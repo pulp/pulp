@@ -1,0 +1,132 @@
+body {
+  background-image:		url('/static/images/template/background.png');
+  background-repeat:		repeat-x;
+  background-color:		#f9f9f9;
+  margin:			0px;
+  padding:			0px;
+}
+
+body, h1, h2, h3, h4, h5, p, ul, li {
+  font-family:			"Luxi Sans", "Gill Sans", "Verdana", "Helvetica", sans-serif;
+}
+
+#head {
+  margin:			0px;
+  padding:			0px;
+  padding-left:			12px;
+} 
+
+#head h1 a {
+  display:			block;
+  text-indent:			-9999px;
+  height:			55px;
+  width:			201px;
+  overflow:			hidden;
+  float:			left;
+
+  background:			url('/static/images/branding/logo.png') no-repeat;
+}
+
+#searchbar {
+  float: 			right;
+  margin-right: 		24px;
+  margin-top: 			18px;
+}
+
+#navbar {
+  width: 			100%;
+  height: 			70px;
+  margin: 			0px;
+  clear:			both;
+
+  background-image:		url('/static/images/template/background-navbar.png');
+  background-repeat:		repeat-x;
+
+}
+
+#navbar ul {
+  margin:			0px;
+  padding:			0px;
+  padding-left:			10px;
+  list-style:			none;
+}
+
+#navbar li {
+  float:			left;
+  margin:			0px;
+  padding:			0px;
+  
+  font-size:			small;
+}
+
+#navbar a {
+  display:			block;
+  margin:			22px 15px;
+}
+
+#navbar .active {
+  background-image:		url('/static/images/template/background-navbar-active.png');
+  height:			70px;
+  width:			116px;
+
+  text-align:			center;
+}
+
+#content {
+  width:			100%;
+
+  background-color:		#f9f9f9;
+  background-image:		url('/static/images/template/background-content.png');
+  background-repeat:		repeat-x;
+
+}
+
+#details {
+  margin:			0px 24px;
+  border-top:			1px solid #e8e886;
+  background-color:		white;
+}
+
+#sidebar {
+  padding:			18px 12px;
+  margin-top: 			-1px;
+  float:			right;
+
+  background-color:		#ccc;
+}
+
+#sidebar h1, h2, h3 {
+  padding:			0px;
+  margin:			0px;
+}
+
+#sidebar h2 { font-size: 	medium; }
+#sidebar h3 { font-size: 	small; }
+
+#sidebar ul {
+  padding:			0px;
+  margin:			0px;
+  list-style:			none;
+  padding-bottom:		10px;
+}
+
+#sidebar ul, #sidebar li  {
+  margin-bottom:		6px;
+  font-size:			small;
+}
+
+#navbar-secondary {
+  padding-top:			12px !important; 
+}
+
+input.text {
+  border:			1px solid #8e8e8e;
+  background-color:		#e5f1f4;
+  color:			#444444;
+}
+
+input.button {
+
+}
+
+

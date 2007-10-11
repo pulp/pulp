@@ -1,0 +1,137 @@
+<html>
+<head>
+<title>Hello</title>
+<link media="all" href="css/style.css" type="text/css" charset="utf-8" rel="stylesheet" />
+</head>
+<body>
+
+<div id="head">
+  <h1><a href="/">Buster</a></h1>
+  <div id="searchbar">
+    <select>
+      <option>Systems</option>
+      <option>Software</option>
+      <option>Users</option>
+      <option>Events</option>
+    </select>
+    <input class="text" type="text" value="Type search terms here."/>
+    <input class="button" type="submit" value="Search!"/>
+  </div>
+</div>
+
+<div id="navbar">
+  <ul>
+    <li><a href="#">Overview</a></li>
+    <li class="active"><a href="#">Users</a></li>
+    <li><a href="#">Groups</a></li>
+    <li><a href="#">Resources</a></li>
+    <li><a href="#">Policy</a></li>
+    <li><a href="#">Search</a></li>
+  </ul>
+</div>
+
+<div id="content">
+
+<!-- SIDEBAR START -->
+    <div id="sidebar">
+    
+<h2>About Me:</h2>
+  <ul>
+  <li><a href="#">Update my password</a></li>
+  <li><a href="#">Update my contact information</a></li>
+  </ul>
+
+<h2>About Users:</h2>
+  <ul>
+  <li><a href="#">Add a new user</a></li>
+  <li><a href="#">Other users on my team</a></li>
+  <li><a href="#">Other users in my department</a></li>
+  <li><a href="#">Other users in my office</a></li>
+  </ul>
+
+<hr />
+
+<h3>Find a User:</h3>
+  <input class="text" type="text" value="Type search terms here."/>
+  <input class="button" type="submit" value="Search!"/>
+
+<hr />
+
+  <ul id="navbar-secondary">
+  <li class="active"><a href="#">Browse Users</a></li>
+  <li><a href="#">Browse User Groups</a></li>
+  <li><a href="#">Search for Users</a></li>
+  <li><a href="#">Manage User Policies</a></li>
+  </ul>
+    </div>
+<!-- END SIDEBAR -->
+
+
+  <div id="details">
+<!-- DETAILS START -->
+
+    <div id="alertbox">
+      <h2>Tip:</h2>
+      <p>This user is you!</p>
+    </div>
+
+<h1 class="user">User Details</h1>   
+ 
+<table class="details">
+<caption>Identity Details</caption>
+<tbody>
+<tr>
+<th>First Name</th>
+<td>Darth</td>
+</tr>
+<tr>
+<th>Last Name</th>
+<td>Vader</td>
+</tr>
+</table>
+
+<table class="details">
+<caption>Account Details</caption>
+<tr>
+<th scope="row">Login</th>
+<td>dvader</td>
+</tr>
+<tr>
+<th scope="row">Password</th>
+<td><em>hidden</em> (<a href="#">update password</a>)</td>
+</tr>
+<tr>
+<th scope="row">User ID</th> 
+<td>514</td>
+</tr>
+<tr>
+<th scope="row">Group ID</th> 
+<td>514</td>
+</tr>
+</tbody>
+</table>
+
+<table class="details">
+<caption>Contact Information</caption>
+<tr>
+<th scope="row">Email Address (Office)</th>
+<td>dvader@sith.com</td>
+</tr>
+<tr>
+<th scope="row">Email Address (Mobile)</th>
+<td>6175551234@sprintpcs.com</td>
+</tr>
+<tr>
+<th scope="row">Email Address (Home)</th>
+<td>darthy234@hotmail.com</td>
+</tr>
+</table>
+
+  </div>
+<!-- END DETAILS -->
+
+
+</div>
+
+</body>
+</html>
