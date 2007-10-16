@@ -18,7 +18,7 @@
 @import "${tg.url('/static/css/style.css')}";
 </style>
 </head>
-<body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
+<body id="planes" py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
     <div py:if="tg.config('identity.on') and not defined('logging_in')" id="pageLogin">
         <span py:if="tg.identity.anonymous">
             <a href="${tg.url('/login')}">Login</a>
@@ -56,6 +56,8 @@
 <span py:replace="tg.if_path('/search', 'pulp.templates.groups-sidebar')" />
 <!-- END SIDEBAR -->
 
+<div id="details">
+
     <FONT COLOR="gray"><h1><span>START MAIN CONTENT</span></h1></FONT>
     
     <div id="main_content">
@@ -65,6 +67,8 @@
     <!-- End of main_content -->
     <FONT COLOR="gray"><h1>END MAIN CONTENT</h1></FONT>
     </div>
+
+</div>
 
 </div>
     
