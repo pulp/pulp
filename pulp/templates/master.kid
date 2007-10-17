@@ -3,6 +3,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="sitetemplate">
 
 <head py:match="item.tag=='{http://www.w3.org/1999/xhtml}head'" py:attrs="item.items()">
+    <link rel="shortcut icon" href="static/images/favico-ponies.png" type="image/vnd.microsoft.icon" />
+    <link rel="icon" href="static/images/favico-ponies.png" type="image/vnd.microsoft.icon" /> 
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
     <title py:replace="''">Your title goes here</title>
     <meta py:replace="item[:]"/>
@@ -17,8 +19,15 @@
     <style type="text/css" media="screen">
 @import "${tg.url('/static/css/style.css')}";
 </style>
+    <script type="text/javascript">
+ 
+    function SwitchTheme(theme) {
+      document.body.id = theme;
+    }
+
+    </script>
 </head>
-<body id="planes" py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
+<body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
     <div py:if="tg.config('identity.on') and not defined('logging_in')" id="pageLogin">
         <span py:if="tg.identity.anonymous">
             <a href="${tg.url('/login')}">Login</a>
@@ -47,7 +56,19 @@
 <!--  Nav Bar -->
 <span py:replace="tg.buildnav('pulp/master.xml')" />
 
-<div id="content">
+<div id="switcher" style="float: right; margin-right: 24px; margin-bottom: 12px;">
+
+Pick yer poison: 
+<select style="margin-left: 10px;" name="themeSwitcher">
+  <option onClick="SwitchTheme('');">Boring</option>
+  <option onClick="SwitchTheme('ponies');">Ponies!1</option>
+  <option onClick="SwitchTheme('planes');">PLANES!</option>
+  <option onClick="SwitchTheme('bonbons');">mmm... yummy bonbons</option>
+  <option onClick="SwitchTheme('snakes');">snakes!!</option>
+</select>
+
+</div>
+<div id="content" style="clear: both;">
 
 <!-- SIDEBAR START -->
 <span py:replace="tg.if_path('/', 'pulp.templates.overview-sidebar')" />

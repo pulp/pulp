@@ -41,6 +41,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #head h1 a { background: url('/static/images/branding/logo-ponies.png') no-repeat !important; }
 #planes #head h1 a { background: url('/static/images/branding/logo-planes.png') no-repeat; }
+#bonbons #head h1 a { background: url('/static/images/branding/logo-bonbons.png') no-repeat; }
+#snakes #head h1 a { background: url('/static/images/branding/logo-snakes.png') no-repeat; }
 
 #searchbar {
   float: 			right;
@@ -62,6 +64,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #navbar { background-image: url('/static/images/template/background-navbar_ponies.png'); }
 #planes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
+#bonbons #navbar { background-image: url('/static/images/template/background-navbar_bonbons.png'); }
+#snakes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
 
 #navbar ul {
   margin:			0px;
@@ -93,6 +97,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #navbar .active { background-image: url('/static/images/template/background-navbar-active_ponies.png'); }
 #planes #navbar .active { background-image: url('/static/images/template/background-navbar-active_planes.png'); }
+#bonbons #navbar .active { background-image: url('/static/images/template/background-navbar-active_bonbons.png'); }
+#snakes #navbar .active { background-image: url('/static/images/template/background-navbar-active_planes.png'); }
 
 #content {
   width:			100%;
@@ -115,6 +121,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #details { border-top: 1px solid #df00d4; }
 #planes #details { border-top: 1px solid #e8e886; }
+#bonbons #details { border-top: 1px solid #facbdf; }
+#snakes #details { border-top: 1px solid #444; }
 
 #sidebar {
   width:			250px;
