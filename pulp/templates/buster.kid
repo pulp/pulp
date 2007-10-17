@@ -9,7 +9,7 @@
 <body>
 
 
-<div id="head">
+<div id="head" class="ponies">
   <h1><a href="/">Buster</a></h1>
   <div id="searchbar">
     <select>

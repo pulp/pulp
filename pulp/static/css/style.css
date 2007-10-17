@@ -31,13 +31,16 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 #head h1 a {
   display:			block;
   text-indent:			-9999px;
-  height:			55px;
-  width:			201px;
+  height:			75px;
+  width:			350px;
   overflow:			hidden;
   float:			left;
 
   background:			url('/static/images/branding/logo.png') no-repeat;
 }
+
+#ponies #head h1 a { background: url('/static/images/branding/logo-ponies.png') no-repeat !important; }
+#planes #head h1 a { background: url('/static/images/branding/logo-planes.png') no-repeat; }
 
 #searchbar {
   float: 			right;
@@ -55,6 +58,10 @@ body, h1, h2, h3, h4, h5, p, ul, li {
   background-repeat:		repeat-x;
 
 }
+
+
+#ponies #navbar { background-image: url('/static/images/template/background-navbar_ponies.png'); }
+#planes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
 
 #navbar ul {
   margin:			0px;
@@ -84,6 +91,9 @@ body, h1, h2, h3, h4, h5, p, ul, li {
   text-align:			center;
 }
 
+#ponies #navbar .active { background-image: url('/static/images/template/background-navbar-active_ponies.png'); }
+#planes #navbar .active { background-image: url('/static/images/template/background-navbar-active_planes.png'); }
+
 #content {
   width:			100%;
   min-height:			100%;
@@ -91,7 +101,6 @@ body, h1, h2, h3, h4, h5, p, ul, li {
   background-color:		#f9f9f9;
   background-image:		url('/static/images/template/background-content.png');
   background-repeat:		repeat-x;
-
 }
 
 #details {
@@ -100,9 +109,12 @@ body, h1, h2, h3, h4, h5, p, ul, li {
   margin-right:			300px;
 
   padding:			18px 18px;
-  border-top:			1px solid #e8e886;
+  border-top:			1px solid #aaa;
   background-color:		white;
 }
+
+#ponies #details { border-top: 1px solid #df00d4; }
+#planes #details { border-top: 1px solid #e8e886; }
 
 #sidebar {
   width:			250px;
