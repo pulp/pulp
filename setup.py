@@ -58,5 +58,11 @@ setup(
         # 'Framework :: TurboGears :: Widgets',
     ],
     test_suite = 'nose.collector',
+    entry_points = """
+    [turbogears.identity.provider]
+    webserviceprovider = pulp.webserviceprovider:WebServiceIdentityProvider
+    [turbogears.visit.manager]
+    simplevisit = pulp.simple:SimpleVisitManager
+    """,
     )
     

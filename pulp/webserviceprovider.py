@@ -6,7 +6,7 @@ from model import *
 
 log = logging.getLogger("pulp.identity")
 
-class Fake_User(object):
+class WsUser(object):
     def __init__(self, user_name):
         self.user_name = user_name
         self.display_name = user_name
@@ -14,9 +14,9 @@ class Fake_User(object):
         self.groups = None
         return
 
-class FakeIdentity(object):
+class WsIdentity(object):
     def __init__(self, visit_key, user=None):
-        log.debug("fakeIdent constructor")
+        log.debug("WsIdentity constructor")
         self._user= user
         self.visit_key= visit_key
    
@@ -24,7 +24,6 @@ class FakeIdentity(object):
         try:
             return self._user
         except AttributeError:
-            # User hasn't already been set
             return None
     user= property(_get_user)
 
@@ -41,7 +40,6 @@ class FakeIdentity(object):
     display_name= property(_get_display_name)
 
     def _get_anonymous(self):
-        log.debug("get anon")
         return not self._user
     anonymous= property(_get_anonymous)
 
@@ -62,9 +60,9 @@ class FakeIdentity(object):
     groups= property(_get_groups)
 
     def logout(self):
-        store = IdentityStore()
+        store = WsIdentityStore()
         store.remove_identity(self.visit_key)
-        anon= FakeIdentity(None,None)
+        anon= WsIdentity(None,None)
         identity.set_current_identity( anon )
         
 
@@ -74,16 +72,13 @@ class WebServiceIdentityProvider(object):
         log.info("WebServiceIdentityProvider starting")
 
     def create_provider_model(self):
-        pass
-
+        return
+    
     def validate_identity(self, user_name, password, visit_key):
         
         log.debug("validate_identity CALLED, username %s, password: %s, visit_key: %s", 
                   user_name, password, visit_key)
-        #ul = UserFactory.user_list()
-        #for u in ul:
-        #    log.debug("user: %s", u.user_name)
-        store = IdentityStore()
+        store = WsIdentityStore()
         if store.get_identity(visit_key):
             log.debug("found in ident store!")
             found = store.get_identity(visit_key)
@@ -97,11 +92,11 @@ class WebServiceIdentityProvider(object):
                 log.debug("pass_param: %s", cherrypy.request.params['password'])
                 if self.validate_password(None, uname_param, pass_param):
                     log.debug("valid password ..")
-                    user = Fake_User(user_name)
+                    user = WsUser(user_name)
                     user.display_name = "Mike McUser"
                     set_login_attempted(True)
-                    log.debug( "Fake validate_identity %s" % user_name)
-                    fi = FakeIdentity(visit_key, user)
+                    log.debug( "WS validate_identity %s" % user_name)
+                    fi = WsIdentity(visit_key, user)
                     store.store_identity(fi)
                     return fi;    
                 else:
@@ -125,14 +120,14 @@ class WebServiceIdentityProvider(object):
 
     def anonymous_identity( self ):
         log.debug("anonymous_identity CALLED")
-        return FakeIdentity( None )
+        return WsIdentity( None )
 
     def authenticated_identity(self, user):
         log.debug("authenticated_identity CALLED")
-        return FakeIdentity(None, user)
+        return WsIdentity(None, user)
     
     
-class IdentityStore:
+class WsIdentityStore:
 
     class __impl:
         def __init__(self):
@@ -167,12 +162,12 @@ class IdentityStore:
     def __init__(self):
         """ Create singleton instance """
         # Check whether we already have an instance
-        if IdentityStore.__instance is None:
+        if WsIdentityStore.__instance is None:
             # Create and remember instance
-            IdentityStore.__instance = IdentityStore.__impl()
+            WsIdentityStore.__instance = WsIdentityStore.__impl()
 
         # Store instance reference as the only member in the handle
-        self.__dict__['_Singleton__instance'] = IdentityStore.__instance
+        self.__dict__['_Singleton__instance'] = WsIdentityStore.__instance
 
     def __getattr__(self, attr):
         """ Delegate access to implementation """

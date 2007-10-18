@@ -1,13 +1,14 @@
-from turbogears import controllers, expose, flash
+from cherrypy import request, response
+from turbogears import controllers, expose, flash, identity, redirect
 from turbogears import widgets, validators, validate, error_handler
 from turbogears.widgets import Tabber
 import cherrypy
+import if_path
 import logging
+import navbar
 import turbogears
 import xml.dom.minidom
 import xmlrpclib
-import navbar
-import if_path
 
 
 tabber_widget = widgets.Tabber()
@@ -25,7 +26,45 @@ class Root(controllers.RootController):
         return dict(now=time.ctime())
 
     @expose(template="pulp.templates.login")
-    def login(self):
+    def login(self, forward_url=None, previous_url=None, *args, **kw):
+
+        log.debug("anon: %s", identity.current.anonymous)
+        log.debug("attempt: %s", identity.was_login_attempted())
+        
+        if not identity.current.anonymous \
+            and identity.was_login_attempted():
+            log.debug("redirecting to: %s", forward_url)
+            raise redirect(forward_url)
+
+        forward_url=None
+        previous_url= request.path
+
+        if identity.was_login_attempted():
+            log.debug("1")
+            msg=_("The credentials you supplied were not correct or "
+                   "did not grant access to this resource.")
+        elif identity.get_identity_errors():
+            log.debug("2")
+            msg=_("You must provide your credentials before accessing "
+                   "this resource.")
+        else:
+            log.debug("3")
+            msg=_("Please log in.")
+            forward_url= request.headers.get("Referer", "/")
+            
+        response.status=403
+        return dict(message=msg, previous_url=previous_url, logging_in=True,
+                    original_parameters=request.params,
+                    forward_url=forward_url)
+
+    @expose()
+    def logout(self):
+        identity.current.logout()
+        raise redirect("/")
+
+
+    @expose(template="pulp.templates.login")
+    def login_old(self):
         tabber = PulpTabber()
         login_form = widgets.TableForm(
            fields=LoginFields(),
@@ -41,24 +80,25 @@ class Root(controllers.RootController):
         
 
 
-    @expose(template="pulp.templates.login")
-    def users(self):
-        login_form = widgets.TableForm(
-           fields=LoginFields(),
-            action="loginsubmit"
+    @expose(template="pulp.templates.search")
+    def users(self, **kw):
+        search_form = widgets.TableForm(
+           fields=SearchFields(),
+            action="searchsubmit"
         )
-        return dict(login_form=login_form)
-
-    @expose(template="pulp.templates.login")
-    def groups(self):
-        login_form = widgets.TableForm(
-           fields=LoginFields(),
-            action="loginsubmit"
-        )
-        return dict(login_form=login_form)
+        return dict(search_form=search_form)
 
     @expose(template="pulp.templates.search")
-    def search(self):
+    def groups(self, **kw):
+        search_form = widgets.TableForm(
+           fields=SearchFields(),
+            action="searchsubmit"
+        )
+        return dict(search_form=search_form)
+
+    @expose(template="pulp.templates.search")
+    @identity.require(identity.not_anonymous())
+    def admin(self, **kw):
         search_form = widgets.TableForm(
            fields=SearchFields(),
             action="searchsubmit"
@@ -66,21 +106,21 @@ class Root(controllers.RootController):
         return dict(search_form=search_form)
 
 
-    @expose(template="pulp.templates.login")
-    def resources(self):
+    @expose(template="pulp.templates.search")
+    def resources(self, **kw):
         login_form = widgets.TableForm(
            fields=LoginFields(),
             action="loginsubmit"
         )
         return dict(login_form=login_form)
 
-    @expose(template="pulp.templates.login")
-    def policy(self):
-        login_form = widgets.TableForm(
-           fields=LoginFields(),
-            action="loginsubmit"
+    @expose(template="pulp.templates.search")
+    def policy(self, **kw):
+        search_form = widgets.TableForm(
+           fields=SearchFields(),
+            action="searchsubmit"
         )
-        return dict(login_form=login_form)
+        return dict(search_form=search_form)
 
     def xmlrpclogin(self): 
         log.debug("fetch_systems called")
