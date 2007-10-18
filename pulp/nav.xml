@@ -1,7 +1,0 @@
-<nav-tree>
-    <tab name="Overview" url="/"/>
-    <tab name="Users" url="/users"/>
-    <tab name="Groups" url="/groups"/>
-    <tab name="Policy" url="/policy"/>
-    <tab name="Search" url="/search"/>
-</nav-tree>
