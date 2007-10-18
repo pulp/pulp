@@ -41,11 +41,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #head h1 a { background: url('/static/images/branding/logo-ponies.png') no-repeat !important; }
 #planes #head h1 a { background: url('/static/images/branding/logo-planes.png') no-repeat; }
-<<<<<<< HEAD:pulp/static/css/style.css
 #bonbons #head h1 a { background: url('/static/images/branding/logo-bonbons.png') no-repeat; }
 #snakes #head h1 a { background: url('/static/images/branding/logo-snakes.png') no-repeat; }
-=======
->>>>>>> 5e44058090f93c2a9448859da62f2572a5c509aa:pulp/static/css/style.css
 
 #searchbar {
   float: 			right;
@@ -67,11 +64,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #navbar { background-image: url('/static/images/template/background-navbar_ponies.png'); }
 #planes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
-<<<<<<< HEAD:pulp/static/css/style.css
 #bonbons #navbar { background-image: url('/static/images/template/background-navbar_bonbons.png'); }
 #snakes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
-=======
->>>>>>> 5e44058090f93c2a9448859da62f2572a5c509aa:pulp/static/css/style.css
 
 #navbar ul {
   margin:			0px;
@@ -103,11 +97,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #navbar .active { background-image: url('/static/images/template/background-navbar-active_ponies.png'); }
 #planes #navbar .active { background-image: url('/static/images/template/background-navbar-active_planes.png'); }
-<<<<<<< HEAD:pulp/static/css/style.css
 #bonbons #navbar .active { background-image: url('/static/images/template/background-navbar-active_bonbons.png'); }
 #snakes #navbar .active { background-image: url('/static/images/template/background-navbar-active_planes.png'); }
-=======
->>>>>>> 5e44058090f93c2a9448859da62f2572a5c509aa:pulp/static/css/style.css
 
 #content {
   width:			100%;
@@ -130,11 +121,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #ponies #details { border-top: 1px solid #df00d4; }
 #planes #details { border-top: 1px solid #e8e886; }
-<<<<<<< HEAD:pulp/static/css/style.css
 #bonbons #details { border-top: 1px solid #facbdf; }
 #snakes #details { border-top: 1px solid #444; }
-=======
->>>>>>> 5e44058090f93c2a9448859da62f2572a5c509aa:pulp/static/css/style.css
 
 #sidebar {
   width:			250px;
