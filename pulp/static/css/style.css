@@ -281,3 +281,9 @@ table.details {
 td, th {
   text-align:			left;
 }
+
+.context-tools {
+  float: right;
+  margin-top: -1.2em;
+  font-size: small;
+}
