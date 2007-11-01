@@ -49,7 +49,8 @@
       <option>Events</option>
     </select>
     <input class="text" type="text" value="Type search terms here."/>
-    <input class="button" type="submit" value="Search!"/>
+    <input class="button" type="submit" value="Search!"/><br/>
+    <a href="#"><div id="pageLogin">Advanced Search...</div></a>
   </div>
 </div>
 
@@ -57,8 +58,7 @@
 <span py:replace="tg.buildnav('pulp/master.xml')" />
 
 <div id="switcher" style="float: right; margin-right: 24px; margin-bottom: 12px;">
-
-Pick yer poison: 
+Theme Picker 
 <select style="margin-left: 10px;" name="themeSwitcher">
   <option onClick="SwitchTheme('');">Boring</option>
   <option onClick="SwitchTheme('ponies');">Ponies!1</option>
@@ -66,8 +66,9 @@ Pick yer poison:
   <option onClick="SwitchTheme('bonbons');">mmm... yummy bonbons</option>
   <option onClick="SwitchTheme('snakes');">snakes!!</option>
 </select>
-
 </div>
+
+
 <div id="content" style="clear: both;">
 
 <!-- SIDEBAR START -->
@@ -75,29 +76,26 @@ Pick yer poison:
 <span py:replace="tg.if_path('/users', 'pulp.templates.users-sidebar')" />
 <span py:replace="tg.if_path('/groups', 'pulp.templates.groups-sidebar')" />
 <span py:replace="tg.if_path('/search', 'pulp.templates.groups-sidebar')" />
+
 <!-- END SIDEBAR -->
 
 <div id="details">
 
-    <FONT COLOR="gray"><h1><span>START MAIN CONTENT</span></h1></FONT>
+    <!--START MAIN CONTENT-->
     
     <div id="main_content">
     <div id="status_block" class="flash" py:if="value_of('tg_flash', None)" py:content="tg_flash"></div>
 
     <div py:replace="[item.text]+item[:]"/>
     <!-- End of main_content -->
-    <FONT COLOR="gray"><h1>END MAIN CONTENT</h1></FONT>
     </div>
-
 </div>
 
 </div>
-    
-    
-<div id="footer"> <img src="${tg.url('/static/images/under_the_hood_blue.png')}" alt="TurboGears under the hood" />
-  <p>TurboGears is a open source front-to-back web development
-    framework written in Python</p>
-</div>
+ 
+
+ 
+
 </body>
 
 </html>

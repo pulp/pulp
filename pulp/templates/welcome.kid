@@ -3,7 +3,7 @@
     py:extends="'master.kid'">
 <head>
 <meta content="text/html; charset=utf-8" http-equiv="Content-Type" py:replace="''"/>
-<title>Welcome to TurboGears</title>
+<title>Overview</title>
 </head>
 <body>
 
