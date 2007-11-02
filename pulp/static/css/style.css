@@ -190,10 +190,6 @@ input.button {
   font-weight:			bold;
 }
 
-#details * {
-  color:			#444;
-  vertical-align:		middle;
-}
 
 #details p,
 #details td,
@@ -265,7 +261,7 @@ table.details {
   width:			auto;
   padding:			0px 16px;
   float:			left;
-  font-size:			medium;
+  font-size:			medium;e
   text-transform:		uppercase;
   color:			white;
   font-weight:			bold;
@@ -287,3 +283,18 @@ td, th {
   margin-top: -1.2em;
   font-size: small;
 }
+
+.summary {
+  width: 40%;
+  float: left;
+}
+
+.tasks, .search {
+  width: 40%;
+  float: right;
+  background-image:     url('/static/images/template/background-search.png');
+  background-repeat:        repeat-y;
+} 
+
+.search.ul, .summary ul, .tasks ul { list-style: square; padding-left: 2ex; }
+
