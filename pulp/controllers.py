@@ -1,24 +1,26 @@
 from channelcontroller import *
-from model.infofeed import InfoFeedService
 from cherrypy import request, response
+from globalwidgets import GlobalWidget, NavBar
+from model.infofeed import InfoFeedService
+from perspectivesummary import PerspectiveSummaryWidget, PerspectiveSummary
 from turbogears import controllers, expose, flash, identity, widgets, paginate, redirect
-from turbogears import widgets, validators, validate, error_handler
-from turbogears.widgets import Tabber
+from turbogears import widgets, validators, validate, error_handler, config
 from turbogears.widgets.datagrid import *
+from perspectives import PerspectiveManager
 import cherrypy
 import if_path
+import if_perspective
 import logging
-import navbar
 import turbogears
 import xml.dom.minidom
 import xmlrpclib
+import navbar
 
-
-tabber_widget = widgets.Tabber()
 log = logging.getLogger("pulp.controllers")
 
-    
 class Root(controllers.RootController):
+    
+         
     @expose(template="pulp.templates.overview")
     @identity.require(identity.not_anonymous())
     @paginate('data', default_order='id', limit=10)
@@ -27,7 +29,8 @@ class Root(controllers.RootController):
         if "locale" in data:
             locale = data['locale']
             turbogears.i18n.set_session_locale(locale)
-        # log.debug("Happy TurboGears Controller Responding For Duty")
+        
+        log.debug("Happy TurboGears Controller Responding For Duty")
         infoFeed = PaginateDataGrid(template="pulp.templates.dgrid", fields=[
             DataGrid.Column('perspective', 'perspective', 'Perspective', 
                 options=dict(sortable=True, type="Raw")),
@@ -38,7 +41,16 @@ class Root(controllers.RootController):
 
         ])
         data = InfoFeedService().get_feed(identity)
-        return dict(now=time.ctime(), infoFeed=infoFeed, data=data)
+        summaries = []
+        summaries.append(PerspectiveSummary("Software Content", 
+                                             "software channels",
+                                             "software packages"))
+        #summaries.append(PerspectiveSummary("Admin", 
+        #                                     "systems", 
+        #                                     "flib flarb"))
+        ps = PerspectiveSummaryWidget(summaries=summaries)
+        return dict(now=time.ctime(), infoFeed=infoFeed, data=data, 
+                    ps=ps)
 
     @expose(template="pulp.templates.login")
     def login(self, forward_url=None, previous_url=None, *args, **kw):
@@ -76,6 +88,16 @@ class Root(controllers.RootController):
     def logout(self):
         identity.current.logout()
         raise redirect("/")
+    
+    @expose()
+    def setperspective(self, **data):
+        if "perspective" in data:
+            pm = PerspectiveManager()
+            pers = pm.get_perspective(data["perspective"])
+            if not pers:
+                raise ValueError("perspective not found: %s", data("perspective"))
+            pm.set_current_perspective(pers)
+            raise redirect(pers.url)
 
     @expose(template="pulp.templates.dashboard")
     @identity.require(identity.not_anonymous())
@@ -155,6 +177,36 @@ class Root(controllers.RootController):
         return results
     
     channels = ChannelController()
+
+    def register_widgets(widgets, pkg_name):
+         """Include site-wide widgets on every page.
+    
+         'widgets' is a list of widget instance names.
+    
+         Order of the widget names is important for proper inclusion
+         of JavaScript and CSS.
+    
+         The named widget instances have to be instantiated in
+         some of your modules.
+    
+         'pkg_name' is the name of your Python module/package, in which
+         the widget instances are defined.
+         """
+    
+         # first get widgets listed in the config files
+         include_widgets = config.get('tg.include_widgets', [])
+         # then append given list of widgets
+         for widget in widgets:
+             include_widgets.append('%s.%s' % (pkg_name, widget))
+         config.update({'global': {'tg.include_widgets': include_widgets}})
+    
+    _sitewidgets = [
+       'GlobalWidget',
+       'NavBar',
+    ]
+
+    register_widgets(_sitewidgets, 'pulp.globalwidgets')
+
                     
 class LoginFields(widgets.WidgetsList):
     login = widgets.TextField(validator=validators.NotEmpty())

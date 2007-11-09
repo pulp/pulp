@@ -1,0 +1,4 @@
+<nav-tree>
+    <tab name="Overview" url="/"/>
+    <tab name="Event Log" url="/events"/>
+</nav-tree>

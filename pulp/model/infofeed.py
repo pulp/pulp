@@ -1,7 +1,13 @@
+import logging
+
+log = logging.getLogger("pulp.model.infofeed")
+
+
 class InfoFeedService:
         
     #get a feed for a person
-    def get_feed(self, identity): 
+    def get_feed(self, identity):
+        log.debug("get_feed called!!!!!!!! XXXXXXXXXXXXX")
         ret = []
         e1 = """
             12 new errata issued for channel RHEL4 AS.

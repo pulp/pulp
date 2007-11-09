@@ -1,0 +1,6 @@
+<nav-tree>
+    <tab name="Overview" url="/admin"/>
+    <tab name="Systems" url="/admin/systems"/>
+    <tab name="Users" url="/admin/users"/>
+    <tab name="Event Log" url="/admin/events"/>
+</nav-tree>

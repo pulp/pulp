@@ -1,0 +1,6 @@
+<nav-tree>
+    <tab name="Overview" url="/middleware"/>
+    <tab name="Systems" url="/middleware/systems"/>
+    <tab name="Users" url="/middleware/users"/>
+    <tab name="Event Log" url="/middleware/events"/>
+</nav-tree>

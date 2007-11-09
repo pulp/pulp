@@ -4,9 +4,13 @@ import logging
 import turbogears
 
 
-log = logging.getLogger("pulp.if_path")
+log = logging.getLogger("pulp.ui.if_path")
 
-def if_path(path, template):
+def if_path(path, template, *args, **kwargs):
+    ip = IfPath(path=path, template=template)
+    return ip.display(*args, **kwargs)
+
+def old_if_path(path, template):
     ip = IfPath(path=path, template=template)
     return ip.display()
 
@@ -14,6 +18,7 @@ def add_custom_stdvars(vars):
     return vars.update({"if_path": if_path})
 
 turbogears.view.variable_providers.append(add_custom_stdvars)
+
 
 class IfPath(widgets.Widget):
     def __init__(self, *args, **kw):

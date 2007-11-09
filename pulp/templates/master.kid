@@ -55,10 +55,15 @@
 </div>
 
 <!--  Nav Bar -->
-<span py:replace="tg.buildnav('pulp/master.xml')" />
+<!-- span py:replace="tg.buildnav('pulp/master.xml')" 
+/-->
+${tg_NavBar.display()}
+
+
 
 <div id="switcher" style="float: right; margin-right: 24px; margin-bottom: 12px;">
-Theme Picker 
+Theme Picker  
+<!--  ${tg_GlobalWidget.display()}  -->
 <select style="margin-left: 10px;" name="themeSwitcher">
   <option onClick="SwitchTheme('');">Boring</option>
   <option onClick="SwitchTheme('ponies');">Ponies!1</option>
@@ -68,10 +73,11 @@ Theme Picker
 </select>
 </div>
 
-
 <div id="content" style="clear: both;">
 
+
 <!-- SIDEBAR START -->
+<!--  TODO: Replace with one component -->
 <span py:replace="tg.if_path('/', 'pulp.templates.overview-sidebar')" />
 <span py:replace="tg.if_path('/users', 'pulp.templates.users-sidebar')" />
 <span py:replace="tg.if_path('/groups', 'pulp.templates.groups-sidebar')" />

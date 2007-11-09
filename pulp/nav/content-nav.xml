@@ -1,0 +1,10 @@
+<nav-tree>
+    <tab name="Overview" url="/pulp"/>
+    <tab name="Channels" url="/pulp/channels"/>
+    <tab name="Content" url="/pulp/content"/>
+    <tab name="Systems" url="/pulp/systems"/>
+    <tab name="Users" url="/pulp/users"/>
+    <tab name="Policy" url="/pulp/policy"/>
+    <tab name="Events" url="/pulp/events"/>
+    <tab name="Stats" url="/pulp/stats"/>
+</nav-tree>
