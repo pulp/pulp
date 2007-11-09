@@ -36,7 +36,7 @@ body, h1, h2, h3, h4, h5, p, ul, li {
   overflow:			hidden;
   float:			left;
 
-  background:			url('/static/images/branding/logo.png') no-repeat;
+  background:			url('/static/images/branding/root-logo.png') no-repeat;
 }
 
 #ponies #head h1 a { background: url('/static/images/branding/logo-ponies.png') no-repeat !important; }
@@ -66,6 +66,8 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 #planes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
 #bonbons #navbar { background-image: url('/static/images/template/background-navbar_bonbons.png'); }
 #snakes #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }
+/*#content #navbar { background-image: url('/static/images/template/background-navbar_planes.png'); }*/
+
 
 #navbar ul {
   margin:			0px;

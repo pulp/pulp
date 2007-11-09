@@ -2,7 +2,7 @@ from turbogears import widgets
 import cherrypy
 import logging
 import turbogears
-import perspectives
+from perspectives import PerspectiveManager
 
 log = logging.getLogger("pulp.ui.if_perspective")
 
@@ -13,8 +13,16 @@ def if_perspective(perspective):
         return session_pers.name == perspective
     return False 
 
-def add_custom_stdvars(vars):
+def get_perspective():
+    return PerspectiveManager().get_current_perspective().name 
+
+def add_if_perspective(vars):
     return vars.update({"if_perspective": if_perspective})
 
-turbogears.view.variable_providers.append(add_custom_stdvars)
+def add_get_perspective(vars):
+    return vars.update({"get_perspective": get_perspective})
+
+
+turbogears.view.variable_providers.append(add_if_perspective)
+turbogears.view.variable_providers.append(add_get_perspective)
 

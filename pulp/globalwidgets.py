@@ -1,7 +1,6 @@
 from perspectives import PerspectiveManager
 from turbogears import widgets
 import cherrypy
-import if_perspective
 import logging
 import xml.dom.minidom
 

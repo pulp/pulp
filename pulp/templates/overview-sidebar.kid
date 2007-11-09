@@ -36,5 +36,10 @@
     <br />
     <small>manage middleware applications</small>
     <br />
+    <a href="/setperspective?perspective=root">None</a>
+        <strong py:if="tg.if_perspective('root')">(current)</strong>
+    <br />
+    <small>starting point</small>
+    
 </div>
 <!-- END SIDEBAR -->

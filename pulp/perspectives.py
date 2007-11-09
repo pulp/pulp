@@ -23,7 +23,7 @@ class PerspectiveManager(object):
     def get_all_perspectives(self):
         retval = dict()
         retval['root'] = Perspective("root", "/")
-        retval['content'] = Perspective("content", "/content")
+        retval['content'] = Perspective("content", "/pulp")
         retval['admin'] = Perspective("admin", "/admin")
         retval['middleware'] = Perspective("middleware", "/middleware")
         return retval

@@ -1,26 +1,33 @@
+from middlewarecontroller import *
+from admincontroller import *
 from channelcontroller import *
 from cherrypy import request, response
 from globalwidgets import GlobalWidget, NavBar
 from model.infofeed import InfoFeedService
+from perspectives import PerspectiveManager
 from perspectivesummary import PerspectiveSummaryWidget, PerspectiveSummary
+from pulpcontroller import *
 from turbogears import controllers, expose, flash, identity, widgets, paginate, redirect
 from turbogears import widgets, validators, validate, error_handler, config
 from turbogears.widgets.datagrid import *
-from perspectives import PerspectiveManager
 import cherrypy
 import if_path
-import if_perspective
 import logging
+import navbar
+import perspective_functions
 import turbogears
 import xml.dom.minidom
 import xmlrpclib
-import navbar
 
 log = logging.getLogger("pulp.controllers")
 
 class Root(controllers.RootController):
-    
-         
+
+    channels = ChannelController()    
+    pulp = PulpController()
+    admin = AdminController()
+    middleware = MiddlewareController()
+      
     @expose(template="pulp.templates.overview")
     @identity.require(identity.not_anonymous())
     @paginate('data', default_order='id', limit=10)
@@ -104,12 +111,6 @@ class Root(controllers.RootController):
     def dashboard(self, **kw):
         return dict()
     
-    @expose(template="pulp.templates.overview")
-    @identity.require(identity.not_anonymous())
-    def pulp(self, **kw):
-        return dict()
-    
-
     @expose(template="pulp.templates.channels.overview")
     @identity.require(identity.not_anonymous())
     def overview(self, **kw):
@@ -127,25 +128,6 @@ class Root(controllers.RootController):
             action="searchsubmit"
         )
         return dict(search_form=search_form)
- 
-    @expose(template="pulp.templates.search")
-    @identity.require(identity.not_anonymous())
-    def groups(self, **kw):
-        search_form = widgets.TableForm(
-           fields=SearchFields(),
-            action="searchsubmit"
-        )
-        return dict(search_form=search_form)
-
-    @expose(template="pulp.templates.search")
-    @identity.require(identity.not_anonymous())
-    def admin(self, **kw):
-        search_form = widgets.TableForm(
-           fields=SearchFields(),
-            action="searchsubmit"
-        )
-        return dict(search_form=search_form)
-
 
     @expose(template="pulp.templates.search")
     def resources(self, **kw):
@@ -176,8 +158,6 @@ class Root(controllers.RootController):
         results = client.system.listUserSystems(session_key)
         return results
     
-    channels = ChannelController()
-
     def register_widgets(widgets, pkg_name):
          """Include site-wide widgets on every page.
     
