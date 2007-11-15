@@ -1,20 +1,19 @@
-from middlewarecontroller import *
-from admincontroller import *
-from channelcontroller import *
 from cherrypy import request, response
+from subcontrollers.admincontroller import *
+from subcontrollers.channelcontroller import *
+from subcontrollers.middlewarecontroller import *
+from subcontrollers.pulpcontroller import *
 from globalwidgets import GlobalWidget, NavBar
 from model.infofeed import InfoFeedService
 from perspectives import PerspectiveManager
-from perspectivesummary import PerspectiveSummaryWidget, PerspectiveSummary
-from pulpcontroller import *
+from perspectives.perspectivesummary import PerspectiveSummaryWidget, PerspectiveSummary
 from turbogears import controllers, expose, flash, identity, widgets, paginate, redirect
 from turbogears import widgets, validators, validate, error_handler, config
 from turbogears.widgets.datagrid import *
 import cherrypy
 import if_path
 import logging
-import navbar
-import perspective_functions
+import perspectives.perspective_functions
 import turbogears
 import xml.dom.minidom
 import xmlrpclib
@@ -183,6 +182,8 @@ class Root(controllers.RootController):
     _sitewidgets = [
        'GlobalWidget',
        'NavBar',
+       'PerspectiveList',
+       'SideBar',
     ]
 
     register_widgets(_sitewidgets, 'pulp.globalwidgets')

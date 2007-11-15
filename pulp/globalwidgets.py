@@ -15,7 +15,7 @@ class NavBar(widgets.Widget):
     def display(self, value=None, **params):
         pm = PerspectiveManager()
         perspective = pm.get_current_perspective() 
-        xmlfile = "pulp/nav/" + perspective.name + "-nav.xml"
+        xmlfile = "pulp/perspectives/nav/" + perspective.name + "-nav.xml"
         f = open(xmlfile, mode="r")
         log.debug("file: " + xmlfile)
         #f = open(file, mode="r")
@@ -30,7 +30,12 @@ class NavBar(widgets.Widget):
             tablist.append(nt)
         return widgets.Widget.display(self, tabs=tablist)
     
-    
+
+class PerspectiveList(widgets.Widget):
+    template="pulp.templates.perspective-list"
+
+class SideBar(widgets.Widget):
+    template="pulp.templates.overview-sidebar"
 
 class NavTab:
     def __init__(self, name, url, active):

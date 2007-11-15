@@ -1,0 +1,5 @@
+<perspective>
+	<name>admin</name>
+	<url>/admin</url>
+	<description>platform administration tasks</description>
+</perspective>

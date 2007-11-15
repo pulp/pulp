@@ -19,27 +19,9 @@
         <li><strong>System Owner <a href="#">(more ...)</a></strong></li>
       </ul>
     <hr />
-    <h3>Other Perspectives:</h3>
-
-    <a href="/setperspective?perspective=content">Software Content</a>
-        <strong py:if="tg.if_perspective('content')">(current)</strong>
-    <br />
-    <small>advanced software content management</small>
-    <br />
-    <a href="/setperspective?perspective=admin">Admin</a>
-        <strong py:if="tg.if_perspective('admin')">(current)</strong>
-    <br />
-    <small>create/manage clusters and their storage</small>
-    <br />
-    <a href="/setperspective?perspective=middleware">Middleware</a>
-        <strong py:if="tg.if_perspective('middleware')">(current)</strong>
-    <br />
-    <small>manage middleware applications</small>
-    <br />
-    <a href="/setperspective?perspective=root">None</a>
-        <strong py:if="tg.if_perspective('root')">(current)</strong>
-    <br />
-    <small>starting point</small>
+    
+    <!-- see perspective-summary.kid -->
+    <span py:replace="tg.perspective_list()" />
     
 </div>
 <!-- END SIDEBAR -->

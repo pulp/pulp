@@ -2,7 +2,6 @@ from turbogears.identity.soprovider import *
 from turbogears.identity.visitor import *
 import logging
 import os
-from model import *
 
 log = logging.getLogger("pulp.identity")
 

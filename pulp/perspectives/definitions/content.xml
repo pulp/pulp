@@ -1,0 +1,5 @@
+<perspective>
+	<name>content</name>
+	<url>/pulp</url>
+	<description>advanced software content management</description>
+</perspective>

@@ -1,0 +1,5 @@
+<perspective>
+	<name>middleware</name>
+	<url>/middleware</url>
+	<description>manage middleware applications</description>
+</perspective>

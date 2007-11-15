@@ -7,7 +7,7 @@ class InfoFeedService:
         
     #get a feed for a person
     def get_feed(self, identity):
-        log.debug("get_feed called!!!!!!!! XXXXXXXXXXXXX")
+        log.debug("get_feed called")
         ret = []
         e1 = """
             12 new errata issued for channel RHEL4 AS.

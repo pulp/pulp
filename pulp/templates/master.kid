@@ -55,7 +55,7 @@
 </div>
 
 <!--  Nav Bar -->
-
+<!-- see nav.kid -->
 ${tg_NavBar.display()}
 
 <div id="switcher" style="float: right; margin-right: 24px; margin-bottom: 12px;">
@@ -75,10 +75,13 @@ Theme Picker
 
 <!-- SIDEBAR START -->
 <!--  TODO: Replace with one component -->
+${tg_SideBar.display()}
+<!-- 
 <span py:replace="tg.if_path('/', 'pulp.templates.overview-sidebar')" />
 <span py:replace="tg.if_path('/users', 'pulp.templates.users-sidebar')" />
 <span py:replace="tg.if_path('/groups', 'pulp.templates.groups-sidebar')" />
 <span py:replace="tg.if_path('/search', 'pulp.templates.groups-sidebar')" />
+ -->
 
 <!-- END SIDEBAR -->
 
