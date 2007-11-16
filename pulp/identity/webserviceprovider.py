@@ -1,16 +1,21 @@
+from suds.common import WebFault
+#from suds.serviceproxy import ServiceProxy
 from turbogears.identity.soprovider import *
 from turbogears.identity.visitor import *
+from turbogears import config
+from turbogears.util import load_class 
 import logging
 import os
 
 log = logging.getLogger("pulp.identity")
 
 class WsUser(object):
-    def __init__(self, user_name):
+    def __init__(self, user_name, subject):
         self.user_name = user_name
         self.display_name = user_name
         self.permissions = None
         self.groups = None
+        self.subject = subject
         return
 
 class WsIdentity(object):
@@ -89,10 +94,11 @@ class WebServiceIdentityProvider(object):
                 pass_param = cherrypy.request.params['password']
                 log.debug("uname_param: %s", cherrypy.request.params['user_name'])
                 log.debug("pass_param: %s", cherrypy.request.params['password'])
-                if self.validate_password(None, uname_param, pass_param):
+                subject = self.validate_password(None, uname_param, pass_param) 
+                if subject is not None:
                     log.debug("valid password ..")
-                    user = WsUser(user_name)
-                    user.display_name = "Mike McUser"
+                    user = WsUser(user_name, subject)
+                    user.display_name = subject.firstName, subject.lastName
                     set_login_attempted(True)
                     log.debug( "WS validate_identity %s" % user_name)
                     fi = WsIdentity(visit_key, user)
@@ -104,14 +110,28 @@ class WebServiceIdentityProvider(object):
         return None
 
     def validate_password(self, user, user_name, password):
-        log.debug("validate_password CALLED: %s", password)
-        #Only accept redhat as the password
-        if password == "redhat": 
-            log.debug("password is redhat, lets return true")
-            return True
-        else:
-            log.debug("password is NOT REDHAT!")
-            return False
+        log.debug("validate_password pass CALLED: %s", password)
+        log.debug("validate_password uname CALLED: %s", user_name)
+        subject = None
+        try:
+            c = config.get('pulp.config.serviceproxy', 'suds.serviceproxy.ServiceProxy')
+            ServiceProxy = load_class(c)
+            service = ServiceProxy(
+                "http://localhost.localdomain:7080/on-on-enterprise-server-ejb./SubjectManagerBean?wsdl")
+            subject = service.login(user_name, password)
+            log.debug("subject returned")
+        except WebFault:
+            log.error("error attempting login")
+            return None
+        return subject
+        
+#        #Only accept redhat as the password
+#        if password == "redhat": 
+#            log.debug("password is redhat, lets return true")
+#            return True
+#        else:
+#            log.debug("password is NOT REDHAT!")
+#            return False
 
     def load_identity(self, visit_key):
         log.debug("load ident: %s", visit_key)

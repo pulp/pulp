@@ -1,3 +1,5 @@
+from suds.serviceproxy import ServiceProxy
+
 from cherrypy import request, response
 from subcontrollers.admincontroller import *
 from subcontrollers.channelcontroller import *
@@ -156,6 +158,14 @@ class Root(controllers.RootController):
         session_key = client.auth.login(SATELLITE_LOGIN, SATELLITE_PASSWORD)
         results = client.system.listUserSystems(session_key)
         return results
+
+    @expose()
+    def testsuds(self):
+        service = ServiceProxy(
+            "http://localhost.localdomain:7080/on-on-enterprise-server-ejb./SubjectManagerBean?wsdl")
+        subject = service.login('jonadmin', 'jonadmin')
+        #return service.echo('this is cool')
+        return '\nreply(\n%s\n)\n' % subject
     
     def register_widgets(widgets, pkg_name):
          """Include site-wide widgets on every page.

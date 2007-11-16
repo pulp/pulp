@@ -83,7 +83,7 @@
                         <label for="user_name">User Name:</label>
                     </td>
                     <td class="field">
-                        <input type="text" id="user_name" name="user_name" value="admin"/>
+                        <input type="text" id="user_name" name="user_name" value="jonadmin"/>
                     </td>
                 </tr>
                 <tr>
@@ -91,7 +91,7 @@
                         <label for="password">Password:</label>
                     </td>
                     <td class="field">
-                        <input type="password" id="password" name="password" value="redhat"/>
+                        <input type="password" id="password" name="password" value="jonadmin"/>
                     </td>
                 </tr>
                 <tr>
