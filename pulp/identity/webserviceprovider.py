@@ -1,5 +1,3 @@
-from suds.common import WebFault
-#from suds.serviceproxy import ServiceProxy
 from turbogears.identity.soprovider import *
 from turbogears.identity.visitor import *
 from turbogears import config
@@ -120,7 +118,7 @@ class WebServiceIdentityProvider(object):
                 "http://localhost.localdomain:7080/on-on-enterprise-server-ejb./SubjectManagerBean?wsdl")
             subject = service.login(user_name, password)
             log.debug("subject returned")
-        except WebFault:
+        except Exception:
             log.error("error attempting login")
             return None
         return subject

@@ -1,5 +1,3 @@
-from suds.serviceproxy import ServiceProxy
-
 from cherrypy import request, response
 from subcontrollers.admincontroller import *
 from subcontrollers.channelcontroller import *
@@ -100,6 +98,7 @@ class Root(controllers.RootController):
     @expose()
     def setperspective(self, **data):
         if "perspective" in data:
+            print "setting perspective!!"
             pm = PerspectiveManager()
             pers = pm.get_perspective(data["perspective"])
             if not pers:
@@ -158,6 +157,10 @@ class Root(controllers.RootController):
         session_key = client.auth.login(SATELLITE_LOGIN, SATELLITE_PASSWORD)
         results = client.system.listUserSystems(session_key)
         return results
+
+    @expose()
+    def testip(self):
+        return cherrypy.request.remoteAddr
 
     @expose()
     def testsuds(self):

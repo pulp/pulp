@@ -30,7 +30,9 @@ class NavBar(widgets.Widget):
             tablist.append(nt)
         return widgets.Widget.display(self, tabs=tablist)
     
-
+class TaskList(widgets.Widget):
+    template="pulp.templates.tasks-list"
+    
 class PerspectiveList(widgets.Widget):
     template="pulp.templates.perspective-list"
 

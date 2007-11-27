@@ -1,5 +1,3 @@
-<perspective>
-	<name>admin</name>
-	<url>/admin</url>
-	<description>platform administration tasks</description>
+<perspective name="admin" url="/admin"
+	description="platform administration tasks">
 </perspective>

@@ -3,8 +3,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="sitetemplate">
 
 <head py:match="item.tag=='{http://www.w3.org/1999/xhtml}head'" py:attrs="item.items()">
-    <link rel="shortcut icon" href="static/images/favico-ponies.png" type="image/vnd.microsoft.icon" />
-    <link rel="icon" href="static/images/favico-ponies.png" type="image/vnd.microsoft.icon" /> 
+    <link rel="shortcut icon" href="/static/images/favico-ponies.png" type="image/vnd.microsoft.icon" />
+    <link rel="icon" href="/static/images/favico-ponies.png" type="image/vnd.microsoft.icon" /> 
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
     <title py:replace="''">Your title goes here</title>
     <meta py:replace="item[:]"/>
@@ -27,7 +27,7 @@
 
     </script>
 </head>
-<body id="${tg.get_perspective()}" py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
+<body id="${tg.get_perspective().name}" py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
     <div py:if="tg.config('identity.on') and not defined('logging_in')" id="pageLogin">
         <span py:if="tg.identity.anonymous">
             <a href="${tg.url('/login')}">Login</a>

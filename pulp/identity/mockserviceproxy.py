@@ -1,3 +1,4 @@
+from pulp.identity.webserviceprovider import WsUser
 
 class MockServiceProxy(object):
     """ a mock service proxy"""
@@ -20,4 +21,8 @@ class MockSubject(object):
     emailAddress = 'nobody@localhost'
     id = 2
     
+    
+def get_mock_WsUser():
+    subject = MockSubject()
+    return WsUser(subject.name, subject)
         

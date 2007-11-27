@@ -18,6 +18,8 @@ setup(
     
     install_requires = [
         "TurboGears >= 1.0.2.2",
+        "elementtree >= 1.2.6",
+        #"suds >= 0.1"
     ],
     scripts = ["start-pulp.py"],
     zip_safe=False,
@@ -60,9 +62,9 @@ setup(
     test_suite = 'nose.collector',
     entry_points = """
     [turbogears.identity.provider]
-    webserviceprovider = pulp.webserviceprovider:WebServiceIdentityProvider
+    webserviceprovider = pulp.identity.webserviceprovider:WebServiceIdentityProvider
     [turbogears.visit.manager]
-    simplevisit = pulp.simple:SimpleVisitManager
+    simplevisit = pulp.identity.simplevisit:SimpleVisitManager
     """,
     )
     

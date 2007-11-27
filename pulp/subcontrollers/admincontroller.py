@@ -1,4 +1,5 @@
 from turbogears import controllers, expose, identity
+# from model.resourcemanager import ResourceManager
 import logging
 log = logging.getLogger("pulp.controllers.channelcontroller")
 
@@ -13,6 +14,7 @@ class AdminController(controllers.Controller):
     @expose(template="pulp.templates.mockup")
     @identity.require(identity.not_anonymous())
     def systems(self, **kw):
+        
         return dict(mockup_text="Admin Systems")
 
     @expose(template="pulp.templates.mockup")

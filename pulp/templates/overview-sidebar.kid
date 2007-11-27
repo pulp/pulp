@@ -1,11 +1,6 @@
 <!-- SIDEBAR START -->
 <div id="sidebar" xmlns:py="http://purl.org/kid/ns#" py:extends="'master.kid'">
-    <h2>About My Overview:</h2>
-      <ul>
-      <li><a href="#">Add a new perspective</a></li>
-      <li><a href="#">Customize my info feed</a></li>
-      <li><a href="#">Modify my overview page layout</a></li>
-      </ul>
+    <span py:replace="tg.task_list()"/>
     
     <h2>About Me:</h2>
       <ul>

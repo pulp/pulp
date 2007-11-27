@@ -1,5 +1,25 @@
-<perspective>
-	<name>content</name>
-	<url>/pulp</url>
-	<description>advanced software content management</description>
+<perspective name="content" url="/pulp"
+	description="advanced software content management">
+	<tasks>
+		<task name="channel create" url="/pulp/channels/create"
+			display="Create Channel">
+			<url-match>/pulp/channels</url-match>
+			<url-match>/pulp/channels/create</url-match>
+			<url-match>/pulp/channels/create_confirm</url-match>
+			<url-match>/pulp/channels/create*</url-match>
+		</task>
+		<task name="channel add package"
+			url="/pulp/channels/add_package"
+			display="Add Content to this Channel">
+			<url-match>/pulp/channels/details/*</url-match>
+		</task>
+		<task name="channel clone" url="/pulp/channels/clone"
+			display="Clone A Channel">
+			<url-match>/pulp/channels/*</url-match>
+		</task>
+		<task name="channel delete" url="/pulp/channels/delete"
+			display="Delete A channel">
+			<url-match>/pulp/channels/*</url-match>
+		</task>
+	</tasks>
 </perspective>
