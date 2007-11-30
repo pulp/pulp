@@ -18,8 +18,6 @@ setup(
     
     install_requires = [
         "TurboGears >= 1.0.2.2",
-        "elementtree >= 1.2.6",
-        #"suds >= 0.1"
     ],
     scripts = ["start-pulp.py"],
     zip_safe=False,
