@@ -211,17 +211,12 @@ input.button {
   padding-left:			48px;
   padding-top:			6px;
   vertical-align:		middle;
-}
-
-#details h1.user {
-  background-image:		url('/static/images/objects/object-user.png');
   background-repeat:		no-repeat;
 }
 
-#details h1.overview {
-  background-image: 		url('/static/images/objects/object-overview.png');
-  background-repeat:		no-repeat;
-}
+#details h1.user { background-image: url('/static/images/objects/object-user.png'); }
+#details h1.overview { background-image: url('/static/images/objects/object-overview.png'); }
+#details h1.content-overview { background-image: url('/static/images/objects/object-content.png'); }
 
 #details h2, #details table caption {
   color:			#999;
