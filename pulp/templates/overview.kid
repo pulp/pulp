@@ -25,11 +25,7 @@ function togglehide(id){
 }
 </script>
 	<body>
-		<div id="pageheading">
-			<img src="static/images/star.png" />
-			<strong>My Overview</strong>
-		</div>
-		<br />
+		<h1 class="overview">My Overview</h1>
 
 		<!--  INFO FEED -->
 		<h2>

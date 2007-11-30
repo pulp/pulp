@@ -1,14 +1,8 @@
 <span py:for="p in summaries" xmlns:py="http://purl.org/kid/ns#">
-<div>
-	<div><h3>${p.title}</h3>
-	   (hide ${p.title} details)
-	</div>
-	<div id="${p.type_one}-perspective-details" class="float=left;">
+	<h3>${p.title}<a href="#">(hide ${p.title} details)</a></h3>
+	<div id="${p.type_one}-perspective-details" class="details-block">
 		<div class="summary">
-			<h4>
-				Summary
-				<hr />
-			</h4>
+			<h4>Summary</h4>
 			<ul>
 				<li>
 					<strong>I own</strong>
@@ -25,7 +19,6 @@
 				<li>I administer 3 ${p.type_one}</li>
 				<li>I may view 100 ${p.type_one}</li>
 			</ul>
-			<hr />
 			
 			<ul py:if="not p.type_two == None">
 				<li>
@@ -64,16 +57,13 @@
 						<a href="">Add new package to ${p.type_one}(s)</a>
 					</li>
 				</ul>
-				<br />
-				<hr />
-				<br />
 			</div>
 			<div class="search">
 				<h4>Search</h4>
 				<ul>
 					<li>
-						Search for a
-						<strong>${p.type_one}:</strong>
+						Search for
+						<strong> ${p.type_one}:</strong>
 						<input type="text" />
 						<input type="submit" value="Search" />
 					</li>
@@ -81,8 +71,8 @@
 				<br />
 				<ul>
 					<li>
-						Search for a
-						<strong>${p.type_two}:</strong>
+						Search for
+						<strong> ${p.type_two}:</strong>
 						<input type="text" />
 						<input type="submit" value="Search" />
 					</li>
@@ -90,5 +80,4 @@
 			</div>
 		</div>
 	</div>
-</div>
 </span>

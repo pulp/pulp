@@ -8,14 +8,6 @@
     <meta content="text/html; charset=UTF-8" http-equiv="content-type" py:replace="''"/>
     <title py:replace="''">Your title goes here</title>
     <meta py:replace="item[:]"/>
-    <style type="text/css">
-        #pageLogin
-        {
-            font-size: 10px;
-            font-family: verdana;
-            text-align: right;
-        }
-    </style>
     <style type="text/css" media="screen">
 @import "${tg.url('/static/css/master.css')}";
 </style>
@@ -28,7 +20,10 @@
     </script>
 </head>
 <body id="${tg.get_perspective().name}" py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
-    <div py:if="tg.config('identity.on') and not defined('logging_in')" id="pageLogin">
+   
+    <div id="head">
+
+    <div py:if="tg.config('identity.on') and not defined('logging_in')" id="page-login">
         <span py:if="tg.identity.anonymous">
             <a href="${tg.url('/login')}">Login</a>
         </span>
@@ -37,8 +32,7 @@
             <a href="${tg.url('/logout')}">Logout</a>
         </span>
     </div>
-    
-    <div id="head">
+ 
 <h1><a href="/">Buster</a></h1>
 
 <div id="searchbar">
@@ -50,7 +44,7 @@
     </select>
     <input class="text" type="text" value="Type search terms here."/>
     <input class="button" type="submit" value="Search!"/><br/>
-    <a href="#"><div id="pageLogin">Advanced Search...</div></a>
+    <a href="#" class="additional-link">Advanced Search...</a>
   </div>
 </div>
 
@@ -58,7 +52,7 @@
 <!-- see nav.kid -->
 ${tg_NavBar.display()}
 
-<div id="switcher" style="float: right; margin-right: 24px; margin-bottom: 12px;">
+<div id="switcher" style="display: none; float: right; margin-right: 24px; margin-bottom: 12px;">
 Theme Picker  
 <!--  ${tg_GlobalWidget.display()}  -->
 <select style="margin-left: 10px;" name="themeSwitcher">
@@ -70,7 +64,7 @@ Theme Picker
 </select>
 </div>
 
-<div id="content" style="clear: both;">
+<div id="content">
 
 
 <!-- SIDEBAR START -->
@@ -95,11 +89,13 @@ ${tg_SideBar.display()}
     <div py:replace="[item.text]+item[:]"/>
     <!-- End of main_content -->
     </div>
-</div>
-
-</div>
  
+<div id="footer">
+Copyright 2007 Red Hat, Inc. <blink>It's a trap!</blink>
+</div>
+</div>
 
+</div>
  
 
 </body>

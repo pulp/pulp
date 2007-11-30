@@ -3,9 +3,9 @@
   <table>  
     <tr>
         <td>
-            <table align="center">
+            <table>
                 <tr>
-                    <td width="50" align="right">
+                    <td>
                         &nbsp;
                         <span py:if="not tg.paginate.current_page == 1">
                             <a href="${tg.paginate.get_href(1)}">&lt;&lt;</a>
@@ -20,7 +20,7 @@
                             </span>
                         </span>
                     </td>
-                    <td width="50">
+                    <td>
                         <span py:if="tg.paginate.pages and not tg.paginate.current_page == tg.paginate.page_count">
                             <a href="${tg.paginate.get_href(tg.paginate.current_page+1)}">&gt;</a>
                             <a href="${tg.paginate.get_href(tg.paginate.page_count)}">&gt;&gt;</a>
@@ -33,7 +33,7 @@
     </tr>
     <tr>
         <td>
-          <table id="${name}" class="grid" cellpadding="0" cellspacing="1" border="0">
+          <table id="${name}" class="grid">
             <thead py:if="columns">
               <th py:for="i, col in enumerate(columns)" class="col_${i}">
                 <a py:if="col.get_option('sortable', False) and getattr(tg, 'paginate', False)" 
