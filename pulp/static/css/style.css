@@ -2,6 +2,7 @@
 {
   margin: 			0;
   padding:			0;
+  font-size:			small;
 }
 
 html, body {
@@ -22,21 +23,25 @@ body, h1, h2, h3, h4, h5, p, ul, li {
   font-family:			"Luxi Sans", "Gill Sans", "Verdana", "Helvetica", sans-serif;
 }
 
+#page-login {
+  font-size: x-small;
+  text-align: right;
+}
+
 #head {
   margin:			0px;
-  padding:			0px;
-  padding-left:			12px;
+  padding:			0px 1.5ex;
 } 
 
 #head h1 a {
   display:			block;
   text-indent:			-9999px;
-  height:			75px;
+  height:			40px;
   width:			350px;
   overflow:			hidden;
   float:			left;
 
-  background:			url('/static/images/branding/root-logo.png') no-repeat;
+  background:			url('/static/images/branding/logo-portal.png') no-repeat;
 }
 
 #ponies #head h1 a { background: url('/static/images/branding/logo-ponies.png') no-repeat !important; }
@@ -46,7 +51,6 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 
 #searchbar {
   float: 			right;
-  margin-right: 		24px;
   margin-top: 			18px;
 }
 
@@ -114,7 +118,7 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 #details {
   height: 			100%;
   margin:			0px 24px;
-  margin-right:			300px;
+  margin-right:			298px;
 
   padding:			18px 18px;
   border-top:			1px solid #aaa;
@@ -174,7 +178,6 @@ input.text {
 }
 
 input.button {
-
 }
 
 #navbar-secondary li {
@@ -215,6 +218,11 @@ input.button {
   background-repeat:		no-repeat;
 }
 
+#details h1.overview {
+  background-image: 		url('/static/images/objects/object-overview.png');
+  background-repeat:		no-repeat;
+}
+
 #details h2, #details table caption {
   color:			#999;
   font-size:			large;
@@ -225,6 +233,10 @@ input.button {
 
   text-align:			left;
   width:			100%;
+}
+
+#details h2 img {
+  margin-right:			1.4ex;
 }
 
 table.details {
@@ -286,17 +298,86 @@ td, th {
   font-size: small;
 }
 
+.context-tools a:link, .context-tools a:active, .context-tools a:visited {
+  text-decoration: none;
+}
+
 .summary {
   width: 40%;
   float: left;
+  clear: none;
+  padding-top: 2ex;
 }
 
 .tasks, .search {
+  padding: 3ex;
+  padding-top: 2ex;
   width: 40%;
   float: right;
   background-image:     url('/static/images/template/background-search.png');
   background-repeat:        repeat-y;
+  background-color: white;
 } 
 
-.search.ul, .summary ul, .tasks ul { list-style: square; padding-left: 2ex; }
+.summary ul, .tasks ul { list-style: square; margin-left: 2ex; }
+.summary ul + ul, .tasks ul + ul { margin-top: 1ex; padding-top: 1ex; border-top: 1px solid #eee; }
+.search ul { list-style: none; margin-left: 2ex; }
 
+
+
+#main_content {
+  height: auto;
+  margin-bottom: 4ex;
+}
+
+.additional-link {
+  font-size: x-small;
+}
+
+#details h3 {
+  font-size: medium;
+  text-transform: uppercase;
+  margin-bottom: 1ex;
+  margin-top: 1.5ex;
+}
+
+#details h4 {
+  font-size: 	medium;
+  color: 	#8aa445;
+}
+
+#perspectives h3 a {
+  font-size: x-small;
+  text-transform: none;
+  margin-left: 1ex;
+  font-weight: normal;
+}
+
+.details-block {
+  border-top: 1px solid #eeeeee;
+}
+
+.grid td, .grid th {padding:3px;border:none;} 
+.grid .action_cell {text-align:right;} 
+.grid THEAD tr th {text-align:left;background-color:#f0f0f0;color:#333;} 
+.grid .heading img {float:right;margin-left:2px;margin-right:3px;}  
+.grid .heading a {text-decoration:none;color:#333;} 
+.grid td a {text-decoration:none;color:#333;} 
+.grid tr.odd td {background-color:#edf3fe;} 
+.grid tr.even td {background-color:#fff;} 
+.grid .pointer {cursor:pointer;} 
+.grid .column_chooser_link {position:relative;background-color:#e3e3e3;} 
+.grid .column_chooser_link ul {position:absolute;display:none;top:0px;right:-20px;} 
+.grid .column_chooser_list a {width:200px;display:block;padding:3px;background-color:#e3e3e3;} 
+.grid .column_chooser_list a:hover {background-color:#cdcdcd;} 
+.grid .column_chooser_list {padding:0;margin:0;list-style:none;background-color:#e3e3e3;}
+
+#footer {
+  font-size: x-small;
+  color: #ccc;
+  clear: both;
+  text-align: center;
+  padding-top: 4ex;
+  border-top: 1px solid #efefef;
+  width: 100%;
+}

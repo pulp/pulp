@@ -1,1 +1,4 @@
-#admin #head h1 a { background: url('/static/images/branding/admin-logo.png') no-repeat; }
+#admin #head h1 a { background: url('/static/images/branding/logo-admin.png') no-repeat; }
+#admin #navbar { background-image: url('/static/images/template/background-navbar_admin.png'); }
+#admin #navbar .active { background-image: url('/static/images/template/background-navbar-active_admin.png'); }
+#admin #content #details { border-top: 1px solid #debb79; }
