@@ -1,6 +1,7 @@
+from pulp.model.pulpserviceproxy import PulpServiceProxy
+from turbogears import config
 from turbogears.identity.soprovider import *
 from turbogears.identity.visitor import *
-from turbogears import config
 from turbogears.util import load_class 
 import logging
 import os
@@ -112,10 +113,7 @@ class WebServiceIdentityProvider(object):
         log.debug("validate_password uname CALLED: %s", user_name)
         subject = None
         try:
-            c = config.get('pulp.config.serviceproxy', 'suds.serviceproxy.ServiceProxy')
-            ServiceProxy = load_class(c)
-            service = ServiceProxy(
-                "http://localhost.localdomain:7080/on-on-enterprise-server-ejb./SubjectManagerBean?wsdl")
+            service = PulpServiceProxy().getServiceProxy('SubjectManagerBean')
             subject = service.login(user_name, password)
             log.debug("subject returned")
         except Exception:
@@ -123,14 +121,6 @@ class WebServiceIdentityProvider(object):
             return None
         return subject
         
-#        #Only accept redhat as the password
-#        if password == "redhat": 
-#            log.debug("password is redhat, lets return true")
-#            return True
-#        else:
-#            log.debug("password is NOT REDHAT!")
-#            return False
-
     def load_identity(self, visit_key):
         log.debug("load ident: %s", visit_key)
         return self.validate_identity( None, None, visit_key )

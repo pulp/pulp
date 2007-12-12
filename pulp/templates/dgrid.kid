@@ -50,6 +50,9 @@
                 <a py:if="col.get_option('type', False) == 'Checkbox'">
                     <input type="checkbox" name="${col.name}" value="${col.get_field(row)}"/>
                 </a>
+                <a py:if="col.get_option('type', False) == 'link'">
+                    <a href="${col.get_option('href').replace('*id*', row.id)}">${col.get_field(row)}</a>
+                </a>
                 <a py:if="col.get_option('type', 'Raw') == 'Raw'">
                     ${col.get_field(row)}
                 </a>

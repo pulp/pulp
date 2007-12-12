@@ -1,8 +1,12 @@
 import cherrypy
 import logging
 import os, os.path
-#from elementtree.ElementTree import parse 
-from xml.etree.ElementTree import parse
+import sys
+if sys.version_info < (2, 5):
+    from elementtree.ElementTree import parse
+else:
+    from xml.etree.ElementTree import parse
+    
 log = logging.getLogger("pulp.perspectives")
 
 class PerspectiveManager(object):

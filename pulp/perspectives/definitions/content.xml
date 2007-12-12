@@ -21,5 +21,11 @@
 			display="Delete A channel">
 			<url-match>/pulp/channels/*</url-match>
 		</task>
+        <task name="content source create" url="/pulp/content/new"
+            display="Create a Content Source">
+            <url-match>/pulp/content/*</url-match>
+            <url-match>/pulp/*</url-match>
+        </task>
+		
 	</tasks>
 </perspective>

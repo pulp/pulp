@@ -1,14 +1,15 @@
 from cherrypy import request, response
-from subcontrollers.admincontroller import *
-from subcontrollers.channelcontroller import *
-from subcontrollers.middlewarecontroller import *
-from subcontrollers.pulpcontroller import *
 from globalwidgets import GlobalWidget, NavBar
 from model.infofeed import InfoFeedService
 from perspectives import PerspectiveManager
 from perspectives.perspectivesummary import PerspectiveSummaryWidget, PerspectiveSummary
+from subcontrollers.admincontroller import *
+from subcontrollers.channelcontroller import *
+from subcontrollers.middlewarecontroller import *
+from subcontrollers.pulpcontroller import *
 from turbogears import controllers, expose, flash, identity, widgets, paginate, redirect
 from turbogears import widgets, validators, validate, error_handler, config
+from turbogears.widgets import CSSLink, static
 from turbogears.widgets.datagrid import *
 import cherrypy
 import if_path
@@ -37,7 +38,9 @@ class Root(controllers.RootController):
             turbogears.i18n.set_session_locale(locale)
         
         log.debug("Happy TurboGears Controller Responding For Duty")
-        infoFeed = PaginateDataGrid(template="pulp.templates.dgrid", fields=[
+        infoFeed = PaginateDataGrid(
+            css=[CSSLink(static, "floop.css")],
+            template="pulp.templates.dgrid", fields=[
             DataGrid.Column('perspective', 'perspective', 'Perspective', 
                 options=dict(sortable=True, type="Raw")),
             DataGrid.Column('event', 'event', 'Event', 
