@@ -4,8 +4,8 @@ from turbogears import testutil
 from turbogears.testutil import DummyRequest
 from pulp.controllers import Root
 from pulp.identity.webserviceprovider import WsUser
-from pulp.identity.mockserviceproxy import MockSubject
-from pulp.identity.mockserviceproxy import get_mock_WsUser
+from pulp.model.mockserviceproxy import MockSubject
+from pulp.model.mockserviceproxy import get_mock_WsUser
 import cherrypy
 
 cherrypy.root = Root()
