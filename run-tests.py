@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# EASY-INSTALL-ENTRY-SCRIPT: 'nose==0.9.2','console_scripts','nosetests'
-__requires__ = 'nose==0.9.2'
+# EASY-INSTALL-ENTRY-SCRIPT: 'nose','console_scripts','nosetests'
+__requires__ = 'nose'
 import sys
 from turbogears import update_config
 from pkg_resources import load_entry_point
@@ -13,5 +13,5 @@ else:
 update_config(configfile="test.cfg",modulename="pulp.config")
 
 sys.exit(
-   load_entry_point('nose==0.9.2', 'console_scripts', 'nosetests')()
+   load_entry_point('nose', 'console_scripts', 'nosetests')()
 )
