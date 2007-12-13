@@ -33,17 +33,11 @@ class TestPages(unittest.TestCase):
         assert result['data'] is not None
         assert result['ps'] is not None
 
-#    def test_set_perspective(self):
-#        try:
-#            self.call(cherrypy.root.setperspective, dict(perspective=admin))
-#        except Exception:
-#            print "got redirect"
-#            
-#        from pulp.perspectives import PerspectiveManager
-#        cp = PerspectiveManager().get_current_perspective()
-#        assert cp is not None
-#        print "NAME: ", cp.name
-#        assert cp.name == "admin"
+    def test_content_index(self):
+        "contentSourceList should be in return dict"
+        result = self.call(cherrypy.root.pulp.content.index)
+        assert result['contentSourceList'] is not None
+        assert result['data'] is not None
 
     def call(self, method, *args, **kw):
         testutil.start_cp()
@@ -52,5 +46,6 @@ class TestPages(unittest.TestCase):
         return output
         
 class PulpDummyRequest(DummyRequest):
-    params = dict()    
+    params = dict()
+    object_trail = dict()   
     

@@ -53,7 +53,7 @@ class ContentController(controllers.Controller):
         )
         
         source = ContentManager().get_content_source(identity.current.user.subject, id)
-        source.url = source.configuration.properties.entry.value.stringValue
+        source.url = source.configuration.properties.entry[0].value.stringValue
         print "source! ", source
         
         return dict(form=form, source=source)

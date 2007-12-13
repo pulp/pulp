@@ -13,6 +13,15 @@ if sys.platform == "win32":
 else:
     sys.path.append("../common/suds/")
 
+# Check suds dep
+try:
+    from suds.property import Property
+except Exception:
+    print("error importing suds module.  you need this module to run pulp.")
+    exit(2)
+    
+
+
 # first look on the command line for a desired config file,
 # if it's not on the command line, then
 # look for setup.py in this directory. If it's not there, this script is

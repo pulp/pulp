@@ -33,7 +33,7 @@ class ContentManager(object):
         source.displayName = displayName
         source.description = description
         source.lazyLoad = lazyLoad
-        source.configuration.properties.entry.value.stringValue = url      
+        source.configuration.properties.entry[0].value.stringValue = url      
         self.service.updateContentSource(subject, source)
         return id
 

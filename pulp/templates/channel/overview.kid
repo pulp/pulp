@@ -6,22 +6,22 @@
 <title>Content Overview</title>
 </head>
 <body>
-<h1 class="content-overview">Content Overview</h1>
+<h1 class="content-overview">Channel Overview</h1>
+Channels are containers of Content!
 <br/>
-Content Sources fetch Content for you!
 <h2>
     <img id="feed-img-expand" style="display:none;"
-        alt="Expand ..." onclick="togglehide('sources')"
+        alt="Expand ..." onclick="togglehide('channels')"
         src="/static/images/arrow-right.png" />
     <img id="feed-img-collapse" alt="Collapse ..."
         onclick="togglehide('sources')" src="/static/images/arrow-down.png" />
-    Content Sources
+    Channels
     <div class="context-tools">
         <a href="#">(export CSV)</a>
         <a href="#">(edit)</a>
     </div>
 </h2>
-<div id="feed">${contentSourceList.display(data)}</div>
+<div id="feed">${channelList.display(data)}</div>
 
 <br/>
 </body>

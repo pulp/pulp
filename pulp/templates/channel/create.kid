@@ -3,12 +3,14 @@
     py:extends="'../master.kid'">
 <head>
 <meta content="text/html; charset=utf-8" http-equiv="Content-Type" py:replace="''"/>
-<title>Channel Overview</title>
+<title>Create a Channel</title>
 </head>
 <body>
-<h1 class="content-overview">Content Overview</h1>
+<h1 class="content-overview">Create a Channel</h1>
 <br/>
 
+
+${form.display(action=tg.url("/pulp/channel/create"), value=channel)}
 
 <br/>
 </body>

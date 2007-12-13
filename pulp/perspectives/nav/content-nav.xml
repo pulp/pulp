@@ -1,5 +1,5 @@
 <nav-tree>
     <tab name="Overview" url="/pulp"/>
-    <tab name="Channels" url="/pulp/channels"/>
+    <tab name="Channels" url="/pulp/channel"/>
     <tab name="Content" url="/pulp/content"/>
 </nav-tree>

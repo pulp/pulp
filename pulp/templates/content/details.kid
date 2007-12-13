@@ -14,7 +14,7 @@
 	<tr><td><strong>Display Name: </strong></td><td> ${source.displayName}</td></tr>
 	<tr><td><strong>Description: </strong></td><td> ${source.description}</td></tr>
 	<tr><td><strong>Type: </strong></td><td> ${source.contentSourceType.displayName}</td></tr>
-	<tr><td><strong>Url: </strong></td><td> ${source.configuration.properties.entry.value.stringValue}</td></tr>
+	<tr><td><strong>Url: </strong></td><td> ${source.configuration.properties.entry[0].value.stringValue}</td></tr>
 </table>
 <br/>
 <a href="${tg.url('/pulp/content/edit/' + str(source.id))}">Edit Details</a> ||
