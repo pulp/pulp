@@ -12,7 +12,7 @@ log = logging.getLogger("pulp.controllers.contentcontroler")
 class ContentController(controllers.Controller):
     
     
-    @expose(template="pulp.templates.content.overview")
+    @expose(template="pulp.templates.pulp.content.overview")
     @identity.require(identity.not_anonymous())
     @paginate('data', default_order='name', limit=10)
     def index(self, **data):
@@ -33,7 +33,7 @@ class ContentController(controllers.Controller):
         return dict(contentSourceList=contentSourceList, data=data)
     
         
-    @expose(template="pulp.templates.content.create")
+    @expose(template="pulp.templates.pulp.content.create")
     @identity.require(identity.not_anonymous())
     def new(self, **data):
         print " Edit : ", id
@@ -43,7 +43,7 @@ class ContentController(controllers.Controller):
         )
         return dict(form=form, user={})
 
-    @expose(template="pulp.templates.content.edit")
+    @expose(template="pulp.templates.pulp.content.edit")
     @identity.require(identity.not_anonymous())
     def edit(self, id, **data):
         print " Edit ..", id
@@ -58,11 +58,42 @@ class ContentController(controllers.Controller):
         
         return dict(form=form, source=source)
 
-    @expose(template="pulp.templates.content.details")
+
+    @expose(template="pulp.templates.pulp.content.sync")
+    @identity.require(identity.not_anonymous())
+    def sync(self, id, **data):
+        print " Edit ..", id
+        form = widgets.TableForm(
+            fields=[widgets.HiddenField(name="id")],
+            submit_text="Sync the content!"
+        )
+        
+        source = ContentManager().get_content_source(identity.current.user.subject, id)
+        source.url = source.configuration.properties.entry[0].value.stringValue
+        print "source! ", source
+        
+        return dict(form=form, source=source)
+
+    @expose()
+    @identity.require(identity.not_anonymous())
+    def performsync(self, **data):
+        print "submitted ...."
+        # name = data['name']
+        # displayName
+        cm = ContentManager()
+        subject = identity.current.user.subject
+        cm.sync_content_source(subject, data.get('id'))
+        turbogears.flash("Content now syncing.")
+        #raise turbogears.redirect('/pulp/content/details', csid="1")
+        raise turbogears.redirect(turbogears.url('/pulp/content/details/' + str(id)))
+
+
+    @expose(template="pulp.templates.pulp.content.details")
     @identity.require(identity.not_anonymous())
     def details(self, id, **data):
         print " Details ..", id
-        source = ContentManager().get_content_source(identity.current.user.subject, id)
+        cm = ContentManager()
+        source = cm.get_content_source(identity.current.user.subject, id)
         print "source! ", source
         template = """<div class="tabber"> 
          <div class="tabbertab"><h2>Tab 1</h2>ContentA</div> 
@@ -70,8 +101,8 @@ class ContentController(controllers.Controller):
          <div class="tabbertab"><h2>Tab 3</h2>ContentC</div> 
          </div>"""
         tab = Tabber(template=template)  
-        
-        return dict(source=source, tab=tab)
+        packageCount = cm.get_package_count(identity.current.user.subject, id)
+        return dict(source=source, tab=tab, packageCount=packageCount)
 
 
     @expose()

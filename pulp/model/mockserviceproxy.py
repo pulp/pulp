@@ -15,7 +15,7 @@ class MockServiceProxy(object):
         ms.name = username
         return ms
    
-    def getAllContentSources(self, subject):
+    def getAllContentSources(self, subject, pagecontrol):
         ret = []
         for i in range(15):
             source = Property()
@@ -48,7 +48,7 @@ class MockServiceProxy(object):
     def updateContentSource(self, subject, source):
         return source
     
-    def getAllChannels(self, subject):
+    def getAllChannels(self, subject, pagecontrol):
         ret = []
         for i in range(15):
             channel = Property()
@@ -58,7 +58,7 @@ class MockServiceProxy(object):
             ret.append(channel)
         return ret
     
-    def getChannel(self, id):
+    def getChannel(self, subject, id):
         channel = Property()
         channel.id = id
         channel.name = "fake-channel[%s]" % id
@@ -72,8 +72,25 @@ class MockServiceProxy(object):
     
     def createChannel(self, subject, channel):
         from random import randint
-        return self.getChannel(randint(1,1000))
-
+        return self.getChannel(subject, randint(1,1000))
+    
+    def getPackageVersionCountFromChannel(self, subject, id):
+        return 1235
+    
+    def addContentSourcesToChannel(self, subject, id, contentSourceIds):
+        return
+        
+    def getPackageVersionsInChannel(self, subject, id, pagecontrol):
+        ret = []
+        for i in range(2000):
+            package = Property()
+            package.id = str(i)
+            package.fileName = 'fake-package-i386-' + str(i) + '.i386.rpm'
+            package.name = 'fake-package-' + str(i)
+            package.architecture = Property()
+            package.architecture.name = 'i386'
+            ret.append(package)
+        return ret
     
 class MockSubject(object):
     firstName = "Fake"

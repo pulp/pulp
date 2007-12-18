@@ -13,7 +13,7 @@ class PulpController(controllers.Controller):
     content = ContentController()
     channel = ChannelController()
     
-    @expose(template="pulp.templates.mockup")
+    @expose(template="pulp.templates.pulp.overview")
     def index(self):
         return dict(mockup_text="Welcome to Pulp")
 

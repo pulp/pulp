@@ -8,11 +8,11 @@ class ContentManager(object):
         self.service = PulpServiceProxy().getServiceProxy('ContentSourceManagerBean')
     
     def get_content_source(self, subject, id):
-        source = self.service.getContentSource(id)
+        source = self.service.getContentSource(subject, id)
         return source
     
     def list_all_content_sources(self, subject):
-        sources = self.service.getAllContentSources(subject)
+        sources = self.service.getAllContentSources(subject, subject)
         for s in sources:
             s.type = s.contentSourceType.displayName
             print "Type: ", s.type
@@ -27,7 +27,7 @@ class ContentManager(object):
                               lazyLoad,
                               url):
                 
-        source = self.service.getContentSource(id)
+        source = self.service.getContentSource(subject, id)
         print "we got a content source: ", source.id
         source.name = name
         source.displayName = displayName
@@ -63,4 +63,13 @@ class ContentManager(object):
         
         return source.id
                 
-    
+    def sync_content_source(self, subject, id):
+        print "synching id[%s]" % id
+        self.service.synchronizeAndLoadContentSource(subject, id) 
+
+
+    def get_package_count(self, subject, id):
+        pcount = self.service.getPackageVersionCountFromContentSource(subject, id)
+        if pcount is None:
+            pcount = 0
+        return pcount                      

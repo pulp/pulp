@@ -3,15 +3,11 @@
     py:extends="'../master.kid'">
 <head>
 <meta content="text/html; charset=utf-8" http-equiv="Content-Type" py:replace="''"/>
-<title>Create a Content Source</title>
+<title>Pulp Overview</title>
 </head>
 <body>
-<h1 class="content-overview">Create a Content Source</h1>
+<h1 class="content-overview">Welcome to Pulp</h1>
 <br/>
-
-
-${form.display(action=tg.url("/pulp/content/create"), value=user)}
-
 <br/>
 </body>
 </html>
