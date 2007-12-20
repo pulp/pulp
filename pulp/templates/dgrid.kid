@@ -27,6 +27,13 @@
                         </span>
                         &nbsp;
                     </td>
+                    <td> 
+                        <form action="" method="post" class="tableform" name="form">
+                              Search: <input type="text" name="search"/>
+                              </form>
+                    </td>
+                         
+                    
                     </tr>    
             </table>        
         </td>

@@ -5,7 +5,7 @@ import logging
 class ChannelManager(object):
     
     def __init__(self):
-        self.service = PulpServiceProxy().getServiceProxy('ContentSourceManagerBean')
+        self.service = PulpServiceProxy().getServiceProxy('ChannelManagerBean')
     
     def get_channel(self, subject, id):
         source = self.service.getChannel(subject, id)
@@ -36,9 +36,10 @@ class ChannelManager(object):
     def add_content_source(self, subject, id, contentSourceIds):
         self.service.addContentSourcesToChannel(subject, id, contentSourceIds)
             
-    def list_packages_in_channel(self, subject, id):
+    def list_packages_in_channel(self, subject, id, search):
         versions = self.service.getPackageVersionsInChannel(subject, id, \
                                                         PageControl())
+        # TODO: SORTING
         for v in versions:
             v.arch = v.architecture.name
         #    print "Type: ", s.type

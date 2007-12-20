@@ -16,6 +16,7 @@ class ChannelController(controllers.Controller):
     @paginate('data', default_order='name', limit=10)
     def index(self, **data):
         url = turbogears.url("/pulp/channel/details/*id*")
+        print "Search: " + str(data.get('search'))
         channelList = PaginateDataGrid(
             template="pulp.templates.dgrid", fields=[
             DataGrid.Column('name', 'name', 'Name', 
@@ -138,6 +139,7 @@ class ChannelController(controllers.Controller):
     @paginate('data', default_order='filename', limit=10)
     def packages(self, id, **data):
         print " Packages ..", id
+        search = data.get('search')
         url = turbogears.url("/pulp/package/details/*id*")
         channel = ChannelManager().get_channel(identity.current.user.subject, \
                                                id)
@@ -148,13 +150,11 @@ class ChannelController(controllers.Controller):
                 options=dict(sortable=True, type='link', href=url)),
             DataGrid.Column('architecture', 'arch', 'Architecture', 
                 options=dict(sortable=True, type='link', href=url)),
-            #DataGrid.Column('fileName', 'fileName', 'Name',),
-            #DataGrid.Column('arch', 'arch', 'Architecture', 
-            #    options=dict(sortable=True)),
         ])
         
         cm = ChannelManager()
-        data = cm.list_packages_in_channel(identity.current.user.subject, id)
+        data = cm.list_packages_in_channel(identity.current.user.subject, id,\
+                                           search)
 
         return dict(packageList=packageList, data=data)
 

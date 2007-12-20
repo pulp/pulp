@@ -1,4 +1,5 @@
 from pulp.identity.webserviceprovider import WsUser
+from random import shuffle
 from suds.property import Property
 
 class MockServiceProxy(object):
@@ -28,7 +29,7 @@ class MockServiceProxy(object):
             ret.append(source)
         return ret
     
-    def getContentSource(self, id):
+    def getContentSource(self, subject, id):
         source = Property()
         source.id = str(id)
         source.name = "fake-source[%s]" % id
@@ -53,7 +54,7 @@ class MockServiceProxy(object):
         for i in range(15):
             channel = Property()
             channel.id = str(i)
-            channel.name = "fake-channel[%s]" % i
+            channel.name = self.random_string() + "fake-channel[%s]" % i
             channel.displayName = "fake channel name [%s]" % i
             ret.append(channel)
         return ret
@@ -61,7 +62,7 @@ class MockServiceProxy(object):
     def getChannel(self, subject, id):
         channel = Property()
         channel.id = id
-        channel.name = "fake-channel[%s]" % id
+        channel.name = self.random_string() + "[%s]" % id
         channel.displayName = "fake channel name [%s]" % id
         channel.description = \
             "a Fake Channel created by a mock service implementation."
@@ -77,12 +78,15 @@ class MockServiceProxy(object):
     def getPackageVersionCountFromChannel(self, subject, id):
         return 1235
     
+    def getPackageVersionCountFromContentSource(self, subject, id):
+        return 1235
+    
     def addContentSourcesToChannel(self, subject, id, contentSourceIds):
         return
         
     def getPackageVersionsInChannel(self, subject, id, pagecontrol):
         ret = []
-        for i in range(2000):
+        for i in range(10):
             package = Property()
             package.id = str(i)
             package.fileName = 'fake-package-i386-' + str(i) + '.i386.rpm'
@@ -92,6 +96,19 @@ class MockServiceProxy(object):
             ret.append(package)
         return ret
     
+    def synchronizeAndLoadContentSource(self, subject, id):
+        return
+    
+    def random_string(self):
+        letters = 'abcdefghijklmnopqrstuvwxyz'
+        l = list(letters)
+        for i in range(10):
+            shuffle(l)
+        ret = ''
+        for c in l:
+            ret += c
+        return ret
+           
 class MockSubject(object):
     firstName = "Fake"
     lastName = "User"
