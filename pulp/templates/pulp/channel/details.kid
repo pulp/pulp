@@ -19,7 +19,7 @@
 <a href="${tg.url('/pulp/channel/edit/' + str(channel.id))}">Edit Details</a> ||
 <a href="${tg.url('/pulp/channel/addcontent/' + str(channel.id))}">Get Content into Channel</a> ||
 <a href="${tg.url('/pulp/channel/packages/' + str(channel.id))}">Packages in this Channel</a> ||
-<a href="">Systems using this Channel</a> 
+<a href="${tg.url('/pulp/channel/systems/' + str(channel.id))}">Systems using this Channel</a> 
 <br/>
 
 </body>

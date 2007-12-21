@@ -1,3 +1,4 @@
+from pulp.model.base import PageControl
 from pulp.identity.webserviceprovider import WsUser
 from random import shuffle
 from suds.property import Property
@@ -98,6 +99,17 @@ class MockServiceProxy(object):
     
     def synchronizeAndLoadContentSource(self, subject, id):
         return
+    
+    def findResourceComposites(self, subject, category, type, parentResourceId,\
+                               searchString, pageControl):
+        ret = []
+        for i in range(100):
+            system = Property()
+            system.id = str(i)
+            system.name = 'fake-system-' + str(i)
+            system.description = 'Fake Linux System'
+            ret.append(system)
+        return ret
     
     def random_string(self):
         letters = 'abcdefghijklmnopqrstuvwxyz'

@@ -1,3 +1,5 @@
+from pulp.model.base import PageControl
+from pulp.model.systemmanager import SystemManager
 from suds.property import Property
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
 import logging
@@ -42,18 +44,12 @@ class ChannelManager(object):
         # TODO: SORTING
         for v in versions:
             v.arch = v.architecture.name
-        #    print "Type: ", s.type
 
         return versions
+
+    def list_systems_subscribed(self, subject, id, search):
+        return SystemManager().list_systems(subject)
                     
     def get_package_count(self, subject, id):
         return self.service.getPackageVersionCountFromChannel(subject, id)                      
-
-class PageControl(Property):
-    def __init__(self):
-        Property.__init__(self)
-        #super(PageControl).__init__()
-        self.pageNumber = 0
-        self.pageSize = 100
-
 
