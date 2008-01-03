@@ -6,7 +6,7 @@
 <title>Create a Channel</title>
 </head>
 <body>
-<h1 class="content-overview">Create a Channel</h1>
+<h1 class="channel-new">Create a Channel</h1>
 <br/>
 
 
