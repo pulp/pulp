@@ -205,11 +205,11 @@ class ChannelController(controllers.Controller):
 class ChannelDetailsFields(widgets.WidgetsList):
     # attrs={'size' : '50'}
     name = widgets.TextField(validator=validators.NotEmpty(),
-                               name="name", label="Name")
+                               name="name", label="Name", help_text="Examples: 'f8-rawhide', 'f7-gold', 'rhel_5.1_ap'")
     displayName = widgets.TextField(validator=validators.NotEmpty(),
-                               name="displayName", label="Display Name")
+                               name="displayName", label="Display Name", help_text="Examples: 'Fedora 8 Rawhide', 'Fedora 7 Gold', 'RHEL 5.1 AP'")
     description = widgets.TextArea(name="description", label="Description",
-                                    rows=4, cols=40)
+                                    rows=4, cols=40, help_text="Tip: This field is not required but is a good way to provide some additional information about the channel, such as its target audience or intended consumers.")
     id = widgets.HiddenField(name="id")
 
    
