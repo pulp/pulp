@@ -46,7 +46,7 @@ class ContentController(controllers.Controller):
     @expose(template="pulp.templates.pulp.content.edit")
     @identity.require(identity.not_anonymous())
     def edit(self, id, **data):
-        print " Edit ..", id
+        log.debug(" Edit ..", id)
         form = widgets.TableForm(
             fields=ContentSourceFields(),
             submit_text="Edit Content Source"
@@ -54,7 +54,7 @@ class ContentController(controllers.Controller):
         
         source = ContentManager().get_content_source(identity.current.user.subject, id)
         source.url = source.configuration.properties.entry[0].value.stringValue
-        print "source! ", source
+        log.debug("source! ", source)
         
         return dict(form=form, source=source)
 
@@ -62,7 +62,7 @@ class ContentController(controllers.Controller):
     @expose(template="pulp.templates.pulp.content.sync")
     @identity.require(identity.not_anonymous())
     def sync(self, id, **data):
-        print " Edit ..", id
+        log.debug(" Edit ..", id)
         form = widgets.TableForm(
             fields=[widgets.HiddenField(name="id")],
             submit_text="Sync the content!"
@@ -70,14 +70,14 @@ class ContentController(controllers.Controller):
         
         source = ContentManager().get_content_source(identity.current.user.subject, id)
         source.url = source.configuration.properties.entry[0].value.stringValue
-        print "source! ", source
+        log.debug("source! ", source)
         
         return dict(form=form, source=source)
 
     @expose()
     @identity.require(identity.not_anonymous())
     def performsync(self, **data):
-        print "submitted ...."
+        log.debug("submitted ....")
         # name = data['name']
         # displayName
         cm = ContentManager()
@@ -91,10 +91,10 @@ class ContentController(controllers.Controller):
     @expose(template="pulp.templates.pulp.content.details")
     @identity.require(identity.not_anonymous())
     def details(self, id, **data):
-        print " Details ..", id
+        log.debug(" Details ..", id)
         cm = ContentManager()
         source = cm.get_content_source(identity.current.user.subject, id)
-        print "source! ", source
+        log.debug("source! ", source)
         template = """<div class="tabber"> 
          <div class="tabbertab"><h2>Tab 1</h2>ContentA</div> 
          <div class="tabbertab"><h2>Tab 2</h2>ContentB</div> 
@@ -125,7 +125,7 @@ class ContentController(controllers.Controller):
     @expose()
     @identity.require(identity.not_anonymous())
     def create(self, **data):
-        print "submitted ...."
+        log.debug("submitted ....")
         # name = data['name']
         # displayName
         cm = ContentManager()

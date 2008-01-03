@@ -107,9 +107,14 @@ class MockServiceProxy(object):
             system = Property()
             system.id = str(i)
             system.name = 'fake-system-' + str(i)
+            system.resource = Property()
+            system.resource.name = system.name
             system.description = 'Fake Linux System'
             ret.append(system)
         return ret
+    
+    def subscribeResourceToChannels(self, subject, systemIds, id):
+        return
     
     def random_string(self):
         letters = 'abcdefghijklmnopqrstuvwxyz'

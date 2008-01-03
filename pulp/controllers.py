@@ -32,7 +32,6 @@ class Root(controllers.RootController):
     @identity.require(identity.not_anonymous())
     @paginate('data', default_order='id', limit=10)
     def index(self, **data):
-        print "FLOOOOOOOOB"
         import time
         if "locale" in data:
             locale = data['locale']

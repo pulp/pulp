@@ -2,6 +2,8 @@ from suds.property import Property
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
 import logging
 
+log = logging.getLogger("pulp.model")
+
 class ContentManager(object):
     
     def __init__(self):
@@ -15,7 +17,7 @@ class ContentManager(object):
         sources = self.service.getAllContentSources(subject, subject)
         for s in sources:
             s.type = s.contentSourceType.displayName
-            print "Type: ", s.type
+            log.debug("Type: ", s.type)
         return sources
         
     def update_content_source(self,                                
@@ -28,7 +30,7 @@ class ContentManager(object):
                               url):
                 
         source = self.service.getContentSource(subject, id)
-        print "we got a content source: ", source.id
+        log.debug("we got a content source: ", source.id)
         source.name = name
         source.displayName = displayName
         source.description = description
@@ -59,12 +61,12 @@ class ContentManager(object):
                                                    "YumSource",
                                                    configuration,
                                                    lazy)
-        print "we got a content source: ", source.id
+        log.debug("we got a content source: ", source.id)
         
         return source.id
                 
     def sync_content_source(self, subject, id):
-        print "synching id[%s]" % id
+        log.debug("synching id[%s]" % id)
         self.service.synchronizeAndLoadContentSource(subject, id) 
 
 

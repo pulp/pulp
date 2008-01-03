@@ -4,6 +4,8 @@ from suds.property import Property
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
 import logging
 
+log = logging.getLogger("pulp.model.channelmanager")
+
 class ChannelManager(object):
     
     def __init__(self):
@@ -14,12 +16,16 @@ class ChannelManager(object):
         return source
     
     def list_all_channels(self, subject):
-        return self.service.getAllChannels(subject, PageControl())
+        log.debug("Calling list all channels")
+        pc = Property()
+        pc.pageNumber = 0
+        pc.pageSize = -1
+        return self.service.getAllChannels(subject, pc)
         
     def update_channel(self, subject, id, name, displayName, description):
                 
         channel = self.service.getChannel(subject, id)
-        print "we got a channel : ", channel.id
+        log.debug("we got a channel : ", channel.id)
         channel.name = name
         channel.displayName = displayName
         channel.description = description
@@ -32,7 +38,7 @@ class ChannelManager(object):
         channel.displayName = displayName
         channel.description = description
         channel = self.service.createChannel(subject, channel)
-        print "we got a channel: ", channel.id
+        log.debug("we got a channel: ", channel.id)
         return channel.id
                 
     def add_content_source(self, subject, id, contentSourceIds):
@@ -49,6 +55,9 @@ class ChannelManager(object):
 
     def list_systems_subscribed(self, subject, id, search):
         return SystemManager().list_systems(subject)
+    
+    def subscribe_systems(self, subject, id, systemIds):
+        self.service.subscribeResourceToChannels(subject, systemIds, id)
                     
     def get_package_count(self, subject, id):
         return self.service.getPackageVersionCountFromChannel(subject, id)                      
