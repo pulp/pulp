@@ -217,6 +217,8 @@ input.button {
 #details h1.user { background-image: url('/static/images/objects/object-user.png'); }
 #details h1.overview { background-image: url('/static/images/objects/object-overview.png'); }
 #details h1.content-overview { background-image: url('/static/images/objects/object-content.png'); }
+#details h1.channel { background-image: url('/static/images/objects/object-channel.png'); }
+#details h1.channels { background-image: url('/static/images/objects/object-channels.png'); }
 
 #details h2, #details table caption {
   color:			#999;
@@ -314,8 +316,8 @@ td, th {
   background-color: white;
 } 
 
-.summary ul, .tasks ul { list-style: square; margin-left: 2ex; }
-.summary ul + ul, .tasks ul + ul { margin-top: 1ex; padding-top: 1ex; border-top: 1px solid #eee; }
+.summary ul, .tasks ul, ul { margin-top: 1ex; padding-top: 1ex; list-style: square; margin-left: 2ex; }
+.summary ul + ul, .tasks ul + ul { border-top: 1px solid #eee; }
 .search ul { list-style: none; margin-left: 2ex; }
 
 

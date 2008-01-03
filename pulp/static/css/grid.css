@@ -1,0 +1,88 @@
+table.grid td a:link, table.grid td a:visited, table.grid td a:hover {
+/*
+  text-decoration:	underline;
+*/
+}
+
+table.grid td a:link {
+  color: 		#2a2ad5;  /* deep blue */
+}
+
+table.grid td a:visited {
+  color: 		purple;
+}
+
+div.top-toolbar {
+  padding: 		6px 8px 6px 8px;
+  border-top: 		2px groove white; /* light grey */
+  border-bottom:	2px ridge white; /* light grey */
+  background-color: 	#daeff5; /* powder blue */
+  margin-bottom:	7px;
+} 
+
+.top-toolbar .pagination { float: right; }
+.top-toolbar .search-bar { float: left; }
+
+.search-bar form {
+  color:		#777;
+  font-size: 		x-small;
+}
+
+.search-bar input {
+  width:		14ex;
+  border:		1px solid #999;
+  margin-left:		1ex;
+  font-size:		small;
+  padding:		1px 0px 1px 0px;
+}
+
+.search-bar button {
+  border:		1px solid #999;
+  font-size:		x-small;
+  color:		#777;
+  padding:		2px 0px 2px 0px;
+}
+
+.pagination .page-control {
+  border:		1px solid #d6d6d6;
+  background-color:	white;
+  padding:		.33ex 1ex .33ex 1ex;	
+  margin-left:		.1ex;
+  margin-right:		.1ex;
+  text-decoration:	none;
+}
+
+.current-page {
+  border: 1px solid red;
+}
+
+a.page-number:link, 
+a.page-number:visited, 
+a.page-number:active, 
+a.page-first:link, 
+a.page-first:visited, 
+a.page-first:active, 
+a.page-last:link,
+a.page-last:visited,
+a.page-last:active,
+a.page-next:link, 
+a.page-next:visited, 
+a.page-next:active, 
+a.page-back:link,
+a.page-back:visited,
+a.page-back:active {
+  color: 		#777;  /* medium grey */
+}
+
+.pagination .disabled, 
+.pagination .disabled:link, 
+.pagination .disabled:visited, 
+.pagination .disabled:active {
+  border:		1px solid #ccc;
+  background-color:	#eee;
+  color:		#ccc;
+  padding:		.33ex 1ex .33ex 1ex;	
+  margin-left:		.1ex;
+  margin-right:		.1ex;
+  text-decoration:	none;
+}
