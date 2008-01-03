@@ -6,7 +6,15 @@
 <title>Pulp Overview</title>
 </head>
 <body>
-<h1 class="content-overview">Welcome to Pulp</h1>
+<h1 class="overview">Welcome to Pulp</h1>
+<h2>Getting Started With Pulp</h2>
+<p>Pulp is a next-generation software content management system. Below are some tasks you'll want to try out to get started using Pulp:</p>
+<ul>
+<li><a href="http://localhost:8080/pulp/channel/new">Create a New Channel</a></li>
+<li><a href="http://localhost:8080/pulp/content/new">Create a Content Source</a></li>
+<li><a href="http://localhost:8080/pulp/channel">View a List of All Channels</a></li>
+<li><a href="http://localhost:8080/pulp/content">View a List of All Content Sources</a></li>
+</ul>
 <br/>
 <br/>
 </body>
