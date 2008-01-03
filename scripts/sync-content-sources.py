@@ -46,10 +46,10 @@ def sync_content_sources():
     pc = service.get_instance('pageControl')
     pc.pageNumber = 0
     pc.pageSize = 0
-    for adapter in service.getAllContentSources(pc):
+    for adapter in service.getAllContentSources(subject, pc):
         try:
             print 'synchronizing (%s) ...' % adapter.displayName
-            service.synchronizeAndLoadContentSource(adapter.id)
+            service.synchronizeAndLoadContentSource(subject, adapter.id)
             print '\tfinished'
         except WebFault, fault:
             print '\tfailed: \n', fault

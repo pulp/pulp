@@ -6,7 +6,7 @@ from turbogears.widgets import Widget, Tabber
 from turbogears.widgets.datagrid import *
 import logging
 import turbogears
-log = logging.getLogger("pulp.controllers.contentcontroler")
+log = logging.getLogger("pulp.controllers.channelcontroller")
 
 # sub class
 class ChannelController(controllers.Controller):
@@ -16,12 +16,12 @@ class ChannelController(controllers.Controller):
     @paginate('data', default_order='name', limit=10)
     def index(self, **data):
         url = turbogears.url("/pulp/channel/details/*id*")
-        print "Search: " + str(data.get('search'))
+        log.debug("Search: " + str(data.get('search')))
         channelList = PaginateDataGrid(
             template="pulp.templates.dgrid", fields=[
-            DataGrid.Column('name', 'name', 'Name', 
+            DataGrid.Column('name', 'name', _('Name'), 
                 options=dict(sortable=True, type='link', href=url)),
-            DataGrid.Column('displayName', 'displayName', 'Display Name', 
+            DataGrid.Column('displayName', 'displayName', _('Display Name'), 
                 options=dict(sortable=True)),
         ])
         
@@ -34,10 +34,10 @@ class ChannelController(controllers.Controller):
     @expose(template="pulp.templates.pulp.channel.create")
     @identity.require(identity.not_anonymous())
     def new(self, **data):
-        print " Edit : ", id
+        log.debug(" Edit : ", id)
         form = widgets.TableForm(
             fields=ChannelDetailsFields(),
-            submit_text="Create Channel"
+            submit_text=_("Create Channel")
         )
         return dict(form=form, channel={})
 
@@ -52,7 +52,7 @@ class ChannelController(controllers.Controller):
                                       data.get('name'),
                                       data.get('displayName'),
                                       data.get('description'))
-        turbogears.flash("New Channel created.")
+        turbogears.flash(_("New Channel created."))
         raise turbogears.redirect(turbogears.url('/pulp/channel/details/%s' % \
                                                   str(id)))
     
@@ -60,21 +60,21 @@ class ChannelController(controllers.Controller):
     @expose(template="pulp.templates.pulp.channel.edit")
     @identity.require(identity.not_anonymous())
     def edit(self, id, **data):
-        print " Edit ..", id
+        log.debug(" Edit ..", id)
         form = widgets.TableForm(
             fields=ChannelDetailsFields(),
-            submit_text="Edit Channel"
+            submit_text=_("Edit Channel")
         )
         
         channel = ChannelManager().get_channel(identity.current.user.subject, \
                                                id)
-        print "channel! ", channel
+        log.debug("channel! ", channel)
         return dict(form=form, channel=channel)
 
     @expose(template="pulp.templates.pulp.channel.details")
     @identity.require(identity.not_anonymous())
     def details(self, id, **data):
-        print " Details ..", id
+        log.debug(" Details ..", id)
         channel = ChannelManager().get_channel(identity.current.user.subject, \
                                                id)
         packageCount = ChannelManager().get_package_count(\
@@ -93,7 +93,7 @@ class ChannelController(controllers.Controller):
                                       data.get('displayName'),
                                       data.get('description')
                                       )
-        turbogears.flash("Channel updated.")
+        turbogears.flash(_("Channel updated."))
         #raise turbogears.redirect('/pulp/content/details', csid="1")
         raise turbogears.redirect(turbogears.url('/pulp/channel/details/%s' % \
                                                                     str(id)))
@@ -104,9 +104,9 @@ class ChannelController(controllers.Controller):
     def addcontent(self, id, **data):
         channelList = PaginateDataGrid(
             template="pulp.templates.dgrid", fields=[
-            DataGrid.Column('displayName', 'displayName', 'Display Name', 
+            DataGrid.Column('displayName', 'displayName', _('Display Name'), 
                 options=dict(sortable=True)),
-            DataGrid.Column('id', 'id', 'Associate', 
+            DataGrid.Column('id', 'id', _('Associate'), 
                 options=dict(sortable=True, type='Checkbox')),
         ])
         channel = ChannelManager().get_channel(identity.current.user.subject, \
@@ -123,12 +123,12 @@ class ChannelController(controllers.Controller):
         subject = identity.current.user.subject
         ids = data.get('id')
         if ids is None:
-            turbogears.flash("No Content Sources selected.")
+            turbogears.flash(_("No Content Sources selected."))
         else:
             if not isinstance(ids, list):
                 ids = [ids]
             cm.add_content_source(subject, channel_id, ids)                
-            turbogears.flash("Content added!")
+            turbogears.flash(_("Content added!"))
         raise turbogears.redirect(turbogears.url('/pulp/channel/details/%s' % \
                                                             str(channel_id)))
 
@@ -138,7 +138,7 @@ class ChannelController(controllers.Controller):
     @identity.require(identity.not_anonymous())
     @paginate('data', default_order='filename', limit=10)
     def packages(self, id, **data):
-        print " Packages ..", id
+        log.debug(" Packages ..", id)
         search = data.get('search')
         url = turbogears.url("/pulp/package/details/*id*")
         channel = ChannelManager().get_channel(identity.current.user.subject, \
@@ -146,9 +146,9 @@ class ChannelController(controllers.Controller):
         
         packageList = PaginateDataGrid(
             template="pulp.templates.dgrid", fields=[
-            DataGrid.Column('fileName', 'fileName', 'File Name', 
+            DataGrid.Column('fileName', 'fileName', _('File Name'), 
                 options=dict(sortable=True, type='link', href=url)),
-            DataGrid.Column('architecture', 'arch', 'Architecture', 
+            DataGrid.Column('architecture', 'arch', _('Architecture'), 
                 options=dict(sortable=True, type='link', href=url)),
         ])
         
@@ -158,6 +158,49 @@ class ChannelController(controllers.Controller):
 
         return dict(packageList=packageList, data=data)
 
+
+    @expose(template="pulp.templates.pulp.channel.systems")
+    @identity.require(identity.not_anonymous())
+    @paginate('data', default_order='filename', limit=10)
+    def systems(self, id, **data):
+        log.debug(" Systems ..", id)
+        search = data.get('search')
+        url = turbogears.url("/pulp/package/details/*id*")
+        channel = ChannelManager().get_channel(identity.current.user.subject, \
+                                               id)
+        
+        systemList = PaginateDataGrid(
+            template="pulp.templates.dgrid", fields=[
+            DataGrid.Column('name', 'name', _('Name'), 
+                options=dict(sortable=True)),
+            DataGrid.Column('description', 'description', _('Description'), 
+                options=dict(sortable=True)),
+            DataGrid.Column('id', 'id', _('Subscribe'), 
+                options=dict(sortable=True, type='Checkbox')),
+        ])
+        
+        cm = ChannelManager()
+        data = cm.list_systems_subscribed(identity.current.user.subject, id,\
+                                           search)
+
+        return dict(channel=channel, systemList=systemList, data=data)
+
+    @expose()
+    @identity.require(identity.not_anonymous())
+    def systemstochannel(self, channel_id, **data):
+        cm = ChannelManager()
+        subject = identity.current.user.subject
+        ids = data.get('id')
+        if ids is None:
+            turbogears.flash(_("No Systems selected."))
+            return dict()
+        else:
+            if not isinstance(ids, list):
+                ids = [ids]
+            cm.subscribe_systems(subject, channel_id, ids)                
+            turbogears.flash(_("Systems subscribed!"))
+        raise turbogears.redirect(turbogears.url('/pulp/channel/details/%s' % \
+                                                            str(channel_id)))
 
 class ChannelDetailsFields(widgets.WidgetsList):
     # attrs={'size' : '50'}
