@@ -159,14 +159,14 @@ def widget_getter(widget, field,**kw):
 class ContentSourceFields(widgets.WidgetsList):
     # attrs={'size' : '50'}
     name = widgets.TextField(validator=validators.NotEmpty(),
-                               name="name", label="Name")
+                               name="name", label="Name", help_text="Examples: 'fedora-updates', 'fedora-updates-testing', 'rhel_5.1_rhn'")
     displayName = widgets.TextField(validator=validators.NotEmpty(),
-                               name="displayName", label="Display Name")
-    description = widgets.TextArea(name="description", label="Description",
+                               name="displayName", label="Display Name", help_text="Examples: 'Fedora Updates', 'Fedora Updates Testing', 'RHEL 5.1 RHN Channel'")
+    description = widgets.TextArea(name="description", label="Description", help_text="Tip: You can use this field to provide more details about what is contained in this content source.",
                                     rows=4, cols=40)
     url = widgets.TextField(validator=validators.NotEmpty(),
-                               name="url", label="Source URL", attrs={'size' : '50'})
-    lazyLoad = widgets.CheckBox(name="lazyLoad", label="Lazy Load")
+                               name="url", label="Source URL", attrs={'size' : '50'}, help_text="Example: 'http://download.fedora.redhat.com/pub/fedora/linux/development/i386/os/'")
+    lazyLoad = widgets.CheckBox(name="lazyLoad", label="Lazy Load", help_text="Tip: If you enable lazy load, then content will only be synched when it is specifically requested. This may save you disk space if there is a lot of content from the source that is not used.")
     id = widgets.HiddenField(name="id")
 
    
