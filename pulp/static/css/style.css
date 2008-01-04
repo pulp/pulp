@@ -36,18 +36,14 @@ body, h1, h2, h3, h4, h5, p, ul, li {
 #head h1 a {
   display:			block;
   text-indent:			-9999px;
-  height:			40px;
+  height:			60px;
   width:			350px;
   overflow:			hidden;
   float:			left;
+  margin-top:			-10px;
 
   background:			url('/static/images/branding/logo-portal.png') no-repeat;
 }
-
-#ponies #head h1 a { background: url('/static/images/branding/logo-ponies.png') no-repeat !important; }
-#planes #head h1 a { background: url('/static/images/branding/logo-planes.png') no-repeat; }
-#bonbons #head h1 a { background: url('/static/images/branding/logo-bonbons.png') no-repeat; }
-#snakes #head h1 a { background: url('/static/images/branding/logo-snakes.png') no-repeat; }
 
 #searchbar {
   float: 			right;
@@ -378,4 +374,21 @@ td, th {
   padding-top: 4ex;
   border-top: 1px solid #efefef;
   width: 100%;
+}
+
+#details ul.context-nav {
+  float:		left;
+  width: 		100%;
+  padding:		0;
+  margin:		0;
+  list-style-type:	none;
+}
+
+#details ul.context-nav li a {
+  float: 		left;
+  width:		12ex;
+  text-decoration:	none;
+  background-color:	#eee;
+  padding:		.2ex .6ex;
+  border-right:		1px solid #444;
 }
