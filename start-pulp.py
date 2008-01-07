@@ -8,10 +8,8 @@ cherrypy.lowercase_api = True
 from os.path import *
 import sys
 
-if sys.platform == "win32":
-    sys.path.append("..\common\suds")
-else:
-    sys.path.append("../common/suds/")
+
+sys.path.append(join('..', 'common', 'suds'))
 
 # Check suds dep
 try:
