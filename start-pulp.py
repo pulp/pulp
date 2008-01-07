@@ -8,8 +8,6 @@ cherrypy.lowercase_api = True
 from os.path import *
 import sys
 
-sys.path.append(join('..', 'common', 'suds'))
-
 # Check suds dep
 try:
     from suds.property import Property
