@@ -24,7 +24,6 @@ class ContentManager(object):
                               subject,
                               id, 
                               name, 
-                              displayName, 
                               description, 
                               lazyLoad,
                               url):
@@ -32,14 +31,13 @@ class ContentManager(object):
         source = self.service.getContentSource(subject, id)
         log.debug("we got a content source: ", source.id)
         source.name = name
-        source.displayName = displayName
         source.description = description
         source.lazyLoad = lazyLoad
         source.configuration.properties.entry[0].value.stringValue = url      
         self.service.updateContentSource(subject, source)
         return id
 
-    def create_content_source(self, subject, name, displayName, description, lazyLoad, url):
+    def create_content_source(self, subject, name, description, lazyLoad, url):
 
         configuration = self.service.get_instance('configuration')
         entry = self.service.get_instance('configuration.properties.entry')
@@ -56,7 +54,6 @@ class ContentManager(object):
         
         source = self.service.createContentSource(subject, 
                                                    name,
-                                                   displayName,
                                                    description,
                                                    "YumSource",
                                                    configuration,

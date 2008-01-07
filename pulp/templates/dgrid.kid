@@ -2,6 +2,7 @@
 
 <!-- START PAGINATION CONTROLS -->
 <div class="top-toolbar ${name}">
+<!-- 
 <div class="search-bar">
 <form>
 Search this List:
@@ -9,6 +10,7 @@ Search this List:
 <button>Search</button>
 </form>
 </div>
+ -->
 <div class="pagination">    
   <span py:if="not tg.paginate.current_page == 1">
     <a class="page-back page-control" href="${tg.paginate.get_href(tg.paginate.current_page-1)}">&lt; Back</a>

@@ -11,7 +11,6 @@
 
 <table>
 	<tr><td><strong>Name: </strong></td><td> ${channel.name}</td></tr>
-	<tr><td><strong>Display Name: </strong></td><td> ${channel.displayName}</td></tr>
 	<tr><td><strong>Description: </strong></td><td> ${channel.description}</td></tr>
 	<tr><td><strong>Package Count: </strong></td><td> ${packageCount}</td></tr>
 </table>

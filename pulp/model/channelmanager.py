@@ -22,20 +22,18 @@ class ChannelManager(object):
         pc.pageSize = -1
         return self.service.getAllChannels(subject, pc)
         
-    def update_channel(self, subject, id, name, displayName, description):
+    def update_channel(self, subject, id, name, description):
                 
         channel = self.service.getChannel(subject, id)
         log.debug("we got a channel : ", channel.id)
         channel.name = name
-        channel.displayName = displayName
         channel.description = description
         self.service.updateChannel(subject, channel)
         return id
 
-    def create_channel(self, subject, name, displayName, description):
+    def create_channel(self, subject, name, description):
         channel = Property()
         channel.name = name
-        channel.displayName = displayName
         channel.description = description
         channel = self.service.createChannel(subject, channel)
         log.debug("we got a channel: ", channel.id)

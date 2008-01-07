@@ -21,8 +21,6 @@ class ContentController(controllers.Controller):
             template="pulp.templates.dgrid", fields=[
             DataGrid.Column('name', 'name', 'Name', 
                 options=dict(sortable=True, type='link', href=url)),
-            DataGrid.Column('displayName', 'displayName', 'Display Name', 
-                options=dict(sortable=True)),
             DataGrid.Column('type', 'type', 'Type', 
                 options=dict(sortable=True)),
             
@@ -79,10 +77,10 @@ class ContentController(controllers.Controller):
     def performsync(self, **data):
         log.debug("submitted ....")
         # name = data['name']
-        # displayName
         cm = ContentManager()
         subject = identity.current.user.subject
-        cm.sync_content_source(subject, data.get('id'))
+        id = data.get('id')
+        cm.sync_content_source(subject, id)
         turbogears.flash("Content now syncing.")
         #raise turbogears.redirect('/pulp/content/details', csid="1")
         raise turbogears.redirect(turbogears.url('/pulp/content/details/' + str(id)))
@@ -113,7 +111,6 @@ class ContentController(controllers.Controller):
         id = cm.update_content_source(subject,
                                       data.get('id'),
                                       data.get('name'),
-                                      data.get('displayName'),
                                       data.get('description'),
                                       data.get('lazyLoad'),
                                       data['url']
@@ -127,14 +124,12 @@ class ContentController(controllers.Controller):
     def create(self, **data):
         log.debug("submitted ....")
         # name = data['name']
-        # displayName
         cm = ContentManager()
         subject = identity.current.user.subject
         lazy = str(data.get('lazyLoad') == 'on').lower()
         lazy = str(data.has_key('lazyLoad') and data['lazyLoad'] == 'on').lower()
         id = cm.create_content_source(subject, 
                                       data.get('name'),
-                                      data.get('displayName'),
                                       data.get('description'),
                                       lazy,
                                       data.get('url'),
@@ -159,14 +154,12 @@ def widget_getter(widget, field,**kw):
 class ContentSourceFields(widgets.WidgetsList):
     # attrs={'size' : '50'}
     name = widgets.TextField(validator=validators.NotEmpty(),
-                               name="name", label="Name", help_text="Examples: 'fedora-updates', 'fedora-updates-testing', 'rhel_5.1_rhn'")
-    displayName = widgets.TextField(validator=validators.NotEmpty(),
-                               name="displayName", label="Display Name", help_text="Examples: 'Fedora Updates', 'Fedora Updates Testing', 'RHEL 5.1 RHN Channel'")
-    description = widgets.TextArea(name="description", label="Description", help_text="Tip: You can use this field to provide more details about what is contained in this content source.",
+                               name="name", label="Name")
+    description = widgets.TextArea(name="description", label="Description",
                                     rows=4, cols=40)
     url = widgets.TextField(validator=validators.NotEmpty(),
-                               name="url", label="Source URL", attrs={'size' : '50'}, help_text="Example: 'http://download.fedora.redhat.com/pub/fedora/linux/development/i386/os/'")
-    lazyLoad = widgets.CheckBox(name="lazyLoad", label="Lazy Load", help_text="Tip: If you enable lazy load, then content will only be synched when it is specifically requested. This may save you disk space if there is a lot of content from the source that is not used.")
+                               name="url", label="Source URL", attrs={'size' : '50'})
+    lazyLoad = widgets.CheckBox(name="lazyLoad", label="Lazy Load")
     id = widgets.HiddenField(name="id")
 
    

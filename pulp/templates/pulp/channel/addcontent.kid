@@ -10,7 +10,7 @@
     Content Source into the Channel.  This allows you to easily populate your 
     Channels with the content your systems need.</p>  
 <br/>
-<h2>Pick your Content Sources to link to the ${channel.displayName} channel</h2>
+<h2>Pick your Content Sources to link to the ${channel.name} channel</h2>
 <form action="/pulp/channel/contenttochannel" method="post" class="tableform" name="form">
     <div id="feed">${channelList.display(data)}</div>
 <input type="hidden" name="channel_id" value="${channel.id}"/>

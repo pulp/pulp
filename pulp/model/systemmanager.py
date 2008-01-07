@@ -12,6 +12,7 @@ class SystemManager(object):
     def list_systems(self, subject):
         systems = self.service.findResourceComposites(subject, 'PLATFORM',\
                                                'Linux', -1, None, PageControl())
+        #massage the data for datagrid
         for s in systems:
             s.name = s.resource.name
             s.description = s.resource.description
