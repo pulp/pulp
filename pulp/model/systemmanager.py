@@ -1,6 +1,6 @@
 from pulp.model.base import PageControl
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
-from suds.property import Property
+from property import Property
 import logging
 
 class SystemManager(object):

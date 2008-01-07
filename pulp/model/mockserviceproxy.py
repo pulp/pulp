@@ -1,7 +1,7 @@
 from pulp.model.base import PageControl
 from pulp.identity.webserviceprovider import WsUser
 from random import shuffle
-from suds.property import Property
+from property import Property
 
 class MockServiceProxy(object):
     """ a mock service proxy"""

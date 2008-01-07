@@ -1,4 +1,4 @@
-from suds.property import Property
+from property import Property
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
 import logging
 
