@@ -2,6 +2,9 @@ from pulp.model.base import PageControl
 from pulp.identity.webserviceprovider import WsUser
 from random import shuffle, randint
 from property import Property
+from mockmodel import MockSubject
+from mockmodel import MockContentSource
+from mockmodel import MockChannel
 
 class MockServiceProxy(object):
     """ This class is a mockup of the remote service interface the pulp ui 
@@ -14,23 +17,50 @@ class MockServiceProxy(object):
         return Property()
     
     
+    # 
     # AUTHENTICATION METHODS
+    #
     
-    # Login a user.
-    # The Subject object is the Java backend's concept of a User
-    # The MockSubject is a fake version of that user type object.
     def login(self, username, password):
+        '''
+        Login a user.
+        The Subject object is our concept of a User
+        The MockSubject is a fake version of that user type object.  This method
+        should validate the username and password combination to determine if
+        the user is valid or not.  If the user is valid we return a Subject 
+        object who's structure is defined below in MockSubject.
+                
+        If the login is invalid return None.
+        
+        @param username: username of user wanting to login
+        @param password: password of user wanting to login
+        @return: MockSubject object if correctly logged in or None if its an 
+        invalid login 
+        '''
         ms = MockSubject()
         ms.name = username
         return ms
    
-    #CONTENTSOURCE METHODS  
+    #    
+    # CONTENTSOURCE METHODS
+    #  
     
-    # Get the list of all ContentSource objects defined 
-    # The PageControl is an object the Java backend expects that
-    # controls the pagination and sorting of a list of objects.  It contains
-    # the range of objects out of a greater set we are looking at. 
     def getAllContentSources(self, subject, pagecontrol):
+        '''
+        Get the list of all ContentSource objects defined 
+        
+        The PageControl is an object the backend expects that
+        controls the pagination and sorting of a list of objects.  It contains
+        the range of objects out of a greater set we are looking at.  See 
+        base.py : PageControl 
+        
+        @param subject: The Subject (user) who is wanting the list of all the 
+        ContentSource objects.  
+        @param pagecontrol: PageControl object that dictates the range/subset
+        of objects out of the greater set we are looking at.
+        @return: list of ContentSource objects. 
+        '''
+
         ret = []
         for i in range(15):
             source = Property()
@@ -42,40 +72,50 @@ class MockServiceProxy(object):
             ret.append(source)
         return ret
     
-    # Get individual ContentSource.  Simple lookup
     def getContentSource(self, subject, id):
-        source = Property()
-        source.id = str(id)
-        source.name = "fake-source[%s]" % id
-        source.url = "http://some.redhat.com/url/%s" % id
-        source.contentSourceType = Property()
-        source.contentSourceType.displayName  = "Fake Type"
-        source.configuration = Property()
-        source.configuration.properties = Property()
-        source.configuration.properties.entry = []
-        source.configuration.properties.entry.append(Property())
-        source.configuration.properties.entry[0].value = Property()
-        source.configuration.properties.entry[0].value.stringValue = \
-            "http://some.redhat.com/url/%s" % id
+        '''
+        Get individual ContentSource.  Simple lookup.
+        @param subject: user requesting ContentSource
+        @param id: unique identifier of the ContentSource 
+        '''
+        source = MockContentSource(id)
         return source
                         
     def updateContentSource(self, subject, source):
+        '''
+        Update fields on an existing ContentSource object.  If you want to change
+        the name, the URL or any of the settings on the ContentSource 
+        '''
         return source
     
-    # This gets the count of Packages a ContentSource has defined.
-    # PackageVersion is an object that represents a distinct 
-    # version of a package: kernel-2.6.22.1-27.fc7
     def getPackageVersionCountFromContentSource(self, subject, id):
+        '''
+        This gets the count of Packages a ContentSource has defined.
+        PackageVersion is an object that represents a distinct 
+        version of a package: kernel-2.6.22.1-27.fc7
+        
+        @return count of unique packages in ContentSource
+        '''
         return 1235
     
-    # Tell the ContentSource you want to sync the content from its 
-    # repository NOW
     def synchronizeAndLoadContentSource(self, subject, id):
+        '''
+        Tell the ContentSource you want to sync the content from its 
+        epository NOW.  This is most likely a long running process so this
+        should be async in nature
+        
+        @param subject: user wanting to sync
+        @param id: unique id of ContentSource you want to sync 
+        '''
         return
 
+    #
     # CHANNEL METHODS
-    # List of all Channels defined
+    #
     def getAllChannels(self, subject, pagecontrol):
+        '''
+        List of all Channels defined
+        '''
         ret = []
         for i in range(15):
             channel = Property()
@@ -161,18 +201,6 @@ class MockServiceProxy(object):
             ret += c
         return ret
            
-# Fake User/Subject object.
-class MockSubject(object):
-    firstName = "Fake"
-    lastName = "User"
-    name = "jonadmin"
-    factive = True
-    fsystem = False
-    sessionId = (-1097805654)
-    emailAddress = 'nobody@localhost'
-    id = 2
-    
-    
 def get_mock_WsUser():
     subject = MockSubject()
     return WsUser(subject.name, subject)

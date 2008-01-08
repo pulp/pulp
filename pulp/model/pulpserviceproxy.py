@@ -6,8 +6,8 @@ class PulpServiceProxy(object):
     def getServiceProxy(self, endpoint):
         c = config.get('pulp.config.serviceproxy', 'suds.serviceproxy.ServiceProxy')
         ServiceProxy = load_class(c)
-
-        # FIXME: allow for non-ejb URLs
+        servicehost = config.get('pulp.config.servicehost', 'localhost')
         service = ServiceProxy(
-            "http://localhost:7080/on-on-enterprise-server-ejb./%s?wsdl" % endpoint)
+            "http://%s:7080/on-on-enterprise-server-ejb./%s?wsdl" % (servicehost,
+            endpoint))
         return service

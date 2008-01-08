@@ -20,13 +20,6 @@ class PulpController(controllers.Controller):
     def index(self):
         return dict(mockup_text="Welcome to Pulp")
 
-    @expose(template="pulp.templates.mockup")
-    @identity.require(identity.not_anonymous())
-    def systemsold(self, **kw):
-        return dict(mockup_text="Systems")
-
-
-
     @expose(template="pulp.templates.pulp.systems")
     @identity.require(identity.not_anonymous())
     @paginate('data', default_order='name', limit=10)
