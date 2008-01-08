@@ -15,12 +15,21 @@ class MockServiceProxy(object):
     
     
     # AUTHENTICATION METHODS
+    
+    # Login a user.
+    # The Subject object is the Java backend's concept of a User
+    # The MockSubject is a fake version of that user type object.
     def login(self, username, password):
         ms = MockSubject()
         ms.name = username
         return ms
    
     #CONTENTSOURCE METHODS  
+    
+    # Get the list of all ContentSource objects defined 
+    # The PageControl is an object the Java backend expects that
+    # controls the pagination and sorting of a list of objects.  It contains
+    # the range of objects out of a greater set we are looking at. 
     def getAllContentSources(self, subject, pagecontrol):
         ret = []
         for i in range(15):
@@ -33,6 +42,7 @@ class MockServiceProxy(object):
             ret.append(source)
         return ret
     
+    # Get individual ContentSource.  Simple lookup
     def getContentSource(self, subject, id):
         source = Property()
         source.id = str(id)
@@ -52,13 +62,19 @@ class MockServiceProxy(object):
     def updateContentSource(self, subject, source):
         return source
     
+    # This gets the count of Packages a ContentSource has defined.
+    # PackageVersion is an object that represents a distinct 
+    # version of a package: kernel-2.6.22.1-27.fc7
     def getPackageVersionCountFromContentSource(self, subject, id):
         return 1235
     
+    # Tell the ContentSource you want to sync the content from its 
+    # repository NOW
     def synchronizeAndLoadContentSource(self, subject, id):
         return
 
     # CHANNEL METHODS
+    # List of all Channels defined
     def getAllChannels(self, subject, pagecontrol):
         ret = []
         for i in range(15):
@@ -68,6 +84,7 @@ class MockServiceProxy(object):
             ret.append(channel)
         return ret
     
+    # Get individual Channel
     def getChannel(self, subject, id):
         channel = Property()
         channel.id = id
@@ -76,19 +93,28 @@ class MockServiceProxy(object):
             "a Fake Channel created by a mock service implementation."
         return channel
     
+    # Update individual Channel
     def updateChannel(self, subject, channel):
         return channel.id
     
+    # Create a Channel
     def createChannel(self, subject, channel):
         from random import randint
         return self.getChannel(subject, randint(1,1000))
     
+    # Get the count of Packages definied in a Channel
     def getPackageVersionCountFromChannel(self, subject, id):
         return 1235
     
+    # This is a key method that associates a ContentSource to a Channel
+    # A Channel can have many content sources associated with it.  For 
+    # example you could have a base RHEL 5 yum repo + an EPEL yum repo as
+    # 2 content sources.  With this method you could add both to create a 
+    # single Channel organization of content.
     def addContentSourcesToChannel(self, subject, id, contentSourceIds):
         return
         
+    # Get the list of Packages in a Channel.  
     def getPackageVersionsInChannel(self, subject, id, pagecontrol):
         ret = []
         for i in range(10):
@@ -101,7 +127,11 @@ class MockServiceProxy(object):
             ret.append(package)
         return ret
     
-    # RESOURCE METHODS
+    # RESOURCE METHODS 
+    # NOTE: Resource is the Java backend's abstract name for a System
+    
+    # List all the Resources defined in the system. Basically the list of
+    # Systems.
     def findResourceComposites(self, subject, category, type, parentResourceId,\
                                searchString, pageControl):
         ret = []
@@ -117,6 +147,7 @@ class MockServiceProxy(object):
             ret.append(system)
         return ret
     
+    # Subscribe a System to a set of Channels.
     def subscribeResourceToChannels(self, subject, systemIds, id):
         return
     
@@ -130,6 +161,7 @@ class MockServiceProxy(object):
             ret += c
         return ret
            
+# Fake User/Subject object.
 class MockSubject(object):
     firstName = "Fake"
     lastName = "User"
