@@ -9,5 +9,5 @@ class PulpServiceProxy(object):
 
         # FIXME: allow for non-ejb URLs
         service = ServiceProxy(
-            "http://localhost.localdomain:7080/on-on-enterprise-server-ejb./%s?wsdl" % endpoint)
+            "http://localhost:7080/on-on-enterprise-server-ejb./%s?wsdl" % endpoint)
         return service

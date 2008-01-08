@@ -8,14 +8,11 @@ cherrypy.lowercase_api = True
 from os.path import *
 import sys
 
-
-sys.path.append(join('..', 'common', 'suds'))
-
 # Check suds dep
 try:
     from suds.property import Property
 except Exception:
-    print("error importing suds module.  you need this module to run pulp.")
+    print("error importing suds module.  you need this module to run pulp: http://fedorahosted.org/suds")
     exit(2)
     
 

@@ -1,7 +1,10 @@
-from turbogears import controllers, expose, identity
+from pulp.model import SystemManager
+from turbogears import controllers, expose, identity, paginate
+from turbogears.widgets.datagrid import *
 from contentcontroller import ContentController
 from channelcontroller import ChannelController
 import logging
+import turbogears
 log = logging.getLogger("pulp.controllers.pulpcontroller")
 
 # from pulp.perspectives import Perspective
@@ -19,8 +22,32 @@ class PulpController(controllers.Controller):
 
     @expose(template="pulp.templates.mockup")
     @identity.require(identity.not_anonymous())
-    def systems(self, **kw):
+    def systemsold(self, **kw):
         return dict(mockup_text="Systems")
+
+
+
+    @expose(template="pulp.templates.pulp.systems")
+    @identity.require(identity.not_anonymous())
+    @paginate('data', default_order='name', limit=10)
+    def systems(self, **data):
+        log.debug(" Systems ..", id)
+        
+        url = turbogears.url("/pulp/system/details/*id*")
+        systemList = PaginateDataGrid(
+            template="pulp.templates.dgrid", fields=[
+            DataGrid.Column('name', 'name', _('Name'), 
+                options=dict(sortable=True, type='link', href=url)),
+            DataGrid.Column('description', 'description', _('Description'), 
+                options=dict(sortable=True)),
+            DataGrid.Column('packageCount', 'packageCount', _('Package Count'), 
+                options=dict(sortable=True)),
+        ])
+        
+        sm = SystemManager()
+        data = sm.list_systems(identity.current.user.subject)
+        return dict(systemList=systemList, data=data)
+
 
     @expose(template="pulp.templates.mockup")
     @identity.require(identity.not_anonymous())

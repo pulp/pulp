@@ -21,8 +21,6 @@ class ChannelController(controllers.Controller):
             template="pulp.templates.dgrid", fields=[
             DataGrid.Column('name', 'name', _('Name'), 
                 options=dict(sortable=True, type='link', href=url)),
-            DataGrid.Column('displayName', 'displayName', _('Display Name'), 
-                options=dict(sortable=True)),
         ])
         
         cm = ChannelManager()
@@ -50,7 +48,6 @@ class ChannelController(controllers.Controller):
         lazy = str(data.has_key('lazyLoad') and data['lazyLoad'] == 'on').lower()
         id = cm.create_channel(subject, 
                                       data.get('name'),
-                                      data.get('displayName'),
                                       data.get('description'))
         turbogears.flash(_("New Channel created."))
         raise turbogears.redirect(turbogears.url('/pulp/channel/details/%s' % \
@@ -90,7 +87,6 @@ class ChannelController(controllers.Controller):
         id = cm.update_channel(subject,
                                       data.get('id'),
                                       data.get('name'),
-                                      data.get('displayName'),
                                       data.get('description')
                                       )
         turbogears.flash(_("Channel updated."))
@@ -104,7 +100,7 @@ class ChannelController(controllers.Controller):
     def addcontent(self, id, **data):
         channelList = PaginateDataGrid(
             template="pulp.templates.dgrid", fields=[
-            DataGrid.Column('displayName', 'displayName', _('Display Name'), 
+            DataGrid.Column('name', 'name', _('Name'), 
                 options=dict(sortable=True)),
             DataGrid.Column('id', 'id', _('Associate'), 
                 options=dict(sortable=True, type='Checkbox')),
@@ -205,11 +201,10 @@ class ChannelController(controllers.Controller):
 class ChannelDetailsFields(widgets.WidgetsList):
     # attrs={'size' : '50'}
     name = widgets.TextField(validator=validators.NotEmpty(),
-                               name="name", label="Name", help_text="Examples: 'f8-rawhide', 'f7-gold', 'rhel_5.1_ap'")
-    displayName = widgets.TextField(validator=validators.NotEmpty(),
-                               name="displayName", label="Display Name", help_text="Examples: 'Fedora 8 Rawhide', 'Fedora 7 Gold', 'RHEL 5.1 AP'")
+                               name="name", label="Name", 
+                               attrs={'bloop' : 'blarg'} )
     description = widgets.TextArea(name="description", label="Description",
-                                    rows=4, cols=40, help_text="Tip: This field is not required but is a good way to provide some additional information about the channel, such as its target audience or intended consumers.")
+                                    rows=4, cols=40)
     id = widgets.HiddenField(name="id")
 
    
