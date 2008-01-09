@@ -1,10 +1,7 @@
-from pulp.model.base import PageControl
 from pulp.identity.webserviceprovider import WsUser
 from random import shuffle, randint
 from property import Property
-from mockmodel import MockSubject
-from mockmodel import MockContentSource
-from mockmodel import MockChannel
+from mockmodel import MockSubject, MockContentSource, MockChannel, MockSystem
 
 class MockServiceProxy(object):
     """ This class is a mockup of the remote service interface the pulp ui 
@@ -63,12 +60,7 @@ class MockServiceProxy(object):
 
         ret = []
         for i in range(15):
-            source = Property()
-            source.id = str(i)
-            source.name = "fake-source[%s]" % i
-            source.url = "http://some.redhat.com/url/%s" % i
-            source.contentSourceType = Property()
-            source.contentSourceType.displayName  = "Fake Type"
+            source = MockContentSource(i)
             ret.append(source)
         return ret
     
@@ -114,23 +106,17 @@ class MockServiceProxy(object):
     #
     def getAllChannels(self, subject, pagecontrol):
         '''
-        List of all Channels defined
+        List of all Channels defined.
         '''
         ret = []
         for i in range(15):
-            channel = Property()
-            channel.id = str(i)
-            channel.name = self.random_string() + "fake-channel[%s]" % i
+            channel = MockChannel(i)
             ret.append(channel)
         return ret
     
     # Get individual Channel
     def getChannel(self, subject, id):
-        channel = Property()
-        channel.id = id
-        channel.name = self.random_string() + "[%s]" % id
-        channel.description = \
-            "a Fake Channel created by a mock service implementation."
+        channel = MockChannel(id)
         return channel
     
     # Update individual Channel
@@ -158,12 +144,7 @@ class MockServiceProxy(object):
     def getPackageVersionsInChannel(self, subject, id, pagecontrol):
         ret = []
         for i in range(10):
-            package = Property()
-            package.id = str(i)
-            package.fileName = 'fake-package-i386-' + str(i) + '.i386.rpm'
-            package.name = 'fake-package-' + str(i)
-            package.architecture = Property()
-            package.architecture.name = 'i386'
+            package = MockPackageVersion()
             ret.append(package)
         return ret
     
@@ -176,14 +157,7 @@ class MockServiceProxy(object):
                                searchString, pageControl):
         ret = []
         for i in range(100):
-            system = Property()
-            # system.id = str(i)
-            # system.name = 'fake-system-' + str(i)
-            system.resource = Property()
-            system.resource.name = 'fake-system-' + str(i)
-            system.resource.id = str(i)
-            system.resource.description = 'Fake Linux System'
-            system.packageCount = randint(1000,2000)
+            system = MockSystem(i)
             ret.append(system)
         return ret
     

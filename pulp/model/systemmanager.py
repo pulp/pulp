@@ -1,6 +1,5 @@
-from pulp.model.base import PageControl
+from pulp.model.base import get_page_control
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
-from property import Property
 import logging
 
 class SystemManager(object):
@@ -11,7 +10,7 @@ class SystemManager(object):
         
     def list_systems(self, subject):
         systems = self.service.findResourceComposites(subject, 'PLATFORM',\
-                                               'Linux', -1, None, PageControl())
+                                        'Linux', -1, None, get_page_control())
         #massage the data for datagrid
         for s in systems:
             s.name = s.resource.name

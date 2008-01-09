@@ -46,9 +46,11 @@ class ChannelController(controllers.Controller):
         subject = identity.current.user.subject
         lazy = str(data.get('lazyLoad') == 'on').lower()
         lazy = str(data.has_key('lazyLoad') and data['lazyLoad'] == 'on').lower()
+        name = str(data.get('name'))
+        desc = str(data.get('description'))
         id = cm.create_channel(subject, 
-                                      data.get('name'),
-                                      data.get('description'))
+                               name,
+                               desc)
         turbogears.flash(_("New Channel created."))
         raise turbogears.redirect(turbogears.url('/pulp/channel/details/%s' % \
                                                   str(id)))

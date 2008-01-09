@@ -1,4 +1,5 @@
 from property import Property
+from random import shuffle, randint
 
 # Fake User/Subject object.
 class MockSubject(object):
@@ -13,6 +14,10 @@ class MockSubject(object):
     
     
 class MockContentSource(Property):
+    '''
+    ContentSource is a class representing a location to fetch packages from.
+    Examples of this would be a http served yum repository or a mounted DVD drive
+    '''
     def __init__(self, id):
         Property.__init__(self)
         self.id = str(id)
@@ -30,5 +35,47 @@ class MockContentSource(Property):
 
 
 class MockChannel(Property):
-    def __init__(self):
-        property.Property.__init__(self)
+    '''
+    A Channel is a collection of ContentSources.  Channels allow you to group
+    ContentSources and thus repositories of packages into a logical grouping.
+    
+    Systems can be 'subscribed' to a Channel which implies the packages 
+    contained within the Channel apply to that system.  
+    '''
+    def __init__(self, id):
+        Property.__init__(self)
+        self.id = str(id)
+        self.name = "fake-channel[%s]" % id
+        self.description = "mock channel description"
+
+
+class MockPackageVersion(Property):
+    '''
+    A class representing a concrete package with a version  
+    '''
+    def __init__(self, id):
+        Property.__init__(self)
+        self.id = id
+        self.name = "fake-channel[%s]" % id
+        self.description = "mock channel description"
+        self.id = str(id)
+        self.fileName = 'fake-package-i386-' + str(id) + '.i386.rpm'
+        self.name = 'fake-package-' + str(id)
+        self.architecture = Property()
+        self.architecture.name = 'i386'
+
+
+
+class MockSystem(Property):
+    '''
+    A fake System class.  This represents a System that gets packages installed
+    on it and is associated with Channels.
+    '''
+    def __init__(self, id):
+        Property.__init__(self)
+        self.resource = Property()
+        self.resource.name = 'fake-system-' + str(id)
+        self.resource.id = str(id)
+        self.resource.description = 'Fake Linux System'
+        self.packageCount = randint(1000,2000)
+

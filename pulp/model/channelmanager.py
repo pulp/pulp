@@ -1,6 +1,5 @@
-from pulp.model.base import PageControl
+from pulp.model.base import get_page_control, get_new_channel
 from pulp.model.systemmanager import SystemManager
-from property import Property
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
 import logging
 
@@ -17,10 +16,9 @@ class ChannelManager(object):
     
     def list_all_channels(self, subject):
         log.debug("Calling list all channels")
-        pc = Property()
-        pc.pageNumber = 0
-        pc.pageSize = -1
-        return self.service.getAllChannels(subject, pc)
+        pagecontrol = get_page_control()
+        pagecontrol['pageSize'] = -1
+        return self.service.getAllChannels(subject, pagecontrol)
         
     def update_channel(self, subject, id, name, description):
                 
@@ -32,9 +30,7 @@ class ChannelManager(object):
         return id
 
     def create_channel(self, subject, name, description):
-        channel = Property()
-        channel.name = name
-        channel.description = description
+        channel = get_new_channel(name, description)
         channel = self.service.createChannel(subject, channel)
         log.debug("we got a channel: ", channel.id)
         return channel.id
@@ -44,7 +40,7 @@ class ChannelManager(object):
             
     def list_packages_in_channel(self, subject, id, search):
         versions = self.service.getPackageVersionsInChannel(subject, id, \
-                                                        PageControl())
+                                                        get_page_control())
         # TODO: SORTING
         for v in versions:
             v.arch = v.architecture.name
