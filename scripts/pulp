@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+import sys
+
+from pulp.cli.cli import PulpCommandLine
+PulpCommandLine().main(sys.argv)
+

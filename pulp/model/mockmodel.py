@@ -12,17 +12,24 @@ class MockSubject(object):
     emailAddress = 'nobody@localhost'
     id = 2
     
+
     
 class MockContentSource(Property):
     '''
     ContentSource is a class representing a location to fetch packages from.
     Examples of this would be a http served yum repository or a mounted DVD drive
     '''
-    def __init__(self, id):
+    def __init__(self, id, name=None, url=None):
         Property.__init__(self)
+
         self.id = str(id)
-        self.name = "fake-source[%s]" % id
-        self.url = "http://some.redhat.com/url/%s" % id
+        self.name = name
+        if name is None:
+            self.name = "fake-source[%s]" % id
+        self.url = url
+        if url is None:
+            self.url = "http://some.redhat.com/url/%s" % id
+
         self.contentSourceType = Property()
         self.contentSourceType.displayName  = "Fake Type"
         self.configuration = Property()

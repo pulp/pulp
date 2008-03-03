@@ -1,4 +1,5 @@
 from pulp.model.pulpserviceproxy import PulpServiceProxy 
+from pulp.model.mockmodel import MockContentSource
 import logging
 
 log = logging.getLogger("pulp.model")
@@ -70,3 +71,35 @@ class ContentManager(object):
         if pcount is None:
             pcount = 0
         return pcount                      
+
+
+
+class DummyContentSourceContentManager(ContentManager):
+    """
+    Dummy class used currently to return some valid countent sources.
+    Used in testing the repo sync command.
+
+    TODO: Destroy this once the model and methods for testing against it are
+    a little more clear.
+    """
+
+    def __init__(self):
+        """ Overload to not do any networking. """
+        pass
+
+    def list_all_content_sources(self, subject):
+        """
+        Overload method in ContentManager to return real Yum repositories.
+        """
+        repos = []
+
+        # TODO: Remove hard coded repository data here. Using packagekit
+        # repository for testing until we have repository storage
+        # straightened out.
+        repos.append(MockContentSource(id=1, name="utopia", 
+            url="http://people.freedesktop.org/~hughsient/fedora/8/i386/"))
+
+        return repos
+
+
+

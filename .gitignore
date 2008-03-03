@@ -2,3 +2,5 @@
 *.pyc
 .project
 .pydevproject
+*.swp
+*.swo
