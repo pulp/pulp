@@ -41,14 +41,13 @@ class ContentManager(object):
         configuration = self.service.get_instance('configuration')
         entry = self.service.get_instance('configuration.properties.entry')
         simple = self.service.get_instance('propertySimple')
-        entry.key = 'url'
-        simple.name = 'url'
+        entry.key = 'location'
+        simple.name = 'location'
         simple.stringValue = url
         entry.value = simple
         configuration.properties.entry.append(entry)
         configuration.notes = name, ' configuration entry'
         
-        #lazy = str(lazyLoad == 'on').lower()
         lazy = lazyLoad.lower()
         
         source = self.service.createContentSource(subject, 
