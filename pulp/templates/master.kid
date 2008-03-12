@@ -90,6 +90,23 @@ ${tg_SideBar.display()}
     <!-- End of main_content -->
     </div>
  
+<div id="tray">
+<strong>System Tray:</strong><br/>
+<table>
+<tr>
+  <td align="left"><img src="/static/images/rhn-icon-system.gif"/>40 RHEL Systems Selected</td>
+  <td align="center"><input type="button" value="clear"/></td>
+</tr>
+<tr>
+  <td align="left"><img src="/static/images/rhn-listicon-virthost.gif"/>3 Virtual Host Systems Selected</td>
+  <td align="center"><input type="button" value="tag"/></td>
+</tr>
+<tr>
+  <td align="left"><img src="/static/images/rhn-listicon-virtguest.gif"/>1 Virtual Guest Selected</td>
+  <td align="center"><input type="button" value="clear"/></td>
+</tr>
+</table>
+</div>
 <div id="footer">
 Copyright 2007 Red Hat, Inc.
 </div>

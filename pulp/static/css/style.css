@@ -376,6 +376,19 @@ td, th {
   width: 100%;
 }
 
+#tray {
+  font-size: small;
+  clear: both;
+  text-align: left;
+  border-top: 1px solid #efefef;
+  border-left: 1px solid #efefef;
+  border-right: 1px solid #efefef;
+  border-bottom: 1px solid #efefef;
+  width: 100%;
+  background-color: #eee;
+}
+
+
 #details ul.context-nav {
   float:		left;
   width: 		100%;

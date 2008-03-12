@@ -40,7 +40,7 @@ class ChannelManager(object):
             
     def list_packages_in_channel(self, subject, id, search):
         versions = self.service.getPackageVersionsInChannel(subject, id, \
-                                                        get_page_control())
+                                                    search, get_page_control())
         # TODO: SORTING
         for v in versions:
             v.arch = v.architecture.name
@@ -54,5 +54,10 @@ class ChannelManager(object):
         self.service.subscribeResourceToChannels(subject, systemIds, id)
                     
     def get_package_count(self, subject, id):
-        return self.service.getPackageVersionCountFromChannel(subject, id)                      
+        return self.service.getPackageVersionCountFromChannel(subject, None, id)
+    
+    def install_packages_system(self, subject, id, systemIds, packageIds):
+        contentservice = PulpServiceProxy().getServiceProxy('ContentManagerBean')
+        contentservice.deployPackages(subject, systemIds, packageIds)
+        return
 

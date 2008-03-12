@@ -6,24 +6,7 @@
 			http-equiv="Content-Type" py:replace="''" />
 		<title>Overview</title>
 	</head>
-	<script>
-function togglehide(id){ 
-    div = document.getElementById(id)
-    collapse = document.getElementById(id + "-img-collapse")
-    expand = document.getElementById(id + "-img-expand")
-    if (div.style.display != 'none') {
-        div.style.display= 'none';
-        collapse.style.display= 'none';
-        expand.style.display= '';
-    }
-    else {
-        div.style.display= '';
-        collapse.style.display= '';
-        expand.style.display= 'none';
-        
-    }
-}
-</script>
+	<script src="/static/javascript/util.js"/>
 	<body>
 		<h1 class="overview">My Overview</h1>
 

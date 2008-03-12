@@ -1,7 +1,8 @@
 from pulp.identity.webserviceprovider import WsUser
 from random import shuffle, randint
 from property import Property
-from mockmodel import MockSubject, MockContentSource, MockChannel, MockSystem
+from mockmodel import MockSubject, MockContentSource, MockChannel, MockSystem,\
+                      MockPackageVersion
 
 class MockServiceProxy(object):
     """ This class is a mockup of the remote service interface the pulp ui 
@@ -129,7 +130,7 @@ class MockServiceProxy(object):
         return self.getChannel(subject, randint(1,1000))
     
     # Get the count of Packages definied in a Channel
-    def getPackageVersionCountFromChannel(self, subject, id):
+    def getPackageVersionCountFromChannel(self, subject, filter, id):
         return 1235
     
     # This is a key method that associates a ContentSource to a Channel
@@ -141,10 +142,10 @@ class MockServiceProxy(object):
         return
         
     # Get the list of Packages in a Channel.  
-    def getPackageVersionsInChannel(self, subject, id, pagecontrol):
+    def getPackageVersionsInChannel(self, subject, id, filter, pagecontrol):
         ret = []
-        for i in range(10):
-            package = MockPackageVersion()
+        for i in range(1000):
+            package = MockPackageVersion(i)
             ret.append(package)
         return ret
     
@@ -163,6 +164,9 @@ class MockServiceProxy(object):
     
     # Subscribe a System to a set of Channels.
     def subscribeResourceToChannels(self, subject, systemIds, id):
+        return
+    
+    def deployPackages(self, subject, systemIds, packageIds):
         return
     
     def random_string(self):

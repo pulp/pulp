@@ -9,7 +9,7 @@ class PulpServiceProxy(object):
         servicehost = config.get('pulp.config.servicehost', 'localhost')
         serviceport = config.get('pulp.config.serviceport', '7080')
         service = ServiceProxy(
-            "http://%s:%s/on-on-enterprise-server-ejb3/%s?wsdl" % (servicehost, 
+            "http://%s:%s/rhq-rhq-enterprise-server-ejb3/%s?wsdl" % (servicehost, 
                                                                 serviceport,
                                                                 endpoint))
         return service

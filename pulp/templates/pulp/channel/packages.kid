@@ -8,7 +8,18 @@
 <body>
 <h1 class="content-overview">Channel Packages</h1>
 
-<div id="feed">${packageList.display(data)}</div>
+<form action="/pulp/channel/operateonpackages" method="post" class="tableform" name="form">
+    <div id="feed">${packageList.display(data)}</div>
+
+<br/>
+<input type="hidden" name="channel_id" value="${channel.id}"/>
+<select name="operation">
+    <option value="installsystem">Install on Systems</option>
+    <option value="deletefromsystem">Remove from Systems</option>
+    <option value="deletefromchannel">Remove from Channel</option>
+</select>
+<input type="submit" class="submitbutton" value="Go!"/>
+</form>
 
 </body>
 </html>

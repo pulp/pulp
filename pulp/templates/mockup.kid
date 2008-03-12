@@ -7,9 +7,5 @@
 </head>
 <body>
 <h1>${mockup_text}</h1>
-<br/>
-
-
-<br/>
 </body>
 </html>

@@ -7,6 +7,7 @@ from subcontrollers.admincontroller import *
 from subcontrollers.channelcontroller import *
 from subcontrollers.middlewarecontroller import *
 from subcontrollers.pulpcontroller import *
+from subcontrollers.virtcontroller import *
 from turbogears import controllers, expose, flash, identity, widgets, paginate, redirect
 from turbogears import widgets, validators, validate, error_handler, config
 from turbogears.widgets import CSSLink, static
@@ -27,6 +28,7 @@ class Root(controllers.RootController):
     pulp = PulpController()
     admin = AdminController()
     middleware = MiddlewareController()
+    virt = VirtController()
       
     @expose(template="pulp.templates.overview")
     @identity.require(identity.not_anonymous())
@@ -49,7 +51,7 @@ class Root(controllers.RootController):
                 options=dict(sortable=True, type="Raw")),
 
         ])
-        data = InfoFeedService().get_feed(identity)
+        data = InfoFeedService().get_perspective_feed(identity)
         summaries = []
         summaries.append(PerspectiveSummary("Software Content", 
                                              "software channels",
@@ -101,7 +103,6 @@ class Root(controllers.RootController):
     @expose()
     def setperspective(self, **data):
         if "perspective" in data:
-            print "setting perspective!!"
             pm = PerspectiveManager()
             pers = pm.get_perspective(data["perspective"])
             if not pers:

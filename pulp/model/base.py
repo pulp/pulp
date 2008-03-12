@@ -5,7 +5,7 @@
 def get_page_control():
     pagecontrol = dict()
     pagecontrol['pageNumber'] = 0
-    pagecontrol['pageSize'] = 100
+    pagecontrol['pageSize'] = -1
     return pagecontrol
 
 def get_new_channel(name, description):

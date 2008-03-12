@@ -2,16 +2,25 @@
 
 <!-- START PAGINATION CONTROLS -->
 <div class="top-toolbar ${name}">
-<!-- 
 <div class="search-bar">
-<form>
 Search this List:
-<input type="text" name="grid-search-1" />
-<button>Search</button>
-</form>
+<input id="dgrid.searchinput" type="text" name="searchstring" />
+<button onClick="performSearch();return false;">Search</button>
+<script>
+    function performSearch() {
+        sstring = document.getElementById('dgrid.searchinput').value;
+        url = document.URL;
+        if (url.indexOf('?') > 0) {
+            url = url + '&amp;searchstring=' + sstring;
+        }else {
+            url = url + '?&amp;searchstring=' + sstring;
+        }
+        window.location = url;
+    }
+</script>
+
 </div>
- -->
-<div class="pagination">    
+ <div class="pagination">    
   <span py:if="not tg.paginate.current_page == 1">
     <a class="page-back page-control" href="${tg.paginate.get_href(tg.paginate.current_page-1)}">&lt; Back</a>
     <a class="page-first page-control" href="${tg.paginate.get_href(1)}">&lt;&lt; First</a>

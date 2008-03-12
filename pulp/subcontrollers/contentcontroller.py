@@ -135,8 +135,7 @@ class ContentController(controllers.Controller):
                                       data.get('url'),
                                       )
         turbogears.flash("New Content Source created.")
-        #raise turbogears.redirect('/pulp/content/details', csid="1")
-        raise turbogears.redirect('/', csid="1")
+        raise turbogears.redirect(turbogears.url('/pulp/content/details/' + str(id)))
         
 
 class MakeImgTag(Widget):
