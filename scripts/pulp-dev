@@ -1,6 +1,10 @@
 #!/usr/bin/python
 """
-Pulp Command Line Launch Script
+Pulp Command Line Development Launch Script
+
+Used to launch pulp using just the code in the source checkout. Can be run
+either from the top level of the source checkout (i.e. scripts/pulp-dev) or
+from the scripts directory (i.e. ./pulp-dev).
 
 Copyright 2008, Red Hat, Inc
 Devan Goodwin <dgoodwin@redhat.com>
@@ -14,6 +18,8 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 """
 
 import sys
+sys.path.insert(0, './')
+sys.path.insert(0, '../')
 
 from pulp.cli.cli import PulpCommandLine
 PulpCommandLine().main(sys.argv)
