@@ -35,6 +35,20 @@ class PulpCommandLine:
             self.help()
 
         module_name = argv[1]
+        (parser, module) = self.__generate_module_option_parser(module_name)
+
+        (options, args) = parser.parse_args(argv[2:])
+        module.run(options)
+
+    def __generate_module_option_parser(self, module_name):
+        """ 
+        Generate an OptionParser for the given module. 
+
+        Does not actually call the parse_args method.
+
+        Return a tuple of option parser and CLI module.
+        """
+        usage = "usage: %prog " + module_name + " [options]"
         print "Module: %s" % module_name
         if not MODULES.has_key(module_name):
             print "ERROR: Unknown module: %s" % module_name
@@ -43,12 +57,18 @@ class PulpCommandLine:
         parser = OptionParser()
         module = MODULES[module_name]
         module.add_options(parser)
+        return (parser, module)
 
-        (options, args) = parser.parse_args(argv[2:])
-        module.run(options)
 
     def help(self):
-        """ Display help info to the user. """
-        # TODO
-        print "Help!"
+        """ 
+        Display help info to the user. 
+
+        Constructs an OptionParser for each module and calls it's print_help
+        method.
+        """
+        for module_name in MODULES.keys():
+            parser = self.__generate_module_option_parser(module_name)[0]
+            parser.print_help()
+            print "\n\n"
         sys.exit(1)
