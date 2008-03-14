@@ -20,19 +20,10 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 from pulp.model.contentmanager import DummyContentSourceContentManager 
 from pulp.actions.reposync import RepoSync
 
-HELP_FORMAT = "%-20s%s"
-
 class CliModule:
     """
     Parent command line module class.
     """
-
-    def help(self, parser):
-        """
-        Return a single line of help information for use when a user runs the
-        parent pulp command line asking for help or without a module/args.
-        """
-        raise NotImplementedError
 
     def add_options(self, parser):
         """
@@ -50,10 +41,6 @@ class CliModule:
 
 
 class RepoModule(CliModule):
-
-    def help(self):
-        return HELP_FORMAT % ("pulp repo",
-                "<--list|> [ARGS|--help]")
 
     def add_options(self, parser):
 
