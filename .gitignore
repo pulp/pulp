@@ -4,3 +4,6 @@
 .pydevproject
 *.swp
 *.swo
+build
+dist
+pulp.egg-info
