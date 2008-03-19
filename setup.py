@@ -19,7 +19,7 @@ setup(
     install_requires = [
         "TurboGears >= 1.0.2.2",
     ],
-    scripts = ["start-pulp.py"],
+    scripts = ["start-pulp.py", "scripts/pulp"],
     zip_safe=False,
     packages=find_packages(),
     package_data = find_package_data(where='pulp',

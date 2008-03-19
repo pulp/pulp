@@ -44,16 +44,13 @@ class RepoModule(CliModule):
 
     def add_options(self, parser):
 
-        parser.add_option("--sync-all", action="store_true", dest="sync_all",
-            help="Sync all repositories.")
         parser.add_option("--list", action="store_true", dest="list",
             help="List all repositories.")
+        parser.add_option("--sync-all", action="store_true", dest="sync_all",
+            help="Sync all repositories.")
 
 
     def run(self, options):
-        print "Hello world!"
-        print options
-
         # TODO: Better way to do this with optparse?
         # Restrict to only one "sub-command":
         sub_commands = {

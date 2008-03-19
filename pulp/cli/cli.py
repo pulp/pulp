@@ -35,20 +35,49 @@ class PulpCommandLine:
             self.help()
 
         module_name = argv[1]
-        print "Module: %s" % module_name
+
+        # If only one argument, display the help for just that module:
+        if len(argv) == 2:
+            self.help(module_name)
+
+        (parser, module) = self.__generate_module_option_parser(module_name)
+
+        (options, args) = parser.parse_args(argv[2:])
+        module.run(options)
+
+    def __generate_module_option_parser(self, module_name):
+        """ 
+        Generate an OptionParser for the given module. 
+
+        Does not actually call the parse_args method.
+
+        Return a tuple of option parser and CLI module.
+        """
+        usage = "usage: %prog " + module_name + " [options]"
         if not MODULES.has_key(module_name):
-            print "ERROR: Unknown module: %s" % module_name
+            print "ERROR: Unknown module: %s\n" % module_name
             self.help()
 
         parser = OptionParser()
         module = MODULES[module_name]
         module.add_options(parser)
+        return (parser, module)
 
-        (options, args) = parser.parse_args(argv[2:])
-        module.run(options)
 
-    def help(self):
-        """ Display help info to the user. """
-        # TODO
-        print "Help!"
+    def help(self, module_name=None):
+        """ 
+        Display help info to the user. 
+
+        Constructs an OptionParser for each module and calls it's print_help
+        method.
+        """
+        modules_to_print = MODULES.keys()
+        if module_name != None:
+            modules_to_print = [module_name]
+
+        for module_name in modules_to_print:
+            parser = self.__generate_module_option_parser(module_name)[0]
+            parser.print_help()
+            if len(modules_to_print) > 1:
+                print "\n\n"
         sys.exit(1)
