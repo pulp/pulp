@@ -1,0 +1,6 @@
+
+    [turbogears.identity.provider]
+    webserviceprovider = pulp.identity.webserviceprovider:WebServiceIdentityProvider
+    [turbogears.visit.manager]
+    simplevisit = pulp.identity.simplevisit:SimpleVisitManager
+    
