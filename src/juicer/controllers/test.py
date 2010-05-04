@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -16,10 +16,10 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
+import web
 
-from juicer.controllers.test import test_index
 
-
-URLS = (
-    '/.*', 'test_index',
-)
+class test_index(object):
+    
+    def GET(self):
+        return "Hello World!"

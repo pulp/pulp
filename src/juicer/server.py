@@ -15,38 +15,34 @@
 # in this software or its documentation.
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
-__version__ = '0.0.0'
 
 import gevent.socket
 import gevent.ssl
 import gevent.wsgi
+import web
 
-
-def hello_application(environ, start_response):
-    start_response('200 OK', [('Content-Type', 'text/plain')])
-    return ['Hello World!']
+from juicer.urls import URLS
 
 
 def _create_socket(config):
     address = config.get('server', 'address')
     port = config.getint('server', 'port')
-    #address = '127.0.0.1'
-    #port = 8811
     socket = gevent.socket.tcp_listener((address, port))
     if config.getboolean('server', 'use_ssl'):
-    #if False:
         keyfile = config.get('ssl', 'keyfile')
         certfile = config.get('ssl', 'certfile')
         socket = gevent.ssl.SSLSocket(socket, keyfile, certfile)
     return socket
 
 
-def get_server(config):
-    server = gevent.wsgi.WSGIServer(_create_socket(config),
-                                    hello_application)
-    return server
-
-# testing ---------------------------------------------------------------------
-
-if __name__ == '__main__':
+def _configure_application(application, config):
+    # TODO (2010-05-04 jconnor) add configuration file options to application
     pass
+
+
+def get_server(config):
+    socket = _create_socket(config)
+    application = web.application(URLS, globals())
+    _configure_application(application, config)
+    server = gevent.wsgi.WSGIServer(socket, application.wsgifunc())
+    return server

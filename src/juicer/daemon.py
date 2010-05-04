@@ -24,7 +24,6 @@ import time
 from juicer.server import get_server
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
-__version__ = '0.0.0'
 
 
 def parse_cmdline():
@@ -107,4 +106,6 @@ def run():
 # testing ---------------------------------------------------------------------
 
 if __name__ == '__main__':
-    pass
+    # XXX this must be run from the parent directory
+    sys.argv.extend(('-c', '../etc/juicer.ini', '-F'))
+    run()
