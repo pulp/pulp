@@ -31,7 +31,7 @@ def _create_socket(config):
     #address = config.get('server', 'address')
     #port = config.getint('server', 'port')
     address = '127.0.0.1'
-    port = 8311
+    port = 8811
     socket = gevent.socket.tcp_listener((address, port))
     #if config.getbool('server', 'use_ssl'):
     if False:

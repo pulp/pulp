@@ -101,7 +101,7 @@ def run():
     if not opts.foreground:
         daemonize()
     server = get_server(config)
-    server.server_forever()
+    server.serve_forever()
     return os.EX_OK
 
 # testing ---------------------------------------------------------------------
