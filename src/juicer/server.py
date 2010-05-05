@@ -19,9 +19,8 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 import gevent.socket
 import gevent.ssl
 import gevent.wsgi
-import web
 
-from juicer.urls import URLS
+from juicer.application import wsgi_application
 
 
 def _create_socket(config):
@@ -35,14 +34,8 @@ def _create_socket(config):
     return socket
 
 
-def _configure_application(application, config):
-    # TODO (2010-05-04 jconnor) add configuration file options to application
-    pass
-
-
 def get_server(config):
     socket = _create_socket(config)
-    application = web.application(URLS, globals())
-    _configure_application(application, config)
-    server = gevent.wsgi.WSGIServer(socket, application.wsgifunc())
+    application = wsgi_application(config)
+    server = gevent.wsgi.WSGIServer(socket, application)
     return server

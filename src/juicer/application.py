@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -16,6 +16,7 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
+import web
 
 from juicer.controllers.test import test_index
 
@@ -23,3 +24,15 @@ from juicer.controllers.test import test_index
 URLS = (
     '/.*', 'test_index',
 )
+
+
+
+def _configure_application(application, config):
+    # TODO (2010-05-04 jconnor) add configuration file options to application
+    pass
+
+
+def wsgi_application(config):
+    application = web.application(URLS, globals())
+    _configure_application(application, config)
+    return application.wsgifunc()

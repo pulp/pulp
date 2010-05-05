@@ -108,4 +108,5 @@ def run():
 if __name__ == '__main__':
     # XXX this must be run from the parent directory
     sys.argv.extend(('-c', '../etc/juicer.ini', '-F'))
-    run()
+    sys.path.append('.')
+    sys.exit(run())
