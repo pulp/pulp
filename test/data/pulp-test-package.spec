@@ -1,5 +1,5 @@
 Name: pulp-test-package
-Version: 0.1.1	
+Version: 0.2.1	
 Release: 1%{?dist}
 Summary: Test package	
 
@@ -38,6 +38,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed May 05 2010 Mike McCune <mmccune@redhat.com> 0.2.1-1
+- new package
+
 * Wed May 05 2010 <mmccune@redhat.com> - 0.1.1
 - Initial rev
 
