@@ -21,9 +21,9 @@ import model
 from pymongo import Connection
 
 class RepoApi(object):
-    '''
+    """
     API for create/delete/syncing of Repo objects
-    '''
+    """
     def __init__(self):
         ####### Mongo DB ########
         connection = Connection()
@@ -31,30 +31,55 @@ class RepoApi(object):
         self.collection = self.db.pulp_collection
         self.repos = self.db.repos
 
-    
+    def clean(self):
+        """
+        Delete all the Repos in the database.  WARNING: Destructive
+        """
+        self.repos.remove()
+
     def repositories(self):
+        """
+        Return a list of Repositories
+        """
         return list(self.repos.find())
         
     def repository(self, id):
-        return
+        """
+        Return a single Repository object
+        """
+        return self.repos.find_one({'id': id})
         
     def packages(self, id):
-        return
+        """
+        Return list of Package objects in this Repo
+        """
+        repo = repository(id)
+        return repo['packages']
+        
+    def update(self, repo):
+        """
+        Write the repository document to the database
+        """
+        self.repos.save(repo)
     
     def create(self, id, name, arch, feed):
+        """
+        Create a new Repository object and return it
+        """
         r = model.Repo(id, name, arch, feed)
         self.repos.insert(r)
         return r
         
 
     def delete(self, id):
-        return
+        """
+        Delete a single Repository
+        """
+        self.repos.remove({'id': id})
         
     def clone(self, id, newid, newname):
         return
     
-    def clone(self, id):
-        return
 
         
         

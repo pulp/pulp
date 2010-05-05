@@ -18,6 +18,7 @@
 import sys
 sys.path.append("../src")
 from pulp.api import RepoApi
+from pulp.model import Package
 
 import time
 import unittest
@@ -26,19 +27,35 @@ import logging
 class TestApi(unittest.TestCase):
 
     def setUp(self):
-        print('Setting up test environment')
-
+        self.rapi = RepoApi()
+        
+    def tearDown(self):
+        RepoApi().clean()
+        
     def test_create(self):
-        rapi = RepoApi()
-        repo = rapi.create('some-id','some name', 'i386', 'http://example.com')
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
         assert(repo != None)
         
+    def test_clean(self):
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
+        self.rapi.clean()
+        repos = self.rapi.repositories()
+        assert(len(repos) == 0)
+        
+    def test_delete(self):
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
+        repos = self.rapi.delete('some-id')
+        assert(repos == None or len(repos) == 0)
+        
     def test_repositories(self):
-        rapi = RepoApi()
-        repo = rapi.create('some-id','some name', 'i386', 'http://example.com')
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
         
         # list all the repos
-        repos = rapi.repositories()
+        repos = self.rapi.repositories()
         found = False
         assert(len(repos) > 0)
         for r in repos:
@@ -47,11 +64,29 @@ class TestApi(unittest.TestCase):
                 found = True
 
         assert(found)
-            
-
-
+    
+    def test_repository(self):
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
+        
+        found = self.rapi.repository('some-id')
+        assert(found != None)
+        assert(found['id'] == 'some-id')
+        
+    def test_repo_packages(self):
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
+        package = Package('test_repo_packages','test package')
+        repo.packages[package.id] = package
+        self.rapi.update(repo)
+        
+        found = self.rapi.repository('some-id')
+        packages = found['packages']
+        assert(packages != None)
+        assert(packages['test_repo_packages'] != None)
+        
+        
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.INFO)
-
     unittest.main()
