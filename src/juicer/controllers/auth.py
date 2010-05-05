@@ -14,10 +14,24 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import auth
-import consumers
-import packages
-import repositories
-import test
+__author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-__all__ = ['auth', 'consumers', 'packages', 'repositories', 'test']
+import web
+
+
+class login(object):
+    
+    def POST(self):
+        # TODO authorize and set a session cookie
+        pass
+    
+
+class logout(object):
+    
+    def POST(self):
+        # TODO end session
+        pass
+    
+# web.py application ----------------------------------------------------------
+
+application = web.auto_application()

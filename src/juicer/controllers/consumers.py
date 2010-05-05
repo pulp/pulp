@@ -16,18 +16,43 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
+import json
 import web
 
-
-class index(object):
+# queries ---------------------------------------------------------------------
+    
+class list(object):
+    """
+    List all consumers.
+    """
     def GET(self):
-        return "Hello World!"
+        pass
+    
+# actions ---------------------------------------------------------------------
+ 
+class add(object):
+    """
+    Add a consumer.
+    """
+    def POST(self):
+        # TODO glean the id, name, and repo from posted JSON
+        pass
+    
+    
+class subscribe(object):
+    """
+    Subscribe a user to a repository.
+    """
+    def POST(self, consumer_id, repo_id):
+        pass
+    
     
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/.*', 'index',
+    '/', 'list',
+    '/add/', 'add',
+    '/(\d+)/subscribe/(\d+)', 'subscribe',
 )
 
-#application = web.application(URLS, globals())
-application = web.auto_application()
+application = web.application(URLS, globals())

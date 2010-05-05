@@ -14,10 +14,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import auth
-import consumers
-import packages
-import repositories
-import test
+__author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-__all__ = ['auth', 'consumers', 'packages', 'repositories', 'test']
+import web
+    
+# web.py application ----------------------------------------------------------
+
+application = web.auto_application()

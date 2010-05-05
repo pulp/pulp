@@ -18,11 +18,15 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
-from juicer.controllers.test import test_index
+from juicer import controllers
 
 
 URLS = (
-    '/.*', 'test_index',
+    '/test', controllers.test.application,
+    '/auth', controllers.auth.application,
+    '/consumers', controllers.consumers.application,
+    '/packages', controllers.packages.application,
+    '/repositories', controllers.repositories.application,
 )
 
 
@@ -33,6 +37,6 @@ def _configure_application(application, config):
 
 
 def wsgi_application(config):
-    application = web.application(URLS, globals())
+    application = web.subdir_application(URLS)
     _configure_application(application, config)
     return application.wsgifunc()
