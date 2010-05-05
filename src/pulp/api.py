@@ -15,12 +15,16 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+import os
 import pymongo
 import model
+from util import getRPMInformation
+from grinder.RepoFetch import YumRepoGrinder
 
 from pymongo import Connection
 
 class RepoApi(object):
+    
     """
     API for create/delete/syncing of Repo objects
     """
@@ -30,6 +34,8 @@ class RepoApi(object):
         self.db = connection._database
         self.collection = self.db.pulp_collection
         self.repos = self.db.repos
+        # TODO: Extract this to a config
+        self.LOCAL_STORAGE = "/var/lib/pulp/"
 
     def clean(self):
         """
@@ -85,8 +91,28 @@ class RepoApi(object):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         
+        print "Creating repo grinder"
+        yfetch = YumRepoGrinder(repo['id'], repo['feed'], 1)
+        yfetch.fetchYumRepo(self.LOCAL_STORAGE)
+        self._add_packages_from_dir(self.LOCAL_STORAGE, repo)
+        self.update(repo)
+        print "fetched!"
         return
     
+    def _add_packages_from_dir(self, base_dir, repo):
+        repo_dir = "%s/%s/" % (base_dir, repo['id'])
+        dirList=os.listdir(repo_dir)
+        packages = repo['packages']
+        package_count = 0
+        for fname in dirList:
+            if (fname.endswith(".rpm")):
+                info = getRPMInformation(repo_dir + fname)
+                # print "rpm name: %s" % info['name']
+                p = model.Package(info['name'], info['description'])
+                packages[p.id] = p
+                package_count = package_count + 1
+        
+        print "read [%s] packages" % package_count
 
         
         

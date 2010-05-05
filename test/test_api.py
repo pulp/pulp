@@ -23,6 +23,7 @@ from pulp.model import Package
 import time
 import unittest
 import logging
+import os
 
 class TestApi(unittest.TestCase):
 
@@ -66,7 +67,7 @@ class TestApi(unittest.TestCase):
         assert(found)
     
     def test_repository(self):
-        repo = self.rapi.create('some-id','some name', 
+        repo = self.rapi.create('some-id','some name', \
             'i386', 'http://example.com')
         
         found = self.rapi.repository('some-id')
@@ -74,7 +75,7 @@ class TestApi(unittest.TestCase):
         assert(found['id'] == 'some-id')
         
     def test_repo_packages(self):
-        repo = self.rapi.create('some-id','some name', 
+        repo = self.rapi.create('some-id','some name', \
             'i386', 'http://example.com')
         package = Package('test_repo_packages','test package')
         repo.packages[package.id] = package
@@ -85,10 +86,25 @@ class TestApi(unittest.TestCase):
         assert(packages != None)
         assert(packages['test_repo_packages'] != None)
         
-    def test_sync(self);
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'http://example.com')
+    def test_sync(self):
+        repo = self.rapi.create('some-id','some name', 'i386', 
+                                'http://localhost/repo/sat-ng/')
+        failed = False
+        try:
+            self.rapi.sync('invalid-id-not-found')
+        except Exception:
+            failed = True
+        assert(failed)
         
+        self.rapi.sync(repo.id)
+        
+        # Check that local storage has dir and rpms
+        dirList = os.listdir(self.rapi.LOCAL_STORAGE + '/' + repo.id)
+        assert(len(dirList) > 0)
+        found = self.rapi.repository(repo.id)
+        packages = found['packages']
+        assert(packages != None)
+        assert(len(packages) > 0)
         
         
 if __name__ == '__main__':

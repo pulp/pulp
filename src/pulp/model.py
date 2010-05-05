@@ -44,7 +44,6 @@ class Package(Base):
 
 class Version(Base):
     def __init__(self, id, version_str):
-        self.id = id
         self.version_str = version_str
         
 class Consumer(Base):
