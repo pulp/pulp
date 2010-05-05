@@ -85,6 +85,11 @@ class TestApi(unittest.TestCase):
         assert(packages != None)
         assert(packages['test_repo_packages'] != None)
         
+    def test_sync(self);
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'http://example.com')
+        
+        
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

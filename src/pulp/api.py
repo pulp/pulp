@@ -77,7 +77,14 @@ class RepoApi(object):
         """
         self.repos.remove({'id': id})
         
-    def clone(self, id, newid, newname):
+    def sync(self, id):
+        """
+        Sync a repo from the URL contained in the feed
+        """
+        repo = self.repository(id)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % id)
+        
         return
     
 
