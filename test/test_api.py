@@ -17,7 +17,7 @@
 #
 import sys
 sys.path.append("../src")
-from api.api import RepoApi
+from pulp.api import RepoApi
 
 import time
 import unittest
