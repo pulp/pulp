@@ -19,7 +19,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp',
-    version='0.0.0'
+    version='0.0.0',
     description='content mangement and delivery',
     author='Jason L Connor, Mike McCune',
     author_email='jconnor@redhat.com, mmcune@redhat.com',
