@@ -56,6 +56,9 @@ rm -rf %{buildroot}
 %{_includedir}/python*/greenlet
 
 %changelog
+* Thu May 06 2010 Mike McCune <mmccune@redhat.com> 0.3.1-1
+- import locally so we can build
+
 * Wed Apr 14 2010 Lev Shamardin <shamardin@gmail.com> - 0.3.1-2
 - Splitted headers into a -devel package.
 
