@@ -59,7 +59,7 @@ class RepoApi(object):
         """
         Return list of Package objects in this Repo
         """
-        repo = repository(id)
+        repo = self.repository(id)
         return repo['packages']
         
     def update(self, repo):

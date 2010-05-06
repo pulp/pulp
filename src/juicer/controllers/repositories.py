@@ -17,7 +17,73 @@
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
+
+from juicer.controllers.base import JSONController
+from pulp.api import RepoApi
+
+# api JSONController ------------------------------------------------------------------
+
+API = RepoApi()
+
+# controllers -----------------------------------------------------------------
+
+class Repositories(JSONController):
+    
+    def GET(self):
+        return self.output(API.repositories())
+    
+    
+class Repository(JSONController):
+    
+    def DELETE(self, id):
+        API.delete(id)
+        return self.output(True)
+
+    def GET(self, id):
+        return self.output(API.repository(id))
+    
+    
+class Packages(JSONController):
+    
+    def GET(self, id):
+        return self.output(API.packages(id))
+    
+    
+class Update(JSONController):
+    
+    def POST(self):
+        repo = self.input()
+        API.update(repo)
+        return self.output(True)
+    
+    
+class Create(JSONController):
+    
+    def POST(self):
+        repo_data = self.input()
+        repo = API.create(repo_data['id'],
+                          repo_data['name'],
+                          repo_data['arch'],
+                          repo_data['feed'])
+        return self.output(repo)
+    
+    
+class Sync(JSONController):
+    
+    def GET(self, id):
+        API.sync(id)
+        return self.output(True)
+    
     
 # web.py application ----------------------------------------------------------
 
-application = web.auto_application()
+URLS = (
+    '/', 'Repositories',
+    '/(\d+)', 'Repository',
+    '/packages/(\d+)', 'Packages',
+    '/update', 'Update',
+    '/create', 'Create',
+    '/sync/(\d+)', 'Sync',
+)
+
+application = web.application(URLS, globals())

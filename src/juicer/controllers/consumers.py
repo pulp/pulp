@@ -16,12 +16,11 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-import json
 import web
 
 # queries ---------------------------------------------------------------------
     
-class list(object):
+class List(object):
     """
     List all consumers.
     """
@@ -30,7 +29,7 @@ class list(object):
     
 # actions ---------------------------------------------------------------------
  
-class add(object):
+class Add(object):
     """
     Add a consumer.
     """
@@ -39,7 +38,7 @@ class add(object):
         pass
     
     
-class subscribe(object):
+class Subscribe(object):
     """
     Subscribe a user to a repository.
     """
@@ -50,9 +49,9 @@ class subscribe(object):
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/', 'list',
-    '/add/', 'add',
-    '/(\d+)/subscribe/(\d+)', 'subscribe',
+    '/', 'List',
+    '/add', 'Add',
+    '/(\d+)/subscribe/(\d+)', 'Subscribe',
 )
 
 application = web.application(URLS, globals())
