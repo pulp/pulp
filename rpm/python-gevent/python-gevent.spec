@@ -9,8 +9,7 @@ Summary:        Python network library that uses greenlet and libevent for easy 
 Group:          Development/Libraries
 License:        MIT
 URL:            http://www.gevent.org/
-Source0:        http://pypi.python.org/packages/source/g/gevent/gevent-%{version}.tar.gz
-#Source0:        gevent-%{version}.tar.gz
+Source0:        gevent-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  python-devel

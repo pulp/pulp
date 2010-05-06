@@ -87,8 +87,9 @@ class TestApi(unittest.TestCase):
         assert(packages['test_repo_packages'] != None)
         
     def test_sync(self):
+        
         repo = self.rapi.create('some-id','some name', 'i386', 
-                                'http://localhost/repo/sat-ng/')
+                                'http://localhost/repo/f11-i386/')
         failed = False
         try:
             self.rapi.sync('invalid-id-not-found')
