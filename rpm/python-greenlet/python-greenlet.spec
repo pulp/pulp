@@ -3,8 +3,8 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           python-greenlet
-Version:        0.3.1
-Release:        2%{?dist}
+Version:        0.3.2
+Release:        1%{?dist}
 Summary:        Lightweight in-process concurrent programming
 Group:          Development/Libraries
 License:        MIT
@@ -56,6 +56,9 @@ rm -rf %{buildroot}
 %{_includedir}/python*/greenlet
 
 %changelog
+* Thu May 06 2010 Mike McCune <mmccune@redhat.com> 0.3.2-1
+- new package
+
 * Wed Apr 14 2010 Lev Shamardin <shamardin@gmail.com> - 0.3.1-2
 - Splitted headers into a -devel package.
 
