@@ -89,7 +89,7 @@ class TestApi(unittest.TestCase):
     def test_sync(self):
         
         repo = self.rapi.create('some-id','some name', 'i386', 
-                                'http://localhost/repo/f11-i386/')
+                                'http://mmccune.fedorapeople.org/pulp/')
         failed = False
         try:
             self.rapi.sync('invalid-id-not-found')
