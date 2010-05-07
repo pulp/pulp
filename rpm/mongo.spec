@@ -132,6 +132,10 @@ fi
 #%{_libdir}/libmongotestfiles.a
 
 %changelog
+* Fri May 7, 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2
+- chaged spec to use with default naming of source tarball
+- updated to version 1.4.2
+
 * Thu Jan 28 2010 Richard M Kreuter <richard@10gen.com>
 - Minor fixes.
 
