@@ -4,7 +4,7 @@
 
 Name:           python-greenlet
 Version:        0.3.1
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Lightweight in-process concurrent programming
 Group:          Development/Libraries
 License:        MIT
@@ -56,7 +56,7 @@ rm -rf %{buildroot}
 %{_includedir}/python*/greenlet
 
 %changelog
-* Thu May 06 2010 Mike McCune <mmccune@redhat.com> 0.3.1-4
+* Thu May 06 2010 Mike McCune <mmccune@redhat.com> 0.3.1-5
 - import locally so we can build
 
 * Wed Apr 14 2010 Lev Shamardin <shamardin@gmail.com> - 0.3.1-2
