@@ -30,7 +30,7 @@ Requires:       %{name} = %{version}-%{release}
 This package contains header files required for C modules development.
 
 %prep
-%setup -q -n greenlet-%{version}
+%setup -q -n %{name}-%{version}
 
 %build
 #CFLAGS="$RPM_OPT_FLAGS" %{__python} setup.py build
