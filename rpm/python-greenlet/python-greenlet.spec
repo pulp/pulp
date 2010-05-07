@@ -4,13 +4,13 @@
 
 Name:           python-greenlet
 Version:        0.3.1
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Lightweight in-process concurrent programming
 Group:          Development/Libraries
 License:        MIT
 URL:            http://pypi.python.org/pypi/greenlet
 Source0:        python-greenlet-0.3.1.tar.gz
-BuildRoot:      %{_tmppath}/greenlet-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
@@ -56,7 +56,7 @@ rm -rf %{buildroot}
 %{_includedir}/python*/greenlet
 
 %changelog
-* Thu May 06 2010 Mike McCune <mmccune@redhat.com> 0.3.1-5
+* Thu May 06 2010 Mike McCune <mmccune@redhat.com> 0.3.1-6
 - import locally so we can build
 
 * Wed Apr 14 2010 Lev Shamardin <shamardin@gmail.com> - 0.3.1-2
