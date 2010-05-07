@@ -16,12 +16,14 @@
 # in this software or its documentation.
 #
 import os
+
 import pymongo
-import model
-from util import getRPMInformation
+
 from grinder.RepoFetch import YumRepoGrinder
 
-from pymongo import Connection
+from pulp import model
+from pulp.pexceptions import PulpException
+from pulp.util import getRPMInformation
 
 class RepoApi(object):
     
@@ -30,7 +32,7 @@ class RepoApi(object):
     """
     def __init__(self):
         ####### Mongo DB ########
-        connection = Connection()
+        connection = pymongo.Connection()
         self.db = connection._database
         self.collection = self.db.pulp_collection
         self.repos = self.db.repos

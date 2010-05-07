@@ -21,7 +21,20 @@ import web
 from juicer.controllers.base import JSONController
 from pulp.api import RepoApi
 
-# api JSONController ------------------------------------------------------------------
+# web.py application ----------------------------------------------------------
+
+URLS = (
+    '/', 'Repositories',
+    '/(\d+)', 'Repository',
+    '/update', 'Update',
+    '/create', 'Create',
+    '/sync/(\d+)', 'Sync',
+    '/packages/(\d+)', 'Packages',
+)
+
+application = web.application(URLS, globals())
+
+# repository api --------------------------------------------------------------
 
 API = RepoApi()
 
@@ -30,28 +43,36 @@ API = RepoApi()
 class Repositories(JSONController):
     
     def GET(self):
+        """
+        @return: a list of all available repositories
+        """
         return self.output(API.repositories())
     
     
 class Repository(JSONController):
     
     def DELETE(self, id):
+        """
+        @param id: repository id
+        @return: True on successful deletion of repository
+        """
         API.delete(id)
         return self.output(True)
 
     def GET(self, id):
+        """
+        @param id: repository id
+        @return: repository meta data
+        """
         return self.output(API.repository(id))
-    
-    
-class Packages(JSONController):
-    
-    def GET(self, id):
-        return self.output(API.packages(id))
     
     
 class Update(JSONController):
     
     def POST(self):
+        """
+        @return: True on successful update or repository meta data
+        """
         repo = self.input()
         API.update(repo)
         return self.output(True)
@@ -60,6 +81,9 @@ class Update(JSONController):
 class Create(JSONController):
     
     def POST(self):
+        """
+        @return: repository meta data on successful creation of repository
+        """
         repo_data = self.input()
         repo = API.create(repo_data['id'],
                           repo_data['name'],
@@ -71,19 +95,19 @@ class Create(JSONController):
 class Sync(JSONController):
     
     def GET(self, id):
+        """
+        @param id: repository id
+        @return: True on successful sync of repository from feed
+        """
         API.sync(id)
         return self.output(True)
+       
+  
+class Packages(JSONController):
     
-    
-# web.py application ----------------------------------------------------------
-
-URLS = (
-    '/', 'Repositories',
-    '/(\d+)', 'Repository',
-    '/packages/(\d+)', 'Packages',
-    '/update', 'Update',
-    '/create', 'Create',
-    '/sync/(\d+)', 'Sync',
-)
-
-application = web.application(URLS, globals())
+    def GET(self, id):
+        """
+        @param id: repository id
+        @return: list of all packages available in corresponding repository
+        """
+        return self.output(API.packages(id))
