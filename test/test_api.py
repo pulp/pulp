@@ -130,6 +130,21 @@ class TestApi(unittest.TestCase):
         assert(packages != None)
         assert(len(packages) > 0)
         
+    def test_local_sync(self):
+        cwd = os.getcwd()
+        datadir = cwd + "/data"
+        print "Data dir! %s" % datadir
+        repo = self.rapi.create('some-id','some name', 'i386', 
+                                'local:file://%s' % datadir)
+                                
+        self.rapi.sync(repo.id)
+        found = self.rapi.repository(repo.id)
+        packages = found['packages']
+        assert(packages != None)
+        assert(len(packages) > 0)
+    
+
+        
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

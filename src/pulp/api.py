@@ -99,24 +99,29 @@ class RepoApi(object):
             print "Creating repo grinder: %s" % rs.url
             yfetch = YumRepoGrinder(repo['id'], rs.url, 1)
             yfetch.fetchYumRepo(self.LOCAL_STORAGE)
-            self._add_packages_from_dir(self.LOCAL_STORAGE, repo)
+            repo_dir = "%s/%s/" % (self.LOCAL_STORAGE, repo['id'])
+            self._add_packages_from_dir(repo_dir, repo)
             self.update(repo)
             print "fetched!"
         if (rs.type == 'local'):
-            parts = urlparse(rs.url)
-            self._add_packages_from_dir(parts['path'], repo)
+            print "Local URL: %s" % rs.url
+            local_url = rs.url
+            if (not local_url.endswith('/')):
+                local_url = local_url + '/'
+            parts = urlparse(local_url)
+            print "PARTS: %s" % str(parts)
+            self._add_packages_from_dir(parts.path, repo)
             self.update(repo)
             
         return
     
-    def _add_packages_from_dir(self, base_dir, repo):
-        repo_dir = "%s/%s/" % (base_dir, repo['id'])
-        dirList=os.listdir(repo_dir)
+    def _add_packages_from_dir(self, dir, repo):
+        dirList=os.listdir(dir)
         packages = repo['packages']
         package_count = 0
         for fname in dirList:
             if (fname.endswith(".rpm")):
-                info = getRPMInformation(repo_dir + fname)
+                info = getRPMInformation(dir + fname)
                 # print "rpm name: %s" % info['name']
                 p = model.Package(info['name'], info['description'])
                 packages[p.id] = p
