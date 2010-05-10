@@ -31,7 +31,7 @@ ERROR = 'error'
 class Task(object):
     """
     Task class
-    Used to run long-running tasks in their own thread.
+    Execute a long-running task in its own thread
     """
     def __init__(self, callable, args=[], kwargs={}):
         """
