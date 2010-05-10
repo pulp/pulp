@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# Authors: Jason Dobies
+# Authors: Mike McCune
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -35,25 +35,48 @@ class TestApi(unittest.TestCase):
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
-            'i386', 'http://example.com')
+            'i386', 'yum:http://example.com')
         assert(repo != None)
+        
+    def test_feed_types(self):
+        failed = False
+        try:
+            repo = self.rapi.create('some-id','some name', 
+                'i386', 'invalidtype:http://example.com/')
+        except:
+            failed = True
+        assert(failed)
+
+        try:
+            repo = self.rapi.create('some-id','some name', 
+                'i386', 'blippybloopyfoo')
+        except:
+            failed = True
+        assert(failed)
+        
+        
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'yum:http://example.com')
+        assert(repo != None)
+        assert(repo.repo_source.type == 'yum')
+        
         
     def test_clean(self):
         repo = self.rapi.create('some-id','some name', 
-            'i386', 'http://example.com')
+            'i386', 'yum:http://example.com')
         self.rapi.clean()
         repos = self.rapi.repositories()
         assert(len(repos) == 0)
         
     def test_delete(self):
         repo = self.rapi.create('some-id','some name', 
-            'i386', 'http://example.com')
+            'i386', 'yum:http://example.com')
         repos = self.rapi.delete('some-id')
         assert(repos == None or len(repos) == 0)
         
     def test_repositories(self):
         repo = self.rapi.create('some-id','some name', 
-            'i386', 'http://example.com')
+            'i386', 'yum:http://example.com')
         
         # list all the repos
         repos = self.rapi.repositories()
@@ -68,7 +91,7 @@ class TestApi(unittest.TestCase):
     
     def test_repository(self):
         repo = self.rapi.create('some-id','some name', \
-            'i386', 'http://example.com')
+            'i386', 'yum:http://example.com')
         
         found = self.rapi.repository('some-id')
         assert(found != None)
@@ -76,7 +99,7 @@ class TestApi(unittest.TestCase):
         
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
-            'i386', 'http://example.com')
+            'i386', 'yum:http://example.com')
         package = Package('test_repo_packages','test package')
         repo.packages[package.id] = package
         self.rapi.update(repo)
@@ -89,7 +112,7 @@ class TestApi(unittest.TestCase):
     def test_sync(self):
         
         repo = self.rapi.create('some-id','some name', 'i386', 
-                                'http://mmccune.fedorapeople.org/pulp/')
+                                'yum:http://mmccune.fedorapeople.org/pulp/')
         failed = False
         try:
             self.rapi.sync('invalid-id-not-found')

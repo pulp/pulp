@@ -16,6 +16,7 @@
 # in this software or its documentation.
 #
 
+from pulp.pexceptions import PulpException
 
 class Base(dict):
     '''
@@ -27,14 +28,39 @@ class Base(dict):
     __setattr__= dict.__setitem__
     __delattr__= dict.__delitem__
 
-
 class Repo(Base):
-    def __init__(self, id, name, arch, feed):
+    def __init__(self, id, name, arch, source):
+        self.source = source
+        self.repo_source = RepoSource(source)
         self.id = id
         self.name = name
         self.arch = arch
-        self.feed = feed
         self.packages = dict()
+        
+    def get_repo_source(self):
+        return RepoSource(self.source)
+    
+        
+class RepoSource(Base):
+    # yum:http://blah.bloop.com
+    
+    def __init__(self, url):
+        self.supported_types = ['yum', 'local', 'rhn']
+        self.type = None
+        self.url = None
+        self.parse_feed(url)
+        
+    def parse_feed(self, source):
+        parts = source.split(':')
+        if (len(parts) < 2):
+            msg = "Invalid feed url.  Must be <type>:<path> where types are: %s"
+            raise PulpException(msg % supported_types)
+        if (self.supported_types.count(parts[0]) < 1):
+            raise PulpException("Invalid type.  valid types are %s" 
+                                % self.supported_types)
+        self.type = parts[0]
+        self.url = source.replace((self.type + ":"), "")
+
 
 class Package(Base):
     def __init__(self, id, description):

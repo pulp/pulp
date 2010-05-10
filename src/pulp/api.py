@@ -18,6 +18,7 @@
 import os
 
 import pymongo
+from urlparse import urlparse
 
 from grinder.RepoFetch import YumRepoGrinder
 
@@ -93,12 +94,19 @@ class RepoApi(object):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         
-        print "Creating repo grinder"
-        yfetch = YumRepoGrinder(repo['id'], repo['feed'], 1)
-        yfetch.fetchYumRepo(self.LOCAL_STORAGE)
-        self._add_packages_from_dir(self.LOCAL_STORAGE, repo)
-        self.update(repo)
-        print "fetched!"
+        rs = model.RepoSource(repo['source'])
+        if (rs.type == 'yum'):
+            print "Creating repo grinder: %s" % rs.url
+            yfetch = YumRepoGrinder(repo['id'], rs.url, 1)
+            yfetch.fetchYumRepo(self.LOCAL_STORAGE)
+            self._add_packages_from_dir(self.LOCAL_STORAGE, repo)
+            self.update(repo)
+            print "fetched!"
+        if (rs.type == 'local'):
+            parts = urlparse(rs.url)
+            self._add_packages_from_dir(parts['path'], repo)
+            self.update(repo)
+            
         return
     
     def _add_packages_from_dir(self, base_dir, repo):
