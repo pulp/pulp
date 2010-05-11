@@ -21,8 +21,11 @@ import threading
 import traceback
 from datetime import datetime
 
+from pulp.tasks.queue.base import TaskQueue
+
 
 CREATED = 'created'
+RESET = 'reset'
 RUNNING = 'running'
 FINISHED = 'finished'
 ERROR = 'error'
@@ -58,15 +61,7 @@ class Task(object):
     @property
     def id(self):
         return self.__thread.ident
-    
-    def _set_queue(self, task_queue):
-        """
-        Semi-private method when used in conjunction with a
-        pulp.tasks.queue.TaskQueue instance for setting a back reference to the
-        queue itself.
-        """
-        self.__queue = task_queue
-        
+       
     def __wrapper(self):
         """
         Private wrapper that executes the callable and captures and records any
@@ -85,10 +80,30 @@ class Task(object):
             self.status = FINISHED
         self.finish_time = datetime.now()
         if self.__queue is not None:
-            self.__queue._finished(self)        
-        
+            self.__queue.finished(self)        
+    
+    def set_queue(self, task_queue):
+        """
+        Called by a TaskQueue instance for setting a back reference to the queue
+        itself.
+        """
+        assert task_queue is None or isinstance(task_queue, TaskQueue)
+        self.__queue = task_queue
+         
     def run(self):
         """
         Run this task's callable in a separate thread.
         """
         self.__thread.run()
+        
+    def reset(self, args=None, kwargs=None):
+        if args is not None:
+            self.args = args
+        if kwargs is not None:
+            self.kwargs = kwargs
+        
+        self.status = RESET
+        self.start_time = None
+        self.finish_time = None
+        self.exception = None
+        self.traceback = None
