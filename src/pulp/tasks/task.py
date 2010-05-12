@@ -17,6 +17,7 @@
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 import sys
+import thread
 import threading
 import traceback
 from datetime import datetime
@@ -83,9 +84,15 @@ class Task(object):
   
     def _wrapper(self):
         """
-        Protected wrapper that exe    cutes the callable and captures and records any
+        Protected wrapper that executes the callable and captures and records any
         exceptions in a separate thread.
         """
+        # XXX (2010-05-12 jconnor) This is retarded. Apparently the wrapper gets
+        # called by a different thread when this task's thread calls start().
+        # However, it has to call start in order to get the id property to work.
+        if thread.get_ident() != self.id:
+            #print '_wrapper called by thread %d' % thread.get_ident()
+            return
         ret = None
         self.status = RUNNING
         self.start_time = datetime.now()
