@@ -14,14 +14,14 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-__author__ = 'Jason L Connor <jconnor@redhat.com>'
+_author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 import sys
 import threading
 import traceback
 from datetime import datetime
 
-from pulp.tasks.queue.base import TaskQueue
+from pulp.tasks.queue import base
 
 
 CREATED = 'created'
@@ -31,6 +31,25 @@ FINISHED = 'finished'
 ERROR = 'error'
 
 
+class TaskThread(threading.Thread):
+    """
+    Derived thread class that allows the thread to be run more than once
+    """
+    def __init__(self, target=None, args=[], kwargs={}):
+        """
+        """
+        super(TaskThread, self).__init__(target=target, args=args, kwargs=kwargs)
+        self.__target = target
+        self.__args = args
+        self.__kwargs = kwargs
+        
+    def run(self):
+        """
+        """
+        assert self.__target is not None
+        return self.__target(*self.__args, **self.__kwargs)
+
+    
 class Task(object):
     """
     Task class
@@ -39,7 +58,7 @@ class Task(object):
     def __init__(self, callable, args=[], kwargs={}):
         """
         Create a Task for the passed in callable and arguments.
-        @param callable: function, method, lambda, or object implementing __call__
+        @param callable: function, method, lambda, or object implementing _call_
         @param args: list of positional arguments to be passed into the callable
         @param kwargs: dictionary of keyword arguments to be passed into the callable
         """
@@ -53,24 +72,25 @@ class Task(object):
         self.exception = None
         self.traceback = None
         
-        self.__queue = None
+        self._queue = None
         
-        self.__thread = threading.Thread(target=self.wrapper)
-        self.__thread.start()
+        self._thread = TaskThread(target=self._wrapper)
+        self._thread.start()
         
     @property
     def id(self):
-        return self.__thread.ident
-       
-    def __wrapper(self):
+        return self._thread.ident
+  
+    def _wrapper(self):
         """
-        Private wrapper that executes the callable and captures and records any
+        Protected wrapper that exe    cutes the callable and captures and records any
         exceptions in a separate thread.
         """
+        ret = None
         self.status = RUNNING
         self.start_time = datetime.now()
         try:
-            self.callable(*self.args, **self.kwargs)
+            ret = self.callable(*self.args, **self.kwargs)
         except Exception, e:
             self.exception = e
             exec_info = sys.exc_info()
@@ -79,22 +99,23 @@ class Task(object):
         else:
             self.status = FINISHED
         self.finish_time = datetime.now()
-        if self.__queue is not None:
-            self.__queue.finished(self)        
-    
+        if self._queue is not None:
+            self._queue.finished(self)        
+        return ret
+     
     def set_queue(self, task_queue):
         """
         Called by a TaskQueue instance for setting a back reference to the queue
         itself.
         """
-        assert task_queue is None or isinstance(task_queue, TaskQueue)
-        self.__queue = task_queue
+        assert task_queue is None or isinstance(task_queue, base.TaskQueue)
+        self._queue = task_queue
          
     def run(self):
         """
         Run this task's callable in a separate thread.
         """
-        self.__thread.run()
+        self._thread.run()
         
     def reset(self, args=None, kwargs=None):
         if args is not None:

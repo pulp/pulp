@@ -15,3 +15,9 @@
 # in this software or its documentation.
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
+
+from pulp.tasks.queue.base import TaskQueue
+
+
+class AtTaskQueue(TaskQueue):
+    pass
