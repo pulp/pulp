@@ -19,6 +19,7 @@
 import sys
 sys.path.append("../src")
 from pulp.api import RepoApi
+from pulp.api import PackageApi
 from pulp.model import Package
 
 import time
@@ -34,23 +35,32 @@ class LargeLoad(unittest.TestCase):
     """
     def __init__(self):
         self.rapi = RepoApi()
+        self.papi = PackageApi()
 
     def create_repos(self):
+        self.rapi.clean()
         repo = self.rapi.create('test-id','test repo', \
-            'i386', 'local:file:///opt/repo/sat-ng/')
+            'i386', 'local:file:///opt/repo/misc-packages/')
         self.rapi.sync(repo.id)
+        print "Repos Created"
         
 
 
 
-if __name__ == '__main__':
-    ll = LargeLoad()
-    
-    ll.create_repos()
-    
-    # ll.create_consumers()
-    # ll.find_consumer()
-    # ll.find_repo()
-    # ll.find_consumers_with_package()
-    
+console = logging.StreamHandler(sys.stdout)
+console.setLevel(logging.DEBUG)
+logging.getLogger('pulp.api').addHandler(console)
+
+ll = LargeLoad()
+ll.create_repos()
+repos = ll.rapi.repositories()
+packages = ll.papi.packages()
+
+print "number of repos: %s" % len(list(repos))
+print "number of packages: %s" % len(packages)
+# ll.create_consumers()
+# ll.find_consumer()
+# ll.find_repo()
+# ll.find_consumers_with_package()
+
            

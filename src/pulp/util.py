@@ -17,16 +17,19 @@
 #
 import rpm
 import os
+import logging
 
+log = logging.getLogger("pulp.util")
 
 def getRPMInformation(rpmPath):
     """
     Get metadata about an RPM from the path passed in
     """
-    
-    long_variable_name = rpm.ts();
+    log.debug("rpmPath: %s" % rpmPath)
+    ts = rpm.ts();
+    ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES) 
     file_descriptor_number = os.open(rpmPath, os.O_RDONLY)
-    rpmInfo = long_variable_name.hdrFromFdno(file_descriptor_number);
+    rpmInfo = ts.hdrFromFdno(file_descriptor_number);
     os.close(file_descriptor_number)
     return rpmInfo
 

@@ -18,6 +18,7 @@
 import sys
 sys.path.append("../src")
 from pulp.api import RepoApi
+from pulp.api import PackageApi
 from pulp.model import Package
 
 import time
@@ -29,6 +30,7 @@ class TestApi(unittest.TestCase):
 
     def setUp(self):
         self.rapi = RepoApi()
+        self.papi = PackageApi()
         
     def tearDown(self):
         RepoApi().clean()
@@ -96,6 +98,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id')
         assert(found != None)
         assert(found['id'] == 'some-id')
+        assert(found.id == 'some-id')
         
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
@@ -110,7 +113,6 @@ class TestApi(unittest.TestCase):
         assert(packages['test_repo_packages'] != None)
         
     def test_sync(self):
-        
         repo = self.rapi.create('some-id','some name', 'i386', 
                                 'yum:http://mmccune.fedorapeople.org/pulp/')
         failed = False
@@ -144,7 +146,11 @@ class TestApi(unittest.TestCase):
         assert(len(packages) > 0)
     
 
-        
+    def test_packages(self):
+        p = self.papi.create('some-package-id', 'some package desc')
+        packages = self.papi.packages()
+        print "packages: %s" % packages
+        assert(len(packages) > 0)
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
