@@ -19,6 +19,20 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 class TaskQueue(object):
     """
-    Base task queue class to describe common functionality
+    Base task queue class to describe common functionality and interface
     """
-    pass
+    
+    def _dispatch(self):
+        raise NotImplementedError()
+    
+    def finished(self, task):
+        raise NotImplementedError()
+    
+    def is_empty(self):
+        raise NotImplementedError()
+    
+    def enqueue(self, task):
+        raise NotImplementedError()
+    
+    def find(self, task_id):
+        raise NotImplementedError()

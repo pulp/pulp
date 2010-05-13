@@ -16,10 +16,9 @@
 
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
-import thread
-#import threading
 from datetime import datetime, timedelta
-from pulp.tasks import threads as threading
+
+from pulp.tasks.threads import Lock, Condition, Thread
 from pulp.tasks.task import Task
 from pulp.tasks.queue.base import TaskQueue
 
@@ -49,17 +48,19 @@ class FIFOTaskQueue(TaskQueue):
         self.max_dispatch_sleep = max_dispatcher_sleep
         self.finished_lifetime = finished_lifetime
         
-        self._dispatcher = threading.Thread(target=self._dispatch)
-        self._lock = threading.Lock()
-        self._condition = threading.Condition(self._lock)
+        self._dispatcher = Thread(target=self._dispatch)
+        self._lock = Lock()
+        self._condition = Condition(self._lock)
         self._running_count = 0
         
         self._wait_queue = []
         self._running_tasks = {}
         self._finished_tasks = {}
         
-        self._dispatcher.start()
-        self._dispatcher.run()
+        self._dispatcher.execute()
+        
+    def __del__(self):
+        self._dispatcher.exit()
         
     def _clean_finished_tasks(self):
         """
@@ -78,8 +79,6 @@ class FIFOTaskQueue(TaskQueue):
         * dequeue and dispatch up max_running tasks
         @return: None
         """
-        if thread.get_ident() != self._dispatcher.ident:
-            return
         self._lock.acquire()
         while True:
             self._condition.wait(self.max_dispatch_sleep)

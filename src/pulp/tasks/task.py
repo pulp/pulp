@@ -17,12 +17,11 @@
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 import sys
-import thread
-import threading
 import traceback
 from datetime import datetime
 
 from pulp.tasks.queue import base
+from pulp.tasks.threads import Thread
 
 
 CREATED = 'created'
@@ -30,25 +29,6 @@ RESET = 'reset'
 RUNNING = 'running'
 FINISHED = 'finished'
 ERROR = 'error'
-
-
-class TaskThread(threading.Thread):
-    """
-    Derived thread class that allows the thread to be run more than once
-    """
-    def __init__(self, target=None, args=[], kwargs={}):
-        """
-        """
-        super(TaskThread, self).__init__(target=target, args=args, kwargs=kwargs)
-        self.__target = target
-        self.__args = args
-        self.__kwargs = kwargs
-        
-    def run(self):
-        """
-        """
-        assert self.__target is not None
-        return self.__target(*self.__args, **self.__kwargs)
 
     
 class Task(object):
@@ -75,8 +55,10 @@ class Task(object):
         
         self._queue = None
         
-        self._thread = TaskThread(target=self._wrapper)
-        self._thread.start()
+        self._thread = Thread(target=self._wrapper)
+        
+    def __del__(self):
+        self._thread.exit()
         
     @property
     def id(self):
@@ -87,12 +69,6 @@ class Task(object):
         Protected wrapper that executes the callable and captures and records any
         exceptions in a separate thread.
         """
-        # XXX (2010-05-12 jconnor) This is retarded. Apparently the wrapper gets
-        # called by a different thread when this task's thread calls start().
-        # However, it has to call start in order to get the id property to work.
-        if thread.get_ident() != self.id:
-            #print '_wrapper called by thread %d' % thread.get_ident()
-            return
         ret = None
         self.status = RUNNING
         self.start_time = datetime.now()
@@ -122,7 +98,7 @@ class Task(object):
         """
         Run this task's callable in a separate thread.
         """
-        self._thread.run()
+        self._thread.execute()
         
     def reset(self, args=None, kwargs=None):
         if args is not None:
