@@ -3,7 +3,6 @@ import time
 import unittest
 from pprint import pprint
 
-from pulp.tasks.threads import Condition
 from pulp.tasks.task import Task, FINISHED
 from pulp.tasks.queue.fifo import FIFOTaskQueue
 
@@ -26,7 +25,7 @@ class TaskTester(unittest.TestCase):
 #    def test_t_allocation(self):
 #        t = Task(print_thread_id)
 
-    def test_t(self):
+    def test_task(self):
         t = Task(thread_id)
         print 'task id: %s' % str(t.id)
         t.reset(args=[t.id])
@@ -64,35 +63,11 @@ class FIFOQueueTester(unittest.TestCase):
         q.enqueue(t)
         time.sleep(0.005)
         self.assertTrue(t.status == FINISHED)
-        del q
-        del t
-
-
-class ConditionTester(unittest.TestCase):
-
-    def setUp(self):
-        self.condition = Condition()
-
-    def tearDown(self):
-        pass
-
-    def __condition_callback(self):
-        self.condition.acquire()
-        self.condition.notify()
-        self.condition.release()
-
-    def test_condition(self):
-        self.condition.acquire()
-        t = Task(self.__condition_callback)
-        q = FIFOTaskQueue()
-        q.enqueue(t)
-        self.condition.wait()
-        self.assertTrue(t.status == FINISHED)
 
 
 if __name__ == '__main__':
     #unittest.main()
-    cases = [TaskTester, FIFOQueueTester, ConditionTester]
+    cases = [TaskTester, FIFOQueueTester]
     for c in cases:
         suite = unittest.TestLoader().loadTestsFromTestCase(c)
-        unittest.TextTestRunner(verbosity=1).run(suite)
+        unittest.TextTestRunner(verbosity=2).run(suite)

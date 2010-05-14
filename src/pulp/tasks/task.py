@@ -16,12 +16,13 @@
 
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
+import functools
 import sys
+import threading
 import traceback
 from datetime import datetime
 
 from pulp.tasks.queue import base
-from pulp.tasks.threads import Thread
 
 
 CREATED = 'created'
@@ -29,6 +30,51 @@ RESET = 'reset'
 RUNNING = 'running'
 FINISHED = 'finished'
 ERROR = 'error'
+
+
+class TaskThread(threading.Thread):
+    """
+    TaskThread class
+    Thread objects that will call the target with the passed in arguments in a
+    separate thread whenever execute() is called.
+    Because of the difference in semantics from other thread classes, the
+    thread will only exit with exit() is explicitly called.
+    """
+    def __init__(self, target, args=[], kwargs={}):
+        super(TaskThread, self).__init__(target=target, args=args, kwargs=kwargs)
+        self.__call = functools.partial(target, *args, **kwargs)
+        self.__lock = threading.Lock()
+        self.__exit = False
+        self.daemon = True
+    
+    def __yield(self):
+        self.__lock.acquire()
+        self.__lock.acquire()
+    
+    def __continue(self):
+        if not self.__lock.locked():
+            return
+        self.__lock.release()
+    
+    def run(self):
+        while True:
+            self.__yield()
+            if self.__exit:
+                return
+            self.__call()
+    
+    def execute(self):
+        """
+        Execute the target callable in a separate thread
+        """
+        self.__continue()
+    
+    def exit(self):
+        """
+        Allow the separate thread to exit
+        """
+        self.__exit = True
+        self.__continue()
 
     
 class Task(object):
@@ -55,7 +101,8 @@ class Task(object):
         
         self._queue = None
         
-        self._thread = Thread(target=self._wrapper)
+        self._thread = TaskThread(target=self._wrapper)
+        self._thread.start()
         
     def __del__(self):
         self._thread.exit()

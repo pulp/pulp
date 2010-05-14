@@ -18,8 +18,8 @@ _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 import time
 from datetime import datetime, timedelta
+from threading import Lock, Condition, Thread
 
-from pulp.tasks.threads import Lock, Condition, Thread
 from pulp.tasks.task import Task
 from pulp.tasks.queue.base import TaskQueue
 
@@ -49,7 +49,6 @@ class FIFOTaskQueue(TaskQueue):
         self.max_dispatch_sleep = max_dispatcher_sleep
         self.finished_lifetime = finished_lifetime
         
-        self._dispatcher = Thread(target=self._dispatch)
         self._lock = Lock()
         self._condition = Condition(self._lock)
         self._running_count = 0
@@ -58,14 +57,14 @@ class FIFOTaskQueue(TaskQueue):
         self._running_tasks = {}
         self._finished_tasks = {}
         
-        self._dispatcher.execute()
+        self._dispatcher = Thread(target=self._dispatch)
+        self._dispatcher.daemon = True
+        self._dispatcher.start()
         
     def __del__(self):
         while not self.is_empty():
             time.sleep(0.0005)
         self._finished_tasks.clear()
-        self._dispatcher.exit()
-        time.sleep(0.0005)
         
     def _clean_finished_tasks(self):
         """
@@ -101,10 +100,12 @@ class FIFOTaskQueue(TaskQueue):
         @return: None
         """
         self._lock.acquire()
-        self._finished_tasks[task.id] = self._running_tasks.pop(task.id)
-        self._running_count -= 1
-        self._condition.notify()
-        self._lock.release()
+        try:
+            self._finished_tasks[task.id] = self._running_tasks.pop(task.id)
+            self._running_count -= 1
+            self._condition.notify()
+        finally:
+            self._lock.release()
         
     def is_empty(self):
         """
@@ -128,10 +129,12 @@ class FIFOTaskQueue(TaskQueue):
         """
         assert isinstance(task, Task)
         self._lock.acquire()
-        task.set_queue(self)
-        self._wait_queue.append(task)
-        self._condition.notify()
-        self._lock.release()
+        try:
+            task.set_queue(self)
+            self._wait_queue.append(task)
+            self._condition.notify()
+        finally:
+            self._lock.release()
     
     def find(self, task_id):
         """
@@ -141,14 +144,16 @@ class FIFOTaskQueue(TaskQueue):
         """
         task = None
         self._lock.acquire()
-        if task_id in self._finished_tasks:
-            task = self._finished_tasks[task_id]
-        elif task_id in self._running_tasks:
-            task = self._running_tasks[task_id]
-        else:
-            for t in self._wait_queue:
-                if t.id == task_id:
-                    task = t
-                    break
-        self._lock.release()
+        try:
+            if task_id in self._finished_tasks:
+                task = self._finished_tasks[task_id]
+            elif task_id in self._running_tasks:
+                task = self._running_tasks[task_id]
+            else:
+                for t in self._wait_queue:
+                    if t.id == task_id:
+                        task = t
+                        break
+        finally:
+            self._lock.release()
         return task
