@@ -16,7 +16,6 @@
 
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
-import time
 from datetime import datetime, timedelta
 from threading import Lock, Condition, Thread
 
@@ -60,11 +59,6 @@ class FIFOTaskQueue(TaskQueue):
         self._dispatcher = Thread(target=self._dispatch)
         self._dispatcher.daemon = True
         self._dispatcher.start()
-        
-    def __del__(self):
-        while not self.is_empty():
-            time.sleep(0.0005)
-        self._finished_tasks.clear()
         
     def _clean_finished_tasks(self):
         """
