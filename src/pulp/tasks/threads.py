@@ -253,6 +253,9 @@ class Thread(object):
         self.__block = Lock()
         self.__join = Condition()
         thread.start_new_thread(self.__bootstrap, ())
+        # allow the new thread to bootstrap to avoid a race condition between
+        # between the thread's __bootstrap and another thread calling execute
+        time.sleep(0.0005)
         
     def __repr__(self):
         return '<Thread: %s>' % str(self.__ident)
