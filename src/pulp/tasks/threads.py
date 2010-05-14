@@ -249,34 +249,33 @@ class Thread(object):
         """
         self.__ident = None
         self.__exit = False
-        self.__call = functools.partial(target, args, kwargs)
+        self.__call = functools.partial(target, *args, **kwargs)
         self.__block = Lock()
         self.__join = Condition()
-        thread.start_new_thread(self.__boostrap, ())
+        thread.start_new_thread(self.__bootstrap, ())
         
     def __repr__(self):
-        return '<Thread: %d>' % self.__ident
+        return '<Thread: %s>' % str(self.__ident)
         
     def __bootstrap(self):
         # only called by new thread
         self.__ident = thread.get_ident()
-        self.__block()
         self.__thread_loop()
     
     def __thread_loop(self):
         # only called by new thread
         while True:
+            self.__yield()
             if self.__exit:
                 thread.exit()
             self.__call()
-            self.__block()
             
-    def __block(self):
+    def __yield(self):
         # only called by new thread
         self.__block.acquire()
         self.__block.acquire()
     
-    def __unblock(self):
+    def __continue(self):
         # only called by other threads (most likely the parent)
         if not self.__block.locked():
             return
@@ -291,7 +290,7 @@ class Thread(object):
         """
         Execute the target callable in a separate thread
         """
-        self.__unblock()
+        self.__continue()
         
     @_sync_debug
     def exit(self):
@@ -299,7 +298,7 @@ class Thread(object):
         Allow the separate thread to exit
         """
         self.__exit = True
-        self.__unblock()
+        self.__continue()
         self.__join.acquire()
         self.__join.notify_all()
         self.__join.release()
