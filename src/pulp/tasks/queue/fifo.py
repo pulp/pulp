@@ -16,6 +16,7 @@
 
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
+import time
 from datetime import datetime, timedelta
 
 from pulp.tasks.threads import Lock, Condition, Thread
@@ -60,7 +61,11 @@ class FIFOTaskQueue(TaskQueue):
         self._dispatcher.execute()
         
     def __del__(self):
+        while not self.is_empty():
+            time.sleep(0.0005)
+        self._finished_tasks.clear()
         self._dispatcher.exit()
+        time.sleep(0.0005)
         
     def _clean_finished_tasks(self):
         """

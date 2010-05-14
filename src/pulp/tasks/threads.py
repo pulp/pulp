@@ -36,7 +36,7 @@ def _sync_debug(method):
     @functools.wraps(method)
     def sync_debug_decorator(self, *args, **kwargs):
         thread_id = thread.get_ident()
-        print 'Thread %d called %s on %s' % (thread_id, method.__name__, repr(self))
+        print 'Thread %d called *%s* on %s' % (thread_id, method.__name__, repr(self))
         return method(self, *args, **kwargs)
     return sync_debug_decorator
 
