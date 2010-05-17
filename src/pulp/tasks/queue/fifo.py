@@ -60,11 +60,18 @@ class FIFOTaskQueue(TaskQueue):
         self._dispatcher.daemon = True
         self._dispatcher.start()
         
+    def __del__(self):
+        # try to head-off a race condition on shutdown
+        self._finished_tasks.clear()
+        
     def _clean_finished_tasks(self):
         """
         Protected method to clean up finished task data
         @return: None
         """
+        # try to head-off a race condition on shutdown
+        if not self._finished_tasks:
+            return
         now = datetime.now()
         for id, task in self._finished_tasks.items():
             if now - task.finish_time > self.finished_lifetime:
