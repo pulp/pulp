@@ -22,7 +22,7 @@ import threading
 import traceback
 from datetime import datetime
 
-from pulp.tasks.queue import base
+from pulp.tasks.queue.base import TaskQueue
 
 
 CREATED = 'created'
@@ -138,7 +138,7 @@ class Task(object):
         Called by a TaskQueue instance for setting a back reference to the queue
         itself.
         """
-        assert task_queue is None or isinstance(task_queue, base.TaskQueue)
+        assert task_queue is None or isinstance(task_queue, TaskQueue)
         self._queue = task_queue
          
     def run(self):
