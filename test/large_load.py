@@ -23,6 +23,8 @@ import logging
 import unittest
 import os
 import fileinput
+import random
+
 
 sys.path.append("../src")
 from pulp.api import RepoApi
@@ -37,10 +39,11 @@ class LargeLoad(unittest.TestCase):
     """
     Util for loading large amounts of data through our API
     """
-    def __init__(self, dir_list_path):
+    def __init__(self, dir_list_path, numconsumers):
         self.rapi = RepoApi()
         self.papi = PackageApi()
         self.capi = ConsumerApi()
+        self.numconsumers = numconsumers
         self.dirlist = []
         if (dir_list_path != None):
             for line in fileinput.input(dir_list_path):
@@ -64,11 +67,16 @@ class LargeLoad(unittest.TestCase):
     def create_consumers(self):
         last_desc = None
         last_id = None
-        for i in range(1000):
+        repos = self.rapi.repositories()
+        
+        for i in range(self.numconsumers):
+            repo = random.choice(repos)
             c = self.capi.create(random_string(), random_string())
-            #for pid in r.packages:
-            #    c.packages[pid] = r.packages[pid]
-            #    c.packageids.append(pid)
+            packages = repo['packages']
+            for pid in packages:
+                # c.packages[pid] = packages[pid]
+                c.packageids.append(pid)
+            self.capi.update(c)
             if (i % 100 == 0):
                 print "Inserted [%s] consumers" % i
                 p = Package('random-package', 'random package to be found')
@@ -81,10 +89,14 @@ class LargeLoad(unittest.TestCase):
 parser = optparse.OptionParser()
 parser.add_option('--dirlist', dest='dirlist', 
                  action='store', help='File containing list of directories containing the repos you wish to use for this test')
+parser.add_option('--numconsumers', dest='numconsumers', 
+                 action='store', default=1000, help='Number of consumers you want to load')
+
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
 cmdoptions, args = parser.parse_args()
 dirlist = cmdoptions.dirlist
 clean = cmdoptions.clean
+numconsumers = int(cmdoptions.numconsumers)
 
 if (clean):
     ll = LargeLoad(None)
@@ -97,10 +109,10 @@ if (dirlist == None):
 
 console = logging.StreamHandler(sys.stdout)
 console.setLevel(logging.DEBUG)
-logging.getLogger('pulp.api').addHandler(console)
+# logging.getLogger('pulp.api').addHandler(console)
 
-ll = LargeLoad(dirlist)
-
+ll = LargeLoad(dirlist, numconsumers)
+ll.clean()
 
 ll.create_repos()
 repos = ll.rapi.repositories()
@@ -109,6 +121,14 @@ packages = ll.papi.packages()
 print "number of repos: %s" % len(list(repos))
 print "number of packages: %s" % len(packages)
 ll.create_consumers()
+
+consumers = ll.capi.consumers()
+c = consumers[0]
+# print c
+
+p = ll.papi.package(random.choice(c['packageids']))
+print "Package: %s " % p
+
 # ll.find_consumer()
 # ll.find_repo()
 # ll.find_consumers_with_package()

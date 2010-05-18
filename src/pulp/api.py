@@ -28,7 +28,7 @@ from pulp.pexceptions import PulpException
 from pulp.util import getRPMInformation
 
 log = logging.getLogger("pulp.api")
-log.setLevel(logging.DEBUG)
+# log.setLevel(logging.DEBUG)
 
 class BaseApi(object):
     def __init__(self):
@@ -106,7 +106,6 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         
         rs = model.RepoSource(repo['source'])
-        print("RepoSource type: %s" % rs.type)
         if (rs.type == 'yum'):
             log.debug("Creating repo grinder: %s" % rs.url)
             yfetch = YumRepoGrinder(repo['id'], rs.url, 1)
@@ -135,14 +134,11 @@ class RepoApi(BaseApi):
             if (fname.endswith(".rpm")):
                 try:
                     info = getRPMInformation(dir + fname)
+                    p = self.packageApi.create(info['name'], info['description'])
+                    packages[p.id] = p
+                    package_count = package_count + 1
                 except:
                     log.error("error reading package %s" % (dir + fname))
-                    
-                print "rpm name: %s" % info['name']
-                p = self.packageApi.create(info['name'], info['description'])
-                packages[p.id] = p
-                package_count = package_count + 1
-        
         log.debug("read [%s] packages" % package_count)
 
         
@@ -159,6 +155,12 @@ class PackageApi(BaseApi):
         p = model.Package(id, name)
         self.objectdb.insert(p)
         return p
+        
+    def package(self, id):
+        """
+        Return a single Package object
+        """
+        return self.objectdb.find_one({'id': id})
 
     def packages(self):
         """
