@@ -76,5 +76,4 @@ class Consumer(Base):
     def __init__(self, id, description):
         self.id = id
         self.description = description
-        self.packages = dict()
         self.packageids = []

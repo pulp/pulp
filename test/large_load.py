@@ -34,6 +34,9 @@ from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import random_string
 
+
+TEST_PACKAGE_ID = 'random-package'
+
 class LargeLoad(unittest.TestCase):
     
     """
@@ -54,15 +57,19 @@ class LargeLoad(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
+        db = self.rapi.db
+        self.rapi.connection.drop_database(db)
         
     def create_repos(self):
         print "RPMDIRS: %s" % self.dirlist
+        numrepos = 0
         for rdir in self.dirlist:
             repo = self.rapi.create(rdir,'test repo: %s' % rdir, \
                 'i386', 'local:file://%s' % rdir)
             self.rapi.sync(repo.id)
+            numrepos = numrepos + 1
         
-        print "[%s] repos created" % len(self.dirlist)
+        return numrepos
     
     def create_consumers(self):
         last_desc = None
@@ -74,17 +81,35 @@ class LargeLoad(unittest.TestCase):
             c = self.capi.create(random_string(), random_string())
             packages = repo['packages']
             for pid in packages:
-                # c.packages[pid] = packages[pid]
                 c.packageids.append(pid)
             self.capi.update(c)
             if (i % 100 == 0):
                 print "Inserted [%s] consumers" % i
-                p = Package('random-package', 'random package to be found')
-                c.packages[p.id] = p
+                p = Package(TEST_PACKAGE_ID, 'random package to be found')
+                c.packageids.append(p.id)
+                self.capi.update(c)
+                # packages[p.id] = p
+                # self.rapi.update(repo)
             last_desc = c.description
             last_id = c.id
+        return last_desc, last_id
 
-
+    
+    def find_consumer(self, last_id):
+        # Get entire list.  Make sure its not too slow.
+        # When we initially were storing the entire package in the 
+        # consumer object this call would blow out all the ram on a 8GB box
+        consumers = self.capi.consumers()
+        c = consumers[0]
+        assert(len(consumers) == self.numconsumers)
+        p = ll.papi.package(random.choice(c['packageids']))
+        assert(p != None)
+        c2 = self.capi.consumer(last_id)
+        assert(c2 != None)
+        
+        print "Searching for all consumers with %s package id" % TEST_PACKAGE_ID
+        cwithp = ll.capi.consumerswithpackage(TEST_PACKAGE_ID)
+        print "Found [%s] consumers with packageid: [%s]" % (len(cwithp), TEST_PACKAGE_ID)
 
 parser = optparse.OptionParser()
 parser.add_option('--dirlist', dest='dirlist', 
@@ -99,7 +124,7 @@ clean = cmdoptions.clean
 numconsumers = int(cmdoptions.numconsumers)
 
 if (clean):
-    ll = LargeLoad(None)
+    ll = LargeLoad(None, None)
     ll.clean()
     exit("cleaned the databases")
 
@@ -114,24 +139,20 @@ console.setLevel(logging.DEBUG)
 ll = LargeLoad(dirlist, numconsumers)
 ll.clean()
 
-ll.create_repos()
+numrepos = ll.create_repos()
 repos = ll.rapi.repositories()
 packages = ll.papi.packages()
 
 print "number of repos: %s" % len(list(repos))
 print "number of packages: %s" % len(packages)
-ll.create_consumers()
-
-consumers = ll.capi.consumers()
-c = consumers[0]
-# print c
-
-p = ll.papi.package(random.choice(c['packageids']))
-print "Package: %s " % p
-
-# ll.find_consumer()
+last_desc, last_id = ll.create_consumers()
+print "Done creating consumers.  Listing all of them"
+ll.find_consumer(last_id)
 # ll.find_repo()
 # ll.find_consumers_with_package()
 
+numpackages = len(ll.papi.packages())
+print "Your database now has [%s] repositories with [%s] total packages and [%s] consumers" \
+      % (numrepos, numpackages, numconsumers)
            
 

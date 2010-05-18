@@ -19,8 +19,9 @@ import sys
 sys.path.append("../src")
 from pulp.api import RepoApi
 from pulp.api import PackageApi
+from pulp.api import ConsumerApi
 from pulp.model import Package
-
+from pulp.util import random_string
 import time
 import unittest
 import logging
@@ -31,10 +32,12 @@ class TestApi(unittest.TestCase):
     def setUp(self):
         self.rapi = RepoApi()
         self.papi = PackageApi()
+        self.capi = ConsumerApi()
         
     def tearDown(self):
         self.rapi.clean()
         self.papi.clean()
+        self.capi.clean()
         return
         
     def test_create(self):
@@ -113,6 +116,28 @@ class TestApi(unittest.TestCase):
         packages = found['packages']
         assert(packages != None)
         assert(packages['test_repo_packages'] != None)
+    
+    def test_consumer_create(self):
+        c = self.capi.create('test-consumer', 'some consumer desc')
+        assert(c != None)
+        found = self.capi.consumer('test-consumer')
+        assert(found != None)
+        
+    def test_consumerwithpackage(self):
+        c = self.capi.create('test-consumer', 'some consumer desc')
+        package = Package('test_consumerwithpackage','test package search')
+        c.packageids.append(package.id)
+        for i in range(10):
+            package = Package(random_string(), random_string())
+            c.packageids.append(package.id)
+        self.capi.update(c)
+        
+        found = self.capi.consumerswithpackage('some-invalid-id')
+        assert(len(found) == 0)
+
+        found = self.capi.consumerswithpackage('test_consumerwithpackage')
+        assert(len(found) == 1)
+        
         
     def test_sync(self):
         repo = self.rapi.create('some-id','some name', 'i386', 

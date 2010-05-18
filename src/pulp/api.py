@@ -33,8 +33,8 @@ log = logging.getLogger("pulp.api")
 class BaseApi(object):
     def __init__(self):
         ####### Mongo DB ########
-        connection = pymongo.Connection()
-        self.db = connection._database
+        self.connection = pymongo.Connection()
+        self.db = self.connection._database
         self.collection = self.db.pulp_collection
     
     def clean(self):
@@ -85,7 +85,6 @@ class RepoApi(BaseApi):
         """
         repo = self.repository(id)
         return repo['packages']
-        
     
     def create(self, id, name, arch, feed):
         """
@@ -156,7 +155,7 @@ class PackageApi(BaseApi):
         self.objectdb.insert(p)
         return p
         
-    def package(self, id):
+    def package(self, id, filter=None):
         """
         Return a single Package object
         """
@@ -187,6 +186,22 @@ class ConsumerApi(BaseApi):
         List all consumers.  Can be quite large
         """
         return list(self.objectdb.find())
-        
-        
+
+    def consumers(self):
+        """
+        List all consumers.  Can be quite large
+        """
+        return list(self.objectdb.find())
     
+        
+    def consumer(self, id):
+        """
+        Return a single Consumer object
+        """
+        return self.objectdb.find_one({'id': id})
+    
+    def consumerswithpackage(self, packageid):
+        """
+        List consumers using passed in packageid
+        """
+        return list(self.objectdb.find({"packageids":  packageid}))
