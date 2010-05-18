@@ -33,7 +33,9 @@ class TestApi(unittest.TestCase):
         self.papi = PackageApi()
         
     def tearDown(self):
-        RepoApi().clean()
+        self.rapi.clean()
+        self.papi.clean()
+        return
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
@@ -98,7 +100,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id')
         assert(found != None)
         assert(found['id'] == 'some-id')
-        assert(found.id == 'some-id')
+        # assert(found.id == 'some-id')
         
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
@@ -134,7 +136,7 @@ class TestApi(unittest.TestCase):
         
     def test_local_sync(self):
         cwd = os.getcwd()
-        datadir = cwd + "/data"
+        datadir = cwd + "/data/"
         print "Data dir! %s" % datadir
         repo = self.rapi.create('some-id','some name', 'i386', 
                                 'local:file://%s' % datadir)

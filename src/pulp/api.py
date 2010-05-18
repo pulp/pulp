@@ -28,6 +28,7 @@ from pulp.pexceptions import PulpException
 from pulp.util import getRPMInformation
 
 log = logging.getLogger("pulp.api")
+log.setLevel(logging.DEBUG)
 
 class BaseApi(object):
     def __init__(self):
@@ -36,7 +37,24 @@ class BaseApi(object):
         self.db = connection._database
         self.collection = self.db.pulp_collection
     
+    def clean(self):
+        """
+        Delete all the Objects in the database.  WARNING: Destructive
+        """
+        self.objectdb.remove()
 
+    def update(self, object):
+        """
+        Write the object document to the database
+        """
+        self.objectdb.save(object)
+
+    def delete(self, id):
+        """
+        Delete a single stored Object
+        """
+        self.objectdb.remove({'id': id})
+        
 class RepoApi(BaseApi):
 
     """
@@ -44,28 +62,22 @@ class RepoApi(BaseApi):
     """
     def __init__(self):
         BaseApi.__init__(self)
-        self.repodb = self.db.repos
+        self.objectdb = self.db.repos
         # TODO: Extract this to a config
         self.LOCAL_STORAGE = "/var/lib/pulp/"
         self.packageApi = PackageApi()
-
-    def clean(self):
-        """
-        Delete all the Repos in the database.  WARNING: Destructive
-        """
-        self.repodb.remove()
 
     def repositories(self):
         """
         Return a list of Repositories
         """
-        return list(self.repodb.find())
+        return list(self.objectdb.find())
         
     def repository(self, id):
         """
         Return a single Repository object
         """
-        return self.repodb.find_one({'id': id})
+        return self.objectdb.find_one({'id': id})
         
     def packages(self, id):
         """
@@ -74,26 +86,16 @@ class RepoApi(BaseApi):
         repo = self.repository(id)
         return repo['packages']
         
-    def update(self, repo):
-        """
-        Write the repository document to the database
-        """
-        self.repodb.save(repo)
     
     def create(self, id, name, arch, feed):
         """
         Create a new Repository object and return it
         """
         r = model.Repo(id, name, arch, feed)
-        self.repodb.insert(r)
+        self.objectdb.insert(r)
         return r
         
 
-    def delete(self, id):
-        """
-        Delete a single Repository
-        """
-        self.repodb.remove({'id': id})
         
     def sync(self, id):
         """
@@ -104,6 +106,7 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         
         rs = model.RepoSource(repo['source'])
+        print("RepoSource type: %s" % rs.type)
         if (rs.type == 'yum'):
             log.debug("Creating repo grinder: %s" % rs.url)
             yfetch = YumRepoGrinder(repo['id'], rs.url, 1)
@@ -134,7 +137,8 @@ class RepoApi(BaseApi):
                     info = getRPMInformation(dir + fname)
                 except:
                     log.error("error reading package %s" % (dir + fname))
-                # print "rpm name: %s" % info['name']
+                    
+                print "rpm name: %s" % info['name']
                 p = self.packageApi.create(info['name'], info['description'])
                 packages[p.id] = p
                 package_count = package_count + 1
@@ -142,23 +146,45 @@ class RepoApi(BaseApi):
         log.debug("read [%s] packages" % package_count)
 
         
-        
 class PackageApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.packagesdb = self.db.packages
-    
+        self.objectdb = self.db.packages
+        
     def create(self, id, name):
         """
         Create a new Package object and return it
         """
         p = model.Package(id, name)
-        self.packagesdb.insert(p)
+        self.objectdb.insert(p)
         return p
 
     def packages(self):
         """
         List all packages.  Can be quite large
         """
-        return list(self.packagesdb.find())
+        return list(self.objectdb.find())
+        
+class ConsumerApi(BaseApi):
+
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.objectdb = self.db.consumers
+    
+    def create(self, id, description):
+        """
+        Create a new Consumer object and return it
+        """
+        c = model.Consumer(id, description)
+        self.objectdb.insert(c)
+        return c
+
+    def consumers(self):
+        """
+        List all consumers.  Can be quite large
+        """
+        return list(self.objectdb.find())
+        
+        
+    
