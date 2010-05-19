@@ -39,9 +39,9 @@ setup(
         'Intended Audience :: Developers',
         'Development Status :: 3 - Alpha',
     ],
-    requires=[
+    install_requires=[
         'grinder >= 0.0.20',
-        'python-pymongo = 1.6',
+        'pymongo == 1.6',
     ]
 )
 
