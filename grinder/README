@@ -1,0 +1,20 @@
+ABOUT
+=====
+
+Grinder is a tool for synching packages from RHN Hosted.  It fetches only packages, 
+no errata, no kickstart trees and can do this very quickly.
+
+NAME
+====
+
+<jdob> mmccune: do you guys (where "you guys" means people on the west coast) call sandwiches "grinders" ?
+<mmccune> jdob: no
+<jdob> kk
+<mmccune> but that works :)
+<jdob> haha
+<mmccune> i just was looking for a word, looked around my kitchen where i was standing and saw my coffee grinder
+<jdob> haaa
+<jdob> awesome
+<mmccune> hehe
+<jdob> and, might i add, any project that bears resemblence to caffeine is good
+<mmccune> exactly

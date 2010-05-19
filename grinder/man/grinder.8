@@ -1,0 +1,126 @@
+.\" grinder - Grinder Content Synchronization tool
+.TH "grinder" "8" ""  "John Matthews" ""
+.SH "NAME"
+grinder \- Grinder Content Synchronization tool
+.SH "SYNOPSIS"
+\fBgrinder\fP [command] [options] labels
+.SH "DESCRIPTION"
+.PP
+\fBgrinder\fP is a command line utility to synchronize content (rpms & kickstart files). It allows content to be synchronized from yum repositories or Red Hat Network(RHN)\.
+.PP
+.PP
+.SH "COMMANDS"
+Unless the --help or -h option is given, one of the following commands
+must be present\&.
+.PP
+.PP
+.IP "\fByum\fP [options]"
+Synchronizes content from yum repositories\&.
+.IP
+.IP "\fBrhn\fP [options]"
+Synchronizes content from Red Hat Network(RHN)\&.
+.IP
+.IP "\fBhelp\fP [command]"
+Displays the help content for a given command or for all commands if left blank\&.
+.IP
+.PP
+.SH "GENERAL OPTIONS"
+.PP
+.IP "\fB\-h, \-\-help\fP"
+Display a help message and exit\&.
+.PP
+.SH "YUM OPTIONS"
+.PP
+.IP "\fB\-\-debug\fP"
+Debug level\&.
+.br
+.IP "\fB\-\-label\fP"
+Repo label\&.
+.br
+.IP "\fB\-\-url\fP"
+URL to fetch the content bits from\&.
+.br
+.IP "\fB\-\-cacert\fP"
+Path to location of CA Certificate\&.
+.br
+.IP "\fB\-\-clicert\fP"
+Path to location of Client SSL Certificate\&.
+.br
+.IP "\fB\-\-clikey\fP"
+Path to location of Client Certificate Key\&.
+.br
+.IP "\fB\-\-parallel\fP"
+Number of parallel connections to use\&.
+.br
+.IP "\fB\-\-dir\fP"
+Directory to store fetched content in\&.
+.br
+.SH "RHN OPTIONS"
+.PP
+.IP "\fB\-a, \-\-all\fP"
+Fetch all packages, old and new.
+.br
+.IP "\fB\-b, \-\-basepath\fP"
+Path to store downloaded files
+.br
+.IP "\fB\-c, \-\-cert\fP"
+Satellite certificate
+.br
+.IP "\fB\-C, \-\-config\fP"
+Configuration file
+.br
+.IP "\fB\-k, \-\-kickstarts\fP"
+Synchronize kickstarts
+.br
+.IP "\fB\-K, \-\-skippackages\fP"
+Skip synchronizing packages
+.br
+.IP "\fB\-L, \-\-listchannels\fP"
+List all channels which are authorized to be synchronized
+.br
+.IP "\fB\-p, \-\-password\fP"
+Password, only required if activating
+.br
+.IP "\fB\-P, \-\-parallel\fP"
+Number of parallel connections to use
+.br
+.IP "\fB\-r, \-\-removeold\fP"
+After synchronization scan through rpms and remove those that are old
+.br
+.IP "\fB\-s, \-\-systemid\fP"
+systemid used to authenticate to Red Hat Network
+.br
+.IP "\fB\-u, \-\-username\fP"
+Username, only required if activating
+.br
+.IP "\fB\-U, \-\-url\fP"
+URL to Red Hat Network
+
+.SH "EXAMPLES"
+.PP
+.br
+.IP "\fB grinder rhn -L\fP"
+Lists all channels which can be synchronized
+.br
+.IP "\fB\ grinder rhn rhel-i386-server-5 rhel-i386-server-vt-5\fP"
+Synchronize packages from channel 'rhel-i386-server-5' & 'rhel-i386-server-vt-5'
+.br
+.IP "\fB\ grinder rhn -k rhel-i386-server-5 rhel-i386-server-vt-5\fP"
+Synchronize packages and kickstarts from channel 'rhel-i386-server-5' & 'rhel-i386-server-vt-5'
+.br
+.IP "\fB\ grinder yum --dir /tmp --label test-f12 --url http://download.fedora.redhat.com/pub/fedora/linux/releases/12/Everything/x86_64/os/\fP"
+Synchronize packages from a fedora repo
+.br
+.PP
+.PP
+.SH "FILES"
+.nf
+/etc/grinder/grinder.conf
+.fi
+
+.PP
+.SH "AUTHORS"
+.nf
+.I John Matthews <jmatthew@redhat.com>
+.I Mike McCune  <mmccune@redhat.com>
+.I Pradeep Kilambi <pkilambi@redhat.com>

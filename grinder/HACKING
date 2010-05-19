@@ -1,0 +1,15 @@
+SOURCE
+======
+
+Source is found in src/grinder/*
+
+TESTS
+=====
+
+Tests are found in test/
+
+To run all tests, install the python-nose package and from the root of the 
+project:
+
+    ./runtests.py
+

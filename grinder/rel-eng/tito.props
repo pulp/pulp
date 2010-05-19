@@ -1,0 +1,10 @@
+[globalconfig]
+default_builder = tito.builder.Builder
+default_tagger = tito.tagger.VersionTagger
+
+[cvs]
+cvsroot = :gserver:cvs.devel.redhat.com:/cvs/dist
+branches = RHEL-5-CLOUDE-1
+
+
+
