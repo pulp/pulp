@@ -363,9 +363,9 @@ class RHNSync(BaseSync):
         satDump = SatDumpClient(self.baseURL, verbose=verbose)
         LOG.debug("*** calling product_names ***")
         packages = satDump.getChannelPackages(self.systemid, channelLabel)
-        LOG.info("%s packages are available, getting list of short metadata now." % (len(packages)))
+        LOG.info("%s <%s> packages are available, getting list of short metadata now." % (len(packages), channelLabel))
         pkgInfo = satDump.getShortPackageInfo(self.systemid, packages, filterLatest = not self.fetchAll)
-        LOG.info("%s packages have been marked to be fetched" % (len(pkgInfo.values())))
+        LOG.info("%s <%s> packages have been marked to be fetched" % (len(pkgInfo.values()), channelLabel))
 
         numThreads = int(self.parallel)
         LOG.info("Running in parallel fetch mode with %s threads" % (numThreads))
