@@ -20,6 +20,7 @@ sys.path.append("../src")
 from pulp.api import RepoApi
 from pulp.api import PackageApi
 from pulp.api import ConsumerApi
+from pulp.api import PackageVersionApi
 from pulp.model import Package
 from pulp.util import random_string
 import time
@@ -33,6 +34,7 @@ class TestApi(unittest.TestCase):
         self.rapi = RepoApi()
         self.papi = PackageApi()
         self.capi = ConsumerApi()
+        self.pvapi = PackageVersionApi()
         
     def tearDown(self):
         self.rapi.clean()
@@ -171,8 +173,23 @@ class TestApi(unittest.TestCase):
         packages = found['packages']
         assert(packages != None)
         assert(len(packages) > 0)
-    
-
+        print packages
+        p = packages.values()[0]
+        assert(p['versions'] != None)
+        # versions = p['versions']
+        
+    def test_package_versions(self):
+        p = self.papi.create('some-package-id', 'some package desc')
+        pv = self.pvapi.create(p.id, 0, '1.2.3', '1', 'i386')
+        p.versions.append(pv)
+        self.papi.update(p)
+        
+        found = self.papi.package(p.id)
+        versions = found['versions']
+        assert(versions != None)
+        assert(versions[0]['packageid'] == p.id)
+        print found
+        
     def test_packages(self):
         p = self.papi.create('some-package-id', 'some package desc')
         packages = self.papi.packages()

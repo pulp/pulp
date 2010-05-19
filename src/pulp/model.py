@@ -68,9 +68,15 @@ class Package(Base):
         self.description = description
         self.versions = []
 
-class Version(Base):
-    def __init__(self, id, version_str):
-        self.version_str = version_str
+class PackageVersion(Base):
+    def __init__(self, packageid, epoch, version, release, arch):
+        self.packageid = packageid
+        self.epoch = epoch
+        self.version = version
+        self.release = release
+        self.arch = arch
+        self.requires = []
+        self.provides = []
         
 class Consumer(Base):
     def __init__(self, id, description):

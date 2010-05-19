@@ -66,6 +66,7 @@ class RepoApi(BaseApi):
         # TODO: Extract this to a config
         self.LOCAL_STORAGE = "/var/lib/pulp/"
         self.packageApi = PackageApi()
+        self.packageVersionApi = PackageVersionApi()
 
     def repositories(self):
         """
@@ -134,9 +135,17 @@ class RepoApi(BaseApi):
                 try:
                     info = getRPMInformation(dir + fname)
                     p = self.packageApi.create(info['name'], info['description'])
+                    pv = self.packageVersionApi.create(p.id, info['epoch'], 
+                        info['version'], info['release'], info['arch'])
+                    for dep in info['requires']:
+                        pv.requires.append(dep)
+                    for dep in info['provides']:
+                        pv.provides.append(dep)
+                    p.versions.append(pv)
+                    self.packageApi.update(p)
                     packages[p.id] = p
                     package_count = package_count + 1
-                except:
+                except Exception, e:
                     log.error("error reading package %s" % (dir + fname))
         log.debug("read [%s] packages" % package_count)
 
@@ -166,6 +175,33 @@ class PackageApi(BaseApi):
         List all packages.  Can be quite large
         """
         return list(self.objectdb.find())
+        
+class PackageVersionApi(BaseApi):
+
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.objectdb = self.db.packageversions
+
+    def create(self, packageid, epoch, version, release, arch):
+        """
+        Create a new PackageVersion object and return it
+        """
+        pv = model.PackageVersion(packageid, epoch, version, release, arch)
+        self.objectdb.insert(pv)
+        return pv
+        
+    def packageversion(self, id, filter=None):
+        """
+        Return a single PackageVersion object
+        """
+        return self.objectdb.find_one({'id': id})
+
+    def packageversions(self):
+        """
+        List all packages.  Can be quite large
+        """
+        return list(self.objectdb.find())
+
         
 class ConsumerApi(BaseApi):
 
