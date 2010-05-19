@@ -19,7 +19,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp',
-    version='0.0.0',
+    version='0.0.1',
     description='content mangement and delivery',
     author='Jason L Connor, Mike McCune',
     author_email='jconnor@redhat.com, mmcune@redhat.com',
@@ -39,5 +39,9 @@ setup(
         'Intended Audience :: Developers',
         'Development Status :: 3 - Alpha',
     ],
+    requires=[
+        'grinder >= 0.0.20',
+        'python-pymongo = 1.6',
+    ]
 )
 

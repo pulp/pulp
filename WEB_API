@@ -1,0 +1,62 @@
+This is the "official" documentation of Web Services API. If you are running
+juicer with the example configuration file, the web services are running at
+http://localhost:8811/
+
+The web services are broken into three main groups of functionality, delimited
+by a prefix in the url path, they are:
+1. Repositories
+2. Packages
+3. Consumers
+This document is organized by these groups as sections.
+
+
+1. Repositories ===============================================================
+
+Function: List all available repositories
+URL Path: /repositories/
+Method:   GET
+Body:     None
+Return:   JSON encoded list of repositories
+
+Function: Get information on a specific repository
+URL Path: /repositories/<integer id>/
+Method:   GET
+Body:     None
+Return:   JSON encoded repository information
+
+Function: Update repository information
+URL Path: /repositories/<integer id>/
+Method:   POST
+Body:     JSON encoded repository information
+Return:   JSON encoded True on success
+
+Function: Delete a repository
+URL Path: /repositories/<integer id>/
+Method:   DELETE
+Body:     None
+Return:   JSON encoded True on success
+
+Function: List all packages in a repository
+URL Path: /repositories/<integer id>/list/
+Method:   GET
+Body:     None
+Return:   JSON encoded list of packages in the repository
+
+Function: Sync a repository
+URL Path: /repositories/<integer id>/sync/
+Method:   GET
+Body:     None
+Return:   JSON encoded True on success
+
+
+2. Packages ===================================================================
+
+TODO
+
+Function:
+URL Path:
+Method:
+Body:
+Return:
+
+3. Consumers ==================================================================

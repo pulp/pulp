@@ -26,10 +26,9 @@ from pulp.api import RepoApi
 URLS = (
     '/', 'Repositories',
     '/(\d+)', 'Repository',
-    '/update', 'Update',
-    '/create', 'Create',
-    '/sync/(\d+)', 'Sync',
-    '/packages/(\d+)', 'Packages',
+    '/new', 'Create',
+    '/(\d+)/sync', 'Sync',
+    '/(\d+)/list', 'Packages',
 )
 
 application = web.application(URLS, globals())
@@ -66,9 +65,6 @@ class Repository(JSONController):
         """
         return self.output(API.repository(id))
     
-    
-class Update(JSONController):
-    
     def POST(self):
         """
         @return: True on successful update or repository meta data
@@ -76,7 +72,7 @@ class Update(JSONController):
         repo = self.input()
         API.update(repo)
         return self.output(True)
-    
+     
     
 class Create(JSONController):
     
