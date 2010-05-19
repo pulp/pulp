@@ -1,7 +1,7 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.46
+Version: 0.0.47
 Release: 1%{?dist}
 Summary: A tool synching content
 
@@ -47,6 +47,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed May 19 2010 John Matthews <jmatthew@redhat.com> 0.0.47-1
+- Adding extra log output to help QE in automation testing
+  (jmatthew@redhat.com)
+
 * Wed May 19 2010 Mike McCune <mmccune@redhat.com> 0.0.46-1
 - import into pulp
 
