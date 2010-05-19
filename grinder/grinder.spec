@@ -1,7 +1,7 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.45
+Version: 0.0.46
 Release: 1%{?dist}
 Summary: A tool synching content
 
@@ -47,8 +47,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Wed May 19 2010 Mike McCune <mmccune@redhat.com> 0.0.45-1
-- new package
+* Wed May 19 2010 Mike McCune <mmccune@redhat.com> 0.0.46-1
+- import into pulp
 
 * Tue May 18 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.44-1
 - 593304 - Minor issue, visible python errors at the end of a kickstart sync
