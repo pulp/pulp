@@ -43,6 +43,6 @@ setup(
         'gevent == 0.12',
         'grinder >= 0.0.20',
         'pymongo == 1.6',
-    ]
+    ],
 )
 
