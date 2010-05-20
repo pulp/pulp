@@ -17,6 +17,14 @@
 #
 import sys
 sys.path.append("../src")
+import json
+import time
+import unittest
+import logging
+import os
+
+import pymongo.json_util 
+
 from pulp.api import RepoApi
 from pulp.api import PackageApi
 from pulp.api import ConsumerApi
@@ -24,10 +32,6 @@ from pulp.api import PackageVersionApi
 from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import random_string
-import time
-import unittest
-import logging
-import os
 
 class TestApi(unittest.TestCase):
 
@@ -146,6 +150,11 @@ class TestApi(unittest.TestCase):
         found = self.capi.consumerswithpackage('test_consumerwithpackage')
         assert(len(found) > 0)
         
+    def test_json(self):
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'yum:http://example.com')
+        jsonrepo = json.dumps(repo, default=pymongo.json_util.default)
+        assert(jsonrepo != None)
         
         
         

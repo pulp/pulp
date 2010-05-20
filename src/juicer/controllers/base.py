@@ -18,6 +18,7 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import json
 import web
+import pymongo.json_util 
 
 
 class JSONController(object):
@@ -27,4 +28,4 @@ class JSONController(object):
     
     def output(self, data):
         web.header('Content-Type', 'application/json')
-        return json.dumps(data)
+        return json.dumps(data, default=pymongo.json_util.default)
