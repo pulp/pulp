@@ -246,10 +246,13 @@ class ConsumerApi(BaseApi):
         """
         ## Have to chunk this because of issue with PyMongo and network
         ## See: http://tinyurl.com/2eyumnc
-        chunksize = 1000
+        chunksize = 500
         chunked = chunks(consumers, chunksize)
+        inserted = 0
         for chunk in chunked:
             self.objectdb.insert(chunk)
+            inserted = inserted + chunksize
+            print "Inserted: %s" % inserted
 
     def consumers(self):
         """

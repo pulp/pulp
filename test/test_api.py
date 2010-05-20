@@ -22,6 +22,7 @@ from pulp.api import PackageApi
 from pulp.api import ConsumerApi
 from pulp.api import PackageVersionApi
 from pulp.model import Package
+from pulp.model import Consumer
 from pulp.util import random_string
 import time
 import unittest
@@ -35,13 +36,10 @@ class TestApi(unittest.TestCase):
         self.papi = PackageApi()
         self.capi = ConsumerApi()
         self.pvapi = PackageVersionApi()
-        
-    def tearDown(self):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
         self.pvapi.clean()
-        return
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
@@ -126,6 +124,13 @@ class TestApi(unittest.TestCase):
         found = self.capi.consumer('test-consumer')
         assert(found != None)
         
+    def test_bulk_create(self):
+        consumers = []
+        for i in range(1005):
+            consumers.append(Consumer(random_string(), random_string()))
+        self.capi.bulkcreate(consumers)
+        assert(len(self.capi.consumers()) == 1005)
+            
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         package = Package('test_consumerwithpackage','test package search')
