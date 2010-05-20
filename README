@@ -20,8 +20,9 @@ Requirements: The following packages must first be installed:
 4. Gevent: (python-gevent) python micro-threaded http server w/ ssl support
            based on libevent
 5. Grinder: (grinder) python RHN and Yum repository synchronization
+6. Web.py: (python-webpy) simple python webframework
 
-All of these packages can be found as rpm's in the yum repo:
+All of these packages can be found as rpm's in the yum repo (or from fedora):
 http://admiyo.fedorapeople.org/pulp-repo/
 
 Cut & Paste this as a yum repo file (pulp.repo):
