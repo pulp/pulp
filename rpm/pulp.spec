@@ -18,7 +18,7 @@ BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 
 %description
-Pulp provides replication, access, and accounting for software respositories.
+Pulp provides replication, access, and accounting for software repositories.
 
 %prep
 %setup -q
