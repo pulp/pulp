@@ -61,7 +61,7 @@ rm -rf %{buildroot}
 - tito tagging
 
 
-* Thu May 20 2010 Adam Young  <ayoung@redhat.com> - 0.0.1-2
+* Thu May 20 2010 Adam Young 0.0.2-1
 - Use macro for file entry for juicer
 - strip leading line from files that are not supposed to be scripts 
 
