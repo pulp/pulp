@@ -46,6 +46,13 @@ class TaskThread(threading.Thread):
         self.__lock = threading.Lock()
         self.__exit = False
         self.daemon = True
+        
+        
+    def __cmp__(self, other):
+        """
+        Next run time based comparison used by At and Cron task queues
+        """
+        return cmp(self.next, other.next)
     
     def __yield(self):
         self.__lock.acquire()
@@ -96,6 +103,7 @@ class Task(object):
         self.status = CREATED
         self.start_time = None
         self.finish_time = None
+        self.next_time = None
         self.exception = None
         self.traceback = None
         
@@ -146,15 +154,3 @@ class Task(object):
         Run this task's callable in a separate thread.
         """
         self._thread.execute()
-        
-    def reset(self, args=None, kwargs=None):
-        if args is not None:
-            self.args = args
-        if kwargs is not None:
-            self.kwargs = kwargs
-        
-        self.status = RESET
-        self.start_time = None
-        self.finish_time = None
-        self.exception = None
-        self.traceback = None

@@ -16,11 +16,26 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
+from threading import Condition, Lock, Thread
+
 
 class TaskQueue(object):
     """
     Base task queue class to describe common functionality and interface
     """
+    def __init__(self, max_dispatcher_sleep=1):
+        self.max_dispatch_sleep = max_dispatcher_sleep
+        
+        self._lock = Lock()
+        self._condition = Condition(self._lock)
+        
+        self._wait_queue = []
+        self._running_tasks = {}
+        self._finished_tasks = {}
+        
+        self._dispatcher = Thread(target=self._dispatch)
+        self._dispatcher.daemon = True
+        self._dispatcher.start()
     
     def _dispatch(self):
         raise NotImplementedError()
@@ -29,10 +44,33 @@ class TaskQueue(object):
         raise NotImplementedError()
     
     def is_empty(self):
-        raise NotImplementedError()
+        """
+        Check to see if there are any waiting or running tasks
+        @return: True if there are no waiting or running tasks, False otherwise
+        """
+        return self._wait_queue or self._running_tasks
     
     def enqueue(self, task):
         raise NotImplementedError()
     
     def find(self, task_id):
-        raise NotImplementedError()
+        """
+        Find a task in the task queue, given its task id
+        @param task_id: Task instance id
+        @return: Task instance with corresponding id if found, None otherwise
+        """
+        task = None
+        self._lock.acquire()
+        try:
+            if task_id in self._finished_tasks:
+                task = self._finished_tasks[task_id]
+            elif task_id in self._running_tasks:
+                task = self._running_tasks[task_id]
+            else:
+                for t in self._wait_queue:
+                    if t.id == task_id:
+                        task = t
+                        break
+        finally:
+            self._lock.release()
+        return task

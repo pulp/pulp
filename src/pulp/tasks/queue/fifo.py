@@ -17,7 +17,6 @@
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 from datetime import datetime, timedelta
-from threading import Lock, Condition, Thread
 
 from pulp.tasks.task import Task
 from pulp.tasks.queue.base import TaskQueue
@@ -30,35 +29,23 @@ class FIFOTaskQueue(TaskQueue):
     amount of time.
     """
     def __init__(self,
-                 max_running=4,
                  max_dispatcher_sleep=1,
+                 max_running=4,
                  finished_lifetime=timedelta(seconds=3600)):
         """
-        @param max_running: the maximum number of tasks to have running
-                            simultaneously
         @param max_dispatch_sleep: maximum amount of time, in seconds, before
                                    the dispatcher wakes and performs its duties
+        @param max_running: the maximum number of tasks to have running
+                            simultaneously
         @param finished_lifetime: timedelta object representing the length of
                                   time to keep information on finished tasks
         @return: FIFOTaskQueue instance
         """
-        super(FIFOTaskQueue, self).__init__()
+        super(FIFOTaskQueue, self).__init__(max_dispatcher_sleep)
         
-        self.max_running = max_running
-        self.max_dispatch_sleep = max_dispatcher_sleep
-        self.finished_lifetime = finished_lifetime
-        
-        self._lock = Lock()
-        self._condition = Condition(self._lock)
         self._running_count = 0
-        
-        self._wait_queue = []
-        self._running_tasks = {}
-        self._finished_tasks = {}
-        
-        self._dispatcher = Thread(target=self._dispatch)
-        self._dispatcher.daemon = True
-        self._dispatcher.start()
+        self.max_running = max_running
+        self.finished_lifetime = finished_lifetime
         
     def __del__(self):
         # try to head-off a race condition on shutdown
@@ -108,13 +95,6 @@ class FIFOTaskQueue(TaskQueue):
         finally:
             self._lock.release()
         
-    def is_empty(self):
-        """
-        Check to see if there are any waiting or running tasks
-        @return: True if there are no waiting or running tasks, False otherwise
-        """
-        return self._wait_queue or self._running_tasks
-    
     def finished_tasks(self):
         """
         Get a list of all the finished tasks
@@ -136,25 +116,3 @@ class FIFOTaskQueue(TaskQueue):
             self._condition.notify()
         finally:
             self._lock.release()
-    
-    def find(self, task_id):
-        """
-        Find a task in the task queue, given its task id
-        @param task_id: Task instance id
-        @return: Task instance with corresponding id if found, None otherwise
-        """
-        task = None
-        self._lock.acquire()
-        try:
-            if task_id in self._finished_tasks:
-                task = self._finished_tasks[task_id]
-            elif task_id in self._running_tasks:
-                task = self._running_tasks[task_id]
-            else:
-                for t in self._wait_queue:
-                    if t.id == task_id:
-                        task = t
-                        break
-        finally:
-            self._lock.release()
-        return task

@@ -16,8 +16,58 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
+import heapq
+from datetime import datetime, timedelta
+
 from pulp.tasks.queue.base import TaskQueue
+from pulp.tasks.task import Task
 
 
 class AtTaskQueue(TaskQueue):
-    pass
+    """
+    """
+    
+    def _dispatch(self):
+        """
+        """
+        self._lock.acquire()
+        while True:
+            self._condition.wait(self.max_dispatcher_sleep)
+            now = datetime.now()
+            while self._wait_queue and self._wait_queue[0].next <= now:
+                task = heapq.heappop(self._wait_queue)
+                self._running_tasks[task.id] = task
+                task.run()
+                
+    def finished(self, task):
+        """
+        """
+        self._lock.acquire()
+        try:
+            self._finished_tasks[task.id] = self._running_tasks.pop(task.id)
+            self._condition.notify()
+        finally:
+            self._lock.release()
+            
+    def _parse_at_string(self, atstr):
+        raise NotImplementedError()
+            
+    def enqueue(self, task, at=None):
+        assert isinstance(task, Task)
+        assert at is not None or task.next_time is not None
+        
+        # an explicit at will override an existing next_time
+        next = at or task.next_time
+        
+        if isinstance(next, datetime):
+            pass
+        elif isinstance(next, basestring):
+            next = self._parse_at_string(next)
+        elif isinstance(next, timedelta):
+            now = datetime.now()
+            next = now + next
+        else:
+            raise TypeError('unsupported at time')
+        
+        task.next_time = next
+        heapq.heappush(self._wait_queue, task)
