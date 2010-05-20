@@ -41,7 +41,7 @@ setup(
     ],
     install_requires=[
         'gevent == 0.12.2',
-        'web == 0.32',
+        'web.py == 0.32',
         'grinder >= 0.0.20',
         'pymongo == 1.6',
     ],
