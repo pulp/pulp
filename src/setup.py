@@ -40,7 +40,7 @@ setup(
         'Development Status :: 3 - Alpha',
     ],
     install_requires=[
-        'gevent == 0.12',
+        'gevent == 0.12.2',
         'grinder >= 0.0.20',
         'pymongo == 1.6',
     ],
