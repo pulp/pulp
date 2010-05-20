@@ -4,20 +4,21 @@
 
 Name:           pulp
 Version:        0.0.1
-Release:        1%{?dist}
-Summary:        an application for managing software content. 
+Release:        2%{?dist}
+Summary:        An application for managing software content
 
 Group:          Development/Languages
-License:        GPLV2+
+License:        GPLv2
 URL:            https://fedorahosted.org/pulp/
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
 BuildRequires:  python2-devel
+BuildRequires:  python-setuptools
 
 %description
-
+Pulp provides replication, access, and accounting for software respositories.
 
 %prep
 %setup -q
@@ -28,12 +29,24 @@ BuildRequires:  python2-devel
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-%{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+rm -rf %{buildroot}
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+
+
+find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
+
+# RHEL 5 packages don't have egg-info files, so remove the requires.txt
+# It isn't needed, because RPM will guarantee the dependency itself
+%if 0%{?rhel} > 0
+%if 0%{?rhel} <= 5
+rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
+%endif
+%endif
 
  
+ 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 
 %files
@@ -41,8 +54,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/*
-/usr/bin/juicer
+%{_bindir}/juicer
 
 %changelog
+
+* Thu May 20 2010 Adam Young  <ayoung@redhat.com> - 0.0.1-2
+- Use macro for file entry for juicer
+
+
 * Wed May 19 2010 Adam Young  <ayoung@redhat.com> - 0.0.1
 - Initial specfile
