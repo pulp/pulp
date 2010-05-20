@@ -118,7 +118,7 @@ class RepoApi(BaseApi):
         rs = model.RepoSource(repo['source'])
         if (rs.type == 'yum'):
             log.debug("Creating repo grinder: %s" % rs.url)
-            yfetch = YumRepoGrinder(repo['id'], rs.url, 1)
+            yfetch = YumRepoGrinder(repo['id'], rs.url.encode('ascii', 'ignore'), 1)
             yfetch.fetchYumRepo(self.LOCAL_STORAGE)
             repo_dir = "%s/%s/" % (self.LOCAL_STORAGE, repo['id'])
             self._add_packages_from_dir(repo_dir, repo)
