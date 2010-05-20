@@ -40,6 +40,7 @@ class TestApi(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
+        self.pvapi.clean()
         return
         
     def test_create(self):
@@ -138,7 +139,9 @@ class TestApi(unittest.TestCase):
         assert(len(found) == 0)
 
         found = self.capi.consumerswithpackage('test_consumerwithpackage')
-        assert(len(found) == 1)
+        assert(len(found) > 0)
+        
+        
         
         
     def test_sync(self):

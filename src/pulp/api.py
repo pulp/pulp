@@ -26,6 +26,7 @@ from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
 from pulp.pexceptions import PulpException
 from pulp.util import getRPMInformation
+from pulp.util import chunks
 
 log = logging.getLogger("pulp.api")
 # log.setLevel(logging.DEBUG)
@@ -36,6 +37,13 @@ class BaseApi(object):
         self.connection = pymongo.Connection()
         self.db = self.connection._database
         self.collection = self.db.pulp_collection
+        ## INDEXES
+        self.objectdb = self._getcollection()
+        self.objectdb.create_index([("id", pymongo.DESCENDING)])
+        
+    def _getcollection(self):
+        return
+
     
     def clean(self):
         """
@@ -62,12 +70,14 @@ class RepoApi(BaseApi):
     """
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb = self.db.repos
         # TODO: Extract this to a config
         self.LOCAL_STORAGE = "/var/lib/pulp/"
         self.packageApi = PackageApi()
         self.packageVersionApi = PackageVersionApi()
 
+    def _getcollection(self):
+        return self.db.repos
+        
     def repositories(self):
         """
         Return a list of Repositories
@@ -155,6 +165,9 @@ class PackageApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         self.objectdb = self.db.packages
+
+    def _getcollection(self):
+        return self.db.packages
         
     def create(self, id, name):
         """
@@ -182,6 +195,9 @@ class PackageVersionApi(BaseApi):
         BaseApi.__init__(self)
         self.objectdb = self.db.packageversions
 
+    def _getcollection(self):
+        return self.db.packageversions
+
     def create(self, packageid, epoch, version, release, arch):
         """
         Create a new PackageVersion object and return it
@@ -208,6 +224,13 @@ class ConsumerApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         self.objectdb = self.db.consumers
+        # INDEXES
+        self.objectdb.create_index([("packageids", pymongo.DESCENDING)])
+
+
+    def _getcollection(self):
+        return self.db.consumers
+
     
     def create(self, id, description):
         """
@@ -216,6 +239,17 @@ class ConsumerApi(BaseApi):
         c = model.Consumer(id, description)
         self.objectdb.insert(c)
         return c
+        
+    def bulkcreate(self, consumers):
+        """
+        Create a set of Consumer objects in a bulk manner
+        """
+        ## Have to chunk this because of issue with PyMongo and network
+        ## See: http://tinyurl.com/2eyumnc
+        chunksize = 1000
+        chunked = chunks(consumers, chunksize)
+        for chunk in chunked:
+            self.objectdb.insert(chunk)
 
     def consumers(self):
         """

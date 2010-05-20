@@ -40,3 +40,9 @@ def random_string():
     # The characters to make up the random password
     chars = string.ascii_letters + string.digits
     return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     
+
+def chunks(l, n):
+    """
+    Split an array into n# of chunks.  Taken from : http://tinyurl.com/y8v5q2j
+    """
+    return [l[i:i+n] for i in range(0, len(l), n)]

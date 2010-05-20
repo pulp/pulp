@@ -75,23 +75,28 @@ class LargeLoad(unittest.TestCase):
         last_desc = None
         last_id = None
         repos = self.rapi.repositories()
-        
+        consumers = []
         for i in range(self.numconsumers):
             repo = random.choice(repos)
-            c = self.capi.create(random_string(), random_string())
+            # c = self.capi.create(random_string(), random_string())
+            c = Consumer(random_string(), random_string())
             packages = repo['packages']
             for pid in packages:
                 c.packageids.append(pid)
-            self.capi.update(c)
+            # self.capi.update(c)
             if (i % 100 == 0):
-                print "Inserted [%s] consumers" % i
+                print "created [%s] consumers" % i
                 p = Package(TEST_PACKAGE_ID, 'random package to be found')
                 c.packageids.append(p.id)
-                self.capi.update(c)
-                # packages[p.id] = p
-                # self.rapi.update(repo)
+                # self.capi.update(c)
             last_desc = c.description
             last_id = c.id
+            consumers.append(c)
+        print "BULK INSERTING size: %s" % str(sys.getsizeof(consumers))
+        
+        self.capi.bulkcreate(consumers)
+        print "Done bulk inserting"
+        
         return last_desc, last_id
 
     

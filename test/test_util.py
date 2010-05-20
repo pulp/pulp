@@ -18,6 +18,7 @@
 import sys
 sys.path.append("../src")
 from pulp.util import getRPMInformation
+from pulp.util import chunks
 
 import time
 import unittest
@@ -31,6 +32,14 @@ class TestUtil(unittest.TestCase):
         assert(info['version'] == '0.2.1')
         assert(info['name'] == 'pulp-test-package')
         
+    def test_chunks(self):
+        list = range(1003)
+        ck = chunks(list, 100)
+        assert(len(ck) == 11)
+        total = 0
+        for chunk in ck:
+            total = total + len(chunk)
+        assert(total == 1003)
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
