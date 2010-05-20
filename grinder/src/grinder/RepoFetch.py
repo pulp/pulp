@@ -39,7 +39,7 @@ class RepoFetch(BaseFetch):
                  mirrorlist=None, download_dir='./'):
         BaseFetch.__init__(self, cacert=cacert, clicert=clicert, clikey=clikey)
         self.repo_label = repo_label
-        self.repourl = repourl
+        self.repourl = repourl.encode('ascii', 'ignore')
         self.mirrorlist = mirrorlist
         self.local_dir = download_dir
         self.repo_dir = os.path.join(self.local_dir, self.repo_label)
