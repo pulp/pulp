@@ -34,17 +34,15 @@ class CliDriver(object):
         self.shortdesc = shortdesc
         if shortdesc is not None and description is None:
             description = shortdesc
-        self.debug = 0
         self.parser = OptionParser(usage=usage, description=description)
         self._add_common_options()
         self.name = name
         self.killcount = 0
-        #GrinderLog.setup(self.debug)
 
     def _add_common_options(self):
         """ Add options that apply to all sub-commands. """
         self.parser.add_option("--debug", dest="debug",
-                default=0, help="debug level")
+                action="store_true", help="enable debug logging")
 
     def _do_command(self):
         """ implement this in sub classes"""
@@ -56,6 +54,7 @@ class CliDriver(object):
     def main(self):
 
         (self.options, self.args) = self.parser.parse_args()
+        GrinderLog.setup(self.options.debug)
         self.args = self.args[1:]
         # do the work, catch most common errors here:
         self._do_command()
@@ -66,7 +65,7 @@ class RHNDriver(CliDriver):
         shortdesc = "Fetches content from a rhn source."
         desc = "rhn"
         CliDriver.__init__(self, "rhn", usage, shortdesc, desc)
-        GrinderLog.setup(self.debug)
+        #GrinderLog.setup(self.debug)
         self.rhnSync = RHNSync()
 
         self.parser.add_option('-a', '--all', action='store_true', 
@@ -175,7 +174,7 @@ class RepoDriver(CliDriver):
         shortdesc = "Fetches content from a yum repo."
         desc = "yum"
         CliDriver.__init__(self, "yum", usage, shortdesc, desc)
-        GrinderLog.setup(self.debug)
+        #GrinderLog.setup(self.debug)
 
         self.parser.add_option("--label", dest="label",
                           help="Repo label")
