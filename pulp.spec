@@ -3,8 +3,8 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.1
-Release:        2%{?dist}
+Version:        0.0.2
+Release:        1%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -57,6 +57,9 @@ rm -rf %{buildroot}
 %{_bindir}/juicer
 
 %changelog
+* Thu May 20 2010 Mike McCune <mmccune@redhat.com> 0.0.2-1
+- tito tagging
+
 
 * Thu May 20 2010 Adam Young  <ayoung@redhat.com> - 0.0.1-2
 - Use macro for file entry for juicer
