@@ -60,7 +60,7 @@ rm -rf %{buildroot}
 
 * Thu May 20 2010 Adam Young  <ayoung@redhat.com> - 0.0.1-2
 - Use macro for file entry for juicer
-
+- strip leading line from files that are not supposed to be scripts 
 
 * Wed May 19 2010 Adam Young  <ayoung@redhat.com> - 0.0.1
 - Initial specfile
