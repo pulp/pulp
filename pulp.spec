@@ -25,13 +25,16 @@ Pulp provides replication, access, and accounting for software repositories.
 
 
 %build
+pushd src
 %{__python} setup.py build
+popd
 
 
 %install
 rm -rf %{buildroot}
+pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
-
+popd
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -44,10 +47,9 @@ rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
 %endif
 
 %check
-pushd %{buildroot}/%{python_sitelib}/%{name}
+pushd  %{buildroot}/%{python_sitelib}/%{name}
 nosetests
 popd
- 
  
 %clean
 rm -rf %{buildroot}
