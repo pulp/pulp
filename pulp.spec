@@ -63,6 +63,10 @@ rm -rf %{buildroot}
 %{_bindir}/juicer
 
 %changelog
+
+* Thu May 20 2010 Mike McCune <ayoung@redhat.com> 0.0.3-1
+- fixed call to setup to install all files
+
 * Thu May 20 2010 Mike McCune <mmccune@redhat.com> 0.0.2-1
 - tito tagging
 
