@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.2
+Version:        0.0.3
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -43,6 +43,10 @@ rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
 %endif
 %endif
 
+%check
+pushd %{buildroot}/%{python_sitelib}/%{name}
+nosetests
+popd
  
  
 %clean
@@ -61,7 +65,7 @@ rm -rf %{buildroot}
 - tito tagging
 
 
-* Thu May 20 2010 Adam Young 0.0.2-1
+* Thu May 20 2010 Adam Young 0.0.3-1
 - Use macro for file entry for juicer
 - strip leading line from files that are not supposed to be scripts 
 
