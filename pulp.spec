@@ -17,6 +17,7 @@ BuildArch:      noarch
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
+BuildRequires:  rpm-python
 
 Requires: python-gevent
 Requires: python-pymongo
@@ -52,11 +53,6 @@ rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
 %endif
 %endif
 
-%check
-pushd  %{buildroot}/%{python_sitelib}/%{name}
-nosetests -e test_getrpminfo -e multi_runs -e test_task -e test_sync -e test_local_sync
-popd
- 
 %clean
 rm -rf %{buildroot}
 
@@ -70,7 +66,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Fri May 21 2010 Adam Young <ayoung@redhat.com> 0.0.3-2
-- Added dependencies and nosetest
+- Added dependencies 
   
 * Thu May 20 2010 Adam Young <ayoung@redhat.com> 0.0.3-1
 - fixed call to setup to install all files
