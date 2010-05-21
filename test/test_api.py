@@ -48,6 +48,16 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
         assert(repo != None)
+
+    def test_duplicate(self):
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'yum:http://example.com')
+        repo = self.rapi.create('some-id','some name', 
+            'i386', 'yum:http://example.com')
+        
+        repos = self.rapi.repositories()
+        assert(len(repos) == 1)
+        
         
     def test_feed_types(self):
         failed = False

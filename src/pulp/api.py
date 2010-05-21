@@ -40,12 +40,11 @@ class BaseApi(object):
         self.collection = self.db.pulp_collection
         ## INDEXES
         self.objectdb = self._getcollection()
-        self.objectdb.create_index([("id", pymongo.DESCENDING)])
+        self.objectdb.ensure_index([("id", pymongo.DESCENDING)], unique=True)
         
     def _getcollection(self):
         return
 
-    
     def clean(self):
         """
         Delete all the Objects in the database.  WARNING: Destructive
@@ -226,7 +225,7 @@ class ConsumerApi(BaseApi):
         BaseApi.__init__(self)
         self.objectdb = self.db.consumers
         # INDEXES
-        self.objectdb.create_index([("packageids", pymongo.DESCENDING)])
+        self.objectdb.ensure_index([("packageids", pymongo.DESCENDING)])
 
 
     def _getcollection(self):
