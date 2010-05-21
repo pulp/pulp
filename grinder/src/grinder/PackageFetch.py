@@ -52,7 +52,7 @@ class PackageFetch(BaseFetch):
         if status == BaseFetch.STATUS_UNAUTHORIZED:
             LOG.warn("Unauthorized request from fetch().  Will attempt to update authentication credentials and retry")
             authMap = self.login(refresh=True)
-            return self.fetch(fileName, fetchURL, itemSize, md5sum, self.savePath, headers=authMap)
+            return self.fetch(fileName, fetchURL, itemSize, hashType,md5sum, self.savePath, headers=authMap)
         return status
 
 if __name__ == "__main__":
