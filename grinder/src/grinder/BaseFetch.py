@@ -106,7 +106,8 @@ class BaseFetch(object):
             status = curl.getinfo(curl.HTTP_CODE)
             curl.close()
             f.close()
-            
+            # validate the fetched bits
+            vstatus = self.validateDownload(filePath, int(itemSize), hashtype, checksum)
             if status == 401:
                 LOG.warn("Unauthorized request from: %s" % (fetchURL))
                 return BaseFetch.STATUS_UNAUTHORIZED
@@ -117,8 +118,6 @@ class BaseFetch(object):
                     LOG.warn("Retrying fetch of: %s with %s retry attempts left." % (fileName, retryTimes))
                     return self.fetch(fileName, fetchURL, itemSize, hashtype, checksum, savePath, headers, retryTimes)
                 return BaseFetch.STATUS_ERROR
-            # validate the fetched bits
-            vstatus = self.validateDownload(filePath, int(itemSize), hashtype, checksum)
             if vstatus in [BaseFetch.STATUS_ERROR, BaseFetch.STATUS_SIZE_MISSMATCH, 
                 BaseFetch.STATUS_MD5_MISSMATCH] and retryTimes > 0:
                 #
