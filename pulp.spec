@@ -4,7 +4,7 @@
 
 Name:           pulp
 Version:        0.0.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -16,6 +16,10 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
+BuildRequires:  python-nose	
+
+Requires: python-gevent
+Requires: python-pymongo
 
 %description
 Pulp provides replication, access, and accounting for software repositories.
@@ -36,6 +40,8 @@ pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
+cp -R test  %{buildroot}/%{python_sitelib}/%{name}
+
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
 # RHEL 5 packages don't have egg-info files, so remove the requires.txt
@@ -48,7 +54,7 @@ rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
 
 %check
 pushd  %{buildroot}/%{python_sitelib}/%{name}
-nosetests
+nosetests -e test_getrpminfo -e multi_runs -e test_task -e test_sync -e test_local_sync
 popd
  
 %clean
@@ -63,13 +69,14 @@ rm -rf %{buildroot}
 %{_bindir}/juicer
 
 %changelog
-
+* Fri May 21 2010 Adam Young <ayoung@redhat.com> 0.0.3-2
+- Added dependencies and nosetest
+  
 * Thu May 20 2010 Adam Young <ayoung@redhat.com> 0.0.3-1
 - fixed call to setup to install all files
 
 * Thu May 20 2010 Mike McCune <mmccune@redhat.com> 0.0.2-1
 - tito tagging
-
 
 * Thu May 20 2010 Adam Young 0.0.3-1
 - Use macro for file entry for juicer
