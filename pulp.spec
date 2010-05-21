@@ -64,7 +64,7 @@ rm -rf %{buildroot}
 
 %changelog
 
-* Thu May 20 2010 Mike McCune <ayoung@redhat.com> 0.0.3-1
+* Thu May 20 2010 Adam Young <ayoung@redhat.com> 0.0.3-1
 - fixed call to setup to install all files
 
 * Thu May 20 2010 Mike McCune <mmccune@redhat.com> 0.0.2-1
