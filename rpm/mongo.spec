@@ -1,6 +1,6 @@
 Name: mongo
 Version: 1.4.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: mongo client shell and tools
 License: AGPL 3.0
 URL: http://www.mongodb.org
@@ -69,7 +69,7 @@ scons -c
 rm -rf $RPM_BUILD_ROOT
 
 %pre server
-/usr/sbin/useradd -M -r -U -d /var/lib/mongo -s /bin/false \
+/usr/sbin/useradd -M -r  -d /var/lib/mongo -s /bin/false \
     -c mongod mongod > /dev/null 2>&1
 
 %post server
@@ -89,6 +89,10 @@ if test $1 -ge 1
 then
   /sbin/service mongod stop >/dev/null 2>&1 || :
 fi
+
+/usr/sbin/userdel mongod
+
+
 
 %files
 %defattr(-,root,root,-)
@@ -132,8 +136,11 @@ fi
 #%{_libdir}/libmongotestfiles.a
 
 %changelog
+* Fri May 21 2010 Adam Young <ayoung@redhat.com> - 1.4.2-2
+- Removed The -U option which is not supporteed  RHEL5 shadow-utils.  It is not needed on F12 or later
+
 * Fri May 7 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2
-- chaged spec to use with default naming of source tarball
+- changed spec to use with default naming of source tarball
 - updated to version 1.4.2
 
 * Thu Jan 28 2010 Richard M Kreuter <richard@10gen.com>
