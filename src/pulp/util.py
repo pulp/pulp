@@ -20,6 +20,7 @@ import os
 import logging
 import string
 import random
+import fnmatch
 
 log = logging.getLogger("pulp.util")
 
@@ -46,3 +47,22 @@ def chunks(l, n):
     Split an array into n# of chunks.  Taken from : http://tinyurl.com/y8v5q2j
     """
     return [l[i:i+n] for i in range(0, len(l), n)]
+
+## {{{ http://code.activestate.com/recipes/499305/ (r3)
+def locate(pattern, root=os.curdir):
+    '''Locate all files matching supplied filename pattern in and below
+    supplied root directory.'''
+    for path, dirs, files in os.walk(os.path.abspath(root)):
+        for filename in fnmatch.filter(files, pattern):
+            yield os.path.join(path, filename)
+## end of http://code.activestate.com/recipes/499305/ }}}
+
+def find_dir_with_file(filename, root=os.curdir):
+    """
+    Find the first matching dir with file pattern starting in root passed in
+    """
+    locations = locate(filename, root)
+    fullpath = ''
+    for loc in locations:
+        fullpath = loc
+    return fullpath.replace(filename, '')

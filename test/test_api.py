@@ -32,9 +32,10 @@ from pulp.api import PackageVersionApi
 from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import random_string
+from pulp.util import find_dir_with_file
+from pulp.util import locate
 
 class TestApi(unittest.TestCase):
-
     def setUp(self):
         self.rapi = RepoApi()
         self.papi = PackageApi()
@@ -179,9 +180,7 @@ class TestApi(unittest.TestCase):
         assert(len(packages) > 0)
         
     def test_local_sync(self):
-        cwd = os.getcwd()
-        datadir = cwd + "/data/"
-        print "Data dir! %s" % datadir
+        datadir = find_dir_with_file("pulp-test-data-dir.txt", os.getcwd())
         repo = self.rapi.create('some-id','some name', 'i386', 
                                 'local:file://%s' % datadir)
                                 
