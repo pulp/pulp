@@ -1,7 +1,7 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name: grinder
-Version: 0.0.48
+Version: 0.0.49
 Release: 1%{?dist}
 Summary: A tool synching content
 
@@ -47,6 +47,22 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri May 21 2010 John Matthews <jmatthew@redhat.com> 0.0.49-1
+- fix 'fetch' call to pass in hashType, this prob showed up during a long sync
+  when auth data became stale we would refresh auth data, then re-call fetch.
+  The call to fetch was missing hashType (jmatthew@redhat.com)
+- Grinder: before fetching the repodata convert the url to ascii so urlgrabber
+  doesnt freakout (pkilambi@redhat.com)
+- logging info change, as per QE request (jmatthew@redhat.com)
+- added web install requirement (jconnor@redhat.com)
+- changed package_dir argument from 'grinder': 'src/grinder' to '': 'src' which
+  tells disutils that the packages found by find_packages are under src/
+  (jconnor@redhat.com)
+- moving grinder tests from 'tests' to 'test', makes setup.py happy for develop
+  install (jmatthew@redhat.com)
+- Change --debug to be a True/False only, removed unused 'logging level'
+  ability. (jmatthew@redhat.com)
+
 * Wed May 19 2010 John Matthews <jmatthew@redhat.com> 0.0.48-1
 - Adding extra log output to help QE in automation testing
   (jmatthew@redhat.com)
