@@ -4,7 +4,7 @@
 
 Name:           pulp
 Version:        0.0.3
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -44,6 +44,9 @@ pushd src
 popd
 
 cp -R test  %{buildroot}/%{python_sitelib}/%{name}
+mkdir %{buildroot}/etc
+cp -R etc/juicer.ini %{buildroot}/etc
+
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -65,6 +68,7 @@ rm -rf %{buildroot}
 # For noarch packages: sitelib
 %{python_sitelib}/*
 %{_bindir}/juicer
+%config /etc/juicer.ini
 
 %changelog
 * Mon May 24 2010 Adam Young <ayoung@redhat.com> 0.0.3-3
