@@ -1,6 +1,6 @@
 Name: mongo
 Version: 1.4.2
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: mongo client shell and tools
 License: AGPL 3.0
 URL: http://www.mongodb.org
@@ -135,13 +135,21 @@ fi
 %{_libdir}/libmongoclient.a
 #%{_libdir}/libmongotestfiles.a
 
+%preuninstall
+/sbin/service mongod stop
+
 %uninstall
 /usr/sbin/userdel mongod >/dev/null 2>&1
 /usr/sbin/groupdel mongod >/dev/null 2>&1
 # XXX should we delete the logs as well?
 #rm -rf /var/log/mongo/
+rm -rf /var/lib/mongo/mogo.lock >/dev/null 2>&1
 
 %changelog
+* Mon May 24 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-3
+- added %preunistall directives
+- incremented release
+
 * Mon May 24 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-2
 - added %unistall directives
 - incremented release
