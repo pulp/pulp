@@ -135,7 +135,18 @@ fi
 %{_libdir}/libmongoclient.a
 #%{_libdir}/libmongotestfiles.a
 
+%uninstall
+/usr/sbin/userdel mongod >/dev/null 2>&1
+/usr/sbin/groupdel mongod >/dev/null 2>&1
+# XXX should we delete the logs as well?
+#rm -rf /var/log/mongo/
+
 %changelog
+* Mon May 24 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-2
+- added %unistall directives
+- incremented release
+added user and group cleanup on uninstall to mongo's spec file
+
 * Fri May 21 2010 Adam Young <ayoung@redhat.com> - 1.4.2-2
 - Removed The -U option which is not supporteed  RHEL5 shadow-utils.  It is not needed on F12 or later
 
