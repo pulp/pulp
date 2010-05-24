@@ -3,8 +3,8 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.3
-Release:        4%{?dist}
+Version:        0.0.4
+Release:        1%{?dist}
 Summary:        An application for managing software content
 
 Group:          Development/Languages
@@ -71,7 +71,7 @@ rm -rf %{buildroot}
 %config /etc/juicer.ini
 
 %changelog
-* Mon May 24 2010 Adam Young <ayoung@redhat.com> 0.0.3-3
+* Mon May 24 2010 Adam Young <ayoung@redhat.com> 0.0.4-1
 - added dep for  setup-tools (ayoung@redhat.com)
 - Removed the _U option that was breaking installs on epel. (ayoung@redhat.com)
 - Removed build dep on pymongo, as it breaks a mock build. (ayoung@redhat.com)
