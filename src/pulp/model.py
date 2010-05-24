@@ -36,6 +36,9 @@ class Repo(Base):
         self.name = name
         self.arch = arch
         self.packages = dict()
+        self.packagegroups = dict()
+        self.packagegroupcategories = dict()
+        self.comps_xml_path = "" 
         
     def get_repo_source(self):
         return RepoSource(self.source)
@@ -83,17 +86,17 @@ class PackageGroup(Base):
         self.groupid = groupid
         self.name = name
         self.description = description
-        self.mandatory_packages = {}
-        self.optional_packages = {}
-        self.default_packages = {}
-        self.conditional_packages = {}
+        self.mandatory_package_names = []
+        self.optional_package_names = []
+        self.default_package_names = []
+        self.conditional_package_names = {}
 
-class Category(Base):
+class PackageGroupCategory(Base):
     def __init__(self, categoryid, name, description):
         self.categoryid = categoryid
         self.name = name
         self.description = description
-        self.packagegroups = []
+        self.packagegroupids = []
 
 class Consumer(Base):
     def __init__(self, id, description):

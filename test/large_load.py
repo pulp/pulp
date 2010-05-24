@@ -140,6 +140,7 @@ if (dirlist == None):
 console = logging.StreamHandler(sys.stdout)
 console.setLevel(logging.DEBUG)
 # logging.getLogger('pulp.api').addHandler(console)
+# logging.getLogger('pulp.api').setLevel(logging.DEBUG)
 
 ll = LargeLoad(dirlist, numconsumers)
 ll.clean()

@@ -27,9 +27,13 @@ import pymongo.json_util
 
 from pulp.api import RepoApi
 from pulp.api import PackageApi
+from pulp.api import PackageGroupApi
+from pulp.api import PackageGroupCategoryApi
 from pulp.api import ConsumerApi
 from pulp.api import PackageVersionApi
 from pulp.model import Package
+from pulp.model import PackageGroup
+from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import random_string
 
@@ -39,10 +43,14 @@ class TestApi(unittest.TestCase):
         self.papi = PackageApi()
         self.capi = ConsumerApi()
         self.pvapi = PackageVersionApi()
+        self.pgapi = PackageGroupApi()
+        self.pgcapi = PackageGroupCategoryApi()
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
         self.pvapi.clean()
+        self.pgapi.clean()
+        self.pgcapi.clean()
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
@@ -130,6 +138,50 @@ class TestApi(unittest.TestCase):
         packages = found['packages']
         assert(packages != None)
         assert(packages['test_repo_packages'] != None)
+    
+    def test_repo_package_groups(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        pkggroup = PackageGroup('test-group-id', 'test-group-name', 
+                'test-group-description')
+        package = Package('test_repo_packages','test package')
+        pkggroup.default_package_names.append(package.id)
+        repo.packagegroups[pkggroup.groupid] = pkggroup
+        repo.packages[package.id] = package
+        self.rapi.update(repo)
+        
+        found = self.rapi.repository('some-id')
+        packages = found['packages']
+        assert(packages != None)
+        assert(packages['test_repo_packages'] != None)
+        assert(found['packagegroups'] != None)
+        print "test_repo_package_groups found['packagegroups'] = %s" % (found['packagegroups'])
+        assert(pkggroup.groupid in found['packagegroups'])
+    
+    def test_repo_package_group_categories(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        package = Package('test_repo_packages','test package')
+        pkggroup = PackageGroup('test-group-id', 'test-group-name', 
+                'test-group-description')
+        pkggroup.default_package_names.append(package.id)
+        ctg = PackageGroupCategory('test-group-cat-id', 'test-group-cat-name',
+                'test-group-cat-description')
+        ctg.packagegroupids = pkggroup.id
+        repo.packagegroupcategories[ctg.categoryid] = ctg
+        repo.packagegroups[pkggroup.groupid] = pkggroup
+        repo.packages[package.id] = package
+        self.rapi.update(repo)
+        
+        found = self.rapi.repository('some-id')
+        packages = found['packages']
+        assert(packages != None)
+        assert(packages['test_repo_packages'] != None)
+        assert(found['packagegroups'] != None)
+        print "test_repo_package_groups found['packagegroups'] = %s" % (found['packagegroups'])
+        assert(pkggroup.groupid in found['packagegroups'])
+        assert(found['packagegroupcategories'] != None)
+        assert(ctg.categoryid in found['packagegroupcategories'])
     
     def test_consumer_create(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
@@ -220,6 +272,30 @@ class TestApi(unittest.TestCase):
         packages = self.papi.packages()
         print "packages: %s" % packages
         assert(len(packages) > 0)
+    
+    def test_package_groups(self):
+        pkggroup = self.pgapi.create('test-pkg-group-id', 'test-pkg-group-name', 
+                'test-pkg-group-description')
+        test_package_id = "test_package_id"
+        pkggroup.default_package_names.append(test_package_id)
+        self.pgapi.update(pkggroup)
+
+        found = self.pgapi.packagegroup(pkggroup.id)
+        print found
+        assert(found['default_package_names'] != None)
+        assert(test_package_id in found['default_package_names'])
+    
+    def test_package_group_categories(self):
+        ctg = self.pgcapi.create('test_pkg_group_ctg_id', 'test_pkg_group_ctg_name',
+                'test_pkg_group_description')
+        test_pkg_group_id = 'test_package_group_id'
+        ctg.packagegroupids.append(test_pkg_group_id)
+        self.pgcapi.update(ctg)
+
+        found = self.pgcapi.packagegroupcategory(ctg.id)
+        print found
+        assert(found['packagegroupids'] != None)
+        assert(test_pkg_group_id in found['packagegroupids'])
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

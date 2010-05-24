@@ -16,10 +16,14 @@
 # in this software or its documentation.
 #
 import os
+import sys
 
 import logging
 import pymongo
 from urlparse import urlparse
+import gzip
+import yum.comps
+from yum.Errors import CompsException
 
 from grinder.RepoFetch import YumRepoGrinder
 
@@ -74,6 +78,8 @@ class RepoApi(BaseApi):
         self.LOCAL_STORAGE = "/var/lib/pulp/"
         self.packageApi = PackageApi()
         self.packageVersionApi = PackageVersionApi()
+        self.packageGroupApi = PackageGroupApi()
+        self.packageGroupCategoryApi = PackageGroupCategoryApi()
 
     def _getcollection(self):
         return self.db.repos
@@ -158,8 +164,49 @@ class RepoApi(BaseApi):
                 except Exception, e:
                     log.error("error reading package %s" % (dir + fname))
         log.debug("read [%s] packages" % package_count)
+        self._read_comps_xml(dir, repo)
 
-        
+    def _read_comps_xml(self, dir, repo):
+        """
+        Reads a comps.xml or comps.xml.gz under repodata from dir
+        Loads PackageGroup and Category info our db
+        """
+        compspath = os.path.join(dir, 'repodata/comps.xml')
+        compsxml = None
+        if os.path.isfile(compspath):
+            compsxml = open(compspath, "r")
+        else:
+            compspath = os.path.join(dir, 'repodata/comps.xml.gz')
+            if os.path.isfile(compspath):
+                compsxml = gzip.open(compspath, 'r')
+        if not compsxml:
+            log.info("Not able to find a comps.xml(.gz) to read")
+            return False
+        log.info("Reading comps info from %s" % (compspath))
+        repo['comps_xml_path'] = compspath
+        try:
+            comps = yum.comps.Comps()
+            comps.add(compsxml)
+            for c in comps.categories:
+                ctg = self.packageGroupCategoryApi.create(c.categoryid, c.name, c.description)
+                groupids = [grp for grp in c.groups]
+                ctg.packagegroupids.extend(groupids)
+                self.packageGroupCategoryApi.update(ctg)
+                repo['packagegroupcategories'][ctg.categoryid] = ctg
+            for g in comps.groups:
+                grp = self.packageGroupApi.create(g.groupid, g.name, g.description)
+                grp.mandatory_package_names.extend(g.mandatory_packages.keys())
+                grp.optional_package_names.extend(g.optional_packages.keys())
+                grp.default_package_names.extend(g.default_packages.keys())
+                grp.conditional_package_names = g.conditional_packages
+                self.packageGroupApi.update(grp)
+                repo['packagegroups'][grp.groupid] = grp
+            log.info("Comps info added from %s" % (compspath))
+        except CompsException:
+            log.error("Unable to parse comps info for %s" % (compspath))
+            return False
+        return True
+
 class PackageApi(BaseApi):
 
     def __init__(self):
@@ -218,6 +265,63 @@ class PackageVersionApi(BaseApi):
         """
         return list(self.objectdb.find())
 
+class PackageGroupApi(BaseApi):
+
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.objectdb = self.db.packagegroups
+
+    def _getcollection(self):
+        return self.db.packagegroups
+
+    def create(self, groupid, name, description):
+        """
+        Create a new PackageGroup object and return it
+        """
+        pg = model.PackageGroup(groupid, name, description)
+        self.objectdb.insert(pg)
+        return pg
+        
+    def packagegroup(self, id, filter=None):
+        """
+        Return a single PackageGroup object
+        """
+        return self.objectdb.find_one({'id': id})
+
+    def packagegroups(self):
+        """
+        List all packagegroups.  Can be quite large
+        """
+        return list(self.objectdb.find())
+
+class PackageGroupCategoryApi(BaseApi):
+
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.objectdb = self.db.packagegroupcategories
+
+    def _getcollection(self):
+        return self.db.packagegroupcategories
+
+    def create(self, categoryid, name, description):
+        """
+        Create a new PackageGroupCategory object and return it
+        """
+        pgc = model.PackageGroupCategory(categoryid, name, description)
+        self.objectdb.insert(pgc)
+        return pgc
+        
+    def packagegroupcategory(self, id, filter=None):
+        """
+        Return a single PackageGroupCategory object
+        """
+        return self.objectdb.find_one({'id': id})
+
+    def packagegroupcategories(self):
+        """
+        List all packagegroupcategories.  Can be quite large
+        """
+        return list(self.objectdb.find())
         
 class ConsumerApi(BaseApi):
 
@@ -246,7 +350,8 @@ class ConsumerApi(BaseApi):
         """
         ## Have to chunk this because of issue with PyMongo and network
         ## See: http://tinyurl.com/2eyumnc
-        chunksize = 500
+        #chunksize = 500
+        chunksize = 100
         chunked = chunks(consumers, chunksize)
         inserted = 0
         for chunk in chunked:
