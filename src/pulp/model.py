@@ -77,7 +77,24 @@ class PackageVersion(Base):
         self.arch = arch
         self.requires = []
         self.provides = []
-        
+
+class PackageGroup(Base):
+    def __init__(self, groupid, name, description):
+        self.groupid = groupid
+        self.name = name
+        self.description = description
+        self.mandatory_packages = {}
+        self.optional_packages = {}
+        self.default_packages = {}
+        self.conditional_packages = {}
+
+class Category(Base):
+    def __init__(self, categoryid, name, description):
+        self.categoryid = categoryid
+        self.name = name
+        self.description = description
+        self.packagegroups = []
+
 class Consumer(Base):
     def __init__(self, id, description):
         self.id = id
