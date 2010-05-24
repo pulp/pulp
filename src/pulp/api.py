@@ -260,13 +260,6 @@ class ConsumerApi(BaseApi):
         """
         return list(self.objectdb.find())
 
-    def consumers(self):
-        """
-        List all consumers.  Can be quite large
-        """
-        return list(self.objectdb.find())
-    
-        
     def consumer(self, id):
         """
         Return a single Consumer object
