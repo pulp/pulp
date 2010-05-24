@@ -67,6 +67,36 @@ rm -rf %{buildroot}
 %{_bindir}/juicer
 
 %changelog
+* Mon May 24 2010 Adam Young <ayoung@redhat.com> 0.0.3-3
+- added dep for  setup-tools (ayoung@redhat.com)
+- Removed the _U option that was breaking installs on epel. (ayoung@redhat.com)
+- Removed build dep on pymongo, as it breaks a mock build. (ayoung@redhat.com)
+- Added nosetest, with failing tests excluded. (ayoung@redhat.com)
+- Corrected name in changelog (ayoung@redhat.com)
+- Updated changelog. (ayoung@redhat.com)
+- Updated to work with tito. (ayoung@redhat.com)
+- Adding objects for PackageGroup & Category (jmatthew@redhat.com)
+- removed duplicate 'consumers' definiton in ConsumerApi (jmatthew@redhat.com)
+- adding unique index on all objects based on id (mmccune@redhat.com)
+- pointing readme to wiki (mmccune@redhat.com)
+- validate downloaded bits before status checks . this way we can clean up
+  empty packages and the return error state (pkilambi@redhat.com)
+- remove uneeded dir find code.  instead use magic __file__ attrib
+  (mmccune@redhat.com)
+- make it so we can run our tests from top level of project
+  (mmccune@redhat.com)
+- Automatic commit of package [grinder] release [0.0.49-1].
+  (jmatthew@redhat.com)
+- fix 'fetch' call to pass in hashType, this prob showed up during a long sync
+  when auth data became stale we would refresh auth data, then re-call fetch.
+  The call to fetch was missing hashType (jmatthew@redhat.com)
+- Automatic commit of package [pulp] release [0.0.3-1]. (ayoung@redhat.com)
+- adding mongo helper for json dumping (mmccune@redhat.com)
+- Grinder: before fetching the repodata convert the url to ascii so urlgrabber
+  doesnt freakout (pkilambi@redhat.com)
+- encode urls to ascii to please urlgrabber (pkilambi@redhat.com)
+- logging info change, as per QE request (jmatthew@redhat.com)
+
 * Fri May 21 2010 Adam Young <ayoung@redhat.com> 0.0.3-2
 - Added dependencies 
   
