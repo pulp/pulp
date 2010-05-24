@@ -17,15 +17,26 @@
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import heapq
+import re
 from datetime import datetime, timedelta
 
 from pulp.tasks.queue.base import TaskQueue
 from pulp.tasks.task import Task
 
+# at time regular expressions -------------------------------------------------
+
+_inc_or_dec = r''
+_date = r''
+_time = r''
+_spec_base = r'(%s|%s|%s\s+%s|(?P<now>now)' % (_date, _time, _time, _date)
+_at_time_spec = r'^%s(\s+%s)?' % (_spec_base, _inc_or_dec)
+
+# at task queue ---------------------------------------------------------------
 
 class AtTaskQueue(TaskQueue):
     """
     """
+    at_regex = re.compile(_at_time_spec)
     
     def _dispatch(self):
         """
@@ -61,11 +72,11 @@ class AtTaskQueue(TaskQueue):
         
         if isinstance(next, datetime):
             pass
-        elif isinstance(next, basestring):
-            next = self._parse_at_string(next)
         elif isinstance(next, timedelta):
             now = datetime.now()
             next = now + next
+        elif isinstance(next, basestring):
+            next = self._parse_at_string(next)
         else:
             raise TypeError('unsupported at time')
         
