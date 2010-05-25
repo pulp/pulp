@@ -103,6 +103,20 @@ class RepoApi(BaseApi):
         repo = self.repository(id)
         return repo['packages']
     
+    def packagegroups(self, id):
+        """
+        Return list of PackageGroup objects in this Repo
+        """
+        repo = self.repository(id)
+        return repo['packagegroups']
+    
+    def packagegroupcategories(self, id):
+        """
+        Return list of PackageGroupCategory objects in this Repo
+        """
+        repo = self.repository(id)
+        return repo['packagegroupcategories']
+    
     def create(self, id, name, arch, feed):
         """
         Create a new Repository object and return it
@@ -188,7 +202,8 @@ class RepoApi(BaseApi):
             comps = yum.comps.Comps()
             comps.add(compsxml)
             for c in comps.categories:
-                ctg = self.packageGroupCategoryApi.create(c.categoryid, c.name, c.description)
+                ctg = self.packageGroupCategoryApi.create(c.categoryid, 
+                        c.name, c.description)
                 groupids = [grp for grp in c.groups]
                 ctg.packagegroupids.extend(groupids)
                 self.packageGroupCategoryApi.update(ctg)
