@@ -1,0 +1,7 @@
+[pulp]
+name=pulp
+baseurl=http://admiyo.fedorapeople.org/pulp-repo/
+gpgcheck=0
+enabled=1
+
+
