@@ -26,30 +26,51 @@ from pulp.tasks.task import Task
 # at time regular expressions -------------------------------------------------
 
 _minute_spec = r'(?P<minute>[0-5][0-9])'
-_twelve_hour_spec = r'(?<hour>0[1-9]|1[0-2]):%s\s+(?<ampm>AM|PM)' % _minute_spec
+_twelve_hour_spec = r'(?<hour>0[1-9]|1[0-2]):%s\s+(?<ampm>am|pm)' % _minute_spec
 _twentyfour_hour_spec = r'(?<hour>[01][0-9]|2[0-3]:%s' % _minute_spec
-_time_spec = r'(%s|%s)' % (_twelve_hour_spec, _twentyfour_hour_spec)
+_hour_min_spec = r'(%s|%s)' % (_twelve_hour_spec,
+                               _twentyfour_hour_spec)
 _named_time_spec = r'(?P<named_time>midnight|noon|teatime)'
 _relative_day_spec = r'(?P<relative_day>today|tomorrow)'
-_time_spec = r'(%s|%s(\s+%s)?' % (_time_spec, _named_time_spec, _relative_day_spec)
+_time_spec = r'(%s|%s(\s+%s)?' % (_hour_min_spec,
+                                  _named_time_spec,
+                                  _relative_day_spec)
 
 _day_spec = r'<?P<day>0?[1-9]|[12][0-9]|3[01])'
+_weekday_spec = r'<?P<weekday>sun|mon|tue|wed|thu|fri|sat)'
 _month_spec = r'(?P<month>0[1-9]|1[0-2])'
 _named_month_spec = r'(?<named_month>jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)'
 _two_year_spec = r'(?P<twoyear>[0-9]{2})'
 _four_year_spec = r'(?P<fouryear>[0-9]{4})'
-_slash_date_spec = r'%s(/)?%s(/)?%s' % (_month_spec, _day_spec, _two_year_spec)
-_dot_date_spec = r'%s\.%s\.%s' % (_day_spec, _month_spec, _two_year_spec)
-_dash_date_spec = r'%s-%s-%s' % (_four_year_spec, _month_spec, _day_spec)
-_formal_date_spec = r'%s\s+%s\s+(,\s+)?%s' % (_named_month_spec, _day_spec, _four_year_spec)
-_weekday_spec = r'<?P<weekday>sun|mon|tue|wed|thu|fri|sat)'
-_date_spec = r'(%s|%s|%s|%s|%s)' % (_slash_date_spec, _dot_date_spec, _dash_date_spec, _formal_date_spec, _weekday_spec)
+_slash_date_spec = r'%s(/)?%s(/)?%s' % (_month_spec,
+                                        _day_spec,
+                                        _two_year_spec)
+_dot_date_spec = r'%s\.%s\.%s' % (_day_spec,
+                                  _month_spec,
+                                  _two_year_spec)
+_dash_date_spec = r'%s-%s-%s' % (_four_year_spec,
+                                 _month_spec,
+                                 _day_spec)
+_formal_date_spec = r'%s\s+%s\s+(,\s+)?%s' % (_named_month_spec,
+                                              _day_spec,
+                                              _four_year_spec)
+_explicit_date_spec = r'((?P<next>next)\s+)?%s' % _weekday_spec
+_date_spec = r'(%s|%s|%s|%s|%s)' % (_slash_date_spec,
+                                    _dot_date_spec,
+                                    _dash_date_spec,
+                                    _formal_date_spec,
+                                    _explicit_date_spec)
 
 _operator_spec = r'(?P<operator>\+|-)'
 _units_spec = r'(?P<units>minutes|hours|days|weeks)'
-_offset_spec = '%s(?<offset>[0-9]+)\s+%s' % (_operator_spec, _units_spec)
+_offset_spec = '%s(?<offset>[0-9]+)\s+%s' % (_operator_spec,
+                                             _units_spec)
 
-_at_spec = r'(%s|%s|%s\s+%s)(\s+%s)?' % (_time_spec, _date_spec, _time_spec, _date_spec, _offset_spec)
+_at_spec = r'(%s|%s|%s\s+%s)(\s+%s)?' % (_time_spec,
+                                         _date_spec,
+                                         _time_spec,
+                                         _date_spec,
+                                         _offset_spec)
 
 # at task queue ---------------------------------------------------------------
 
@@ -107,6 +128,7 @@ class AtTaskQueue(TaskQueue):
         @param at: an 'at' formatted time string
         @return: datetime instance for the time specified
         """
+        at = at.lowercase() # normalize string
         match = self.at_regex.match(at)
         if match is None:
             raise AtSpecificationError('Malformed at string: %s' % at)
