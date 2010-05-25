@@ -28,7 +28,7 @@ class TaskTester(unittest.TestCase):
     def test_task(self):
         t = Task(thread_id)
         print 'task id: %s' % str(t.id)
-        t.reset(args=[t.id])
+        t.args=[t.id]
         t.run()
         time.sleep(0.0005)
         self.assertTrue(t.status == FINISHED)
@@ -36,7 +36,7 @@ class TaskTester(unittest.TestCase):
     def test_multi_runs(self):
         t = Task(thread_id)
         print 'task id: %s' % str(t.id)
-        t.reset(args=[t.id])
+        t.args=[t.id]
         t.run()
         time.sleep(0.0005)
         self.assertTrue(t.status == FINISHED)
