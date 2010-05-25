@@ -7,4 +7,5 @@
 build
 dist
 pulp.egg-info
+grinder.egg-info
 .settings
