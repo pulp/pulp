@@ -25,8 +25,8 @@ from pulp.api import RepoApi
 
 URLS = (
     '/', 'Repositories',
-    '/(\d+)', 'Repository',
     '/new', 'Create',
+    '/(\d+)', 'Repository',
     '/(\d+)/sync', 'Sync',
     '/(\d+)/list', 'Packages',
 )
@@ -46,6 +46,20 @@ class Repositories(JSONController):
         @return: a list of all available repositories
         """
         return self.output(API.repositories())
+    
+    
+class Create(JSONController):
+    
+    def POST(self):
+        """
+        @return: repository meta data on successful creation of repository
+        """
+        repo_data = self.input()
+        repo = API.create(repo_data['id'],
+                          repo_data['name'],
+                          repo_data['arch'],
+                          repo_data['feed'])
+        return self.output(repo)
     
     
 class Repository(JSONController):
@@ -72,20 +86,6 @@ class Repository(JSONController):
         repo = self.input()
         API.update(repo)
         return self.output(True)
-     
-    
-class Create(JSONController):
-    
-    def POST(self):
-        """
-        @return: repository meta data on successful creation of repository
-        """
-        repo_data = self.input()
-        repo = API.create(repo_data['id'],
-                          repo_data['name'],
-                          repo_data['arch'],
-                          repo_data['feed'])
-        return self.output(repo)
     
     
 class Sync(JSONController):
