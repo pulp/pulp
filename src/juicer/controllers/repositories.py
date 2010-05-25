@@ -26,9 +26,9 @@ from pulp.api import RepoApi
 URLS = (
     '/', 'Repositories',
     '/new', 'Create',
-    '/(\d+)', 'Repository',
-    '/(\d+)/sync', 'Sync',
-    '/(\d+)/list', 'Packages',
+    '/([!/]+)', 'Repository',
+    '/([!/]+)/sync', 'Sync',
+    '/([!/]+)/list', 'Packages',
 )
 
 application = web.application(URLS, globals())
