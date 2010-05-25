@@ -2,8 +2,6 @@
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# Authors: Mike McCune
-#
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
 # implied, including the implied warranties of MERCHANTABILITY or FITNESS
@@ -230,7 +228,6 @@ class PackageApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb = self.db.packages
 
     def _getcollection(self):
         return self.db.packages
@@ -259,7 +256,6 @@ class PackageVersionApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb = self.db.packageversions
 
     def _getcollection(self):
         return self.db.packageversions
@@ -288,7 +284,6 @@ class PackageGroupApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb = self.db.packagegroups
 
     def _getcollection(self):
         return self.db.packagegroups
@@ -331,7 +326,6 @@ class PackageGroupCategoryApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb = self.db.packagegroupcategories
 
     def _getcollection(self):
         return self.db.packagegroupcategories
@@ -360,7 +354,6 @@ class ConsumerApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb = self.db.consumers
         # INDEXES
         self.objectdb.ensure_index([("packageids", pymongo.DESCENDING)])
 

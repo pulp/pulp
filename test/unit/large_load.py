@@ -64,7 +64,8 @@ class LargeLoad(unittest.TestCase):
         print "RPMDIRS: %s" % self.dirlist
         numrepos = 0
         for rdir in self.dirlist:
-            repo = self.rapi.create(rdir,'test repo: %s' % rdir, \
+            id = rdir.replace('/', '.')
+            repo = self.rapi.create(id,'test repo: %s' % rdir, \
                 'i386', 'local:file://%s' % rdir)
             self.rapi.sync(repo.id)
             numrepos = numrepos + 1

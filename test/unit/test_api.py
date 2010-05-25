@@ -223,6 +223,9 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         jsonrepo = json.dumps(repo, default=pymongo.json_util.default)
         assert(jsonrepo != None)
+        parsed = json.loads(jsonrepo)
+        assert(parsed != None)
+        print parsed
         
         
         
