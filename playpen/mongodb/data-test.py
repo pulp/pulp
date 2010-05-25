@@ -126,7 +126,7 @@ def getRPMInformation (rpmPath):
     return rpmInfo
 
 
-def random_string():
+def randomString():
     # The characters to make up the random password
     chars = string.ascii_letters + string.digits
     return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     
@@ -134,7 +134,7 @@ def random_string():
 def translate_package(info):
     p = Package(info['name'], info['description'])
     vr = info['version'] + "-" + info['release']
-    v = Version(random_string(), vr)
+    v = Version(randomString(), vr)
     p.versions.append(v)
     return p
  
@@ -221,7 +221,7 @@ if (not skipcreate):
     last_desc = None
     last_id = None
     for i in range(1000):
-        c = Consumer(random_string(), random_string())
+        c = Consumer(randomString(), randomString())
         # c.packages = r.packages
         for pid in r.packages:
             c.packages[pid] = r.packages[pid]

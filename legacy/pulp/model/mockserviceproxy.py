@@ -169,7 +169,7 @@ class MockServiceProxy(object):
     def deployPackages(self, subject, systemIds, packageIds):
         return
     
-    def random_string(self):
+    def randomString(self):
         letters = 'abcdefghijklmnopqrstuvwxyz'
         l = list(letters)
         for i in range(10):

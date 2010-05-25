@@ -35,11 +35,12 @@ from pulp.model import Package
 from pulp.model import PackageGroup
 from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
-from pulp.util import random_string
+from pulp.util import randomString
 
 class TestApi(unittest.TestCase):
     def setUp(self):
         self.rapi = RepoApi()
+        self.rapi.localStoragePath = "/tmp"
         self.papi = PackageApi()
         self.capi = ConsumerApi()
         self.pvapi = PackageVersionApi()
@@ -192,7 +193,7 @@ class TestApi(unittest.TestCase):
     def test_bulk_create(self):
         consumers = []
         for i in range(1005):
-            consumers.append(Consumer(random_string(), random_string()))
+            consumers.append(Consumer(randomString(), randomString()))
         self.capi.bulkcreate(consumers)
         assert(len(self.capi.consumers()) == 1005)
             
@@ -201,7 +202,7 @@ class TestApi(unittest.TestCase):
         package = Package('test_consumerwithpackage','test package search')
         c.packageids.append(package.id)
         for i in range(10):
-            package = Package(random_string(), random_string())
+            package = Package(randomString(), randomString())
             c.packageids.append(package.id)
         self.capi.update(c)
         
@@ -232,7 +233,7 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo.id)
         
         # Check that local storage has dir and rpms
-        dirList = os.listdir(self.rapi.LOCAL_STORAGE + '/' + repo.id)
+        dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo.id)
         packages = found['packages']

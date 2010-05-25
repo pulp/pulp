@@ -94,7 +94,7 @@ class YumHammer(object):
         #for i in range(15):
         #    channel = Property()
         #    channel.id = str(i)
-        #    channel.name = self.random_string() + "fake-channel[%s]" % i
+        #    channel.name = self.randomString() + "fake-channel[%s]" % i
         #    channel.displayName = "YUMMATRON fake channel name [%s]" % i
         #    ret.append(channel)
         #return ret
@@ -103,7 +103,7 @@ class YumHammer(object):
     def getChannel(self, subject, id):
         #channel = Property()
         #channel.id = id
-        #channel.name = self.random_string() + "[%s]" % id
+        #channel.name = self.randomString() + "[%s]" % id
         #channel.displayName = "fake channel name [%s]" % id
         #channel.description = \
         #    "a Fake YUMMATRON Channel created by a mock service implementation."
@@ -171,7 +171,7 @@ class YumHammer(object):
         return 
 
     
-    #def random_string(self):
+    #def randomString(self):
     #    letters = 'abcdefghijklmnopqrstuvwxyz'
     #    l = list(letters)
     #    for i in range(10):

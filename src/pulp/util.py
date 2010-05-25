@@ -37,7 +37,7 @@ def getRPMInformation(rpmPath):
     return rpmInfo
 
 
-def random_string():
+def randomString():
     # The characters to make up the random password
     chars = string.ascii_letters + string.digits
     return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     

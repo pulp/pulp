@@ -75,7 +75,7 @@ class RepoApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         # TODO: Extract this to a config
-        self.LOCAL_STORAGE = "/var/lib/pulp/"
+        self.localStoragePath = "/var/lib/pulp/"
         self.packageApi = PackageApi()
         self.packageVersionApi = PackageVersionApi()
         self.packageGroupApi = PackageGroupApi()
@@ -125,8 +125,8 @@ class RepoApi(BaseApi):
         if (rs.type == 'yum'):
             log.debug("Creating repo grinder: %s" % rs.url)
             yfetch = YumRepoGrinder(repo['id'], rs.url.encode('ascii', 'ignore'), 1)
-            yfetch.fetchYumRepo(self.LOCAL_STORAGE)
-            repo_dir = "%s/%s/" % (self.LOCAL_STORAGE, repo['id'])
+            yfetch.fetchYumRepo(self.localStoragePath)
+            repo_dir = "%s/%s/" % (self.localStoragePath, repo['id'])
             self._add_packages_from_dir(repo_dir, repo)
             self.update(repo)
             log.debug("fetched!")

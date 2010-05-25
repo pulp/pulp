@@ -32,7 +32,7 @@ from pulp.api import PackageApi
 from pulp.api import ConsumerApi
 from pulp.model import Package
 from pulp.model import Consumer
-from pulp.util import random_string
+from pulp.util import randomString
 
 
 TEST_PACKAGE_ID = 'random-package'
@@ -78,8 +78,8 @@ class LargeLoad(unittest.TestCase):
         consumers = []
         for i in range(self.numconsumers):
             repo = random.choice(repos)
-            # c = self.capi.create(random_string(), random_string())
-            c = Consumer(random_string(), random_string())
+            # c = self.capi.create(randomString(), randomString())
+            c = Consumer(randomString(), randomString())
             packages = repo['packages']
             for pid in packages:
                 c.packageids.append(pid)
