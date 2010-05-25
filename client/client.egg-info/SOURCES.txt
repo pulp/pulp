@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+client/__init__.py
+client.egg-info/PKG-INFO
+client.egg-info/SOURCES.txt
+client.egg-info/dependency_links.txt
+client.egg-info/entry_points.txt
+client.egg-info/not-zip-safe
+client.egg-info/top_level.txt
