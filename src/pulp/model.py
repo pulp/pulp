@@ -82,14 +82,21 @@ class PackageVersion(Base):
         self.provides = []
 
 class PackageGroup(Base):
-    def __init__(self, groupid, name, description):
+    def __init__(self, groupid, name, description, user_visible=False, 
+            display_order=1024, default=True, langonly=None):
         self.groupid = groupid
         self.name = name
         self.description = description
+        self.user_visible = user_visible
+        self.display_order = display_order
+        self.default = default
+        self.langonly = langonly
         self.mandatory_package_names = []
         self.optional_package_names = []
         self.default_package_names = []
         self.conditional_package_names = {}
+        self.translated_name = {}
+        self.translated_description = {}
 
 class PackageGroupCategory(Base):
     def __init__(self, categoryid, name, description):

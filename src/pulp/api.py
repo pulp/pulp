@@ -44,7 +44,8 @@ class BaseApi(object):
         self.collection = self.db.pulp_collection
         ## INDEXES
         self.objectdb = self._getcollection()
-        self.objectdb.ensure_index([("id", pymongo.DESCENDING)], unique=True)
+        self.objectdb.ensure_index([("id", pymongo.DESCENDING)], unique=True, 
+                background=True)
         
     def _getcollection(self):
         return
@@ -209,11 +210,14 @@ class RepoApi(BaseApi):
                 self.packageGroupCategoryApi.update(ctg)
                 repo['packagegroupcategories'][ctg.categoryid] = ctg
             for g in comps.groups:
-                grp = self.packageGroupApi.create(g.groupid, g.name, g.description)
+                grp = self.packageGroupApi.create(g.groupid, g.name, g.description,
+                        g.user_visible, g.display_order, g.default, g.langonly)
                 grp.mandatory_package_names.extend(g.mandatory_packages.keys())
                 grp.optional_package_names.extend(g.optional_packages.keys())
                 grp.default_package_names.extend(g.default_packages.keys())
                 grp.conditional_package_names = g.conditional_packages
+                grp.translated_name = g.translated_name
+                grp.translated_description = g.translated_description
                 self.packageGroupApi.update(grp)
                 repo['packagegroups'][grp.groupid] = grp
             log.info("Comps info added from %s" % (compspath))
@@ -288,12 +292,26 @@ class PackageGroupApi(BaseApi):
 
     def _getcollection(self):
         return self.db.packagegroups
+    
+    def update(self, object):
+        """
+        Override BaseApi 'update' so we may force the xml file on disk to be 
+        updated with any changes that have been made. Afterwards we will 
+        write the object document to the database
+        """
+        # comps.Comps()
+        # Add in Groups & Categories
+        # write out comps.Comps().xml()
+        self.objectdb.save(object)
 
-    def create(self, groupid, name, description):
+    def create(self, groupid, name, description, user_visible=False,
+            display_order=1024, default=False, langonly=None):
         """
         Create a new PackageGroup object and return it
         """
-        pg = model.PackageGroup(groupid, name, description)
+        pg = model.PackageGroup(groupid, name, description, 
+                user_visible=user_visible, display_order=display_order, 
+                default=default, langonly=langonly)
         self.objectdb.insert(pg)
         return pg
         
