@@ -25,31 +25,31 @@ Body:     JSON encoded repository information
 Return:   JSON encoded repository information on success
 
 Function: Get information on a specific repository
-URL Path: /repositories/<integer id>/
+URL Path: /repositories/<id>/
 Method:   GET
 Body:     None
 Return:   JSON encoded repository information
 
 Function: Update repository information
-URL Path: /repositories/<integer id>/
+URL Path: /repositories/<id>/
 Method:   POST
 Body:     JSON encoded repository information
 Return:   JSON encoded True on success
 
 Function: Delete a repository
-URL Path: /repositories/<integer id>/
+URL Path: /repositories/<id>/
 Method:   DELETE
 Body:     None
 Return:   JSON encoded True on success
 
 Function: List all packages in a repository
-URL Path: /repositories/<integer id>/list/
+URL Path: /repositories/<id>/list/
 Method:   GET
 Body:     None
 Return:   JSON encoded list of packages in the repository
 
 Function: Sync a repository
-URL Path: /repositories/<integer id>/sync/
+URL Path: /repositories/<id>/sync/
 Method:   GET
 Body:     None
 Return:   JSON encoded True on success
