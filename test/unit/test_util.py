@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# Authors: Mike McCune
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
