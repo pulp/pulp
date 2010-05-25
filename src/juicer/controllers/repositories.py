@@ -24,11 +24,10 @@ from pulp.api import RepoApi
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/', 'Repositories',
-    '/new', 'Create',
-    '/([!/]+)', 'Repository',
-    '/([!/]+)/sync', 'Sync',
-    '/([!/]+)/list', 'Packages',
+    '/$', 'Repositories',
+    '/([^/]+)/$', 'Repository',
+    '/([^/]+)/sync/$', 'Sync',
+    '/([^/]+)/list/$', 'Packages',
 )
 
 application = web.application(URLS, globals())
@@ -46,9 +45,6 @@ class Repositories(JSONController):
         @return: a list of all available repositories
         """
         return self.output(API.repositories())
-    
-    
-class Create(JSONController):
     
     def POST(self):
         """

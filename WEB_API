@@ -19,7 +19,7 @@ Body:     None
 Return:   JSON encoded list of repositories
 
 Function: Create a new repository
-URL Path: /repositories/new/
+URL Path: /repositories/
 Method:   POST
 Body:     JSON encoded repository information
 Return:   JSON encoded repository information on success

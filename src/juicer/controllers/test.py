@@ -19,15 +19,14 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 import web
 
 
-class index(object):
+class Index(object):
     def GET(self):
         return "Hello World!"
     
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/.*', 'index',
+    '/.*', 'Index',
 )
 
-#application = web.application(URLS, globals())
-application = web.auto_application()
+application = web.application(URLS, globals())
