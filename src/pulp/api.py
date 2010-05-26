@@ -170,6 +170,7 @@ class RepoApi(BaseApi):
                         pv.requires.append(dep)
                     for dep in info['provides']:
                         pv.provides.append(dep)
+                    self.packageVersionApi.update(pv)
                     p.versions.append(pv)
                     self.packageApi.update(p)
                     packages[p.id] = p
