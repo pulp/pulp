@@ -75,9 +75,9 @@ class Repository(JSONController):
         """
         return self.output(API.repository(id))
     
-    def POST(self):
+    def POST(self, id):
         """
-        @return: True on successful update or repository meta data
+        @return: True on successful update of repository meta data
         """
         repo = self.input()
         API.update(repo)

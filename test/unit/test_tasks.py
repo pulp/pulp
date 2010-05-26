@@ -31,6 +31,7 @@ class TaskTester(unittest.TestCase):
         t.args=[t.id]
         t.run()
         time.sleep(0.0005)
+        t.exit()
         self.assertTrue(t.status == FINISHED)
 
     def test_multi_runs(self):
@@ -42,6 +43,7 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(t.status == FINISHED)
         t.run()
         time.sleep(0.0005)
+        t.exit()
         self.assertTrue(t.status == FINISHED)
 
 
@@ -63,6 +65,7 @@ class FIFOQueueTester(unittest.TestCase):
         q.enqueue(t)
         time.sleep(0.005)
         self.assertTrue(t.status == FINISHED)
+        q.clear()
 
 
 if __name__ == '__main__':
