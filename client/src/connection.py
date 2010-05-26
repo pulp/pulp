@@ -114,9 +114,10 @@ class PulpConnection:
         self.conn.close()
         log.info("remote connection closed")
 
-    ###############################
-    # Repository Specific Calls   #
-    ###############################
+class RepoConnection(PulpConnection):
+    """
+    Connection class to access repo specific calls
+    """
     def createRepo(self, repodata):
         method = "/repositories/"
         return self.conn.request_post(method, params=repodata)
@@ -145,28 +146,27 @@ class PulpConnection:
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_get(method)
 
-    ###############################
-    # Package Specific Calls   #
-    ############################### 
+class PackageConnection(PulpConnection):
+    """
+    Connection class to access repo specific calls
+    """
+    pass
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        pconn = PulpConnection(sys.argv[1])
-    else:
-        pconn = PulpConnection()
+    rconn = RepoConnection()
     repodata = {'id' : 'test-f12',
                 'name' : 'f12',
                 'arch' : 'i386',
                 'feed' : 'yum:http://mmccune.fedorapeople.org/pulp/'}
-    repo = pconn.createRepo(repodata)
+    repo = rconn.createRepo(repodata)
     print "create Repos", repo['id']
-    print "list repos:", pconn.listRepos()
-    print "Get repo By Id: ",pconn.getRepoById(repo['id'])
-    newdata = {'id' : 'f12',
+    print "list repos:", rconn.listRepos()
+    print "Get repo By Id: ",rconn.getRepoById(repo['id'])
+    newdata = {'id' : 'test-f12',
                 'name' : 'f12',
-                'arch' : 'i386',
+                'arch' : 'noarch',
                 'feed' : 'yum:http://mmccune.fedorapeople.org/pulp/'}
-    #print "update Repo:",pconn.updateRepo(repo['id'], newdata)
-    print "Sync Repos:", pconn.syncRepos(repo['id'])
-    print "list Repo Packages: ", pconn.listRepoPackages(repo['id'])
-    print "delete Repo:", pconn.deleteRepo(repo['id'])
+    #print "update Repo:",rconn.updateRepo(repo['id'], newdata)
+    print "Sync Repos:", rconn.syncRepos(repo['id'])
+    print "list Repo Packages: ", rconn.listRepoPackages(repo['id'])
+    print "delete Repo:", rconn.deleteRepo(repo['id'])
