@@ -78,6 +78,7 @@ class Repository(JSONController):
     
     def POST(self, id):
         """
+        @param id: repository id
         @return: True on successful update of repository meta data
         """
         repo_data = self.input()
