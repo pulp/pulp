@@ -97,10 +97,13 @@ class PackageGroup(Base):
         self.translated_description = {}
 
 class PackageGroupCategory(Base):
-    def __init__(self, categoryid, name, description):
+    def __init__(self, categoryid, name, description, display_order=99):
         self.categoryid = categoryid
         self.name = name
         self.description = description
+        self.display_order = display_order
+        self.translated_name = {}
+        self.translated_description = {}
         self.packagegroupids = []
 
 class Consumer(Base):

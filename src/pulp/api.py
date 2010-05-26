@@ -202,9 +202,11 @@ class RepoApi(BaseApi):
             comps.add(compsxml)
             for c in comps.categories:
                 ctg = self.packageGroupCategoryApi.create(c.categoryid, 
-                        c.name, c.description)
+                        c.name, c.description, c.display_order)
                 groupids = [grp for grp in c.groups]
                 ctg.packagegroupids.extend(groupids)
+                ctg.translated_name = c.translated_name
+                ctg.translated_description = c.translated_description
                 self.packageGroupCategoryApi.update(ctg)
                 repo['packagegroupcategories'][ctg.categoryid] = ctg
             for g in comps.groups:
@@ -330,11 +332,12 @@ class PackageGroupCategoryApi(BaseApi):
     def _getcollection(self):
         return self.db.packagegroupcategories
 
-    def create(self, categoryid, name, description):
+    def create(self, categoryid, name, description, display_order=99):
         """
         Create a new PackageGroupCategory object and return it
         """
-        pgc = model.PackageGroupCategory(categoryid, name, description)
+        pgc = model.PackageGroupCategory(categoryid, name, description, 
+                display_order=display_order)
         self.objectdb.insert(pgc)
         return pgc
         
