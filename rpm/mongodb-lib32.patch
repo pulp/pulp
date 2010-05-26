@@ -1,0 +1,11 @@
+--- SConstruct.orig	2010-05-26 14:07:29.477288328 -0400
++++ SConstruct	2010-05-26 14:07:37.978161254 -0400
+@@ -514,7 +514,7 @@
+         force64 = False
+ 
+     if force32:
+-        env.Append( LIBPATH=["/usr/lib32"] )
++        env.Append( LIBPATH=["/usr/lib"] )
+ 
+     nix = True
+ 

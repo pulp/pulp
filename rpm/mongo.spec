@@ -8,6 +8,7 @@ Group: Applications/Databases
 
 #Source0: mongodb-src-r%{version}.tar.gz
 Source0: http://downloads.mongodb.org/src/mongodb-src-r%{version}.tar.gz
+Patch0: mongodb-lib32.patch
 BuildRoot: %{_tmppath}/mongo-%{version}-%{release}-root
 BuildRequires: js-devel, readline-devel, boost-devel, pcre-devel
 BuildRequires: gcc-c++, scons
@@ -43,10 +44,19 @@ This package provides the mongo static library and header files needed
 to develop mongo client software.
 
 %prep
+
+
+
 %setup -q -n mongodb-src-r%{version}
+patch -p0 <  %{PATCH0}
 
 %build
-scons --prefix=$RPM_BUILD_ROOT/usr all
+%ifarch i686
+scons --prefix=$RPM_BUILD_ROOT/usr --32  all
+%else
+scons --prefix=$RPM_BUILD_ROOT/usr  all
+%endif
+
 # XXX really should have shared library here
 
 %install
