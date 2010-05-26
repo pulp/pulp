@@ -36,11 +36,22 @@ class TaskQueue(object):
         self._dispatcher = Thread(target=self._dispatch)
         self._dispatcher.daemon = True
         self._dispatcher.start()
+        
+    def __del__(self):
+        self.clear()
     
     def _dispatch(self):
+        """
+        Protected method executed by the dispatch thread
+        This must be overridden by derived classes
+        """
         raise NotImplementedError()
     
     def finished(self, task):
+        """
+        Callback method called by tasks when the finish
+        This must be overridden by derived classes
+        """
         raise NotImplementedError()
     
     def is_empty(self):
@@ -51,6 +62,10 @@ class TaskQueue(object):
         return self._wait_queue or self._running_tasks
     
     def enqueue(self, task):
+        """
+        Add a task instance to the queue
+        This must be overridden by derived classes
+        """
         raise NotImplementedError()
     
     def find(self, task_id):
@@ -74,3 +89,20 @@ class TaskQueue(object):
         finally:
             self._lock.release()
         return task
+        
+    def clear(self):
+        """
+        Clear all tasks from the queue and force them to exit
+        @return: None
+        """
+        self._lock.acquire()
+        try:
+            tasks = set().union(self._wait_queue,
+                                self._running_tasks.values(),
+                                self._finished_tasks.values())
+        finally:
+            self._lock.release()
+            
+        for task in tasks:
+            task.exit()
+            task.wait()
