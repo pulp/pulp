@@ -23,4 +23,4 @@ class WebservicesTest(TestApi):
 
     def setUp(self):
         TestApi.setUp(self)
-        self.rapi = WsRestApi('localhost', '8811')
+        self.rapi = WsRestApi()

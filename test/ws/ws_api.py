@@ -27,6 +27,10 @@ from connection import RepoConnection
 
 class WsRestApi(RepoConnection):
     
+    def __init__(self):
+        RepoConnection.__init__(self)
+        self.localStoragePath = "/tmp/pulp/"
+
     def clean(self):
         api.RepoApi().clean()
 
