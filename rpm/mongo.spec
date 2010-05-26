@@ -1,8 +1,8 @@
 Name: mongo
 Version: 1.4.2
-Release: 3%{?dist}
+Release: 4%{?dist}
 Summary: mongo client shell and tools
-License: AGPL 3.0
+License: AGPLv3
 URL: http://www.mongodb.org
 Group: Applications/Databases
 
@@ -62,15 +62,21 @@ mkdir -p $RPM_BUILD_ROOT/etc/sysconfig
 cp rpm/mongod.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/mongod
 mkdir -p $RPM_BUILD_ROOT/var/lib/mongo
 mkdir -p $RPM_BUILD_ROOT/var/log/mongo
-touch $RPM_BUILD_ROOT/var/log/mongo/mongod.log
+#touch $RPM_BUILD_ROOT/var/log/mongo/mongod.log
 
 %clean
 scons -c
 rm -rf $RPM_BUILD_ROOT
 
 %pre server
-/usr/sbin/useradd -M -r  -d /var/lib/mongo -s /bin/false \
-    -c mongod mongod > /dev/null 2>&1
+
+/usr/sbin/groupadd -g 71 -o -r mongod >/dev/null 2>&1 || :
+/usr/sbin/useradd -M -N -g mongod -o -r -d /var/lib/mongo -s /bin/bash \
+	-c "MongoDB Server" -u 71 mongod >/dev/null 2>&1 || :
+
+
+#/usr/sbin/useradd -M -r  -d /var/lib/mongo -s /bin/false \
+#    -c mongod mongod > /dev/null 2>&1
 
 %post server
 if test $1 = 1
@@ -81,17 +87,9 @@ fi
 %preun server
 if test $1 = 0
 then
+  /sbin/service mongod stop >/dev/null 2>&1
   /sbin/chkconfig --del mongod
 fi
-
-%postun server
-if test $1 -ge 1
-then
-  /sbin/service mongod stop >/dev/null 2>&1 || :
-fi
-
-/usr/sbin/userdel mongod
-
 
 
 %files
@@ -126,26 +124,22 @@ fi
 /etc/rc.d/init.d/mongod
 /etc/sysconfig/mongod
 #/etc/rc.d/init.d/mongos
-%attr(0755,mongod,mongod) %dir /var/lib/mongo
-%attr(0755,mongod,mongod) %dir /var/log/mongo
-%attr(0640,mongod,mongod) %config(noreplace) %verify(not md5 size mtime) /var/log/mongo/mongod.log
+#%attr(0755,mongod,mongod) %dir /var/log/mongo
+#%attr(0640,mongod,mongod) %config(noreplace) %verify(not md5 size mtime) /var/log/mongo/mongod.log
 
 %files devel
 /usr/include/mongo
 %{_libdir}/libmongoclient.a
 #%{_libdir}/libmongotestfiles.a
 
-%preuninstall
-/sbin/service mongod stop
 
-%uninstall
-/usr/sbin/userdel mongod >/dev/null 2>&1
-/usr/sbin/groupdel mongod >/dev/null 2>&1
-# XXX should we delete the logs as well?
-#rm -rf /var/log/mongo/
-rm -rf /var/lib/mongo/mogo.lock >/dev/null 2>&1
 
 %changelog
+* Wed May 26 2010 Adam Young <ayoung@redhat.com> - 1.4.2-4
+- Cleaned up rpmlint complaints
+- No longer trying to manage the log or remove the mongod user IAW Fedora 
+  guidelines
+
 * Mon May 24 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-3
 - added %preunistall directives
 - incremented release
