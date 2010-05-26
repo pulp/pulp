@@ -55,7 +55,7 @@ class RepoSource(Base):
         parts = source.split(':')
         if (len(parts) < 2):
             msg = "Invalid feed url.  Must be <type>:<path> where types are: %s"
-            raise PulpException(msg % supported_types)
+            raise PulpException(msg % self.supported_types)
         if (self.supported_types.count(parts[0]) < 1):
             raise PulpException("Invalid type.  valid types are %s" 
                                 % self.supported_types)
