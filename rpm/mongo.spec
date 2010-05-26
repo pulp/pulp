@@ -1,6 +1,6 @@
 Name: mongo
 Version: 1.4.2
-Release: 4%{?dist}
+Release: 5%{?dist}
 Summary: mongo client shell and tools
 License: AGPLv3
 URL: http://www.mongodb.org
@@ -84,10 +84,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/sbin/useradd -M -N -g mongod -o -r -d /var/lib/mongo -s /bin/bash \
 	-c "MongoDB Server" -u 71 mongod >/dev/null 2>&1 || :
 
-
-#/usr/sbin/useradd -M -r  -d /var/lib/mongo -s /bin/false \
-#    -c mongod mongod > /dev/null 2>&1
-
 %post server
 if test $1 = 1
 then
@@ -134,7 +130,8 @@ fi
 /etc/rc.d/init.d/mongod
 /etc/sysconfig/mongod
 #/etc/rc.d/init.d/mongos
-#%attr(0755,mongod,mongod) %dir /var/log/mongo
+%attr(0755,mongod,mongod) %dir /var/log/mongo
+%attr(0755,mongod,mongod) %dir /var/lib/mongo
 #%attr(0640,mongod,mongod) %config(noreplace) %verify(not md5 size mtime) /var/log/mongo/mongod.log
 
 %files devel
@@ -145,7 +142,7 @@ fi
 
 
 %changelog
-* Wed May 26 2010 Adam Young <ayoung@redhat.com> - 1.4.2-4
+* Wed May 26 2010 Adam Young <ayoung@redhat.com> - 1.4.2-5
 - Cleaned up rpmlint complaints
 - No longer trying to manage the log or remove the mongod user IAW Fedora 
   guidelines
