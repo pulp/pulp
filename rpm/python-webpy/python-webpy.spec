@@ -4,7 +4,7 @@
 
 Name:           python-%{pkgname}
 Version:        0.32
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        A simple web framework for Python
 Group:          Development/Libraries
 
@@ -28,7 +28,6 @@ BuildRequires:  python-setuptools
 BuildArch:      noarch
 # https://bugs.launchpad.net/webpy/+bug/396789
 Patch0:         web.utils-tests.patch
-Patch1:         webpy-setup.py.patch
 
 %description
 web.py is a web framework for python that is as simple as it is
@@ -38,7 +37,6 @@ purpose with absolutely no restrictions.
 %prep
 %setup -q -n %{pkgname}
 %patch0 -p1 -b .tests
-patch -p0 < %{PATCH1}
 # Remove shebang from non scripts.
 %{__sed} -i '1d' web/utils.py
 %{__sed} -i '1d' web/application.py
@@ -46,7 +44,7 @@ patch -p0 < %{PATCH1}
 %{__cp} web/wsgiserver/LICENSE.txt LICENSE.wsgiserver.txt
 
 %build
-%{__python} setup.py build
+%{__python} -c 'import setuptools; execfile("setup.py")' build
 
 %check
 %{__python} test/application.py
@@ -54,7 +52,7 @@ patch -p0 < %{PATCH1}
 
 %install
 %{__rm} -rf %{buildroot}
-%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+%{__python} -c 'import setuptools; execfile("setup.py")' install -O1 --skip-build --root %{buildroot}
 
 %clean
 %{__rm} -rf %{buildroot}
@@ -65,6 +63,10 @@ patch -p0 < %{PATCH1}
 %{python_sitelib}/*
 
 %changelog
+* Thu May 27 2010 Jason L Connor <jconnor@redhat.com> - 0.32-5
+- removed patch
+- added import of setuptools directly in spec file
+
 * Thu May 27 2010 Jason L Connor <jconnor@redhat.com> - 0.32-4
 - added patch to convert from distools to setuptools
 - added build dependency for same
