@@ -1,6 +1,6 @@
 Name: mongo
 Version: 1.4.2
-Release: 5%{?dist}
+Release: 6%{?dist}
 Summary: mongo client shell and tools
 License: AGPLv3
 URL: http://www.mongodb.org
@@ -81,7 +81,7 @@ rm -rf $RPM_BUILD_ROOT
 %pre server
 
 /usr/sbin/groupadd -g 71 -o -r mongod >/dev/null 2>&1 || :
-/usr/sbin/useradd -M -N -g mongod -o -r -d /var/lib/mongo -s /bin/bash \
+/usr/sbin/useradd -M -g mongod -o -r -d /var/lib/mongo -s /bin/bash \
 	-c "MongoDB Server" -u 71 mongod >/dev/null 2>&1 || :
 
 %post server
@@ -142,6 +142,9 @@ fi
 
 
 %changelog
+* Thu May 27 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-6
+- removed -N option to useradd, which isn't supported by rhel5 shadow-utils
+
 * Wed May 26 2010 Adam Young <ayoung@redhat.com> - 1.4.2-5
 - Cleaned up rpmlint complaints
 - No longer trying to manage the log or remove the mongod user IAW Fedora 
@@ -149,12 +152,10 @@ fi
 
 * Mon May 24 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-3
 - added %preunistall directives
-- incremented release
 
 * Mon May 24 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-2
 - added %unistall directives
-- incremented release
-added user and group cleanup on uninstall to mongo's spec file
+- added user and group cleanup on uninstall to mongo's spec file
 
 * Fri May 21 2010 Adam Young <ayoung@redhat.com> - 1.4.2-2
 - Removed The -U option which is not supporteed  RHEL5 shadow-utils.  It is not needed on F12 or later
