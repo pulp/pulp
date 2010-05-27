@@ -16,7 +16,10 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import web
 import pymongo.json_util 
 
