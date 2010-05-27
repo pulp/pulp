@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import pymongo
+from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 class BaseApi(object):
 
@@ -21,10 +22,15 @@ class BaseApi(object):
         # Mongo DB
         self.connection = pymongo.Connection()
         self.db = self.connection._database
+        # Inject the collection's namespace into each object
+        self.db.add_son_manipulator(NamespaceInjector())
+        # Provides auto-referencing/auto-dereferencing ability
+        self.db.add_son_manipulator(AutoReference(self.db))
+
         self.collection = self.db.pulp_collection
+        self.objectdb = self._getcollection()
 
         # Indexes
-        self.objectdb = self._getcollection()
         self.objectdb.ensure_index([("id", pymongo.DESCENDING)], unique=True, 
                                    background=True)
         
