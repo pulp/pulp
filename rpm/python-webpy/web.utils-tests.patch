@@ -1,0 +1,26 @@
+Binary files webpy.orig/test/webtest.pyc and webpy/test/webtest.pyc differ
+diff -uNr webpy.orig/web/utils.py webpy/web/utils.py
+--- webpy.orig/web/utils.py	2009-06-04 07:24:34.000000000 -0700
++++ webpy/web/utils.py	2009-07-07 14:50:06.000000000 -0700
+@@ -834,13 +834,21 @@
+ 
+         import cStringIO
+         out = cStringIO.StringIO()
++        oldout = sys.stdout
+         stats = hotshot.stats.load(temp.name)
+-        stats.stream = out
++        if sys.version_info >= (2, 5):
++          stats.stream = out
++        else:
++          sys.stdout = out
++
+         stats.strip_dirs()
+         stats.sort_stats('time', 'calls')
+         stats.print_stats(40)
+         stats.print_callers()
+ 
++        if sys.version_info < (2, 5):
++          sys.stdout = oldout
++
+         x =  '\n\ntook '+ str(stime) + ' seconds\n'
+         x += out.getvalue()

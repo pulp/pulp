@@ -1,0 +1,11 @@
+--- setup.py.orig	2009-06-04 08:24:34.000000000 -0600
++++ setup.py	2010-05-27 13:20:44.000000000 -0600
+@@ -2,7 +2,7 @@
+ 
+ # ...
+ 
+-from distutils.core import setup
++from setuptools import setup
+ 
+ setup(name='web.py',
+       version='0.32',

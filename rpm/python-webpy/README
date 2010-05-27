@@ -1,0 +1,3 @@
+This is for building in EPEL for RHEL 5 only.
+The original source and rpm do not use setuptools, which is required by the
+pulp rpmbuild.
