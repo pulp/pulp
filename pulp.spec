@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.4
+Version:        0.0.5
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -21,7 +21,9 @@ BuildRequires:  rpm-python
 
 Requires: python-gevent
 Requires: python-pymongo
-Requires:  python-setuptools
+Requires: python-setuptools
+Requires: python-webpy
+Requires: grinder
 
 
 %description
@@ -71,6 +73,59 @@ rm -rf %{buildroot}
 %config /etc/juicer.ini
 
 %changelog
+* Thu May 27 2010 Adam Young <ayoung@redhat.com> 0.0.5-1
+- Updated Dirs in var (ayoung@redhat.com)
+- Added a patch to build 32 bit on 64 bit RH systems (ayoung@redhat.com)
+- Updated to the WsRepoApi (jason.dobies@redhat.com)
+- First pass at web services tests (jason.dobies@redhat.com)
+- Renamed RepoConnection methods to be the same as their RepoApi counterpart.
+  This way, we can use the RepoConnection object as a web services proxy and
+  pass it into the unit tests that make direct calls on the RepoApi object.
+  (jason.dobies@redhat.com)
+- moving sub calls to separate class (pkilambi@redhat.com)
+- fixed typo in doc added id to repo_data for update (jconnor@redhat.com)
+- spec file changes to get closer to Fedora compliance. (ayoung@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (jason.dobies@redhat.com)
+- Missing self reference (jason.dobies@redhat.com)
+- added some task cleanup to tasks as well as the base queue class added
+  cleanup calls to test_tasks (jconnor@redhat.com)
+- fixed missing 'id' parameter to repository update (jconnor@redhat.com)
+-  New project for pulp client. Initial commit includes: (pkilambi@redhat.com)
+- removing authors (mmccune@redhat.com)
+- minor cleanup (mmccune@redhat.com)
+- fixed my regular expressions for repositories and test applications changed
+  create repo from /repostiories/new/ to just /repositories/ in case someone
+  wants a repo called 'new' updated doc to reflect change (jconnor@redhat.com)
+- updated docs to reflect new id (jconnor@redhat.com)
+- changing regex to accept any type of id (jconnor@redhat.com)
+- added creat url to documentation (jconnor@redhat.com)
+- added 'next' keyword some formatting cleanup (jconnor@redhat.com)
+- create index in background and add more data to PackageGroup objects
+  (jmatthew@redhat.com)
+- deleting grinder.  now avail in its own git repo (mmccune@redhat.com)
+- cleanup on setup and teardown (mmccune@redhat.com)
+- Added grinder egg to ignore (jason.dobies@redhat.com)
+- Refactored unit tests into their own directory (jason.dobies@redhat.com)
+- add methods for listing package groups/categories from repo api
+  (jmatthew@redhat.com)
+- fixing randomString casing and making unit tests work without root
+  (mmccune@redhat.com)
+- adding the pulp repo file (jconnor@redhat.com)
+- fixed my test_tasks for the fifo tests (jconnor@redhat.com)
+- extensive regex construction for at time specifications added some
+  documentation to at queues added place-holder persistent queue module
+  (jconnor@redhat.com)
+- Test update to see if I can commit (jason.dobies@redhat.com)
+- adding object/api for PackageGroup and PackageGroupCategory to represent data
+  in comps.xml (repodata). (jmatthew@redhat.com)
+- mid-stream modifications of more powerful at time spec parser
+  (jconnor@redhat.com)
+- adding preuninstall to stop a currently running server adding forceful
+  deletion of db lock to uninstall (jconnor@redhat.com)
+- added user and group cleanup on uninstall to mongo's spec file
+  (jconnor@redhat.com)
+
 * Mon May 24 2010 Adam Young <ayoung@redhat.com> 0.0.4-1
 - added dep for  setup-tools (ayoung@redhat.com)
 - Removed the _U option that was breaking installs on epel. (ayoung@redhat.com)
