@@ -1,0 +1,13 @@
+diff -uNr ssl-1.15.ORIG/setup.py ssl-1.15/setup.py
+--- ssl-1.15.ORIG/setup.py	2009-10-02 20:02:10.864763790 +0200
++++ ssl-1.15/setup.py	2009-10-03 09:00:06.541685860 +0200
+@@ -131,7 +131,8 @@
+ 
+     ssl_libs = find_library_file(compiler, 'ssl',
+                                  ['/usr/lib'],
+-                                 ['/usr/local/lib',
++                                 ['/usr/lib64',
++                                  '/usr/local/lib',
+                                   '/usr/local/ssl/lib',
+                                   '/usr/contrib/ssl/lib/'
+                                  ] )
