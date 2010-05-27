@@ -134,7 +134,9 @@ class RepoApi(BaseApi):
             if (fname.endswith(".rpm")):
                 try:
                     info = getRPMInformation(dir + fname)
-                    p = self.packageApi.create(info['name'], info['description'])
+                    p = self.packageApi.package(info['name'])
+                    if not p:
+                        p = self.packageApi.create(info['name'], info['description'])
                     pv = self.packageVersionApi.create(p.id, info['epoch'], 
                         info['version'], info['release'], info['arch'])
                     for dep in info['requires']:
