@@ -16,11 +16,15 @@
 #
 import sys
 sys.path.append("../../src")
-import json
 import time
 import unittest
 import logging
 import os
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import pymongo.json_util 
 
