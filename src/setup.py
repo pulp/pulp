@@ -14,7 +14,27 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+from platform import python_version
 from setuptools import setup, find_packages
+
+
+major, minor, micro = python_version().split('.')
+
+if major != '2' or minor not in ['4', '5', '6']:
+    raise Exception('unsuported version of python')
+
+requires = [
+    'gevent == 0.12.2',
+    'web.py == 0.32',
+    'grinder >= 0.0.20',
+    'pymongo == 1.6',
+]
+
+if minor != '6':
+    requires.extend([
+        'simplejson == 2.0.9',
+        'ssl == 1.15',
+    ])
 
 
 setup(
@@ -39,11 +59,6 @@ setup(
         'Intended Audience :: Developers',
         'Development Status :: 3 - Alpha',
     ],
-    install_requires=[
-        'gevent == 0.12.2',
-        'web.py == 0.32',
-        'grinder >= 0.0.20',
-        'pymongo == 1.6',
-    ],
+    install_requires=requires,
 )
 
