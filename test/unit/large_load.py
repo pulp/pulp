@@ -26,9 +26,9 @@ import random
 
 
 sys.path.append("../src")
-from pulp.api import RepoApi
-from pulp.api import PackageApi
-from pulp.api import ConsumerApi
+from pulp.api.repo import RepoApi
+from pulp.api.package import PackageApi
+from pulp.api.consumer import ConsumerApi
 from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import randomString
