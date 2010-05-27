@@ -15,7 +15,7 @@
 # in this software or its documentation.
 #
 import sys
-sys.path.append("../src")
+sys.path.append("../../src")
 import json
 import time
 import unittest
