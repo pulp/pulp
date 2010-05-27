@@ -19,7 +19,7 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 import web
 
 from juicer.controllers.base import JSONController
-from pulp.api import RepoApi
+from pulp.api.repo import RepoApi
 
 # web.py application ----------------------------------------------------------
 

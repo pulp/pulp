@@ -12,73 +12,46 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
-import os
-import sys
 
+# Python
 import logging
-import pymongo
-from urlparse import urlparse
 import gzip
+import os
+from urlparse import urlparse
+
+# 3rd Party
 import yum.comps
 from yum.Errors import CompsException
 
+# Pulp
 from grinder.RepoFetch import YumRepoGrinder
-
 from pulp import model
+from pulp.api.base import BaseApi
+from pulp.api.package import PackageApi
+from pulp.api.package_version import PackageVersionApi
+from pulp.api.package_group import PackageGroupApi
+from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
 from pulp.util import getRPMInformation
-from pulp.util import chunks
+
+log = logging.getLogger('pulp.api.repo')
 
 
-log = logging.getLogger("pulp.api")
-# log.setLevel(logging.DEBUG)
-
-class BaseApi(object):
-    def __init__(self):
-        ####### Mongo DB ########
-        self.connection = pymongo.Connection()
-        self.db = self.connection._database
-        self.collection = self.db.pulp_collection
-        ## INDEXES
-        self.objectdb = self._getcollection()
-        self.objectdb.ensure_index([("id", pymongo.DESCENDING)], unique=True, 
-                background=True)
-        
-    def _getcollection(self):
-        return
-
-    def clean(self):
-        """
-        Delete all the Objects in the database.  WARNING: Destructive
-        """
-        self.objectdb.remove()
-
-    def update(self, object):
-        """
-        Write the object document to the database
-        """
-        self.objectdb.save(object)
-
-    def delete(self, id):
-        """
-        Delete a single stored Object
-        """
-        self.objectdb.remove({'id': id})
-        
 class RepoApi(BaseApi):
-
     """
     API for create/delete/syncing of Repo objects
     """
+
     def __init__(self):
         BaseApi.__init__(self)
-        # TODO: Extract this to a config
-        self.localStoragePath = "/var/lib/pulp/"
+
         self.packageApi = PackageApi()
         self.packageVersionApi = PackageVersionApi()
         self.packageGroupApi = PackageGroupApi()
         self.packageGroupCategoryApi = PackageGroupCategoryApi()
+
+        # TODO: Extract this to a config
+        self.localStoragePath = "/var/lib/pulp/"
 
     def _getcollection(self):
         return self.db.repos
@@ -123,9 +96,7 @@ class RepoApi(BaseApi):
         r = model.Repo(id, name, arch, feed)
         self.objectdb.insert(r)
         return r
-        
 
-        
     def sync(self, id):
         """
         Sync a repo from the URL contained in the feed
@@ -153,10 +124,8 @@ class RepoApi(BaseApi):
             self._add_packages_from_dir(parts.path, repo)
             self.update(repo)
             
-        return
-    
     def _add_packages_from_dir(self, dir, repo):
-        dirList=os.listdir(dir)
+        dirList = os.listdir(dir)
         packages = repo['packages']
         package_count = 0
         for fname in dirList:
@@ -226,183 +195,3 @@ class RepoApi(BaseApi):
             log.error("Unable to parse comps info for %s" % (compspath))
             return False
         return True
-
-class PackageApi(BaseApi):
-
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    def _getcollection(self):
-        return self.db.packages
-        
-    def create(self, id, name):
-        """
-        Create a new Package object and return it
-        """
-        p = model.Package(id, name)
-        self.objectdb.insert(p)
-        return p
-        
-    def package(self, id, filter=None):
-        """
-        Return a single Package object
-        """
-        return self.objectdb.find_one({'id': id})
-
-    def packages(self):
-        """
-        List all packages.  Can be quite large
-        """
-        return list(self.objectdb.find())
-        
-class PackageVersionApi(BaseApi):
-
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    def _getcollection(self):
-        return self.db.packageversions
-
-    def create(self, packageid, epoch, version, release, arch):
-        """
-        Create a new PackageVersion object and return it
-        """
-        pv = model.PackageVersion(packageid, epoch, version, release, arch)
-        self.objectdb.insert(pv)
-        return pv
-        
-    def packageversion(self, id, filter=None):
-        """
-        Return a single PackageVersion object
-        """
-        return self.objectdb.find_one({'id': id})
-
-    def packageversions(self):
-        """
-        List all packages.  Can be quite large
-        """
-        return list(self.objectdb.find())
-
-class PackageGroupApi(BaseApi):
-
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    def _getcollection(self):
-        return self.db.packagegroups
-    
-    def update(self, object):
-        """
-        Override BaseApi 'update' so we may force the xml file on disk to be 
-        updated with any changes that have been made. Afterwards we will 
-        write the object document to the database
-        """
-        # comps.Comps()
-        # Add in Groups & Categories
-        # write out comps.Comps().xml()
-        self.objectdb.save(object)
-
-    def create(self, groupid, name, description, user_visible=False,
-            display_order=1024, default=False, langonly=None):
-        """
-        Create a new PackageGroup object and return it
-        """
-        pg = model.PackageGroup(groupid, name, description, 
-                user_visible=user_visible, display_order=display_order, 
-                default=default, langonly=langonly)
-        self.objectdb.insert(pg)
-        return pg
-        
-    def packagegroup(self, id, filter=None):
-        """
-        Return a single PackageGroup object
-        """
-        return self.objectdb.find_one({'id': id})
-
-    def packagegroups(self):
-        """
-        List all packagegroups.  Can be quite large
-        """
-        return list(self.objectdb.find())
-
-class PackageGroupCategoryApi(BaseApi):
-
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    def _getcollection(self):
-        return self.db.packagegroupcategories
-
-    def create(self, categoryid, name, description, display_order=99):
-        """
-        Create a new PackageGroupCategory object and return it
-        """
-        pgc = model.PackageGroupCategory(categoryid, name, description, 
-                display_order=display_order)
-        self.objectdb.insert(pgc)
-        return pgc
-        
-    def packagegroupcategory(self, id, filter=None):
-        """
-        Return a single PackageGroupCategory object
-        """
-        return self.objectdb.find_one({'id': id})
-
-    def packagegroupcategories(self):
-        """
-        List all packagegroupcategories.  Can be quite large
-        """
-        return list(self.objectdb.find())
-        
-class ConsumerApi(BaseApi):
-
-    def __init__(self):
-        BaseApi.__init__(self)
-        # INDEXES
-        self.objectdb.ensure_index([("packageids", pymongo.DESCENDING)])
-
-
-    def _getcollection(self):
-        return self.db.consumers
-
-    
-    def create(self, id, description):
-        """
-        Create a new Consumer object and return it
-        """
-        c = model.Consumer(id, description)
-        self.objectdb.insert(c)
-        return c
-        
-    def bulkcreate(self, consumers):
-        """
-        Create a set of Consumer objects in a bulk manner
-        """
-        ## Have to chunk this because of issue with PyMongo and network
-        ## See: http://tinyurl.com/2eyumnc
-        #chunksize = 500
-        chunksize = 100
-        chunked = chunks(consumers, chunksize)
-        inserted = 0
-        for chunk in chunked:
-            self.objectdb.insert(chunk)
-            inserted = inserted + chunksize
-            print "Inserted: %s" % inserted
-
-    def consumers(self):
-        """
-        List all consumers.  Can be quite large
-        """
-        return list(self.objectdb.find())
-
-    def consumer(self, id):
-        """
-        Return a single Consumer object
-        """
-        return self.objectdb.find_one({'id': id})
-    
-    def consumerswithpackage(self, packageid):
-        """
-        List consumers using passed in packageid
-        """
-        return list(self.objectdb.find({"packageids":  packageid}))

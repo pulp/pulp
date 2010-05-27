@@ -24,12 +24,13 @@ import os
 
 import pymongo.json_util 
 
-from pulp.api import RepoApi
-from pulp.api import PackageApi
-from pulp.api import PackageGroupApi
-from pulp.api import PackageGroupCategoryApi
-from pulp.api import ConsumerApi
-from pulp.api import PackageVersionApi
+from pulp.api.consumer import ConsumerApi
+from pulp.api.package import PackageApi
+from pulp.api.package_group import PackageGroupApi
+from pulp.api.package_group_category import PackageGroupCategoryApi
+from pulp.api.package_version import PackageVersionApi
+from pulp.api.repo import RepoApi
+
 from pulp.model import Package
 from pulp.model import PackageGroup
 from pulp.model import PackageGroupCategory
