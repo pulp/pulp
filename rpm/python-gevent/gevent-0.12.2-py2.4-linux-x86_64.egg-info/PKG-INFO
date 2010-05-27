@@ -1,0 +1,19 @@
+Metadata-Version: 1.0
+Name: gevent
+Version: 0.12.2
+Summary: Python network library that uses greenlet and libevent for easy and scalable concurrency
+Home-page: http://www.gevent.org/
+Author: Denis Bilenko
+Author-email: denis.bilenko@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Topic :: Internet
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Intended Audience :: Developers
+Classifier: Development Status :: 4 - Beta
