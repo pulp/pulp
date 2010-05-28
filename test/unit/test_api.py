@@ -209,17 +209,12 @@ class TestApi(unittest.TestCase):
             
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
-        c.packageids.append(package["packageid"])
+        repo = self.rapi.create('some-id', 'some name',
+                'i386', 'yum:http://example.com')
         for i in range(10):
-        repo = self.rapi.create('some-id','some name',
-            'i386', 'yum:http://example.com')
-        package = self.rapi.create_package(repo.id, 'test_consumerwithpackage',
+            package = self.rapi.create_package(repo["id"], 'test_consumerwithpackage',
                 'test package search')
-        repo = self.rapi.repository(repo["id"])
-        c.packageids.append(package["packageid"])
-        for i in range(10):
-            package = self.rapi.create_package(repo['id'],
-                    randomString(), randomString())
+            repo = self.rapi.repository(repo["id"])
             c.packageids.append(package["packageid"])
         self.capi.update(c)
         
