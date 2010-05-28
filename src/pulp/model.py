@@ -64,12 +64,14 @@ class RepoSource(Base):
 
 
 class Package(Base):
-    def __init__(self, packageid, description):
+    def __init__(self, repoid, packageid, description):
+        self.repoid = repoid
         self.packageid = packageid
         self.description = description
         self.versions = []
 
 class PackageVersion(Base):
+    #TODO: Needs reference to repo-id as well
     def __init__(self, packageid, epoch, version, release, arch):
         self.packageid = packageid
         self.epoch = epoch
