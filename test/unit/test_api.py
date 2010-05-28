@@ -142,7 +142,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
         package = Package('test_repo_packages','test package')
-        repo.packages[package.id] = package
+        repo.packages[package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -156,9 +156,9 @@ class TestApi(unittest.TestCase):
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
         package = Package('test_repo_packages','test package')
-        pkggroup.default_package_names.append(package.id)
-        repo.packagegroups[pkggroup.groupid] = pkggroup
-        repo.packages[package.id] = package
+        pkggroup.default_package_names.append(package["packageid"])
+        repo.packagegroups[pkggroup["groupid"]] = pkggroup
+        repo.packages[package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -175,13 +175,13 @@ class TestApi(unittest.TestCase):
         package = Package('test_repo_packages','test package')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        pkggroup.default_package_names.append(package.id)
+        pkggroup.default_package_names.append(package["packageid"])
         ctg = PackageGroupCategory('test-group-cat-id', 'test-group-cat-name',
                 'test-group-cat-description')
         ctg.packagegroupids = pkggroup.id
         repo.packagegroupcategories[ctg.categoryid] = ctg
         repo.packagegroups[pkggroup.groupid] = pkggroup
-        repo.packages[package.id] = package
+        repo.packages[package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -210,10 +210,10 @@ class TestApi(unittest.TestCase):
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         package = Package('test_consumerwithpackage','test package search')
-        c.packageids.append(package.id)
+        c.packageids.append(package["packageid"])
         for i in range(10):
             package = Package(randomString(), randomString())
-            c.packageids.append(package.id)
+            c.packageids.append(package["packageid"])
         self.capi.update(c)
         
         found = self.capi.consumerswithpackage('some-invalid-id')
