@@ -174,18 +174,16 @@ class RepoApi(BaseApi):
                     if not p:
                         p = self.create_package(repo["id"], info['name'],
                                 info['description'])
-                    pv = self.packageVersionApi.create(p.packageid, info['epoch'],
+                    pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
                         info['version'], info['release'], info['arch'])
                     for dep in info['requires']:
                         pv.requires.append(dep)
                     for dep in info['provides']:
                         pv.provides.append(dep)
                     self.packageVersionApi.update(pv)
-                    p.versions.append(pv)
+                    p["versions"].append(pv)
                     #self.packageApi.update(p)
                     packages[p["packageid"]] = p
-                    log.debug("repo = %s" % (repo))
-                    log.debug("packages = %s" % (packages))
                     self.update(repo) # Need to send
                     package_count = package_count + 1
                     log.debug("Repo <%s> added package <%s> with %s versions" %
