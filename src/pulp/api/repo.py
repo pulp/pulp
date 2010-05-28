@@ -30,7 +30,7 @@ from yum.Errors import CompsException
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
 from pulp.api.base import BaseApi
-from pulp.api.package import PackageApi
+#from pulp.api.package import PackageApi
 from pulp.api.package_version import PackageVersionApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
@@ -47,15 +47,13 @@ class RepoApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-
-        self.packageApi = PackageApi()
+        #self.packageApi = PackageApi()
         self.packageVersionApi = PackageVersionApi()
         self.packageGroupApi = PackageGroupApi()
         self.packageGroupCategoryApi = PackageGroupCategoryApi()
 
         # TODO: Extract this to a config
         self.localStoragePath = "/var/lib/pulp/"
-
     def _getcollection(self):
         return self.db.repos
         
@@ -76,8 +74,18 @@ class RepoApi(BaseApi):
         Return list of Package objects in this Repo
         """
         repo = self.repository(id)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % id)
         return repo['packages']
     
+    def package(self, repoid, packageid):
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if not repo["packages"].has_key(packageid):
+            return None
+        return repo["packages"][packageid]
+
     def packagegroups(self, id):
         """
         Return list of PackageGroup objects in this Repo
@@ -99,6 +107,32 @@ class RepoApi(BaseApi):
         r = model.Repo(id, name, arch, feed)
         self.objectdb.insert(r)
         return r
+
+    def create_package(self, repoid, packageid, description):
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        p = model.Package(repoid, packageid, description)
+        repo["packages"][packageid] = p
+        self.update(repo)
+        return repo["packages"][packageid]
+
+    def remove_package(self, repoid, packageid):
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if not repo["packages"].has_key(packageid):
+            raise PulpException("No Package with id: %s found in repo: %s" %
+                    (packageid, repoid))
+        del repo["packages"][packageid]
+        self.update(repo)
+
+    def remove_packages(self, repoid):
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        repo["packages"] = {}
+        self.update(repo)
 
     def sync(self, id):
         """
@@ -135,24 +169,29 @@ class RepoApi(BaseApi):
             if (fname.endswith(".rpm")):
                 try:
                     info = getRPMInformation(dir + fname)
-                    p = self.packageApi.package(info['name'])
+                    #p = self.packageApi.package(info['name'])
+                    p = self.package(repo["id"], info['name'])
                     if not p:
-                        p = self.packageApi.create(info['name'], info['description'])
-                    pv = self.packageVersionApi.create(p["packageid"], info['epoch'], 
+                        p = self.create_package(repo["id"], info['name'],
+                                info['description'])
+                    pv = self.packageVersionApi.create(p.packageid, info['epoch'],
                         info['version'], info['release'], info['arch'])
                     for dep in info['requires']:
                         pv.requires.append(dep)
                     for dep in info['provides']:
                         pv.provides.append(dep)
                     self.packageVersionApi.update(pv)
-                    p["versions"].append(pv)
-                    self.packageApi.update(p)
+                    p.versions.append(pv)
+                    #self.packageApi.update(p)
                     packages[p["packageid"]] = p
+                    log.debug("repo = %s" % (repo))
+                    log.debug("packages = %s" % (packages))
+                    self.update(repo) # Need to send
                     package_count = package_count + 1
                     log.debug("Repo <%s> added package <%s> with %s versions" %
                             (repo["id"], p["packageid"], len(p["versions"])))
                 except Exception, e:
-                    log.debug("Exception = %s" % (traceback.format_exc()))
+                    log.debug("%s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
         log.debug("read [%s] packages" % package_count)
         self._read_comps_xml(dir, repo)

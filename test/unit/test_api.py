@@ -141,7 +141,7 @@ class TestApi(unittest.TestCase):
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        package = Package('test_repo_packages','test package')
+        package = Package(repo.id, 'test_repo_packages','test package')
         repo.packages[package["packageid"]] = package
         self.rapi.update(repo)
         
@@ -155,9 +155,9 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        package = Package('test_repo_packages','test package')
-        pkggroup.default_package_names.append(package["packageid"])
-        repo.packagegroups[pkggroup["groupid"]] = pkggroup
+        package = Package(repo.id, 'test_repo_packages','test package')
+        pkggroup.default_package_names.append(package.id)
+        repo.packagegroups[pkggroup.groupid] = pkggroup
         repo.packages[package["packageid"]] = package
         self.rapi.update(repo)
         
@@ -172,7 +172,7 @@ class TestApi(unittest.TestCase):
     def test_repo_package_group_categories(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        package = Package('test_repo_packages','test package')
+        package = Package(repo.id, 'test_repo_packages','test package')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
         pkggroup.default_package_names.append(package["packageid"])
@@ -209,10 +209,17 @@ class TestApi(unittest.TestCase):
             
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
-        package = Package('test_consumerwithpackage','test package search')
         c.packageids.append(package["packageid"])
         for i in range(10):
-            package = Package(randomString(), randomString())
+        repo = self.rapi.create('some-id','some name',
+            'i386', 'yum:http://example.com')
+        package = self.rapi.create_package(repo.id, 'test_consumerwithpackage',
+                'test package search')
+        repo = self.rapi.repository(repo["id"])
+        c.packageids.append(package["packageid"])
+        for i in range(10):
+            package = self.rapi.create_package(repo['id'],
+                    randomString(), randomString())
             c.packageids.append(package["packageid"])
         self.capi.update(c)
         
@@ -249,7 +256,9 @@ class TestApi(unittest.TestCase):
         dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo.id)
+        print "found = ", found
         packages = found['packages']
+        print "packages = ", packages
         assert(packages != None)
         assert(len(packages) > 0)
         
@@ -270,21 +279,29 @@ class TestApi(unittest.TestCase):
         # versions = p['versions']
         
     def test_package_versions(self):
-        p = self.papi.create('some-package-id', 'some package desc')
-        pv = self.pvapi.create(p.id, 0, '1.2.3', '1', 'i386')
-        p.versions.append(pv)
-        self.papi.update(p)
-        
-        found = self.papi.package(p.id)
+        repo = self.rapi.create('some-id','some name',
+            'i386', 'yum:http://example.com')
+        p = self.rapi.create_package(repo.id, 'some-package-id',
+                'some package desc')
+        repo = self.rapi.repository(repo["id"])
+        pv = self.pvapi.create(p["packageid"], 0, '1.2.3', '1', 'i386')
+        #Explicit reference to the repo packages dict is needed
+        # The SON Manipulator prob made a copy of the dict, which makes references
+        # to p["versions"].append(pv) no longer work
+        repo["packages"][p["packageid"]]["versions"].append(pv)
+        self.rapi.update(repo)
+        found = self.rapi.package(repo["id"], p["packageid"])
         versions = found['versions']
         assert(versions != None)
-        assert(versions[0]['packageid'] == p.id)
-        print found
+        assert(versions[0]['packageid'] == p["packageid"])
         
     def test_packages(self):
-        p = self.papi.create('some-package-id', 'some package desc')
-        packages = self.papi.packages()
-        print "packages: %s" % packages
+        repo = self.rapi.create('some-id','some name',
+            'i386', 'yum:http://example.com')
+        p = self.rapi.create_package(repo.id, 'some-package-id',
+                'some package desc')
+        repo = self.rapi.repository(repo["id"])
+        packages = self.rapi.packages(repo["id"])
         assert(len(packages) > 0)
     
     def test_package_groups(self):
