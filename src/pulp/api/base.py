@@ -43,7 +43,7 @@ class BaseApi(object):
         """
         Write the object document to the database
         """
-        self.objectdb.save(object)
+        self.objectdb.save(object, safe=True)
 
     def delete(self, id):
         """
