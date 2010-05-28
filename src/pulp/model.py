@@ -64,8 +64,8 @@ class RepoSource(Base):
 
 
 class Package(Base):
-    def __init__(self, id, description):
-        self.id = id
+    def __init__(self, packageid, description):
+        self.packageid = packageid
         self.description = description
         self.versions = []
 

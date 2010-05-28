@@ -16,6 +16,7 @@
 import pymongo
 
 # Python
+import traceback
 import logging
 import gzip
 import os
@@ -137,18 +138,19 @@ class RepoApi(BaseApi):
                     p = self.packageApi.package(info['name'])
                     if not p:
                         p = self.packageApi.create(info['name'], info['description'])
-                    pv = self.packageVersionApi.create(p.id, info['epoch'], 
+                    pv = self.packageVersionApi.create(p["packageid"], info['epoch'], 
                         info['version'], info['release'], info['arch'])
                     for dep in info['requires']:
                         pv.requires.append(dep)
                     for dep in info['provides']:
                         pv.provides.append(dep)
                     self.packageVersionApi.update(pv)
-                    p.versions.append(pv)
+                    p["versions"].append(pv)
                     self.packageApi.update(p)
-                    packages[p.id] = p
+                    packages[p["packageid"]] = p
                     package_count = package_count + 1
                 except Exception, e:
+                    log.debug("Exception = %s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
         log.debug("read [%s] packages" % package_count)
         self._read_comps_xml(dir, repo)

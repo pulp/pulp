@@ -35,7 +35,16 @@ if __name__ == "__main__":
         print "\t%s packages" % (len(r["packages"]))
         for key in r["packages"].keys()[:int(options.num_packages)]:
             pkg = r["packages"][key]
-            print "\tPackage: <%s> in repo <%s>" % (pkg["packageid"], pkg["repoid"])
-            print "\tversions = \n\t\t%s" % (pkg["versions"])
+            #While the model is changing we will try to detect what data is in mongo
+            #later when we have stabilized on the model we shall use these if checks 
+            #should be removed
+            if type(pkg) == type({}):
+                if pkg.has_key("repoid"):
+                    print "\tPackage: <%s> in repo <%s>" % (pkg["packageid"], pkg["repoid"])
+                else:
+                    print "\tPackage: <%s> in repo <%s>" % (pkg["packageid"], r["id"])
+                print "\tversions = \n\t\t%s" % (pkg["versions"])
+            else:
+                print "\tPackage: %s" % (pkg)
 
 

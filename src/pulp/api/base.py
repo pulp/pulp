@@ -13,8 +13,11 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 import pymongo
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
+
+log = logging.getLogger('pulp.api.base')
 
 class BaseApi(object):
 
@@ -26,13 +29,24 @@ class BaseApi(object):
         self.db.add_son_manipulator(NamespaceInjector())
         # Provides auto-referencing/auto-dereferencing ability
         self.db.add_son_manipulator(AutoReference(self.db))
-
         self.objectdb = self._getcollection()
 
-        # Indexes
-        self.objectdb.ensure_index([("id", pymongo.DESCENDING)], unique=True, 
+        if self.objectdb:
+            # Indexes
+            for index in self._get_unique_indexes():
+                log.info("'%s' ensure_index('%s', unique=True)" % (self._getcollection().name, index))
+                self.objectdb.ensure_index([(index, pymongo.DESCENDING)], unique=True, 
                                    background=True)
-        
+            for index in self._get_indexes():
+                log.info("'%s' ensure_index('%s')" % (self._getcollection().name, index))
+                self.objectdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
+   
+    def _get_unique_indexes(self):
+        return ["id"]
+
+    def _get_indexes(self):
+        return []
+
     def clean(self):
         """
         Delete all the Objects in the database.  WARNING: Destructive

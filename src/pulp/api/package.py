@@ -24,6 +24,12 @@ class PackageApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
 
+    def _get_unique_indexes(self):
+        return []
+
+    def _get_indexes(self):
+        return ["packageid"]
+        
     def _getcollection(self):
         return self.db.packages
         
