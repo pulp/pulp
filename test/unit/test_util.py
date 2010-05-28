@@ -43,6 +43,13 @@ class TestUtil(unittest.TestCase):
             total = total + len(chunk)
         assert(total == 1003)
         
+    def test_fail(self):
+        """
+        Testing hudson to make sure we see failures
+        """
+        assert(False)
+        
+        
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.INFO)
