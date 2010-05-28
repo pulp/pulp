@@ -27,7 +27,6 @@ class BaseApi(object):
         # Provides auto-referencing/auto-dereferencing ability
         self.db.add_son_manipulator(AutoReference(self.db))
 
-        self.collection = self.db.pulp_collection
         self.objectdb = self._getcollection()
 
         # Indexes
