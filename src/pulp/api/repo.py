@@ -149,6 +149,8 @@ class RepoApi(BaseApi):
                     self.packageApi.update(p)
                     packages[p["packageid"]] = p
                     package_count = package_count + 1
+                    log.debug("Repo <%s> added package <%s> with %s versions" %
+                            (repo["id"], p["packageid"], len(p["versions"])))
                 except Exception, e:
                     log.debug("Exception = %s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
