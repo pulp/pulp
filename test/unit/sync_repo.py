@@ -98,6 +98,7 @@ if __name__ == "__main__":
     num_packages = 0
     for r in repos:
         num_packages += len(r["packages"])
+        print "Repo <%s> has %s packages" % (r["id"], len(r["packages"]))
     print "number of packages: %s" % (num_packages)
     print "Your database now has [%s] repositories with [%s] total packages" \
       % (len(repos), num_packages)
