@@ -16,6 +16,7 @@
 import pymongo
 
 # Python
+import time
 import traceback
 import logging
 import gzip
@@ -54,6 +55,7 @@ class RepoApi(BaseApi):
 
         # TODO: Extract this to a config
         self.localStoragePath = "/var/lib/pulp/"
+
     def _getcollection(self):
         return self.db.repos
         
@@ -163,17 +165,23 @@ class RepoApi(BaseApi):
             
     def _add_packages_from_dir(self, dir, repo):
         dirList = os.listdir(dir)
-        packages = repo['packages']
         package_count = 0
+        #TODO:  Do we want to traverse multiple directories, or should this
+        #       be locked down to a single directory traversal?  
+        #       How will this impact comps.xml and repodata if we allow import from
+        #       multiple directories into a single pulp repo?
+        startTime = time.time()
         for fname in dirList:
             if (fname.endswith(".rpm")):
+                startTimeA = time.time()
                 try:
                     info = getRPMInformation(dir + fname)
-                    #p = self.packageApi.package(info['name'])
-                    p = self.package(repo["id"], info['name'])
-                    if not p:
-                        p = self.create_package(repo["id"], info['name'],
-                                info['description'])
+                    if repo["packages"].has_key(info['name']):
+                        p = repo["packages"][info['name']]
+                    else:
+                        p = model.Package(repo['id'], info['name'], info['description'])
+                        repo["packages"][p['packageid']] = p
+                    # TODO: 
                     pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
                         info['version'], info['release'], info['arch'])
                     for dep in info['requires']:
@@ -182,16 +190,19 @@ class RepoApi(BaseApi):
                         pv.provides.append(dep)
                     self.packageVersionApi.update(pv)
                     p["versions"].append(pv)
-                    #self.packageApi.update(p)
-                    packages[p["packageid"]] = p
-                    self.update(repo) # Need to send
                     package_count = package_count + 1
-                    log.debug("Repo <%s> added package <%s> with %s versions" %
-                            (repo["id"], p["packageid"], len(p["versions"])))
+                    #log.debug("Repo <%s> added package <%s> with %s versions" %
+                    #        (repo["id"], p["packageid"], len(p["versions"])))
+                    endTimeA = time.time()
+                    #log.debug("%s Repo <%s> added package %s %s:%s-%s-%s in %s seconds" % 
+                    #        (package_count, repo["id"], p["packageid"], info['epoch'], 
+                    #            info['version'], info['release'], info['arch'], 
+                    #            (endTimeA - startTimeA)))
                 except Exception, e:
                     log.debug("%s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
-        log.debug("read [%s] packages" % package_count)
+                endTime = time.time()
+        log.debug("Repo: %s read [%s] packages took %s seconds" % (repo['id'], package_count, endTime - startTime))
         self._read_comps_xml(dir, repo)
 
     def _read_comps_xml(self, dir, repo):
