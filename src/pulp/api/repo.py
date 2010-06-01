@@ -54,7 +54,7 @@ class RepoApi(BaseApi):
         self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
 
         # TODO: Extract this to a config
-        self.localStoragePath = "/var/lib/pulp/"
+        self.localStoragePath = config['local_storage']
 
     def _getcollection(self):
         return self.db.repos
