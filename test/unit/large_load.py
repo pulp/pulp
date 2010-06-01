@@ -32,7 +32,7 @@ from pulp.api.consumer import ConsumerApi
 from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import randomString
-
+import pulp.util
 
 TEST_PACKAGE_ID = 'random-package'
 
@@ -41,10 +41,11 @@ class LargeLoad(unittest.TestCase):
     """
     Util for loading large amounts of data through our API
     """
-    def __init__(self, dir_list_path, numconsumers):
-        self.rapi = RepoApi()
-        self.papi = PackageApi()
-        self.capi = ConsumerApi()
+    def __init__(self, dir_list_path, numconsumers, config):
+        self.config = config
+        self.rapi = RepoApi(self.config)
+        self.papi = PackageApi(self.config)
+        self.capi = ConsumerApi(self.config)
         self.numconsumers = numconsumers
         self.dirlist = []
         if (dir_list_path != None):
@@ -123,13 +124,16 @@ parser.add_option('--numconsumers', dest='numconsumers',
                  action='store', default=1000, help='Number of consumers you want to load')
 
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
+parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp.ini")
 cmdoptions, args = parser.parse_args()
 dirlist = cmdoptions.dirlist
 clean = cmdoptions.clean
 numconsumers = int(cmdoptions.numconsumers)
+print "Attempting to load configuration from: %s" % (cmdoptions.config)
+config = pulp.util.loadConfig(cmdoptions.config)
 
 if (clean):
-    ll = LargeLoad(None, None)
+    ll = LargeLoad(None, None, config)
     ll.clean()
     exit("cleaned the databases")
 
@@ -142,7 +146,7 @@ console.setLevel(logging.DEBUG)
 # logging.getLogger('pulp.api').addHandler(console)
 # logging.getLogger('pulp.api').setLevel(logging.DEBUG)
 
-ll = LargeLoad(dirlist, numconsumers)
+ll = LargeLoad(dirlist, numconsumers, config)
 ll.clean()
 
 numrepos = ll.create_repos()

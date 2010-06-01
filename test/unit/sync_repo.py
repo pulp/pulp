@@ -32,7 +32,7 @@ from pulp.api.consumer import ConsumerApi
 from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import randomString
-
+import pulp.util
 
 TEST_PACKAGE_ID = 'random-package'
 
@@ -41,8 +41,8 @@ class SyncRepo(object):
     """
     Util for loading a repo of data through our API
     """
-    def __init__(self, dir_list_path):
-        self.rapi = RepoApi()
+    def __init__(self, dir_list_path, config):
+        self.rapi = RepoApi(config)
         self.dirlist = []
         if (dir_list_path != None):
             for line in fileinput.input(dir_list_path):
@@ -70,14 +70,18 @@ class SyncRepo(object):
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option('--dirlist', dest='dirlist', 
-                 action='store', help='File containing list of directories containing the repos you wish to use for this test')
+                 action='store', 
+                 help='File containing list of directories containing the repos you wish to use for this test')
     parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
+    parser.add_option('--config', dest='config', action='store', 
+            help='Pulp configuration file', default="../../etc/pulp.ini")
     cmdoptions, args = parser.parse_args()
     dirlist = cmdoptions.dirlist
     clean = cmdoptions.clean
+    config = pulp.util.loadConfig(cmdoptions.config)
 
     if (clean):
-        sr = SyncRepo(None)
+        sr = SyncRepo(None, config)
         sr.clean()
         exit("cleaned the databases")
 
@@ -89,7 +93,7 @@ if __name__ == "__main__":
     logging.getLogger('pulp.api').addHandler(console)
     logging.getLogger('pulp.api').setLevel(logging.DEBUG)
     start = time.time()
-    sr = SyncRepo(dirlist)
+    sr = SyncRepo(dirlist, config)
     sr.clean()
     numrepos = sr.create_repos()
     end = time.time()
