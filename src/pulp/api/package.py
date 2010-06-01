@@ -45,7 +45,7 @@ class PackageApi(BaseApi):
         """
         Return a single Package object
         """
-        return self.objectdb.find_one({'id': id})
+        return self.objectdb.find_one({'packageid': id})
 
     def packages(self):
         """
