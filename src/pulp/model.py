@@ -65,6 +65,8 @@ class RepoSource(Base):
 
 class Package(Base):
     def __init__(self, packageid, description):
+        #TODO: move 'description' to PackageVersion
+        #TODO: Consider getting rid of 'package', we might not need it
         self.packageid = packageid
         self.description = description
         self.versions = []
