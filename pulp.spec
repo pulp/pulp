@@ -24,6 +24,7 @@ Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
 Requires: grinder
+Requires: httpd
 
 
 %description
