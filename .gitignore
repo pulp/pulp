@@ -6,6 +6,5 @@
 *.swo
 build
 dist
-pulp.egg-info
-grinder.egg-info
+*.egg-info
 .settings
