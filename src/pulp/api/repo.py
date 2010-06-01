@@ -54,7 +54,7 @@ class RepoApi(BaseApi):
         self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
 
         # TODO: Extract this to a config
-        self.localStoragePath = config['local_storage']
+        self.localStoragePath = config.get('paths', 'local_storage')
 
     def _getcollection(self):
         return self.db.repos
