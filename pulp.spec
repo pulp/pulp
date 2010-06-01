@@ -49,7 +49,7 @@ popd
 cp -R test  %{buildroot}/%{python_sitelib}/%{name}
 mkdir %{buildroot}/etc
 cp -R etc/juicer.ini %{buildroot}/etc
-
+cp -R etc/pulp.ini %{buildroot}/etc
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -71,7 +71,8 @@ rm -rf %{buildroot}
 # For noarch packages: sitelib
 %{python_sitelib}/*
 %{_bindir}/juicer
-%config /etc/juicer.ini
+%config(noreplace) /etc/juicer.ini
+%config(noreplace) /etc/pulp.ini
 
 %changelog
 * Thu May 27 2010 Adam Young <ayoung@redhat.com> 0.0.5-1
