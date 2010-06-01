@@ -34,7 +34,8 @@ application = web.application(URLS, globals())
 
 # repository api --------------------------------------------------------------
 
-API = RepoApi()
+# TODO: jdobies, Jun 1: Wire this into juicer's configuration loading
+API = RepoApi(None)
 
 # controllers -----------------------------------------------------------------
 

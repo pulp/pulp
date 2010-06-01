@@ -45,13 +45,13 @@ class RepoApi(BaseApi):
     API for create/delete/syncing of Repo objects
     """
 
-    def __init__(self):
-        BaseApi.__init__(self)
+    def __init__(self, config):
+        BaseApi.__init__(self, config)
 
-        self.packageApi = PackageApi()
-        self.packageVersionApi = PackageVersionApi()
-        self.packageGroupApi = PackageGroupApi()
-        self.packageGroupCategoryApi = PackageGroupCategoryApi()
+        self.packageApi = PackageApi(config)
+        self.packageVersionApi = PackageVersionApi(config)
+        self.packageGroupApi = PackageGroupApi(config)
+        self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
 
         # TODO: Extract this to a config
         self.localStoragePath = "/var/lib/pulp/"

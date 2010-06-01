@@ -14,6 +14,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+
+import ConfigParser
 import rpm
 import os
 import logging
@@ -35,7 +37,6 @@ def getRPMInformation(rpmPath):
     os.close(file_descriptor_number)
     return rpmInfo
 
-
 def randomString():
     # The characters to make up the random password
     chars = string.ascii_letters + string.digits
@@ -47,3 +48,6 @@ def chunks(l, n):
     """
     return [l[i:i+n] for i in range(0, len(l), n)]
 
+def loadConfig(filename, config=ConfigParser.SafeConfigParser()):
+    config.read(filename)
+    return config

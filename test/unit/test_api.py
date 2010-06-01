@@ -41,6 +41,8 @@ from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import randomString
 
+from util import loadTestConfig
+
 class TestApi(unittest.TestCase):
     def clean(self):
         self.rapi.clean()
@@ -51,13 +53,15 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        self.rapi = RepoApi()
+        config = loadTestConfig()
+
+        self.rapi = RepoApi(config)
         self.rapi.localStoragePath = "/tmp"
-        self.papi = PackageApi()
-        self.capi = ConsumerApi()
-        self.pvapi = PackageVersionApi()
-        self.pgapi = PackageGroupApi()
-        self.pgcapi = PackageGroupCategoryApi()
+        self.papi = PackageApi(config)
+        self.capi = ConsumerApi(config)
+        self.pvapi = PackageVersionApi(config)
+        self.pgapi = PackageGroupApi(config)
+        self.pgcapi = PackageGroupCategoryApi(config)
         self.clean()
         
     def tearDown(self):

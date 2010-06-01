@@ -22,8 +22,8 @@ from pulp.util import chunks
 
 class ConsumerApi(BaseApi):
 
-    def __init__(self):
-        BaseApi.__init__(self)
+    def __init__(self, config):
+        BaseApi.__init__(self, config)
         # INDEXES
         self.objectdb.ensure_index([("packageids", pymongo.DESCENDING)])
 

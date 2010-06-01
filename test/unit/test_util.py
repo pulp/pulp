@@ -17,8 +17,9 @@
 import os
 import sys
 sys.path.append("../src")
-from pulp.util import getRPMInformation
 from pulp.util import chunks
+from pulp.util import getRPMInformation
+from pulp.util import loadConfig
 
 import time
 import unittest
@@ -42,6 +43,18 @@ class TestUtil(unittest.TestCase):
         for chunk in ck:
             total = total + len(chunk)
         assert(total == 1003)
+
+    def test_loadConfig(self):
+        # Setup
+        origFile = '../../etc/pulp.ini'
+        overrideFile = './data/test-override-pulp.ini'
+        
+        # Test & Verify
+        config = loadConfig(origFile)
+        self.assertEqual(config.get('paths', 'http_mount'), '/var/www/pulp')
+
+        config = loadConfig(overrideFile, config=config)
+        assert(config.get('paths', 'http_mount') == '/tmp/pulp')
         
     def test_fail(self):
         """

@@ -21,9 +21,9 @@ from pulp.api.base import BaseApi
 
 class PackageVersionApi(BaseApi):
 
-    def __init__(self):
-        BaseApi.__init__(self)
-    
+    def __init__(self, config):
+        BaseApi.__init__(self, config)
+
     def _get_unique_indexes(self):
         return []
 

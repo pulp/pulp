@@ -21,7 +21,9 @@ log = logging.getLogger('pulp.api.base')
 
 class BaseApi(object):
 
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
+
         # Mongo DB
         self.connection = pymongo.Connection()
         self.db = self.connection._database
