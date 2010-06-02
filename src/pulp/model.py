@@ -78,6 +78,9 @@ class PackageVersion(Base):
         self.version = version
         self.release = release
         self.arch = arch
+        #TODO: add support for 'filename' and 'checksum' to constructor, apis, and tests
+        #self.filename = ""
+        #self.checksum = {}
         self.requires = []
         self.provides = []
 
