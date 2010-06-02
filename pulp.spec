@@ -19,7 +19,6 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 
-Requires: python-gevent
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
@@ -50,10 +49,9 @@ pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
-cp -R test  %{buildroot}/%{python_sitelib}/%{name}
-mkdir %{buildroot}/etc
-cp -R etc/juicer.ini %{buildroot}/etc
-cp -R etc/pulp.ini %{buildroot}/etc
+CP -R TEST  %{BUILDROOT}/%{PYTHON_SITELIB}/%{NAME}
+CP -R etc %{buildroot}
+CP -R srv %{buildroot}
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -74,86 +72,15 @@ rm -rf %{buildroot}
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/*
-%{_bindir}/juicer
 %config(noreplace) /etc/juicer.ini
 %config(noreplace) /etc/pulp.ini
+%config(noreplace) /etc/httpd/conf.d/juicer.conf
+/srv/juicer/juicer.wsgi
 
 %changelog
-* Wed Jun 02 2010 Adam Young <ayoung@redhat.com> 0.0.6-1
-- no change (jconnor@redhat.com)
-- adding wsgi script and apache config file for apache deployment
-  (jconnor@redhat.com)
-- added full range of client methods to test uri in juuicer
-  (jconnor@redhat.com)
-- pulpcli a.k.a corkscrew with support for repo create, list and sync
-  (pkilambi@redhat.com)
-- Refactored the synchronization logic out of the API.
-  (jason.dobies@redhat.com)
-- add python-hashlib dep to spec and checksum to pulp.utils
-  (jmatthew@redhat.com)
-- updating unit tests to get ready to test importing 2 packages same NEVRA,
-  different checksum (jmatthew@redhat.com)
-- Disabled config usage until juicer loads configuration files properly
-  (jason.dobies@redhat.com)
-- added egg-info to gitignore (jconnor@redhat.com)
-- removed my own thread class and converted tasks to use "fire and forget"
-  threads i.e. spawn a new thread each time it runs altered Task.wait to
-  account for new semantics removed Task.exit (no longer necessary) modified
-  test_tasks.py to take into account new semantics (jconnor@redhat.com)
-- adding test packages/dir structure for unit tests of repo syncs Will be
-  adding a test 2 repos same nevra, same checksum 2 repos same nevra, different
-  checksum (jmatthew@redhat.com)
-- add note about changes to Package we might want to consider
-  (jmatthew@redhat.com)
-- update sync_repo.py for using pulp.util.loadConfig (jmatthew@redhat.com)
-- add support for config file to large_load.py (jmatthew@redhat.com)
-- update package lookup (jmatthew@redhat.com)
-- Incorrect config retrieval format (jason.dobies@redhat.com)
-- Changed to pull from config (jason.dobies@redhat.com)
-- update in DELETE doc string (jconnor@redhat.com)
-- Added pulp.ini to spec file (jason.dobies@redhat.com)
-- Added configuration infrastructure to pulp API calls
-  (jason.dobies@redhat.com)
-- Added httpd as a requirement (it's used to serve repos)
-  (jason.dobies@redhat.com)
-- Add debug line to show which repo/package are being added to repo
-  (jmatthew@redhat.com)
-- testing failure (mmccune@redhat.com)
-- unit test fixes (jmatthew@redhat.com)
-- Added a sync_repo helper script, fixed a few issues preventing a repo sync
-  import from working. Updated display_repo to work with 'master' as well as
-  branch 'modelchanges' (jmatthew@redhat.com)
-- instructing pymongo to use "safe" save calls, i.e. throw an exception on a
-  problem, don't silently fail (jmatthew@redhat.com)
-- Removing unused references (jmatthew@redhat.com)
-- helper script to display repos and packages (jmatthew@redhat.com)
-- update to be compatible with api refactoring (jmatthew@redhat.com)
-- adding manual egg-info workaround for now (jconnor@localhost.localdomain)
-- before creating a new package, check to see if one exists then reuse if it
-  does (jmatthew@redhat.com)
-- Add SON Manipulators to handle auto referencing/dereferencing for objects in
-  different collections (jmatthew@redhat.com)
-- added json import fallback of simplejson (jconnor@localhost.localdomain)
-- changed import of json to look for simplejson as a fallback
-  (jconnor@localhost.localdomain)
-- removed -N option from useradd, which was causing it to fail on rhel5
-  (jconnor@localhost.localdomain)
-- added python-ssl rpm stuff to get egg info in (jconnor@localhost.localdomain)
-- added dependency discovery based on python version
-  (jconnor@localhost.localdomain)
-- removed setuptools patch and just called setuptools directly in rpm spec file
-  (jconnor@localhost.localdomain)
-- adding modified web.py rpm for epel build (jconnor@localhost.localdomain)
-- Adding a test to explore how mongo works with DBRefs (jmatthew@redhat.com)
-- fix so unittests can run (jmatthew@redhat.com)
-- Fixed src location (jason.dobies@redhat.com)
-- Refactored api module into a package with multiple modules.
-  (jason.dobies@redhat.com)
-- Automatic commit of package [pulp] release [0.0.5-1]. (ayoung@redhat.com)
-- Fix for package versions, we weren't storing 'requires' or 'provides' in
-  mongo this info was saved on the 'package' object it was attached to, but was
-  not saved in the 'packageversion' collection (jmatthew@redhat.com)
-- adding extra data for Categories (jmatthew@redhat.com)
+* Wed Jun 02 2010 Jason L Connor <jconnor@redhat.com> 0.0.6-1
+- removed gevent deployment
+- added apache deployment
 
 * Thu May 27 2010 Adam Young <ayoung@redhat.com> 0.0.5-1
 - Updated Dirs in var (ayoung@redhat.com)
