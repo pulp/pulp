@@ -17,11 +17,37 @@
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
+from juicer.controllers.base import JSONController
 
 
-class Index(object):
+class Index(JSONController):
+    
     def GET(self):
-        return "Hello World!"
+        return self.output(True)
+    
+    def HEAD(self):
+        # should get through, but shouldn't return the body
+        return self.output(True)
+    
+    def POST(self):
+        return self.output(True)
+    
+    def PUT(self):
+        return self.output(True)
+    
+    def DELETE(self):
+        return self.output(True)
+    
+    def TRACE(self):
+        # should get through, but shouldn't return the body
+        return self.output(True)
+    
+    def OPTIONS(self):
+        return self.output(True)
+    
+    def CONNECT(self):
+        # proxy-only command, most likely not supported
+        return self.output(True)
     
 # web.py application ----------------------------------------------------------
 
