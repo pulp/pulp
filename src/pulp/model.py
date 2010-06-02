@@ -64,8 +64,14 @@ class RepoSource(Base):
 
 
 class Package(Base):
+<<<<<<< HEAD
     def __init__(self, repoid, packageid, description):
         self.repoid = repoid
+=======
+    def __init__(self, packageid, description):
+        #TODO: move 'description' to PackageVersion
+        #TODO: Consider getting rid of 'package', we might not need it
+>>>>>>> master
         self.packageid = packageid
         self.description = description
         self.versions = []
@@ -78,6 +84,9 @@ class PackageVersion(Base):
         self.version = version
         self.release = release
         self.arch = arch
+        #TODO: add support for 'filename' and 'checksum' to constructor, apis, and tests
+        #self.filename = ""
+        #self.checksum = {}
         self.requires = []
         self.provides = []
 

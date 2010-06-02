@@ -16,11 +16,13 @@
 
 _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
+import datetime
 import functools
 import sys
 import threading
+import time
 import traceback
-from datetime import datetime
+import uuid
 
 from pulp.tasks.queue.base import TaskQueue
 
@@ -30,65 +32,6 @@ RESET = 'reset'
 RUNNING = 'running'
 FINISHED = 'finished'
 ERROR = 'error'
-
-
-class TaskThread(threading.Thread):
-    """
-    TaskThread class
-    Thread objects that will call the target with the passed in arguments in a
-    separate thread whenever execute() is called.
-    Because of the difference in semantics from other thread classes, the
-    thread will only exit with exit() is explicitly called.
-    """
-    def __init__(self, target, args=[], kwargs={}):
-        super(TaskThread, self).__init__(target=target, args=args, kwargs=kwargs)
-        self.__call = functools.partial(target, *args, **kwargs)
-        self.__lock = threading.Lock()
-        self.__wait = threading.Condition(self.__lock)
-        self.__exit = False
-        self.daemon = True
-        
-    def __yield(self):
-        self.__lock.acquire()
-        self.__lock.acquire()
-    
-    def __continue(self):
-        self.__lock.release()
-    
-    def run(self):
-        while True:
-            self.__yield()
-            try:
-                if self.__exit:
-                    return
-                self.__call()
-            finally:
-                self.__wait.notify_all()
-    
-    def execute(self):
-        """
-        Execute the target callable in a separate thread
-        """
-        self.__continue()
-        
-    def wait(self):
-        """
-        Wait for a single run of this thread.
-        """
-        self.__lock.acquire()
-        try:
-            if self.__exit:
-                return
-            self.__wait.wait()
-        finally:
-            self.__lock.release()
-    
-    def exit(self):
-        """
-        Allow the separate thread to exit
-        """
-        self.__exit = True
-        self.__continue()
 
     
 class Task(object):
@@ -103,9 +46,8 @@ class Task(object):
         @param args: list of positional arguments to be passed into the callable
         @param kwargs: dictionary of keyword arguments to be passed into the callable
         """
-        self.callable = callable
-        self.args = args
-        self.kwargs = kwargs
+        self.func = functools.partial(callable, *args, **kwargs)
+        self.id = uuid.uuid1(clock_seq=int(time.time() * 1000))
         
         self.status = CREATED
         self.start_time = None
@@ -114,15 +56,9 @@ class Task(object):
         self.exception = None
         self.traceback = None
         
-        self._queue = None
-        self._wait = threading.Condition()
+        self.__queue = None
+        self.__thread = None
         
-        self._thread = TaskThread(target=self._wrapper)
-        self._thread.start()
-        
-    def __del__(self):
-        self.exit()
-       
     def __cmp__(self, other):
         """
         Next run time based comparison used by At and Cron task queues
@@ -130,20 +66,21 @@ class Task(object):
         return cmp(self.next_time, other.next_time)
      
     @property
-    def id(self):
-        return self._thread.ident
+    def thread_id(self):
+        if self.__thread is None:
+            return None
+        return self.__thread.ident
   
-    def _wrapper(self):
+    def _wrapper(self, args, kwargs):
         """
         Protected wrapper that executes the callable and captures and records any
         exceptions in a separate thread.
         @return: the return value of the callable
         """
-        ret = None
         self.status = RUNNING
-        self.start_time = datetime.now()
+        self.start_time = datetime.datetime.now()
         try:
-            ret = self.callable(*self.args, **self.kwargs)
+            self.func(*args, **kwargs)
         except Exception, e:
             self.exception = e
             exec_info = sys.exc_info()
@@ -151,14 +88,9 @@ class Task(object):
             self.status = ERROR
         else:
             self.status = FINISHED
-        finally:
-            self._wait.acquire()
-            self._wait.notify_all()
-            self._wait.release()
-        self.finish_time = datetime.now()
-        if self._queue is not None:
-            self._queue.finished(self)        
-        return ret
+        self.finish_time = datetime.datetime.now()
+        if self.__queue is not None:
+            self.__queue.finished(self)        
      
     def set_queue(self, task_queue):
         """
@@ -168,25 +100,24 @@ class Task(object):
         @return: None
         """
         assert task_queue is None or isinstance(task_queue, TaskQueue)
-        self._queue = task_queue
+        self.__queue = task_queue
          
-    def run(self):
+    def run(self, *args, **kwargs):
         """
         Run this task's callable in a separate thread.
         @return: None
         """
-        self._thread.execute()
+        self.__thread = threading.Thread(target=self._wrapper,
+                                        args=[args, kwargs])
+        # XXX set thread to daemon here?
+        #self.__thread.daemon = True
+        self.__thread.start()
         
     def wait(self):
         """
-        Wait for a single execute of this task to execute
+        Wait for a single run of this task
         @return: None
         """
-        self._thread.wait()
-        
-    def exit(self):
-        """
-        Force the task's thread to exit
-        @return: None
-        """
-        self._thread.exit()
+        while self.__thread is None:
+            time.sleep(0.0005)
+        self.__thread.join()
