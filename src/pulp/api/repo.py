@@ -37,6 +37,7 @@ from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
 from pulp.util import getRPMInformation
+import pulp.util
 
 log = logging.getLogger('pulp.api.repo')
 
@@ -178,14 +179,21 @@ class RepoApi(BaseApi):
                 startTimeA = time.time()
                 try:
                     info = getRPMInformation(dir + fname)
+                    # Lookup if existing package version exists.
+                    # Will the rpm header tell us the checksum type
+                    # Need to test against RHEL and F12
+                    checksum = pulp.util.getFileChecksum(hashtype="sha256", 
+                            filename=os.path.join(dir,fname))
+                    print "filename = %s, checksum = %s" % (fname, checksum)
                     if repo["packages"].has_key(info['name']):
                         p = repo["packages"][info['name']]
                     else:
-                        p = model.Package(repo['id'], info['name'], info['description'])
+                        p = model.Package(repo['id'], info['name'])
                         repo["packages"][p['packageid']] = p
                     # TODO: 
                     pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
-                        info['version'], info['release'], info['arch'])
+                        info['version'], info['release'], info['arch'], info['description'],
+                        "sha256", checksum, fname)
                     for dep in info['requires']:
                         pv.requires.append(dep)
                     for dep in info['provides']:

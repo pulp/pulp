@@ -64,25 +64,25 @@ class RepoSource(Base):
 
 
 class Package(Base):
-    def __init__(self, repoid, packageid, description):
-        #TODO: move 'description' to PackageVersion
+    def __init__(self, repoid, packageid):
         #TODO: Consider getting rid of 'package', we might not need it
         self.repoid = repoid
         self.packageid = packageid
-        self.description = description
         self.versions = []
 
 class PackageVersion(Base):
-    #TODO: Needs reference to repo-id as well
-    def __init__(self, packageid, epoch, version, release, arch):
+    def __init__(self, packageid, epoch, version, release, arch, description, 
+            checksum_type, checksum, filename):
+        #TODO: Consider adding reference to repo-id
         self.packageid = packageid
         self.epoch = epoch
         self.version = version
         self.release = release
         self.arch = arch
+        self.description = description
         #TODO: add support for 'filename' and 'checksum' to constructor, apis, and tests
-        #self.filename = ""
-        #self.checksum = {}
+        self.filename = filename
+        self.checksum = {checksum_type:checksum}
         self.requires = []
         self.provides = []
 

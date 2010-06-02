@@ -33,11 +33,13 @@ class PackageVersionApi(BaseApi):
     def _getcollection(self):
         return self.db.packageversions
 
-    def create(self, packageid, epoch, version, release, arch):
+    def create(self, packageid, epoch, version, release, arch, descrp, 
+            checksum_type, checksum, filename):
         """
         Create a new PackageVersion object and return it
         """
-        pv = model.PackageVersion(packageid, epoch, version, release, arch)
+        pv = model.PackageVersion(packageid, epoch, version, release, arch, descrp,
+                checksum_type, checksum, filename)
         self.objectdb.insert(pv)
         return pv
         

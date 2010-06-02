@@ -87,9 +87,9 @@ class LargeLoad(unittest.TestCase):
             # self.capi.update(c)
             if (i % 100 == 0):
                 print "created [%s] consumers" % i
-                p = Package(TEST_PACKAGE_ID, 'random package to be found')
+                p = Package(repo["id"], TEST_PACKAGE_ID, 'random package to be found')
                 c.packageids.append(p.id)
-                # self.capi.update(c)
+                #self.capi.update(c)
             last_desc = c.description
             last_id = c.id
             consumers.append(c)
@@ -116,6 +116,11 @@ class LargeLoad(unittest.TestCase):
         print "Searching for all consumers with %s package id" % TEST_PACKAGE_ID
         cwithp = ll.capi.consumerswithpackage(TEST_PACKAGE_ID)
         print "Found [%s] consumers with packageid: [%s]" % (len(cwithp), TEST_PACKAGE_ID)
+
+
+print "This has not been updated with the branch modelchanges yet"
+print "More work is needed on the consumer side"
+sys.exit(1)
 
 parser = optparse.OptionParser()
 parser.add_option('--dirlist', dest='dirlist', 
