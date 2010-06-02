@@ -64,14 +64,10 @@ class RepoSource(Base):
 
 
 class Package(Base):
-<<<<<<< HEAD
     def __init__(self, repoid, packageid, description):
-        self.repoid = repoid
-=======
-    def __init__(self, packageid, description):
         #TODO: move 'description' to PackageVersion
         #TODO: Consider getting rid of 'package', we might not need it
->>>>>>> master
+        self.repoid = repoid
         self.packageid = packageid
         self.description = description
         self.versions = []

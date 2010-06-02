@@ -159,7 +159,7 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        package = Package('test_repo_packages','test package')
+        package = Package(repo["id"], 'test_repo_packages','test package')
         pkggroup.default_package_names.append(package["packageid"])
         repo.packagegroups[pkggroup["groupid"]] = pkggroup
         repo.packages[package["packageid"]] = package
