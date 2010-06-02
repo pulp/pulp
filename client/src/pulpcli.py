@@ -19,12 +19,13 @@
 import os
 import sys
 import connection
-from optparse import OptionParser
+import constants
+from optparse import OptionParser, OptionGroup
 from logutil import getLogger
 import gettext
 _ = gettext.gettext
 
-log = getLogger(__name__)
+LOG = getLogger(__name__)
 
 class BaseCore(object):
     """ Base class for all sub-calls. """
@@ -52,27 +53,139 @@ class BaseCore(object):
 
 class RepoCore(BaseCore):
     def __init__(self):
-        usage = "usage: %prog repository [OPTIONS]"
-        shortdesc = "Create a repository on your pulp server."
-        desc = "register"
+        usage = "usage: %prog repo [OPTIONS]"
+        shortdesc = "Manage repository on your pulp server."
+        desc = ""
 
-        BaseCore.__init__(self, "repository", usage, shortdesc, desc)
+        BaseCore.__init__(self, "repo", usage, shortdesc, desc)
 
         self.username = None
         self.password = None
-        self.cp = connection.PulpConnection(host="localhost", port=8811)
-        self.parser.add_option("--create", dest="create",
-                               help="Create a Repository")
+        self.pconn = connection.RepoConnection(host="localhost", port=8811)
+        self.generate_options()
+
+    def generate_options(self):
+        self.actions = {"create" : "Create a repo", 
+                        "update" : "Update a repo", 
+                        "list"   : "List available repos", 
+                        "delete" : "Delete a repo", 
+                        "sync"   : "Sync data to this repo from the feed"}
+
+        possiblecmd = []
+
+        for arg in sys.argv[1:]:
+            if not arg.startswith("-"):
+                possiblecmd.append(arg)
+        self.action = None
+        if len(possiblecmd) > 1:
+            self.action = possiblecmd[1]
+        elif len(possiblecmd) == 1:
+            self._usage()
+            sys.exit(0)
+        else:
+            return
+        if self.action not in self.actions.keys():
+            self._usage()
+            sys.exit(0)
+        if self.action == "create":
+            usage = "usage: %prog repo create [OPTIONS]"
+            BaseCore.__init__(self, "repo create", usage, "", "")
+            self.parser.add_option("--label", dest="label",
+                           help="Repository Label")
+            self.parser.add_option("--name", dest="name",
+                           help="common repository name")
+            self.parser.add_option("--arch", dest="arch",
+                           help="package arch the repo should support.")
+            self.parser.add_option("--feed", dest="feed",
+                           help="Url feed to populate the repo")
+        if self.action == "sync":
+            usage = "usage: %prog repo sync [OPTIONS]"
+            BaseCore.__init__(self, "repo sync", usage, "", "")
+            self.parser.add_option("--label", dest="label",
+                           help="Repository Label")
+        if self.action == "list":
+            usage = "usage: %prog repo list [OPTIONS]"
+            BaseCore.__init__(self, "repo list", usage, "", "")
 
     def _validate_options(self):
         pass
 
+    def _usage(self):
+        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
+        print "Supported Actions:\n"
+        items = self.actions.items()
+        items.sort()
+        for (name, cmd) in items:
+            print("\t%-14s %-25s" % (name, cmd))
+        print("")
+
     def _do_core(self):
-        """
-        Executes the core.
-        """
         self._validate_options()
-        pass
+        if self.action == "create":
+            self._create()
+        if self.action == "list":
+            self._list()
+        if self.action == "sync":
+            self._sync()
+
+    def _create(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.label:
+            print("repo label required. Try --help")
+            sys.exit(0)
+        if not self.options.name:
+            print("repo name required. Try --help")
+            sys.exit(0)
+        if not self.options.arch:
+            print("repo arch required. Try --help")
+            sys.exit(0)
+        if not self.options.feed:
+            print("repo feed required. Try --help")
+            sys.exit(0)
+        repoinfo = {"id"   : self.options.label,
+                     "name" : self.options.name,
+                     "arch" : self.options.arch,
+                     "feed" : self.options.feed,}
+        try:
+            repo = self.pconn.create(repoinfo)
+            print _(" Successfully created Repo [ %s ] with feed [ %s ]" % (repo['id'], repo["source"]))
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _list(self):
+        (self.options, self.args) = self.parser.parse_args()
+        try:
+            repos = self.pconn.repositories()
+            columns = ["id", "name", "source", "arch"]
+            data = [ _sub_dict(repo, columns) for repo in repos]
+            print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
+            for repo in data:
+                print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"], repo["source"], repo["arch"] )
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _sync(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.label:
+            print("repo label required. Try --help")
+            sys.exit(0)
+        try:
+            status = self.pconn.sync(self.options.label)
+            if status:
+                repo = self.pconn.repository(self.options.label)
+                count =0
+                for key, value in repo["packages"].items():
+                    count += len(value["versions"])
+            print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, count))
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+def _sub_dict(datadict, subkeys, default=None) :
+    return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
+
 
 class CLI:
     """
@@ -100,7 +213,6 @@ class CLI:
         items.sort()
         for (name, cmd) in items:
             print("\t%-14s %-25s" % (name, cmd.shortdesc))
-            #print(" %-25s" % cmd.parser.print_help())
         print("")
 
     def _find_best_match(self, args):
@@ -116,13 +228,11 @@ class CLI:
         key = " ".join(possiblecmd)
         if self.cli_cores.has_key(" ".join(possiblecmd)):
             cmd = self.cli_cores[key]
-
         i = -1
         while cmd == None:
             key = " ".join(possiblecmd[:i])
             if key is None or key == "":
                 break
-
             if self.cli_cores.has_key(key):
                 cmd = self.cli_cores[key]
             i -= 1

@@ -70,7 +70,6 @@ class Restlib(object):
         return json.loads(rinfo)
 
     def validateResponse(self, response):
-        print response.status
         if str(response.status) not in ["200", "204"]:
             parsed = json.loads(response.read())
             raise RestlibException(response.status,

@@ -16,12 +16,9 @@
 import pymongo
 
 # Python
-import time
-import traceback
 import logging
 import gzip
 import os
-from urlparse import urlparse
 
 # 3rd Party
 import yum.comps
@@ -30,14 +27,13 @@ from yum.Errors import CompsException
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
+from pulp import repo_sync
 from pulp.api.base import BaseApi
 #from pulp.api.package import PackageApi
 from pulp.api.package_version import PackageVersionApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
-from pulp.util import getRPMInformation
-import pulp.util
 
 log = logging.getLogger('pulp.api.repo')
 
@@ -147,112 +143,6 @@ class RepoApi(BaseApi):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         
-        rs = model.RepoSource(repo['source'])
-        if (rs.type == 'yum'):
-            log.debug("Creating repo grinder: %s" % rs.url)
-            yfetch = YumRepoGrinder(repo['id'], rs.url.encode('ascii', 'ignore'), 1)
-            yfetch.fetchYumRepo(self.localStoragePath)
-            repo_dir = "%s/%s/" % (self.localStoragePath, repo['id'])
-            self._add_packages_from_dir(repo_dir, repo)
-            self.update(repo)
-            log.debug("fetched!")
-        if (rs.type == 'local'):
-            log.debug("Local URL: %s" % rs.url)
-            local_url = rs.url
-            if (not local_url.endswith('/')):
-                local_url = local_url + '/'
-            parts = urlparse(local_url)
-            log.debug("PARTS: %s" % str(parts))
-            self._add_packages_from_dir(parts.path, repo)
-            self.update(repo)
-        print "Packages = %s" % (repo["packages"])
-            
-    def _add_packages_from_dir(self, dir, repo):
-        log.info("Importing packages from %s into repo %s" % (dir, repo['id']))
-        dirList = os.listdir(dir)
-        package_count = 0
-        startTime = time.time()
-        for fname in dirList:
-            if (fname.endswith(".rpm")):
-                try:
-                    info = getRPMInformation(dir + fname)
-                    if repo["packages"].has_key(info['name']):
-                        p = repo["packages"][info['name']]
-                    else:
-                        p = model.Package(repo['id'], info['name'])
-                        repo["packages"][p['packageid']] = p
-                    hashtype = "sha256"
-                    checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
-                            filename=os.path.join(dir,fname))
-                    found = self.packageVersionApi.packageversion(name=info['name'], 
-                            epoch=info['epoch'], version=info['version'], 
-                            release=info['release'], arch=info['arch'],filename=fname, 
-                            checksum_type=hashtype, checksum=checksum)
-                    if found.count() == 1:
-                        pv = found[0]
-                    else:
-                        pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
-                            info['version'], info['release'], info['arch'], info['description'],
-                            "sha256", checksum, fname)
-                        for dep in info['requires']:
-                            pv.requires.append(dep)
-                        for dep in info['provides']:
-                            pv.provides.append(dep)
-                        self.packageVersionApi.update(pv)
-                    # Package will prob be removed and it will become a list of PackageVersion objects
-                    p["versions"].append(pv)
-                    package_count = package_count + 1
-                except Exception, e:
-                    log.debug("%s" % (traceback.format_exc()))
-                    log.error("error reading package %s" % (dir + fname))
-                endTime = time.time()
-        log.debug("Repo: %s read [%s] packages took %s seconds" % 
-                (repo['id'], package_count, endTime - startTime))
-        self._read_comps_xml(dir, repo)
-
-    def _read_comps_xml(self, dir, repo):
-        """
-        Reads a comps.xml or comps.xml.gz under repodata from dir
-        Loads PackageGroup and Category info our db
-        """
-        compspath = os.path.join(dir, 'repodata/comps.xml')
-        compsxml = None
-        if os.path.isfile(compspath):
-            compsxml = open(compspath, "r")
-        else:
-            compspath = os.path.join(dir, 'repodata/comps.xml.gz')
-            if os.path.isfile(compspath):
-                compsxml = gzip.open(compspath, 'r')
-        if not compsxml:
-            log.info("Not able to find a comps.xml(.gz) to read")
-            return False
-        log.info("Reading comps info from %s" % (compspath))
-        repo['comps_xml_path'] = compspath
-        try:
-            comps = yum.comps.Comps()
-            comps.add(compsxml)
-            for c in comps.categories:
-                ctg = self.packageGroupCategoryApi.create(c.categoryid, 
-                        c.name, c.description, c.display_order)
-                groupids = [grp for grp in c.groups]
-                ctg.packagegroupids.extend(groupids)
-                ctg.translated_name = c.translated_name
-                ctg.translated_description = c.translated_description
-                self.packageGroupCategoryApi.update(ctg)
-                repo['packagegroupcategories'][ctg.categoryid] = ctg
-            for g in comps.groups:
-                grp = self.packageGroupApi.create(g.groupid, g.name, g.description,
-                        g.user_visible, g.display_order, g.default, g.langonly)
-                grp.mandatory_package_names.extend(g.mandatory_packages.keys())
-                grp.optional_package_names.extend(g.optional_packages.keys())
-                grp.default_package_names.extend(g.default_packages.keys())
-                grp.conditional_package_names = g.conditional_packages
-                grp.translated_name = g.translated_name
-                grp.translated_description = g.translated_description
-                self.packageGroupApi.update(grp)
-                repo['packagegroups'][grp.groupid] = grp
-            log.info("Comps info added from %s" % (compspath))
-        except CompsException:
-            log.error("Unable to parse comps info for %s" % (compspath))
-            return False
-        return True
+        repo_source = model.RepoSource(repo['source'])
+        repo_sync.sync(self.config, repo, repo_source)
+        self.update(repo)
