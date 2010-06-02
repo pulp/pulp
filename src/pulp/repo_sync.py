@@ -59,7 +59,6 @@ class BaseSynchronizer(object):
         self.packageGroupApi = PackageGroupApi(config)
 
     def add_packages_from_dir(self, dir, repo):
-
         dir_list = os.listdir(dir)
         packages = repo['packages']
         package_count = 0
@@ -68,11 +67,8 @@ class BaseSynchronizer(object):
             if (fname.endswith(".rpm")):
                 try:
                     info = pulp.util.getRPMInformation(os.path.join(dir, fname))
-                    if repo["packages"].has_key(info['name']):
-                        p = repo["packages"][info['name']]
-                    else:
-                        p = model.Package(repo['id'], info['name'])
-                        repo["packages"][p['packageid']] = p
+                    if not repo["packages"].has_key(info['name']):
+                        repo["packages"][info['name']] = []
                     hashtype = "sha256"
                     checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
                             filename=os.path.join(dir,fname))
@@ -83,7 +79,7 @@ class BaseSynchronizer(object):
                     if found.count() == 1:
                         pv = found[0]
                     else:
-                        pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
+                        pv = self.packageVersionApi.create(info['name'], info['epoch'],
                             info['version'], info['release'], info['arch'], info['description'],
                             "sha256", checksum, fname)
                         for dep in info['requires']:
@@ -91,8 +87,8 @@ class BaseSynchronizer(object):
                         for dep in info['provides']:
                             pv.provides.append(dep)
                         self.packageVersionApi.update(pv)
-                    # Package will prob be removed and it will become a list of PackageVersion objects
-                    p["versions"].append(pv)
+                    #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
+                    repo['packages'][info['name']].append(pv)
                     package_count = package_count + 1
                 except Exception, e:
                     log.debug("%s" % (traceback.format_exc()))

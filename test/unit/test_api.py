@@ -265,10 +265,10 @@ class TestApi(unittest.TestCase):
         # Grab the associated package version (there should only be 1)
         # Ensure that the package versions have different md5sums, but all other
         # keys are identical
-        assert (len(found_a["packages"][test_pkg_name]["versions"]) == 1)
-        assert (len(found_b["packages"][test_pkg_name]["versions"]) == 1)
-        pkgVerA = found_a["packages"][test_pkg_name]["versions"][0]
-        pkgVerB = found_b["packages"][test_pkg_name]["versions"][0]
+        assert (len(found_a["packages"][test_pkg_name]) == 1)
+        assert (len(found_b["packages"][test_pkg_name]) == 1)
+        pkgVerA = found_a["packages"][test_pkg_name][0]
+        pkgVerB = found_b["packages"][test_pkg_name][0]
         for key in ['epoch', 'version', 'release', 'arch']:
             assert (pkgVerA[key] == pkgVerB[key])
         #Ensure checksums are not equal
@@ -305,10 +305,10 @@ class TestApi(unittest.TestCase):
         # keys are identical
 
         # BELOW TEST Needs more changes to model/sync code before it can pass
-        assert (len(found_a["packages"][test_pkg_name]["versions"]) == 1)
-        assert (len(found_b["packages"][test_pkg_name]["versions"]) == 1)
-        pkgVerA = found_a["packages"][test_pkg_name]["versions"][0]
-        pkgVerB = found_b["packages"][test_pkg_name]["versions"][0]
+        assert (len(found_a["packages"][test_pkg_name]) == 1)
+        assert (len(found_b["packages"][test_pkg_name]) == 1)
+        pkgVerA = found_a["packages"][test_pkg_name][0]
+        pkgVerB = found_b["packages"][test_pkg_name][0]
         # Ensure that the 2 PackageVersions instances actually point 
         # to the same single instance
         assert(repo_a['_id'] != repo_b['_id'])
@@ -349,7 +349,7 @@ class TestApi(unittest.TestCase):
         assert(len(packages) > 0)
         print packages
         p = packages.values()[0]
-        assert(p['versions'] != None)
+        assert(p != None)
         # versions = p['versions']
         
     def test_package_versions(self):
