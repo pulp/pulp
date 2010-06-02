@@ -145,7 +145,7 @@ class TestApi(unittest.TestCase):
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        package = Package(repo.id, 'test_repo_packages','test package')
+        package = Package(repo.id, 'test_repo_packages')
         repo.packages[package["packageid"]] = package
         self.rapi.update(repo)
         
@@ -159,7 +159,7 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        package = Package(repo["id"], 'test_repo_packages','test package')
+        package = Package(repo["id"], 'test_repo_packages')
         pkggroup.default_package_names.append(package["packageid"])
         repo.packagegroups[pkggroup["groupid"]] = pkggroup
         repo.packages[package["packageid"]] = package
@@ -176,7 +176,7 @@ class TestApi(unittest.TestCase):
     def test_repo_package_group_categories(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        package = Package(repo.id, 'test_repo_packages','test package')
+        package = Package(repo.id, 'test_repo_packages')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
         pkggroup.default_package_names.append(package["packageid"])
@@ -216,8 +216,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id', 'some name',
                 'i386', 'yum:http://example.com')
         for i in range(10):
-            package = self.rapi.create_package(repo["id"], 'test_consumerwithpackage',
-                'test package search')
+            package = self.rapi.create_package(repo["id"], 'test_consumerwithpackage')
             repo = self.rapi.repository(repo["id"])
             c.packageids.append(package["packageid"])
         self.capi.update(c)
@@ -352,10 +351,10 @@ class TestApi(unittest.TestCase):
     def test_package_versions(self):
         repo = self.rapi.create('some-id','some name',
             'i386', 'yum:http://example.com')
-        p = self.rapi.create_package(repo.id, 'some-package-id',
-                'some package desc')
+        p = self.rapi.create_package(repo.id, 'some-package-id')
         repo = self.rapi.repository(repo["id"])
-        pv = self.pvapi.create(p["packageid"], 0, '1.2.3', '1', 'i386')
+        pv = self.pvapi.create(p["packageid"], 0, '1.2.3', '1', 'i386',
+                "descrp", "chksum_type", "chksum", "test-filename.rpm")
         #Explicit reference to the repo packages dict is needed
         # The SON Manipulator prob made a copy of the dict, which makes references
         # to p["versions"].append(pv) no longer work
@@ -369,8 +368,7 @@ class TestApi(unittest.TestCase):
     def test_packages(self):
         repo = self.rapi.create('some-id','some name',
             'i386', 'yum:http://example.com')
-        p = self.rapi.create_package(repo.id, 'some-package-id',
-                'some package desc')
+        p = self.rapi.create_package(repo.id, 'some-package-id')
         repo = self.rapi.repository(repo["id"])
         packages = self.rapi.packages(repo["id"])
         assert(len(packages) > 0)

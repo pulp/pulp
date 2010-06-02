@@ -113,11 +113,11 @@ class RepoApi(BaseApi):
         self.objectdb.insert(r)
         return r
 
-    def create_package(self, repoid, packageid, description):
+    def create_package(self, repoid, packageid):
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
-        p = model.Package(repoid, packageid, description)
+        p = model.Package(repoid, packageid)
         repo["packages"][packageid] = p
         self.update(repo)
         return repo["packages"][packageid]
