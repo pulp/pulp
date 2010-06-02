@@ -15,6 +15,10 @@
 # in this software or its documentation.
 #
 
+"""
+Contains repo management (backend) classes.
+"""
+
 import os
 from urllib import basejoin
 from certlib import EntitlementDirectory, ActionLock
@@ -25,11 +29,23 @@ log = getLogger(__name__)
 
 
 class RepoLib:
+    """
+    Library for performing yum repo management.
+    @ivar lock: The action lock.  Ensures only 1 instance updating repos.
+    @type lock: L{Lock}
+    """
 
     def __init__(self, lock=ActionLock()):
+        """
+        @param lock: A lock.
+        @type lock: L{Lock}
+        """
         self.lock = lock
 
     def update(self):
+        """
+        Update yum repos based on pulp bind (subscription).
+        """
         lock = self.lock
         lock.acquire()
         try:
@@ -40,6 +56,11 @@ class RepoLib:
 
 
 class ActionLock(Lock):
+    """
+    Action lock.
+    @cvar PATH: The lock file absolute path.
+    @type PATH: str
+    """
 
     PATH = '/var/run/subsys/pulp/repolib.pid'
 
@@ -48,20 +69,37 @@ class ActionLock(Lock):
 
 
 class Pulp:
+    """
+    The pulp server.
+    """
 
     def getProducts(self):
         return []
 
 
 class Action:
+    """
+    Action base class.
+    """
 
     def __init__(self):
         self.pulp = Pulp()
 
 
 class UpdateAction(Action):
+    """
+    Update the yum repositores based on pulp bindings (subscription).
+    """
 
     def perform(self):
+        """
+        Perform the action.
+          - Get the content set(s) from pulp.
+          - Merge with yum .repo file.
+          - Write the merged .repo file.
+        @return: The number of updates performed.
+        @rtype: int
+        """
         repod = RepoFile()
         repod.read()
         valid = set()
@@ -83,6 +121,11 @@ class UpdateAction(Action):
         return updates
 
     def getUniqueContent(self):
+        """
+        Get the B{unique} content sets from pulp.
+        @return: A unique set L{Repo} objects reported by pulp.
+        @rtype: [L{Repo},...]
+        """
         unique = set()
         products = self.pulp.getProducts()
         products.sort()
@@ -94,6 +137,15 @@ class UpdateAction(Action):
         return unique
 
     def getContent(self, product, baseurl):
+        """
+        Get L{Repo} object(s) for a given subscription.
+        @param product: A product (contains content sets).
+        @type product: dict
+        @param baseurl: The yum base url to be joined with relative url.
+        @type baseurl: str
+        @return: A list of L{Repo} objects for the specified product.
+        @rtype: [L{Repo},...]
+        """
         lst = []
         for ent in product.getContentEntitlements():
             id = ent.getLabel()
@@ -108,6 +160,15 @@ class UpdateAction(Action):
         return lst
 
     def join(self, base, url):
+        """
+        Join the base and url.
+        @param base: The URL base (protocol, host & port).
+        @type base: str
+        @param url: The relative url.
+        @type url: str
+        @return: The complete (joined) url.
+        @rtype: str
+        """
         if '://' in url:
             return url
         else:
@@ -115,6 +176,13 @@ class UpdateAction(Action):
 
 
 class Repo(dict):
+    """
+    A yum repo (content set).
+    @cvar CA: The absolute path to the CA.
+    @type CA: str
+    @cvar PROPERTIES: Yum repo property definitions.
+    @type PROPERTIES: tuple.
+    """
 
     CA = '/usr/share/rhn/RHNS-CA-CERT'
 
@@ -132,11 +200,20 @@ class Repo(dict):
     )
 
     def __init__(self, id):
+        """
+        @param id: The repo (unique) id.
+        @type id: str
+        """
         self.id = id
         for k,m,d in self.PROPERTIES:
             self[k] = d
 
     def items(self):
+        """
+        Get I{ordered} items.
+        @return: A list of ordered items.
+        @rtype: list
+        """
         lst = []
         for k,m,d in self.PROPERTIES:
             v = self[k]
@@ -144,6 +221,13 @@ class Repo(dict):
         return tuple(lst)
 
     def update(self, other):
+        """
+        Update (merge) based on property definitions.
+        @param other: The object to merge.
+        @type other: L{Repo}.
+        @return: The number of properties updated.
+        @rtype: int
+        """
         count = 0
         for k,m,d in self.PROPERTIES:
             v = other.get(k)
@@ -175,35 +259,73 @@ class Repo(dict):
 
 
 class RepoFile(Parser):
+    """
+    Represents a .repo file and is primarily a wrapper around
+    I{iniparse} to get around its short comings and understand L{Repo} objects.
+    @cvar PATH: The absolute path to a .repo file.
+    @type PATH: str
+    """
 
     PATH = '/etc/yum.repos.d/'
 
     def __init__(self, name='redhat.repo'):
+        """
+        @param name: The absolute path to a .repo file.
+        @type name: str
+        """
         Parser.__init__(self)
         self.path = os.path.join(self.PATH, name)
         self.create()
 
     def read(self):
+        """
+        Read and parse the file.
+        """
         r = Reader(self.path)
         Parser.readfp(self, r)
 
     def write(self):
+        """
+        Write the file.
+        """
         f = open(self.path, 'w')
         Parser.write(self, f)
         f.close()
 
     def add(self, repo):
+        """
+        Add a repo and create section if needed.
+        @param repo: A repo to add.
+        @type repo: L{Repo}
+        """
         self.add_section(repo.id)
         self.update(repo)
 
     def delete(self, section):
+        """
+        Delete a section (repo name).
+        @return: self
+        @rtype: L{RepoFile}
+        """
         return self.remove_section(section)
 
     def update(self, repo):
+        """
+        Update the repo section using the specified repo.
+        @param repo: A repo used to update.
+        @type repo: L{Repo}
+        """
         for k,v in repo.items():
             Parser.set(self, repo.id, k, v)
 
     def section(self, section):
+        """
+        Get a L{Repo} (section) by name.
+        @param section: A section (repo) name.
+        @type section: str
+        @return: A repo for the section name.
+        @rtype: L{Repo}
+        """
         if self.has_section(section):
             repo = Repo(section)
             for k,v in self.items(section):
@@ -211,6 +333,10 @@ class RepoFile(Parser):
             return repo
 
     def create(self):
+        """
+        Create the .repo file with appropriate header/footer
+        if it does not already exist.
+        """
         if os.path.exists(self.path):
             return
         f = open(self.path, 'w')
@@ -224,8 +350,16 @@ class RepoFile(Parser):
 
 
 class Reader:
+    """
+    Reader object used to mitigate annoying behavior of
+    iniparse of leaving blank lines when removing sections.
+    """
 
     def __init__(self, path):
+        """
+        @param path: The absolute path to a .repo file.
+        @type path: str
+        """
         f = open(path)
         bfr = f.read()
         self.idx = 0
@@ -233,6 +367,13 @@ class Reader:
         f.close()
 
     def readline(self):
+        """
+        Read the next line.
+        Strips annoying blank lines left by iniparse when
+        removing sections.
+        @return: The next line (or None).
+        @rtype: str
+        """
         nl = 0
         i = self.idx
         eof = len(self.lines)
