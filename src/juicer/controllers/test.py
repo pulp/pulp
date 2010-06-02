@@ -26,10 +26,10 @@ class Index(JSONController):
         return self.output(True)
     
     def HEAD(self):
+        # should get through, but shouldn't return the body
         return self.output(True)
     
     def POST(self):
-        input = self.input()
         return self.output(True)
     
     def PUT(self):
@@ -39,12 +39,14 @@ class Index(JSONController):
         return self.output(True)
     
     def TRACE(self):
+        # should get through, but shouldn't return the body
         return self.output(True)
     
     def OPTIONS(self):
         return self.output(True)
     
     def CONNECT(self):
+        # proxy-only command, most likely not supported
         return self.output(True)
     
 # web.py application ----------------------------------------------------------
