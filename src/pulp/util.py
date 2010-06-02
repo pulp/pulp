@@ -22,6 +22,12 @@ import logging
 import string
 import random
 import fnmatch
+import sys
+try:
+    import hashlib
+except:
+    print "Please install python-hashlib"
+    sys.exit(1)
 
 log = logging.getLogger("pulp.util")
 
@@ -51,3 +57,38 @@ def chunks(l, n):
 def loadConfig(filename, config=ConfigParser.SafeConfigParser()):
     config.read(filename)
     return config
+
+
+def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
+    """ Compute a file's checksum
+    """
+    if hashtype in ['sha', 'SHA']:
+        hashtype = 'sha1'
+
+    if buffer_size is None:
+        buffer_size = 65536
+
+    if filename is None and fd is None and file is None:
+        raise Exception("no file specified")
+    if file:
+        f = file
+    elif fd is not None:
+        f = os.fdopen(os.dup(fd), "r")
+    else:
+        f = open(filename, "r")
+    # Rewind it
+    f.seek(0, 0)
+    m = hashlib.new(hashtype)
+    while 1:
+        buffer = f.read(buffer_size)
+        if not buffer:
+            break
+        m.update(buffer)
+
+    # cleanup time
+    if file is not None:
+        file.seek(0, 0)
+    else:
+        f.close()
+    return m.hexdigest()
+
