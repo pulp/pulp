@@ -26,6 +26,10 @@ Requires: python-webpy
 Requires: grinder
 Requires: httpd
 
+%if 0%{?rhel} > 5
+Requires: python-hashlib
+%endif
+
 
 %description
 Pulp provides replication, access, and accounting for software repositories.
