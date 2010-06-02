@@ -23,12 +23,21 @@ class PackageVersionApi(BaseApi):
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
+        self.objectdb.ensure_index([('name', pymongo.DESCENDING), 
+            ('epoch', pymongo.DESCENDING), 
+            ('version', pymongo.DESCENDING),
+            ('release', pymongo.DESCENDING),
+            ('arch', pymongo.DESCENDING), 
+            ('filename', pymongo.DESCENDING),
+            ('descrp', pymongo.DESCENDING),
+            ('checksum', pymongo.DESCENDING)], 
+            unique=True, background=True)
 
     def _get_unique_indexes(self):
         return []
 
     def _get_indexes(self):
-        return ["packageid"]
+        return ["name", "filename", "checksum", "epoch", "version", "release", "arch", "descrp"]
 
     def _getcollection(self):
         return self.db.packageversions
@@ -43,11 +52,27 @@ class PackageVersionApi(BaseApi):
         self.objectdb.insert(pv)
         return pv
         
-    def packageversion(self, id, filter=None):
+    def packageversion(self, name=None, epoch=None, version=None, release=None, arch=None, 
+            filename=None, checksum_type=None, checksum=None):
         """
-        Return a single PackageVersion object
+        Return a list of all package version objects matching search terms
         """
-        return self.objectdb.find_one({'id': id})
+        searchDict = {}
+        if name:
+            searchDict['name'] = name
+        if epoch:
+            searchDict['epoch'] = epoch
+        if version:
+            searchDict['version'] = version
+        if release:
+            searchDict['release'] = release
+        if arch:
+            searchDict['arch'] = arch
+        if filename:
+            searchDict['filename'] = filename
+        if checksum_type and checksum:
+            searchDict['checksum.%s' % checksum_type] = checksum
+        return self.objectdb.find(searchDict)
 
     def packageversions(self):
         """

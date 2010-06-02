@@ -165,54 +165,49 @@ class RepoApi(BaseApi):
             log.debug("PARTS: %s" % str(parts))
             self._add_packages_from_dir(parts.path, repo)
             self.update(repo)
+        print "Packages = %s" % (repo["packages"])
             
     def _add_packages_from_dir(self, dir, repo):
+        log.info("Importing packages from %s into repo %s" % (dir, repo['id']))
         dirList = os.listdir(dir)
         package_count = 0
-        #TODO:  Do we want to traverse multiple directories, or should this
-        #       be locked down to a single directory traversal?  
-        #       How will this impact comps.xml and repodata if we allow import from
-        #       multiple directories into a single pulp repo?
         startTime = time.time()
         for fname in dirList:
             if (fname.endswith(".rpm")):
-                startTimeA = time.time()
                 try:
                     info = getRPMInformation(dir + fname)
-                    # Lookup if existing package version exists.
-                    # Will the rpm header tell us the checksum type
-                    # Need to test against RHEL and F12
-                    checksum = pulp.util.getFileChecksum(hashtype="sha256", 
-                            filename=os.path.join(dir,fname))
-                    print "filename = %s, checksum = %s" % (fname, checksum)
                     if repo["packages"].has_key(info['name']):
                         p = repo["packages"][info['name']]
                     else:
                         p = model.Package(repo['id'], info['name'])
                         repo["packages"][p['packageid']] = p
-                    # TODO: 
-                    pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
-                        info['version'], info['release'], info['arch'], info['description'],
-                        "sha256", checksum, fname)
-                    for dep in info['requires']:
-                        pv.requires.append(dep)
-                    for dep in info['provides']:
-                        pv.provides.append(dep)
-                    self.packageVersionApi.update(pv)
+                    hashtype = "sha256"
+                    checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
+                            filename=os.path.join(dir,fname))
+                    found = self.packageVersionApi.packageversion(name=info['name'], 
+                            epoch=info['epoch'], version=info['version'], 
+                            release=info['release'], arch=info['arch'],filename=fname, 
+                            checksum_type=hashtype, checksum=checksum)
+                    if found.count() == 1:
+                        pv = found[0]
+                    else:
+                        pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
+                            info['version'], info['release'], info['arch'], info['description'],
+                            "sha256", checksum, fname)
+                        for dep in info['requires']:
+                            pv.requires.append(dep)
+                        for dep in info['provides']:
+                            pv.provides.append(dep)
+                        self.packageVersionApi.update(pv)
+                    # Package will prob be removed and it will become a list of PackageVersion objects
                     p["versions"].append(pv)
                     package_count = package_count + 1
-                    #log.debug("Repo <%s> added package <%s> with %s versions" %
-                    #        (repo["id"], p["packageid"], len(p["versions"])))
-                    endTimeA = time.time()
-                    #log.debug("%s Repo <%s> added package %s %s:%s-%s-%s in %s seconds" % 
-                    #        (package_count, repo["id"], p["packageid"], info['epoch'], 
-                    #            info['version'], info['release'], info['arch'], 
-                    #            (endTimeA - startTimeA)))
                 except Exception, e:
                     log.debug("%s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
                 endTime = time.time()
-        log.debug("Repo: %s read [%s] packages took %s seconds" % (repo['id'], package_count, endTime - startTime))
+        log.debug("Repo: %s read [%s] packages took %s seconds" % 
+                (repo['id'], package_count, endTime - startTime))
         self._read_comps_xml(dir, repo)
 
     def _read_comps_xml(self, dir, repo):

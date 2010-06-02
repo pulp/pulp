@@ -71,18 +71,18 @@ class Package(Base):
         self.versions = []
 
 class PackageVersion(Base):
-    def __init__(self, packageid, epoch, version, release, arch, description, 
+    def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
-        #TODO: Consider adding reference to repo-id
-        self.packageid = packageid
+        #TODO: Can we enforce unique indexes between keys?
+        self.name = name
         self.epoch = epoch
         self.version = version
         self.release = release
         self.arch = arch
         self.description = description
-        #TODO: add support for 'filename' and 'checksum' to constructor, apis, and tests
         self.filename = filename
         self.checksum = {checksum_type:checksum}
+        # Add gpg keys
         self.requires = []
         self.provides = []
 
