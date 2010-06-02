@@ -367,7 +367,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.package(repo["id"], p["packageid"])
         versions = found['versions']
         assert(versions != None)
-        assert(versions[0]['packageid'] == p["packageid"])
+        assert(versions[0]['name'] == p["packageid"])
         
     def test_packages(self):
         repo = self.rapi.create('some-id','some name',

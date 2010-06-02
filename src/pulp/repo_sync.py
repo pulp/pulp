@@ -16,8 +16,11 @@
 # Python
 import logging
 import os
+import time
 import traceback
 from urlparse import urlparse
+
+import yum
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
@@ -60,30 +63,43 @@ class BaseSynchronizer(object):
         dir_list = os.listdir(dir)
         packages = repo['packages']
         package_count = 0
+        startTime = time.time()
         for fname in dir_list:
             if (fname.endswith(".rpm")):
                 try:
-                    info = pulp.util.getRPMInformation(dir + fname)
-                    p = self.packageApi.package(info['name'])
-                    if not p:
-                        p = self.packageApi.create(info['name'], info['description'])
-                    pv = self.packageVersionApi.create(p["packageid"], info['epoch'], 
-                                                   info['version'], info['release'], info['arch'])
-                    for dep in info['requires']:
-                        pv.requires.append(dep)
-                    for dep in info['provides']:
-                        pv.provides.append(dep)
-                    self.packageVersionApi.update(pv)
+                    info = pulp.util.getRPMInformation(os.path.join(dir, fname))
+                    if repo["packages"].has_key(info['name']):
+                        p = repo["packages"][info['name']]
+                    else:
+                        p = model.Package(repo['id'], info['name'])
+                        repo["packages"][p['packageid']] = p
+                    hashtype = "sha256"
+                    checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
+                            filename=os.path.join(dir,fname))
+                    found = self.packageVersionApi.packageversion(name=info['name'], 
+                            epoch=info['epoch'], version=info['version'], 
+                            release=info['release'], arch=info['arch'],filename=fname, 
+                            checksum_type=hashtype, checksum=checksum)
+                    if found.count() == 1:
+                        pv = found[0]
+                    else:
+                        pv = self.packageVersionApi.create(p["packageid"], info['epoch'],
+                            info['version'], info['release'], info['arch'], info['description'],
+                            "sha256", checksum, fname)
+                        for dep in info['requires']:
+                            pv.requires.append(dep)
+                        for dep in info['provides']:
+                            pv.provides.append(dep)
+                        self.packageVersionApi.update(pv)
+                    # Package will prob be removed and it will become a list of PackageVersion objects
                     p["versions"].append(pv)
-                    self.packageApi.update(p)
-                    packages[p["packageid"]] = p
                     package_count = package_count + 1
-                    log.debug("Repo <%s> added package <%s> with %s versions" %
-                              (repo["id"], p["packageid"], len(p["versions"])))
                 except Exception, e:
-                    log.debug("Exception = %s" % (traceback.format_exc()))
+                    log.debug("%s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
-        log.debug("read [%s] packages" % package_count)
+        endTime = time.time()
+        log.debug("Repo: %s read [%s] packages took %s seconds" % 
+                (repo['id'], package_count, endTime - startTime))
         self._read_comps_xml(dir, repo)
 
     def _read_comps_xml(self, dir, repo):
@@ -132,7 +148,7 @@ class BaseSynchronizer(object):
                 self.packageGroupApi.update(grp)
                 repo['packagegroups'][grp.groupid] = grp
             log.info("Comps info added from %s" % (compspath))
-        except CompsException:
+        except yum.Errors.CompsException:
             log.error("Unable to parse comps info for %s" % (compspath))
             return False
         return True
