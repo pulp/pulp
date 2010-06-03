@@ -22,3 +22,11 @@ CONFIG - the raw configurations of juicer and pulp as a configuration parser
 """
 
 CONFIG = None
+
+
+def bootstrap(config):
+    # the global CONFIG must be set *before* the application is imported
+    global CONFIG
+    CONFIG = config
+    from juicer.application import wsgi_application
+    return wsgi_application(config)
