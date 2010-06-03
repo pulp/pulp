@@ -25,6 +25,7 @@ Requires: python-webpy
 Requires: grinder
 Requires: httpd
 Requires: mongo
+Requires: mongo-server
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
