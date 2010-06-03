@@ -24,6 +24,7 @@ Requires: python-setuptools
 Requires: python-webpy
 Requires: grinder
 Requires: httpd
+Requires: mongo
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -59,7 +60,7 @@ cp etc/juicer.ini %{buildroot}/etc/
 cp etc/pulp.ini %{buildroot}/etc/
 
 mkdir -p %{buildroot}/var/lib/pulp
-mkdir -p %{buildroot}/var/www/html
+mkdir -p %{buildroot}/var/www/html/
 ln -s %{buildroot}/var/lib/pulp %{buildroot}/var/www/html/pub
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
@@ -85,6 +86,8 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
 /srv/juicer/juicer.wsgi
+/var/lib/pulp
+/var/www/html/pub
 
 %changelog
 * Thu Jun 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.7-1
