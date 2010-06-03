@@ -14,11 +14,13 @@
 # in this software or its documentation.
 
 import pymongo
-
+import logging
 # Pulp
 from pulp import model
 from pulp.api.base import BaseApi
 from pulp.util import chunks
+
+log = logging.getLogger('pulp.api.consumer')
 
 class ConsumerApi(BaseApi):
 

@@ -35,9 +35,14 @@ application = web.application(URLS, globals())
 # queries ---------------------------------------------------------------------
     
 class Consumers(JSONController):
-    """
-    List all consumers.
-    """
+    def POST(self):
+        """
+        @return: consumer meta data on successful creation of consumer
+        """
+        consumer_data = self.input()
+        consumer = API.create(consumer_data['id'], consumer_data['description'])
+        return self.output(consumer)
+
     def GET(self):
         """
         @return: a list of all consumers
@@ -48,13 +53,6 @@ class Consumers(JSONController):
  
 class Consumer(JSONController):
 
-    def POST(self):
-        """
-        @return: consumer meta data on successful creation of consumer
-        """
-        consumer_data = self.input()
-        consumer = API.create(consumer_data['id'], consumer_data['description'])
-        return self.output(consumer)
 
     def GET(self, id):
         """
