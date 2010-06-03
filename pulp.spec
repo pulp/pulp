@@ -61,7 +61,7 @@ cp etc/pulp.ini %{buildroot}/etc/
 
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
-ln -s %{buildroot}/var/lib/pulp %{buildroot}/var/www/html/pub
+ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
