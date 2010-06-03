@@ -14,30 +14,63 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-__author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
+from juicer.controllers.base import JSONController
+from pulp.api.consumer import ConsumerApi
+
+API = ConsumerApi(None)
+
+# web.py application ----------------------------------------------------------
+
+URLS = (
+    '/$', 'Consumers',
+    '/([^/]+)/$', 'Consumer',
+    '/(\d+)/subscribe/(\d+)', 'Subscribe',
+)
+
+application = web.application(URLS, globals())
+
 # queries ---------------------------------------------------------------------
     
-class List(object):
+class Consumers(JSONController):
     """
     List all consumers.
     """
     def GET(self):
-        pass
+        """
+        @return: a list of all consumers
+        """
+        return self.output(API.consumers())
     
 # actions ---------------------------------------------------------------------
  
-class Add(object):
-    """
-    Add a consumer.
-    """
+class Consumer(JSONController):
+
     def POST(self):
-        # TODO glean the id, name, and repo from posted JSON
-        pass
-    
-    
+        """
+        @return: consumer meta data on successful creation of consumer
+        """
+        consumer_data = self.input()
+        consumer = API.create(consumer_data['id'], consumer_data['description'])
+        return self.output(consumer)
+
+    def GET(self, id):
+        """
+        @param id: consumer id
+        @return: consumer meta data
+        """
+        return self.output(API.consumer(id))
+
+    def DELETE(self, id):
+        """
+        @param id: consumer id
+        @return: True on successful deletion of consumer
+        """
+        API.delete(id)
+        return self.output(True)
+
 class Subscribe(object):
     """
     Subscribe a user to a repository.
@@ -46,12 +79,3 @@ class Subscribe(object):
         pass
     
     
-# web.py application ----------------------------------------------------------
-
-URLS = (
-    '/', 'List',
-    '/add', 'Add',
-    '/(\d+)/subscribe/(\d+)', 'Subscribe',
-)
-
-application = web.application(URLS, globals())
