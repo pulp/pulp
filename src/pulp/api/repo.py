@@ -72,20 +72,23 @@ class RepoApi(BaseApi):
         
     def packages(self, id):
         """
-        Return list of Package objects in this Repo
+        Return dictionary of PackageVersion objects in this Repo, key is package name
         """
         repo = self.repository(id)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         return repo['packages']
     
-    def package(self, repoid, packageid):
+    def packageversions(self, repoid, name):
+        """
+        Return list of PackageVersions objects for this repo and package name
+        """
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packages"].has_key(packageid):
+        if not repo["packages"].has_key(name):
             return None
-        return repo["packages"][packageid]
+        return repo["packages"][name]
 
     def packagegroups(self, id):
         """
@@ -109,31 +112,46 @@ class RepoApi(BaseApi):
         self.objectdb.insert(r)
         return r
 
-    def create_package(self, repoid, packageid):
+    def add_package_version(self, repoid, pv):
+        """
+        Adds the passed in package version to this repo
+        """
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
-        p = model.Package(repoid, packageid)
-        repo["packages"][packageid] = p
+        if not repo["packages"].has_key(pv['name']):
+            repo["packages"][pv['name']] = []
+        # TODO:  We might want to restrict PackageVersions we add to only
+        #        allow 1 NEVRA per repo and require filename to be unique
+        for item in repo["packages"][pv['name']]:
+            if item['_id'] == pv['_id']:
+                # No need to update repo, this PackageVersion is already under this repo
+                return
+        # Note:  A DBRef() for the objects '_id' is what's added in mongo
+        #        This is a reference to the PackageVersion collection's object
+        repo["packages"][pv['name']].append(pv)
         self.update(repo)
-        return repo["packages"][packageid]
 
-    def remove_package(self, repoid, packageid):
+    def remove_package_version(self, repoid, pv):
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packages"].has_key(packageid):
-            raise PulpException("No Package with id: %s found in repo: %s" %
-                    (packageid, repoid))
-        del repo["packages"][packageid]
+        if not repo["packages"].has_key(pv['name']):
+            raise PulpException("No Package with name: %s found in repo: %s" %
+                    (pv['name'], repoid))
+        for item in repo["packages"][pv['name']]:
+            if item['name'] == pv['name'] and \
+                item['version'] == pv['version'] and \
+                item['epoch'] == pv['epoch'] and \
+                item['release'] == pv['release'] and \
+                item['arch'] == pv['arch']:
+                    repo['packages'][pv['name']].remove(item)
+                    if len(repo['packages'][pv['name']]) == 0:
+                        # list is empty now, so cleanup and remove 
+                        # it from the packages
+                        del repo['packages'][pv['name']]
         self.update(repo)
 
-    def remove_packages(self, repoid):
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        repo["packages"] = {}
-        self.update(repo)
 
     def sync(self, id):
         """
