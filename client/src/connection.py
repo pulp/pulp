@@ -121,6 +121,10 @@ class RepoConnection(PulpConnection):
         method = "/repositories/"
         return self.conn.request_post(method, params=repodata)
 
+    def repository(self, id):
+        method = "/repositories/%s" % str(id)
+        return self.conn.request_get(method)
+
     def repositories(self):
         method = "/repositories/"
         return self.conn.request_get(method)
@@ -152,6 +156,10 @@ class ConsumerConnection(PulpConnection):
     def create(self, consumerdata):
         method = "/consumers/"
         return self.conn.request_post(method, params=consumerdata)
+
+    def consumer(self, id):
+        method = "/consumers/%s" % str(id)
+        return self.conn.request_get(method)
 
     def consumers(self):
         method = "/consumers/"

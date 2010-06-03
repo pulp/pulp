@@ -21,8 +21,8 @@ Contains repo management (backend) classes.
 
 import os
 from urllib import basejoin
-from certlib import EntitlementDirectory, ActionLock
 from iniparse import ConfigParser as Parser
+from connection import ConsumerConnection, RepoConnection
 from logutil import getLogger
 
 log = getLogger(__name__)
@@ -72,9 +72,23 @@ class Pulp:
     """
     The pulp server.
     """
+    def __init__(self):
+        host = 'localhost'
+        port = 8811
+        self.repo = RepoConnection(host=host, port=port)
+        self.consumer = ConsumerConnection(host=host, port=port)
 
     def getProducts(self):
-        return []
+        # TODO: hack for demo, replace w/ real stuff later.
+        repos = []
+        product = dict(content=repos)
+        products = (product,)
+        for c in self.consumer.consumer(0): # need to get from registration
+            for repoid in c['repoids']:
+                r = self.repo.repository(repoid)
+                d = dict(id=repoid, name=r['name'], enabled='1')
+                repos.append(d)
+        return products
 
 
 class Action:
@@ -128,8 +142,7 @@ class UpdateAction(Action):
         """
         unique = set()
         products = self.pulp.getProducts()
-        products.sort()
-        cfg = initConfig()
+        cfg = dict(baseurl='http://localhost/pub') ## TODO: Replace w/ real config.
         baseurl = cfg['baseurl']
         for product in products:
             for r in self.getContent(product, baseurl):
@@ -147,15 +160,12 @@ class UpdateAction(Action):
         @rtype: [L{Repo},...]
         """
         lst = []
-        for ent in product.getContentEntitlements():
-            id = ent.getLabel()
+        for cont in product['content']:
+            id = cont['id']
             repo = Repo(id)
-            repo['name'] = ent.getName()
-            repo['enabled'] = ent.getEnabled()
-            repo['baseurl'] = self.join(baseurl, ent.getUrl())
-            repo['gpgkey'] = self.join(baseurl, ent.getGpg())
-            repo['sslclientkey'] = EntitlementDirectory.keypath()
-            repo['sslclientcert'] = product.path
+            repo['name'] = cont['name']
+            repo['baseurl'] = self.join(baseurl, id)
+            repo['enabled'] = cont.get('enabled', '1')
             lst.append(repo)
         return lst
 
@@ -184,19 +194,13 @@ class Repo(dict):
     @type PROPERTIES: tuple.
     """
 
-    CA = '/usr/share/rhn/RHNS-CA-CERT'
+    CA = None
 
     # (name, mutable, default)
     PROPERTIES = (
         ('name', 0, None),
         ('baseurl', 0, None),
         ('enabled', 1, '1'),
-        ('gpgcheck', 0, '1'),
-        ('gpgkey', 0, None),
-        ('sslverify', 0, '1'),
-        ('sslcacert', 0, CA),
-        ('sslclientkey', 0, None),
-        ('sslclientcert', 0, None),
     )
 
     def __init__(self, id):
