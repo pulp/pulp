@@ -18,7 +18,7 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
-from juicer.controllers.base import JSONController
+from juicer.controllers.base import JSONController, error_wrapper
 from juicer.runtime import CONFIG
 from pulp.api.package import PackageApi
 
@@ -39,12 +39,14 @@ API = PackageApi(CONFIG)
 
 class Root(JSONController):
     
+    @error_wrapper
     def GET(self):
         """
         @return: a list of packages
         """
         return self.output(API.packages())
     
+    @error_wrapper
     def POST(self):
         """
         @return: package meta data on successful creation of new package
@@ -56,6 +58,7 @@ class Root(JSONController):
 
 class Package(JSONController):
     
+    @error_wrapper
     def GET(self, id):
         """
         @param id: package id

@@ -7,3 +7,6 @@ cvsroot = :gserver:cvs.devel.redhat.com:/cvs/dist
 branches = RHEL-5-CLOUDE-1
 
 
+[mongo]
+default_builder = tito.builder.NoTgzBuilder
+default_tagger = tito.tagger.VersionTagger

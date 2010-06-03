@@ -1,13 +1,13 @@
 Name: mongo
 Version: 1.4.2
-Release: 6%{?dist}
+Release: 7%{?dist}
 Summary: mongo client shell and tools
 License: AGPLv3
 URL: http://www.mongodb.org
 Group: Applications/Databases
 
-#Source0: mongodb-src-r%{version}.tar.gz
-Source0: http://downloads.mongodb.org/src/mongodb-src-r%{version}.tar.gz
+Source0: mongodb-src-r%{version}.tar.gz
+#Source0: http://downloads.mongodb.org/src/mongodb-src-r%{version}.tar.gz
 Patch0: mongodb-lib32.patch
 BuildRoot: %{_tmppath}/mongo-%{version}-%{release}-root
 BuildRequires: js-devel, readline-devel, boost-devel, pcre-devel
@@ -142,6 +142,9 @@ fi
 
 
 %changelog
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 1.4.2-7
+- seeing if i can get tito to build this
+
 * Thu May 27 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-6
 - removed -N option to useradd, which isn't supported by rhel5 shadow-utils
 

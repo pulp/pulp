@@ -18,7 +18,8 @@
 
 import os
 import sys
-import connection
+import utils
+from connection import RepoConnection, ConsumerConnection, RestlibException
 import constants
 from optparse import OptionParser, OptionGroup
 from logutil import getLogger
@@ -68,7 +69,7 @@ class ConsumerCore(BaseCore):
         self.name = "consumer"
         self.username = None
         self.password = None
-        self.cconn = connection.ConsumerConnection(host="localhost", port=8811)
+        self.cconn = ConsumerConnection(host="localhost", port=8811)
         self.generate_options()
 
     def generate_options(self):
@@ -148,15 +149,11 @@ class ConsumerCore(BaseCore):
                     "description" : self.options.description,}
         try:
             consumer = self.cconn.create(consumerinfo)
-            if not os.path.exists(CONSUMERID):
-                try:
-                    os.makedirs(CONSUMERID)
-                except IOError, e:
-                    LOG.error("Unable to create repo directory %s" % CONSUMERID)
-            f = open(os.path.join(CONSUMERID, "consumer"), "w")
-            f.write(consumer['id'])
-            f.close()
+            utils.writeToFile(os.path.join(CONSUMERID, "consumer"), consumer['id'])
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
@@ -170,6 +167,9 @@ class ConsumerCore(BaseCore):
             print """+-------------------------------------------+\n    List of Consumers \n+-------------------------------------------+"""
             for con in data:
                 print constants.AVAILABLE_CONSUMER_LIST % (con["id"], con["description"])
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
@@ -199,7 +199,7 @@ class RepoCore(BaseCore):
         self.username = None
         self.password = None
         self.name = "repo"
-        self.pconn = connection.RepoConnection(host="localhost", port=8811)
+        self.pconn = RepoConnection(host="localhost", port=8811)
         self.generate_options()
 
     def generate_options(self):
@@ -236,6 +236,11 @@ class RepoCore(BaseCore):
             BaseCore.__init__(self, "repo sync", usage, "", "")
             self.parser.add_option("--label", dest="label",
                            help="Repository Label")
+        if self.action == "delete":
+            usage = "usage: %prog repo delete [OPTIONS]"
+            BaseCore.__init__(self, "repo delete", usage, "", "")
+            self.parser.add_option("--label", dest="label",
+                           help="Repository Label")
         if self.action == "list":
             usage = "usage: %prog repo list [OPTIONS]"
             BaseCore.__init__(self, "repo list", usage, "", "")
@@ -260,6 +265,8 @@ class RepoCore(BaseCore):
             self._list()
         if self.action == "sync":
             self._sync()
+        if self.action == "delete":
+            self._delete()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -280,9 +287,12 @@ class RepoCore(BaseCore):
         try:
             repo = self.pconn.create(repoinfo)
             print _(" Successfully created Repo [ %s ] with feed [ %s ]" % (repo['id'], repo["source"]))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise
+            systemExit(e.code, e.msg)
 
     def _list(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -297,6 +307,9 @@ class RepoCore(BaseCore):
             for repo in data:
                 repo["packages"] = _pkg_count(repo["packages"])
                 print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"], repo["source"], repo["arch"], repo["packages"] )
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
@@ -312,6 +325,27 @@ class RepoCore(BaseCore):
                 packages =  self.pconn.packages(self.options.label)
                 pkg_count = _pkg_count(packages)
             print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _delete(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.label:
+            print("repo label required. Try --help")
+            sys.exit(0)
+        try:
+            status = self.pconn.delete(self.options.label)
+            if status:
+                print _(" Successful deleted Repo [ %s ] " % self.options.label)
+            else:
+                print _(" Deleted operation failed on Repo [ %s ] " % self.options.label)
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise

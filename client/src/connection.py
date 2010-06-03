@@ -71,9 +71,8 @@ class Restlib(object):
 
     def validateResponse(self, response):
         if str(response.status) not in ["200", "204"]:
-            parsed = json.loads(response.read())
-            raise RestlibException(response.status,
-                    parsed['exceptionMessage']['displayMessage'])
+            raise RestlibException(response.status, response.read())
+            #parsed = json.loads(response.read())
 
     def request_get(self, method):
         return self._request("GET", method)

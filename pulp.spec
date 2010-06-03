@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.7
+Version:        0.0.9
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -24,6 +24,7 @@ Requires: python-setuptools
 Requires: python-webpy
 Requires: grinder
 Requires: httpd
+Requires: mongo
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -59,8 +60,8 @@ cp etc/juicer.ini %{buildroot}/etc/
 cp etc/pulp.ini %{buildroot}/etc/
 
 mkdir -p %{buildroot}/var/lib/pulp
-mkdir -p %{buildroot}/var/www/html
-ln -s %{buildroot}/var/lib/pulp %{buildroot}/var/www/html/pub
+mkdir -p %{buildroot}/var/www/html/
+ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -85,8 +86,12 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
 /srv/juicer/juicer.wsgi
+/var/lib/pulp
+/var/www/html/pub
 
 %changelog
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.0.9-1
+- large numbers of changes.  see git for list
 * Thu Jun 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.7-1
 - Link the grinder synchronized packages over to apache
   (jason.dobies@redhat.com)

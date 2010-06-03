@@ -18,7 +18,7 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
-from juicer import controllers, runtime
+from juicer import controllers
 
 
 URLS = (
@@ -33,7 +33,7 @@ URLS = (
 
 def _configure_application(application, config):
     # TODO (2010-05-04 jconnor) add configuration file options to application
-    runtime.CONFIG = config
+    pass
 
 
 def wsgi_application(config):
