@@ -142,6 +142,9 @@ fi
 
 
 %changelog
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> - 1.4.2-6
+- seeing if i can get tito to build this
+
 * Thu May 27 2010 Jason L Connor <jconnor@redhat.com> - 1.4.2-6
 - removed -N option to useradd, which isn't supported by rhel5 shadow-utils
 
