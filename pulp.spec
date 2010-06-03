@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.6
+Version:        0.0.7
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -87,6 +87,32 @@ rm -rf %{buildroot}
 /srv/juicer/juicer.wsgi
 
 %changelog
+* Thu Jun 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.7-1
+- Link the grinder synchronized packages over to apache
+  (jason.dobies@redhat.com)
+- was missing an import, and CompsException needed to be fully qualified
+  (jmatthew@redhat.com)
+- make the imports absolute to the files running
+  (mmccune@gibson.pdx.redhat.com)
+- added pulps configuration to wsgi script (jconnor@redhat.com)
+- changed the way juicer handles pulp's configuration at runtime
+  (jconnor@redhat.com)
+- added preliminary packages controllers cleanup in repositories and consumers
+  controllers (jconnor@redhat.com)
+- removing failed test (mmccune@gibson.pdx.redhat.com)
+- fixing the help options to render based on the command (pkilambi@redhat.com)
+- Adding consumer commands and actions to corkscrew (pkilambi@redhat.com)
+- debugging and testing of pulp rpm spec for new apache deployment
+  (jconnor@redhat.com)
+- removing gevet daemon deployment and adding apache deployment
+  (jconnor@redhat.com)
+- moving the POST to consumers call (pkilambi@redhat.com)
+- Adding webservices consumer calls based on available api.
+  (pkilambi@redhat.com)
+- pkg counts in cli reports and adding consumer connections
+  (pkilambi@redhat.com)
+- Temporary configuration loading (jason.dobies@redhat.com)
+
 * Wed Jun 02 2010 Jason L Connor <jconnor@redhat.com> 0.0.6-1
 - removed gevent deployment
 - added apache deployment
