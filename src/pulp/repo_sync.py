@@ -19,6 +19,8 @@ import os
 import traceback
 from urlparse import urlparse
 
+import yum
+
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
@@ -132,7 +134,7 @@ class BaseSynchronizer(object):
                 self.packageGroupApi.update(grp)
                 repo['packagegroups'][grp.groupid] = grp
             log.info("Comps info added from %s" % (compspath))
-        except CompsException:
+        except yum.comps.CompsException:
             log.error("Unable to parse comps info for %s" % (compspath))
             return False
         return True
