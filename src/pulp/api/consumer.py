@@ -19,6 +19,7 @@ import logging
 from pulp import model
 from pulp.api.base import BaseApi
 from pulp.util import chunks
+from pulp.pexceptions import PulpException
 
 log = logging.getLogger('pulp.api.consumer')
 
@@ -74,3 +75,39 @@ class ConsumerApi(BaseApi):
         List consumers using passed in packageid
         """
         return list(self.objectdb.find({"packageids":  packageid}))
+
+    def bind(self, id, repoid):
+        """
+        Bind (subscribe) a consumer to a repo.
+        @param id: A consumer id.
+        @type id: str
+        @param repoid: A repo id to bind.
+        @type repoid: str
+        @raise PulpException: When consumer not found.
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('consumer "%s", not-found', id)
+        repoids = consumer['repoids']
+        if repoid in repoids:
+            return
+        repoids.append(repoid)
+        self.update(consumer)
+
+    def unbind(self, id, repoid):
+        """
+        Unbind (unsubscribe) a consumer to a repo.
+        @param id: A consumer id.
+        @type id: str
+        @param repoid: A repo id to unbind.
+        @type repoid: str
+        @raise PulpException: When consumer not found.
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('consumer "%s", not-found', id)
+        repoids = consumer['repoids']
+        if repoid not in repoids:
+            return
+        repoids.remove(repoid)
+        self.update(consumer)
