@@ -83,12 +83,20 @@ class Pulp:
         repos = []
         product = dict(content=repos)
         products = (product,)
-        for c in self.consumer.consumer(0): # need to get from registration
-            for repoid in c['repoids']:
-                r = self.repo.repository(repoid)
-                d = dict(id=repoid, name=r['name'], enabled='1')
+        cid = self.consumerId()
+        for consumer in self.consumer.consumer(cid):
+            for repoid in consumer['repoids']:
+                repo = self.repo.repository(repoid)
+                d = dict(id=repoid, name=repo['name'], enabled='1')
                 repos.append(d)
         return products
+    
+    def consumerId(self):
+        f = open('/etc/pulp/consumer')
+        try:
+            return f.read().strip()
+        finally:
+            f.close()
 
 
 class Action:
@@ -272,7 +280,7 @@ class RepoFile(Parser):
 
     PATH = '/etc/yum.repos.d/'
 
-    def __init__(self, name='redhat.repo'):
+    def __init__(self, name='pulp.repo'):
         """
         @param name: The absolute path to a .repo file.
         @type name: str
