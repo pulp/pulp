@@ -63,10 +63,11 @@ class ConsumerCore(BaseCore):
                         "delete" : "Delete a consumer", 
                         "bind"   : "Bind the consumer to listed repos",
                         "unbind" : "UnBind the consumer from repos"}
-
+        self.name = "consumer"
         self.username = None
         self.password = None
         self.cconn = connection.ConsumerConnection(host="localhost", port=8811)
+        self.generate_options()
 
     def generate_options(self):
         possiblecmd = []
@@ -77,7 +78,7 @@ class ConsumerCore(BaseCore):
         self.action = None
         if len(possiblecmd) > 1:
             self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1:
+        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
             self._usage()
             sys.exit(0)
         else:
@@ -122,7 +123,6 @@ class ConsumerCore(BaseCore):
         print("")
 
     def _do_core(self):
-        self.generate_options()
         self._validate_options()
         if self.action == "create":
             self._create()
@@ -188,7 +188,9 @@ class RepoCore(BaseCore):
 
         self.username = None
         self.password = None
+        self.name = "repo"
         self.pconn = connection.RepoConnection(host="localhost", port=8811)
+        self.generate_options()
 
     def generate_options(self):
 
@@ -200,7 +202,7 @@ class RepoCore(BaseCore):
         self.action = None
         if len(possiblecmd) > 1:
             self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1:
+        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
             self._usage()
             sys.exit(0)
         else:
@@ -241,7 +243,6 @@ class RepoCore(BaseCore):
         print("")
 
     def _do_core(self):
-        self.generate_options()
         self._validate_options()
         if self.action == "create":
             self._create()
