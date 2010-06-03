@@ -1,2 +1,2 @@
-[builder]
+[buildconfig]
 builder = tito.builder.NoTgzBuilder
