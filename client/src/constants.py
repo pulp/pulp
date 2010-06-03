@@ -1,4 +1,7 @@
-#!/usr/bin/python
+#
+# String constants for the pulp CLI
+#
+# Author: Pradeep Kilambi <pkilambi@redhat.com>
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
@@ -12,17 +15,18 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+#
+#
 
-import sys
-import os
-unitdir = os.path.abspath(os.path.dirname(__file__)) + "/../unit"
-sys.path.append(unitdir)
+AVAILABLE_REPOS_LIST = """
+Label              \t%-25s
+Name               \t%-25s
+Feed               \t%-25s
+Arch               \t%-25s
+Packages           \t%-25s
+"""
 
-from test_api import TestApi
-from ws_api import *
-
-class WebservicesTest(TestApi):
-
-    def setUp(self):
-        TestApi.setUp(self)
-        self.rapi = WsRestApi()
+AVAILABLE_CONSUMER_LIST="""
+Id              \t%-25s
+Description     \t%-25s
+"""

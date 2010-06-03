@@ -14,44 +14,80 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-__author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
-# queries ---------------------------------------------------------------------
-    
-class List(object):
-    """
-    List all consumers.
-    """
-    def GET(self):
-        pass
-    
-# actions ---------------------------------------------------------------------
- 
-class Add(object):
-    """
-    Add a consumer.
-    """
-    def POST(self):
-        # TODO glean the id, name, and repo from posted JSON
-        pass
-    
-    
-class Subscribe(object):
-    """
-    Subscribe a user to a repository.
-    """
-    def POST(self, consumer_id, repo_id):
-        pass
-    
-    
+from juicer.controllers.base import JSONController
+from juicer.runtime import CONFIG
+from pulp.api.consumer import ConsumerApi
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/', 'List',
-    '/add', 'Add',
-    '/(\d+)/subscribe/(\d+)', 'Subscribe',
+    '/$', 'Root',
+    '/([^/]+)/$', 'Consumer',
+    '/(\d+)/bind/(\d+)', 'Bind',
+    '/(\d+)/unbind/(\d+)', 'Unbind',
 )
 
 application = web.application(URLS, globals())
+
+# consumers api ---------------------------------------------------------------
+
+API = ConsumerApi(CONFIG)
+
+# controllers -----------------------------------------------------------------
+    
+class Root(JSONController):
+
+    def GET(self):
+        """
+        @return: a list of all consumers
+        """
+        return self.output(API.consumers())
+     
+    def POST(self):
+        """
+        @return: consumer meta data on successful creation of consumer
+        """
+        consumer_data = self.input()
+        consumer = API.create(consumer_data['id'], consumer_data['description'])
+        return self.output(consumer)
+   
+ 
+class Consumer(JSONController):
+
+    def GET(self, id):
+        """
+        @param id: consumer id
+        @return: consumer meta data
+        """
+        return self.output(API.consumer(id))
+
+    def DELETE(self, id):
+        """
+        @param id: consumer id
+        @return: True on successful deletion of consumer
+        """
+        API.delete(id)
+        return self.output(True)
+
+
+class Bind(object):
+    """
+    Bind (subscribe) a user to a repository.
+    """
+    def POST(self, id, repoid):
+        API.bind(id, repoid)
+        return self.output(True)
+
+
+class Unbind(object):
+    """
+    Unbind (unsubscribe) a user to a repository.
+    """
+    def POST(self, id, repoid):
+        API.unbind(id, repoid)
+        return self.output(True)
+    
+    

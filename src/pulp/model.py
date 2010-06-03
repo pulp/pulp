@@ -118,3 +118,4 @@ class Consumer(Base):
         self.id = id
         self.description = description
         self.packageids = []
+        self.repoids = []

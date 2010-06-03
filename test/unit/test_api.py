@@ -15,7 +15,9 @@
 # in this software or its documentation.
 #
 import sys
-sys.path.append("../../src")
+import os
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.append(srcdir)
 import time
 import unittest
 import logging
@@ -204,6 +206,19 @@ class TestApi(unittest.TestCase):
         found = self.capi.consumer('test-consumer')
         assert(found != None)
         
+    def test_consumer_bind(self):
+        cid = 'bindconsumerid'
+        rid = 'bindrepoid'
+        key = 'repoids'
+        self.capi.create(cid, 'test bind/unbind.')
+        self.rapi.create(rid, 'testbind', 'noarch', 'yum:http://foo')
+        self.capi.bind(cid, rid)
+        consumer = self.capi.consumer(cid)
+        assert(rid in consumer[key])
+        self.capi.unbind(cid, rid)
+        consumer = self.capi.consumer(cid)
+        assert(rid not in consumer[key])
+
     def test_bulk_create(self):
         consumers = []
         for i in range(1005):
@@ -326,6 +341,7 @@ class TestApi(unittest.TestCase):
         
         # Check that local storage has dir and rpms
         dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)
+        print('+++++++++ ' + self.rapi.localStoragePath)
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo.id)
         print "found = ", found

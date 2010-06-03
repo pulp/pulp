@@ -23,6 +23,7 @@ from juicer.application import wsgi_application
 # added potential paths to configuration files here
 config_file_paths = [
     '/etc/juicer.ini',
+    '/etc/pulp.ini',
 ]
 
 parser = ConfigParser.SafeConfigParser()

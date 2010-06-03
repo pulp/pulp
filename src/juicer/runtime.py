@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,16 +14,11 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import sys
-import os
-unitdir = os.path.abspath(os.path.dirname(__file__)) + "/../unit"
-sys.path.append(unitdir)
+__author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-from test_api import TestApi
-from ws_api import *
+"""
+This module contains various globals that get set at runtime.
+CONFIG - the raw configurations of juicer and pulp as a configuration parser
+"""
 
-class WebservicesTest(TestApi):
-
-    def setUp(self):
-        TestApi.setUp(self)
-        self.rapi = WsRestApi()
+CONFIG = None

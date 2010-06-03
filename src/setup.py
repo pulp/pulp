@@ -21,10 +21,9 @@ from setuptools import setup, find_packages
 major, minor, micro = python_version().split('.')
 
 if major != '2' or minor not in ['4', '5', '6']:
-    raise Exception('unsuported version of python')
+    raise Exception('unsupported version of python')
 
 requires = [
-    'gevent == 0.12.2',
     'web.py == 0.32',
     'grinder >= 0.0.20',
     'pymongo == 1.6',
@@ -33,20 +32,18 @@ requires = [
 if minor != '6':
     requires.extend([
         'simplejson == 2.0.9',
-        'ssl == 1.15',
     ])
 
 
 setup(
     name='pulp',
-    version='0.0.1',
+    version='0.0.6',
     description='content mangement and delivery',
     author='Jason L Connor, Mike McCune',
     author_email='jconnor@redhat.com, mmcune@redhat.com',
     url='',
     license='GPLv2+',
     packages=find_packages(),
-    entry_points={'console_scripts': ['juicer = juicer.daemon:run',]},
     scripts=[],
     include_package_data=False,
     data_files=[],
