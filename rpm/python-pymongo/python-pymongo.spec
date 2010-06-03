@@ -49,5 +49,8 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 1.6-1
+- Titoification 
+
 * Fri May 7 2010 Jason L Connor <jconnor@redhat.com> - 1.6
 - Initial package version.
