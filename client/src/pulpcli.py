@@ -230,6 +230,11 @@ class RepoCore(BaseCore):
             BaseCore.__init__(self, "repo sync", usage, "", "")
             self.parser.add_option("--label", dest="label",
                            help="Repository Label")
+        if self.action == "delete":
+            usage = "usage: %prog repo delete [OPTIONS]"
+            BaseCore.__init__(self, "repo delete", usage, "", "")
+            self.parser.add_option("--label", dest="label",
+                           help="Repository Label")
         if self.action == "list":
             usage = "usage: %prog repo list [OPTIONS]"
             BaseCore.__init__(self, "repo list", usage, "", "")
@@ -254,6 +259,8 @@ class RepoCore(BaseCore):
             self._list()
         if self.action == "sync":
             self._sync()
+        if self.action == "delete":
+            self._delete()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -306,6 +313,21 @@ class RepoCore(BaseCore):
                 packages =  self.pconn.packages(self.options.label)
                 pkg_count = _pkg_count(packages)
             print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _delete(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.label:
+            print("repo label required. Try --help")
+            sys.exit(0)
+        try:
+            status = self.pconn.delete(self.options.label)
+            if status:
+                print _(" Successful deleted Repo [ %s ] " % self.options.label)
+            else:
+                print _(" Deleted operation failed on Repo [ %s ] " % self.options.label)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
