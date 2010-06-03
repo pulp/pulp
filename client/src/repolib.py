@@ -151,7 +151,7 @@ class UpdateAction(Action):
         """
         unique = set()
         products = self.pulp.getProducts()
-        cfg = dict(baseurl='http://localhost/pub') ## TODO: Replace w/ real config.
+        cfg = dict(baseurl='http://localhost/pub/') ## TODO: Replace w/ real config.
         baseurl = cfg['baseurl']
         for product in products:
             for r in self.getContent(product, baseurl):
