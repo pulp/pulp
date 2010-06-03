@@ -25,7 +25,7 @@ import pulp.util
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/$', 'Repositories',
+    '/$', 'Root',
     '/([^/]+)/$', 'Repository',
     '/([^/]+)/sync/$', 'Sync',
     '/([^/]+)/list/$', 'Packages',
@@ -41,7 +41,7 @@ API = RepoApi(config)
 
 # controllers -----------------------------------------------------------------
 
-class Repositories(JSONController):
+class Root(JSONController):
     
     def GET(self):
         """

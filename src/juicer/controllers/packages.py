@@ -17,7 +17,49 @@
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
-    
+
+from juicer.controllers.base import JSONController
+from pulp.api.package import PackageApi
+from pulp.util import loadConfig
+
 # web.py application ----------------------------------------------------------
 
-application = web.auto_application()
+URLS = (
+    '/$', 'Root',
+    '/([^/]+)/$', 'Package',
+)
+
+application = web.application(URLS, globals())
+
+# packages api ----------------------------------------------------------------
+
+config = loadConfig('/etc/pulp.ini')
+API = PackageApi(config)
+
+# packages controllers --------------------------------------------------------
+
+class Root(JSONController):
+    
+    def GET(self):
+        """
+        @return: a list of packages
+        """
+        return self.output(API.packages())
+    
+    def POST(self):
+        """
+        @return: package meta data on successful creation of new package
+        """
+        pkg_data = self.input()
+        pkg = API.create(pkg_data['id'], pkg_data['name'])
+        return self.output(pkg)
+    
+
+class Package(JSONController):
+    
+    def GET(self, id):
+        """
+        @param id: package id
+        @return: package meta data corresponding to id
+        """
+        return self.output(API.package(id))

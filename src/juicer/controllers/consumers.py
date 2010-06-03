@@ -19,22 +19,33 @@ import web
 
 from juicer.controllers.base import JSONController
 from pulp.api.consumer import ConsumerApi
-
-API = ConsumerApi(None)
+from pulp.util import loadConfig
 
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/$', 'Consumers',
+    '/$', 'Root',
     '/([^/]+)/$', 'Consumer',
     '/(\d+)/subscribe/(\d+)', 'Subscribe',
 )
 
 application = web.application(URLS, globals())
 
-# queries ---------------------------------------------------------------------
+# consumers api ---------------------------------------------------------------
+
+config = loadConfig('/etc/pulp.ini')
+API = ConsumerApi(config)
+
+# controllers -----------------------------------------------------------------
     
-class Consumers(JSONController):
+class Root(JSONController):
+
+    def GET(self):
+        """
+        @return: a list of all consumers
+        """
+        return self.output(API.consumers())
+     
     def POST(self):
         """
         @return: consumer meta data on successful creation of consumer
@@ -42,17 +53,9 @@ class Consumers(JSONController):
         consumer_data = self.input()
         consumer = API.create(consumer_data['id'], consumer_data['description'])
         return self.output(consumer)
-
-    def GET(self):
-        """
-        @return: a list of all consumers
-        """
-        return self.output(API.consumers())
-    
-# actions ---------------------------------------------------------------------
+   
  
 class Consumer(JSONController):
-
 
     def GET(self, id):
         """
@@ -68,6 +71,7 @@ class Consumer(JSONController):
         """
         API.delete(id)
         return self.output(True)
+
 
 class Subscribe(object):
     """
