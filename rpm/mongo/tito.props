@@ -1,0 +1,2 @@
+[builder]
+builder = tito.builder.NoTgzBuilder
