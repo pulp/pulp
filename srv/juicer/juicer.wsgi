@@ -17,8 +17,7 @@
 import ConfigParser
 import os
 
-from juicer.application import wsgi_application
-
+from juicer import runtime
 
 # added potential paths to configuration files here
 config_file_paths = [
@@ -28,5 +27,8 @@ config_file_paths = [
 
 parser = ConfigParser.SafeConfigParser()
 parser.read(f for f in config_file_paths if os.access(f, os.F_OK|os.R_OK))
+runtime.CONFIG = parser
 
-application = wsgi_application(parser)
+from juicer.application import wsgi_application
+
+application = wsgi_application()

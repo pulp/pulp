@@ -31,12 +31,12 @@ URLS = (
 
 
 
-def _configure_application(application, config):
+def _configure_application(application):
     # TODO (2010-05-04 jconnor) add configuration file options to application
-    runtime.CONFIG = config
+    pass
 
 
-def wsgi_application(config):
+def wsgi_application():
     application = web.subdir_application(URLS)
-    _configure_application(application, config)
+    _configure_application(application)
     return application.wsgifunc()
