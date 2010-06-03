@@ -18,8 +18,8 @@
 import web
 
 from juicer.controllers.base import JSONController
+from juicer.runtime import CONFIG
 from pulp.api.consumer import ConsumerApi
-from pulp.util import loadConfig
 
 # web.py application ----------------------------------------------------------
 
@@ -33,8 +33,7 @@ application = web.application(URLS, globals())
 
 # consumers api ---------------------------------------------------------------
 
-config = loadConfig('/etc/pulp.ini')
-API = ConsumerApi(config)
+API = ConsumerApi(CONFIG)
 
 # controllers -----------------------------------------------------------------
     

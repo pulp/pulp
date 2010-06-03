@@ -19,8 +19,8 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 import web
 
 from juicer.controllers.base import JSONController
+from juicer.runtime import CONFIG
 from pulp.api.repo import RepoApi
-import pulp.util
 
 # web.py application ----------------------------------------------------------
 
@@ -35,9 +35,7 @@ application = web.application(URLS, globals())
 
 # repository api --------------------------------------------------------------
 
-# TODO: jdobies, Jun 1: Wire this into juicer's configuration loading
-config = pulp.util.loadConfig('/etc/pulp.ini')
-API = RepoApi(config)
+API = RepoApi(CONFIG)
 
 # controllers -----------------------------------------------------------------
 
