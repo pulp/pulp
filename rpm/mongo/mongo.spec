@@ -6,8 +6,8 @@ License: AGPLv3
 URL: http://www.mongodb.org
 Group: Applications/Databases
 
-#Source0: mongodb-src-r%{version}.tar.gz
-Source0: http://downloads.mongodb.org/src/mongodb-src-r%{version}.tar.gz
+Source0: mongodb-src-r%{version}.tar.gz
+#Source0: http://downloads.mongodb.org/src/mongodb-src-r%{version}.tar.gz
 Patch0: mongodb-lib32.patch
 BuildRoot: %{_tmppath}/mongo-%{version}-%{release}-root
 BuildRequires: js-devel, readline-devel, boost-devel, pcre-devel
