@@ -53,6 +53,7 @@ class Task(object):
         self.start_time = None
         self.finish_time = None
         self.next_time = None
+        self.result = None
         self.exception = None
         self.traceback = None
         
@@ -80,13 +81,16 @@ class Task(object):
         self.status = RUNNING
         self.start_time = datetime.datetime.now()
         try:
-            self.func(*args, **kwargs)
+            result = self.func(*args, **kwargs)
         except Exception, e:
             self.exception = e
             exec_info = sys.exc_info()
             self.traceback = traceback.format_exception(*exec_info)
             self.status = ERROR
         else:
+            self.result = result
+            if result is None:
+                self.result = True # set to 'True' so we know it has run
             self.status = FINISHED
         self.finish_time = datetime.datetime.now()
         if self.__queue is not None:
@@ -107,10 +111,9 @@ class Task(object):
         Run this task's callable in a separate thread.
         @return: None
         """
+        self.result = None
         self.__thread = threading.Thread(target=self._wrapper,
                                         args=[args, kwargs])
-        # XXX set thread to daemon here?
-        #self.__thread.daemon = True
         self.__thread.start()
         
     def wait(self):

@@ -18,6 +18,7 @@
 
 import os
 import sys
+import utils
 import connection
 import constants
 from optparse import OptionParser, OptionGroup
@@ -148,14 +149,7 @@ class ConsumerCore(BaseCore):
                     "description" : self.options.description,}
         try:
             consumer = self.cconn.create(consumerinfo)
-            if not os.path.exists(CONSUMERID):
-                try:
-                    os.makedirs(CONSUMERID)
-                except IOError, e:
-                    LOG.error("Unable to create repo directory %s" % CONSUMERID)
-            f = open(os.path.join(CONSUMERID, "consumer"), "w")
-            f.write(consumer['id'])
-            f.close()
+            utils.writeToFile(os.path.join(CONSUMERID, "consumer"), consumer['id'])
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except Exception, e:
             log.error("Error: %s" % e)
