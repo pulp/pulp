@@ -55,13 +55,7 @@ class TestUtil(unittest.TestCase):
 
         config = loadConfig(overrideFile, config=config)
         assert(config.get('paths', 'http_mount') == '/tmp/pulp')
-        
-    def test_fail(self):
-        """
-        Testing hudson to make sure we see failures
-        """
-        assert(False)
-        
+       
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

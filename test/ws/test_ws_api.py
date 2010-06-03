@@ -14,7 +14,6 @@
 # in this software or its documentation.
 
 import sys
-
 sys.path.append('../unit')
 from test_api import TestApi
 from ws_api import *
