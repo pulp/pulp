@@ -259,7 +259,7 @@ class RepoCore(BaseCore):
         if not self.options.name:
             self.options.name = self.options.label
         if not self.options.arch:
-            self.options.arch - "noarch"
+            self.options.arch = "noarch"
         if not self.options.feed:
             print("repo feed required. Try --help")
             sys.exit(0)
@@ -280,6 +280,9 @@ class RepoCore(BaseCore):
             repos = self.pconn.repositories()
             columns = ["id", "name", "source", "arch", "packages"]
             data = [ _sub_dict(repo, columns) for repo in repos]
+            if not len(data):
+                print _("No repos available to list")
+                sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
             for repo in data:
                 repo["packages"] = _pkg_count(repo["packages"])
@@ -320,11 +323,16 @@ class CLI:
     """
     def __init__(self):
         self.cli_cores = {}
-        for clazz in [ RepoCore, ConsumerCore]:
-            cmd = clazz()
-            # ignore the base class
-            if cmd.name != "cli":
-                self.cli_cores[cmd.name] = cmd 
+        if len(sys.argv) > 2 and sys.argv[1] == "repo":
+            self.cli_cores["repo"] = RepoCore()
+        elif len(sys.argv) > 2 and sys.argv[1] == "consumer":
+            self.cli_cores["consumer"] = ConsumerCore()
+        else:
+            for clazz in [ RepoCore, ConsumerCore]:
+                cmd = clazz()
+                # ignore the base class
+                if cmd.name != "cli":
+                    self.cli_cores[cmd.name] = cmd 
 
 
     def _add_core(self, cmd):
