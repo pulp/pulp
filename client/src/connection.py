@@ -145,14 +145,25 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_get(method)
 
-class PackageConnection(PulpConnection):
+class ConsumerConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    pass
+    def create(self, consumerdata):
+        method = "/consumers/"
+        return self.conn.request_post(method, params=consumerdata)
+
+    def consumers(self):
+        method = "/consumers/"
+        return self.conn.request_get(method)
+
 
 if __name__ == '__main__':
     rconn = RepoConnection()
+    print "+--------------------------------+"
+    print "   Repo API Tests                "
+    print "+--------------------------------+"
+    
     repodata = {'id' : 'test-f12',
                 'name' : 'f12',
                 'arch' : 'i386',
@@ -169,3 +180,10 @@ if __name__ == '__main__':
     print "Sync Repos:", rconn.sync(repo['id'])
     print "list Repo Packages: ", rconn.packages(repo['id'])
     print "delete Repo:", rconn.delete(repo['id'])
+    print "+--------------------------------+"
+    print "   Consumer API Tests             "
+    print "+--------------------------------+"
+    consumerdata = { 'id' : "1",
+                     'description' : 'prad.rdu.redhat.com', }
+    cconn = ConsumerConnection()
+    print cconn.create(consumerdata)

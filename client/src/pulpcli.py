@@ -25,7 +25,7 @@ from logutil import getLogger
 import gettext
 _ = gettext.gettext
 
-LOG = getLogger(__name__)
+log = getLogger(__name__)
 
 class BaseCore(object):
     """ Base class for all sub-calls. """
@@ -157,11 +157,12 @@ class RepoCore(BaseCore):
         (self.options, self.args) = self.parser.parse_args()
         try:
             repos = self.pconn.repositories()
-            columns = ["id", "name", "source", "arch"]
+            columns = ["id", "name", "source", "arch", "packages"]
             data = [ _sub_dict(repo, columns) for repo in repos]
             print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
             for repo in data:
-                print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"], repo["source"], repo["arch"] )
+                repo["packages"] = _pkg_count(repo["packages"])
+                print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"], repo["source"], repo["arch"], repo["packages"] )
         except Exception, e:
             log.error("Error: %s" % e)
             raise
@@ -174,14 +175,18 @@ class RepoCore(BaseCore):
         try:
             status = self.pconn.sync(self.options.label)
             if status:
-                repo = self.pconn.repository(self.options.label)
-                count =0
-                for key, value in repo["packages"].items():
-                    count += len(value["versions"])
-            print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, count))
+                packages =  self.pconn.packages(self.options.label)
+                pkg_count = _pkg_count(packages)
+            print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
         except Exception, e:
             log.error("Error: %s" % e)
             raise
+
+def _pkg_count(pkgdict):
+    count =0
+    for key, value in pkgdict.items():
+        count += len(value["versions"])
+    return count
 
 def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
