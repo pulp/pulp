@@ -51,25 +51,146 @@ class BaseCore(object):
         self.args = self.args[1:]
         self._do_core()
 
-class RepoCore(BaseCore):
+class ConsumerCore(BaseCore):
     def __init__(self):
-        usage = "usage: %prog repo [OPTIONS]"
-        shortdesc = "Manage repository on your pulp server."
+        usage = "usage: %prog consumer [OPTIONS]"
+        shortdesc = "consumer specific actions to pulp server."
         desc = ""
 
-        BaseCore.__init__(self, "repo", usage, shortdesc, desc)
+        BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
+        self.actions = {"create" : "Create a consumer", 
+                        "list"   : "List consumers", 
+                        "delete" : "Delete a consumer", 
+                        "bind"   : "Bind the consumer to listed repos",
+                        "unbind" : "UnBind the consumer from repos"}
 
         self.username = None
         self.password = None
-        self.pconn = connection.RepoConnection(host="localhost", port=8811)
-        self.generate_options()
+        self.cconn = connection.ConsumerConnection(host="localhost", port=8811)
 
     def generate_options(self):
+        possiblecmd = []
+
+        for arg in sys.argv[1:]:
+            if not arg.startswith("-"):
+                possiblecmd.append(arg)
+        self.action = None
+        if len(possiblecmd) > 1:
+            self.action = possiblecmd[1]
+        elif len(possiblecmd) == 1:
+            self._usage()
+            sys.exit(0)
+        else:
+            return
+        if self.action not in self.actions.keys():
+            self._usage()
+            sys.exit(0)
+        if self.action == "create":
+            usage = "usage: %prog consumer create [OPTIONS]"
+            BaseCore.__init__(self, "consumer create", usage, "", "")
+            self.parser.add_option("--id", dest="id",
+                           help="Consumer Identifier eg: foo.example.com")
+            self.parser.add_option("--description", dest="description",
+                           help="consumer description eg: foo's web server")
+        if self.action == "bind":
+            usage = "usage: %prog consumer bind [OPTIONS]"
+            BaseCore.__init__(self, "consumer bind", usage, "", "")
+            self.parser.add_option("--repoid", dest="repoid",
+                           help="Repo Identifier")
+        if self.action == "unbind":
+            usage = "usage: %prog consumer unbind [OPTIONS]"
+            BaseCore.__init__(self, "consumer unbind", usage, "", "")
+            self.parser.add_option("--repoid", dest="repoid",
+                           help="Repo Identifier")
+        if self.action == "list":
+            usage = "usage: %prog consumer list [OPTIONS]"
+            BaseCore.__init__(self, "consumer list", usage, "", "")
+        if self.action == "delete":
+            usage = "usage: %prog consumer delete [OPTIONS]"
+            BaseCore.__init__(self, "consumer delete", usage, "", "")
+
+    def _validate_options(self):
+        pass
+
+    def _usage(self):
+        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
+        print "Supported Actions:\n"
+        items = self.actions.items()
+        #items.sort()
+        for (name, cmd) in items:
+            print("\t%-14s %-25s" % (name, cmd))
+        print("")
+
+    def _do_core(self):
+        self.generate_options()
+        self._validate_options()
+        if self.action == "create":
+            self._create()
+        if self.action == "list":
+            self._list()
+        if self.action == "delete":
+            self._delete()
+        if self.action == "bind":
+            self._bind()
+        if self.action == "unbind":
+            self._unbind()
+
+    def _create(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.id:
+            print("consumer id required. Try --help")
+            sys.exit(0)
+        if not self.options.description:
+            self.options.description = self.options.id
+        consumerinfo = {"id"   : self.options.id,
+                    "description" : self.options.description,}
+        try:
+            repo = self.cconn.create(consumerinfo)
+            print _(" Successfully created Consumer [ %s ]" % repo['id'])
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _list(self):
+        (self.options, self.args) = self.parser.parse_args()
+        try:
+            cons = self.cconn.consumers()
+            columns = ["id", "description"]
+            data = [ _sub_dict(con, columns) for con in cons]
+            print """+-------------------------------------------+\n    List of Consumers \n+-------------------------------------------+"""
+            for con in data:
+                print constants.AVAILABLE_CONSUMER_LIST % (con["id"], con["description"])
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _bind(self):
+        print "Under Construction"
+
+    def _unbind(self):
+        print "under Construction"
+
+    def _delete(self):
+        print "under Construction"
+
+class RepoCore(BaseCore):
+    def __init__(self):
+        usage = "usage: %prog repo [OPTIONS]"
+        shortdesc = "repository specifc actions to pulp server."
+        desc = ""
+
+        BaseCore.__init__(self, "repo", usage, shortdesc, desc)
         self.actions = {"create" : "Create a repo", 
                         "update" : "Update a repo", 
                         "list"   : "List available repos", 
                         "delete" : "Delete a repo", 
                         "sync"   : "Sync data to this repo from the feed"}
+
+        self.username = None
+        self.password = None
+        self.pconn = connection.RepoConnection(host="localhost", port=8811)
+
+    def generate_options(self):
 
         possiblecmd = []
 
@@ -120,6 +241,7 @@ class RepoCore(BaseCore):
         print("")
 
     def _do_core(self):
+        self.generate_options()
         self._validate_options()
         if self.action == "create":
             self._create()
@@ -134,11 +256,9 @@ class RepoCore(BaseCore):
             print("repo label required. Try --help")
             sys.exit(0)
         if not self.options.name:
-            print("repo name required. Try --help")
-            sys.exit(0)
+            self.options.name = self.options.label
         if not self.options.arch:
-            print("repo arch required. Try --help")
-            sys.exit(0)
+            self.options.arch - "noarch"
         if not self.options.feed:
             print("repo feed required. Try --help")
             sys.exit(0)
@@ -199,7 +319,7 @@ class CLI:
     """
     def __init__(self):
         self.cli_cores = {}
-        for clazz in [ RepoCore]:
+        for clazz in [ RepoCore, ConsumerCore]:
             cmd = clazz()
             # ignore the base class
             if cmd.name != "cli":
@@ -215,7 +335,7 @@ class CLI:
 
         # want the output sorted
         items = self.cli_cores.items()
-        items.sort()
+        #items.sort()
         for (name, cmd) in items:
             print("\t%-14s %-25s" % (name, cmd.shortdesc))
         print("")

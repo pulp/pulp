@@ -186,4 +186,5 @@ if __name__ == '__main__':
     consumerdata = { 'id' : "1",
                      'description' : 'prad.rdu.redhat.com', }
     cconn = ConsumerConnection()
-    print cconn.create(consumerdata)
+    print "Create Consumer", cconn.create(consumerdata)
+    print "List Consumers", cconn.consumers()
