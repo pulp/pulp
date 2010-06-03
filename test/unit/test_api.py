@@ -15,7 +15,9 @@
 # in this software or its documentation.
 #
 import sys
-sys.path.append("../../src")
+import os
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.append(srcdir)
 import time
 import unittest
 import logging
