@@ -4,7 +4,7 @@
 
 Name:           python-pymongo
 Version:        1.6
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python driver for MongoDB <http://www.mongodb.org>
 Group:          Development/Libraries
 License:        Apache License, version 2.0
@@ -49,7 +49,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 1.6-2
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 1.6-3
 - Titoification 
 
 * Fri May 7 2010 Jason L Connor <jconnor@redhat.com> - 1.6
