@@ -26,6 +26,8 @@ import gettext
 _ = gettext.gettext
 
 log = getLogger(__name__)
+## TODO: move this to config
+CONSUMERID = "/etc/pulp/"
 
 class BaseCore(object):
     """ Base class for all sub-calls. """
@@ -145,8 +147,16 @@ class ConsumerCore(BaseCore):
         consumerinfo = {"id"   : self.options.id,
                     "description" : self.options.description,}
         try:
-            repo = self.cconn.create(consumerinfo)
-            print _(" Successfully created Consumer [ %s ]" % repo['id'])
+            consumer = self.cconn.create(consumerinfo)
+            if not os.path.exists(CONSUMERID):
+                try:
+                    os.makedirs(CONSUMERID)
+                except IOError, e:
+                    LOG.error("Unable to create repo directory %s" % CONSUMERID)
+            f = open(os.path.join(CONSUMERID, "consumer"), "w")
+            f.write(consumer['id'])
+            f.close()
+            print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except Exception, e:
             log.error("Error: %s" % e)
             raise
