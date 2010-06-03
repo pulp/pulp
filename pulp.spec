@@ -49,12 +49,18 @@ pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
-cp -R test  %{buildroot}/%{python_sitelib}/%{name}
+cp -R test %{buildroot}/%{python_sitelib}/%{name}
+
 mkdir -p %{buildroot}/etc/httpd/conf.d/
-cp etc/juicer.ini %{buildroot}/etc/
-cp etc/pulp.ini %{buildroot}/etc/
 cp etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
+
+cp etc/juicer.ini %{buildroot}/etc/
+cp etc/pulp.ini %{buildroot}/etc/
+
+mkdir -p %{buildroot}/var/lib/pulp
+mkdir -p %{buildroot}/var/www/html
+ln -s %{buildroot}/var/lib/pulp %{buildroot}/var/www/html/pub
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
