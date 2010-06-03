@@ -16,10 +16,8 @@
 from pulp.util import loadConfig
 
 def loadTestConfig():
-    origFile = '../../etc/pulp.ini'
     overrideFile = './data/test-override-pulp.ini'
 
-    config = loadConfig(origFile)
-    config = loadConfig(overrideFile, config=config)
+    config = loadConfig(overrideFile)
 
     return config
