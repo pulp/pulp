@@ -23,9 +23,23 @@ import os
 from urllib import basejoin
 from iniparse import ConfigParser as Parser
 from connection import ConsumerConnection, RepoConnection
+from lock import Lock
 from logutil import getLogger
 
 log = getLogger(__name__)
+
+
+class ActionLock(Lock):
+    """
+    Action lock.
+    @cvar PATH: The lock file absolute path.
+    @type PATH: str
+    """
+
+    PATH = '/var/run/subsys/pulp/repolib.pid'
+
+    def __init__(self):
+        Lock.__init__(self, self.PATH)
 
 
 class RepoLib:
@@ -55,19 +69,6 @@ class RepoLib:
             lock.release()
 
 
-class ActionLock(Lock):
-    """
-    Action lock.
-    @cvar PATH: The lock file absolute path.
-    @type PATH: str
-    """
-
-    PATH = '/var/run/subsys/pulp/repolib.pid'
-
-    def __init__(self):
-        Lock.__init__(self, self.PATH)
-
-
 class Pulp:
     """
     The pulp server.
@@ -75,8 +76,8 @@ class Pulp:
     def __init__(self):
         host = 'localhost'
         port = 8811
-        self.repo = RepoConnection(host=host, port=port)
-        self.consumer = ConsumerConnection(host=host, port=port)
+        self.rapi = RepoConnection(host=host, port=port)
+        self.capi = ConsumerConnection(host=host, port=port)
 
     def getProducts(self):
         # TODO: hack for demo, replace w/ real stuff later.
@@ -84,11 +85,11 @@ class Pulp:
         product = dict(content=repos)
         products = (product,)
         cid = self.consumerId()
-        for consumer in self.consumer.consumer(cid):
-            for repoid in consumer['repoids']:
-                repo = self.repo.repository(repoid)
-                d = dict(id=repoid, name=repo['name'], enabled='1')
-                repos.append(d)
+        consumer = self.capi.consumer(cid)
+        for repoid in consumer['repoids']:
+            repo = self.rapi.repository(repoid)
+            d = dict(id=repoid, name=repo['name'], enabled='1')
+            repos.append(d)
         return products
     
     def consumerId(self):
@@ -354,8 +355,8 @@ class RepoFile(Parser):
         f = open(self.path, 'w')
         s = []
         s.append('#')
-        s.append('# Red Hat Repositories')
-        s.append('# Managed by (rhsm) subscription-manager')
+        s.append('# Pulp Repositories')
+        s.append('# Managed by Pulp client')
         s.append('#')
         f.write('\n'.join(s))
         f.close()
@@ -405,6 +406,22 @@ class Reader:
         return ln
 
 
+def test():
+    host = 'localhost'
+    port = 8811
+    f = open('/etc/pulp/consumer', 'w')
+    f.write('0')
+    f.flush()
+    f.close()
+    rapi = RepoConnection(host=host, port=port)
+    capi = ConsumerConnection(host=host, port=port)
+    d = dict(id='jortel', name='The jortel repository', arch='', feed='yum:http://foo')
+    rapi.create(d)
+    d = dict(id='0', description='The local consumer.')
+    capi.create(d)
+    capi.bind('0', 'jortel')
+    main()
+
 def main():
     print 'Updating Pulp repository'
     repolib = RepoLib()
@@ -413,4 +430,5 @@ def main():
     print 'done'
 
 if __name__ == '__main__':
-    main()
+    #main()
+    test()

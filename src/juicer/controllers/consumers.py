@@ -26,8 +26,8 @@ from pulp.api.consumer import ConsumerApi
 URLS = (
     '/$', 'Root',
     '/([^/]+)/$', 'Consumer',
-    '/([^/]+)/bind/([^/]+)', 'Bind',
-    '/([^/]+)/unbind/([^/]+)', 'Unbind',
+    '/([^/]+)/bind', 'Bind',
+    '/([^/]+)/unbind', 'Unbind',
 )
 
 application = web.application(URLS, globals())
@@ -78,30 +78,22 @@ class Consumer(JSONController):
 
 
 class Bind(JSONController):
-    
+    """
+    Bind (subscribe) a user to a repository.
+    """
     @error_wrapper
-    def POST(self, id, repoid):
-        """
-        Bind (subscribe) a user to a repository.
-        @param id: consumer id
-        @param repoid: repository id
-        @return: True on successful bind of consumer to repository
-        """
-        API.bind(id, repoid)
+    def POST(self, id):
+        data = self.input()
+        API.bind(id, data['repoid'])
         return self.output(True)
 
 
 class Unbind(JSONController):
-    
+    """
+    Unbind (unsubscribe) a user to a repository.
+    """
     @error_wrapper
-    def POST(self, id, repoid):
-        """
-        Unbind (unsubscribe) a user to a repository.
-        @param id: consumer id
-        @param repoid: repository id
-        @return: True on successful unbind of consumer from repository
-        """
-        API.unbind(id, repoid)
+    def POST(self, id):
+        data = self.input()
+        API.unbind(id, data['repoid'])
         return self.output(True)
-    
-    
