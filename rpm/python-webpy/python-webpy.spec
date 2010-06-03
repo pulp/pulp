@@ -1,10 +1,9 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 %define pkgname webpy
-%define srcname web.py
 
-Name:           python-%{pkgname}
+Name:           python-webpy
 Version:        0.32
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        A simple web framework for Python
 Group:          Development/Libraries
 
@@ -21,7 +20,7 @@ Group:          Development/Libraries
 License:        Public Domain and BSD
 
 URL:            http://webpy.org/
-Source0:        http://webpy.org/static/%{srcname}-%{version}.tar.gz
+Source0:        web.py-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
@@ -63,6 +62,9 @@ purpose with absolutely no restrictions.
 %{python_sitelib}/*
 
 %changelog
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.32-6
+- Titoification : http://rm-rf.ca/tito
+
 * Thu May 27 2010 Jason L Connor <jconnor@redhat.com> - 0.32-5
 - removed patch
 - added import of setuptools directly in spec file
