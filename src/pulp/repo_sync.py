@@ -53,10 +53,10 @@ class BaseSynchronizer(object):
 
     def __init__(self, config):
         self.config = config
-        self.packageApi = PackageApi(config)
-        self.packageVersionApi = PackageVersionApi(config)
-        self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
-        self.packageGroupApi = PackageGroupApi(config)
+        self.package_api = PackageApi(config)
+        self.package_version_api = PackageVersionApi(config)
+        self.package_group_category_api = PackageGroupCategoryApi(config)
+        self.package_group_api = PackageGroupApi(config)
 
     def add_packages_from_dir(self, dir, repo):
 
@@ -67,18 +67,18 @@ class BaseSynchronizer(object):
             if (fname.endswith(".rpm")):
                 try:
                     info = pulp.util.getRPMInformation(dir + fname)
-                    p = self.packageApi.package(info['name'])
+                    p = self.package_api.package(info['name'])
                     if not p:
-                        p = self.packageApi.create(info['name'], info['description'])
-                    pv = self.packageVersionApi.create(p["packageid"], info['epoch'], 
+                        p = self.package_api.create(info['name'], info['description'])
+                    pv = self.package_version_api.create(p["packageid"], info['epoch'], 
                                                    info['version'], info['release'], info['arch'])
                     for dep in info['requires']:
                         pv.requires.append(dep)
                     for dep in info['provides']:
                         pv.provides.append(dep)
-                    self.packageVersionApi.update(pv)
+                    self.package_version_api.update(pv)
                     p["versions"].append(pv)
-                    self.packageApi.update(p)
+                    self.package_api.update(p)
                     packages[p["packageid"]] = p
                     package_count = package_count + 1
                     log.debug("Repo <%s> added package <%s> with %s versions" %
@@ -114,17 +114,17 @@ class BaseSynchronizer(object):
             comps = yum.comps.Comps()
             comps.add(compsxml)
             for c in comps.categories:
-                ctg = self.packageGroupCategoryApi.create(c.categoryid, c.name,
+                ctg = self.package_group_category_api.create(c.categoryid, c.name,
                                                           c.description, c.display_order)
                 groupids = [grp for grp in c.groups]
                 ctg.packagegroupids.extend(groupids)
                 ctg.translated_name = c.translated_name
                 ctg.translated_description = c.translated_description
-                self.packageGroupCategoryApi.update(ctg)
+                self.package_group_category_api.update(ctg)
                 repo['packagegroupcategories'][ctg.categoryid] = ctg
 
             for g in comps.groups:
-                grp = self.packageGroupApi.create(g.groupid, g.name, g.description,
+                grp = self.package_group_api.create(g.groupid, g.name, g.description,
                                               g.user_visible, g.display_order, g.default, g.langonly)
                 grp.mandatory_package_names.extend(g.mandatory_packages.keys())
                 grp.optional_package_names.extend(g.optional_packages.keys())
@@ -132,7 +132,7 @@ class BaseSynchronizer(object):
                 grp.conditional_package_names = g.conditional_packages
                 grp.translated_name = g.translated_name
                 grp.translated_description = g.translated_description
-                self.packageGroupApi.update(grp)
+                self.package_group_api.update(grp)
                 repo['packagegroups'][grp.groupid] = grp
             log.info("Comps info added from %s" % (compspath))
         except yum.comps.CompsException:
