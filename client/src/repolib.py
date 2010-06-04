@@ -20,10 +20,10 @@ Contains repo management (backend) classes.
 """
 
 import os
-from urllib import basejoin
 from iniparse import ConfigParser as Parser
 from connection import ConsumerConnection, RepoConnection
 from lock import Lock
+from config import Config
 from logutil import getLogger
 
 log = getLogger(__name__)
@@ -73,9 +73,9 @@ class Pulp:
     """
     The pulp server.
     """
-    def __init__(self):
-        host = 'localhost'
-        port = 8811
+    def __init__(self, cfg):
+        host = cfg.server.host
+        port = cfg.server.port
         self.rapi = RepoConnection(host=host, port=port)
         self.capi = ConsumerConnection(host=host, port=port)
 
@@ -106,7 +106,8 @@ class Action:
     """
 
     def __init__(self):
-        self.pulp = Pulp()
+        self.cfg = Config()
+        self.pulp = Pulp(self.cfg)
 
 
 class UpdateAction(Action):
@@ -151,8 +152,7 @@ class UpdateAction(Action):
         """
         unique = set()
         products = self.pulp.getProducts()
-        cfg = dict(baseurl='http://localhost/pub/') ## TODO: Replace w/ real config.
-        baseurl = cfg['baseurl']
+        baseurl = self.cfg.cds.baseurl
         for product in products:
             for r in self.getContent(product, baseurl):
                 unique.add(r)
@@ -191,7 +191,7 @@ class UpdateAction(Action):
         if '://' in url:
             return url
         else:
-            return basejoin(base, url)
+            return os.path.join(base, url)
 
 
 class Repo(dict):

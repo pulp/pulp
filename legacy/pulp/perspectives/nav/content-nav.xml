@@ -1,6 +1,0 @@
-<nav-tree>
-    <tab name="Overview" url="/pulp"/>
-    <tab name="Channels" url="/pulp/channel"/>
-    <tab name="Content" url="/pulp/content"/>
-    <tab name="Systems" url="/pulp/systems"/>
-</nav-tree>

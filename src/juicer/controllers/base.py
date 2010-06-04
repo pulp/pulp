@@ -33,6 +33,22 @@ class JSONController(object):
     """
     Base controller class with convenience methods for JSON serialization
     """
+    @staticmethod
+    def error_handler(method):
+        """
+        Controller class method wrapper that catches internal errors and reports
+        them as JSON serialized trace back strings
+        """
+        @functools.wraps(method)
+        def report_error(self, *args, **kwargs):
+            try:
+                return method(self, *args, **kwargs)
+            except Exception:
+                exc_info = sys.exc_info()
+                tb_msg = ''.join(traceback.format_exception(*exc_info))
+                web.ctx.status = '500 Internal Server Error'
+                return self.output(tb_msg)
+        return report_error
     
     def input(self):
         return json.loads(web.data())
@@ -40,21 +56,3 @@ class JSONController(object):
     def output(self, data):
         web.header('Content-Type', 'application/json')
         return json.dumps(data, default=pymongo.json_util.default)
-
-
-def error_wrapper(method):
-    """
-    Controller class method wrapper that catches internal errors and reports
-    them as tracebacks
-    """
-    @functools.wraps(method)
-    def report_error(self, *args, **kwargs):
-        try:
-            return method(self, *args, **kwargs)
-        except Exception:
-            exc_info = sys.exc_info()
-            tb_msg = ''.join(traceback.format_exception(*exc_info))
-            web.header('Content-Type', 'text/plain')
-            web.ctx.status = '500 Internal Server Error'
-            return tb_msg
-    return report_error

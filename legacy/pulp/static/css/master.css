@@ -1,8 +1,0 @@
-/** Master CSS file that imports all the perspectives **/
-@import url("style.css");
-@import url("grid.css");
-@import url("admin.css");
-@import url("content.css");
-@import url("middleware.css");
-@import url("virt.css");
-

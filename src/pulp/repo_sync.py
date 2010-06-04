@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 # Python
+import gzip
 import logging
 import os
 import time
@@ -24,6 +25,7 @@ import yum
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
+from grinder.RHNSync import RHNSync
 from pulp import model
 from pulp.api.package import PackageApi
 from pulp.api.package_version import PackageVersionApi
@@ -53,10 +55,10 @@ class BaseSynchronizer(object):
 
     def __init__(self, config):
         self.config = config
-        self.packageApi = PackageApi(config)
-        self.packageVersionApi = PackageVersionApi(config)
-        self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
-        self.packageGroupApi = PackageGroupApi(config)
+        self.package_api = PackageApi(config)
+        self.package_version_api = PackageVersionApi(config)
+        self.package_group_category_api = PackageGroupCategoryApi(config)
+        self.package_group_api = PackageGroupApi(config)
 
     def add_packages_from_dir(self, dir, repo):
         dir_list = os.listdir(dir)
@@ -90,6 +92,8 @@ class BaseSynchronizer(object):
                     #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
                     repo['packages'][info['name']].append(pv)
                     package_count = package_count + 1
+                    log.debug("Repo <%s> added package <%s> with %s versions" %
+                              (repo["id"], p["packageid"], len(p["versions"])))
                 except Exception, e:
                     log.debug("%s" % (traceback.format_exc()))
                     log.error("error reading package %s" % (dir + fname))
@@ -123,17 +127,17 @@ class BaseSynchronizer(object):
             comps = yum.comps.Comps()
             comps.add(compsxml)
             for c in comps.categories:
-                ctg = self.packageGroupCategoryApi.create(c.categoryid, c.name,
+                ctg = self.package_group_category_api.create(c.categoryid, c.name,
                                                           c.description, c.display_order)
                 groupids = [grp for grp in c.groups]
                 ctg.packagegroupids.extend(groupids)
                 ctg.translated_name = c.translated_name
                 ctg.translated_description = c.translated_description
-                self.packageGroupCategoryApi.update(ctg)
+                self.package_group_category_api.update(ctg)
                 repo['packagegroupcategories'][ctg.categoryid] = ctg
 
             for g in comps.groups:
-                grp = self.packageGroupApi.create(g.groupid, g.name, g.description,
+                grp = self.package_group_api.create(g.groupid, g.name, g.description,
                                               g.user_visible, g.display_order, g.default, g.langonly)
                 grp.mandatory_package_names.extend(g.mandatory_packages.keys())
                 grp.optional_package_names.extend(g.optional_packages.keys())
@@ -141,7 +145,7 @@ class BaseSynchronizer(object):
                 grp.conditional_package_names = g.conditional_packages
                 grp.translated_name = g.translated_name
                 grp.translated_description = g.translated_description
-                self.packageGroupApi.update(grp)
+                self.package_group_api.update(grp)
                 repo['packagegroups'][grp.groupid] = grp
             log.info("Comps info added from %s" % (compspath))
         except yum.Errors.CompsException:
@@ -166,9 +170,31 @@ class LocalSynchronizer(BaseSynchronizer):
 
 class RHNSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
-        pass
+        # Parse the repo source for necessary pieces
+        # Expected format:   <server>/<channel>
+        pieces = repo_source.url.split('/')
+        if len(pieces) < 2:
+            raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
+                                repo_source.url)
 
+        host = 'https://' + pieces[0]
+        channel = pieces[1]
+
+        log.info('Synchronizing from RHN. Host [%s], Channel [%s]' % (host, channel))
+
+        # Create and configure the grinder hook to RHN
+        s = RHNSync()
+        s.setURL(host)
+
+        # Perform the sync
+        dest_dir = '%s/%s/' % (self.config.get('paths', 'local_storage'), repo['id'])
+        s.syncPackages(channel, savePath=dest_dir)
+        s.createRepo(dest_dir)
+        s.setParallel(self.config.get('rhn', 'threads'))
+
+        return dest_dir
+        
 TYPE_CLASSES = {'yum'   : YumSynchronizer,
                 'local' : LocalSynchronizer,
-                'rhn'   : RHNSynchronizer}
+                'rhn'   : RHNSynchronizer,}
 

@@ -17,7 +17,7 @@
 
 import web
 
-from juicer.controllers.base import JSONController, error_wrapper
+from juicer.controllers.base import JSONController
 from juicer.runtime import CONFIG
 from pulp.api.consumer import ConsumerApi
 
@@ -40,14 +40,14 @@ API = ConsumerApi(CONFIG)
     
 class Root(JSONController):
 
-    @error_wrapper
+    @JSONController.error_handler
     def GET(self):
         """
         @return: a list of all consumers
         """
         return self.output(API.consumers())
      
-    @error_wrapper
+    @JSONController.error_handler
     def POST(self):
         """
         @return: consumer meta data on successful creation of consumer
@@ -59,7 +59,7 @@ class Root(JSONController):
  
 class Consumer(JSONController):
 
-    @error_wrapper
+    @JSONController.error_handler
     def GET(self, id):
         """
         @param id: consumer id
@@ -67,7 +67,7 @@ class Consumer(JSONController):
         """
         return self.output(API.consumer(id))
 
-    @error_wrapper
+    @JSONController.error_handler
     def DELETE(self, id):
         """
         @param id: consumer id
@@ -81,7 +81,7 @@ class Bind(JSONController):
     """
     Bind (subscribe) a user to a repository.
     """
-    @error_wrapper
+    @JSONController.error_handler
     def POST(self, id):
         data = self.input()
         API.bind(id, data['repoid'])
@@ -92,7 +92,7 @@ class Unbind(JSONController):
     """
     Unbind (unsubscribe) a user to a repository.
     """
-    @error_wrapper
+    @JSONController.error_handler
     def POST(self, id):
         data = self.input()
         API.unbind(id, data['repoid'])
