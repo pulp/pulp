@@ -45,7 +45,7 @@ class JSONController(object):
 def error_wrapper(method):
     """
     Controller class method wrapper that catches internal errors and reports
-    them as tracebacks
+    them as JSON serialized trace back strings
     """
     @functools.wraps(method)
     def report_error(self, *args, **kwargs):
@@ -54,7 +54,7 @@ def error_wrapper(method):
         except Exception:
             exc_info = sys.exc_info()
             tb_msg = ''.join(traceback.format_exception(*exc_info))
-            web.header('Content-Type', 'text/plain')
+            web.header('Content-Type', 'application/json')
             web.ctx.status = '500 Internal Server Error'
-            return tb_msg
+            return json.dumps(tb_msg)
     return report_error
