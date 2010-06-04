@@ -18,7 +18,7 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
-from juicer.controllers.base import JSONController, error_wrapper
+from juicer.controllers.base import JSONController
 from juicer.runtime import CONFIG
 from pulp.api.repo import RepoApi
 
@@ -41,14 +41,14 @@ API = RepoApi(CONFIG)
 
 class Root(JSONController):
     
-    @error_wrapper
+    @JSONController.error_handler
     def GET(self):
         """
         @return: a list of all available repositories
         """
         return self.output(API.repositories())
     
-    @error_wrapper
+    @JSONController.error_handler
     def POST(self):
         """
         @return: repository meta data on successful creation of repository
@@ -63,7 +63,7 @@ class Root(JSONController):
     
 class Repository(JSONController):
     
-    @error_wrapper
+    @JSONController.error_handler
     def DELETE(self, id):
         """
         @param id: repository id
@@ -72,7 +72,7 @@ class Repository(JSONController):
         API.delete(id)
         return self.output(True)
 
-    @error_wrapper
+    @JSONController.error_handler
     def GET(self, id):
         """
         @param id: repository id
@@ -80,7 +80,7 @@ class Repository(JSONController):
         """
         return self.output(API.repository(id))
     
-    @error_wrapper
+    @JSONController.error_handler
     def POST(self, id):
         """
         @param id: repository id
@@ -94,7 +94,7 @@ class Repository(JSONController):
     
 class Sync(JSONController):
     
-    @error_wrapper
+    @JSONController.error_handler
     def GET(self, id):
         """
         @param id: repository id
@@ -106,7 +106,7 @@ class Sync(JSONController):
   
 class Packages(JSONController):
     
-    @error_wrapper
+    @JSONController.error_handler
     def GET(self, id):
         """
         @param id: repository id
