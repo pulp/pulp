@@ -26,7 +26,7 @@ from logutil import getLogger
 import base64
 import gettext
 _ = gettext.gettext
-
+from repolib import RepoLib
 log = getLogger(__name__)
 ## TODO: move this to config
 CONSUMERID = "/etc/pulp/"
@@ -71,6 +71,7 @@ class ConsumerCore(BaseCore):
         self.username = None
         self.password = None
         self.cconn = ConsumerConnection(host="localhost", port=8811)
+        self.repolib = RepoLib()
         self.generate_options()
 
     def generate_options(self):
@@ -102,11 +103,15 @@ class ConsumerCore(BaseCore):
             BaseCore.__init__(self, "consumer bind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
+            self.parser.add_option("--consumerid", dest="consumerid",
+                           help="Consumer Identifier")
         if self.action == "unbind":
             usage = "usage: %prog consumer unbind [OPTIONS]"
             BaseCore.__init__(self, "consumer unbind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
+            self.parser.add_option("--consumerid", dest="consumerid",
+                           help="Consumer Identifier")
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             BaseCore.__init__(self, "consumer list", usage, "", "")
@@ -176,10 +181,43 @@ class ConsumerCore(BaseCore):
             raise
 
     def _bind(self):
-        print "Under Construction"
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.consumerid:
+            print("consumer id required. Try --help")
+            sys.exit(0)
+        if not self.options.repoid:
+            print("repo id required. Try --help")
+            sys.exit(0)
+        try:
+            self.cconn.bind(self.options.consumerid, self.options.repoid)
+            self.repolib.update()
+            print _(" Successfully subscribed Consumer [%s] to Repo [%s]" % (self.options.consumerid, self.options.repoid))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
 
     def _unbind(self):
-        print "under Construction"
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.consumerid:
+            print("consumer id required. Try --help")
+            sys.exit(0)
+        if not self.options.repoid:
+            print("repo id required. Try --help")
+            sys.exit(0)
+        try:
+            self.cconn.unbind(self.options.consumerid, self.options.repoid)
+            self.repolib.update()
+            print _(" Successfully unsubscribed Consumer [%s] from Repo [%s]" % (self.options.consumerid, self.options.repoid))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
 
     def _delete(self):
         print "under Construction"
