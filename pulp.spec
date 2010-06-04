@@ -64,6 +64,7 @@ cp etc/pulp/* %{buildroot}/etc/pulp
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
 mkdir -p %{buildroot}/var/log/pulp
+ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -81,8 +82,6 @@ rm -rf %{buildroot}
 %post
 chown apache:apache /var/lib/pulp
 chown apache:apache /var/log/pulp
-ln -s /var/lib/pulp /var/www/html/pub
-
 
 %files
 %defattr(-,root,root,-)
