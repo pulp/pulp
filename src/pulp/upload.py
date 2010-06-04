@@ -21,8 +21,6 @@ import util
 import base64
 import tempfile
 import hashlib
-from pulp.api.package import PackageApi
-from pulp.api.package_version import PackageVersionApi
 from repo_sync import BaseSynchronizer
 
 class PackageUpload:

@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.14
+Version:        0.0.17
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -55,20 +55,15 @@ popd
 cp -R test %{buildroot}/%{python_sitelib}/%{name}
 
 mkdir -p %{buildroot}/etc/httpd/conf.d/
-cp %{buildroot}/etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
+cp etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
 
 mkdir -p %{buildroot}/etc/pulp
-cp etc/pulp/juicer.ini %{buildroot}/etc/pulp
-cp etc/pulp/pulp.ini %{buildroot}/etc/pulp
+cp etc/pulp/* %{buildroot}/etc/pulp
 
 mkdir -p %{buildroot}/var/lib/pulp
-chown apache:apache %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
-ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
-
 mkdir -p %{buildroot}/var/log/pulp
-chown apache:apache %{buildroot}/var/log/pulp
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -83,14 +78,19 @@ rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
 %clean
 rm -rf %{buildroot}
 
+%post
+chown apache:apache /var/lib/pulp
+chown apache:apache /var/log/pulp
+ln -s /var/lib/pulp /var/www/html/pub
+
 
 %files
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/*
-%config(noreplace) /etc/juicer.ini
-%config(noreplace) /etc/pulp.ini
+%config(noreplace) /etc/pulp/juicer.ini
+%config(noreplace) /etc/pulp/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
 /etc/pulp
 /srv/juicer/juicer.wsgi
@@ -99,7 +99,7 @@ rm -rf %{buildroot}
 /var/log/pulp
 
 %changelog
-* Fri Jun 04 2010 Mike McCune <mmccune@redhat.com> 0.0.14-1
+* Fri Jun 04 2010 Mike McCune <mmccune@redhat.com> 0.0.17-1
 - rebuild
 * Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.0.10-1
 - large numbers of changes.  see git for list
