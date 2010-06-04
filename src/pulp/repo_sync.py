@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 # Python
+import gzip
 import logging
 import os
 import traceback
