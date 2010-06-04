@@ -53,6 +53,12 @@ class RepoApi(BaseApi):
 
         # TODO: Extract this to a config
         self.localStoragePath = config.get('paths', 'local_storage')
+   
+    def _get_indexes(self):
+        return ["packages", "packagegroups", "packagegroupcategories"]
+
+    def _get_unique_indexes(self):
+        return ["id"]
 
     def _getcollection(self):
         return self.db.repos
@@ -88,28 +94,6 @@ class RepoApi(BaseApi):
         if not repo["packages"].has_key(name):
             return None
         return repo["packages"][name]
-
-    def packagegroups(self, id):
-        """
-        Return list of PackageGroup objects in this Repo
-        """
-        repo = self.repository(id)
-        return repo['packagegroups']
-    
-    def packagegroupcategories(self, id):
-        """
-        Return list of PackageGroupCategory objects in this Repo
-        """
-        repo = self.repository(id)
-        return repo['packagegroupcategories']
-    
-    def create(self, id, name, arch, feed):
-        """
-        Create a new Repository object and return it
-        """
-        r = model.Repo(id, name, arch, feed)
-        self.objectdb.insert(r)
-        return r
 
     def add_package_version(self, repoid, pv):
         """
@@ -151,6 +135,176 @@ class RepoApi(BaseApi):
                         del repo['packages'][pv['name']]
         self.update(repo)
 
+    def remove_packagegroup(self, repoid, groupid):
+        """
+        Remove a packagegroup from a repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if repo['packagegroups'].has_key(groupid):
+            del repo['packagegroups'][groupid]
+        self.update(repo)
+
+    def update_packagegroup(self, repoid, pg):
+        """
+        Save the passed in PackageGroup to this repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        repo['packagegroups'][pg['id']] = pg
+        self.update(repo)
+
+    def update_packagegroups(self, repoid, pglist):
+        """
+        Save the list of passed in PackageGroup objects to this repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        for item in pglist:
+            repo['packagegroups'][item['id']] = item
+        self.update(repo)
+
+    def translate_packagegroup(self, obj):
+        """
+        Translate a SON Document to an object that yum.comps.Comps can work with
+        """
+        # Main reason for doing this is that yum.comps expects the passed in 
+        # object to support dot notation references, the returned SON document
+        # does not support this, so yum.comps isn't able to read the info 
+        #TODO: More work is needed in this method before output of groups will work
+        pg = model.PackageGroup(obj['id'], obj['name'], obj['description'], 
+                user_visible=obj['user_visible'], display_order=obj['display_order'],
+                default=obj['default'], langonly=obj['langonly'])
+        pg.groupid = obj['id']  
+        pg.translated_name = {}
+        for key in obj['translated_name']:
+            pg.translated_name[key] = obj['translated_name'][key]
+        pg.translated_description = {}
+        for key in obj['translated_description']:
+            pg.translated_description[key] = obj['translated_description']
+        pg.mandatory_packages = {}
+        for pkgname in obj['mandatory_package_names']:
+            pg.mandatory_packages[pkgname] = 1 
+        pg.optional_packages = {}
+        for pkgname in obj['optional_package_names']:
+            pg.optional_packages[pkgname] = 1
+        pg.default_packages = {}
+        for pkgname in obj['default_package_names']:
+            pg.default_packages[pkgname] = 1
+        pg.conditional_packages = {}
+        for key in obj['conditional_package_names']:
+            pg.conditional_packages[key] = obj['conditional_package_names'][key]
+        return pg
+
+    def packagegroups(self, id):
+        """
+        Return list of PackageGroup objects in this Repo
+        """
+        repo = self.repository(id)
+        return repo['packagegroups']
+    
+    def packagegroup(self, repoid, groupid):
+        """
+        Return a PackageGroup from this Repo
+        """
+        repo = self.repository(repoid)
+        if not repo['packagegroups'].has_key(groupid):
+            return None
+        return repo['packagegroups'][groupid]
+
+    def remove_packagegroupcategory(self, repoid, categoryid):
+        """
+        Remove a packagegroupcategory from a repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if repo['packagegroupcategories'].has_key(categoryid):
+            del repo['packagegroupcategories'][categoryid]
+        self.update(repo)
+    
+    def update_packagegroupcategory(self, repoid, pgc):
+        """
+        Save the passed in PackageGroupCategory to this repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        repo['packagegroupcategories'][pgc['id']] = pgc
+        self.update(repo)
+    
+    def update_packagegroupcategories(self, repoid, pgclist):
+        """
+        Save the list of passed in PackageGroupCategory objects to this repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        for item in pgclist:
+            repo['packagegroupcategories'][item['id']] = item
+        self.update(repo)
+
+    def translate_packagegroupcategory(self, obj):
+        """
+        Translate a SON Document to an object that yum.comps.Comps can work with
+        """
+        #TODO: More work is needed in this method before output of categories will work
+        pgc = model.PackageGroupCategory(obj['id'], obj['name'], obj['description'], 
+                display_order=obj['display_order'])
+        pgc.categoryid = obj['id']
+        pgc.translated_name = {}
+        for key in obj['translated_name']:
+            pgc.translated_name[key] = obj['translated_name'][key]
+        pgc.translated_description = {}
+        for key in obj['translated_description']:
+            pgc.translated_description[key] = obj['translated_description'][key]
+        pgc._groups = {}
+        for groupid in obj['packagegroupids']:
+            pgc._groups[groupid] = groupid
+        return pgc
+
+    def packagegroups(self, id):
+        """
+        Return list of PackageGroup objects in this Repo
+        """
+        repo = self.repository(id)
+        return repo['packagegroups']
+
+    def packagegroup(self, repoid, groupid):
+        """
+        Return a PackageGroup from this Repo
+        """
+        repo = self.repository(repoid)
+        if not repo['packagegroups'].has_key(groupid):
+            return None
+        return repo['packagegroups'][groupid]
+
+    def packagegroupcategories(self, id):
+        """
+        Return list of PackageGroupCategory objects in this Repo
+        """
+        repo = self.repository(id)
+        return repo['packagegroupcategories']
+
+    def packagegroupcategory(self, repoid, categoryid):
+        """
+        Return a PackageGroupCategory object from this Repo
+        """
+        repo = self.repository(repoid)
+        if not repo['packagegroupcategories'].has_key(categoryid):
+            return None
+        return repo['packagegroupcategories'][categoryid]
+
+    def create(self, id, name, arch, feed):
+        """
+        Create a new Repository object and return it
+        """
+        r = model.Repo(id, name, arch, feed)
+        self.objectdb.insert(r)
+        return r
 
     def sync(self, id):
         """

@@ -161,44 +161,32 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        package = Package(repo["id"], 'test_repo_packages')
-        pkggroup.default_package_names.append(package["packageid"])
-        repo.packagegroups[pkggroup["groupid"]] = pkggroup
-        repo.packages[package["packageid"]] = package
+        pkggroup.default_package_names.append("test-package-id")
+        repo.packagegroups[pkggroup["id"]] = pkggroup
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
-        packages = found['packages']
-        assert(packages != None)
-        assert(packages['test_repo_packages'] != None)
         assert(found['packagegroups'] != None)
-        print "test_repo_package_groups found['packagegroups'] = %s" % (found['packagegroups'])
-        assert(pkggroup.groupid in found['packagegroups'])
+        assert(pkggroup['id'] in found['packagegroups'])
     
     def test_repo_package_group_categories(self):
-        repo = self.rapi.create('some-id','some name', \
+        repo = self.rapi.create('some-id_pkg_group_categories','some name', \
             'i386', 'yum:http://example.com')
-        package = Package(repo.id, 'test_repo_packages')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        pkggroup.default_package_names.append(package["packageid"])
+        pkggroup.default_package_names.append("test-package-name")
         ctg = PackageGroupCategory('test-group-cat-id', 'test-group-cat-name',
                 'test-group-cat-description')
-        ctg.packagegroupids = pkggroup.id
-        repo.packagegroupcategories[ctg.categoryid] = ctg
-        repo.packagegroups[pkggroup.groupid] = pkggroup
-        repo.packages[package["packageid"]] = package
+        ctg['packagegroupids'] = pkggroup['id']
+        repo['packagegroupcategories'][ctg['id']] = ctg
+        repo['packagegroups'][pkggroup['id']] = pkggroup
         self.rapi.update(repo)
         
-        found = self.rapi.repository('some-id')
-        packages = found['packages']
-        assert(packages != None)
-        assert(packages['test_repo_packages'] != None)
+        found = self.rapi.repository('some-id_pkg_group_categories')
         assert(found['packagegroups'] != None)
-        print "test_repo_package_groups found['packagegroups'] = %s" % (found['packagegroups'])
-        assert(pkggroup.groupid in found['packagegroups'])
+        assert(pkggroup['id'] in found['packagegroups'])
         assert(found['packagegroupcategories'] != None)
-        assert(ctg.categoryid in found['packagegroupcategories'])
+        assert(ctg['id'] in found['packagegroupcategories'])
     
     def test_consumer_create(self):
         c = self.capi.create('test-consumer', 'some consumer desc')

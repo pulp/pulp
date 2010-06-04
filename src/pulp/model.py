@@ -87,9 +87,12 @@ class PackageVersion(Base):
         self.provides = []
 
 class PackageGroup(Base):
-    def __init__(self, groupid, name, description, user_visible=False, 
+    """
+    Class represents a yum.comps.Group
+    """
+    def __init__(self, id, name, description, user_visible=False, 
             display_order=1024, default=True, langonly=None):
-        self.groupid = groupid
+        self.id = id
         self.name = name
         self.description = description
         self.user_visible = user_visible
@@ -104,8 +107,8 @@ class PackageGroup(Base):
         self.translated_description = {}
 
 class PackageGroupCategory(Base):
-    def __init__(self, categoryid, name, description, display_order=99):
-        self.categoryid = categoryid
+    def __init__(self, id, name, description, display_order=99):
+        self.id = id
         self.name = name
         self.description = description
         self.display_order = display_order

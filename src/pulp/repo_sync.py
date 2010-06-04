@@ -70,7 +70,19 @@ class BaseSynchronizer(object):
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" % 
                 (repo['id'], package_count, endTime - startTime))
-        self._read_comps_xml(dir, repo)
+        # TODO: Parse repomd.xml and lookup name for groups element
+        compsfile = None
+        compspath = os.path.join(dir, 'repodata/comps.xml')
+        if os.path.isfile(compspath):
+            compsfile = open(compspath, "r")
+        else:
+            compspath = os.path.join(dir, 'repodata/comps.xml.gz')
+            if os.path.isfile(compspath):
+                compsfile = gzip.open(compspath, 'r')
+        if compsfile:
+            repo['comps_xml_path'] = compspath
+            self.import_groups_data(compsfile, repo)
+            log.debug("Loaded comps info from %s" % (compspath))
 
     def import_package(self, pkg_path, repo):
         if (pkg_path.endswith(".rpm")):
@@ -103,52 +115,32 @@ class BaseSynchronizer(object):
                 log.debug("%s" % (traceback.format_exc()))
                 log.error("error reading package %s" % (pkg_path))
 
-    def _read_comps_xml(self, dir, repo):
+    def import_groups_data(self, compsfile, repo):
         """
         Reads a comps.xml or comps.xml.gz under repodata from dir
         Loads PackageGroup and Category info our db
         """
-
-        compspath = os.path.join(dir, 'repodata/comps.xml')
-        compsxml = None
-        if os.path.isfile(compspath):
-            compsxml = open(compspath, "r")
-        else:
-            compspath = os.path.join(dir, 'repodata/comps.xml.gz')
-            if os.path.isfile(compspath):
-                compsxml = gzip.open(compspath, 'r')
-    
-        if not compsxml:
-            log.info("Not able to find a comps.xml(.gz) to read")
-            return False
-
-        log.info("Reading comps info from %s" % (compspath))
-        repo['comps_xml_path'] = compspath
         try:
             comps = yum.comps.Comps()
-            comps.add(compsxml)
+            comps.add(compsfile)
             for c in comps.categories:
-                ctg = self.package_group_category_api.create(c.categoryid, c.name,
-                                                          c.description, c.display_order)
+                ctg = model.PackageGroupCategory(c.categoryid, c.name,
+                    c.description, c.display_order)
                 groupids = [grp for grp in c.groups]
-                ctg.packagegroupids.extend(groupids)
-                ctg.translated_name = c.translated_name
-                ctg.translated_description = c.translated_description
-                self.package_group_category_api.update(ctg)
-                repo['packagegroupcategories'][ctg.categoryid] = ctg
-
+                ctg['packagegroupids'].extend(groupids)
+                ctg['translated_name'] = c.translated_name
+                ctg['translated_description'] = c.translated_description
+                repo['packagegroupcategories'][ctg['id']] = ctg
             for g in comps.groups:
-                grp = self.package_group_api.create(g.groupid, g.name, g.description,
-                                              g.user_visible, g.display_order, g.default, g.langonly)
+                grp = model.PackageGroup(g.groupid, g.name, g.description,
+                    g.user_visible, g.display_order, g.default, g.langonly)
                 grp.mandatory_package_names.extend(g.mandatory_packages.keys())
                 grp.optional_package_names.extend(g.optional_packages.keys())
                 grp.default_package_names.extend(g.default_packages.keys())
                 grp.conditional_package_names = g.conditional_packages
                 grp.translated_name = g.translated_name
                 grp.translated_description = g.translated_description
-                self.package_group_api.update(grp)
-                repo['packagegroups'][grp.groupid] = grp
-            log.info("Comps info added from %s" % (compspath))
+                repo['packagegroups'][grp['id']] = grp
         except yum.Errors.CompsException:
             log.error("Unable to parse comps info for %s" % (compspath))
             return False
