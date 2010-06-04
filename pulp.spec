@@ -59,8 +59,8 @@ cp %{buildroot}/etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
 
 mkdir -p %{buildroot}/etc/pulp
-cp %{buildroot}/etc/pulp/juicer.ini %{buildroot}/etc/pulp
-cp %{buildroot}/etc/pulp/pulp.ini %{buildroot}/etc/pulp
+cp etc/pulp/juicer.ini %{buildroot}/etc/pulp
+cp etc/pulp/pulp.ini %{buildroot}/etc/pulp
 
 mkdir -p %{buildroot}/var/lib/pulp
 chown apache:apache %{buildroot}/var/lib/pulp
