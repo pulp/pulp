@@ -55,12 +55,12 @@ popd
 cp -R test %{buildroot}/%{python_sitelib}/%{name}
 
 mkdir -p %{buildroot}/etc/httpd/conf.d/
-cp etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
+cp %{buildroot}/etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
 
 mkdir -p %{buildroot}/etc/pulp
-cp etc/pulp/juicer.ini %{buildroot}/etc/pulp
-cp etc/pulp/pulp.ini %{buildroot}/etc/pulp
+cp %{buildroot}/etc/pulp/juicer.ini %{buildroot}/etc/pulp
+cp %{buildroot}/etc/pulp/pulp.ini %{buildroot}/etc/pulp
 
 mkdir -p %{buildroot}/var/lib/pulp
 chown apache:apache %{buildroot}/var/lib/pulp
@@ -92,6 +92,7 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/juicer.ini
 %config(noreplace) /etc/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
+/etc/pulp
 /srv/juicer/juicer.wsgi
 /var/lib/pulp
 /var/www/html/pub
