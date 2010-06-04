@@ -394,10 +394,10 @@ class RepoCore(BaseCore):
                     print _(" Faied to Upload %s to Repo [ %s ] " % self.options.label)
             except RestlibException, re:
                 log.error("Error: %s" % re)
-                continue
+                raise #continue
             except Exception, e:
                 log.error("Error: %s" % e)
-                continue
+                raise #continue
  
 
 def _pkg_count(pkgdict):

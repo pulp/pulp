@@ -21,7 +21,10 @@ import util
 import base64
 import tempfile
 import hashlib
+import logging
 from repo_sync import BaseSynchronizer
+
+log = logging.getLogger('pulp.upload')
 
 class PackageUpload:
     def __init__(self, config, repo, pkginfo, payload):
@@ -41,8 +44,10 @@ class PackageUpload:
             store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
             self.bindPackageToRepo(pkg_path, self.repo)
         except IOError, ie:
+            log.error("Error writing file to filesystem %s " % ie)
             raise UploadError("Error writing to the file %s" % self.pkgname)
         except Exception, e:
+            log.error("UnExpected Error %s " % e)
             raise UploadError("Upload Failed due to unexpected Error ")
 
     def bindPackageToRepo(self, pkg_path, repo):
@@ -65,7 +70,12 @@ def store_package(pkgstream, pkg_path, size, checksum, hashtype, force=None):
     Write the package stream to a file under repo location
     """
     stream = base64.b64decode(pkgstream)
-    dir = os.path.dirname(pkg_path)
+    rel_dir = os.path.dirname(pkg_path)
+    if not os.path.exists(rel_dir):
+        try:
+            os.makedirs(rel_dir)
+        except IOError, e:
+            log.error("Unable to create repo directory %s" % rel_dir)
     tmpstream = tempfile.TemporaryFile()
     tmpstream.write(stream)
     chunk_size = 65536
