@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.9
+Version:        0.0.10
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -25,6 +25,7 @@ Requires: python-webpy
 Requires: grinder
 Requires: httpd
 Requires: mongo
+Requires: mongo-server
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -90,7 +91,7 @@ rm -rf %{buildroot}
 /var/www/html/pub
 
 %changelog
-* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.0.9-1
+* Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.0.10-1
 - large numbers of changes.  see git for list
 * Thu Jun 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.7-1
 - Link the grinder synchronized packages over to apache

@@ -157,12 +157,22 @@ class ConsumerConnection(PulpConnection):
         return self.conn.request_post(method, params=consumerdata)
 
     def consumer(self, id):
-        method = "/consumers/%s" % str(id)
+        method = "/consumers/%s/" % str(id)
         return self.conn.request_get(method)
 
     def consumers(self):
         method = "/consumers/"
         return self.conn.request_get(method)
+
+    def bind(self, id, repoid):
+        method = "/consumers/%s/bind" % id
+        d = dict(repoid=repoid)
+        return self.conn.request_post(method, params=d)
+
+    def unbind(self, id, repoid):
+        method = "/consumers/%s/unbind" % id
+        d = dict(repoid=repoid)
+        return self.conn.request_post(method, params=d)
 
 
 if __name__ == '__main__':
