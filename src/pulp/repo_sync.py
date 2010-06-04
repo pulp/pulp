@@ -24,6 +24,7 @@ import yum
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
+from grinder.RHNSync import RHNSync
 from pulp import model
 from pulp.api.package import PackageApi
 from pulp.api.package_version import PackageVersionApi
@@ -157,9 +158,31 @@ class LocalSynchronizer(BaseSynchronizer):
 
 class RHNSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
-        pass
+        # Parse the repo source for necessary pieces
+        # Expected format:   <server>/<channel>
+        pieces = repo_source.url.split('/')
+        if len(pieces) < 2:
+            raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
+                                repo_source.url)
 
+        host = 'https://' + pieces[0]
+        channel = pieces[1]
+
+        log.info('Synchronizing from RHN. Host [%s], Channel [%s]' % (host, channel))
+
+        # Create and configure the grinder hook to RHN
+        s = RHNSync()
+        s.setURL(host)
+
+        # Perform the sync
+        dest_dir = '%s/%s/' % (self.config.get('paths', 'local_storage'), repo['id'])
+        s.syncPackages(channel, savePath=dest_dir)
+        s.createRepo(dest_dir)
+        s.setParallel(10)  # this should be a configuration option in some capacity
+
+        return dest_dir
+        
 TYPE_CLASSES = {'yum'   : YumSynchronizer,
                 'local' : LocalSynchronizer,
-                'rhn'   : RHNSynchronizer}
+                'rhn'   : RHNSynchronizer,}
 
