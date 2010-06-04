@@ -21,6 +21,7 @@ DIRS = (
     '/etc',
     '/etc/httpd',
     '/etc/httpd/conf.d',
+    '/etc/pulp',
     '/srv',
     '/srv/juicer',
     '/var/lib/pulp',
