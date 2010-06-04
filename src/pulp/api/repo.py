@@ -27,7 +27,7 @@ from yum.Errors import CompsException
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
-from pulp import repo_sync
+from pulp import repo_sync, upload
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
 from pulp.api.package_version import PackageVersionApi
@@ -109,3 +109,16 @@ class RepoApi(BaseApi):
         repo_source = model.RepoSource(repo['source'])
         repo_sync.sync(self.config, repo, repo_source)
         self.update(repo)
+
+    def upload(self, id, pkginfo, pkgstream):
+        """
+        Store the uploaded package and associate to this repo
+        """
+        repo = self.repository(id)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % id)
+        pkg_upload = upload.PackageUpload(self.config, repo, pkginfo, pkgstream)
+        pkg_upload.upload()
+        log.error("Upload success")
+        self.update(repo)
+        return True

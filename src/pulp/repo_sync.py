@@ -62,33 +62,36 @@ class BaseSynchronizer(object):
     def add_packages_from_dir(self, dir, repo):
 
         dir_list = os.listdir(dir)
-        packages = repo['packages']
         package_count = 0
         for fname in dir_list:
-            if (fname.endswith(".rpm")):
-                try:
-                    info = pulp.util.getRPMInformation(dir + fname)
-                    p = self.package_api.package(info['name'])
-                    if not p:
-                        p = self.package_api.create(info['name'], info['description'])
-                    pv = self.package_version_api.create(p["packageid"], info['epoch'], 
-                                                   info['version'], info['release'], info['arch'])
-                    for dep in info['requires']:
-                        pv.requires.append(dep)
-                    for dep in info['provides']:
-                        pv.provides.append(dep)
-                    self.package_version_api.update(pv)
-                    p["versions"].append(pv)
-                    self.package_api.update(p)
-                    packages[p["packageid"]] = p
-                    package_count = package_count + 1
-                    log.debug("Repo <%s> added package <%s> with %s versions" %
-                              (repo["id"], p["packageid"], len(p["versions"])))
-                except Exception, e:
-                    log.debug("Exception = %s" % (traceback.format_exc()))
-                    log.error("error reading package %s" % (dir + fname))
+            self.import_package(dir + fname, repo)
+            package_count = package_count + 1
         log.debug("read [%s] packages" % package_count)
         self._read_comps_xml(dir, repo)
+
+    def import_package(self, pkg_path, repo):
+        packages = repo['packages']
+        if (pkg_path.endswith(".rpm")):
+            try:
+                info = pulp.util.getRPMInformation(pkg_path)
+                p = self.package_api.package(info['name'])
+                if not p:
+                    p = self.package_api.create(info['name'], info['description'])
+                pv = self.package_version_api.create(p["packageid"], info['epoch'], 
+                                              info['version'], info['release'], info['arch'])
+                for dep in info['requires']:
+                    pv.requires.append(dep)
+                for dep in info['provides']:
+                    pv.provides.append(dep)
+                self.package_version_api.update(pv)
+                p["versions"].append(pv)
+                self.package_api.update(p)
+                packages[p["packageid"]] = p
+                log.debug("Repo <%s> added package <%s> with %s versions" %
+                          (repo["id"], p["packageid"], len(p["versions"])))
+            except Exception, e:
+                log.debug("Exception = %s" % (traceback.format_exc()))
+                log.error("error reading package %s" % (pkg_path))
 
     def _read_comps_xml(self, dir, repo):
         """

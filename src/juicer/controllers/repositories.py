@@ -29,6 +29,7 @@ URLS = (
     '/([^/]+)/$', 'Repository',
     '/([^/]+)/sync/$', 'Sync',
     '/([^/]+)/list/$', 'Packages',
+    '/([^/]+)/upload/$', 'Upload',
 )
 
 application = web.application(URLS, globals())
@@ -113,3 +114,13 @@ class Packages(JSONController):
         @return: list of all packages available in corresponding repository
         """
         return self.output(API.packages(id))
+
+class Upload(JSONController):
+
+    @JSONController.error_handler
+    def POST(self, id):
+        data = self.input()
+        API.upload(data['repo'],
+                   data['pkginfo'],
+                   data['pkgstream'])
+        return self.output(True)

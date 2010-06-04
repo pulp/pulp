@@ -148,6 +148,10 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_get(method)
 
+    def upload(self, uploadinfo):
+        method = "/repositories/%s/upload/" % uploadinfo['repo']
+        return self.conn.request_post(method, params=uploadinfo)
+
 class ConsumerConnection(PulpConnection):
     """
     Connection class to access repo specific calls
