@@ -21,8 +21,8 @@ from juicer.runtime import bootstrap
 
 # added potential paths to configuration files here
 config_file_paths = [
-    '/etc/juicer.ini',
-    '/etc/pulp.ini',
+    '/etc/pulp/juicer.ini',
+    '/etc/pulp/pulp.ini',
 ]
 
 parser = ConfigParser.SafeConfigParser()
