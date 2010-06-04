@@ -23,6 +23,7 @@ from connection import RepoConnection, ConsumerConnection, RestlibException
 import constants
 from optparse import OptionParser, OptionGroup
 from logutil import getLogger
+import base64
 import gettext
 _ = gettext.gettext
 
@@ -194,7 +195,8 @@ class RepoCore(BaseCore):
                         "update" : "Update a repo", 
                         "list"   : "List available repos", 
                         "delete" : "Delete a repo", 
-                        "sync"   : "Sync data to this repo from the feed"}
+                        "sync"   : "Sync data to this repo from the feed",
+                        "upload" : "Upload package(s) to this repo"}
 
         self.username = None
         self.password = None
@@ -244,6 +246,13 @@ class RepoCore(BaseCore):
         if self.action == "list":
             usage = "usage: %prog repo list [OPTIONS]"
             BaseCore.__init__(self, "repo list", usage, "", "")
+        if self.action == "upload":
+            usage = "usage: %prog repo upload [OPTIONS] <package>"
+            BaseCore.__init__(self, "repo upload", usage, "", "")
+            self.parser.add_option("--label", dest="label",
+                           help="Repository Label")
+            self.parser.add_option("--dir", dest="dir",
+                           help="Process packages from this directory")
 
     def _validate_options(self):
         pass
@@ -267,6 +276,8 @@ class RepoCore(BaseCore):
             self._sync()
         if self.action == "delete":
             self._delete()
+        if self.action == "upload":
+            self._upload()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -350,6 +361,47 @@ class RepoCore(BaseCore):
             log.error("Error: %s" % e)
             raise
 
+    def _upload(self):
+        (self.options, files) = self.parser.parse_args()
+        # ignore the command and pick the files
+        files = files[2:]
+        if not self.options.label:
+            print("repo label required. Try --help")
+            sys.exit(0)
+        if self.options.dir:
+            files += utils.processDirectory(self.options.dir, "rpm")
+        if not files:
+            print("Need to provide atleast one file to perform upload")
+            sys.exit(0)
+        uploadinfo = {}
+        uploadinfo['repo'] = self.options.label
+        for frpm in files:
+            try: 
+                pkginfo = utils.processFile(frpm)
+            except FileError, e:
+                print('Error: %s' % e)
+                continue
+            if not pkginfo.has_key('nvrea'):
+                if debug: print("Package %s is Not an RPM Skipping" % frpm)
+                continue
+            uploadinfo['pkginfo']   = pkginfo
+            uploadinfo['pkgstream'] = base64.b64encode(open(frpm).read())
+            try:
+                status = self.pconn.upload(uploadinfo)
+                if status:
+                    print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.label))
+                else:
+                    print _(" Faied to Upload %s to Repo [ %s ] " % self.options.label)
+            except RestlibException, re:
+                log.error("Error: %s" % re)
+                #continue
+                systemExit(re.code, re.msg)
+            except Exception, e:
+                log.error("Error: %s" % e)
+                #continue
+                raise
+ 
+
 def _pkg_count(pkgdict):
     count =0
     for key, value in pkgdict.items():
@@ -359,6 +411,8 @@ def _pkg_count(pkgdict):
 def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
 
+class FileError(Exception):
+    pass
 
 class CLI:
     """

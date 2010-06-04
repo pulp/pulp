@@ -74,7 +74,7 @@ if __name__ == "__main__":
                  help='File containing list of directories containing the repos you wish to use for this test')
     parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
     parser.add_option('--config', dest='config', action='store', 
-            help='Pulp configuration file', default="../../etc/pulp.ini")
+            help='Pulp configuration file', default="../../etc/pulp/pulp.ini")
     cmdoptions, args = parser.parse_args()
     dirlist = cmdoptions.dirlist
     clean = cmdoptions.clean

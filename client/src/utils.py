@@ -62,9 +62,9 @@ def writeToFile(filename, message, overwrite=True):
 def listdir(directory):
     directory = os.path.abspath(os.path.normpath(directory))
     if not os.access(directory, os.R_OK | os.X_OK):
-        raise UploadError("Cannot read from directory %s" % directory)
+        raise Exception("Cannot read from directory %s" % directory)
     if not os.path.isdir(directory):
-        raise UploadError("%s not a directory" % directory)
+        raise Exception("%s not a directory" % directory)
     # Build the package list
     packagesList = []
     for f in os.listdir(directory):
@@ -125,7 +125,7 @@ def processFile(filename, relativeDir=None, source=None):
 
     # Size
     size = os.path.getsize(filename)
-    hash = {'packageSize' : size}
+    hash = {'size' : size}
     if relativeDir:
         # Append the relative dir too
         hash["relativePath"] = "%s/%s" % (relativeDir,
@@ -154,7 +154,32 @@ def processFile(filename, relativeDir=None, source=None):
         lh.append(h['arch'])
 
     hash['nvrea'] = tuple(lh)
+    hash['hashtype'] = getChecksumType(h)
+    hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
+    hash['pkgname'] = os.path.basename(filename)
     return hash
+
+PGPHASHALGO = {
+  1: 'md5',
+  2: 'sha1',
+  3: 'ripemd160',
+  5: 'md2',
+  6: 'tiger192',
+  7: 'haval-5-160',
+  8: 'sha256',
+  9: 'sha384',
+ 10: 'sha512',
+}
+# need this for rpm-pyhon < 4.6 (e.g. on RHEL5)
+rpm.RPMTAG_FILEDIGESTALGO = 5011
+
+def getChecksumType(header):
+    if header[rpm.RPMTAG_FILEDIGESTALGO] \
+       and PGPHASHALGO.has_key(header[rpm.RPMTAG_FILEDIGESTALGO]):
+       checksum_type = PGPHASHALGO[header[rpm.RPMTAG_FILEDIGESTALGO]]
+    else:
+       checksum_type = 'md5'
+    return checksum_type
 
 def readRpmHeader(ts, rpmname):
     fd = os.open(rpmname, os.O_RDONLY)
@@ -162,3 +187,7 @@ def readRpmHeader(ts, rpmname):
     os.close(fd)
     return h
 
+if __name__=='__main__':
+    ts = rpm.TransactionSet()
+    hdr = readRpmHeader(ts, "/home/pkilambi/demo/test-f12/zsh-4.3.10-4.fc12.x86_64.rpm")
+    print getChecksumType(hdr)

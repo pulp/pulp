@@ -62,45 +62,46 @@ class BaseSynchronizer(object):
 
     def add_packages_from_dir(self, dir, repo):
         dir_list = os.listdir(dir)
-        packages = repo['packages']
         package_count = 0
         startTime = time.time()
         for fname in dir_list:
-            if (fname.endswith(".rpm")):
-                try:
-                    info = pulp.util.getRPMInformation(os.path.join(dir, fname))
-                    if not repo["packages"].has_key(info['name']):
-                        repo["packages"][info['name']] = []
-                    hashtype = "sha256"
-                    checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
-                            filename=os.path.join(dir,fname))
-                    found = self.package_version_api.packageversion(name=info['name'], 
-                            epoch=info['epoch'], version=info['version'], 
-                            release=info['release'], arch=info['arch'],filename=fname, 
-                            checksum_type=hashtype, checksum=checksum)
-                    if found.count() == 1:
-                        pv = found[0]
-                    else:
-                        pv = self.package_version_api.create(info['name'], info['epoch'],
-                            info['version'], info['release'], info['arch'], info['description'],
-                            "sha256", checksum, fname)
-                        for dep in info['requires']:
-                            pv.requires.append(dep)
-                        for dep in info['provides']:
-                            pv.provides.append(dep)
-                        self.package_version_api.update(pv)
-                    #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
-                    repo['packages'][info['name']].append(pv)
-                    package_count = package_count + 1
-                    log.debug("Repo <%s> added package <%s> with %s versions" %
-                              (repo["id"], p["packageid"], len(p["versions"])))
-                except Exception, e:
-                    log.debug("%s" % (traceback.format_exc()))
-                    log.error("error reading package %s" % (dir + fname))
+            self.import_package(dir + fname, repo)
+            package_count = package_count + 1
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" % 
                 (repo['id'], package_count, endTime - startTime))
         self._read_comps_xml(dir, repo)
+
+    def import_package(self, pkg_path, repo):
+        if (pkg_path.endswith(".rpm")):
+            try:
+                file_name = os.path.basename(pkg_path)
+                info = pulp.util.getRPMInformation(pkg_path)
+                if not repo["packages"].has_key(info['name']):
+                    repo["packages"][info['name']] = []
+                hashtype = "sha256"
+                checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
+                        filename=pkg_path)
+                found = self.package_version_api.packageversion(name=info['name'], 
+                        epoch=info['epoch'], version=info['version'], 
+                        release=info['release'], arch=info['arch'],filename=file_name, 
+                        checksum_type=hashtype, checksum=checksum)
+                if found.count() == 1:
+                    pv = found[0]
+                else:
+                    pv = self.package_version_api.create(info['name'], info['epoch'],
+                        info['version'], info['release'], info['arch'], info['description'],
+                        "sha256", checksum, file_name)
+                    for dep in info['requires']:
+                        pv.requires.append(dep)
+                    for dep in info['provides']:
+                        pv.provides.append(dep)
+                    self.package_version_api.update(pv)
+                #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
+                repo['packages'][info['name']].append(pv)
+            except Exception, e:
+                log.debug("%s" % (traceback.format_exc()))
+                log.error("error reading package %s" % (pkg_path))
 
     def _read_comps_xml(self, dir, repo):
         """
