@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.17
+Version:        0.0.18
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -64,6 +64,7 @@ cp etc/pulp/* %{buildroot}/etc/pulp
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
 mkdir -p %{buildroot}/var/log/pulp
+ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -81,8 +82,6 @@ rm -rf %{buildroot}
 %post
 chown apache:apache /var/lib/pulp
 chown apache:apache /var/log/pulp
-ln -s /var/lib/pulp /var/www/html/pub
-
 
 %files
 %defattr(-,root,root,-)
@@ -99,7 +98,7 @@ ln -s /var/lib/pulp /var/www/html/pub
 /var/log/pulp
 
 %changelog
-* Fri Jun 04 2010 Mike McCune <mmccune@redhat.com> 0.0.17-1
+* Fri Jun 04 2010 Mike McCune <mmccune@redhat.com> 0.0.18-1
 - rebuild
 * Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.0.10-1
 - large numbers of changes.  see git for list
