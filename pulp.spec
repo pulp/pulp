@@ -95,6 +95,7 @@ rm -rf %{buildroot}
 /srv/juicer/juicer.wsgi
 /var/lib/pulp
 /var/www/html/pub
+/var/log/pulp
 
 %changelog
 * Fri Jun 04 2010 Mike McCune <mmccune@redhat.com> 0.0.11-1
