@@ -21,6 +21,8 @@ This module contains various globals that get set at runtime.
 CONFIG - the raw configurations of juicer and pulp as a configuration parser
 """
 
+import logging
+
 CONFIG = None
 
 
@@ -29,4 +31,17 @@ def bootstrap(config):
     global CONFIG
     CONFIG = config
     from juicer.application import wsgi_application
+
+    format = logging.Formatter('%(asctime)s  %(message)s')
+
+    file_handler = logging.FileHandler('/var/log/pulp/pulp-grinder.log')
+    file_handler.setFormatter(format)
+    logging.getLogger('grinder').addHandler(file_handler)
+    logging.getLogger('grinder').setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler('/var/log/pulp/pulp.log')
+    file_handler.setFormatter(format)
+    logging.getLogger('pulp').addHandler(file_handler)
+    logging.getLogger('pulp').setLevel(logging.DEBUG)
+
     return wsgi_application(config)

@@ -94,6 +94,10 @@ def install(opts):
     if not os.path.exists('/var/www/html/pub'):
         os.symlink('/var/lib/pulp', '/var/www/html/pub')
 
+    # Create the log files so apache can access them
+    if not os.path.exists('/var/log/pulp'):
+        os.mkdir('/var/log/pulp', 0777)
+
     return os.EX_OK
 
 

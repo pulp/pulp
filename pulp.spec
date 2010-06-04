@@ -64,6 +64,9 @@ mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
 ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
+mkdir -p %{buildroot}/var/log/pulp
+chown apache %{buildroot}/var/log/pulp
+
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
 # RHEL 5 packages don't have egg-info files, so remove the requires.txt
