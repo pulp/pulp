@@ -29,6 +29,7 @@ DIRS = (
 LINKS = (
     'etc/juicer.ini',
     'etc/pulp.ini',
+    'etc/pulp/client.ini',
     'etc/httpd/conf.d/juicer.conf',
     'srv/juicer/juicer.wsgi',
 )
