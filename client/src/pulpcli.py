@@ -168,11 +168,11 @@ class ConsumerCore(BaseCore):
         (self.options, self.args) = self.parser.parse_args()
         try:
             cons = self.cconn.consumers()
-            columns = ["id", "description"]
+            columns = ["id", "description", "repoids"]
             data = [ _sub_dict(con, columns) for con in cons]
             print """+-------------------------------------------+\n    List of Consumers \n+-------------------------------------------+"""
             for con in data:
-                print constants.AVAILABLE_CONSUMER_LIST % (con["id"], con["description"])
+                print constants.AVAILABLE_CONSUMER_LIST % (con["id"], con["description"], con["repoids"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

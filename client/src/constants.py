@@ -27,6 +27,7 @@ Packages           \t%-25s
 """
 
 AVAILABLE_CONSUMER_LIST="""
-Id              \t%-25s
-Description     \t%-25s
+Id                 \t%-25s
+Description        \t%-25s
+Subscribed Repos   \t%-25s
 """
