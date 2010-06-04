@@ -24,6 +24,7 @@ Requires: python-setuptools
 Requires: python-webpy
 Requires: grinder
 Requires: httpd
+Requires: mod_wsgi
 Requires: mongo
 Requires: mongo-server
 
@@ -61,6 +62,7 @@ cp etc/juicer.ini %{buildroot}/etc/
 cp etc/pulp.ini %{buildroot}/etc/
 
 mkdir -p %{buildroot}/var/lib/pulp
+chown apache:apache %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
 ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
