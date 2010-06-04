@@ -178,7 +178,7 @@ class RHNSynchronizer(BaseSynchronizer):
         dest_dir = '%s/%s/' % (self.config.get('paths', 'local_storage'), repo['id'])
         s.syncPackages(channel, savePath=dest_dir)
         s.createRepo(dest_dir)
-        s.setParallel(10)  # this should be a configuration option in some capacity
+        s.setParallel(self.config.get('rhn', 'threads'))
 
         return dest_dir
         
