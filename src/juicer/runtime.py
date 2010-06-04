@@ -32,16 +32,24 @@ def bootstrap(config):
     CONFIG = config
     from juicer.application import wsgi_application
 
+    # Logging
+    LEVELS = {'debug':    logging.DEBUG,
+              'info':     logging.INFO,
+              'warning':  logging.WARNING,
+              'error':    logging.ERROR,
+              'critical': logging.CRITICAL}
+    log_level = LEVELS[config.get('logs', 'level')]
+
     format = logging.Formatter('%(asctime)s  %(message)s')
 
-    file_handler = logging.FileHandler('/var/log/pulp/pulp-grinder.log')
+    file_handler = logging.FileHandler(config.get('logs', 'grinder_file'))
     file_handler.setFormatter(format)
     logging.getLogger('grinder').addHandler(file_handler)
-    logging.getLogger('grinder').setLevel(logging.DEBUG)
+    logging.getLogger('grinder').setLevel(log_level)
 
-    file_handler = logging.FileHandler('/var/log/pulp/pulp.log')
+    file_handler = logging.FileHandler(config.get('logs', 'pulp_file'))
     file_handler.setFormatter(format)
     logging.getLogger('pulp').addHandler(file_handler)
-    logging.getLogger('pulp').setLevel(logging.DEBUG)
+    logging.getLogger('pulp').setLevel(log_level)
 
     return wsgi_application(config)
