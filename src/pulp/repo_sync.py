@@ -74,21 +74,21 @@ class BaseSynchronizer(object):
                     hashtype = "sha256"
                     checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
                             filename=os.path.join(dir,fname))
-                    found = self.packageVersionApi.packageversion(name=info['name'], 
+                    found = self.package_version_api.packageversion(name=info['name'], 
                             epoch=info['epoch'], version=info['version'], 
                             release=info['release'], arch=info['arch'],filename=fname, 
                             checksum_type=hashtype, checksum=checksum)
                     if found.count() == 1:
                         pv = found[0]
                     else:
-                        pv = self.packageVersionApi.create(info['name'], info['epoch'],
+                        pv = self.package_version_api.create(info['name'], info['epoch'],
                             info['version'], info['release'], info['arch'], info['description'],
                             "sha256", checksum, fname)
                         for dep in info['requires']:
                             pv.requires.append(dep)
                         for dep in info['provides']:
                             pv.provides.append(dep)
-                        self.packageVersionApi.update(pv)
+                        self.package_version_api.update(pv)
                     #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
                     repo['packages'][info['name']].append(pv)
                     package_count = package_count + 1
