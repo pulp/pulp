@@ -62,7 +62,7 @@ mkdir -p %{buildroot}/etc/pulp
 cp etc/pulp/* %{buildroot}/etc/pulp
 
 mkdir -p %{buildroot}/var/lib/pulp
-chown apache:apache %{buildroot}/var/lib/pulp
+sudo chown apache:apache %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
 ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
