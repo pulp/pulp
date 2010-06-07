@@ -13,20 +13,25 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
+
+# Python
+import logging
 import sys
 import os
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.append(srcdir)
 import time
 import unittest
-import logging
-import os
 
 try:
     import json
 except ImportError:
     import simplejson as json
+
+# Pulp
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.append(srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common'
+sys.path.append(commondir)
 
 import pymongo.json_util 
 
