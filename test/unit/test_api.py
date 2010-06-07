@@ -48,7 +48,7 @@ from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import randomString
 
-from util import loadTestConfig
+from util import load_test_config
 
 class TestApi(unittest.TestCase):
     def clean(self):
@@ -60,7 +60,7 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        config = loadTestConfig()
+        config = load_test_config()
 
         self.rapi = RepoApi(config)
         self.papi = PackageApi(config)

@@ -17,7 +17,7 @@ import os
 
 from pulp.util import loadConfig
 
-def loadTestConfig():
+def load_test_config():
     override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.ini'
     config = loadConfig(override_file)
     return config
