@@ -116,8 +116,12 @@ class RepoConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, repodata):
+    def create(self, id, name, arch, feed):
         method = "/repositories/"
+        repodata = {"id"   : id,
+                    "name" : name,
+                    "arch" : arch,
+                    "feed" : feed,}
         return self.conn.request_post(method, params=repodata)
 
     def repository(self, id):
@@ -148,15 +152,19 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_get(method)
 
-    def upload(self, uploadinfo):
-        method = "/repositories/%s/upload/" % uploadinfo['repo']
+    def upload(self, id, pkginfo, pkgstream):
+        uploadinfo = {'repo' : id,
+                      'pkginfo' : pkginfo,
+                      'pkgstream' : pkgstream}
+        method = "/repositories/%s/upload/" % id
         return self.conn.request_post(method, params=uploadinfo)
 
 class ConsumerConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, consumerdata):
+    def create(self, id, description):
+        consumerdata = {"id"   : id, "description" : description}
         method = "/consumers/"
         return self.conn.request_post(method, params=consumerdata)
 
