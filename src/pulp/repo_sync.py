@@ -168,7 +168,7 @@ class RHNSynchronizer(BaseSynchronizer):
             raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
                                 repo_source.url)
 
-        host = 'https://' + pieces[0]
+        host = 'http://' + pieces[0]
         channel = pieces[1]
 
         log.info('Synchronizing from RHN. Host [%s], Channel [%s]' % (host, channel))
