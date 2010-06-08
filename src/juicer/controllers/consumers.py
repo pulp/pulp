@@ -55,6 +55,14 @@ class Root(JSONController):
         consumer_data = self.input()
         consumer = API.create(consumer_data['id'], consumer_data['description'])
         return self.output(consumer)
+
+    @JSONController.error_handler
+    def DELETE(self):
+        """
+        @return: True on successful deletion of all consumers
+        """
+        API.clean()
+        return self.output(True)
    
  
 class Consumer(JSONController):
