@@ -265,19 +265,23 @@ class TestApi(unittest.TestCase):
         repo_name_b = "test_same_nevra_diff_checksum_repo_B"
         datadir_a = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"
         datadir_b = my_dir + "/data/sameNEVRA_differentChecksums/B/repo/"
+
         # Create & Sync Repos
         repo_a = self.rapi.create(repo_name_a,'some name', 'x86_64', 
-                                'local:file://%s' % datadir_a)
+                                  'local:file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b,'some name', 'x86_64', 
-                                'local:file://%s' % datadir_b)
+                                  'local:file://%s' % datadir_b)
         self.rapi.sync(repo_a.id)
         self.rapi.sync(repo_b.id)
+
         # Look up each repo from API
         found_a = self.rapi.repository(repo_a.id)
         found_b = self.rapi.repository(repo_b.id)
+
         # Verify each repo has the test package synced
         assert (found_a["packages"].has_key(test_pkg_name))
         assert (found_b["packages"].has_key(test_pkg_name))
+
         # Grab the associated package version (there should only be 1)
         # Ensure that the package versions have different md5sums, but all other
         # keys are identical
@@ -287,6 +291,7 @@ class TestApi(unittest.TestCase):
         pkgVerB = found_a["packages"][test_pkg_name]["versions"][0]
         for key in ['epoch', 'version', 'release', 'arch']:
             assert (pkgVerA[key] == pkgVerB[key])
+
         #TODO:
         # Add test to compare checksum when it's implemented in PackageVersion
         # verify the checksums are different

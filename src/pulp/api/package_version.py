@@ -52,3 +52,7 @@ class PackageVersionApi(BaseApi):
         List all packages.  Can be quite large
         """
         return list(self.objectdb.find())
+
+    def packageversion_by_ivera(self, id, version, epoch, release, arch):
+        return self.objectdb.find_one({'packageid' : id, 'version' : version, 'epoch' : epoch,
+                                       'release' : release, 'arch' : arch,})

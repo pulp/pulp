@@ -77,13 +77,28 @@ class BaseSynchronizer(object):
                 p = self.package_api.package(info['name'])
                 if not p:
                     p = self.package_api.create(info['name'], info['description'])
-                pv = self.package_version_api.create(p["packageid"], info['epoch'], 
+
+                print('-----')
+                print(info['name'])
+                print(info['version'])
+                print(info['epoch'])
+                print(info['release'])
+                print(info['arch'])
+
+                pv = self.package_version_api.packageversion_by_ivera(p['packageid'],
+                                                                      info['version'],
+                                                                      info['epoch'],
+                                                                      info['release'],
+                                                                      info['arch'],)
+                if not pv:
+                    pv = self.package_version_api.create(p["packageid"], info['epoch'], 
                                               info['version'], info['release'], info['arch'])
-                for dep in info['requires']:
-                    pv.requires.append(dep)
-                for dep in info['provides']:
-                    pv.provides.append(dep)
-                self.package_version_api.update(pv)
+                    for dep in info['requires']:
+                        pv.requires.append(dep)
+                    for dep in info['provides']:
+                        pv.provides.append(dep)
+                    self.package_version_api.update(pv)
+
                 p["versions"].append(pv)
                 self.package_api.update(p)
                 packages[p["packageid"]] = p
