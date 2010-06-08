@@ -26,6 +26,7 @@ from pulp.api.package import PackageApi
 
 # /packages/
 # GET    -  List of all package names and descriptions
+# DELETE -  Delete all packages
 # 
 # /packages/<name>
 # GET    -  All package versions for that package name
@@ -57,6 +58,10 @@ class Root(JSONController):
         """
         return self.output(API.package_descriptions())
     
+    @JSONController.error_handler
+    def DELETE(self):
+        API.clean()
+        return self.output(None)
 
 class Packages(JSONController):
     

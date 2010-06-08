@@ -206,13 +206,33 @@ class ConsumerConnection(PulpConnection):
 class PackageConnection(PulpConnection):
 
     def clean(self):
-        pass
+        method = "/packages/"
+        return self.conn.request_delete(method)
+
+    def packages(self):
+        method = "/packages/"
+        return self.conn.request_get(method)
+
+    def package(self, id, filter=None):
+        method = "/packages/%s/" % id
+        return self.conn.request_get(method)
+
+    def delete(self, id):
+        method = "/packages/%s/" % id
+        return self.conn.request_delete(method)
 
 
 class PackageVersionConnection(PulpConnection):
 
     def clean(self):
-        pass
+        method = "/packages/"
+        return self.conn.request_delete(method)
+
+    def packageversion_by_ivera(self, name, version, release,
+                                epoch, arch):
+        method = "/packages/%s/%s/%s/%s/%s/" %
+            (name, version, release, epoch, arch)
+        return self.conn.request_get(method)
 
 
 class PackageGroupConnection(PulpConnection):
