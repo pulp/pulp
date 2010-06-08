@@ -39,6 +39,9 @@ class RemoteTestApi(TestApi):
         self.pvapi = PackageVersionApi(**d)
         self.pgapi = PackageGroupApi(**d)
         self.pgcapi = PackageGroupCategoryApi(**d)
+        
+    def test_bulk_create(self):
+        pass
 
     def test_consumerwithpackage(self):
         pass

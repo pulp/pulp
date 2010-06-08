@@ -28,6 +28,7 @@ class Base(dict):
 
 class Repo(Base):
     def __init__(self, id, name, arch, source):
+        self._id = id
         self.source = source
         self.repo_source = RepoSource(source)
         self.id = id
@@ -67,12 +68,14 @@ class Package(Base):
     def __init__(self, packageid, description):
         #TODO: move 'description' to PackageVersion
         #TODO: Consider getting rid of 'package', we might not need it
+        self._id = packageid
         self.packageid = packageid
         self.description = description
         self.versions = []
 
 class PackageVersion(Base):
     def __init__(self, packageid, epoch, version, release, arch):
+        self._id = str((packageid, epoch, version, release, arch))
         self.packageid = packageid
         self.epoch = epoch
         self.version = version
@@ -87,6 +90,7 @@ class PackageVersion(Base):
 class PackageGroup(Base):
     def __init__(self, groupid, name, description, user_visible=False, 
             display_order=1024, default=True, langonly=None):
+        self._id = groupid
         self.groupid = groupid
         self.name = name
         self.description = description
@@ -103,6 +107,7 @@ class PackageGroup(Base):
 
 class PackageGroupCategory(Base):
     def __init__(self, categoryid, name, description, display_order=99):
+        self._id = categoryid
         self.categoryid = categoryid
         self.name = name
         self.description = description
@@ -113,6 +118,7 @@ class PackageGroupCategory(Base):
 
 class Consumer(Base):
     def __init__(self, id, description):
+        self._id = id
         self.id = id
         self.description = description
         self.packageids = []
