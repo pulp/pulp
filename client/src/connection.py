@@ -194,13 +194,11 @@ class ConsumerConnection(PulpConnection):
 
     def bind(self, id, repoid):
         method = "/consumers/%s/bind" % id
-        d = dict(repoid=repoid)
-        return self.conn.request_post(method, params=d)
+        return self.conn.request_post(method, params=repoid)
 
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind" % id
-        d = dict(repoid=repoid)
-        return self.conn.request_post(method, params=d)
+        return self.conn.request_post(method, params=repoid)
 
 
 class PackageConnection(PulpConnection):

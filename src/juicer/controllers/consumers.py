@@ -90,9 +90,7 @@ class Bulk(JSONController):
 
     @JSONController.error_handler
     def POST(self):
-        data = self.input()
-        print >> sys.stderr, str(data)
-        API.bulkcreate(data['consumers'])
+        API.bulkcreate(self.input())
         return self.output(None)
 
 
@@ -102,8 +100,7 @@ class Bind(JSONController):
     """
     @JSONController.error_handler
     def POST(self, id):
-        data = self.input()
-        API.bind(id, data['repoid'])
+        API.bind(id, self.input())
         return self.output(None)
 
 
@@ -113,6 +110,5 @@ class Unbind(JSONController):
     """
     @JSONController.error_handler
     def POST(self, id):
-        data = self.input()
-        API.unbind(id, data['repoid'])
+        API.unbind(id, self.input())
         return self.output(None)
