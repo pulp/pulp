@@ -18,7 +18,7 @@ import os
 import sys
 sys.path.append("../src")
 from pulp.util import chunks
-from pulp.util import getRPMInformation
+from pulp.util import get_rpm_information
 from pulp.util import loadConfig
 
 import time
@@ -30,7 +30,7 @@ class TestUtil(unittest.TestCase):
     def test_getrpminfo(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir = my_dir + "/data"
-        info = getRPMInformation(datadir + '/pulp-test-package-0.2.1-1.fc11.x86_64.rpm')
+        info = get_rpm_information(datadir + '/pulp-test-package-0.2.1-1.fc11.x86_64.rpm')
         assert(info != None)
         assert(info['version'] == '0.2.1')
         assert(info['name'] == 'pulp-test-package')

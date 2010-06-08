@@ -73,7 +73,7 @@ class BaseSynchronizer(object):
         packages = repo['packages']
         if (pkg_path.endswith(".rpm")):
             try:
-                info = pulp.util.getRPMInformation(pkg_path)
+                info = pulp.util.get_rpm_information(pkg_path)
                 p = self.package_api.package(info['name'])
                 if not p:
                     p = self.package_api.create(info['name'], info['description'])
