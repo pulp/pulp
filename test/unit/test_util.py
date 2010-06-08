@@ -16,7 +16,9 @@
 #
 import os
 import sys
-sys.path.append("../src")
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.insert(0, srcdir)
+
 from pulp.util import chunks
 from pulp.util import get_rpm_information
 from pulp.util import load_config

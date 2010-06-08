@@ -28,10 +28,10 @@ except ImportError:
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.append(srcdir)
+sys.path.insert(0, srcdir)
 
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common'
-sys.path.append(commondir)
+sys.path.insert(0, commondir)
 
 import pymongo.json_util 
 
