@@ -78,13 +78,6 @@ class BaseSynchronizer(object):
                 if not p:
                     p = self.package_api.create(info['name'], info['description'])
 
-                print('-----')
-                print(info['name'])
-                print(info['version'])
-                print(info['epoch'])
-                print(info['release'])
-                print(info['arch'])
-
                 pv = self.package_version_api.packageversion_by_ivera(p['packageid'],
                                                                       info['version'],
                                                                       info['epoch'],
