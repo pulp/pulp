@@ -48,7 +48,7 @@ from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import random_string
 
-from util import load_test_config
+from testutil import load_test_config
 
 class TestApi(unittest.TestCase):
     def clean(self):
@@ -108,7 +108,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
         assert(repo != None)
-        assert(repo.repo_source.type == 'yum')
+        assert(repo['repo_source']['type'] == 'yum')
         
         
     def test_clean(self):
@@ -119,10 +119,13 @@ class TestApi(unittest.TestCase):
         assert(len(repos) == 0)
         
     def test_delete(self):
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'yum:http://example.com')
-        repos = self.rapi.delete('some-id')
-        assert(repos == None or len(repos) == 0)
+        id = 'some-id'
+        repo = self.rapi.create(id,'some name', 'i386', 'yum:http://example.com')
+        repo = self.rapi.repository(id)
+        assert(repo is not None)
+        self.rapi.delete(id)
+        repo = self.rapi.repository(id)
+        assert(repo is None)
         
     def test_repositories(self):
         repo = self.rapi.create('some-id','some name', 
@@ -152,7 +155,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
         package = Package('test_repo_packages','test package')
-        repo.packages[package["packageid"]] = package
+        repo['packages'][package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -167,8 +170,8 @@ class TestApi(unittest.TestCase):
                 'test-group-description')
         package = Package('test_repo_packages','test package')
         pkggroup.default_package_names.append(package["packageid"])
-        repo.packagegroups[pkggroup["groupid"]] = pkggroup
-        repo.packages[package["packageid"]] = package
+        repo['packagegroups'][pkggroup["groupid"]] = pkggroup
+        repo['packages'][package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -189,9 +192,9 @@ class TestApi(unittest.TestCase):
         ctg = PackageGroupCategory('test-group-cat-id', 'test-group-cat-name',
                 'test-group-cat-description')
         ctg.packagegroupids = pkggroup.id
-        repo.packagegroupcategories[ctg.categoryid] = ctg
-        repo.packagegroups[pkggroup.groupid] = pkggroup
-        repo.packages[package["packageid"]] = package
+        repo['packagegroupcategories'][ctg.categoryid] = ctg
+        repo['packagegroups'][pkggroup.groupid] = pkggroup
+        repo['packages'][package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -312,11 +315,11 @@ class TestApi(unittest.TestCase):
                                 'local:file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b,'some name', 'x86_64', 
                                 'local:file://%s' % datadir_b)
-        self.rapi.sync(repo_a.id)
-        self.rapi.sync(repo_b.id)
+        self.rapi.sync(repo_a['id'])
+        self.rapi.sync(repo_b['id'])
         # Look up each repo from API
-        found_a = self.rapi.repository(repo_a.id)
-        found_b = self.rapi.repository(repo_b.id)
+        found_a = self.rapi.repository(repo_a['id'])
+        found_b = self.rapi.repository(repo_b['id'])
         # Verify each repo has the test package synced
         assert (found_a["packages"].has_key(test_pkg_name))
         assert (found_b["packages"].has_key(test_pkg_name))
@@ -343,7 +346,7 @@ class TestApi(unittest.TestCase):
             failed = True
         assert(failed)
         
-        self.rapi.sync(repo.id)
+        self.rapi.sync(repo['id'])
         
         # Check that local storage has dir and rpms
         dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)

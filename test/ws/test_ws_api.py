@@ -15,14 +15,57 @@
 
 import sys
 import os
-unitdir = os.path.abspath(os.path.dirname(__file__)) + "/../unit"
-sys.path.append(unitdir)
+
+cdir = os.path.dirname(__file__)
+sys.path.append(os.path.join(cdir, '../../client/src'))
+sys.path.append(os.path.join(cdir, '../unit'))
+
+from connection import RepoConnection as RepoApi
+from connection import ConsumerConnection as ConsumerApi
+from connection import PackageConnection as PackageApi
+from connection import PackageVersionConnection as PackageVersionApi
+from connection import PackageGroupConnection as PackageGroupApi
+from connection import PackageGroupCategoryConnection as PackageGroupCategoryApi
 
 from test_api import TestApi
-from ws_api import *
 
-class WebservicesTest(TestApi):
+class RemoteTestApi(TestApi):
 
     def setUp(self):
-        TestApi.setUp(self)
-        self.rapi = WsRestApi()
+        d = dict(host='localhost', port=8811)
+        self.rapi = RepoApi(**d)
+        self.capi = ConsumerApi(**d)
+        self.papi = PackageApi(**d)
+        self.pvapi = PackageVersionApi(**d)
+        self.pgapi = PackageGroupApi(**d)
+        self.pgcapi = PackageGroupCategoryApi(**d)
+
+    def test_consumerwithpackage(self):
+        pass
+
+    def test_json(self):
+        pass
+
+    def test_sync_two_repos_share_common_package(self):
+        pass
+
+    def test_sync_two_repos_share_common_package(self):
+        pass
+
+    def test_sync(self):
+        pass
+
+    def test_local_sync(self):
+        pass
+
+    def test_package_versions(self):
+        pass
+
+    def test_packages(self):
+        pass
+
+    def test_package_groups(self):
+        pass
+
+    def test_package_group_categories(self):
+        pass
