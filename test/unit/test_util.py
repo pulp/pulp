@@ -19,7 +19,7 @@ import sys
 sys.path.append("../src")
 from pulp.util import chunks
 from pulp.util import get_rpm_information
-from pulp.util import loadConfig
+from pulp.util import load_config
 
 import time
 import unittest
@@ -50,10 +50,10 @@ class TestUtil(unittest.TestCase):
         override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-pulp.ini'
         
         # Test & Verify
-        config = loadConfig(orig_file)
+        config = load_config(orig_file)
         self.assertEqual(config.get('paths', 'local_storage'), '/var/lib/pulp')
 
-        config = loadConfig(override_file, config=config)
+        config = load_config(override_file, config=config)
         self.assertEqual(config.get('paths', 'local_storage'), '/tmp/pulp')
        
         
