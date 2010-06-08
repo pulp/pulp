@@ -60,7 +60,14 @@ class Root(JSONController):
                           repo_data['arch'],
                           repo_data['feed'])
         return self.output(repo)
-    
+
+    @JSONController.error_handler
+    def DELETE(self):
+        """
+        @return: True on successful deletion of all repositories
+        """
+        API.clean()
+        return self.output(True)
     
 class Repository(JSONController):
     
