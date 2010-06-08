@@ -62,8 +62,9 @@ def load_config(filename, config=ConfigParser.SafeConfigParser()):
     config.read(filename)
     return config
 
-def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
-    """ Compute a file's checksum
+def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
+    """
+    Compute a file's checksum.
     """
     if hashtype in ['sha', 'SHA']:
         hashtype = 'sha1'

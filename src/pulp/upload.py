@@ -58,7 +58,7 @@ def check_package_exists(pkg_path, hashtype, hashsum, force=0):
     if not os.path.exists(pkg_path):
         return False
     # File exists, same hash?
-    curr_hash = util.getFileChecksum(hashtype, pkg_path)
+    curr_hash = util.get_file_checksum(hashtype, pkg_path)
     if curr_hash == hashsum and not force:
         return True
     if force:
