@@ -46,7 +46,7 @@ from pulp.model import Package
 from pulp.model import PackageGroup
 from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
-from pulp.util import randomString
+from pulp.util import random_string
 
 from util import load_test_config
 
@@ -226,7 +226,7 @@ class TestApi(unittest.TestCase):
     def test_bulk_create(self):
         consumers = []
         for i in range(1005):
-            consumers.append(Consumer(randomString(), randomString()))
+            consumers.append(Consumer(random_string(), random_string()))
         self.capi.bulkcreate(consumers)
         assert(len(self.capi.consumers()) == 1005)
             
@@ -235,7 +235,7 @@ class TestApi(unittest.TestCase):
         package = Package('test_consumerwithpackage','test package search')
         c.packageids.append(package["packageid"])
         for i in range(10):
-            package = Package(randomString(), randomString())
+            package = Package(random_string(), random_string())
             c.packageids.append(package["packageid"])
         self.capi.update(c)
         

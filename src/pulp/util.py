@@ -45,8 +45,10 @@ def get_rpm_information(rpm_path):
     os.close(file_descriptor_number)
     return rpm_info
 
-def randomString():
-    # The characters to make up the random password
+def random_string():
+    '''
+    Generates a random string suitable for using as a password.
+    '''
     chars = string.ascii_letters + string.digits
     return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     
 
