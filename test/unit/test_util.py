@@ -44,17 +44,17 @@ class TestUtil(unittest.TestCase):
             total = total + len(chunk)
         assert(total == 1003)
 
-    def test_loadConfig(self):
+    def test_load_config(self):
         # Setup
-        origFile = '../../etc/pulp.ini'
-        overrideFile = './data/test-override-pulp.ini'
+        orig_file = os.path.abspath(os.path.dirname(__file__)) + '/../../etc/pulp/pulp.ini'
+        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-pulp.ini'
         
         # Test & Verify
-        config = loadConfig(origFile)
-        self.assertEqual(config.get('paths', 'http_mount'), '/var/www/pulp')
+        config = loadConfig(orig_file)
+        self.assertEqual(config.get('paths', 'local_storage'), '/var/lib/pulp')
 
-        config = loadConfig(overrideFile, config=config)
-        assert(config.get('paths', 'http_mount') == '/tmp/pulp')
+        config = loadConfig(override_file, config=config)
+        self.assertEqual(config.get('paths', 'local_storage'), '/tmp/pulp')
        
         
 if __name__ == '__main__':
