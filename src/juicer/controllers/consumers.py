@@ -75,6 +75,17 @@ class Consumer(JSONController):
         @return: consumer meta data
         """
         return self.output(API.consumer(id))
+    
+    @JSONController.error_handler
+    def POST(self, id):
+        """
+        Update
+        @param id: The consumer id
+        @type id: str
+        """
+        consumer = self.input()
+        consumer = API.update(consumer)
+        return self.output(None)
 
     @JSONController.error_handler
     def DELETE(self, id):

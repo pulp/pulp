@@ -236,10 +236,10 @@ class TestApi(unittest.TestCase):
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         package = Package('test_consumerwithpackage','test package search')
-        c.packageids.append(package["packageid"])
+        c['packageids'].append(package["packageid"])
         for i in range(10):
             package = Package(random_string(), random_string())
-            c.packageids.append(package["packageid"])
+            c['packageids'].append(package["packageid"])
         self.capi.update(c)
         
         found = self.capi.consumerswithpackage('some-invalid-id')

@@ -171,6 +171,10 @@ class ConsumerConnection(PulpConnection):
         consumerdata = {"id"   : id, "description" : description}
         method = "/consumers/"
         return self.conn.request_post(method, params=consumerdata)
+    
+    def update(self, consumer):
+        method = "/consumers/%s/" % consumer['id']
+        return self.conn.request_post(method, params=consumer)
 
     def bulkcreate(self, consumers):
         method = "/consumers/bulk"
