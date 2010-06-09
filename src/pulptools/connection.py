@@ -123,7 +123,7 @@ class RepoConnection(PulpConnection):
         return self.conn.request_post(method, params=repodata)
 
     def repository(self, id):
-        method = "/repositories/%s" % str(id)
+        method = "/repositories/%s/" % str(id)
         return self.conn.request_get(method)
 
     def repositories(self):
@@ -251,11 +251,7 @@ if __name__ == '__main__':
     print "   Repo API Tests                "
     print "+--------------------------------+"
     
-    repodata = {'id' : 'test-f12',
-                'name' : 'f12',
-                'arch' : 'i386',
-                'feed' : 'yum:http://mmccune.fedorapeople.org/pulp/'}
-    repo = rconn.create(repodata)
+    repo = rconn.create('test-f12', 'f12','i386', 'yum:http://mmccune.fedorapeople.org/pulp/')
     print "create Repos", repo['id']
     print "list repos:", rconn.repositories()
     print "Get repo By Id: ",rconn.repository(repo['id'])
@@ -270,8 +266,6 @@ if __name__ == '__main__':
     print "+--------------------------------+"
     print "   Consumer API Tests             "
     print "+--------------------------------+"
-    consumerdata = { 'id' : "1",
-                     'description' : 'prad.rdu.redhat.com', }
     cconn = ConsumerConnection()
-    print "Create Consumer", cconn.create(consumerdata)
+    print "Create Consumer", cconn.create("test", 'prad.rdu.redhat.com')
     print "List Consumers", cconn.consumers()
