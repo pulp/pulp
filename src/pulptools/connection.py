@@ -17,11 +17,9 @@
 # in this software or its documentation.
 #
 
-import sys
 import locale
 import httplib
 import simplejson as json
-import base64
 from M2Crypto import SSL, httpslib
 from logutil import getLogger
 
@@ -130,10 +128,6 @@ class RepoConnection(PulpConnection):
 
     def repositories(self):
         method = "/repositories/"
-        return self.conn.request_get(method)
-
-    def repository(self, repoid):
-        method = "/repositories/%s/" % repoid
         return self.conn.request_get(method)
 
     def update(self, repo):

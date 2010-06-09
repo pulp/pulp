@@ -21,7 +21,7 @@ import sys
 import utils
 from connection import RepoConnection, ConsumerConnection, RestlibException
 import constants
-from optparse import OptionParser, OptionGroup
+from optparse import OptionParser
 from logutil import getLogger
 import base64
 import gettext
