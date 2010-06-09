@@ -54,7 +54,7 @@ class BaseApi(object):
         """
         Delete all the Objects in the database.  WARNING: Destructive
         """
-        self.objectdb.remove()
+        self.objectdb.remove(safe=True)
 
     def update(self, object):
         """

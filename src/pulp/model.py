@@ -28,6 +28,7 @@ class Base(dict):
 
 class Repo(Base):
     def __init__(self, id, name, arch, source):
+        self._id = id
         self.source = source
         self.repo_source = RepoSource(source)
         self.id = id
@@ -66,15 +67,16 @@ class RepoSource(Base):
 class Package(Base):
     def __init__(self, repoid, packageid):
         #TODO: Consider getting rid of 'package', we might not need it
-        self.repoid = repoid
+        self._id = packageid
         self.packageid = packageid
         self.versions = []
 
 class PackageVersion(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
-        #TODO: Can we enforce unique indexes between keys?
+        self._id = str((name, packageid, epoch, version, release, arch))
         self.name = name
+        self.packageid = packageid
         self.epoch = epoch
         self.version = version
         self.release = release
@@ -92,7 +94,7 @@ class PackageGroup(Base):
     """
     def __init__(self, id, name, description, user_visible=False, 
             display_order=1024, default=True, langonly=None):
-        self.id = id
+        self._id = id
         self.name = name
         self.description = description
         self.user_visible = user_visible
@@ -107,8 +109,10 @@ class PackageGroup(Base):
         self.translated_description = {}
 
 class PackageGroupCategory(Base):
+
     def __init__(self, id, name, description, display_order=99):
-        self.id = id
+        self._id = id
+        self.categoryid = categoryid
         self.name = name
         self.description = description
         self.display_order = display_order
@@ -118,6 +122,7 @@ class PackageGroupCategory(Base):
 
 class Consumer(Base):
     def __init__(self, id, description):
+        self._id = id
         self.id = id
         self.description = description
         self.packageids = []

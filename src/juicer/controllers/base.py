@@ -53,6 +53,9 @@ class JSONController(object):
     def input(self):
         return json.loads(web.data())
     
+    def params(self):
+        return web.input()
+
     def output(self, data):
         web.header('Content-Type', 'application/json')
         return json.dumps(data, default=pymongo.json_util.default)

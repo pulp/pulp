@@ -187,6 +187,12 @@ def readRpmHeader(ts, rpmname):
     os.close(fd)
     return h
 
+def generatePkgMetadata(pkgFile):
+    ts = rpm.TransactionSet()
+    yumPkg = yumPackages.YumLocalPackage(ts, filename=pkgFile)
+    primary_xml = yumPkg.xml_dump_primary_metadata()
+    return base64.b64encode(primary_xml)
+
 if __name__=='__main__':
     ts = rpm.TransactionSet()
     hdr = readRpmHeader(ts, "/home/pkilambi/demo/test-f12/zsh-4.3.10-4.fc12.x86_64.rpm")

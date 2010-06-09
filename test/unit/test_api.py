@@ -234,9 +234,11 @@ class TestApi(unittest.TestCase):
         test_pkg_name = "test_consumerwithpackage"
         #TODO: The consumer model/api needs to be updated, it's not setup to handle
         #       tracking a packageversion
+        package = Package(test_pkg_name,'test package search')
+        c['packageids'].append(package["packageid"])
         for i in range(10):
             package = Package(random_string(), random_string())
-            c.packageids.append(package["packageid"])
+            c['packageids'].append(package["packageid"])
         self.capi.update(c)
         
         found = self.capi.consumerswithpackage('some-invalid-id')

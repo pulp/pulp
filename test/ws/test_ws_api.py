@@ -17,7 +17,7 @@ import sys
 import os
 
 cdir = os.path.dirname(__file__)
-sys.path.append(os.path.join(cdir, '../../client/src'))
+sys.path.append(os.path.join(cdir, '../../src/pulp-tools'))
 sys.path.append(os.path.join(cdir, '../unit'))
 
 from connection import RepoConnection as RepoApi
@@ -39,8 +39,8 @@ class RemoteTestApi(TestApi):
         self.pvapi = PackageVersionApi(**d)
         self.pgapi = PackageGroupApi(**d)
         self.pgcapi = PackageGroupCategoryApi(**d)
-
-    def test_consumerwithpackage(self):
+        
+    def test_bulk_create(self):
         pass
 
     def test_json(self):
