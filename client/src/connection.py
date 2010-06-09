@@ -116,8 +116,12 @@ class RepoConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, repodata):
+    def create(self, id, name, arch, feed):
         method = "/repositories/"
+        repodata = {"id"   : id,
+                    "name" : name,
+                    "arch" : arch,
+                    "feed" : feed,}
         return self.conn.request_post(method, params=repodata)
 
     def repository(self, id):
@@ -132,12 +136,16 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/" % repoid
         return self.conn.request_get(method)
 
-    def update(self, repoid, info):
-        method = "/repositories/%s/" % repoid
-        return self.conn.request_post(method, params=info)
+    def update(self, repo):
+        method = "/repositories/%s/" % repo['id']
+        return self.conn.request_post(method, params=repo)
 
     def delete(self, repoid):
         method = "/repositories/%s/" % repoid
+        return self.conn.request_delete(method)
+
+    def clean(self):
+        method = "/repositories/"
         return self.conn.request_delete(method)
 
     def sync(self, repoid):
@@ -148,17 +156,33 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_get(method)
 
-    def upload(self, uploadinfo):
-        method = "/repositories/%s/upload/" % uploadinfo['repo']
+    def upload(self, id, pkginfo, pkgstream):
+        uploadinfo = {'repo' : id,
+                      'pkginfo' : pkginfo,
+                      'pkgstream' : pkgstream}
+        method = "/repositories/%s/upload/" % id
         return self.conn.request_post(method, params=uploadinfo)
 
 class ConsumerConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, consumerdata):
+    def create(self, id, description):
+        consumerdata = {"id"   : id, "description" : description}
         method = "/consumers/"
         return self.conn.request_post(method, params=consumerdata)
+
+    def bulkcreate(self, consumers):
+        method = "/consumers/bulk"
+        return self.conn.request_post(method, params=consumers)
+
+    def delete(self, id):
+        method = "/consumers/%s/" % id
+        return self.conn.request_delete(method)
+
+    def clean(self):
+        method = "/consumers/"
+        return self.conn.request_delete(method)
 
     def consumer(self, id):
         method = "/consumers/%s/" % str(id)
@@ -170,13 +194,53 @@ class ConsumerConnection(PulpConnection):
 
     def bind(self, id, repoid):
         method = "/consumers/%s/bind" % id
-        d = dict(repoid=repoid)
-        return self.conn.request_post(method, params=d)
+        return self.conn.request_post(method, params=repoid)
 
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind" % id
-        d = dict(repoid=repoid)
-        return self.conn.request_post(method, params=d)
+        return self.conn.request_post(method, params=repoid)
+
+
+class PackageConnection(PulpConnection):
+
+    def clean(self):
+        method = "/packages/"
+        return self.conn.request_delete(method)
+
+    def packages(self):
+        method = "/packages/"
+        return self.conn.request_get(method)
+
+    def package(self, id, filter=None):
+        method = "/packages/%s/" % id
+        return self.conn.request_get(method)
+
+    def delete(self, id):
+        method = "/packages/%s/" % id
+        return self.conn.request_delete(method)
+
+
+class PackageVersionConnection(PulpConnection):
+
+    def clean(self):
+        method = "/packages/"
+        return self.conn.request_delete(method)
+
+    def packageversion_by_ivera(self, name, version, release, epoch, arch):
+        method = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
+        return self.conn.request_get(method)
+
+
+class PackageGroupConnection(PulpConnection):
+
+    def clean(self):
+        pass
+
+
+class PackageGroupCategoryConnection(PulpConnection):
+
+    def clean(self):
+        pass
 
 
 if __name__ == '__main__':

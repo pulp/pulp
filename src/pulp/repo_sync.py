@@ -88,7 +88,7 @@ class BaseSynchronizer(object):
         if (pkg_path.endswith(".rpm")):
             try:
                 file_name = os.path.basename(pkg_path)
-                info = pulp.util.getRPMInformation(pkg_path)
+                info = pulp.util.get_rpm_information(pkg_path)
                 if not repo["packages"].has_key(info['name']):
                     repo["packages"][info['name']] = []
                 hashtype = "sha256"
@@ -170,7 +170,7 @@ class RHNSynchronizer(BaseSynchronizer):
             raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
                                 repo_source.url)
 
-        host = 'https://' + pieces[0]
+        host = 'http://' + pieces[0]
         channel = pieces[1]
 
         log.info('Synchronizing from RHN. Host [%s], Channel [%s]' % (host, channel))

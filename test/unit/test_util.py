@@ -16,10 +16,12 @@
 #
 import os
 import sys
-sys.path.append("../src")
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.insert(0, srcdir)
+
 from pulp.util import chunks
-from pulp.util import getRPMInformation
-from pulp.util import loadConfig
+from pulp.util import get_rpm_information
+from pulp.util import load_config
 
 import time
 import unittest
@@ -30,7 +32,7 @@ class TestUtil(unittest.TestCase):
     def test_getrpminfo(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir = my_dir + "/data"
-        info = getRPMInformation(datadir + '/pulp-test-package-0.2.1-1.fc11.x86_64.rpm')
+        info = get_rpm_information(datadir + '/pulp-test-package-0.2.1-1.fc11.x86_64.rpm')
         assert(info != None)
         assert(info['version'] == '0.2.1')
         assert(info['name'] == 'pulp-test-package')
@@ -44,17 +46,17 @@ class TestUtil(unittest.TestCase):
             total = total + len(chunk)
         assert(total == 1003)
 
-    def test_loadConfig(self):
+    def test_load_config(self):
         # Setup
-        origFile = '../../etc/pulp.ini'
-        overrideFile = './data/test-override-pulp.ini'
+        orig_file = os.path.abspath(os.path.dirname(__file__)) + '/../../etc/pulp/pulp.ini'
+        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-pulp.ini'
         
         # Test & Verify
-        config = loadConfig(origFile)
-        self.assertEqual(config.get('paths', 'http_mount'), '/var/www/pulp')
+        config = load_config(orig_file)
+        self.assertEqual(config.get('paths', 'local_storage'), '/var/lib/pulp')
 
-        config = loadConfig(overrideFile, config=config)
-        assert(config.get('paths', 'http_mount') == '/tmp/pulp')
+        config = load_config(override_file, config=config)
+        self.assertEqual(config.get('paths', 'local_storage'), '/tmp/pulp')
        
         
 if __name__ == '__main__':

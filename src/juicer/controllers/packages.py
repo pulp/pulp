@@ -24,9 +24,21 @@ from pulp.api.package import PackageApi
 
 # web.py application ----------------------------------------------------------
 
+# /packages/
+# GET    -  List of all package names and descriptions
+# DELETE -  Delete all packages
+# 
+# /packages/<name>
+# GET    -  All package versions for that package name
+# DELETE -  All package versions for that package name
+# 
+# /packages/<name>/<version>/<release>/<epoch>/<arch>
+# GET    -  Package version details for that package version
+
 URLS = (
     '/$', 'Root',
-    '/([^/]+)/$', 'Package',
+    '/([^/]+)/$', 'Packages',
+    '/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
 )
 
 application = web.application(URLS, globals())
@@ -44,19 +56,14 @@ class Root(JSONController):
         """
         @return: a list of packages
         """
-        return self.output(API.packages())
+        return self.output(API.package_descriptions())
     
     @JSONController.error_handler
-    def POST(self):
-        """
-        @return: package meta data on successful creation of new package
-        """
-        pkg_data = self.input()
-        pkg = API.create(pkg_data['id'], pkg_data['name'])
-        return self.output(pkg)
-    
+    def DELETE(self):
+        API.clean()
+        return self.output(None)
 
-class Package(JSONController):
+class Packages(JSONController):
     
     @JSONController.error_handler
     def GET(self, id):
@@ -65,3 +72,18 @@ class Package(JSONController):
         @return: package meta data corresponding to id
         """
         return self.output(API.package(id))
+
+    @JSONController.error_handler
+    def DELETE(self, id):
+        '''
+        @param id: package id
+        '''
+        API.delete(id)
+        return self.output(None)
+
+class Versions(JSONController):
+
+    @JSONController.error_handler
+    def GET(self, name, version, release, epoch, arch):
+        pv = API.packageversion_by_ivera(name, version, epoch, release, arch)
+        return self.output(pv)

@@ -31,20 +31,24 @@ except:
 
 log = logging.getLogger("pulp.util")
 
-def getRPMInformation(rpmPath):
+def get_rpm_information(rpm_path):
     """
-    Get metadata about an RPM from the path passed in
+    Get metadata about an RPM.
+
+    @param rpm_path: Full path to the RPM to inspect
     """
-    log.debug("rpmPath: %s" % rpmPath)
+    log.debug("rpm_path: %s" % rpm_path)
     ts = rpm.ts();
     ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES) 
-    file_descriptor_number = os.open(rpmPath, os.O_RDONLY)
-    rpmInfo = ts.hdrFromFdno(file_descriptor_number);
+    file_descriptor_number = os.open(rpm_path, os.O_RDONLY)
+    rpm_info = ts.hdrFromFdno(file_descriptor_number);
     os.close(file_descriptor_number)
-    return rpmInfo
+    return rpm_info
 
-def randomString():
-    # The characters to make up the random password
+def random_string():
+    '''
+    Generates a random string suitable for using as a password.
+    '''
     chars = string.ascii_letters + string.digits
     return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     
 
@@ -54,13 +58,13 @@ def chunks(l, n):
     """
     return [l[i:i+n] for i in range(0, len(l), n)]
 
-def loadConfig(filename, config=ConfigParser.SafeConfigParser()):
+def load_config(filename, config=ConfigParser.SafeConfigParser()):
     config.read(filename)
     return config
 
-
-def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
-    """ Compute a file's checksum
+def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
+    """
+    Compute a file's checksum.
     """
     if hashtype in ['sha', 'SHA']:
         hashtype = 'sha1'

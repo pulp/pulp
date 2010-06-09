@@ -135,7 +135,7 @@ dirlist = cmdoptions.dirlist
 clean = cmdoptions.clean
 numconsumers = int(cmdoptions.numconsumers)
 print "Attempting to load configuration from: %s" % (cmdoptions.config)
-config = pulp.util.loadConfig(cmdoptions.config)
+config = pulp.util.load_config(cmdoptions.config)
 
 if (clean):
     ll = LargeLoad(None, None, config)

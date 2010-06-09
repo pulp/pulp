@@ -13,20 +13,25 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
+
+# Python
+import logging
 import sys
 import os
-srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
-sys.path.append(srcdir)
 import time
 import unittest
-import logging
-import os
 
 try:
     import json
 except ImportError:
     import simplejson as json
+
+# Pulp
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.insert(0, srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common'
+sys.path.insert(0, commondir)
 
 import pymongo.json_util 
 
@@ -41,9 +46,9 @@ from pulp.model import Package
 from pulp.model import PackageGroup
 from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
-from pulp.util import randomString
+from pulp.util import random_string
 
-from util import loadTestConfig
+from testutil import load_test_config
 
 class TestApi(unittest.TestCase):
     def clean(self):
@@ -55,7 +60,7 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        config = loadTestConfig()
+        config = load_test_config()
 
         self.rapi = RepoApi(config)
         self.rapi.localStoragePath = "/tmp"
@@ -104,7 +109,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
         assert(repo != None)
-        assert(repo.repo_source.type == 'yum')
+        assert(repo['repo_source']['type'] == 'yum')
         
         
     def test_clean(self):
@@ -115,10 +120,13 @@ class TestApi(unittest.TestCase):
         assert(len(repos) == 0)
         
     def test_delete(self):
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'yum:http://example.com')
-        repos = self.rapi.delete('some-id')
-        assert(repos == None or len(repos) == 0)
+        id = 'some-id'
+        repo = self.rapi.create(id,'some name', 'i386', 'yum:http://example.com')
+        repo = self.rapi.repository(id)
+        assert(repo is not None)
+        self.rapi.delete(id)
+        repo = self.rapi.repository(id)
+        assert(repo is None)
         
     def test_repositories(self):
         repo = self.rapi.create('some-id','some name', 
@@ -147,8 +155,10 @@ class TestApi(unittest.TestCase):
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        package = Package(repo.id, 'test_repo_packages')
-        repo.packages[package["packageid"]] = package
+        pv = self.create_package_version('test_repo_packages')
+        # package = PackageVersion('test_repo_packages','test package')
+        self.rapi.add_package_version(repo["id"], pv)
+        # repo['packages'][package["packageid"]] = package
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -161,8 +171,11 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        pkggroup.default_package_names.append("test-package-id")
-        repo.packagegroups[pkggroup["id"]] = pkggroup
+        package = Package('test_repo_packages','test package')
+        pkggroup.default_package_names.append(package["packageid"])
+        repo['packagegroups'][pkggroup["id"]] = pkggroup
+        repo['packages'][package["packageid"]] = package
+        
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id')
@@ -177,9 +190,9 @@ class TestApi(unittest.TestCase):
         pkggroup.default_package_names.append("test-package-name")
         ctg = PackageGroupCategory('test-group-cat-id', 'test-group-cat-name',
                 'test-group-cat-description')
-        ctg['packagegroupids'] = pkggroup['id']
-        repo['packagegroupcategories'][ctg['id']] = ctg
-        repo['packagegroups'][pkggroup['id']] = pkggroup
+        ctg.packagegroupids = pkggroup.id
+        repo['packagegroupcategories'][ctg.id] = ctg
+        repo['packagegroups'][pkggroup.id] = pkggroup
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id_pkg_group_categories')
@@ -210,7 +223,7 @@ class TestApi(unittest.TestCase):
     def test_bulk_create(self):
         consumers = []
         for i in range(1005):
-            consumers.append(Consumer(randomString(), randomString()))
+            consumers.append(Consumer(random_string(), random_string()))
         self.capi.bulkcreate(consumers)
         assert(len(self.capi.consumers()) == 1005)
             
@@ -222,7 +235,8 @@ class TestApi(unittest.TestCase):
         #TODO: The consumer model/api needs to be updated, it's not setup to handle
         #       tracking a packageversion
         for i in range(10):
-            c.packageids.append(test_pkg_name)
+            package = Package(random_string(), random_string())
+            c.packageids.append(package["packageid"])
         self.capi.update(c)
         
         found = self.capi.consumerswithpackage('some-invalid-id')
@@ -251,9 +265,10 @@ class TestApi(unittest.TestCase):
         repo_name_b = "test_same_nevra_diff_checksum_repo_B"
         datadir_a = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"
         datadir_b = my_dir + "/data/sameNEVRA_differentChecksums/B/repo/"
+
         # Create & Sync Repos
         repo_a = self.rapi.create(repo_name_a,'some name', 'x86_64', 
-                                'local:file://%s' % datadir_a)
+                                  'local:file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b,'some name', 'x86_64', 
                                 'local:file://%s' % datadir_b)
         self.rapi.sync(repo_a["id"])
@@ -261,9 +276,11 @@ class TestApi(unittest.TestCase):
         # Look up each repo from API
         found_a = self.rapi.repository(repo_a.id)
         found_b = self.rapi.repository(repo_b.id)
+
         # Verify each repo has the test package synced
         assert (found_a["packages"].has_key(test_pkg_name))
         assert (found_b["packages"].has_key(test_pkg_name))
+
         # Grab the associated package version (there should only be 1)
         # Ensure that the package versions have different checksums, but all other
         # keys are identical
@@ -273,10 +290,9 @@ class TestApi(unittest.TestCase):
         pkgVerB = found_b["packages"][test_pkg_name][0]
         for key in ['epoch', 'version', 'release', 'arch', 'filename', 'name']:
             assert (pkgVerA[key] == pkgVerB[key])
-        #Ensure checksums are not equal
-        print "pkgVerA = %s" % (pkgVerA)
-        print "pkgVerB = %s" % (pkgVerB)
-        assert (pkgVerA['checksum'] != pkgVerB['checksum'])
+        #TODO:
+        # Add test to compare checksum when it's implemented in PackageVersion
+        # verify the checksums are different
 
     def test_sync_two_repos_share_common_package(self):
         """
@@ -294,11 +310,11 @@ class TestApi(unittest.TestCase):
                                 'local:file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b,'some name', 'x86_64', 
                                 'local:file://%s' % datadir_b)
-        self.rapi.sync(repo_a.id)
-        self.rapi.sync(repo_b.id)
+        self.rapi.sync(repo_a['id'])
+        self.rapi.sync(repo_b['id'])
         # Look up each repo from API
-        found_a = self.rapi.repository(repo_a.id)
-        found_b = self.rapi.repository(repo_b.id)
+        found_a = self.rapi.repository(repo_a['id'])
+        found_b = self.rapi.repository(repo_b['id'])
         # Verify each repo has the test package synced
         assert (found_a["packages"].has_key(test_pkg_name))
         assert (found_b["packages"].has_key(test_pkg_name))
@@ -325,11 +341,10 @@ class TestApi(unittest.TestCase):
             failed = True
         assert(failed)
         
-        self.rapi.sync(repo.id)
+        self.rapi.sync(repo['id'])
         
         # Check that local storage has dir and rpms
         dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)
-        print('+++++++++ ' + self.rapi.localStoragePath)
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo.id)
         print "found = ", found
@@ -353,6 +368,21 @@ class TestApi(unittest.TestCase):
         p = packages.values()[0]
         assert(p != None)
         # versions = p['versions']
+        
+    def create_package_version(self, name): 
+        test_pkg_name = name
+        test_epoch = "1"
+        test_version = "1.2.3"
+        test_release = "1.el5"
+        test_arch = "x86_64"
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        pv = self.pvapi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
+                release=test_release, arch=test_arch, description=test_description, 
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        return pv
         
     def test_package_versions(self):
         repo = self.rapi.create('some-id','some name',

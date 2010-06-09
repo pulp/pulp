@@ -13,11 +13,11 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.util import loadConfig
+import os
 
-def loadTestConfig():
-    overrideFile = './data/test-override-pulp.ini'
+import pulp.util
 
-    config = loadConfig(overrideFile)
-
+def load_test_config():
+    override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.ini'
+    config = pulp.util.load_config(override_file)
     return config

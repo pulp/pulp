@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.18
+Version:        0.0.22
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -98,6 +98,17 @@ chown apache:apache /var/log/pulp
 /var/log/pulp
 
 %changelog
+* Mon Jun 07 2010 Mike McCune <mmccune@redhat.com> 0.0.22-1
+- Renamed method (jason.dobies@redhat.com)
+- Refactored out common test utilities (jason.dobies@redhat.com)
+- Removed temporary logging message (jason.dobies@redhat.com)
+
+* Mon Jun 07 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.20-1
+- reflect the subscribed repos in list (pkilambi@redhat.com)
+- Adding bind and unbind support for the cli (pkilambi@redhat.com)
+- If repo dir doesnt exist create it before storing the file and adding some
+  logging (pkilambi@redhat.com)
+
 * Fri Jun 04 2010 Mike McCune <mmccune@redhat.com> 0.0.18-1
 - rebuild
 * Thu Jun 03 2010 Mike McCune <mmccune@redhat.com> 0.0.10-1

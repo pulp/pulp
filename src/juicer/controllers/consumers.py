@@ -26,6 +26,7 @@ from pulp.api.consumer import ConsumerApi
 URLS = (
     '/$', 'Root',
     '/([^/]+)/$', 'Consumer',
+    '/([^/]+)/bulk', 'Bulk',
     '/([^/]+)/bind', 'Bind',
     '/([^/]+)/unbind', 'Unbind',
 )
@@ -55,6 +56,14 @@ class Root(JSONController):
         consumer_data = self.input()
         consumer = API.create(consumer_data['id'], consumer_data['description'])
         return self.output(consumer)
+
+    @JSONController.error_handler
+    def DELETE(self):
+        """
+        @return: True on successful deletion of all consumers
+        """
+        API.clean()
+        return self.output(None)
    
  
 class Consumer(JSONController):
@@ -74,7 +83,15 @@ class Consumer(JSONController):
         @return: True on successful deletion of consumer
         """
         API.delete(id)
-        return self.output(True)
+        return self.output(None)
+
+
+class Bulk(JSONController):
+
+    @JSONController.error_handler
+    def POST(self):
+        API.bulkcreate(self.input())
+        return self.output(None)
 
 
 class Bind(JSONController):
@@ -83,9 +100,8 @@ class Bind(JSONController):
     """
     @JSONController.error_handler
     def POST(self, id):
-        data = self.input()
-        API.bind(id, data['repoid'])
-        return self.output(True)
+        API.bind(id, self.input())
+        return self.output(None)
 
 
 class Unbind(JSONController):
@@ -94,6 +110,5 @@ class Unbind(JSONController):
     """
     @JSONController.error_handler
     def POST(self, id):
-        data = self.input()
-        API.unbind(id, data['repoid'])
-        return self.output(True)
+        API.unbind(id, self.input())
+        return self.output(None)

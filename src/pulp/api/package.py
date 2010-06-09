@@ -53,3 +53,9 @@ class PackageApi(BaseApi):
         """
         return list(self.objectdb.find())
         
+    def package_descriptions(self):
+        '''
+        List of all package names and descriptions (will not contain package
+        version information).
+        '''
+        return list(self.objectdb.find({}, {'packageid' : True, 'description' : True,}))

@@ -151,10 +151,8 @@ class ConsumerCore(BaseCore):
             sys.exit(0)
         if not self.options.description:
             self.options.description = self.options.id
-        consumerinfo = {"id"   : self.options.id,
-                    "description" : self.options.description,}
         try:
-            consumer = self.cconn.create(consumerinfo)
+            consumer = self.cconn.create(self.options.id, self.options.description)
             utils.writeToFile(os.path.join(CONSUMERID, "consumer"), consumer['id'])
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
@@ -329,13 +327,11 @@ class RepoCore(BaseCore):
         if not self.options.feed:
             print("repo feed required. Try --help")
             sys.exit(0)
-        repoinfo = {"id"   : self.options.label,
-                     "name" : self.options.name,
-                     "arch" : self.options.arch,
-                     "feed" : self.options.feed,}
         try:
-            repo = self.pconn.create(repoinfo)
-            print _(" Successfully created Repo [ %s ] with feed [ %s ]" % (repo['id'], repo["source"]))
+            repo = self.pconn.create(self.options.label, self.options.name, \
+                                     self.options.arch, self.options.feed)
+            print _(" Successfully created Repo [ %s ] with feed [ %s ]" % \
+                                     (repo['id'], repo["source"]))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -422,10 +418,9 @@ class RepoCore(BaseCore):
             if not pkginfo.has_key('nvrea'):
                 if debug: print("Package %s is Not an RPM Skipping" % frpm)
                 continue
-            uploadinfo['pkginfo']   = pkginfo
-            uploadinfo['pkgstream'] = base64.b64encode(open(frpm).read())
+            pkgstream = base64.b64encode(open(frpm).read())
             try:
-                status = self.pconn.upload(uploadinfo)
+                status = self.pconn.upload(self.options.label, pkginfo, pkgstream)
                 if status:
                     print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.label))
                 else:
