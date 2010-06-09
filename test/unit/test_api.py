@@ -63,7 +63,6 @@ class TestApi(unittest.TestCase):
         config = load_test_config()
 
         self.rapi = RepoApi(config)
-        self.rapi.localStoragePath = "/tmp"
         #self.papi = PackageApi(config)
         self.capi = ConsumerApi(config)
         self.pvapi = PackageVersionApi(config)
@@ -346,7 +345,10 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo['id'])
         
         # Check that local storage has dir and rpms
-        dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)
+        
+        localpath = self.rapi.localStoragePath + '/' + repo.id
+        print 'Local path: %s' % localpath
+        dirList = os.listdir(localpath)
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo.id)
         print "found = ", found

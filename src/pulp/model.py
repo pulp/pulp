@@ -29,6 +29,7 @@ class Base(dict):
 class Repo(Base):
     def __init__(self, id, name, arch, source):
         self._id = id
+        self.id = id
         self.source = source
         self.repo_source = RepoSource(source)
         self.id = id
@@ -74,9 +75,8 @@ class Package(Base):
 class PackageVersion(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
-        self._id = str((name, packageid, epoch, version, release, arch))
+        self._id = str((name, epoch, version, release, arch))
         self.name = name
-        self.packageid = packageid
         self.epoch = epoch
         self.version = version
         self.release = release
@@ -95,6 +95,7 @@ class PackageGroup(Base):
     def __init__(self, id, name, description, user_visible=False, 
             display_order=1024, default=True, langonly=None):
         self._id = id
+        self.id = id
         self.name = name
         self.description = description
         self.user_visible = user_visible
@@ -112,7 +113,7 @@ class PackageGroupCategory(Base):
 
     def __init__(self, id, name, description, display_order=99):
         self._id = id
-        self.categoryid = categoryid
+        self.id = id
         self.name = name
         self.description = description
         self.display_order = display_order
