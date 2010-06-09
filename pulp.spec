@@ -102,7 +102,9 @@ chown apache:apache /var/log/pulp
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/*
+%{python_sitelib}/pulp/*
+%{python_sitelib}/pulp-*
+%{python_sitelib}/juicer/*
 %config(noreplace) /etc/pulp/juicer.ini
 %config(noreplace) /etc/pulp/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
