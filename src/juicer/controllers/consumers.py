@@ -14,7 +14,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-
 import web
 
 from juicer.controllers.base import JSONController
@@ -25,10 +24,10 @@ from pulp.api.consumer import ConsumerApi
 
 URLS = (
     '/$', 'Root',
+    '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
-    '/([^/]+)/bulk', 'Bulk',
-    '/([^/]+)/bind', 'Bind',
-    '/([^/]+)/unbind', 'Unbind',
+    '/([^/]+)/bind/$', 'Bind',
+    '/([^/]+)/unbind/$', 'Unbind',
 )
 
 application = web.application(URLS, globals())
@@ -46,6 +45,14 @@ class Root(JSONController):
         """
         @return: a list of all consumers
         """
+        params = self.params()
+        if len(params) == 1:
+            pkgid = params.get('pkgid')
+            if pkgid:
+                result = API.consumerswithpackage(pkgid)
+                return self.output(result)
+            else:
+                return self.output([])
         return self.output(API.consumers())
      
     @JSONController.error_handler
@@ -64,7 +71,7 @@ class Root(JSONController):
         """
         API.clean()
         return self.output(None)
-   
+
  
 class Consumer(JSONController):
 

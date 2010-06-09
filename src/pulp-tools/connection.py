@@ -177,7 +177,7 @@ class ConsumerConnection(PulpConnection):
         return self.conn.request_post(method, params=consumer)
 
     def bulkcreate(self, consumers):
-        method = "/consumers/bulk"
+        method = "/consumers/bulk/"
         return self.conn.request_post(method, params=consumers)
 
     def delete(self, id):
@@ -196,12 +196,16 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/"
         return self.conn.request_get(method)
 
+    def consumerswithpackage(self, pkgid):
+        method = '/consumers/?pkgid=%s' % pkgid
+        return self.conn.request_get(method)
+
     def bind(self, id, repoid):
-        method = "/consumers/%s/bind" % id
+        method = "/consumers/%s/bind/" % id
         return self.conn.request_post(method, params=repoid)
 
     def unbind(self, id, repoid):
-        method = "/consumers/%s/unbind" % id
+        method = "/consumers/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
 
 

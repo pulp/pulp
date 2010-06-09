@@ -43,9 +43,6 @@ class RemoteTestApi(TestApi):
     def test_bulk_create(self):
         pass
 
-    def test_consumerwithpackage(self):
-        pass
-
     def test_json(self):
         pass
 
