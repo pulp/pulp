@@ -416,7 +416,7 @@ class RepoCore(BaseCore):
                 print('Error: %s' % e)
                 continue
             if not pkginfo.has_key('nvrea'):
-                if debug: print("Package %s is Not an RPM Skipping" % frpm)
+                print("Package %s is Not an RPM Skipping" % frpm)
                 continue
             pkgstream = base64.b64encode(open(frpm).read())
             try:
@@ -424,7 +424,7 @@ class RepoCore(BaseCore):
                 if status:
                     print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.label))
                 else:
-                    print _(" Faied to Upload %s to Repo [ %s ] " % self.options.label)
+                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.label)
             except RestlibException, re:
                 log.error("Error: %s" % re)
                 raise #continue
