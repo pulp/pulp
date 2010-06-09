@@ -36,6 +36,21 @@ Requires: python-hashlib
 %description
 Pulp provides replication, access, and accounting for software repositories.
 
+%package tools
+Summary:        Client side tools for managing content on pulp server
+Group:          Development/Languages
+BuildRequires:  rpm-python
+Requires:	m2crypto
+
+%if 0%{?rhel} > 5
+Requires: python-hashlib
+%endif
+
+%description    tools
+A collection of tools to interact and perform content specific operations such as repo management, 
+package profile updates etc.
+ 
+
 %prep
 %setup -q
 
@@ -97,7 +112,19 @@ chown apache:apache /var/log/pulp
 /var/www/html/pub
 /var/log/pulp
 
+%files tools
+%defattr(-,root,root,-)
+%doc
+# For noarch packages: sitelib
+%{python_sitelib}/pulptools/
+%{_bindir}/pulp
+%config(noreplace) /etc/pulp/client.ini
+
+
 %changelog
+* Wed Jun 09 2010 Pradeep Kilambi <pkilambi@redhat.com>
+- Adding pulp-tools as a sub rpm to pulp
+
 * Mon Jun 07 2010 Mike McCune <mmccune@redhat.com> 0.0.22-1
 - Renamed method (jason.dobies@redhat.com)
 - Refactored out common test utilities (jason.dobies@redhat.com)
