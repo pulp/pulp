@@ -383,17 +383,18 @@ class RepoCore(BaseCore):
             print("repo label required. Try --help")
             sys.exit(0)
         try:
-            status = self.pconn.delete(id=self.options.label)
-            if status:
-                print _(" Successful deleted Repo [ %s ] " % self.options.label)
-            else:
-                print _(" Deleted operation failed on Repo [ %s ] " % self.options.label)
+            self.pconn.delete(id=self.options.label)
+            print _(" Successful deleted Repo [ %s ] " % self.options.label)
         except RestlibException, re:
+            print _(" Deleted operation failed on Repo [ %s ] " % \
+                  self.options.label)
             log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
+            sys.exit(-1)
         except Exception, e:
+            print _(" Deleted operation failed on Repo [ %s ]. " % \
+                  self.options.label)
             log.error("Error: %s" % e)
-            raise
+            sys.exit(-1)
 
     def _upload(self):
         (self.options, files) = self.parser.parse_args()
