@@ -92,3 +92,11 @@ class PackageVersionApi(BaseApi):
         """
         return self.objectdb.find_one({'packageid' : package_id, 'version' : version,
                                        'epoch' : epoch, 'release' : release, 'arch' : arch,})
+                                       
+    def package_descriptions(self):
+        '''
+        List of all package names and descriptions (will not contain package
+        version information).
+        '''
+        return list(self.objectdb.find({}, {'packageid' : True, 'description' : True,}))
+                                       

@@ -64,18 +64,11 @@ class RepoSource(Base):
         self.type = parts[0]
         self.url = source.replace((self.type + ":"), "")
 
-
 class Package(Base):
-    def __init__(self, repoid, packageid):
-        #TODO: Consider getting rid of 'package', we might not need it
-        self._id = packageid
-        self.packageid = packageid
-        self.versions = []
-
-class PackageVersion(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
         self._id = str((name, epoch, version, release, arch))
+        self.id = self._id
         self.name = name
         self.epoch = epoch
         self.version = version
@@ -83,7 +76,7 @@ class PackageVersion(Base):
         self.arch = arch
         self.description = description
         self.filename = filename
-        self.checksum = {checksum_type:checksum}
+        self.checksum = {checksum_type: checksum}
         # Add gpg keys
         self.requires = []
         self.provides = []

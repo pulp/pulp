@@ -25,13 +25,15 @@ import fileinput
 import random
 
 
-sys.path.append("../src")
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
+sys.path.insert(0, srcdir)
+
 from pulp.api.repo import RepoApi
 from pulp.api.package import PackageApi
 from pulp.api.consumer import ConsumerApi
 from pulp.model import Package
 from pulp.model import Consumer
-from pulp.util import randomString
+from pulp.util import random_string
 import pulp.util
 
 TEST_PACKAGE_ID = 'random-package'
@@ -117,10 +119,6 @@ class LargeLoad(unittest.TestCase):
         cwithp = ll.capi.consumerswithpackage(TEST_PACKAGE_ID)
         print "Found [%s] consumers with packageid: [%s]" % (len(cwithp), TEST_PACKAGE_ID)
 
-
-print "This has not been updated with the branch modelchanges yet"
-print "More work is needed on the consumer side"
-sys.exit(1)
 
 parser = optparse.OptionParser()
 parser.add_option('--dirlist', dest='dirlist', 

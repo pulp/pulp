@@ -29,8 +29,7 @@ from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
 from pulp import repo_sync, upload
 from pulp.api.base import BaseApi
-#from pulp.api.package import PackageApi
-from pulp.api.package_version import PackageVersionApi
+from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
@@ -47,7 +46,7 @@ class RepoApi(BaseApi):
         BaseApi.__init__(self, config)
 
         #self.packageApi = PackageApi(config)
-        self.packageVersionApi = PackageVersionApi(config)
+        self.packageApi = PackageApi(config)
         self.packageGroupApi = PackageGroupApi(config)
         self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
 
@@ -75,64 +74,46 @@ class RepoApi(BaseApi):
         """
         return self.objectdb.find_one({'id': id})
         
-    def packages(self, id):
+    def packages(self, id, name=None):
         """
-        Return dictionary of PackageVersion objects in this Repo, key is package name
+        Return list of Package objects in this Repo
         """
         repo = self.repository(id)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
-        return repo['packages']
+        if (name == None):
+            return repo['packages']
+        else:
+            matches = []
+            packages = repo['packages']
+            for packageid in packages.keys():
+                if (packageid.index(name) >= 0):
+                    matches.append(packages[packageid])
+            return matches
     
-    def packageversions(self, repoid, name):
+    def add_package(self, repoid, p):
         """
-        Return list of PackageVersions objects for this repo and package name
-        """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packages"].has_key(name):
-            return None
-        return repo["packages"][name]
-
-    def add_package_version(self, repoid, pv):
-        """
-        Adds the passed in package version to this repo
+        Adds the passed in package to this repo
         """
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packages"].has_key(pv['name']):
-            repo["packages"][pv['name']] = []
-        # TODO:  We might want to restrict PackageVersions we add to only
+        # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
-        for item in repo["packages"][pv['name']]:
-            if item['_id'] == pv['_id']:
-                # No need to update repo, this PackageVersion is already under this repo
-                return
+        packages = repo['packages']
+        if (packages.has_key(p['id'])):
+            # No need to update repo, this Package is already under this repo
+            return
         # Note:  A DBRef() for the objects '_id' is what's added in mongo
-        #        This is a reference to the PackageVersion collection's object
-        repo["packages"][pv['name']].append(pv)
+        #        This is a reference to the Package collection's object
+        packages[p['id']] = p
         self.update(repo)
 
-    def remove_package_version(self, repoid, pv):
+    def remove_package(self, repoid, p):
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packages"].has_key(pv['name']):
-            raise PulpException("No Package with name: %s found in repo: %s" %
-                    (pv['name'], repoid))
-        for item in repo["packages"][pv['name']]:
-            if item['name'] == pv['name'] and \
-                item['version'] == pv['version'] and \
-                item['epoch'] == pv['epoch'] and \
-                item['release'] == pv['release'] and \
-                item['arch'] == pv['arch']:
-                    repo['packages'][pv['name']].remove(item)
-                    if len(repo['packages'][pv['name']]) == 0:
-                        # list is empty now, so cleanup and remove 
-                        # it from the packages
-                        del repo['packages'][pv['name']]
+        del repo["packages"][p['id']]
         self.update(repo)
 
     def remove_packagegroup(self, repoid, groupid):

@@ -23,7 +23,6 @@ sys.path.append(os.path.join(cdir, '../unit'))
 from connection import RepoConnection as RepoApi
 from connection import ConsumerConnection as ConsumerApi
 from connection import PackageConnection as PackageApi
-from connection import PackageVersionConnection as PackageVersionApi
 from connection import PackageGroupConnection as PackageGroupApi
 from connection import PackageGroupCategoryConnection as PackageGroupCategoryApi
 
@@ -36,7 +35,6 @@ class RemoteTestApi(TestApi):
         self.rapi = RepoApi(**d)
         self.capi = ConsumerApi(**d)
         self.papi = PackageApi(**d)
-        self.pvapi = PackageVersionApi(**d)
         self.pgapi = PackageGroupApi(**d)
         self.pgcapi = PackageGroupCategoryApi(**d)
         
@@ -56,9 +54,6 @@ class RemoteTestApi(TestApi):
         pass
 
     def test_local_sync(self):
-        pass
-
-    def test_package_versions(self):
         pass
 
     def test_packages(self):

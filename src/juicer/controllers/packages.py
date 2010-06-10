@@ -29,8 +29,8 @@ from pulp.api.package import PackageApi
 # DELETE -  Delete all packages
 # 
 # /packages/<name>
-# GET    -  All package versions for that package name
-# DELETE -  All package versions for that package name
+# GET    -  All package for that package name
+# DELETE -  All package for that package name
 # 
 # /packages/<name>/<version>/<release>/<epoch>/<arch>
 # GET    -  Package version details for that package version
@@ -85,5 +85,5 @@ class Versions(JSONController):
 
     @JSONController.error_handler
     def GET(self, name, version, release, epoch, arch):
-        pv = API.packageversion_by_ivera(name, version, epoch, release, arch)
+        pv = API.package_by_ivera(name, version, epoch, release, arch)
         return self.output(pv)

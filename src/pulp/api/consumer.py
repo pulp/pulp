@@ -12,14 +12,16 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-
-import pymongo
 import logging
-# Pulp
+import pymongo
+import re
+
 from pulp import model
 from pulp.api.base import BaseApi
-from pulp.util import chunks
 from pulp.pexceptions import PulpException
+from pulp.util import chunks
+
+# Pulp
 
 log = logging.getLogger('pulp.api.consumer')
 
@@ -70,11 +72,13 @@ class ConsumerApi(BaseApi):
         """
         return self.objectdb.find_one({'id': id})
     
-    def consumerswithpackage(self, packageid):
+    def consumers_with_package_name(self, name):
         """
-        List consumers using passed in packageid
+        List consumers using passed in name
         """
-        return list(self.objectdb.find({"packageids":  packageid}))
+        
+        regex = re.compile(".*%s" % name)
+        return list(self.objectdb.find({"packageids": regex}))
 
     def bind(self, id, repoid):
         """

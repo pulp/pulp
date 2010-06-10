@@ -5,7 +5,7 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 from optparse import OptionParser
 
 import pulp.util
-from pulp.api.package_version import PackageVersionApi
+from pulp.api.package_version import PackageApi
 
 if __name__ == "__main__":
     
@@ -16,12 +16,12 @@ if __name__ == "__main__":
 
 
     config = pulp.util.loadConfig("../../etc/pulp.ini")
-    pvApi = PackageVersionApi(config)
+    pApi = PackageApi(config)
 
-    found = pvApi.packageversion(filename=filename, checksum_type=checksum_type, checksum=checksum)
+    found = pApi.package(filename=filename, checksum_type=checksum_type, checksum=checksum)
     print "Lookup for %s, %s, %s yielded %s" % (filename, checksum_type, checksum, found)
 
-    db = pvApi.objectdb
+    db = pApi.objectdb
     print "db = %s" % (db)
     found = db.find({"filename":filename})
     print "Search for all PV's with %s: %s" % (filename, found)
@@ -30,6 +30,6 @@ if __name__ == "__main__":
     found = db.find()
     print "%s PV objects found with an open search" % (found.count())
 
-    found = pvApi.packageversion()
+    found = pApi.package()
     print "search with empty searchDict returned %s results" % (found.count())
 

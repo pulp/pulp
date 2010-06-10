@@ -39,7 +39,6 @@ from pulp.api.consumer import ConsumerApi
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
-from pulp.api.package_version import PackageVersionApi
 from pulp.api.repo import RepoApi
 
 from pulp.model import Package
@@ -53,9 +52,8 @@ from testutil import load_test_config
 class TestApi(unittest.TestCase):
     def clean(self):
         self.rapi.clean()
-        #self.papi.clean()
+        self.papi.clean()
         self.capi.clean()
-        self.pvapi.clean()
         self.pgapi.clean()
         self.pgcapi.clean()
         
@@ -63,15 +61,15 @@ class TestApi(unittest.TestCase):
         config = load_test_config()
 
         self.rapi = RepoApi(config)
-        #self.papi = PackageApi(config)
+        self.papi = PackageApi(config)
         self.capi = ConsumerApi(config)
-        self.pvapi = PackageVersionApi(config)
         self.pgapi = PackageGroupApi(config)
         self.pgcapi = PackageGroupCategoryApi(config)
         self.clean()
         
     def tearDown(self):
-        self.clean()
+        # self.clean()
+        pass
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
@@ -154,26 +152,26 @@ class TestApi(unittest.TestCase):
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        pv = self.create_package_version('test_repo_packages')
-        # package = PackageVersion('test_repo_packages','test package')
-        self.rapi.add_package_version(repo["id"], pv)
-        # repo['packages'][package["packageid"]] = package
-        self.rapi.update(repo)
+        p = self.create_package('test_repo_packages')
+        self.rapi.add_package(repo["id"], p)
+        for i in range(10):
+            package = self.create_package(random_string())
+            self.rapi.add_package(repo["id"], package)
         
         found = self.rapi.repository('some-id')
         packages = found['packages']
         assert(packages != None)
-        assert(packages['test_repo_packages'] != None)
+        assert(packages[p['id']] != None)
     
     def test_repo_package_groups(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
         pkggroup = PackageGroup('test-group-id', 'test-group-name', 
                 'test-group-description')
-        package = Package('test_repo_packages','test package')
-        pkggroup.default_package_names.append(package["packageid"])
+        package = self.create_package('test_repo_packages')
+        pkggroup.default_package_names.append(package["id"])
         repo['packagegroups'][pkggroup["id"]] = pkggroup
-        repo['packages'][package["packageid"]] = package
+        repo['packages'][package["id"]] = package
         
         self.rapi.update(repo)
         
@@ -232,18 +230,18 @@ class TestApi(unittest.TestCase):
                 'i386', 'yum:http://example.com')
         test_pkg_name = "test_consumerwithpackage"
         #TODO: The consumer model/api needs to be updated, it's not setup to handle
-        #       tracking a packageversion
-        package = Package(test_pkg_name,'test package search')
-        c['packageids'].append(package["packageid"])
+        #       tracking a package
+        package = self.create_package(test_pkg_name)
+        c['packageids'].append(package["id"])
         for i in range(10):
-            package = Package(random_string(), random_string())
-            c['packageids'].append(package["packageid"])
+            package = self.create_package(random_string())
+            c['packageids'].append(package["id"])
         self.capi.update(c)
         
-        found = self.capi.consumerswithpackage('some-invalid-id')
+        found = self.capi.consumers_with_package_name('some-invalid-id')
         assert(len(found) == 0)
 
-        found = self.capi.consumerswithpackage('test_consumerwithpackage')
+        found = self.capi.consumers_with_package_name('test_consumerwithpackage')
         assert(len(found) > 0)
         
     def test_json(self):
@@ -292,7 +290,7 @@ class TestApi(unittest.TestCase):
         for key in ['epoch', 'version', 'release', 'arch', 'filename', 'name']:
             assert (pkgVerA[key] == pkgVerB[key])
         #TODO:
-        # Add test to compare checksum when it's implemented in PackageVersion
+        # Add test to compare checksum when it's implemented in Package
         # verify the checksums are different
 
     def test_sync_two_repos_share_common_package(self):
@@ -327,7 +325,7 @@ class TestApi(unittest.TestCase):
         assert (len(found_b["packages"][test_pkg_name]) == 1)
         pkgVerA = found_a["packages"][test_pkg_name][0]
         pkgVerB = found_b["packages"][test_pkg_name][0]
-        # Ensure that the 2 PackageVersions instances actually point 
+        # Ensure that the 2 Package instances actually point 
         # to the same single instance
         assert(repo_a['_id'] != repo_b['_id'])
         assert(pkgVerA['_id'] == pkgVerB['_id'])
@@ -373,7 +371,7 @@ class TestApi(unittest.TestCase):
         assert(p != None)
         # versions = p['versions']
         
-    def create_package_version(self, name): 
+    def create_package(self, name): 
         test_pkg_name = name
         test_epoch = "1"
         test_version = "1.2.3"
@@ -383,10 +381,10 @@ class TestApi(unittest.TestCase):
         test_checksum_type = "sha256"
         test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
         test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
-        pv = self.pvapi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        return pv
+        return p
         
     def test_package_versions(self):
         repo = self.rapi.create('some-id','some name',
@@ -401,16 +399,17 @@ class TestApi(unittest.TestCase):
         test_checksum_type = "sha256"
         test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
         test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
-        pv = self.pvapi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         # Add this package version to the repo
-        self.rapi.add_package_version(repo["id"], pv)
+        self.rapi.add_package(repo["id"], p)
         # Lookup repo and confirm new package version was added
         repo = self.rapi.repository(repo["id"])
-        self.assertTrue(repo["packages"].has_key(test_pkg_name))
-        self.assertTrue(len(repo["packages"][test_pkg_name]) == 1)
-        saved_pkg = repo["packages"][test_pkg_name][0]
+        self.assertTrue(repo["packages"].has_key(p['id']))
+        packageid = p['id']
+        self.assertTrue(len(repo["packages"][p['id']]) != None)
+        saved_pkg = repo["packages"][packageid]
         self.assertTrue(saved_pkg['name'] == test_pkg_name)
         self.assertTrue(saved_pkg['epoch'] == test_epoch)
         self.assertTrue(saved_pkg['version'] == test_version)
@@ -422,27 +421,27 @@ class TestApi(unittest.TestCase):
         self.assertTrue(saved_pkg['filename'] == test_filename)
         # Verify we can find this package version through repo api calls
         pkgs = self.rapi.packages(repo['id'])
-        self.assertTrue(pkgs.has_key(test_pkg_name))
-        self.assertTrue(len(pkgs[test_pkg_name]) == 1)
-        self.assertTrue(pkgs[test_pkg_name][0]['filename'] == test_filename)
-        pkgs = self.rapi.packageversions(repo['id'], test_pkg_name)
+        self.assertTrue(pkgs.has_key(packageid))
+        self.assertTrue(pkgs[packageid] != None)
+        self.assertTrue(pkgs[packageid]['filename'] == test_filename)
+        pkgs = self.rapi.packages(repo['id'], test_pkg_name)
         self.assertTrue(len(pkgs) == 1)
         self.assertTrue(pkgs[0]['filename'] == test_filename)
 
         # Remove package version from repo
-        self.rapi.remove_package_version(repo['id'], pv)
+        self.rapi.remove_package(repo['id'], p)
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(not repo["packages"].has_key(test_pkg_name))
         # Verify package version from repo
-        found = self.pvapi.packageversion(name=test_pkg_name, epoch=test_epoch, 
+        found = self.papi.package(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)
         self.assertTrue(found.count() == 1)
-        # Remove from PackageVersion collection
-        self.pvapi.delete(found[0])
+        # Remove from Package collection
+        self.papi.delete(found[0])
         # Verify it's deleted
-        found = self.pvapi.packageversion(name=test_pkg_name, epoch=test_epoch, 
+        found = self.papi.package(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)

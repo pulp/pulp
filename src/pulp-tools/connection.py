@@ -227,17 +227,9 @@ class PackageConnection(PulpConnection):
         method = "/packages/%s/" % id
         return self.conn.request_delete(method)
 
-
-class PackageVersionConnection(PulpConnection):
-
-    def clean(self):
-        method = "/packages/"
-        return self.conn.request_delete(method)
-
-    def packageversion_by_ivera(self, name, version, release, epoch, arch):
+    def package_by_ivera(self, name, version, release, epoch, arch):
         method = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
         return self.conn.request_get(method)
-
 
 class PackageGroupConnection(PulpConnection):
 

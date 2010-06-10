@@ -28,7 +28,6 @@ from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp import model
 from pulp.api.package import PackageApi
-from pulp.api.package_version import PackageVersionApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
@@ -56,7 +55,6 @@ class BaseSynchronizer(object):
     def __init__(self, config):
         self.config = config
         self.package_api = PackageApi(config)
-        self.package_version_api = PackageVersionApi(config)
         self.package_group_category_api = PackageGroupCategoryApi(config)
         self.package_group_api = PackageGroupApi(config)
 
@@ -94,21 +92,21 @@ class BaseSynchronizer(object):
                 hashtype = "sha256"
                 checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
                         filename=pkg_path)
-                found = self.package_version_api.packageversion(name=info['name'], 
+                found = self.package_api.package(name=info['name'], 
                         epoch=info['epoch'], version=info['version'], 
                         release=info['release'], arch=info['arch'],filename=file_name, 
                         checksum_type=hashtype, checksum=checksum)
                 if found.count() == 1:
                     pv = found[0]
                 else:
-                    pv = self.package_version_api.create(info['name'], info['epoch'],
+                    pv = self.package_api.create(info['name'], info['epoch'],
                         info['version'], info['release'], info['arch'], info['description'],
                         "sha256", checksum, file_name)
                     for dep in info['requires']:
                         pv.requires.append(dep)
                     for dep in info['provides']:
                         pv.provides.append(dep)
-                    self.package_version_api.update(pv)
+                    self.package_api.update(pv)
                 #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
                 repo['packages'][info['name']].append(pv)
             except Exception, e:

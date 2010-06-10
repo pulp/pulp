@@ -23,7 +23,6 @@ import unittest
 # Pulp
 import pulp.api.repo
 import pulp.api.package
-import pulp.api.package_version
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + '/../common'
 sys.path.append(srcdir)
@@ -38,8 +37,6 @@ class TestRhnSync(unittest.TestCase):
     def clean(self):
         self.rapi.clean()
         self.papi.clean()
-        self.pvapi.clean()
-
         dest_dir = '%s/%s/' % (self.config.get('paths', 'local_storage'), REPO_ID)
         if os.path.exists(dest_dir):
             shutil.rmtree(dest_dir)
@@ -49,7 +46,6 @@ class TestRhnSync(unittest.TestCase):
 
         self.rapi = pulp.api.repo.RepoApi(self.config)
         self.papi = pulp.api.package.PackageApi(self.config)
-        self.pvapi = pulp.api.package_version.PackageVersionApi(self.config)
 
         self.clean()
         

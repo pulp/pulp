@@ -28,6 +28,7 @@ try:
 except:
     print "Please install python-hashlib"
     sys.exit(1)
+import base64
 
 log = logging.getLogger("pulp.util")
 
