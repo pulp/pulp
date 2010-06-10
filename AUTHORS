@@ -1,6 +1,16 @@
-pulp is written by (alphabetically) ...
+Pulp Authors (https://fedorahosted.org/pulp/)
+=============================================
 
-    Jason L Connor <jconnor@redhat.com>
-    Jay Dobies <jdobies@redhat.com>
-    Mike McCune <mmccune@redhat.com>
-    Maureen Duffy <duffy@redhat.com>
+This software consists of contributions made by many individuals. 
+For exact contribution history, see the revision history
+and logs, available at https://fedorahosted.org/pulp/browser.
+
+Jason Connor (jconnor@redhat.com)
+Jason Dobies (jdobies@redhat.com)
+Sayli Karmarkar (skarmark@redhat.com)
+Pradeep Kilambi (pkilambi@redhat.com)
+John Matthews   (jmatthews@redhat.com)
+Mike Mccune     (mmccune@redhat.com)
+Jeff Ortel      (jortel@redhat.com)
+Todd Sanders    (tsanders@redhat.com)
+

@@ -17,13 +17,11 @@
 # in this software or its documentation.
 #
 
-import sys
 import locale
 import httplib
 import simplejson as json
-import base64
 from M2Crypto import SSL, httpslib
-from logutil import getLogger
+from pulptools.logutil import getLogger
 
 import gettext
 _ = gettext.gettext
@@ -125,23 +123,19 @@ class RepoConnection(PulpConnection):
         return self.conn.request_post(method, params=repodata)
 
     def repository(self, id):
-        method = "/repositories/%s" % str(id)
+        method = "/repositories/%s/" % str(id)
         return self.conn.request_get(method)
 
     def repositories(self):
         method = "/repositories/"
         return self.conn.request_get(method)
 
-    def repository(self, repoid):
-        method = "/repositories/%s/" % repoid
-        return self.conn.request_get(method)
-
     def update(self, repo):
         method = "/repositories/%s/" % repo['id']
         return self.conn.request_post(method, params=repo)
 
-    def delete(self, repoid):
-        method = "/repositories/%s/" % repoid
+    def delete(self, id):
+        method = "/repositories/%s/" % id
         return self.conn.request_delete(method)
 
     def clean(self):
@@ -223,8 +217,8 @@ class PackageConnection(PulpConnection):
         method = "/packages/%s/" % id
         return self.conn.request_get(method)
 
-    def delete(self, id):
-        method = "/packages/%s/" % id
+    def delete(self, packageid):
+        method = "/packages/%s/" % packageid
         return self.conn.request_delete(method)
 
     def package_by_ivera(self, name, version, release, epoch, arch):
@@ -249,11 +243,7 @@ if __name__ == '__main__':
     print "   Repo API Tests                "
     print "+--------------------------------+"
     
-    repodata = {'id' : 'test-f12',
-                'name' : 'f12',
-                'arch' : 'i386',
-                'feed' : 'yum:http://mmccune.fedorapeople.org/pulp/'}
-    repo = rconn.create(repodata)
+    repo = rconn.create('test-f12', 'f12','i386', 'yum:http://mmccune.fedorapeople.org/pulp/')
     print "create Repos", repo['id']
     print "list repos:", rconn.repositories()
     print "Get repo By Id: ",rconn.repository(repo['id'])
@@ -268,8 +258,6 @@ if __name__ == '__main__':
     print "+--------------------------------+"
     print "   Consumer API Tests             "
     print "+--------------------------------+"
-    consumerdata = { 'id' : "1",
-                     'description' : 'prad.rdu.redhat.com', }
     cconn = ConsumerConnection()
-    print "Create Consumer", cconn.create(consumerdata)
+    print "Create Consumer", cconn.create("test", 'prad.rdu.redhat.com')
     print "List Consumers", cconn.consumers()

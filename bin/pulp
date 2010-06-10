@@ -20,7 +20,7 @@
 import sys
 import os.path
 
-import pulpcli
+from pulptools import pulpcli
 
 if __name__ == "__main__":
     pulpcli.CLI().main()

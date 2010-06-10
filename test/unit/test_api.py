@@ -47,9 +47,24 @@ from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import random_string
 
-from testutil import load_test_config
+from ConfigParser import ConfigParser
+
+
+class TestConfig(ConfigParser):
+
+    def __init__(self):
+        ConfigParser.__init__(self)
+        self.add_section('paths')
+        self.set('paths', 'local_storage', '/tmp/pulp')
+        self.add_section('logs')
+        self.set('logs', 'pulp_file', '/tmp/pulp.log')
+        self.set('logs', 'grinder_file', '/tmp/pulp/grinder.log')
+        self.add_section('rhn')
+        self.set('rhn', 'threads', '25')
+
 
 class TestApi(unittest.TestCase):
+
     def clean(self):
         self.rapi.clean()
         self.papi.clean()
@@ -58,13 +73,12 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        config = load_test_config()
-
-        self.rapi = RepoApi(config)
-        self.papi = PackageApi(config)
-        self.capi = ConsumerApi(config)
-        self.pgapi = PackageGroupApi(config)
-        self.pgcapi = PackageGroupCategoryApi(config)
+        self.config = TestConfig()
+        self.rapi = RepoApi(self.config)
+        self.papi = PackageApi(self.config)
+        self.capi = ConsumerApi(self.config)
+        self.pgapi = PackageGroupApi(self.config)
+        self.pgcapi = PackageGroupCategoryApi(self.config)
         self.clean()
         
     def tearDown(self):
@@ -77,14 +91,16 @@ class TestApi(unittest.TestCase):
         assert(repo != None)
 
     def test_duplicate(self):
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'yum:http://example.com')
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'yum:http://example.com')
-        
-        repos = self.rapi.repositories()
-        assert(len(repos) == 1)
-        
+        id = 'some-id'
+        name = 'some name'
+        arch = 'i386'
+        feed = 'yum:http://example.com'
+        repo = self.rapi.create(id, name, arch, feed)
+        try:
+            repo = self.rapi.create(id, name, arch, feed)
+            raise Exception, 'Duplicate allowed'
+        except:
+            pass
         
     def test_feed_types(self):
         failed = False
@@ -121,7 +137,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create(id,'some name', 'i386', 'yum:http://example.com')
         repo = self.rapi.repository(id)
         assert(repo is not None)
-        self.rapi.delete(id)
+        self.rapi.delete(id=id)
         repo = self.rapi.repository(id)
         assert(repo is None)
         
@@ -222,7 +238,10 @@ class TestApi(unittest.TestCase):
         for i in range(1005):
             consumers.append(Consumer(random_string(), random_string()))
         self.capi.bulkcreate(consumers)
-        assert(len(self.capi.consumers()) == 1005)
+        all = self.capi.consumers()
+        n = len(all)
+        print '%d consumers found' % n
+        assert(n == 1005)
             
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
@@ -343,13 +362,9 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo['id'])
         
         # Check that local storage has dir and rpms
-        
-        localpath = self.rapi.localStoragePath + '/' + repo.id
-        print 'Local path: %s' % localpath
-        dirList = os.listdir(localpath)
+        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/' + repo['id'])
         assert(len(dirList) > 0)
-        found = self.rapi.repository(repo.id)
-        print "found = ", found
+        found = self.rapi.repository(repo['id'])
         packages = found['packages']
         print "packages = ", packages
         assert(packages != None)
@@ -361,8 +376,8 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', 'i386', 
                                 'local:file://%s' % datadir)
                                 
-        self.rapi.sync(repo.id)
-        found = self.rapi.repository(repo.id)
+        self.rapi.sync(repo['id'])
+        found = self.rapi.repository(repo['id'])
         packages = found['packages']
         assert(packages != None)
         assert(len(packages) > 0)

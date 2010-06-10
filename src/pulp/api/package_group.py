@@ -42,7 +42,7 @@ class PackageGroupApi(BaseApi):
         # comps.Comps()
         # Add in Groups & Categories
         # write out comps.Comps().xml()
-        self.objectdb.save(object)
+        BaseApi.update(self, object)
 
     def create(self, groupid, name, description, user_visible=False,
             display_order=1024, default=False, langonly=None):
@@ -52,7 +52,7 @@ class PackageGroupApi(BaseApi):
         pg = model.PackageGroup(groupid, name, description, 
                 user_visible=user_visible, display_order=display_order, 
                 default=default, langonly=langonly)
-        self.objectdb.insert(pg)
+        self.insert(pg)
         return pg
         
     def packagegroup(self, id, filter=None):

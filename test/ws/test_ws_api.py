@@ -17,26 +17,28 @@ import sys
 import os
 
 cdir = os.path.dirname(__file__)
-sys.path.append(os.path.join(cdir, '../../src/pulp-tools'))
+sys.path.append(os.path.join(cdir, '../../src'))
 sys.path.append(os.path.join(cdir, '../unit'))
 
-from connection import RepoConnection as RepoApi
-from connection import ConsumerConnection as ConsumerApi
-from connection import PackageConnection as PackageApi
-from connection import PackageGroupConnection as PackageGroupApi
-from connection import PackageGroupCategoryConnection as PackageGroupCategoryApi
+from pulptools.connection import RepoConnection
+from pulptools.connection import ConsumerConnection
+from pulptools.connection import PackageConnection
+from pulptools.connection import PackageGroupConnection
+from pulptools.connection import PackageGroupCategoryConnection
 
-from test_api import TestApi
+from test_api import TestApi, TestConfig
 
 class RemoteTestApi(TestApi):
 
     def setUp(self):
         d = dict(host='localhost', port=8811)
-        self.rapi = RepoApi(**d)
-        self.capi = ConsumerApi(**d)
-        self.papi = PackageApi(**d)
-        self.pgapi = PackageGroupApi(**d)
-        self.pgcapi = PackageGroupCategoryApi(**d)
+        self.config = TestConfig()
+        self.rapi = RepoConnection(**d)
+        self.capi = ConsumerConnection(**d)
+        self.papi = PackageConnection(**d)
+        self.pvapi = PackageVersionConnection(**d)
+        self.pgapi = PackageGroupConnection(**d)
+        self.pgcapi = PackageGroupCategoryConnection(**d)
         
     def test_bulk_create(self):
         pass

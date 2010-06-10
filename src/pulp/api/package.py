@@ -51,7 +51,7 @@ class PackageApi(BaseApi):
         """
         p = model.Package(name, epoch, version, release, arch, description,
                 checksum_type, checksum, filename)
-        self.objectdb.insert(p)
+        self.insert(p)
         return p
 
     def delete(self, object):

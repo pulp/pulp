@@ -77,7 +77,7 @@ class Repository(JSONController):
         @param id: repository id
         @return: True on successful deletion of repository
         """
-        API.delete(id)
+        API.delete(id=id)
         return self.output(None)
 
     @JSONController.error_handler

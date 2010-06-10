@@ -14,13 +14,29 @@
 # in this software or its documentation.
 #
 import os
-import sys
 import rpm
 import socket
 import hashlib
+import base64
+import yum.packages as yumPackages
+
+PGPHASHALGO = {
+  1: 'md5',
+  2: 'sha1',
+  3: 'ripemd160',
+  5: 'md2',
+  6: 'tiger192',
+  7: 'haval-5-160',
+  8: 'sha256',
+  9: 'sha384',
+ 10: 'sha512',
+}
+# need this for rpm-pyhon < 4.6 (e.g. on RHEL5)
+rpm.RPMTAG_FILEDIGESTALGO = 5011
+
 
 def getVersionRelease():
-    ts = ts = rpm.TransactionSet()
+    ts = rpm.TransactionSet()
     for h in ts.dbMatch('Providename', "redhat-release"):
         version = h['version']
         versionRelease = (h['name'], version, h['release'])
@@ -159,26 +175,12 @@ def processFile(filename, relativeDir=None, source=None):
     hash['pkgname'] = os.path.basename(filename)
     return hash
 
-PGPHASHALGO = {
-  1: 'md5',
-  2: 'sha1',
-  3: 'ripemd160',
-  5: 'md2',
-  6: 'tiger192',
-  7: 'haval-5-160',
-  8: 'sha256',
-  9: 'sha384',
- 10: 'sha512',
-}
-# need this for rpm-pyhon < 4.6 (e.g. on RHEL5)
-rpm.RPMTAG_FILEDIGESTALGO = 5011
-
 def getChecksumType(header):
     if header[rpm.RPMTAG_FILEDIGESTALGO] \
        and PGPHASHALGO.has_key(header[rpm.RPMTAG_FILEDIGESTALGO]):
-       checksum_type = PGPHASHALGO[header[rpm.RPMTAG_FILEDIGESTALGO]]
+        checksum_type = PGPHASHALGO[header[rpm.RPMTAG_FILEDIGESTALGO]]
     else:
-       checksum_type = 'md5'
+        checksum_type = 'md5'
     return checksum_type
 
 def readRpmHeader(ts, rpmname):
@@ -192,8 +194,3 @@ def generatePkgMetadata(pkgFile):
     yumPkg = yumPackages.YumLocalPackage(ts, filename=pkgFile)
     primary_xml = yumPkg.xml_dump_primary_metadata()
     return base64.b64encode(primary_xml)
-
-if __name__=='__main__':
-    ts = rpm.TransactionSet()
-    hdr = readRpmHeader(ts, "/home/pkilambi/demo/test-f12/zsh-4.3.10-4.fc12.x86_64.rpm")
-    print getChecksumType(hdr)

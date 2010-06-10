@@ -19,14 +19,14 @@
 import os
 import sys
 import utils
-from connection import RepoConnection, ConsumerConnection, RestlibException
-import constants
-from optparse import OptionParser, OptionGroup
-from logutil import getLogger
+from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
+import pulptools.constants
+from optparse import OptionParser
+from pulptools.logutil import getLogger
 import base64
 import gettext
 _ = gettext.gettext
-from repolib import RepoLib
+from pulptools.repolib import RepoLib
 log = getLogger(__name__)
 ## TODO: move this to config
 CONSUMERID = "/etc/pulp/"
@@ -383,17 +383,18 @@ class RepoCore(BaseCore):
             print("repo label required. Try --help")
             sys.exit(0)
         try:
-            status = self.pconn.delete(self.options.label)
-            if status:
-                print _(" Successful deleted Repo [ %s ] " % self.options.label)
-            else:
-                print _(" Deleted operation failed on Repo [ %s ] " % self.options.label)
+            self.pconn.delete(id=self.options.label)
+            print _(" Successful deleted Repo [ %s ] " % self.options.label)
         except RestlibException, re:
+            print _(" Deleted operation failed on Repo [ %s ] " % \
+                  self.options.label)
             log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
+            sys.exit(-1)
         except Exception, e:
+            print _(" Deleted operation failed on Repo [ %s ]. " % \
+                  self.options.label)
             log.error("Error: %s" % e)
-            raise
+            sys.exit(-1)
 
     def _upload(self):
         (self.options, files) = self.parser.parse_args()
@@ -416,7 +417,7 @@ class RepoCore(BaseCore):
                 print('Error: %s' % e)
                 continue
             if not pkginfo.has_key('nvrea'):
-                if debug: print("Package %s is Not an RPM Skipping" % frpm)
+                print("Package %s is Not an RPM Skipping" % frpm)
                 continue
             pkgstream = base64.b64encode(open(frpm).read())
             try:
@@ -424,7 +425,7 @@ class RepoCore(BaseCore):
                 if status:
                     print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.label))
                 else:
-                    print _(" Faied to Upload %s to Repo [ %s ] " % self.options.label)
+                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.label)
             except RestlibException, re:
                 log.error("Error: %s" % re)
                 raise #continue

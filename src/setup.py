@@ -44,7 +44,9 @@ setup(
     url='',
     license='GPLv2+',
     packages=find_packages(),
-    scripts=[],
+    scripts = [
+        '../bin/pulp',
+    ],
     include_package_data=False,
     data_files=[],
     classifiers=[

@@ -13,7 +13,6 @@
 # in this software or its documentation.
 #
 
-import os
 import logging
 from logging import Formatter
 from logging.handlers import RotatingFileHandler

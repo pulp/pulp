@@ -100,7 +100,7 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: True on successful deletion of consumer
         """
-        API.delete(id)
+        API.delete(id=id)
         return self.output(None)
 
 

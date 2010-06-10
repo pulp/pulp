@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.22
+Version:        0.0.23
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -35,6 +35,21 @@ Requires: python-hashlib
 
 %description
 Pulp provides replication, access, and accounting for software repositories.
+
+%package tools
+Summary:        Client side tools for managing content on pulp server
+Group:          Development/Languages
+BuildRequires:  rpm-python
+Requires:	m2crypto
+
+%if 0%{?rhel} > 5
+Requires: python-hashlib
+%endif
+
+%description    tools
+A collection of tools to interact and perform content specific operations such as repo management, 
+package profile updates etc.
+ 
 
 %prep
 %setup -q
@@ -87,7 +102,9 @@ chown apache:apache /var/log/pulp
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/*
+%{python_sitelib}/pulp/*
+%{python_sitelib}/pulp-*
+%{python_sitelib}/juicer/*
 %config(noreplace) /etc/pulp/juicer.ini
 %config(noreplace) /etc/pulp/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
@@ -97,7 +114,56 @@ chown apache:apache /var/log/pulp
 /var/www/html/pub
 /var/log/pulp
 
+%files tools
+%defattr(-,root,root,-)
+%doc
+# For noarch packages: sitelib
+%{python_sitelib}/pulptools/
+%{_bindir}/pulp
+%config(noreplace) /etc/pulp/client.ini
+
+
 %changelog
+* Wed Jun 09 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.23-1
+- inlcude only pulp and juicer for pulp rpm (pkilambi@redhat.com)
+- Adding pulp-tools as a new subrpm (pkilambi@redhat.com)
+- Change pythonpath to new client location. (jortel@redhat.com)
+- Fix test_consumerwithpackage() in WS unit tests. Add
+  juicer/controllers/base.py.params() to get passed parameters.
+  (jortel@redhat.com)
+- rename client to pulp-tools (pkilambi@redhat.com)
+- removing accidental log entry (pkilambi@redhat.com)
+- moving client under src for packaging (pkilambi@prad.rdu.redhat.com)
+- Add consumer update() in WS. (jortel@redhat.com)
+- Assign model object._id in constructor. (jortel@redhat.com)
+- Another dumb mistake (jason.dobies@redhat.com)
+- Fat fingered the signature (jason.dobies@redhat.com)
+- streamline bind/unbind params. (jortel@redhat.com)
+- Client side web service implementation for packages (jason.dobies@redhat.com)
+- switching to an insert vs append so we always use src in git tree
+  (mmccune@redhat.com)
+- Add basic web service API tests. (jortel@redhat.com)
+- Typo (jason.dobies@redhat.com)
+- Initial work on packages API (jason.dobies@redhat.com)
+- Added web service hook to consumer clean (jason.dobies@redhat.com)
+- Added web service hook to repository clean (jason.dobies@redhat.com)
+- Cleaned up for PEP8 format (jason.dobies@redhat.com)
+- Cleaning up for PEP8 format (jason.dobies@redhat.com)
+- Cleaning up for PEP8 format (jason.dobies@redhat.com)
+- Cleaning up for PEP8 format (jason.dobies@redhat.com)
+- Fixed broken config test (jason.dobies@redhat.com)
+- Docs (jason.dobies@redhat.com)
+- Oops, forgot to remove debug info (jason.dobies@redhat.com)
+- Fixed logic for importing packages to make sure the package version doesn't
+  already exist (jason.dobies@redhat.com)
+- Moved non-unit test to common area (jason.dobies@redhat.com)
+- Removed unsupported test file (jason.dobies@redhat.com)
+- the proxy call's signature matches api (pkilambi@redhat.com)
+- Added test case for RHN sync (jason.dobies@redhat.com)
+
+* Wed Jun 09 2010 Pradeep Kilambi <pkilambi@redhat.com>
+- Adding pulp-tools as a sub rpm to pulp
+
 * Mon Jun 07 2010 Mike McCune <mmccune@redhat.com> 0.0.22-1
 - Renamed method (jason.dobies@redhat.com)
 - Refactored out common test utilities (jason.dobies@redhat.com)

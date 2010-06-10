@@ -55,18 +55,26 @@ class BaseApi(object):
         Delete all the Objects in the database.  WARNING: Destructive
         """
         self.objectdb.remove(safe=True)
+        
+    def insert(self, object):
+        """
+        Insert the object document to the database
+        """
+        self.objectdb.insert(object, safe=True)
+        return object
 
     def update(self, object):
         """
         Write the object document to the database
         """
         self.objectdb.save(object, safe=True)
+        return object
 
-    def delete(self, id):
+    def delete(self, **kwargs):
         """
         Delete a single stored Object
         """
-        self.objectdb.remove({'id': id})
+        self.objectdb.remove(kwargs, safe=True)
         
     def _getcollection(self):
-        return
+        pass

@@ -49,7 +49,7 @@ class PackageVersionApi(BaseApi):
         """
         pv = model.PackageVersion(name, epoch, version, release, arch, description,
                 checksum_type, checksum, filename)
-        self.objectdb.insert(pv)
+        self.insert(pv)
         return pv
 
     def delete(self, object):
