@@ -38,7 +38,7 @@ class PackageVersionApi(BaseApi):
         Create a new PackageVersion object and return it
         """
         pv = model.PackageVersion(packageid, epoch, version, release, arch)
-        self.objectdb.insert(pv)
+        self.insert(pv)
         return pv
         
     def packageversion(self, id, filter=None):

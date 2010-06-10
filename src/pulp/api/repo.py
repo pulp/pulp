@@ -95,7 +95,7 @@ class RepoApi(BaseApi):
         Create a new Repository object and return it
         """
         r = model.Repo(id, name, arch, feed)
-        self.objectdb.insert(r)
+        self.insert(r)
         return r
 
     def sync(self, id):

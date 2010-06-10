@@ -134,8 +134,8 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/" % repo['id']
         return self.conn.request_post(method, params=repo)
 
-    def delete(self, repoid):
-        method = "/repositories/%s/" % repoid
+    def delete(self, id):
+        method = "/repositories/%s/" % id
         return self.conn.request_delete(method)
 
     def clean(self):
@@ -217,8 +217,8 @@ class PackageConnection(PulpConnection):
         method = "/packages/%s/" % id
         return self.conn.request_get(method)
 
-    def delete(self, id):
-        method = "/packages/%s/" % id
+    def delete(self, packageid):
+        method = "/packages/%s/" % packageid
         return self.conn.request_delete(method)
 
 

@@ -39,15 +39,6 @@ class RemoteTestApi(TestApi):
         self.pvapi = PackageVersionApi(**d)
         self.pgapi = PackageGroupApi(**d)
         self.pgcapi = PackageGroupCategoryApi(**d)
-        
-    def test_bulk_create(self):
-        pass
-
-    def test_json(self):
-        pass
-
-    def test_sync_two_repos_share_common_package(self):
-        pass
 
     def test_sync_two_repos_share_common_package(self):
         pass

@@ -39,7 +39,7 @@ class PackageGroupCategoryApi(BaseApi):
         """
         pgc = model.PackageGroupCategory(categoryid, name, description, 
                 display_order=display_order)
-        self.objectdb.insert(pgc)
+        self.insert(pgc)
         return pgc
         
     def packagegroupcategory(self, id, filter=None):

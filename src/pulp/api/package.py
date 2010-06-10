@@ -38,7 +38,7 @@ class PackageApi(BaseApi):
         Create a new Package object and return it
         """
         p = model.Package(id, name)
-        self.objectdb.insert(p)
+        self.insert(p)
         return p
         
     def package(self, id, filter=None):

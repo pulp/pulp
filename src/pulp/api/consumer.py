@@ -40,7 +40,7 @@ class ConsumerApi(BaseApi):
         Create a new Consumer object and return it
         """
         c = model.Consumer(id, description)
-        self.objectdb.insert(c)
+        self.insert(c)
         return c
         
     def bulkcreate(self, consumers):
@@ -54,7 +54,7 @@ class ConsumerApi(BaseApi):
         chunked = chunks(consumers, chunksize)
         inserted = 0
         for chunk in chunked:
-            self.objectdb.insert(chunk)
+            self.insert(chunk)
             inserted = inserted + chunksize
             print "Inserted: %s" % inserted
 

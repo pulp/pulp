@@ -79,14 +79,16 @@ class TestApi(unittest.TestCase):
         assert(repo != None)
 
     def test_duplicate(self):
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'yum:http://example.com')
-        repo = self.rapi.create('some-id','some name', 
-            'i386', 'yum:http://example.com')
-        
-        repos = self.rapi.repositories()
-        assert(len(repos) == 1)
-        
+        id = 'some-id'
+        name = 'some name'
+        arch = 'i386'
+        feed = 'yum:http://example.com'
+        repo = self.rapi.create(id, name, arch, feed)
+        try:
+            repo = self.rapi.create(id, name, arch, feed)
+            raise Exception, 'Duplicate allowed'
+        except:
+            pass
         
     def test_feed_types(self):
         failed = False
@@ -123,7 +125,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create(id,'some name', 'i386', 'yum:http://example.com')
         repo = self.rapi.repository(id)
         assert(repo is not None)
-        self.rapi.delete(id)
+        self.rapi.delete(id=id)
         repo = self.rapi.repository(id)
         assert(repo is None)
         
@@ -231,7 +233,10 @@ class TestApi(unittest.TestCase):
         for i in range(1005):
             consumers.append(Consumer(random_string(), random_string()))
         self.capi.bulkcreate(consumers)
-        assert(len(self.capi.consumers()) == 1005)
+        all = self.capi.consumers()
+        n = len(all)
+        print '%d consumers found' % n
+        assert(n == 1005)
             
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
