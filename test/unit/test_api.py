@@ -48,9 +48,24 @@ from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import random_string
 
-from testutil import load_test_config
+from ConfigParser import ConfigParser
+
+
+class TestConfig(ConfigParser):
+
+    def __init__(self):
+        ConfigParser.__init__(self)
+        self.add_section('paths')
+        self.set('paths', 'local_storage', '/tmp/pulp')
+        self.add_section('logs')
+        self.set('logs', 'pulp_file', '/tmp/pulp.log')
+        self.set('logs', 'grinder_file', '/tmp/pulp/grinder.log')
+        self.add_section('rhn')
+        self.set('rhn', 'threads', '25')
+
 
 class TestApi(unittest.TestCase):
+
     def clean(self):
         self.rapi.clean()
         self.papi.clean()
@@ -60,14 +75,13 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        config = load_test_config()
-
-        self.rapi = RepoApi(config)
-        self.papi = PackageApi(config)
-        self.capi = ConsumerApi(config)
-        self.pvapi = PackageVersionApi(config)
-        self.pgapi = PackageGroupApi(config)
-        self.pgcapi = PackageGroupCategoryApi(config)
+        self.config = TestConfig()
+        self.rapi = RepoApi(self.config)
+        self.papi = PackageApi(self.config)
+        self.capi = ConsumerApi(self.config)
+        self.pvapi = PackageVersionApi(self.config)
+        self.pgapi = PackageGroupApi(self.config)
+        self.pgcapi = PackageGroupCategoryApi(self.config)
         self.clean()
         
     def tearDown(self):
@@ -354,9 +368,9 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo['id'])
         
         # Check that local storage has dir and rpms
-        dirList = os.listdir(self.rapi.localStoragePath + '/' + repo.id)
+        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/' + repo['id'])
         assert(len(dirList) > 0)
-        found = self.rapi.repository(repo.id)
+        found = self.rapi.repository(repo['id'])
         packages = found['packages']
         assert(packages != None)
         assert(len(packages) > 0)
@@ -367,8 +381,8 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', 'i386', 
                                 'local:file://%s' % datadir)
                                 
-        self.rapi.sync(repo.id)
-        found = self.rapi.repository(repo.id)
+        self.rapi.sync(repo['id'])
+        found = self.rapi.repository(repo['id'])
         packages = found['packages']
         assert(packages != None)
         assert(len(packages) > 0)

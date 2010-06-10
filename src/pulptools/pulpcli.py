@@ -19,14 +19,14 @@
 import os
 import sys
 import utils
-from connection import RepoConnection, ConsumerConnection, RestlibException
-import constants
+from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
+import pulptools.constants
 from optparse import OptionParser
-from logutil import getLogger
+from pulptools.logutil import getLogger
 import base64
 import gettext
 _ = gettext.gettext
-from repolib import RepoLib
+from pulptools.repolib import RepoLib
 log = getLogger(__name__)
 ## TODO: move this to config
 CONSUMERID = "/etc/pulp/"

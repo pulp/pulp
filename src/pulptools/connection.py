@@ -21,7 +21,7 @@ import locale
 import httplib
 import simplejson as json
 from M2Crypto import SSL, httpslib
-from logutil import getLogger
+from pulptools.logutil import getLogger
 
 import gettext
 _ = gettext.gettext

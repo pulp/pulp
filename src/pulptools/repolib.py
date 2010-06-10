@@ -21,10 +21,10 @@ Contains repo management (backend) classes.
 
 import os
 from iniparse import ConfigParser as Parser
-from connection import ConsumerConnection, RepoConnection
-from lock import Lock
-from config import Config
-from logutil import getLogger
+from pulptools.connection import ConsumerConnection, RepoConnection
+from pulptools.lock import Lock
+from pulptools.config import Config
+from pulptools.logutil import getLogger
 
 log = getLogger(__name__)
 
@@ -415,10 +415,8 @@ def test():
     f.close()
     rapi = RepoConnection(host=host, port=port)
     capi = ConsumerConnection(host=host, port=port)
-    d = dict(id='jortel', name='The jortel repository', arch='', feed='yum:http://foo')
-    rapi.create(d)
-    d = dict(id='0', description='The local consumer.')
-    capi.create(d)
+    rapi.create('jortel', 'The jortel repository', 'noarch', 'yum:http://foo')
+    capi.create('0', 'The local consumer.')
     capi.bind('0', 'jortel')
     main()
 
