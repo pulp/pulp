@@ -78,7 +78,7 @@ class Packages(JSONController):
         '''
         @param id: package id
         '''
-        API.delete(id)
+        API.delete(packageid=id)
         return self.output(None)
 
 class Versions(JSONController):

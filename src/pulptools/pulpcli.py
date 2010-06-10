@@ -383,7 +383,7 @@ class RepoCore(BaseCore):
             print("repo label required. Try --help")
             sys.exit(0)
         try:
-            status = self.pconn.delete(self.options.label)
+            status = self.pconn.delete(id=self.options.label)
             if status:
                 print _(" Successful deleted Repo [ %s ] " % self.options.label)
             else:
