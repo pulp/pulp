@@ -147,7 +147,7 @@ class BaseSynchronizer(object):
                 grp.translated_description = g.translated_description
                 repo['packagegroups'][grp['id']] = grp
         except yum.Errors.CompsException:
-            log.error("Unable to parse comps info for %s" % (compspath))
+            log.error("Unable to parse comps info for %s" % (compsfile))
             return False
         return True
     
