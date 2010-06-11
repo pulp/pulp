@@ -341,20 +341,24 @@ class TestApi(unittest.TestCase):
         found_a = self.rapi.repository(repo_a['id'])
         found_b = self.rapi.repository(repo_b['id'])
         # Verify each repo has the test package synced
-        assert (found_a["packages"].has_key(test_pkg_name))
-        assert (found_b["packages"].has_key(test_pkg_name))
-        # Grab the associated package version (there should only be 1)
-        # Ensure that the package versions have different md5sums, but all other
-        # keys are identical
+        found_a_pid = None
+        for pid in found_a["packages"].keys():
+            if (pid.index(test_pkg_name) >= 0):
+                found_a_pid = pid
+        assert(found_a_pid != None)
+        
+        found_b_pid = None
+        for pid in found_b["packages"].keys():
+            if (pid.index(test_pkg_name) >= 0):
+                found_b_pid = pid
+        assert(found_b_pid != None)
+        packagea = found_a["packages"][found_a_pid]
+        packageb = found_b["packages"][found_b_pid]
 
-        assert (len(found_a["packages"][test_pkg_name]) == 1)
-        assert (len(found_b["packages"][test_pkg_name]) == 1)
-        pkgVerA = found_a["packages"][test_pkg_name][0]
-        pkgVerB = found_b["packages"][test_pkg_name][0]
         # Ensure that the 2 Package instances actually point 
         # to the same single instance
         assert(repo_a['_id'] != repo_b['_id'])
-        assert(pkgVerA['_id'] == pkgVerB['_id'])
+        assert(packagea['_id'] == packageb['_id'])
     
     def test_sync(self):
         repo = self.rapi.create('some-id','some name', 'i386', 
