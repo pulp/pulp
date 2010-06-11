@@ -67,7 +67,7 @@ class RepoSource(Base):
 class Package(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
-        self._id = str((name, epoch, version, release, arch))
+        self._id = str((name, epoch, version, release, arch, checksum))
         self.id = self._id
         self.name = name
         self.epoch = epoch

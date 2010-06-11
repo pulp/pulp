@@ -27,6 +27,7 @@ import yum
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp import model
+
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
@@ -48,7 +49,7 @@ def sync(config, repo, repo_source):
 
     synchronizer = TYPE_CLASSES[repo_source.type](config)
     repo_dir = synchronizer.sync(repo, repo_source)
-    synchronizer.add_packages_from_dir(repo_dir, repo)
+    return synchronizer.add_packages_from_dir(repo_dir, repo)
 
 class BaseSynchronizer(object):
 
@@ -60,14 +61,15 @@ class BaseSynchronizer(object):
 
     def add_packages_from_dir(self, dir, repo):
         dir_list = os.listdir(dir)
-        package_count = 0
         startTime = time.time()
+        added_packages = []
         for fname in dir_list:
-            self.import_package(dir + fname, repo)
-            package_count = package_count + 1
+            package = self.import_package(dir + fname, repo)
+            if (package != None):
+                added_packages.append(package)
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" % 
-                (repo['id'], package_count, endTime - startTime))
+                (repo['id'], len(added_packages), endTime - startTime))
         # TODO: Parse repomd.xml and lookup name for groups element
         compsfile = None
         compspath = os.path.join(dir, 'repodata/comps.xml')
@@ -81,37 +83,42 @@ class BaseSynchronizer(object):
             repo['comps_xml_path'] = compspath
             self.import_groups_data(compsfile, repo)
             log.debug("Loaded comps info from %s" % (compspath))
+        return added_packages
 
     def import_package(self, pkg_path, repo):
         if (pkg_path.endswith(".rpm")):
             try:
+                retval = None
                 file_name = os.path.basename(pkg_path)
                 info = pulp.util.get_rpm_information(pkg_path)
-                if not repo["packages"].has_key(info['name']):
-                    repo["packages"][info['name']] = []
                 hashtype = "sha256"
-                checksum = pulp.util.getFileChecksum(hashtype=hashtype, 
+                checksum = pulp.util.get_file_checksum(hashtype=hashtype, 
                         filename=pkg_path)
                 found = self.package_api.package(name=info['name'], 
                         epoch=info['epoch'], version=info['version'], 
                         release=info['release'], arch=info['arch'],filename=file_name, 
                         checksum_type=hashtype, checksum=checksum)
                 if found.count() == 1:
-                    pv = found[0]
+                    retval = found[0]
                 else:
-                    pv = self.package_api.create(info['name'], info['epoch'],
+                    retval = self.package_api.create(info['name'], info['epoch'],
                         info['version'], info['release'], info['arch'], info['description'],
                         "sha256", checksum, file_name)
                     for dep in info['requires']:
-                        pv.requires.append(dep)
+                        retval.requires.append(dep)
                     for dep in info['provides']:
-                        pv.provides.append(dep)
-                    self.package_api.update(pv)
-                #TODO:  Ensure we don't add duplicate pv's to the 'packages' list
-                repo['packages'][info['name']].append(pv)
+                        retval.provides.append(dep)
+                    self.package_api.update(retval)
+                return retval
             except Exception, e:
+                print("%s" % (traceback.format_exc()))
                 log.debug("%s" % (traceback.format_exc()))
                 log.error("error reading package %s" % (pkg_path))
+        else:
+            return None
+            
+        
+
 
     def import_groups_data(self, compsfile, repo):
         """

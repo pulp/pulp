@@ -100,14 +100,19 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % repoid)
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
+        self._add_package(repo, p)
+        self.update(repo)
+
+    def _add_package(self, repo, p):
+        """
+        Responsible for properly associating a Package to a Repo
+        """
         packages = repo['packages']
         if (packages.has_key(p['id'])):
             # No need to update repo, this Package is already under this repo
             return
-        # Note:  A DBRef() for the objects '_id' is what's added in mongo
-        #        This is a reference to the Package collection's object
         packages[p['id']] = p
-        self.update(repo)
+                     
 
     def remove_package(self, repoid, p):
         repo = self.repository(repoid)
@@ -296,7 +301,9 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         
         repo_source = model.RepoSource(repo['source'])
-        repo_sync.sync(self.config, repo, repo_source)
+        added_packages = repo_sync.sync(self.config, repo, repo_source)
+        for p in added_packages:
+            self._add_package(repo, p)
         self.update(repo)
 
     def upload(self, id, pkginfo, pkgstream):
