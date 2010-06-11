@@ -29,6 +29,13 @@ from pulptools.connection import PackageGroupCategoryConnection
 from test_api import TestApi, TestConfig
 
 class RemoteTestApi(TestApi):
+    """
+    This class subclasses TestApi and overrides the API handlers to actually
+    use the same classes the CLI uses.  This ensures we are using the API exactly
+    like we are when we call the pulp python API directly.
+    
+    The overridden testcases in this class indicate tests that *dont* pass yet.
+    """
 
     def setUp(self):
         d = dict(host='localhost', port=8811)
@@ -36,7 +43,6 @@ class RemoteTestApi(TestApi):
         self.rapi = RepoConnection(**d)
         self.capi = ConsumerConnection(**d)
         self.papi = PackageConnection(**d)
-        self.pvapi = PackageVersionConnection(**d)
         self.pgapi = PackageGroupConnection(**d)
         self.pgcapi = PackageGroupCategoryConnection(**d)
         
