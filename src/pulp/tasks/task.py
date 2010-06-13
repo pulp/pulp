@@ -24,20 +24,36 @@ import time
 import traceback
 import uuid
 
-from pulp.tasks.queue.base import TaskQueue
+# task states -----------------------------------------------------------------
 
+task_created = 'created'
+task_reset = 'reset'
+task_waiting = 'waiting'
+task_running = 'running'
+task_finished = 'finished'
+task_error = 'error'
 
-CREATED = 'created'
-RESET = 'reset'
-RUNNING = 'running'
-FINISHED = 'finished'
-ERROR = 'error'
+task_states = (
+    task_created,
+    task_reset,
+    task_waiting,
+    task_running,
+    task_finished,
+    task_error,
+)
 
+task_done_states = (
+    task_finished,
+    task_error,
+)
+
+# task ------------------------------------------------------------------------
     
 class Task(object):
     """
     Task class
-    Execute a long-running task in its own thread
+    Meta data to be stored in the database for executing a long-running task and
+    querying the status and results.
     """
     def __init__(self, callable, args=[], kwargs={}):
         """
@@ -49,7 +65,7 @@ class Task(object):
         self.func = functools.partial(callable, *args, **kwargs)
         self.id = uuid.uuid1(clock_seq=int(time.time() * 1000))
         
-        self.status = CREATED
+        self.status = task_created
         self.start_time = None
         self.finish_time = None
         self.next_time = None
@@ -57,28 +73,13 @@ class Task(object):
         self.exception = None
         self.traceback = None
         
-        self.__queue = None
-        self.__thread = None
-        
-    def __cmp__(self, other):
-        """
-        Next run time based comparison used by At and Cron task queues
-        """
-        return cmp(self.next_time, other.next_time)
-     
-    @property
-    def thread_id(self):
-        if self.__thread is None:
-            return None
-        return self.__thread.ident
-  
     def _wrapper(self, args, kwargs):
         """
         Protected wrapper that executes the callable and captures and records any
         exceptions in a separate thread.
         @return: the return value of the callable
         """
-        self.status = RUNNING
+        self.status = task_running
         self.start_time = datetime.datetime.now()
         try:
             result = self.func(*args, **kwargs)
@@ -86,26 +87,16 @@ class Task(object):
             self.exception = e
             exec_info = sys.exc_info()
             self.traceback = traceback.format_exception(*exec_info)
-            self.status = ERROR
+            self.status = task_error
         else:
             self.result = result
             if result is None:
                 self.result = True # set to 'True' so we know it has run
-            self.status = FINISHED
+            self.status = task_finished
         self.finish_time = datetime.datetime.now()
         if self.__queue is not None:
             self.__queue.finished(self)        
      
-    def set_queue(self, task_queue):
-        """
-        Called by a TaskQueue instance for setting a back reference to the queue
-        itself.
-        @param task_queue: a TaskQueue instance or None
-        @return: None
-        """
-        assert task_queue is None or isinstance(task_queue, TaskQueue)
-        self.__queue = task_queue
-         
     def run(self, *args, **kwargs):
         """
         Run this task's callable in a separate thread.
@@ -115,12 +106,3 @@ class Task(object):
         self.__thread = threading.Thread(target=self._wrapper,
                                         args=[args, kwargs])
         self.__thread.start()
-        
-    def wait(self):
-        """
-        Wait for a single run of this task
-        @return: None
-        """
-        while self.__thread is None:
-            time.sleep(0.0005)
-        self.__thread.join()
