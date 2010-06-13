@@ -19,10 +19,11 @@ _author_ = 'Jason L Connor <jconnor@redhat.com>'
 import datetime
 import functools
 import sys
-import threading
 import time
 import traceback
 import uuid
+
+from pulp.tasks.queue.base import DummyTaskQueue
 
 # task states -----------------------------------------------------------------
 
@@ -70,6 +71,7 @@ class Task(object):
         """
         self.func = functools.partial(callable, *args, **kwargs)
         self.id = uuid.uuid1(clock_seq=int(time.time() * 1000))
+        self.queue = DummyTaskQueue()
         
         self.status = task_created
         self.start_time = None
@@ -78,17 +80,22 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
-        
-    def _wrapper(self, args, kwargs):
+
+    def waiting(self):
         """
-        Protected wrapper that executes the callable and captures and records any
-        exceptions in a separate thread.
-        @return: the return value of the callable
+        Mark this task as waiting
+        """
+        assert self.status in task_ready_states
+        self.status = task_waiting
+        
+    def run(self):
+        """
+        Run this task and record the result or exception
         """
         self.status = task_running
         self.start_time = datetime.datetime.now()
         try:
-            result = self.func(*args, **kwargs)
+            result = self.func()
         except Exception, e:
             self.exception = e
             exec_info = sys.exc_info()
@@ -96,19 +103,20 @@ class Task(object):
             self.status = task_error
         else:
             self.result = result
-            if result is None:
-                self.result = True # set to 'True' so we know it has run
             self.status = task_finished
         self.finish_time = datetime.datetime.now()
-        if self.__queue is not None:
-            self.__queue.finished(self)        
-     
-    def run(self, *args, **kwargs):
+        self.queue.complete(self)
+        
+    def reset(self):
         """
-        Run this task's callable in a separate thread.
-        @return: None
+        Reset this task's recorded data
         """
+        if self.status not in task_complete_states:
+            return
+        self.status = task_reset
+        self.start_time = None
+        self.finish_time = None
+        self.next_time = None
         self.result = None
-        self.__thread = threading.Thread(target=self._wrapper,
-                                        args=[args, kwargs])
-        self.__thread.start()
+        self.exception = None
+        self.traceback = None

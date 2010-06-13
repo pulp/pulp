@@ -16,93 +16,160 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-from threading import Condition, Lock, Thread
+import itertools
+import threading
 
+# base task queue -------------------------------------------------------------
 
 class TaskQueue(object):
     """
-    Base task queue class to describe common functionality and interface
+    Abstract base class for task queues for interface definition and typing.
     """
-    def __init__(self, max_dispatcher_sleep=1):
-        self.max_dispatch_sleep = max_dispatcher_sleep
-        
-        self._lock = Lock()
-        self._condition = Condition(self._lock)
-        
-        self._wait_queue = []
-        self._running_tasks = {}
-        self._finished_tasks = {}
-        
-        self._dispatcher = Thread(target=self._dispatch)
-        self._dispatcher.daemon = True
-        self._dispatcher.start()
-        
-    def __del__(self):
-        self.clear()
-    
-    def _dispatch(self):
-        """
-        Protected method executed by the dispatch thread
-        This must be overridden by derived classes
-        """
-        raise NotImplementedError()
-    
-    def finished(self, task):
-        """
-        Callback method called by tasks when the finish
-        This must be overridden by derived classes
-        """
-        raise NotImplementedError()
-    
-    def is_empty(self):
-        """
-        Check to see if there are any waiting or running tasks
-        @return: True if there are no waiting or running tasks, False otherwise
-        """
-        return self._wait_queue or self._running_tasks
-    
     def enqueue(self, task):
         """
-        Add a task instance to the queue
-        This must be overridden by derived classes
+        Add a task to the task queue
+        """
+        raise NotImplementedError()
+    
+    def run(self, task):
+        """
+        Run a task from this task queue
+        """
+        raise NotImplementedError()
+    
+    def complete(self, task):
+        """
+        Mark a task run as completed
         """
         raise NotImplementedError()
     
     def find(self, task_id):
         """
-        Find a task in the task queue, given its task id
-        @param task_id: Task instance id
-        @return: Task instance with corresponding id if found, None otherwise
+        Find a task in this task queue
         """
-        task = None
-        self._lock.acquire()
-        try:
-            if task_id in self._finished_tasks:
-                task = self._finished_tasks[task_id]
-            elif task_id in self._running_tasks:
-                task = self._running_tasks[task_id]
-            else:
-                for t in self._wait_queue:
-                    if t.id == task_id:
-                        task = t
-                        break
-        finally:
-            self._lock.release()
-        return task
-        
+        raise NotImplementedError()
+    
     def clear(self):
         """
-        Clear all tasks from the queue and force them to exit
-        @return: None
+        Clear this task queue of all tasks
         """
+        raise NotImplementedError()
+    
+# dummy task queue ------------------------------------------------------------
+    
+class DummyTaskQueue(TaskQueue):
+    """
+    Derived task queue in which all operations are no-ops.
+    """
+    def enqueue(self, task):
+        pass
+    
+    def run(self, task):
+        pass
+    
+    def complete(self, task):
+        pass
+    
+    def find(self, task_id):
+        return None
+    
+    def clear(self):
+        pass
+    
+# base scheduling task queue --------------------------------------------------
+    
+class SchedulingTaskQueue(TaskQueue):
+    """
+    Base task queue that dispatches threads to run tasks based on a scheduler.
+    """
+    def __init__(self):
+        self._lock = threading.RLock()
+        self._condition = threading.Condition(self._lock)
+        
+        self._waiting_tasks = []
+        self._running_tasks = []
+        self._complete_tasks = []
+        
+        self._dispatcher = threading.Thread(target=self._dispatch)
+        self._dispatcher.daemon = True
+        self._dispatcher.start()
+        
+    def _dispatch(self):
+        """
+        Scheduling method that must be overridden in a derived class
+        """
+        raise NotImplementedError()
+    
+    def enqueue(self, task):
         self._lock.acquire()
         try:
-            tasks = set().union(self._wait_queue,
-                                self._running_tasks.values(),
-                                self._finished_tasks.values())
+            task.queue = self
+            task.waiting()
+            self._waiting_tasks.append(task)
+        finally:
+            self._lock.release()
+    
+    def run(self, task):
+        self._lock.acquire()
+        try:
+            self._waiting_tasks.remove(task)
+            self._running_tasks.append(task)
+            thread = threading.Thread(target=task.run)
+            thread.start()
+        finally:
+            self._lock.release()
+    
+    def complete(self, task):
+        self._lock.acquire()
+        try:
+            self._running_tasks.remove(task)
+            self._complete_tasks.append(task)
+        finally:
+            self._lock.release()
+    
+    def find(self, task_id):
+        self._lock.aqcuire()
+        try:
+            for task in itertools.chain(self._waiting_tasks,
+                                        self._running_tasks,
+                                        self._complete_tasks):
+                if task.id == task_id:
+                    return task
+            return None
+        finally:
+            self._lock.release()
+    
+    def clear(self):
+        self._lock.acquire()
+        try:
+            del self._waiting_tasks[:]
+            del self._running_tasks[:]
+            del self._complete_tasks[:]
         finally:
             self._lock.release()
             
-        for task in tasks:
-            task.exit()
-            task.wait()
+# base persistent task queue --------------------------------------------------
+
+class PersistentTaskQueue(TaskQueue):
+    """
+    Task queue that stores tasks in a database.
+    """
+    def __init__(self, db):
+        self._db = db
+        self._id = None
+        
+    def enqueue(self, task):
+        pass
+    
+    def run(self, task):
+        pass
+    
+    def complete(self, task):
+        pass
+    
+    def find(self, task_id):
+        pass
+    
+    def clear(self):
+        pass
+    
