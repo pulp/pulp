@@ -42,7 +42,13 @@ task_states = (
     task_error,
 )
 
-task_done_states = (
+task_ready_states = (
+    task_created,
+    task_reset,
+    task_waiting,
+)
+
+task_complete_states = (
     task_finished,
     task_error,
 )
