@@ -97,11 +97,11 @@ class BaseSynchronizer(object):
                 hashtype = "sha256"
                 checksum = pulp.util.get_file_checksum(hashtype=hashtype, 
                         filename=pkg_path)
-                found = self.package_api.package(name=info['name'], 
+                found = self.package_api.packages(name=info['name'], 
                         epoch=info['epoch'], version=info['version'], 
                         release=info['release'], arch=info['arch'],filename=file_name, 
                         checksum_type=hashtype, checksum=checksum)
-                if found.count() == 1:
+                if len(found) == 1:
                     retval = found[0]
                 else:
                     retval = self.package_api.create(info['name'], info['epoch'],

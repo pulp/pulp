@@ -97,7 +97,6 @@ class RepoApi(BaseApi):
         Adds the passed in package to this repo
         """
         repo = self.repository(repoid)
-        print "Repo: %r" % repo
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
         package = self.packageApi.package(packageid)
@@ -113,7 +112,6 @@ class RepoApi(BaseApi):
         Responsible for properly associating a Package to a Repo
         """
         packages = repo['packages']
-        print "Packs: %s" % packages
         if (packages.has_key(p['id'])):
             # No need to update repo, this Package is already under this repo
             return

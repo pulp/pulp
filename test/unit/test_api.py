@@ -257,6 +257,7 @@ class TestApi(unittest.TestCase):
         self.capi.update(c)
         
         found = self.capi.consumers_with_package_name('some-invalid-id')
+        
         assert(len(found) == 0)
 
         found = self.capi.consumers_with_package_name('test_consumerwithpackage')
@@ -409,9 +410,10 @@ class TestApi(unittest.TestCase):
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        return p
+        lookedUp = self.papi.package(p['id'])
+        return lookedUp
         
-    def test_package_versions(self):
+    def test_packages(self):
         repo = self.rapi.create('some-id','some name',
             'i386', 'yum:http://example.com')
         repo = self.rapi.repository(repo["id"])
@@ -427,7 +429,7 @@ class TestApi(unittest.TestCase):
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        
+        print "Package! %s" % p
         # Add this package version to the repo
         self.rapi.add_package(repo["id"], p['id'])
         # Lookup repo and confirm new package version was added
@@ -459,19 +461,27 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(not repo["packages"].has_key(test_pkg_name))
         # Verify package version from repo
-        found = self.papi.package(name=test_pkg_name, epoch=test_epoch, 
+        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)
-        self.assertTrue(found.count() == 1)
+        self.assertTrue(len(found) == 1)
+        # Check returned in search with no params
+        all = self.papi.packages()
+        self.assertTrue(len(all) > 0)
+
         # Remove from Package collection
         self.papi.delete(found[0])
         # Verify it's deleted
-        found = self.papi.package(name=test_pkg_name, epoch=test_epoch, 
+        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)
-        self.assertTrue(found.count() == 0)
+        self.assertTrue(len(found) == 0)
+        # Check nothing returned in search with no params
+        all = self.papi.packages()
+        self.assertTrue(len(all) == 0)
+        
 
     def test_package_groups(self):
         pkggroup = self.pgapi.create('test-pkg-group-id', 'test-pkg-group-name', 

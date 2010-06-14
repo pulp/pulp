@@ -59,8 +59,14 @@ class PackageApi(BaseApi):
         Delete package version object based on "_id" key
         """
         self.objectdb.remove({"_id":object["_id"]})
+    
+    def package(self, id):
+        """
+        Return a single Package object based on the id
+        """
+        return self.objectdb.find_one({'id': id})
 
-    def package(self, name=None, epoch=None, version=None, release=None, arch=None, 
+    def packages(self, name=None, epoch=None, version=None, release=None, arch=None, 
             filename=None, checksum_type=None, checksum=None):
         """
         Return a list of all package version objects matching search terms
@@ -80,13 +86,10 @@ class PackageApi(BaseApi):
             searchDict['filename'] = filename
         if checksum_type and checksum:
             searchDict['checksum.%s' % checksum_type] = checksum
-        return self.objectdb.find(searchDict)
-
-    def packages(self):
-        """
-        List all packages.  Can be quite large
-        """
-        return list(self.objectdb.find())
+        if (len(searchDict.keys()) == 0):
+            return list(self.objectdb.find())
+        else:
+            return list(self.objectdb.find(searchDict))
 
     def package_by_ivera(self, name, version, epoch, release, arch):
         """
@@ -103,31 +106,3 @@ class PackageApi(BaseApi):
         return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
                                        
         
-    ###### OLD API ########
-    # TODO: Remove
-    #def create(self, id, name):
-        #"""
-        #Create a new Package object and return it
-        #"""
-        #p = model.Package(id, name)
-        #self.objectdb.insert(p)
-        #return p
-        
-    #def package(self, id, filter=None):
-        #"""
-        #Return a single Package object
-        #"""
-        #return self.objectdb.find_one({'packageid': id})
-
-    #def packages(self):
-        #"""
-        #List all packages.  Can be quite large
-        #"""
-        #return list(self.objectdb.find())
-        
-    #def package_descriptions(self):
-        #'''
-        #List of all package names and descriptions (will not contain package
-        #version information).
-        #'''
-        #return list(self.objectdb.find({}, {'packageid' : True, 'description' : True,}))
