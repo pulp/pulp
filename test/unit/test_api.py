@@ -168,10 +168,10 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
         p = self.create_package('test_repo_packages')
-        self.rapi.add_package(repo["id"], p)
+        self.rapi.add_package(repo["id"], p['id'])
         for i in range(10):
             package = self.create_package(random_string())
-            self.rapi.add_package(repo["id"], package)
+            self.rapi.add_package(repo["id"], package['id'])
         
         found = self.rapi.repository('some-id')
         packages = found['packages']
@@ -427,8 +427,9 @@ class TestApi(unittest.TestCase):
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        
         # Add this package version to the repo
-        self.rapi.add_package(repo["id"], p)
+        self.rapi.add_package(repo["id"], p['id'])
         # Lookup repo and confirm new package version was added
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["packages"].has_key(p['id']))

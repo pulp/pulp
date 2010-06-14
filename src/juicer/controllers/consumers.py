@@ -47,9 +47,9 @@ class Root(JSONController):
         """
         params = self.params()
         if len(params) == 1:
-            pkgid = params.get('pkgid')
-            if pkgid:
-                result = API.consumerswithpackage(pkgid)
+            pkgname = params.get('name')
+            if pkgname:
+                result = API.consumers_with_package_name(pkgname)
                 return self.output(result)
             else:
                 return self.output([])

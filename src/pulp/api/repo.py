@@ -91,16 +91,20 @@ class RepoApi(BaseApi):
                     matches.append(packages[packageid])
             return matches
     
-    def add_package(self, repoid, p):
+    def add_package(self, repoid, packageid):
         """
         Adds the passed in package to this repo
         """
         repo = self.repository(repoid)
+        print "Repo: %r" % repo
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
+        package = self.packageApi.package(packageid)
+        if (package == None):
+            raise PulpException("No Package with id: %s found" % packageid)
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
-        self._add_package(repo, p)
+        self._add_package(repo, package)
         self.update(repo)
 
     def _add_package(self, repo, p):
@@ -108,6 +112,7 @@ class RepoApi(BaseApi):
         Responsible for properly associating a Package to a Repo
         """
         packages = repo['packages']
+        print "Packs: %s" % packages
         if (packages.has_key(p['id'])):
             # No need to update repo, this Package is already under this repo
             return

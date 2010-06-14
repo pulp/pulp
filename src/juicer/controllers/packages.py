@@ -63,6 +63,17 @@ class Root(JSONController):
         API.clean()
         return self.output(None)
 
+    @JSONController.error_handler
+    def POST(self):
+        """
+        @return: package meta data on successful creation of package
+        """
+        data = self.input()
+        package = API.create(data['name'], data['epoch'],data['version'],  
+                             data['release'], data['arch'], data['description'],
+                             data['checksum_type'], data['checksum'], data['filename'])
+        return self.output(package)
+    
 class Packages(JSONController):
     
     @JSONController.error_handler
@@ -80,6 +91,7 @@ class Packages(JSONController):
         '''
         API.delete(packageid=id)
         return self.output(None)
+    
 
 class Versions(JSONController):
 
