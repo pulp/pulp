@@ -26,7 +26,7 @@ import yum
 import pulp.util
 import pulp.model
 from pulp.api.repo import RepoApi
-from pulp.repo_sync import BaseSynchronizer
+from pulp.api.repo_sync import BaseSynchronizer
 
 class TestComps(unittest.TestCase):
 

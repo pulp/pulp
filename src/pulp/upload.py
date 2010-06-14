@@ -14,15 +14,14 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-__author__ = 'Pradeep Kilambi <pkilambi@redhat.com>'
-
-import os
-import util
 import base64
-import tempfile
 import hashlib
 import logging
-from repo_sync import BaseSynchronizer
+import os
+import tempfile
+
+from api.repo_sync import BaseSynchronizer
+import util
 
 log = logging.getLogger('pulp.upload')
 

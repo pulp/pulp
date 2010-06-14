@@ -27,7 +27,8 @@ from yum.Errors import CompsException
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
-from pulp import repo_sync, upload
+from pulp import upload
+from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
