@@ -21,18 +21,19 @@ import time
 import traceback
 from urlparse import urlparse
 
+# 3rd Party
 import yum
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp import model
-
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
 import pulp.util
+
 
 log = logging.getLogger('pulp.repo_sync')
 
@@ -41,8 +42,10 @@ def sync(config, repo, repo_source):
     '''
     Synchronizes content for the given RepoSource.
 
-    :param repo: instance of model.Repo; may not be None
-    :param repo_source: instance of model.RepoSource; may not be None
+    @param repo: repo to synchronize; may not be None
+    @type  repo: L{pulp.model.Repo}
+    @param repo_source: indicates the source from which the repo data will be syncced; may not be None
+    @type  repo_source: L{pulp.model.RepoSource}
     '''
     if not TYPE_CLASSES.has_key(repo_source.type):
         raise PulpException('Could not find synchronizer for repo type [%s]', repo_source.type)
@@ -116,9 +119,6 @@ class BaseSynchronizer(object):
                 log.error("error reading package %s" % (pkg_path))
         else:
             return None
-            
-        
-
 
     def import_groups_data(self, compsfile, repo):
         """
