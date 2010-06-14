@@ -18,43 +18,35 @@ _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 from datetime import datetime, timedelta
 
-from pulp.tasks.task import Task
-from pulp.tasks.queue.base import TaskQueue
+from pulp.tasks.queue.base import SchedulingTaskQueue, VolatileTaskQueue
 
 
-class FIFOTaskQueue(TaskQueue):
+class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
     """
     Task queue with threaded dispatcher that fires off tasks in the order in
     which they were enqueued and stores the finished tasks for a specified
     amount of time.
     """
     def __init__(self,
-                 max_dispatcher_sleep=1,
                  max_running=4,
                  finished_lifetime=timedelta(seconds=3600)):
         """
-        @param max_dispatch_sleep: maximum amount of time, in seconds, before
-                                   the dispatcher wakes and performs its duties
         @param max_running: the maximum number of tasks to have running
                             simultaneously
         @param finished_lifetime: timedelta object representing the length of
                                   time to keep information on finished tasks
         @return: FIFOTaskQueue instance
         """
-        super(FIFOTaskQueue, self).__init__(max_dispatcher_sleep)
+        SchedulingTaskQueue.__init__(self)
+        VolatileTaskQueue.__init__(self)
         
         self._running_count = 0
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
         
-    def __del__(self):
-        # try to head-off a race condition on shutdown
-        self._finished_tasks.clear()
-        
-    def _clean_finished_tasks(self):
+    def _initialize_runs(self):
         """
-        Protected method to clean up finished task data
-        @return: None
+        Clean up finished task data
         """
         # try to head-off a race condition on shutdown
         if not self._finished_tasks:
@@ -63,56 +55,23 @@ class FIFOTaskQueue(TaskQueue):
         for id, task in self._finished_tasks.items():
             if now - task.finish_time > self.finished_lifetime:
                 self._finished_tasks.pop(id)
-        
-    def _dispatch(self):
+                
+    def _get_tasks(self):
         """
-        Protected dispatch method executed by dispatch thread
-        * clean up finished tasks
-        * dequeue and dispatch up max_running tasks
-        @return: None
+        Get the next 'n' tasks to run, where is max - currently running tasks
         """
-        self._lock.acquire()
-        while True:
-            self._condition.wait(self.max_dispatch_sleep)
-            self._clean_finished_tasks()
-            while self._running_count < self.max_running and self._wait_queue:
-                task = self._wait_queue.pop(0)
-                self._running_tasks[task.id] = task
-                self._running_count += 1
-                task.run()
+        num_tasks = self.max_running - self._running_count
+        return self._waiting_tasks[:num_tasks]
     
-    def finished(self, task):
+    def _pre_run(self):
         """
-        Called by tasks on finishing
-        @param task: Task instance
-        @return: None
+        Adjust the running count
         """
-        self._lock.acquire()
-        try:
-            self._finished_tasks[task.id] = self._running_tasks.pop(task.id)
-            self._running_count -= 1
-            self._condition.notify()
-        finally:
-            self._lock.release()
+        self._running_count += 1
         
-    def finished_tasks(self):
+    def complete(self, task):
         """
-        Get a list of all the finished tasks
-        @return: list of Task instances
+        Adjust the running count
         """
-        return self._finished_tasks.values()
-                 
-    def enqueue(self, task):
-        """
-        Add a pulp.tasks.task.Task instance to the task queue
-        @param task: Task instance
-        @return: None
-        """
-        assert isinstance(task, Task)
-        self._lock.acquire()
-        try:
-            task.set_queue(self)
-            self._wait_queue.append(task)
-            self._condition.notify()
-        finally:
-            self._lock.release()
+        self._running_count -= 1
+        super(FIFOTaskQueue, self).complete(task)
