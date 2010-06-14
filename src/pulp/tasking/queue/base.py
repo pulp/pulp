@@ -92,10 +92,10 @@ class SchedulingTaskQueue(TaskQueue):
         self._lock = threading.RLock()
         self._condition = threading.Condition(self._lock)
         
+        self._dispatcher_timeout = dispatcher_timeout
         self._dispatcher = threading.Thread(target=self._dispatch)
         self._dispatcher.daemon = True
         self._dispatcher.start()
-        self._dipatcher_timeout = dispatcher_timeout
         
     # protected methods: scheduling
         
@@ -106,7 +106,7 @@ class SchedulingTaskQueue(TaskQueue):
         """
         self._lock.acquire()
         while True:
-            self._condition.wait(self._dipatcher_timeout)
+            self._condition.wait(self._dispatcher_timeout)
             self._initial_runs()
             for task in self._get_tasks():
                 self._pre_run(task)
