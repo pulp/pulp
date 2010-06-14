@@ -2,7 +2,7 @@ import time
 import unittest
 
 from pulp.tasking.task import Task, task_created, task_finished, task_error
-from pulp.tasking.queue.fifo import FIFOTaskQueue
+from pulp.tasking.queue.fifo import volatile_fifo_queue, mongo_fifo_queue
 
 
 def noop_test():
@@ -64,7 +64,7 @@ class TaskTester(unittest.TestCase):
 class FIFOQueueTester(unittest.TestCase):
 
     def setUp(self):
-        self.queue = FIFOTaskQueue()
+        self.queue = volatile_fifo_queue()
 
     def tearDown(self):
         pass

@@ -18,16 +18,19 @@ _author_ = 'Jason L Connor <jconnor@redhat.com>'
 
 from datetime import datetime, timedelta
 
-from pulp.tasks.queue.base import SchedulingTaskQueue, VolatileTaskQueue
+from pulp.tasking.queue.base import SchedulingTaskQueue
+from pulp.tasking.queue.storage import VolatileStorage, MongoStorage
 
+# fifo task queue -------------------------------------------------------------
 
-class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
+class FIFOTaskQueue(SchedulingTaskQueue):
     """
     Task queue with threaded dispatcher that fires off tasks in the order in
     which they were enqueued and stores the finished tasks for a specified
     amount of time.
     """
     def __init__(self,
+                 storage,
                  max_running=4,
                  finished_lifetime=timedelta(seconds=3600)):
         """
@@ -37,14 +40,13 @@ class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
                                   time to keep information on finished tasks
         @return: FIFOTaskQueue instance
         """
-        SchedulingTaskQueue.__init__(self)
-        VolatileTaskQueue.__init__(self)
+        super(FIFOTaskQueue, self).__init__(storage)
         
-        self._running_count = 0
+        self.__running_count = 0
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
         
-    # private methods: scheduling
+    # protected methods: scheduling
         
     def _initialize_runs(self):
         """
@@ -62,14 +64,14 @@ class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
         """
         Get the next 'n' tasks to run, where is max - currently running tasks
         """
-        num_tasks = self.max_running - self._running_count
+        num_tasks = self.max_running - self.__running_count
         return self._waiting_tasks[:num_tasks]
     
     def _pre_run(self):
         """
         Adjust the running count
         """
-        self._running_count += 1
+        self.__running_count += 1
         
     # public methods: queue operations
         
@@ -77,5 +79,22 @@ class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
         """
         Adjust the running count
         """
-        self._running_count -= 1
+        self.__running_count -= 1
         super(FIFOTaskQueue, self).complete(task)
+        
+# factory functions for volatile and mongo backed fifo queues -----------------
+
+def volatile_fifo_queue():
+    """
+    Create a memory-backed fifo queue
+    @return: FIFOTaskQueue instance with VolatileStorage storage
+    """
+    return FIFOTaskQueue(VolatileStorage())
+
+
+def mongo_fifo_queue(db):
+    """
+    Create a memory-backed fifo queue
+    @return: FIFOTaskQueue instance with MongoStorage storage
+    """
+    return FIFOTaskQueue(MongoStorage(db))

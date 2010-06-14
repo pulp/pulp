@@ -16,7 +16,6 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-import itertools
 import threading
 
 # base task queue -------------------------------------------------------------
@@ -25,50 +24,6 @@ class TaskQueue(object):
     """
     Abstract base class for task queues for interface definition and typing.
     """
-    
-    # private methods: storage operations
-    
-    def _waiting_task(self, task):
-        """
-        Add a task to the queue's waiting tasks
-        @type task: pulp.tasks.task.Task
-        @param task: Task instance
-        """
-        raise NotImplementedError()
-        
-    def _running_task(self, task):
-        """
-        Remove a task from the queue's waiting tasks and add it to its running tasks
-        @type task: pulp.tasks.task.Task
-        @param task: Task instance
-        """
-        raise NotImplementedError()
-        
-    def _complete_task(self, task):
-        """
-        Remove a task from the queue's running tasks and add it to it complete tasks
-        @type task: pulp.tasks.task.Task
-        @param task: Task instance
-        """
-        raise NotImplementedError()
-    
-    def _remove_task(self, task):
-        """
-        Remove a task from the queue completely
-        @type task: pulp.tasks.task.Task
-        @param task: Task instance
-        """
-        raise NotImplementedError()
-    
-    def _all_tasks(self):
-        """
-        Get and iterator of all tasks in the queue
-        @return: iterator of Task instances
-        """
-        raise NotImplementedError()
-    
-    # public methods: queue operations
-    
     def enqueue(self, task):
         """
         Add a task to the task queue
@@ -126,25 +81,23 @@ class SchedulingTaskQueue(TaskQueue):
     """
     Base task queue that dispatches threads to run tasks based on a scheduler.
     """
-    def __init__(self, dispatcher_timeout=0.5):
+    def __init__(self, storage, dispatcher_timeout=0.5):
         """
         @type dispatcher_timeout: float
         @param dispatcher_timeout: the max number of seconds before the
                                    dispatcher wakes up to run tasks
         """
+        self._storage = storage
+        
         self._lock = threading.RLock()
         self._condition = threading.Condition(self._lock)
-        
-        self._waiting_tasks = []
-        self._running_tasks = []
-        self._complete_tasks = []
         
         self._dispatcher = threading.Thread(target=self._dispatch)
         self._dispatcher.daemon = True
         self._dispatcher.start()
         self._dipatcher_timeout = dispatcher_timeout
         
-    # private methods: scheduling
+    # protected methods: scheduling
         
     def _dispatch(self):
         """
@@ -199,14 +152,14 @@ class SchedulingTaskQueue(TaskQueue):
         try:
             task.queue = self
             task.waiting()
-            self._waiting_task(task)
+            self._storage.waiting_task(task)
         finally:
             self._lock.release()
     
     def run(self, task):
         self._lock.acquire()
         try:
-            self._running_task(task)
+            self._storage.running_task(task)
             thread = threading.Thread(target=task.run)
             thread.start()
         finally:
@@ -215,75 +168,16 @@ class SchedulingTaskQueue(TaskQueue):
     def complete(self, task):
         self._lock.acquire()
         try:
-            self._complete_task(task)
+            self._storage.complete_task(task)
         finally:
             self._lock.release()
     
     def find(self, task_id):
         self._lock.aqcuire()
         try:
-            for task in self._all_tasks():
+            for task in self._storage.all_tasks():
                 if task.id == task_id:
                     return task
             return None
         finally:
             self._lock.release()
-            
-# base memory-resident task queue ---------------------------------------------
-
-class VolatileTaskQueue(TaskQueue):
-    """
-    Task queue that stores tasks in memory.
-    """
-    def __init__(self):
-        self._waiting_tasks = []
-        self._running_tasks = []
-        self._complete_tasks = []
-        
-    def _waiting_task(self, task):
-        self._waiting_tasks.append(task)
-        
-    def _running_task(self, task):
-        self._waiting_tasks.remove(task)
-        self._running_tasks.append(task)
-        
-    def _complete_task(self, task):
-        self._running_tasks.remove(task)
-        self._complete_tasks.append(task)
-        
-    def _remove_task(self, task):
-        if task in self._waiting_tasks:
-            self._waiting_tasks.remove(task)
-        if task in self._running_tasks:
-            self._running_tasks.remove(task)
-        if task in self._complete_tasks:
-            self._complete_tasks.remove(task)
-            
-    def _all_tasks(self):
-        return itertools.chain(self._waiting_tasks,
-                               self._running_tasks,
-                               self._complete_tasks)
-    
-# base database-resident task queue -------------------------------------------
-
-class PersistentTaskQueue(TaskQueue):
-    """
-    Task queue that stores tasks in a database.
-    """
-    def __init__(self, db):
-        self._db = db
-        
-    def _waiting_task(self, task):
-        raise NotImplementedError()
-    
-    def _running_task(self, task):
-        raise NotImplementedError()
-    
-    def _complete_task(self, task):
-        raise NotImplementedError()
-    
-    def _remove_task(self, task):
-        raise NotImplementedError()
-    
-    def _all_tasks(self):
-        raise NotImplementedError()
