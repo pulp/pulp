@@ -1,19 +1,24 @@
-import thread
 import time
 import unittest
-from pprint import pprint
 
-from pulp.tasks.task import Task, FINISHED
+from pulp.tasks.task import Task, task_created, task_finished, task_error
 from pulp.tasks.queue.fifo import FIFOTaskQueue
 
 
-THREAD_ID = None
-def thread_id():
-    global THREAD_ID
-    THREAD_ID = thread.get_ident()
+def noop_test():
+    pass
 
-def print_thread_id():
-    print 'thread id: %s' % str(thread.get_ident())
+def args_test(*args):
+    assert args
+    
+def kwargs_test(**kwargs):
+    assert kwargs
+
+def result_test():
+    return True
+
+def error_test():
+    raise Exception('Aaaargh!')
 
 
 class TaskTester(unittest.TestCase):
@@ -23,43 +28,49 @@ class TaskTester(unittest.TestCase):
 
     def tearDown(self):
         pass
+    
+    def test_task_create(self):
+        task = Task(noop_test)
+        self.assertTrue(task.status == task_created)
 
-    def test_task(self):
-        t = Task(thread_id)
-        print 'task id: %s' % str(t.id)
-        t.run()
-        t.wait()
-        self.assertTrue(t.thread_id == THREAD_ID)
+    def test_task_noop(self):
+        task = Task(noop_test)
+        task.run()
+        self.assertTrue(task.status == task_finished)
 
-    def test_multi_runs(self):
-        t = Task(thread_id)
-        print 'task id: %s' % str(t.id)
-        t.run()
-        t.wait()
-        self.assertTrue(t.status == FINISHED)
-        t.run()
-        t.wait()
-        self.assertTrue(t.status == FINISHED)
+    def test_task_args(self):
+        task = Task(args_test, 1, 2, 'foo')
+        task.run()
+        self.assertTrue(task.status == task_finished)
+
+    def test_task_kwargs(self):
+        task = Task(kwargs_test, arg1=1, arg2=2, argfoo='foo')
+        task.run()
+        self.assertTrue(task.status == task_finished)
+
+    def test_task_result(self):
+        task = Task(result_test)
+        task.run()
+        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.result is True)
+
+    def test_task_error(self):
+        task = Task(error_test)
+        task.run()
+        self.assertTrue(task.status == task_error)
+        self.assertTrue(task.traceback is not None)
 
 
 class FIFOQueueTester(unittest.TestCase):
 
     def setUp(self):
-        pass
+        self.queue = FIFOTaskQueue()
 
     def tearDown(self):
         pass
 
-    def test_queue_allocation(self):
-        q = FIFOTaskQueue()
-
     def test_task_dispatch(self):
-        q = FIFOTaskQueue()
-        t = Task(print_thread_id)
-        q.enqueue(t)
-        t.wait()
-        self.assertTrue(t.status == FINISHED)
-
+        pass
 
 if __name__ == '__main__':
     unittest.main()

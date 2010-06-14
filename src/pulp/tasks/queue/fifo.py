@@ -44,6 +44,8 @@ class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
         
+    # private methods: scheduling
+        
     def _initialize_runs(self):
         """
         Clean up finished task data
@@ -68,6 +70,8 @@ class FIFOTaskQueue(SchedulingTaskQueue, VolatileTaskQueue):
         Adjust the running count
         """
         self._running_count += 1
+        
+    # public methods: queue operations
         
     def complete(self, task):
         """

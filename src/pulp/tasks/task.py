@@ -62,12 +62,12 @@ class Task(object):
     Meta data to be stored in the database for executing a long-running task and
     querying the status and results.
     """
-    def __init__(self, callable, args=[], kwargs={}):
+    def __init__(self, callable, *args, **kwargs):
         """
         Create a Task for the passed in callable and arguments.
-        @param callable: function, method, lambda, or object implementing _call_
-        @param args: list of positional arguments to be passed into the callable
-        @param kwargs: dictionary of keyword arguments to be passed into the callable
+        @param callable: function, method, lambda, or object with __call__
+        @param args: positional arguments to be passed into the callable
+        @param kwargs: keyword arguments to be passed into the callable
         """
         self.func = functools.partial(callable, *args, **kwargs)
         self.id = uuid.uuid1(clock_seq=int(time.time() * 1000))
