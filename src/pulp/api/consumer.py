@@ -115,3 +115,13 @@ class ConsumerApi(BaseApi):
             return
         repoids.remove(repoid)
         self.update(consumer)
+        
+    def profile_update(self, id, package_profile):
+        """
+        Update the consumer information such as package profile
+        """
+        consumer = self.consumer(id)
+        if consumer is None:
+            raise PulpException('consumer "%s", not-found', id)
+        consumer["package_profile"] =  package_profile
+        self.update(consumer)

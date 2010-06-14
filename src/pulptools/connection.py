@@ -201,7 +201,10 @@ class ConsumerConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
-
+    
+    def profile(self, id, profile):
+        method = "/consumers/%s/profile/" % id
+        return self.conn.request_post(method, params=profile)
 
 class PackageConnection(PulpConnection):
 

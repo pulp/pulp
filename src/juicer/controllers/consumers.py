@@ -28,6 +28,7 @@ URLS = (
     '/([^/]+)/$', 'Consumer',
     '/([^/]+)/bind/$', 'Bind',
     '/([^/]+)/unbind/$', 'Unbind',
+    '/([^/]+)/profile/$', 'Profile',
 )
 
 application = web.application(URLS, globals())
@@ -130,3 +131,13 @@ class Unbind(JSONController):
     def POST(self, id):
         API.unbind(id, self.input())
         return self.output(None)
+
+class Profile(JSONController):
+    """
+    update/add Consumer profile information. eg:package, hardware etc
+    """
+    @JSONController.error_handler
+    def POST(self, id):
+        API.profile_update(id, self.input())
+        return self.output(None)
+     
