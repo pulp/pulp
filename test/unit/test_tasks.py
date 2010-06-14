@@ -1,8 +1,8 @@
 import time
 import unittest
 
-from pulp.tasks.task import Task, task_created, task_finished, task_error
-from pulp.tasks.queue.fifo import FIFOTaskQueue
+from pulp.tasking.task import Task, task_created, task_finished, task_error
+from pulp.tasking.queue.fifo import FIFOTaskQueue
 
 
 def noop_test():
