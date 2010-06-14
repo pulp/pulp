@@ -23,7 +23,7 @@ import time
 import traceback
 import uuid
 
-from pulp.tasks.queue.base import SimpleTaskQueue
+from pulp.tasking.queue.base import SimpleTaskQueue
 
 # task states -----------------------------------------------------------------
 
