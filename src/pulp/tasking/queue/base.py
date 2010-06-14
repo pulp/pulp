@@ -173,7 +173,7 @@ class SchedulingTaskQueue(TaskQueue):
             self._lock.release()
     
     def find(self, task_id):
-        self._lock.aqcuire()
+        self._lock.acquire()
         try:
             for task in self._storage.all_tasks():
                 if task.id == task_id:

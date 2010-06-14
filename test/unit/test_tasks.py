@@ -3,7 +3,8 @@ import time
 import unittest
 
 from pulp.tasking.task import (
-    Task, task_created, task_finished, task_error, task_complete_states)
+    Task, task_created, task_waiting, task_finished, task_error,
+    task_complete_states)
 from pulp.tasking.queue.fifo import volatile_fifo_queue, mongo_fifo_queue
 
 
@@ -74,16 +75,27 @@ class VolatileFIFOQueueTester(unittest.TestCase):
     def __wait_for_task(self, task):
         while task.status not in task_complete_states:
             time.sleep(0.005)
+        if task.status == task_error:
+            pprint.pprint(task.traceback)
+            
+    def test_task_enqueue(self):
+        task = Task(noop_test)
+        self.queue.enqueue(task)
+        self.assertTrue(task.status == task_waiting)
 
     def test_task_dispatch(self):
         task = Task(noop_test)
         self.queue.enqueue(task)
         self.__wait_for_task(task)
-        if task.status == task_error:
-            pprint.pprint(task.traceback)
         self.assertTrue(task.status == task_finished)
         
-# run the unittests -----------------------------------------------------------
+    def test_task_find(self):
+        task1 = Task(noop_test)
+        self.queue.enqueue(task1)
+        task2 = self.queue.find(task1.id)
+        self.assertTrue(task1 is task2)
+        
+# run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
     unittest.main()
