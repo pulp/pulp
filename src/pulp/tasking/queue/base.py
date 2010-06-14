@@ -27,7 +27,7 @@ class TaskQueue(object):
     def enqueue(self, task):
         """
         Add a task to the task queue
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
         """
         raise NotImplementedError()
@@ -35,7 +35,7 @@ class TaskQueue(object):
     def run(self, task):
         """
         Run a task from this task queue
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
         """
         raise NotImplementedError()
@@ -43,7 +43,7 @@ class TaskQueue(object):
     def complete(self, task):
         """
         Mark a task run as completed
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
         """
         raise NotImplementedError()

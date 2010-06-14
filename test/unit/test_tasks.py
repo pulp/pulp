@@ -64,19 +64,22 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(task.traceback is not None)
 
 
-class VolatileFIFOQueueTester(unittest.TestCase):
+class QueueTester(unittest.TestCase):
+    
+    def _wait_for_task(self, task):
+        while task.status not in task_complete_states:
+            time.sleep(0.005)
+        if task.status == task_error:
+            pprint.pprint(task.traceback)
+            
+
+class VolatileFIFOQueueTester(QueueTester):
 
     def setUp(self):
         self.queue = volatile_fifo_queue()
 
     def tearDown(self):
         pass
-    
-    def __wait_for_task(self, task):
-        while task.status not in task_complete_states:
-            time.sleep(0.005)
-        if task.status == task_error:
-            pprint.pprint(task.traceback)
             
     def test_task_enqueue(self):
         task = Task(noop_test)
@@ -86,7 +89,7 @@ class VolatileFIFOQueueTester(unittest.TestCase):
     def test_task_dispatch(self):
         task = Task(noop_test)
         self.queue.enqueue(task)
-        self.__wait_for_task(task)
+        self._wait_for_task(task)
         self.assertTrue(task.status == task_finished)
         
     def test_task_find(self):
@@ -95,6 +98,15 @@ class VolatileFIFOQueueTester(unittest.TestCase):
         task2 = self.queue.find(task1.id)
         self.assertTrue(task1 is task2)
         
+        
+class MongoFIFOQueueTester(QueueTester):
+    
+    def setUp(self):
+        self.queue = mongo_fifo_queue()
+        
+    def tearDown(self):
+        pass
+    
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':

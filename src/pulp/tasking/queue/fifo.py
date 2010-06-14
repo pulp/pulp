@@ -68,6 +68,11 @@ class FIFOTaskQueue(SchedulingTaskQueue):
         self.__running_count += 1
         
     # public methods: queue operations
+    
+    def enqueue(self, task):
+        # Set the 'next_time' scheduled run time on the task
+        task.next_time = datetime.now()
+        super(FIFOTaskQueue, self).enqueue(task)
         
     def complete(self, task):
         # Adjust the running count
@@ -84,9 +89,9 @@ def volatile_fifo_queue():
     return FIFOTaskQueue(VolatileStorage())
 
 
-def mongo_fifo_queue(db):
+def mongo_fifo_queue():
     """
     Create a memory-backed fifo queue
     @return: FIFOTaskQueue instance with MongoStorage storage
     """
-    return FIFOTaskQueue(MongoStorage(db))
+    return FIFOTaskQueue(MongoStorage())

@@ -18,6 +18,11 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import itertools
 
+import pymongo
+from pymongo.son_manipulator import NamespaceInjector, AutoReference
+
+from pulp.tasking.task import (
+    task_waiting, task_running, task_complete_states)
 
 class Storage(object):
     """
@@ -133,29 +138,41 @@ class MongoStorage(Storage):
     """
     Task storage that stores tasks in a mongo database.
     """
-    def __init__(self, db):
-        self._db = db
+    def __init__(self):
+        self._connection = pymongo.Connection()
+        
+        self._db = self._connection._database
+        self._db.add_son_manipulator(NamespaceInjector())
+        self._db.add_son_manipulator(AutoReference(self._db))
+        
+        self._objdb = self._db.fifo_tasks
+        self._objdb.ensure_index([('id', pymongo.DESCENDING)], unique=True, background=True)
+        self._objdb.ensure_index([('next_time', pymongo.ASCENDING)], background=True)
+        
         
     def waiting_task(self, task):
-        raise NotImplementedError()
+        self._objdb.save(task, manipulate=True, safe=True)
     
     def running_task(self, task):
-        raise NotImplementedError()
+        self._objdb.save(task, manipulate=True, safe=True)
     
     def complete_task(self, task):
-        raise NotImplementedError()
+        self._objdb.save(task, manipulate=True, safe=True)
     
     def remove_task(self, task):
-        raise NotImplementedError()
+        self._objdb.remove({'id': task.id}, safe=True)
     
     def all_tasks(self):
-        raise NotImplementedError()
+        return self._objdb.find_all()
     
     def waiting_tasks(self):
-        raise NotImplementedError()
+        return self._objdb.find({'status': task_waiting})
     
     def running_tasks(self):
-        raise NotImplementedError()
+        return self._objdb.find({'status': task_running})
     
     def complete_tasks(self):
-        raise NotImplementedError()
+        tasks = []
+        for status in task_complete_states:
+            tasks.extend(self._objdb.find({'status': status}))
+        return tasks
