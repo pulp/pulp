@@ -23,7 +23,7 @@ import time
 import traceback
 import uuid
 
-from pulp.tasks.queue.base import DummyTaskQueue
+from pulp.tasks.queue.base import SimpleTaskQueue
 
 # task states -----------------------------------------------------------------
 
@@ -71,7 +71,7 @@ class Task(object):
         """
         self.func = functools.partial(callable, *args, **kwargs)
         self.id = uuid.uuid1(clock_seq=int(time.time() * 1000))
-        self.queue = DummyTaskQueue()
+        self.queue = SimpleTaskQueue()
         
         self.status = task_created
         self.start_time = None
@@ -98,8 +98,8 @@ class Task(object):
             result = self.func()
         except Exception, e:
             self.exception = e
-            exec_info = sys.exc_info()
-            self.traceback = traceback.format_exception(*exec_info)
+            exc_info = sys.exc_info() # returns tuple (class, exception, traceback)
+            self.traceback = traceback.format_exception(*exc_info)
             self.status = task_error
         else:
             self.result = result
