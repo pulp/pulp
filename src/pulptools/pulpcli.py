@@ -20,7 +20,7 @@ import os
 import sys
 import utils
 from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
-import pulptools.constants
+import pulptools.constants as constants
 from optparse import OptionParser
 from pulptools.logutil import getLogger
 from package_profile import PackageProfile
