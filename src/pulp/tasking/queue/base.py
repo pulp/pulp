@@ -107,10 +107,10 @@ class SchedulingTaskQueue(TaskQueue):
         self._lock.acquire()
         while True:
             self._condition.wait(self._dispatcher_timeout)
-            self._initial_runs()
+            self._initialize_runs()
             for task in self._get_tasks():
                 self._pre_run(task)
-                self._run(task)
+                self.run(task)
                 self._post_run(task)
             self._finalize_runs()
                 
@@ -133,13 +133,13 @@ class SchedulingTaskQueue(TaskQueue):
         """
         raise NotImplementedError()
     
-    def _pre_run(self):
+    def _pre_run(self, task):
         """
         Pre-individual task run hook that may be overridden in a derived class
         """
         pass
     
-    def _post_run(self):
+    def _post_run(self, task):
         """
         Post-individual task run hook that may be overridden in a derived class
         """

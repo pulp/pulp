@@ -61,6 +61,27 @@ class Storage(object):
         @return: iterator of Task instances
         """
         raise NotImplementedError()
+        
+    def waiting_tasks(self):
+        """
+        Get and iterator of waiting tasks in the queue
+        @return: iterator of Task instances
+        """
+        raise NotImplementedError()
+    
+    def running_tasks(self):
+        """
+        Get and iterator of running tasks in the queue
+        @return: iterator of Task instances
+        """
+        raise NotImplementedError()
+        
+    def complete_tasks(self):
+        """
+        Get and iterator of completed tasks in the queue
+        @return: iterator of Task instances
+        """
+        raise NotImplementedError()
             
 # memory-resident task storage ------------------------------------------------
 
@@ -93,9 +114,18 @@ class VolatileStorage(Storage):
             self.__complete_tasks.remove(task)
             
     def all_tasks(self):
-        return itertools.chain(self.__waiting_tasks,
-                               self.__running_tasks,
-                               self.__complete_tasks)
+        return itertools.chain(self.__waiting_tasks[:],
+                               self.__running_tasks[:],
+                               self.__complete_tasks[:])
+        
+    def waiting_tasks(self):
+        return self.__waiting_tasks[:]
+    
+    def running_tasks(self):
+        return self.__running_tasks[:]
+        
+    def complete_tasks(self):
+        return self.__complete_tasks[:]
     
 # mongo database task storage -------------------------------------------------
 
@@ -119,4 +149,13 @@ class MongoStorage(Storage):
         raise NotImplementedError()
     
     def all_tasks(self):
+        raise NotImplementedError()
+    
+    def waiting_tasks(self):
+        raise NotImplementedError()
+    
+    def running_tasks(self):
+        raise NotImplementedError()
+    
+    def complete_tasks(self):
         raise NotImplementedError()

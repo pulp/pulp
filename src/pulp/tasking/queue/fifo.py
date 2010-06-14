@@ -48,37 +48,29 @@ class FIFOTaskQueue(SchedulingTaskQueue):
         
     # protected methods: scheduling
         
-    def _initialize_runs(self):
-        """
-        Clean up finished task data
-        """
-        # try to head-off a race condition on shutdown
-        if not self._finished_tasks:
+    def _finalilize_runs(self):
+        # Clean up finished task data
+        complete_tasks = self._storage.complete_tasks()
+        if not complete_tasks:
             return
         now = datetime.now()
-        for id, task in self._finished_tasks.items():
+        for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
-                self._finished_tasks.pop(id)
+                self._storage.remove_task(task)
                 
     def _get_tasks(self):
-        """
-        Get the next 'n' tasks to run, where is max - currently running tasks
-        """
+        # Get the next 'n' tasks to run, where is max - currently running tasks
         num_tasks = self.max_running - self.__running_count
-        return self._waiting_tasks[:num_tasks]
+        return self._storage.waiting_tasks()[:num_tasks]
     
-    def _pre_run(self):
-        """
-        Adjust the running count
-        """
+    def _pre_run(self, task):
+        # Adjust the running count
         self.__running_count += 1
         
     # public methods: queue operations
         
     def complete(self, task):
-        """
-        Adjust the running count
-        """
+        # Adjust the running count
         self.__running_count -= 1
         super(FIFOTaskQueue, self).complete(task)
         
