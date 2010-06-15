@@ -353,7 +353,7 @@ class RepoCore(BaseCore):
                 sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
             for repo in data:
-                repo["packages"] = _pkg_count(repo["packages"])
+                repo["packages"] = len(repo["packages"])
                 print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"], repo["source"], repo["arch"], repo["packages"] )
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -371,7 +371,7 @@ class RepoCore(BaseCore):
             status = self.pconn.sync(self.options.label)
             if status:
                 packages =  self.pconn.packages(self.options.label)
-                pkg_count = _pkg_count(packages)
+                pkg_count = len(packages)
             print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -436,13 +436,6 @@ class RepoCore(BaseCore):
                 log.error("Error: %s" % e)
                 raise #continue
  
-
-def _pkg_count(pkgdict):
-    count =0
-    for key, value in pkgdict.items():
-        count += len(value["versions"])
-    return count
-
 def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
 
