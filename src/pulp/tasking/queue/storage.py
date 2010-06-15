@@ -22,7 +22,7 @@ import pymongo
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
 from pulp.tasking.task import (
-    task_waiting, task_running, task_complete_states, task2model)
+    task_waiting, task_running, task_complete_states, task2model, TaskModel)
 
 class Storage(object):
     """
@@ -177,6 +177,10 @@ class MongoStorage(VolatileStorage):
         
         self._objdb = self._db.fifo_tasks
         
+    def _task_db2model(self, task_son):
+        model = TaskModel()
+        model.update(task_son)
+        return model
         
     def waiting_task(self, task):
         model = task2model(task)
@@ -194,7 +198,8 @@ class MongoStorage(VolatileStorage):
         super(MongoStorage, self).complete_task(task)
         
     def task_status(self, task_id):
-        return self._objdb.find_one({'_id': task_id})
+        task_son = self._objdb.find_one({'_id': task_id})
+        return self._task_db2model(task_son)
     
     def remove_task(self, task):
         self._objdb.remove({'_id': task.id}, safe=True)

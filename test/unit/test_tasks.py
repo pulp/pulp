@@ -123,7 +123,14 @@ class MongoFIFOQueueTester(QueueTester):
         self.queue.enqueue(task1)
         task2 = self.queue.find(task1.id)
         self.assertTrue(task1 is task2)
-    
+        
+    def test_task_status(self):
+        task = Task(noop_test)
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        status = self.queue.status(task.id)
+        self.assertTrue(status.status == task.status)
+            
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
