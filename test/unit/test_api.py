@@ -49,18 +49,7 @@ from pulp.util import random_string
 
 from ConfigParser import ConfigParser
 
-
-class TestConfig(ConfigParser):
-
-    def __init__(self):
-        ConfigParser.__init__(self)
-        self.add_section('paths')
-        self.set('paths', 'local_storage', '/tmp/pulp')
-        self.add_section('logs')
-        self.set('logs', 'pulp_file', '/tmp/pulp.log')
-        self.set('logs', 'grinder_file', '/tmp/pulp/grinder.log')
-        self.add_section('rhn')
-        self.set('rhn', 'threads', '25')
+import testutil
 
 
 class TestApi(unittest.TestCase):
@@ -73,7 +62,7 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        self.config = TestConfig()
+        self.config = testutil.load_test_config()
         self.rapi = RepoApi(self.config)
         self.papi = PackageApi(self.config)
         self.capi = ConsumerApi(self.config)
