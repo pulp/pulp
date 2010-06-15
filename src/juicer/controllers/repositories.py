@@ -18,7 +18,7 @@ __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import web
 
-from juicer.controllers.base import JSONController
+from juicer.controllers.base import JSONController, AsyncController
 from juicer.runtime import CONFIG
 from pulp.api.repo import RepoApi
 
@@ -28,6 +28,7 @@ URLS = (
     '/$', 'Root',
     '/([^/]+)/$', 'Repository',
     '/([^/]+)/sync/$', 'Sync',
+    '/([^/]+)/sync/([^/]+)/$', 'SyncStatus',
     '/([^/]+)/list/$', 'Packages',
     '/([^/]+)/upload/$', 'Upload',
 )
@@ -45,6 +46,7 @@ class Root(JSONController):
     @JSONController.error_handler
     def GET(self):
         """
+        List all available repositories.
         @return: a list of all available repositories
         """
         return self.output(API.repositories())
@@ -52,6 +54,7 @@ class Root(JSONController):
     @JSONController.error_handler
     def POST(self):
         """
+        Create a new repository.
         @return: repository meta data on successful creation of repository
         """
         repo_data = self.input()
@@ -74,6 +77,7 @@ class Repository(JSONController):
     @JSONController.error_handler
     def DELETE(self, id):
         """
+        Delete a repository.
         @param id: repository id
         @return: True on successful deletion of repository
         """
@@ -83,6 +87,7 @@ class Repository(JSONController):
     @JSONController.error_handler
     def GET(self, id):
         """
+        Get information on a single repository.
         @param id: repository id
         @return: repository meta data
         """
@@ -91,6 +96,7 @@ class Repository(JSONController):
     @JSONController.error_handler
     def POST(self, id):
         """
+        Change a repository.
         @param id: repository id
         @return: True on successful update of repository meta data
         """
@@ -100,16 +106,35 @@ class Repository(JSONController):
         return self.output(True)
     
     
-class Sync(JSONController):
+class Sync(JSONController, AsyncController):
     
     @JSONController.error_handler
     def GET(self, id):
         """
+        Sync a repository from it's feed.
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        API.sync(id)
-        return self.output(True)
+        task_info = self.async(API.sync, id)
+        status_info = self.accepted(task_info['id'])
+        task_info.update(status_info)
+        return self.output(task_info)
+    
+    
+class SyncStatus(JSONController, AsyncController):
+    
+    @JSONController.error_handler
+    def GET(self, id, task_id):
+        """
+        Check the status of a sync operation.
+        @param id: repository id
+        @param task_id: sync operation id
+        @return: operation status information
+        """
+        task_info = self.status(task_id)
+        if task_info is None:
+            return self.not_found()
+        return self.output(task_info)
        
   
 class Packages(JSONController):
@@ -117,15 +142,22 @@ class Packages(JSONController):
     @JSONController.error_handler
     def GET(self, id):
         """
+        List all packages in a repository.
         @param id: repository id
         @return: list of all packages available in corresponding repository
         """
         return self.output(API.packages(id))
+    
 
 class Upload(JSONController):
 
     @JSONController.error_handler
     def POST(self, id):
+        """
+        Upload a package to a repository.
+        @param id: repository id
+        @return: True on successful upload
+        """
         data = self.input()
         API.upload(data['repo'],
                    data['pkginfo'],

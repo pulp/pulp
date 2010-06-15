@@ -17,8 +17,10 @@
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
 import functools
+import os
 import sys
 import traceback
+import urllib
 
 try:
     import json
@@ -27,6 +29,9 @@ except ImportError:
     
 import pymongo.json_util 
 import web
+
+from juicer.queues import fifo
+from pulp.tasking.task import Task, task2model
 
 
 class JSONController(object):
@@ -59,3 +64,44 @@ class JSONController(object):
     def output(self, data):
         web.header('Content-Type', 'application/json')
         return json.dumps(data, default=pymongo.json_util.default)
+
+
+class AsyncController(object):
+    """
+    Base controller class with convenience methods for executing asynchronous
+    tasks.
+    """
+    
+    def async(self, func, *args, **kwargs):
+        """
+        Execute the function and its arguments as an asynchronous task.
+        @param func: python callable
+        @param args: positional arguments for func
+        @param kwargs: key word arguments for func
+        @return: TaskModel instance
+        """
+        task = Task(func, *args, **kwargs)
+        fifo.enqueue(task)
+        return task2model(task)
+    
+    def status(self, id):
+        """
+        Get the current status of an asynchronous task.
+        @param id: task id
+        @return: TaskModel instance
+        """
+        return fifo.status(id)
+    
+    def accepted(self, id):
+        """
+        Sets up a '202 Accepted' response and returns a dictionary with the 
+        status path in it.
+        A status path is constructed as follows:
+        /<section>/<object type>/<object id>/<operation>/<operation id>/
+        A GET request sent to this path will get a JSON encoded status object
+        @param id: task id
+        @return: dictionary of status URL
+        """
+        web.ctx.status = '200 Accepted'
+        path = os.path.normpath(os.path.join(web.ctx.homepath, web.ctx.path, id))
+        return {'status_path': urllib.pathname2url(path)}

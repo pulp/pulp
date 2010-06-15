@@ -43,6 +43,7 @@ class Root(JSONController):
     @JSONController.error_handler
     def GET(self):
         """
+        List all available consumers.
         @return: a list of all consumers
         """
         params = self.params()
@@ -58,6 +59,7 @@ class Root(JSONController):
     @JSONController.error_handler
     def POST(self):
         """
+        Create a new consumer.
         @return: consumer meta data on successful creation of consumer
         """
         consumer_data = self.input()
@@ -78,6 +80,7 @@ class Consumer(JSONController):
     @JSONController.error_handler
     def GET(self, id):
         """
+        Get a consumer's meta data.
         @param id: consumer id
         @return: consumer meta data
         """
@@ -97,6 +100,7 @@ class Consumer(JSONController):
     @JSONController.error_handler
     def DELETE(self, id):
         """
+        Delete a consumer.
         @param id: consumer id
         @return: True on successful deletion of consumer
         """
@@ -113,20 +117,28 @@ class Bulk(JSONController):
 
 
 class Bind(JSONController):
-    """
-    Bind (subscribe) a user to a repository.
-    """
+    
     @JSONController.error_handler
     def POST(self, id):
-        API.bind(id, self.input())
-        return self.output(None)
+        """
+        Bind (subscribe) a user to a repository.
+        @param id: consumer id
+        @return: True on successful bind
+        """
+        data = self.input()
+        API.bind(id, data['repoid'])
+        return self.output(True)
 
 
 class Unbind(JSONController):
-    """
-    Unbind (unsubscribe) a user to a repository.
-    """
+    
     @JSONController.error_handler
     def POST(self, id):
-        API.unbind(id, self.input())
-        return self.output(None)
+        """
+        Unbind (unsubscribe) a user to a repository.
+        @param id: consumer id
+        @return: True on successful unbind
+        """
+        data = self.input()
+        API.unbind(id, data['repoid'])
+        return self.output(True)

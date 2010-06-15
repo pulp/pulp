@@ -26,11 +26,12 @@ from pulp.api.package import PackageApi
 
 # /packages/
 # GET    -  List of all package names and descriptions
+# POST   -  Create a new package
 # DELETE -  Delete all packages
 # 
 # /packages/<name>
-# GET    -  All package for that package name
-# DELETE -  All package for that package name
+# GET    -  All packages for that package name
+# DELETE -  All packages for that package name
 # 
 # /packages/<name>/<version>/<release>/<epoch>/<arch>
 # GET    -  Package version details for that package version
@@ -54,10 +55,21 @@ class Root(JSONController):
     @JSONController.error_handler
     def GET(self):
         """
+        List available packages.
         @return: a list of packages
         """
         return self.output(API.package_descriptions())
     
+    @JSONController.error_handler
+    def POST(self):
+        """
+        Create a new package.
+        @return: package meta data on successful creation of new package
+        """
+        pkg_data = self.input()
+        pkg = API.create(pkg_data['id'], pkg_data['name'])
+        return self.output(pkg)
+
     @JSONController.error_handler
     def DELETE(self):
         API.clean()
@@ -68,6 +80,7 @@ class Packages(JSONController):
     @JSONController.error_handler
     def GET(self, id):
         """
+        Get information on a sinble package.
         @param id: package id
         @return: package meta data corresponding to id
         """

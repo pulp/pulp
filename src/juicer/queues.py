@@ -16,11 +16,7 @@
 
 __author__ = 'Jason L Connor <jconnor@redhat.com>'
 
-from pulp.tasks.queue.at import AtTaskQueue
-from pulp.tasks.queue.cron import CronTaskQueue
-from pulp.tasks.queue.fifo import FIFOTaskQueue
+from pulp.tasking.queue.fifo import mongo_fifo_queue
 
-AT = AtTaskQueue()
-CRON = CronTaskQueue()
-FIFO = FIFOTaskQueue()
 
+fifo = mongo_fifo_queue()
