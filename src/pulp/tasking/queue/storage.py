@@ -21,8 +21,8 @@ import itertools
 import pymongo
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
-from pulp.tasking.task import (
-    task_waiting, task_running, task_complete_states, task2model, TaskModel)
+from pulp.tasking.task import task2model, TaskModel
+
 
 class Storage(object):
     """
@@ -164,7 +164,7 @@ class VolatileStorage(Storage):
 
 class MongoStorage(VolatileStorage):
     """
-    Task storage that stores tasks in a mongo database.
+    Task storage that stores task status in a mongo database.
     """
     def __init__(self):
         super(MongoStorage, self).__init__()
@@ -178,6 +178,12 @@ class MongoStorage(VolatileStorage):
         self._objdb = self._db.fifo_tasks
         
     def _task_db2model(self, task_son):
+        """
+        Protected method to marshal mongodb son objects into the task model.
+        @type task_son: pymongo.son.SON instance
+        @param task_son: mongodb son representation of a task
+        @return: pulp.tasking.task.TaskModel instance
+        """
         model = TaskModel()
         model.update(task_son)
         return model

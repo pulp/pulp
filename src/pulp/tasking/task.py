@@ -59,8 +59,7 @@ task_complete_states = (
 class Task(object):
     """
     Task class
-    Meta data to be stored in the database for executing a long-running task and
-    querying the status and results.
+    Meta data for executing a long-running task.
     """
     def __init__(self, callable, *args, **kwargs):
         """
@@ -76,7 +75,7 @@ class Task(object):
         self.queue = SimpleTaskQueue()
         
         self.method_name = callable.__name__
-        self.status = task_created
+        self.state = task_created
         self.start_time = None
         self.finish_time = None
         self.next_time = None
@@ -88,15 +87,15 @@ class Task(object):
         """
         Mark this task as waiting
         """
-        assert self.status in task_ready_states
-        self.status = task_waiting
+        assert self.state in task_ready_states
+        self.state = task_waiting
         
     def running(self):
         """
         Mark this task as running
         """
-        assert self.status in task_ready_states
-        self.status = task_running
+        assert self.state in task_ready_states
+        self.state = task_running
         
     def run(self):
         """
@@ -106,15 +105,15 @@ class Task(object):
         try:
             result = self.callable(*self.args, **self.kwargs)
         except Exception, e:
+            self.state = task_error
             self.exception = repr(e)
             # exc_info returns tuple (class, exception, traceback)
             # format_exception takes 3 arguments (class, exception, traceback)
             exc_info = sys.exc_info()
             self.traceback = traceback.format_exception(*exc_info)
-            self.status = task_error
         else:
+            self.state = task_finished
             self.result = result
-            self.status = task_finished
         self.finish_time = datetime.datetime.now()
         self.queue.complete(self)
         
@@ -122,9 +121,9 @@ class Task(object):
         """
         Reset this task's recorded data
         """
-        if self.status not in task_complete_states:
+        if self.state not in task_complete_states:
             return
-        self.status = task_reset
+        self.state = task_reset
         self.start_time = None
         self.finish_time = None
         self.next_time = None
@@ -142,8 +141,7 @@ class TaskModel(Base):
         self._id = None
         
         self.method_name = None
-    
-        self.status = None
+        self.state = None
         self.start_time = None
         self.finish_time = None
         self.next_time = None
@@ -154,7 +152,7 @@ class TaskModel(Base):
 
 _common_attrs = (
     'method_name',
-    'status',
+    'state',
     'start_time',
     'finish_time',
     'next_time',

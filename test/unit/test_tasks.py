@@ -34,42 +34,42 @@ class TaskTester(unittest.TestCase):
     
     def test_task_create(self):
         task = Task(noop_test)
-        self.assertTrue(task.status == task_created)
+        self.assertTrue(task.state == task_created)
 
     def test_task_noop(self):
         task = Task(noop_test)
         task.run()
-        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.state == task_finished)
 
     def test_task_args(self):
         task = Task(args_test, 1, 2, 'foo')
         task.run()
-        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.state == task_finished)
 
     def test_task_kwargs(self):
         task = Task(kwargs_test, arg1=1, arg2=2, argfoo='foo')
         task.run()
-        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.state == task_finished)
 
     def test_task_result(self):
         task = Task(result_test)
         task.run()
-        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.state == task_finished)
         self.assertTrue(task.result is True)
 
     def test_task_error(self):
         task = Task(error_test)
         task.run()
-        self.assertTrue(task.status == task_error)
+        self.assertTrue(task.state == task_error)
         self.assertTrue(task.traceback is not None)
 
 
 class QueueTester(unittest.TestCase):
     
     def _wait_for_task(self, task):
-        while task.status not in task_complete_states:
+        while task.state not in task_complete_states:
             time.sleep(0.005)
-        if task.status == task_error:
+        if task.state == task_error:
             pprint.pprint(task.traceback)
             
 
@@ -84,19 +84,26 @@ class VolatileFIFOQueueTester(QueueTester):
     def test_task_enqueue(self):
         task = Task(noop_test)
         self.queue.enqueue(task)
-        self.assertTrue(task.status == task_waiting)
+        self.assertTrue(task.state == task_waiting)
 
     def test_task_dispatch(self):
         task = Task(noop_test)
         self.queue.enqueue(task)
         self._wait_for_task(task)
-        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.state == task_finished)
         
     def test_task_find(self):
         task1 = Task(noop_test)
         self.queue.enqueue(task1)
         task2 = self.queue.find(task1.id)
         self.assertTrue(task1 is task2)
+        
+    def test_task_status(self):
+        task = Task(noop_test)
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        status = self.queue.status(task.id)
+        self.assertTrue(status.state == task.state)
         
         
 class MongoFIFOQueueTester(QueueTester):
@@ -110,13 +117,13 @@ class MongoFIFOQueueTester(QueueTester):
     def test_task_enqueue(self):
         task = Task(noop_test)
         self.queue.enqueue(task)
-        self.assertTrue(task.status == task_waiting)
+        self.assertTrue(task.state == task_waiting)
 
     def test_task_dispatch(self):
         task = Task(noop_test)
         self.queue.enqueue(task)
         self._wait_for_task(task)
-        self.assertTrue(task.status == task_finished)
+        self.assertTrue(task.state == task_finished)
         
     def test_task_find(self):
         task1 = Task(noop_test)
@@ -129,7 +136,16 @@ class MongoFIFOQueueTester(QueueTester):
         self.queue.enqueue(task)
         self._wait_for_task(task)
         status = self.queue.status(task.id)
-        self.assertTrue(status.status == task.status)
+        self.assertTrue(status.state == task.state)
+        
+    def test_separate_queues(self):
+        new_queue = mongo_fifo_queue()
+        task = Task(noop_test)
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        status = new_queue.status(task.id)
+        self.assertTrue(status.state == task.state)
+        
             
 # run the unit tests ----------------------------------------------------------
 
