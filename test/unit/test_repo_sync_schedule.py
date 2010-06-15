@@ -43,27 +43,63 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.clean()
         shutil.rmtree(self.config.get('paths', 'repo_sync_cron'))
 
-    def test_update_schedule(self):
+    def test_update_delete_schedule(self):
+        '''
+        Tests multiple updates to a repo's sync schedule and the case where multiple updates
+        are created with no schedules.
+        '''
+
         # Setup
         repo_id = 'repo-sync-schedule'
         sync_schedule = '* * * * *'
+        sync_schedule_2 = '2 2 2 2 2'
 
         #   Create the repo
         self.repo_api.create(repo_id, 'Repo Sync Schedule', 'noarch', 'yum://foo')
 
-        #   Set the repo's sync schedule
+        # -- Update #1 ----------
         repo = self.repo_api.repository(repo_id)
         repo['sync_schedule'] = sync_schedule
         self.repo_api.update(repo)
 
-        # Test
-        pulp.api.repo_sync.update_schedule(self.config, repo)
+        file_name = pulp.api.repo_sync._sync_file_name(self.config, repo)
 
         # Verify
-        file_name = pulp.api.repo_sync._sync_file_name(self.config, repo)
         self.assertTrue(os.path.exists(file_name))
 
         f = open(file_name, 'r')
         contents = f.read()
+        print('Update #1 [%s]' % contents)
 
         self.assertTrue(contents.startswith(sync_schedule))
+
+        # -- Update #2 ----------
+        repo = self.repo_api.repository(repo_id)
+        repo['sync_schedule'] = sync_schedule_2
+        self.repo_api.update(repo)
+
+        # Verify
+        self.assertTrue(os.path.exists(file_name))
+
+        f = open(file_name, 'r')
+        contents = f.read()
+        print('Update #2 [%s]' % contents)
+
+        self.assertTrue(contents.startswith(sync_schedule_2))
+
+        # -- Delete #1 ----------
+        repo = self.repo_api.repository(repo_id)
+        repo['sync_schedule'] = None
+        self.repo_api.update(repo)
+
+        # Verify
+        self.assertTrue(not os.path.exists(file_name))
+
+        # -- Delete #2 ----------
+        repo = self.repo_api.repository(repo_id)
+        repo['sync_schedule'] = None
+        self.repo_api.update(repo)
+
+        # Verify
+        self.assertTrue(not os.path.exists(file_name))
+

@@ -86,8 +86,9 @@ def delete_schedule(config, repo):
     '''
     sync_file = _sync_file_name(config, repo)
 
-    log.debug('Removing cron file [%s]' % sync_file)
-    os.remove(sync_file)
+    if os.path.exists(sync_file):
+        log.debug('Removing cron file [%s]' % sync_file)
+        os.remove(sync_file)
 
 def _sync_file_name(config, repo):
     cron_dir = config.get('paths', 'repo_sync_cron')

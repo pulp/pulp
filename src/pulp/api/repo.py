@@ -33,6 +33,7 @@ from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
+import pulp.api.repo_sync
 from pulp.pexceptions import PulpException
 
 log = logging.getLogger('pulp.api.repo')
@@ -62,7 +63,17 @@ class RepoApi(BaseApi):
 
     def _getcollection(self):
         return self.db.repos
-        
+
+    def update(self, repo):
+        self.objectdb.save(repo, safe=True)
+
+        if repo['sync_schedule']:
+            pulp.api.repo_sync.update_schedule(self.config, repo)
+        else:
+            pulp.api.repo_sync.delete_schedule(self.config, repo)
+
+        return repo
+
     def repositories(self):
         """
         Return a list of Repositories
