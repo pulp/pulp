@@ -103,3 +103,20 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Verify
         self.assertTrue(not os.path.exists(file_name))
 
+    def test_all_schedules(self):
+        # Setup
+        self.repo_api.create('repo-1', 'repo-1', 'i386', 'yum:localhost', '1 * * * *')
+        self.repo_api.create('repo-2', 'repo-2', 'i386', 'yum:localhost', '2 * * * *')
+        self.repo_api.create('repo-3', 'repo-3', 'i386', 'yum:localhost', None)
+        self.repo_api.create('repo-4', 'repo-4', 'i386', 'yum:localhost')
+
+        # Test
+        schedules = self.repo_api.all_schedules()
+
+        # Verify
+        self.assertEqual(4, len(schedules))
+
+        self.assertEqual('1 * * * *', schedules['repo-1'])
+        self.assertEqual('2 * * * *', schedules['repo-2'])
+        self.assertEqual(None, schedules['repo-3'])
+        self.assertEqual(None, schedules['repo-4'])

@@ -51,8 +51,6 @@ class RepoApi(BaseApi):
         self.packageApi = PackageApi(config)
         self.packageGroupApi = PackageGroupApi(config)
         self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
-
-        # TODO: Extract this to a config
         self.localStoragePath = config.get('paths', 'local_storage')
    
     def _get_indexes(self):
@@ -299,11 +297,12 @@ class RepoApi(BaseApi):
             return None
         return repo['packagegroupcategories'][categoryid]
 
-    def create(self, id, name, arch, feed):
+    def create(self, id, name, arch, feed, sync_schedule=None):
         """
         Create a new Repository object and return it
         """
         r = model.Repo(id, name, arch, feed)
+        r['sync_schedule'] = sync_schedule
         self.insert(r)
         return r
 
@@ -333,3 +332,20 @@ class RepoApi(BaseApi):
         log.error("Upload success")
         self.update(repo)
         return True
+
+    def all_schedules(self):
+        '''
+        For all repositories, returns a mapping of repository name to sync schedule.
+        
+        @rtype:  dict
+        @return: key - repo name, value - sync schedule
+        '''
+        repo_api = RepoApi(self.config)
+        all_repos = repo_api.repositories()
+
+        result = {}
+        for repo in all_repos:
+            result[repo['id']] = repo['sync_schedule']
+
+        return result
+
