@@ -146,6 +146,13 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/sync/" % repoid
         return self.conn.request_get(method)
 
+    def add_package(self, repoid, packageid):
+        addinfo = {'repoid' : repoid,
+                      'packageid' : packageid}
+        method = "/repositories/%s/add_package/" % repoid
+        print "Add info: %s" % addinfo
+        return self.conn.request_post(method, params=addinfo)
+
     def packages(self, repoid):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_get(method)
@@ -190,8 +197,8 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/"
         return self.conn.request_get(method)
 
-    def consumerswithpackage(self, pkgid):
-        method = '/consumers/?pkgid=%s' % pkgid
+    def consumers_with_package_name(self, name):
+        method = '/consumers/?name=%s' % name
         return self.conn.request_get(method)
 
     def bind(self, id, repoid):
@@ -201,13 +208,30 @@ class ConsumerConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
-
+    
+    def profile(self, id, profile):
+        method = "/consumers/%s/profile/" % id
+        return self.conn.request_post(method, params=profile)
 
 class PackageConnection(PulpConnection):
 
     def clean(self):
         method = "/packages/"
         return self.conn.request_delete(method)
+
+    def create(self, name, epoch, version, release, arch, description, 
+            checksum_type, checksum, filename):
+        method = "/packages/"
+        repodata = {"name"   : name,
+                    "epoch" : epoch,
+                    "version" : version,
+                    "release" : release,
+                    "arch" : arch,
+                    "description" : description,
+                    "checksum_type" : checksum_type,
+                    "checksum": checksum,
+                    "filename": filename,}
+        return self.conn.request_post(method, params=repodata)
 
     def packages(self):
         method = "/packages/"

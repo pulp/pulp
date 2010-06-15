@@ -136,7 +136,7 @@ print "Attempting to load configuration from: %s" % (cmdoptions.config)
 config = pulp.util.load_config(cmdoptions.config)
 
 if (clean):
-    ll = LargeLoad(None, None, config)
+    ll = LargeLoad(None, None, dict())
     ll.clean()
     exit("cleaned the databases")
 

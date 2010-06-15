@@ -18,6 +18,10 @@ import os
 import pulp.util
 
 def load_test_config():
+    base_file = os.path.abspath(os.path.dirname(__file__)) + '../../etc/pulp/pulp.ini'
+    config = pulp.util.load_config(base_file)
+
     override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.ini'
-    config = pulp.util.load_config(override_file)
+    config = pulp.util.load_config(override_file, config=config)
+
     return config

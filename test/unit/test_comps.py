@@ -26,13 +26,13 @@ import yum
 import pulp.util
 import pulp.model
 from pulp.api.repo import RepoApi
-from pulp.repo_sync import BaseSynchronizer
+from pulp.api.repo_sync import BaseSynchronizer
 
 class TestComps(unittest.TestCase):
 
     def setUp(self):
         config_file = os.path.join(srcdir, "../etc/pulp/pulp.ini")
-        self.config = pulp.util.loadConfig(config_file)
+        self.config = pulp.util.load_config(config_file)
         self.rapi = RepoApi(self.config)
         self.rapi.clean()
 

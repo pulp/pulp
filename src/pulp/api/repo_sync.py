@@ -21,18 +21,19 @@ import time
 import traceback
 from urlparse import urlparse
 
+# 3rd Party
 import yum
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp import model
-
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
 import pulp.util
+
 
 log = logging.getLogger('pulp.repo_sync')
 
@@ -41,8 +42,11 @@ def sync(config, repo, repo_source):
     '''
     Synchronizes content for the given RepoSource.
 
-    :param repo: instance of model.Repo; may not be None
-    :param repo_source: instance of model.RepoSource; may not be None
+    @param repo: repo to synchronize; may not be None
+    @type  repo: L{pulp.model.Repo}
+
+    @param repo_source: indicates the source from which the repo data will be syncced; may not be None
+    @type  repo_source: L{pulp.model.RepoSource}
     '''
     if not TYPE_CLASSES.has_key(repo_source.type):
         raise PulpException('Could not find synchronizer for repo type [%s]', repo_source.type)
@@ -50,6 +54,49 @@ def sync(config, repo, repo_source):
     synchronizer = TYPE_CLASSES[repo_source.type](config)
     repo_dir = synchronizer.sync(repo, repo_source)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
+
+def update_schedule(config, repo):
+    '''
+    Updates the repo sync scheduler entry with the schedule for the given repo.
+
+    @param config: pulp configuration values; may not be None
+    @type config:  L{ConfigParser}
+
+    @param repo: repo containg the id and sync schedule; may not be None
+    @type repo:  L{pulp.model.Repo}
+    '''
+    sync_file = _sync_file_name(config, repo)
+
+    cron_entry = '%s pulp repo sync %s' % (repo['sync_schedule'], repo['id'])
+    log.debug('Writing cron entry [%s] to [%s]' % (cron_entry, sync_file))
+
+    f = open(sync_file, 'w')
+    f.write(cron_entry)
+    f.close()
+
+def delete_schedule(config, repo):
+    '''
+    Deletes the repo sync schedule file for the given repo.
+
+    @param config: pulp configuration values; may not be None
+    @type config:  L{ConfigParser}
+
+    @param repo: repo containg the id and sync schedule; may not be None
+    @type repo:  L{pulp.model.Repo}
+    '''
+    sync_file = _sync_file_name(config, repo)
+
+    if os.path.exists(sync_file):
+        log.debug('Removing cron file [%s]' % sync_file)
+        os.remove(sync_file)
+
+def _sync_file_name(config, repo):
+    cron_dir = config.get('paths', 'repo_sync_cron')
+    cron_file_name = 'pulp-' + repo['id']
+    cron_file = os.path.join(cron_dir, cron_file_name)
+
+    return cron_file
+
 
 class BaseSynchronizer(object):
 
@@ -94,11 +141,11 @@ class BaseSynchronizer(object):
                 hashtype = "sha256"
                 checksum = pulp.util.get_file_checksum(hashtype=hashtype, 
                         filename=pkg_path)
-                found = self.package_api.package(name=info['name'], 
+                found = self.package_api.packages(name=info['name'], 
                         epoch=info['epoch'], version=info['version'], 
                         release=info['release'], arch=info['arch'],filename=file_name, 
                         checksum_type=hashtype, checksum=checksum)
-                if found.count() == 1:
+                if len(found) == 1:
                     retval = found[0]
                 else:
                     retval = self.package_api.create(info['name'], info['epoch'],
@@ -116,9 +163,6 @@ class BaseSynchronizer(object):
                 log.error("error reading package %s" % (pkg_path))
         else:
             return None
-            
-        
-
 
     def import_groups_data(self, compsfile, repo):
         """

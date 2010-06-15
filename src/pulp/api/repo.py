@@ -27,11 +27,13 @@ from yum.Errors import CompsException
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
-from pulp import repo_sync, upload
+from pulp import upload
+from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
 from pulp.api.package_group import PackageGroupApi
 from pulp.api.package_group_category import PackageGroupCategoryApi
+import pulp.api.repo_sync
 from pulp.pexceptions import PulpException
 
 log = logging.getLogger('pulp.api.repo')
@@ -61,7 +63,17 @@ class RepoApi(BaseApi):
 
     def _getcollection(self):
         return self.db.repos
-        
+
+    def update(self, repo):
+        self.objectdb.save(repo, safe=True)
+
+        if repo['sync_schedule']:
+            pulp.api.repo_sync.update_schedule(self.config, repo)
+        else:
+            pulp.api.repo_sync.delete_schedule(self.config, repo)
+
+        return repo
+
     def repositories(self):
         """
         Return a list of Repositories
@@ -86,21 +98,24 @@ class RepoApi(BaseApi):
         else:
             matches = []
             packages = repo['packages']
-            for packageid in packages.keys():
-                if (packageid.index(name) >= 0):
-                    matches.append(packages[packageid])
+            for package in packages.values():
+                if (package['name'].index(name) >= 0):
+                    matches.append(package)
             return matches
     
-    def add_package(self, repoid, p):
+    def add_package(self, repoid, packageid):
         """
         Adds the passed in package to this repo
         """
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
+        package = self.packageApi.package(packageid)
+        if (package == None):
+            raise PulpException("No Package with id: %s found" % packageid)
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
-        self._add_package(repo, p)
+        self._add_package(repo, package)
         self.update(repo)
 
     def _add_package(self, repo, p):

@@ -31,6 +31,7 @@ URLS = (
     '/([^/]+)/sync/([^/]+)/$', 'SyncStatus',
     '/([^/]+)/list/$', 'Packages',
     '/([^/]+)/upload/$', 'Upload',
+    '/([^/]+)/add_package/$', 'AddPackage',
 )
 
 application = web.application(URLS, globals())
@@ -135,6 +136,19 @@ class SyncStatus(JSONController, AsyncController):
         if task_info is None:
             return self.not_found()
         return self.output(task_info)
+
+
+class AddPackage(JSONController):
+    
+    @JSONController.error_handler
+    def POST(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of package to repository
+        """
+        data = self.input()
+        API.add_package(id, data['packageid'])
+        return self.output(True)
        
   
 class Packages(JSONController):

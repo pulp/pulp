@@ -49,18 +49,7 @@ from pulp.util import random_string
 
 from ConfigParser import ConfigParser
 
-
-class TestConfig(ConfigParser):
-
-    def __init__(self):
-        ConfigParser.__init__(self)
-        self.add_section('paths')
-        self.set('paths', 'local_storage', '/tmp/pulp')
-        self.add_section('logs')
-        self.set('logs', 'pulp_file', '/tmp/pulp.log')
-        self.set('logs', 'grinder_file', '/tmp/pulp/grinder.log')
-        self.add_section('rhn')
-        self.set('rhn', 'threads', '25')
+import testutil
 
 
 class TestApi(unittest.TestCase):
@@ -73,7 +62,7 @@ class TestApi(unittest.TestCase):
         self.pgcapi.clean()
         
     def setUp(self):
-        self.config = TestConfig()
+        self.config = testutil.load_test_config()
         self.rapi = RepoApi(self.config)
         self.papi = PackageApi(self.config)
         self.capi = ConsumerApi(self.config)
@@ -168,10 +157,10 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
         p = self.create_package('test_repo_packages')
-        self.rapi.add_package(repo["id"], p)
+        self.rapi.add_package(repo["id"], p['id'])
         for i in range(10):
             package = self.create_package(random_string())
-            self.rapi.add_package(repo["id"], package)
+            self.rapi.add_package(repo["id"], package['id'])
         
         found = self.rapi.repository('some-id')
         packages = found['packages']
@@ -257,6 +246,7 @@ class TestApi(unittest.TestCase):
         self.capi.update(c)
         
         found = self.capi.consumers_with_package_name('some-invalid-id')
+        
         assert(len(found) == 0)
 
         found = self.capi.consumers_with_package_name('test_consumerwithpackage')
@@ -291,20 +281,20 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo_a["id"])
         self.rapi.sync(repo_b["id"])
         # Look up each repo from API
-        found_a = self.rapi.repository(repo_a.id)
-        found_b = self.rapi.repository(repo_b.id)
+        found_a = self.rapi.repository(repo_a['id'])
+        found_b = self.rapi.repository(repo_b['id'])
 
         # Verify each repo has the test package synced
         found_a_pid = None
-        for pid in found_a["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_a_pid = pid
+        for p in found_a["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_a_pid = p['id']
         assert(found_a_pid != None)
         
         found_b_pid = None
-        for pid in found_b["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_b_pid = pid
+        for p in found_b["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_b_pid = p['id']
         assert(found_b_pid != None)
         packagea = found_a["packages"][found_a_pid]
         packageb = found_b["packages"][found_b_pid]
@@ -341,16 +331,17 @@ class TestApi(unittest.TestCase):
         found_a = self.rapi.repository(repo_a['id'])
         found_b = self.rapi.repository(repo_b['id'])
         # Verify each repo has the test package synced
+        # Verify each repo has the test package synced
         found_a_pid = None
-        for pid in found_a["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_a_pid = pid
+        for p in found_a["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_a_pid = p['id']
         assert(found_a_pid != None)
         
         found_b_pid = None
-        for pid in found_b["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_b_pid = pid
+        for p in found_b["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_b_pid = p['id']
         assert(found_b_pid != None)
         packagea = found_a["packages"][found_a_pid]
         packageb = found_b["packages"][found_b_pid]
@@ -409,9 +400,10 @@ class TestApi(unittest.TestCase):
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        return p
+        lookedUp = self.papi.package(p['id'])
+        return lookedUp
         
-    def test_package_versions(self):
+    def test_packages(self):
         repo = self.rapi.create('some-id','some name',
             'i386', 'yum:http://example.com')
         repo = self.rapi.repository(repo["id"])
@@ -427,8 +419,9 @@ class TestApi(unittest.TestCase):
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        print "Package! %s" % p
         # Add this package version to the repo
-        self.rapi.add_package(repo["id"], p)
+        self.rapi.add_package(repo["id"], p['id'])
         # Lookup repo and confirm new package version was added
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["packages"].has_key(p['id']))
@@ -458,19 +451,27 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(not repo["packages"].has_key(test_pkg_name))
         # Verify package version from repo
-        found = self.papi.package(name=test_pkg_name, epoch=test_epoch, 
+        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)
-        self.assertTrue(found.count() == 1)
+        self.assertTrue(len(found) == 1)
+        # Check returned in search with no params
+        all = self.papi.packages()
+        self.assertTrue(len(all) > 0)
+
         # Remove from Package collection
         self.papi.delete(found[0])
         # Verify it's deleted
-        found = self.papi.package(name=test_pkg_name, epoch=test_epoch, 
+        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)
-        self.assertTrue(found.count() == 0)
+        self.assertTrue(len(found) == 0)
+        # Check nothing returned in search with no params
+        all = self.papi.packages()
+        self.assertTrue(len(all) == 0)
+        
 
     def test_package_groups(self):
         pkggroup = self.pgapi.create('test-pkg-group-id', 'test-pkg-group-name', 

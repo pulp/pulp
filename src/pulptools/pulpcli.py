@@ -20,9 +20,10 @@ import os
 import sys
 import utils
 from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
-import pulptools.constants
+import pulptools.constants as constants
 from optparse import OptionParser
 from pulptools.logutil import getLogger
+from package_profile import PackageProfile
 import base64
 import gettext
 _ = gettext.gettext
@@ -154,6 +155,8 @@ class ConsumerCore(BaseCore):
         try:
             consumer = self.cconn.create(self.options.id, self.options.description)
             utils.writeToFile(os.path.join(CONSUMERID, "consumer"), consumer['id'])
+            pkginfo = PackageProfile().getPackageList()
+            self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)

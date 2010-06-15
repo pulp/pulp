@@ -28,6 +28,7 @@ URLS = (
     '/([^/]+)/$', 'Consumer',
     '/([^/]+)/bind/$', 'Bind',
     '/([^/]+)/unbind/$', 'Unbind',
+    '/([^/]+)/profile/$', 'Profile',
 )
 
 application = web.application(URLS, globals())
@@ -48,9 +49,9 @@ class Root(JSONController):
         """
         params = self.params()
         if len(params) == 1:
-            pkgid = params.get('pkgid')
-            if pkgid:
-                result = API.consumerswithpackage(pkgid)
+            pkgname = params.get('name')
+            if pkgname:
+                result = API.consumers_with_package_name(pkgname)
                 return self.output(result)
             else:
                 return self.output([])
@@ -142,3 +143,13 @@ class Unbind(JSONController):
         data = self.input()
         API.unbind(id, data['repoid'])
         return self.output(True)
+
+
+class Profile(JSONController):
+    """
+    update/add Consumer profile information. eg:package, hardware etc
+    """
+    @JSONController.error_handler
+    def POST(self, id):
+        API.profile_update(id, self.input())
+        return self.output(None)

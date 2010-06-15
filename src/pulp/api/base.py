@@ -27,7 +27,7 @@ class BaseApi(object):
         # Mongo DB
         self.connection = pymongo.Connection()
         #self.db = self.connection._database
-        self.db = self.connection._database_model_changes
+        self.db = self.connection._database
         # Inject the collection's namespace into each object
         self.db.add_son_manipulator(NamespaceInjector())
         # Provides auto-referencing/auto-dereferencing ability
