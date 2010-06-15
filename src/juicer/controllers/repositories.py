@@ -116,7 +116,7 @@ class Sync(JSONController, AsyncController):
         @return: True on successful sync of repository from feed
         """
         task_info = self.async(API.sync, id)
-        status_info = self.accepted(task_info['id'])
+        status_info = self.accepted(task_info['_id'])
         task_info.update(status_info)
         return self.output(task_info)
     

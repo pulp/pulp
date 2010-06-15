@@ -68,7 +68,7 @@ class Task(object):
         @param args: positional arguments to be passed into the callable
         @param kwargs: keyword arguments to be passed into the callable
         """
-        self.id = uuid.uuid1(clock_seq=int(time.time() * 1000))
+        self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
         self.callable = callable
         self.args = args
         self.kwargs = kwargs
