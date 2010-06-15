@@ -30,6 +30,7 @@ URLS = (
     '/([^/]+)/sync/$', 'Sync',
     '/([^/]+)/list/$', 'Packages',
     '/([^/]+)/upload/$', 'Upload',
+    '/([^/]+)/add_package/$', 'AddPackage',
 )
 
 application = web.application(URLS, globals())
@@ -99,7 +100,7 @@ class Repository(JSONController):
         API.update(repo_data)
         return self.output(True)
     
-    
+
 class Sync(JSONController):
     
     @JSONController.error_handler
@@ -109,6 +110,18 @@ class Sync(JSONController):
         @return: True on successful sync of repository from feed
         """
         API.sync(id)
+        return self.output(True)
+
+class AddPackage(JSONController):
+    
+    @JSONController.error_handler
+    def POST(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of package to repository
+        """
+        data = self.input()
+        API.add_package(id, data['packageid'])
         return self.output(True)
        
   

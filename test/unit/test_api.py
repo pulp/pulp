@@ -292,20 +292,20 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo_a["id"])
         self.rapi.sync(repo_b["id"])
         # Look up each repo from API
-        found_a = self.rapi.repository(repo_a.id)
-        found_b = self.rapi.repository(repo_b.id)
+        found_a = self.rapi.repository(repo_a['id'])
+        found_b = self.rapi.repository(repo_b['id'])
 
         # Verify each repo has the test package synced
         found_a_pid = None
-        for pid in found_a["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_a_pid = pid
+        for p in found_a["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_a_pid = p['id']
         assert(found_a_pid != None)
         
         found_b_pid = None
-        for pid in found_b["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_b_pid = pid
+        for p in found_b["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_b_pid = p['id']
         assert(found_b_pid != None)
         packagea = found_a["packages"][found_a_pid]
         packageb = found_b["packages"][found_b_pid]
@@ -342,16 +342,17 @@ class TestApi(unittest.TestCase):
         found_a = self.rapi.repository(repo_a['id'])
         found_b = self.rapi.repository(repo_b['id'])
         # Verify each repo has the test package synced
+        # Verify each repo has the test package synced
         found_a_pid = None
-        for pid in found_a["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_a_pid = pid
+        for p in found_a["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_a_pid = p['id']
         assert(found_a_pid != None)
         
         found_b_pid = None
-        for pid in found_b["packages"].keys():
-            if (pid.index(test_pkg_name) >= 0):
-                found_b_pid = pid
+        for p in found_b["packages"].values():
+            if (p['name'].index(test_pkg_name) >= 0):
+                found_b_pid = p['id']
         assert(found_b_pid != None)
         packagea = found_a["packages"][found_a_pid]
         packageb = found_b["packages"][found_b_pid]

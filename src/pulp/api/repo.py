@@ -87,9 +87,9 @@ class RepoApi(BaseApi):
         else:
             matches = []
             packages = repo['packages']
-            for packageid in packages.keys():
-                if (packageid.index(name) >= 0):
-                    matches.append(packages[packageid])
+            for package in packages.values():
+                if (package['name'].index(name) >= 0):
+                    matches.append(package)
             return matches
     
     def add_package(self, repoid, packageid):

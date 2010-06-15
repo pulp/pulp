@@ -13,10 +13,16 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+import uuid
 
 from pulp.pexceptions import PulpException
 
 class Base(dict):
+    
+    def __init__(self):
+        self._id = str(uuid.uuid4())
+        self.id = self._id
+        
     '''
     Base object that has convenience methods to get and put
     attrs into the base dict object with dot notation
@@ -68,8 +74,9 @@ class RepoSource(Base):
 class Package(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
-        self._id = str((name, epoch, version, release, arch, checksum))
-        self.id = self._id
+        Base.__init__(self)
+        # self._id = str((name, epoch, version, release, arch, checksum))
+        # self.id = self._id
         self.name = name
         self.epoch = epoch
         self.version = version
