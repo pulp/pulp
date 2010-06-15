@@ -32,6 +32,7 @@ URLS = (
     '/([^/]+)/list/$', 'Packages',
     '/([^/]+)/upload/$', 'Upload',
     '/([^/]+)/add_package/$', 'AddPackage',
+    '/([^/]+)/schedules/$', 'Schedules',
 )
 
 application = web.application(URLS, globals())
@@ -177,3 +178,17 @@ class Upload(JSONController):
                    data['pkginfo'],
                    data['pkgstream'])
         return self.output(True)
+
+
+class Schedules(JSONController):
+
+    @JSONController.error_handler
+    def GET(self):
+        '''
+        Retrieve a map of all repository IDs to their associated synchronization
+        schedules.
+
+        @return: key - repository ID, value - synchronization schedule
+        '''
+        schedules = API.all_schedules()
+        return self.output(schedules)
