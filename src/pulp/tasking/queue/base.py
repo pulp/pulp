@@ -57,6 +57,15 @@ class TaskQueue(object):
         """
         raise NotImplementedError()
     
+    def status(self, task_id):
+        """
+        Get the status of a task in this task queue
+        @type task_id: str
+        @param task_id: task id
+        @return: TaskModel instance on success, None otherwise
+        """
+        raise NotImplementedError()
+    
 # no-frills task queue --------------------------------------------------------
     
 class SimpleTaskQueue(TaskQueue):
@@ -73,6 +82,9 @@ class SimpleTaskQueue(TaskQueue):
         pass
     
     def find(self, task_id):
+        return None
+    
+    def status(self, task_id):
         return None
     
 # base scheduling task queue --------------------------------------------------
@@ -159,6 +171,7 @@ class SchedulingTaskQueue(TaskQueue):
     def run(self, task):
         self._lock.acquire()
         try:
+            task.running()
             self._storage.running_task(task)
             thread = threading.Thread(target=task.run)
             thread.start()
@@ -175,9 +188,13 @@ class SchedulingTaskQueue(TaskQueue):
     def find(self, task_id):
         self._lock.acquire()
         try:
-            for task in self._storage.all_tasks():
-                if task.id == task_id:
-                    return task
-            return None
+            return self._storage.find_task(task_id)
+        finally:
+            self._lock.release()
+    
+    def status(self, task_id):
+        self._lock.acquire()
+        try:
+            return self._storage.task_status(task_id)
         finally:
             self._lock.release()

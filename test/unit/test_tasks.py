@@ -106,6 +106,23 @@ class MongoFIFOQueueTester(QueueTester):
         
     def tearDown(self):
         pass
+            
+    def test_task_enqueue(self):
+        task = Task(noop_test)
+        self.queue.enqueue(task)
+        self.assertTrue(task.status == task_waiting)
+
+    def test_task_dispatch(self):
+        task = Task(noop_test)
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        self.assertTrue(task.status == task_finished)
+        
+    def test_task_find(self):
+        task1 = Task(noop_test)
+        self.queue.enqueue(task1)
+        task2 = self.queue.find(task1.id)
+        self.assertTrue(task1 is task2)
     
 # run the unit tests ----------------------------------------------------------
 

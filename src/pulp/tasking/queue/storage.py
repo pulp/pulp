@@ -22,7 +22,7 @@ import pymongo
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
 from pulp.tasking.task import (
-    task_waiting, task_running, task_complete_states)
+    task_waiting, task_running, task_complete_states, task2model)
 
 class Storage(object):
     """
@@ -31,7 +31,7 @@ class Storage(object):
     def waiting_task(self, task):
         """
         Add a task to the queue's waiting tasks
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
         """
         raise NotImplementedError()
@@ -39,7 +39,7 @@ class Storage(object):
     def running_task(self, task):
         """
         Remove a task from the queue's waiting tasks and add it to its running tasks
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
         """
         raise NotImplementedError()
@@ -47,15 +47,31 @@ class Storage(object):
     def complete_task(self, task):
         """
         Remove a task from the queue's running tasks and add it to it complete tasks
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
+        """
+        raise NotImplementedError()
+    
+    def find_task(self, task_id):
+        """
+        @type task_id: str
+        @param task: Task id
+        @return: pulp.tasking.task.Task instance
+        """
+        raise NotImplementedError()
+    
+    def task_status(self, task_id):
+        """
+        @type task_id: str
+        @param task: Task id
+        @return: pulp.tasking.task.TaskModel instance
         """
         raise NotImplementedError()
     
     def remove_task(self, task):
         """
         Remove a task from the queue completely
-        @type task: pulp.tasks.task.Task
+        @type task: pulp.tasking.task.Task
         @param task: Task instance
         """
         raise NotImplementedError()
@@ -109,6 +125,18 @@ class VolatileStorage(Storage):
     def complete_task(self, task):
         self.__running_tasks.remove(task)
         self.__complete_tasks.append(task)
+    
+    def find_task(self, task_id):
+        for task in self.all_tasks():
+            if task.id == task_id:
+                return task
+        return None
+    
+    def task_status(self, task_id):
+        task = self.find_task(task_id)
+        if task is None:
+            return None
+        return task2model(task)
         
     def remove_task(self, task):
         if task in self.__waiting_tasks:
@@ -134,11 +162,13 @@ class VolatileStorage(Storage):
     
 # mongo database task storage -------------------------------------------------
 
-class MongoStorage(Storage):
+class MongoStorage(VolatileStorage):
     """
     Task storage that stores tasks in a mongo database.
     """
     def __init__(self):
+        super(MongoStorage, self).__init__()
+        
         self._connection = pymongo.Connection()
         
         self._db = self._connection._database
@@ -146,33 +176,26 @@ class MongoStorage(Storage):
         self._db.add_son_manipulator(AutoReference(self._db))
         
         self._objdb = self._db.fifo_tasks
-        self._objdb.ensure_index([('id', pymongo.DESCENDING)], unique=True, background=True)
-        self._objdb.ensure_index([('next_time', pymongo.ASCENDING)], background=True)
         
         
     def waiting_task(self, task):
-        self._objdb.save(task, manipulate=True, safe=True)
+        model = task2model(task)
+        self._objdb.save(model, manipulate=True, safe=True)
+        super(MongoStorage, self).waiting_task(task)
     
     def running_task(self, task):
-        self._objdb.save(task, manipulate=True, safe=True)
+        model = task2model(task)
+        self._objdb.save(model, manipulate=True, safe=True)
+        super(MongoStorage, self).running_task(task)
     
     def complete_task(self, task):
-        self._objdb.save(task, manipulate=True, safe=True)
+        model = task2model(task)
+        self._objdb.save(model, manipulate=True, safe=True)
+        super(MongoStorage, self).complete_task(task)
+        
+    def task_status(self, task_id):
+        return self._objdb.find_one({'_id': task_id})
     
     def remove_task(self, task):
-        self._objdb.remove({'id': task.id}, safe=True)
-    
-    def all_tasks(self):
-        return self._objdb.find_all()
-    
-    def waiting_tasks(self):
-        return self._objdb.find({'status': task_waiting})
-    
-    def running_tasks(self):
-        return self._objdb.find({'status': task_running})
-    
-    def complete_tasks(self):
-        tasks = []
-        for status in task_complete_states:
-            tasks.extend(self._objdb.find({'status': status}))
-        return tasks
+        self._objdb.remove({'_id': task.id}, safe=True)
+        super(MongoStorage, self).remove_task(task)
