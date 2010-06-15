@@ -44,6 +44,7 @@ def sync(config, repo, repo_source):
 
     @param repo: repo to synchronize; may not be None
     @type  repo: L{pulp.model.Repo}
+
     @param repo_source: indicates the source from which the repo data will be syncced; may not be None
     @type  repo_source: L{pulp.model.RepoSource}
     '''
@@ -53,6 +54,48 @@ def sync(config, repo, repo_source):
     synchronizer = TYPE_CLASSES[repo_source.type](config)
     repo_dir = synchronizer.sync(repo, repo_source)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
+
+def update_schedule(config, repo):
+    '''
+    Updates the repo sync scheduler entry with the schedule for the given repo.
+
+    @param config: pulp configuration values; may not be None
+    @type config:  L{ConfigParser}
+
+    @param repo: repo containg the id and sync schedule; may not be None
+    @type repo:  L{pulp.model.Repo}
+    '''
+    sync_file = _sync_file_name(config, repo)
+
+    cron_entry = '%s pulp repo sync %s' % (repo['sync_schedule'], repo['id'])
+    log.debug('Writing cron entry [%s] to [%s]' % (cron_entry, sync_file))
+
+    f = open(sync_file, 'w')
+    f.write(cron_entry)
+    f.close()
+
+def delete_schedule(config, repo):
+    '''
+    Deletes the repo sync schedule file for the given repo.
+
+    @param config: pulp configuration values; may not be None
+    @type config:  L{ConfigParser}
+
+    @param repo: repo containg the id and sync schedule; may not be None
+    @type repo:  L{pulp.model.Repo}
+    '''
+    sync_file = _sync_file_name(config, repo)
+
+    log.debug('Removing cron file [%s]' % sync_file)
+    os.remove(sync_file)
+
+def _sync_file_name(config, repo):
+    cron_dir = config.get('paths', 'repo_sync_cron')
+    cron_file_name = 'pulp-' + repo['id']
+    cron_file = os.path.join(cron_dir, cron_file_name)
+
+    return cron_file
+
 
 class BaseSynchronizer(object):
 
