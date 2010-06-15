@@ -49,6 +49,11 @@ class PackageProfile(object):
         ts.setVSFlags(-1)
         installed = ts.dbMatch()
         for h in installed:
+            if h['name'] == "gpg-pubkey":
+                #dbMatch includes imported gpg keys as well
+                # skip these for now as there isnt compelling 
+                # reason for server to know this info
+                continue
             pkg = {
                 'name'          : h['name'],
                 'version'       : h['version'],
@@ -65,10 +70,13 @@ class PackageProfile(object):
                 'Size'          : h['Size'],
                 'Vendor'        : h['Vendor'],             
             }
-            self.pkglist.append(pkg)
-        self.pkglist.sort(key=lambda pkg:(pkg['name'], pkg['epoch'], \
-                                          pkg['version'], pkg['release']))
+            info = {self.getRpmName(pkg) : pkg}
+            self.pkglist.append(info)
         return self.pkglist
+    
+    def getRpmName(self, pkg):
+        return pkg["name"] + "-" + pkg["version"] + "-" + \
+               pkg["release"] + "." + pkg["arch"]
     
     def _getInstalledJars(self):
         pass
