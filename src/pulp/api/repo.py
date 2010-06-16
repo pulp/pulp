@@ -13,7 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import pymongo
 
 # Python
 import logging
@@ -21,6 +20,7 @@ import gzip
 import os
 
 # 3rd Party
+import pymongo
 import yum.comps
 from yum.Errors import CompsException
 
@@ -36,6 +36,7 @@ from pulp.api.package_group_category import PackageGroupCategoryApi
 import pulp.api.repo_sync
 from pulp.pexceptions import PulpException
 
+
 log = logging.getLogger('pulp.api.repo')
 
 
@@ -47,7 +48,6 @@ class RepoApi(BaseApi):
     def __init__(self, config):
         BaseApi.__init__(self, config)
 
-        #self.packageApi = PackageApi(config)
         self.packageApi = PackageApi(config)
         self.packageGroupApi = PackageGroupApi(config)
         self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
@@ -350,8 +350,6 @@ class RepoApi(BaseApi):
         result = {}
         for repo in all_repos:
             result[repo['id']] = repo['sync_schedule']
-
-        log.info(result)
 
         return result
 
