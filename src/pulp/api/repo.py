@@ -304,6 +304,10 @@ class RepoApi(BaseApi):
         r = model.Repo(id, name, arch, feed)
         r['sync_schedule'] = sync_schedule
         self.insert(r)
+
+        if sync_schedule:
+            pulp.api.repo_sync.update_schedule(self.config, r)
+
         return r
 
     def sync(self, id):
@@ -346,6 +350,8 @@ class RepoApi(BaseApi):
         result = {}
         for repo in all_repos:
             result[repo['id']] = repo['sync_schedule']
+
+        log.info(result)
 
         return result
 

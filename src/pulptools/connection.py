@@ -114,12 +114,13 @@ class RepoConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, name, arch, feed):
+    def create(self, id, name, arch, feed, sync_schedule):
         method = "/repositories/"
         repodata = {"id"   : id,
                     "name" : name,
                     "arch" : arch,
-                    "feed" : feed,}
+                    "feed" : feed,
+                    "sync_schedule" : sync_schedule,}
         return self.conn.request_post(method, params=repodata)
 
     def repository(self, id):
@@ -163,6 +164,10 @@ class RepoConnection(PulpConnection):
                       'pkgstream' : pkgstream}
         method = "/repositories/%s/upload/" % id
         return self.conn.request_post(method, params=uploadinfo)
+
+    def all_schedules(self):
+        method = "/repositories/schedules/"
+        return self.conn.request_get(method)
 
 class ConsumerConnection(PulpConnection):
     """

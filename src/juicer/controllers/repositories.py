@@ -14,8 +14,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-__author__ = 'Jason L Connor <jconnor@redhat.com>'
-
 import web
 
 from juicer.controllers.base import JSONController, AsyncController
@@ -25,6 +23,7 @@ from pulp.api.repo import RepoApi
 # web.py application ----------------------------------------------------------
 
 URLS = (
+    '/schedules/$', 'Schedules',
     '/$', 'Root',
     '/([^/]+)/$', 'Repository',
     '/([^/]+)/sync/$', 'Sync',
@@ -32,7 +31,6 @@ URLS = (
     '/([^/]+)/list/$', 'Packages',
     '/([^/]+)/upload/$', 'Upload',
     '/([^/]+)/add_package/$', 'AddPackage',
-    '/([^/]+)/schedules/$', 'Schedules',
 )
 
 application = web.application(URLS, globals())
@@ -63,7 +61,8 @@ class Root(JSONController):
         repo = API.create(repo_data['id'],
                           repo_data['name'],
                           repo_data['arch'],
-                          repo_data['feed'])
+                          repo_data['feed'],
+                          sync_schedule=repo_data['sync_schedule'])
         return self.output(repo)
 
     @JSONController.error_handler

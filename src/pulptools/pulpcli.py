@@ -235,7 +235,8 @@ class RepoCore(BaseCore):
                         "list"   : "List available repos", 
                         "delete" : "Delete a repo", 
                         "sync"   : "Sync data to this repo from the feed",
-                        "upload" : "Upload package(s) to this repo"}
+                        "upload" : "Upload package(s) to this repo",
+                        "schedules" : "List all repo schedules",}
 
         self.username = None
         self.password = None
@@ -272,6 +273,8 @@ class RepoCore(BaseCore):
                            help="package arch the repo should support.")
             self.parser.add_option("--feed", dest="feed",
                            help="Url feed to populate the repo")
+            self.parser.add_option("--schedule", dest="schedule",
+                           help="Schedule for automatically synchronizing the repository")
         if self.action == "sync":
             usage = "usage: %prog repo sync [OPTIONS]"
             BaseCore.__init__(self, "repo sync", usage, "", "")
@@ -292,6 +295,9 @@ class RepoCore(BaseCore):
                            help="Repository Label")
             self.parser.add_option("--dir", dest="dir",
                            help="Process packages from this directory")
+        if self.action == "schedules":
+            usage = "usage: %prog repo schedules"
+            BaseCore.__init__(self, "repo schedules", usage, "", "")
 
     def _validate_options(self):
         pass
@@ -317,6 +323,8 @@ class RepoCore(BaseCore):
             self._delete()
         if self.action == "upload":
             self._upload()
+        if self.action == "schedules":
+            self._schedules()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -332,7 +340,8 @@ class RepoCore(BaseCore):
             sys.exit(0)
         try:
             repo = self.pconn.create(self.options.label, self.options.name, \
-                                     self.options.arch, self.options.feed)
+                                     self.options.arch, self.options.feed, \
+                                     self.options.schedule)
             print _(" Successfully created Repo [ %s ] with feed [ %s ]" % \
                                      (repo['id'], repo["source"]))
         except RestlibException, re:
@@ -436,6 +445,17 @@ class RepoCore(BaseCore):
                 log.error("Error: %s" % e)
                 raise #continue
  
+    def _schedules(self):
+        schedules = self.pconn.all_schedules()
+        print(schedules)
+
+
+def _pkg_count(pkgdict):
+    count =0
+    for key, value in pkgdict.items():
+        count += len(value["versions"])
+    return count
+
 def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
 
