@@ -26,6 +26,7 @@ DIRS = (
     '/srv/juicer',
     '/var/lib/pulp',
     '/var/log/pulp',
+    '/var/www/.python-eggs',    # needed for older versions of mod_wsgi
 )
 
 LINKS = (
