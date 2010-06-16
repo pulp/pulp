@@ -2,8 +2,6 @@
 # Pulp client utility
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# Authors: Pradeep Kilambi <pkilambi@redhat.com>
-#
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
 # implied, including the implied warranties of MERCHANTABILITY or FITNESS
@@ -18,482 +16,53 @@
 
 import os
 import sys
-import utils
-from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
-import pulptools.constants as constants
-from optparse import OptionParser
+import pkgutil
 from pulptools.logutil import getLogger
-from package_profile import PackageProfile
-import base64
+import pulptools.core as core
 import gettext
 _ = gettext.gettext
-from pulptools.repolib import RepoLib
 log = getLogger(__name__)
-## TODO: move this to config
-CONSUMERID = "/etc/pulp/"
 
-class BaseCore(object):
-    """ Base class for all sub-calls. """
-    def __init__(self, name="cli", usage=None, shortdesc=None,
-            description=None):
-        self.shortdesc = shortdesc
-        if shortdesc is not None and description is None:
-            description = shortdesc
-        self.debug = 0
-        self.parser = OptionParser(usage=usage, description=description)
-        self._add_common_options()
-        self.name = name
-
-    def _add_common_options(self):
-        """ Common options to all modules. """
-        pass
-
-    def _do_core(self):
-        pass
-
-    def main(self):
-        (self.options, self.args) = self.parser.parse_args()
-        self.args = self.args[1:]
-        self._do_core()
-
-class ConsumerCore(BaseCore):
-    def __init__(self):
-        usage = "usage: %prog consumer [OPTIONS]"
-        shortdesc = "consumer specific actions to pulp server."
-        desc = ""
-
-        BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
-        self.actions = {"create" : "Create a consumer", 
-                        "list"   : "List consumers", 
-                        "delete" : "Delete a consumer", 
-                        "bind"   : "Bind the consumer to listed repos",
-                        "unbind" : "UnBind the consumer from repos"}
-        self.name = "consumer"
-        self.username = None
-        self.password = None
-        self.cconn = ConsumerConnection(host="localhost", port=8811)
-        self.repolib = RepoLib()
-        self.generate_options()
-
-    def generate_options(self):
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
-        if self.action == "create":
-            usage = "usage: %prog consumer create [OPTIONS]"
-            BaseCore.__init__(self, "consumer create", usage, "", "")
-            self.parser.add_option("--id", dest="id",
-                           help="Consumer Identifier eg: foo.example.com")
-            self.parser.add_option("--description", dest="description",
-                           help="consumer description eg: foo's web server")
-        if self.action == "bind":
-            usage = "usage: %prog consumer bind [OPTIONS]"
-            BaseCore.__init__(self, "consumer bind", usage, "", "")
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="Repo Identifier")
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Identifier")
-        if self.action == "unbind":
-            usage = "usage: %prog consumer unbind [OPTIONS]"
-            BaseCore.__init__(self, "consumer unbind", usage, "", "")
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="Repo Identifier")
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Identifier")
-        if self.action == "list":
-            usage = "usage: %prog consumer list [OPTIONS]"
-            BaseCore.__init__(self, "consumer list", usage, "", "")
-        if self.action == "delete":
-            usage = "usage: %prog consumer delete [OPTIONS]"
-            BaseCore.__init__(self, "consumer delete", usage, "", "")
-
-    def _validate_options(self):
-        pass
-
-    def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
-        print "Supported Actions:\n"
-        items = self.actions.items()
-        #items.sort()
-        for (name, cmd) in items:
-            print("\t%-14s %-25s" % (name, cmd))
-        print("")
-
-    def _do_core(self):
-        self._validate_options()
-        if self.action == "create":
-            self._create()
-        if self.action == "list":
-            self._list()
-        if self.action == "delete":
-            self._delete()
-        if self.action == "bind":
-            self._bind()
-        if self.action == "unbind":
-            self._unbind()
-
-    def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.id:
-            print("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.options.description:
-            self.options.description = self.options.id
-        try:
-            consumer = self.cconn.create(self.options.id, self.options.description)
-            utils.writeToFile(os.path.join(CONSUMERID, "consumer"), consumer['id'])
-            pkginfo = PackageProfile().getPackageList()
-            self.cconn.profile(consumer['id'], pkginfo)
-            print _(" Successfully created Consumer [ %s ]" % consumer['id'])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
-        try:
-            cons = self.cconn.consumers()
-            columns = ["id", "description", "repoids"]
-            data = [ _sub_dict(con, columns) for con in cons]
-            print """+-------------------------------------------+\n    List of Consumers \n+-------------------------------------------+"""
-            for con in data:
-                print constants.AVAILABLE_CONSUMER_LIST % (con["id"], con["description"], con["repoids"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _bind(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.consumerid:
-            print("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.options.repoid:
-            print("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cconn.bind(self.options.consumerid, self.options.repoid)
-            self.repolib.update()
-            print _(" Successfully subscribed Consumer [%s] to Repo [%s]" % (self.options.consumerid, self.options.repoid))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _unbind(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.consumerid:
-            print("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.options.repoid:
-            print("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cconn.unbind(self.options.consumerid, self.options.repoid)
-            self.repolib.update()
-            print _(" Successfully unsubscribed Consumer [%s] from Repo [%s]" % (self.options.consumerid, self.options.repoid))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-
-    def _delete(self):
-        print "under Construction"
-
-class RepoCore(BaseCore):
-    def __init__(self):
-        usage = "usage: %prog repo [OPTIONS]"
-        shortdesc = "repository specifc actions to pulp server."
-        desc = ""
-
-        BaseCore.__init__(self, "repo", usage, shortdesc, desc)
-        self.actions = {"create" : "Create a repo", 
-                        "update" : "Update a repo", 
-                        "list"   : "List available repos", 
-                        "delete" : "Delete a repo", 
-                        "sync"   : "Sync data to this repo from the feed",
-                        "upload" : "Upload package(s) to this repo",
-                        "schedules" : "List all repo schedules",}
-
-        self.username = None
-        self.password = None
-        self.name = "repo"
-        self.pconn = RepoConnection(host="localhost", port=8811)
-        self.generate_options()
-
-    def generate_options(self):
-
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
-        if self.action == "create":
-            usage = "usage: %prog repo create [OPTIONS]"
-            BaseCore.__init__(self, "repo create", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
-            self.parser.add_option("--name", dest="name",
-                           help="common repository name")
-            self.parser.add_option("--arch", dest="arch",
-                           help="package arch the repo should support.")
-            self.parser.add_option("--feed", dest="feed",
-                           help="Url feed to populate the repo")
-            self.parser.add_option("--schedule", dest="schedule",
-                           help="Schedule for automatically synchronizing the repository")
-        if self.action == "sync":
-            usage = "usage: %prog repo sync [OPTIONS]"
-            BaseCore.__init__(self, "repo sync", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
-        if self.action == "delete":
-            usage = "usage: %prog repo delete [OPTIONS]"
-            BaseCore.__init__(self, "repo delete", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
-        if self.action == "list":
-            usage = "usage: %prog repo list [OPTIONS]"
-            BaseCore.__init__(self, "repo list", usage, "", "")
-        if self.action == "upload":
-            usage = "usage: %prog repo upload [OPTIONS] <package>"
-            BaseCore.__init__(self, "repo upload", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
-            self.parser.add_option("--dir", dest="dir",
-                           help="Process packages from this directory")
-        if self.action == "schedules":
-            usage = "usage: %prog repo schedules"
-            BaseCore.__init__(self, "repo schedules", usage, "", "")
-
-    def _validate_options(self):
-        pass
-
-    def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
-        print "Supported Actions:\n"
-        items = self.actions.items()
-        items.sort()
-        for (name, cmd) in items:
-            print("\t%-14s %-25s" % (name, cmd))
-        print("")
-
-    def _do_core(self):
-        self._validate_options()
-        if self.action == "create":
-            self._create()
-        if self.action == "list":
-            self._list()
-        if self.action == "sync":
-            self._sync()
-        if self.action == "delete":
-            self._delete()
-        if self.action == "upload":
-            self._upload()
-        if self.action == "schedules":
-            self._schedules()
-
-    def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.label:
-            print("repo label required. Try --help")
-            sys.exit(0)
-        if not self.options.name:
-            self.options.name = self.options.label
-        if not self.options.arch:
-            self.options.arch = "noarch"
-        if not self.options.feed:
-            print("repo feed required. Try --help")
-            sys.exit(0)
-        try:
-            repo = self.pconn.create(self.options.label, self.options.name, \
-                                     self.options.arch, self.options.feed, \
-                                     self.options.schedule)
-            print _(" Successfully created Repo [ %s ] with feed [ %s ]" % \
-                                     (repo['id'], repo["source"]))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            systemExit(e.code, e.msg)
-
-    def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
-        try:
-            repos = self.pconn.repositories()
-            columns = ["id", "name", "source", "arch", "packages"]
-            data = [ _sub_dict(repo, columns) for repo in repos]
-            if not len(data):
-                print _("No repos available to list")
-                sys.exit(0)
-            print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
-            for repo in data:
-                repo["packages"] = len(repo["packages"])
-                print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"], repo["source"], repo["arch"], repo["packages"] )
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _sync(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.label:
-            print("repo label required. Try --help")
-            sys.exit(0)
-        try:
-            status = self.pconn.sync(self.options.label)
-            if status:
-                packages =  self.pconn.packages(self.options.label)
-                pkg_count = len(packages)
-            print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _delete(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.label:
-            print("repo label required. Try --help")
-            sys.exit(0)
-        try:
-            self.pconn.delete(id=self.options.label)
-            print _(" Successful deleted Repo [ %s ] " % self.options.label)
-        except RestlibException, re:
-            print _(" Deleted operation failed on Repo [ %s ] " % \
-                  self.options.label)
-            log.error("Error: %s" % re)
-            sys.exit(-1)
-        except Exception, e:
-            print _(" Deleted operation failed on Repo [ %s ]. " % \
-                  self.options.label)
-            log.error("Error: %s" % e)
-            sys.exit(-1)
-
-    def _upload(self):
-        (self.options, files) = self.parser.parse_args()
-        # ignore the command and pick the files
-        files = files[2:]
-        if not self.options.label:
-            print("repo label required. Try --help")
-            sys.exit(0)
-        if self.options.dir:
-            files += utils.processDirectory(self.options.dir, "rpm")
-        if not files:
-            print("Need to provide atleast one file to perform upload")
-            sys.exit(0)
-        uploadinfo = {}
-        uploadinfo['repo'] = self.options.label
-        for frpm in files:
-            try: 
-                pkginfo = utils.processFile(frpm)
-            except FileError, e:
-                print('Error: %s' % e)
-                continue
-            if not pkginfo.has_key('nvrea'):
-                print("Package %s is Not an RPM Skipping" % frpm)
-                continue
-            pkgstream = base64.b64encode(open(frpm).read())
-            try:
-                status = self.pconn.upload(self.options.label, pkginfo, pkgstream)
-                if status:
-                    print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.label))
-                else:
-                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.label)
-            except RestlibException, re:
-                log.error("Error: %s" % re)
-                raise #continue
-            except Exception, e:
-                log.error("Error: %s" % e)
-                raise #continue
- 
-    def _schedules(self):
-        print("""+-------------------------------------+\n    Available Repository Schedules \n+-------------------------------------+""")
-
-        schedules = self.pconn.all_schedules()
-        for label in schedules.keys():
-            print(constants.REPO_SCHEDULES_LIST % (label, schedules[label]))
-
-
-def _pkg_count(pkgdict):
-    count =0
-    for key, value in pkgdict.items():
-        count += len(value["versions"])
-    return count
-
-def _sub_dict(datadict, subkeys, default=None) :
-    return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
-
-class FileError(Exception):
-    pass
-
-class CLI:
+class PulpCore:
     """
-     This is the main cli class that does command parsing like rho and matches
-     the the right commands
+     A top level class to load modules dynamically from pulptools.cores package
     """
     def __init__(self):
         self.cli_cores = {}
-        if len(sys.argv) > 2 and sys.argv[1] == "repo":
-            self.cli_cores["repo"] = RepoCore()
-        elif len(sys.argv) > 2 and sys.argv[1] == "consumer":
-            self.cli_cores["consumer"] = ConsumerCore()
+        if len(sys.argv) > 2:
+            self.cli_cores[sys.argv[1]] = self._load_core(sys.argv[1])()
         else:
-            for clazz in [ RepoCore, ConsumerCore]:
-                cmd = clazz()
-                # ignore the base class
+            for cls in self._load_all_cores():
+                cmd = cls()
                 if cmd.name != "cli":
                     self.cli_cores[cmd.name] = cmd 
-
-
+    
     def _add_core(self, cmd):
         self.cli_cores[cmd.name] = cmd
+        
+    def _load_core(self, core):
+        name = "core_" + core
+        mod = __import__('pulptools.core.', globals(), locals(), [name])
+        submod = getattr(mod, name)
+        return getattr(submod, core)
+    
+    def _load_all_cores(self):
+        pkgpth = os.path.dirname(core.__file__)
+        modules = [name for _, name, _ in pkgutil.iter_modules([pkgpth])
+                   if name.startswith("core_")]
+        cls = []
+        print modules
+        for name in modules:
+            mod = __import__('pulptools.core.', globals(), locals(), [name])
+            submod = getattr(mod, name)
+            cls.append(getattr(submod, name.split("_")[-1]))
+            print cls
+        return cls
 
     def _usage(self):
         print "\nUsage: %s [options] MODULENAME --help\n" % os.path.basename(sys.argv[0])
         print "Supported modules:\n"
-
-        # want the output sorted
         items = self.cli_cores.items()
-        #items.sort()
         for (name, cmd) in items:
             print("\t%-14s %-25s" % (name, cmd.shortdesc))
         print("")
@@ -534,15 +103,5 @@ class CLI:
 
         cmd.main()
 
-def systemExit(code, msgs=None):
-    "Exit with a code and optional message(s). Saved a few lines of code."
-
-    if msgs:
-        if type(msgs) not in [type([]), type(())]:
-            msgs = (msgs, )
-        for msg in msgs:
-            sys.stderr.write(unicode(msg).encode("utf-8") + '\n')
-    sys.exit(code)
-
 if __name__ == "__main__":
-    CLI().main()
+    PulpCore().main()

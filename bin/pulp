@@ -23,5 +23,5 @@ import os.path
 from pulptools import pulpcli
 
 if __name__ == "__main__":
-    pulpcli.CLI().main()
+    pulpcli.PulpCore().main()
 
