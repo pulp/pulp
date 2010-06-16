@@ -35,6 +35,7 @@ from pulp.model import Package
 from pulp.model import Consumer
 from pulp.util import random_string
 import pulp.util
+from testutil import create_package
 
 TEST_PACKAGE_ID = 'random-package'
 
@@ -74,24 +75,36 @@ class LargeLoad(unittest.TestCase):
         
         return numrepos
     
+    def add_package(self, consumer, package):
+        n = str(package['name'])
+        v = str(package['version'])
+        r = str(package['release'])
+        a = str(package['arch'])
+        nevra = '%s-%s-%s-%s' % (n,v,r,a)
+        nevra = nevra.replace('.','_')
+        consumer.packages[nevra]= package
+        
+    
     def create_consumers(self):
         last_desc = None
         last_id = None
         repos = self.rapi.repositories()
         consumers = []
+        randomPackage = create_package(self.papi, TEST_PACKAGE_ID)
         for i in range(self.numconsumers):
             repo = random.choice(repos)
-            # c = self.capi.create(randomString(), randomString())
-            c = Consumer(randomString(), randomString())
+            c = Consumer(random_string(), random_string())
             packages = repo['packages']
-            for pid in packages:
-                c.packageids.append(pid)
+            for p in packages.values():
+                # c.packageids.append(p['id'])
+                # c.packages.append(p)
+                self.add_package(c, p)
             # self.capi.update(c)
             if (i % 100 == 0):
                 print "created [%s] consumers" % i
-                p = Package(repo["id"], TEST_PACKAGE_ID, 'random package to be found')
-                c.packageids.append(p.id)
-                #self.capi.update(c)
+                # c.packageids.append(randomPackage['id'])
+                # c.packages.append(randomPackage)
+                self.add_package(c, randomPackage)
             last_desc = c.description
             last_id = c.id
             consumers.append(c)
@@ -110,13 +123,14 @@ class LargeLoad(unittest.TestCase):
         consumers = self.capi.consumers()
         c = consumers[0]
         assert(len(consumers) == self.numconsumers)
-        p = ll.papi.package(random.choice(c['packageids']))
+        randomPackage = random.choice(c['packages'])
+        p = ll.papi.package(randomPackage['id'])
         assert(p != None)
         c2 = self.capi.consumer(last_id)
         assert(c2 != None)
         
         print "Searching for all consumers with %s package id" % TEST_PACKAGE_ID
-        cwithp = ll.capi.consumerswithpackage(TEST_PACKAGE_ID)
+        cwithp = ll.capi.consumers_with_package_name(TEST_PACKAGE_ID)
         print "Found [%s] consumers with packageid: [%s]" % (len(cwithp), TEST_PACKAGE_ID)
 
 
@@ -127,7 +141,7 @@ parser.add_option('--numconsumers', dest='numconsumers',
                  action='store', default=1000, help='Number of consumers you want to load')
 
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
-parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp.ini")
+parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp/pulp.ini")
 cmdoptions, args = parser.parse_args()
 dirlist = cmdoptions.dirlist
 clean = cmdoptions.clean

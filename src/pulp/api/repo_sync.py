@@ -48,10 +48,10 @@ def sync(config, repo, repo_source):
     @param repo_source: indicates the source from which the repo data will be syncced; may not be None
     @type  repo_source: L{pulp.model.RepoSource}
     '''
-    if not TYPE_CLASSES.has_key(repo_source.type):
-        raise PulpException('Could not find synchronizer for repo type [%s]', repo_source.type)
+    if not TYPE_CLASSES.has_key(repo_source['type']):
+        raise PulpException('Could not find synchronizer for repo type [%s]', repo_source['type'])
 
-    synchronizer = TYPE_CLASSES[repo_source.type](config)
+    synchronizer = TYPE_CLASSES[repo_source['type']](config)
     repo_dir = synchronizer.sync(repo, repo_source)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
 
@@ -197,14 +197,14 @@ class BaseSynchronizer(object):
     
 class YumSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
-        yfetch = YumRepoGrinder(repo['id'], repo_source.url.encode('ascii', 'ignore'), 1)
+        yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'), 1)
         yfetch.fetchYumRepo(self.config.get('paths', 'local_storage'))
         repo_dir = "%s/%s/" % (self.config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
 
 class LocalSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
-        local_url = repo_source.url
+        local_url = repo_source['url']
         if (not local_url.endswith('/')):
             local_url = local_url + '/'
         parts = urlparse(local_url)
@@ -214,7 +214,7 @@ class RHNSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
-        pieces = repo_source.url.split('/')
+        pieces = repo_source['url'].split('/')
         if len(pieces) < 2:
             raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
                                 repo_source.url)

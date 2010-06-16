@@ -36,8 +36,7 @@ class Repo(Base):
     def __init__(self, id, name, arch, source):
         self._id = id
         self.id = id
-        self.source = source
-        self.repo_source = RepoSource(source)
+        self.source = RepoSource(source)
         self.id = id
         self.name = name
         self.arch = arch

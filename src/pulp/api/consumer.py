@@ -64,7 +64,7 @@ class ConsumerApi(BaseApi):
         """
         List all consumers.  Can be quite large
         """
-        return list(self.objectdb.find())
+        return list(self.objectdb.find({},['id', 'description', 'package_profile', 'repoids']))
 
     def consumer(self, id):
         """

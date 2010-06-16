@@ -110,7 +110,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
         assert(repo != None)
-        assert(repo['repo_source']['type'] == 'yum')
+        assert(repo['source']['type'] == 'yum')
         
         
     def test_clean(self):
@@ -151,7 +151,6 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id')
         assert(found != None)
         assert(found['id'] == 'some-id')
-        # assert(found.id == 'some-id')
         
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
@@ -376,6 +375,7 @@ class TestApi(unittest.TestCase):
         datadir = my_dir + "/data/"
         repo = self.rapi.create('some-id','some name', 'i386', 
                                 'local:file://%s' % datadir)
+        print "Repo: %s" % repo
                                 
         self.rapi.sync(repo['id'])
         found = self.rapi.repository(repo['id'])
