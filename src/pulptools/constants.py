@@ -1,8 +1,6 @@
 #
 # String constants for the pulp CLI
 #
-# Author: Pradeep Kilambi <pkilambi@redhat.com>
-#
 # Copyright (c) 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -30,4 +28,9 @@ AVAILABLE_CONSUMER_LIST="""
 Id                 \t%-25s
 Description        \t%-25s
 Subscribed Repos   \t%-25s
+"""
+
+REPO_SCHEDULES_LIST = """
+Label              \t%-25s
+Schedule           \t%-25s
 """

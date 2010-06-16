@@ -446,8 +446,11 @@ class RepoCore(BaseCore):
                 raise #continue
  
     def _schedules(self):
+        print("""+-------------------------------------+\n    Available Repository Schedules \n+-------------------------------------+""")
+
         schedules = self.pconn.all_schedules()
-        print(schedules)
+        for label in schedules.keys():
+            print(constants.REPO_SCHEDULES_LIST % (label, schedules[label]))
 
 
 def _pkg_count(pkgdict):
