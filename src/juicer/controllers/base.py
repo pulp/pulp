@@ -102,6 +102,6 @@ class AsyncController(object):
         @param id: task id
         @return: dictionary of status URL
         """
-        web.ctx.status = '200 Accepted'
+        web.ctx.status = '202 Accepted'
         path = os.path.normpath(os.path.join(web.ctx.homepath, web.ctx.path, id))
         return {'status_path': urllib.pathname2url(path)}
