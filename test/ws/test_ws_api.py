@@ -16,9 +16,12 @@
 import sys
 import os
 
-cdir = os.path.dirname(__file__)
-sys.path.append(os.path.join(cdir, '../../src'))
-sys.path.append(os.path.join(cdir, '../unit'))
+# Pulp
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+sys.path.insert(0, srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../unit/'
+sys.path.insert(0, commondir)
 
 from pulptools.connection import RepoConnection
 from pulptools.connection import ConsumerConnection
@@ -26,7 +29,9 @@ from pulptools.connection import PackageConnection
 from pulptools.connection import PackageGroupConnection
 from pulptools.connection import PackageGroupCategoryConnection
 
-from test_api import TestApi, TestConfig
+from test_api import TestApi
+
+import testutil
 
 class RemoteTestApi(TestApi):
     """
@@ -39,7 +44,7 @@ class RemoteTestApi(TestApi):
 
     def setUp(self):
         d = dict(host='localhost', port=8811)
-        self.config = TestConfig()
+        self.config = testutil.load_test_config()
         self.rapi = RepoConnection(**d)
         self.capi = ConsumerConnection(**d)
         self.papi = PackageConnection(**d)
