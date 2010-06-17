@@ -139,6 +139,7 @@ class TaskModel(Base):
     """
     def __init__(self):
         self._id = None
+        self.id = None
         
         self.method_name = None
         self.state = None
@@ -151,6 +152,7 @@ class TaskModel(Base):
         
 
 _common_attrs = (
+    'id',
     'method_name',
     'state',
     'start_time',

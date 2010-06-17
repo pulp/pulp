@@ -56,12 +56,21 @@ class JSONController(object):
         return report_error
     
     def input(self):
+        """
+        JSON decode the objects in the requests body and return them
+        """
         return json.loads(web.data())
     
     def params(self):
+        """
+        Fetch any arguments passed on the url
+        """
         return web.input()
 
     def output(self, data):
+        """
+        JSON encode the reponse and set the appropriate headers
+        """
         web.header('Content-Type', 'application/json')
         return json.dumps(data, default=pymongo.json_util.default)
 
@@ -103,5 +112,7 @@ class AsyncController(object):
         @return: dictionary of status URL
         """
         web.ctx.status = '202 Accepted'
-        path = os.path.normpath(os.path.join(web.ctx.homepath, web.ctx.path, id))
-        return {'status_path': urllib.pathname2url(path)}
+        path = os.path.normpath(os.path.join(web.ctx.path, id)) # cleanly concat the current path with the id
+        path = web.http.url(path)                               # add the application prefix
+        path += '/'                                             # all urls are paths, so need a trailing '/'
+        return {'status_path': urllib.pathname2url(path)}       # make sure the path is properly encoded
