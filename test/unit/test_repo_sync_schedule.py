@@ -20,6 +20,7 @@ import shutil
 import sys
 import unittest
 
+
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
@@ -27,9 +28,10 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import crontab
+
 import pulp.api.repo
 import pulp.api.repo_sync
-
 import testutil
 
 class TestRepoSyncSchedule(unittest.TestCase):
@@ -37,11 +39,14 @@ class TestRepoSyncSchedule(unittest.TestCase):
     def setUp(self):
         self.config = testutil.load_test_config()
         self.repo_api = pulp.api.repo.RepoApi(self.config)
-        os.mkdir(self.config.get('paths', 'repo_sync_cron'))
 
     def tearDown(self):
         self.repo_api.clean()
-        shutil.rmtree(self.config.get('paths', 'repo_sync_cron'))
+        tab = crontab.CronTab()
+
+        for entry in tab.find_command('pulp repo sync'):
+            tab.remove(entry)
+        tab.write()
 
     def test_update_delete_schedule(self):
         '''
@@ -62,16 +67,12 @@ class TestRepoSyncSchedule(unittest.TestCase):
         repo['sync_schedule'] = sync_schedule
         self.repo_api.update(repo)
 
-        file_name = pulp.api.repo_sync._sync_file_name(self.config, repo)
-
         # Verify
-        self.assertTrue(os.path.exists(file_name))
+        tab = crontab.CronTab()
+        items = tab.find_command('pulp repo sync %s' % repo_id)
+        self.assertEqual(1, len(items))
 
-        f = open(file_name, 'r')
-        contents = f.read()
-        print('Update #1 [%s]' % contents)
-
-        self.assertTrue(contents.startswith(sync_schedule))
+        print('Update #1 [%s]' % items[0].render())
 
         # -- Update #2 ----------
         repo = self.repo_api.repository(repo_id)
@@ -79,13 +80,11 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        self.assertTrue(os.path.exists(file_name))
+        tab = crontab.CronTab()
+        items = tab.find_command('pulp repo sync %s' % repo_id)
+        self.assertEqual(1, len(items))
 
-        f = open(file_name, 'r')
-        contents = f.read()
-        print('Update #2 [%s]' % contents)
-
-        self.assertTrue(contents.startswith(sync_schedule_2))
+        print('Update #2 [%s]' % items[0].render())
 
         # -- Delete #1 ----------
         repo = self.repo_api.repository(repo_id)
@@ -93,7 +92,9 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        self.assertTrue(not os.path.exists(file_name))
+        tab = crontab.CronTab()
+        items = tab.find_command('pulp repo sync %s' % repo_id)
+        self.assertEqual(0, len(items))
 
         # -- Delete #2 ----------
         repo = self.repo_api.repository(repo_id)
@@ -101,7 +102,9 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        self.assertTrue(not os.path.exists(file_name))
+        tab = crontab.CronTab()
+        items = tab.find_command('pulp repo sync %s' % repo_id)
+        self.assertEqual(0, len(items))
 
     def test_all_schedules(self):
         # Setup

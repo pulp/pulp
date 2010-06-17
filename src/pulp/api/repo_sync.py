@@ -22,6 +22,7 @@ import traceback
 from urlparse import urlparse
 
 # 3rd Party
+import crontab
 import yum
 
 # Pulp
@@ -60,42 +61,51 @@ def update_schedule(config, repo):
     Updates the repo sync scheduler entry with the schedule for the given repo.
 
     @param config: pulp configuration values; may not be None
-    @type config:  L{ConfigParser}
+    @type  config: L{ConfigParser}
 
     @param repo: repo containg the id and sync schedule; may not be None
-    @type repo:  L{pulp.model.Repo}
+    @type  repo: L{pulp.model.Repo}
     '''
-    sync_file = _sync_file_name(config, repo)
+    tab = crontab.CronTab()
 
-    cron_entry = '%s pulp repo sync %s' % (repo['sync_schedule'], repo['id'])
-    log.debug('Writing cron entry [%s] to [%s]' % (cron_entry, sync_file))
+    cmd = _cron_command(repo)
+    entries = tab.find_command(cmd)
 
-    f = open(sync_file, 'w')
-    f.write(cron_entry)
-    f.close()
+    if len(entries) == 0:
+        entry = tab.new(command=cmd)
+    else:
+        entry = entries[0]
+
+    entry.parse(repo['sync_schedule'] + ' ' + cmd)
+
+    log.debug('Writing updated cron entry [%s]' % entry.render())
+    tab.write()
 
 def delete_schedule(config, repo):
     '''
     Deletes the repo sync schedule file for the given repo.
 
     @param config: pulp configuration values; may not be None
-    @type config:  L{ConfigParser}
+    @type  config: L{ConfigParser}
 
     @param repo: repo containg the id and sync schedule; may not be None
-    @type repo:  L{pulp.model.Repo}
+    @type  repo: L{pulp.model.Repo}
     '''
-    sync_file = _sync_file_name(config, repo)
+    tab = crontab.CronTab()
 
-    if os.path.exists(sync_file):
-        log.debug('Removing cron file [%s]' % sync_file)
-        os.remove(sync_file)
+    cmd = _cron_command(repo)
+    entries = tab.find_command(cmd)
 
-def _sync_file_name(config, repo):
-    cron_dir = config.get('paths', 'repo_sync_cron')
-    cron_file_name = 'pulp-' + repo['id']
-    cron_file = os.path.join(cron_dir, cron_file_name)
+    if len(entries) > 0:
+        for entry in entries:
+            log.debug('Removing entry [%s]' % entry.render())
+            tab.remove(entry)
+        tab.write()
+    else:
+        log.debug('No existing cron entry for repo [%s]' % repo['id'])
 
-    return cron_file
+def _cron_command(repo):
+    return 'pulp repo sync %s' % repo['id']
 
 
 class BaseSynchronizer(object):
