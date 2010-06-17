@@ -51,12 +51,10 @@ class PulpCore:
         modules = [name for _, name, _ in pkgutil.iter_modules([pkgpth])
                    if name.startswith("core_")]
         cls = []
-        print modules
         for name in modules:
             mod = __import__('pulptools.core.', globals(), locals(), [name])
             submod = getattr(mod, name)
             cls.append(getattr(submod, name.split("_")[-1]))
-            print cls
         return cls
 
     def _usage(self):
