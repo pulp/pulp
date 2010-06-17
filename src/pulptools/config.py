@@ -27,15 +27,24 @@ class Config(Base):
     @type PATH: str
     """
 
-    PATH = '/etc/pulp'
+    PATH = '/etc/pulp/client.ini'
 
-    def __init__(self, name='client.ini'):
+    def __init__(self):
         """
-        @param name: The absolute path to the configuration file.
-        @type name: str
+        Open the configuration.
         """
-        fp = open(os.path.join(self.PATH, name))
+        fp = open(self.PATH)
         try:
             Base.__init__(self, fp)
+        finally:
+            fp.close()
+
+    def write(self):
+        """
+        Write the configuration.
+        """
+        fp = open(self.PATH, 'w')
+        try:
+            fp.write(str(self))
         finally:
             fp.close()
