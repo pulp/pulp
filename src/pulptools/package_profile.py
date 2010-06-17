@@ -30,7 +30,7 @@ class PackageProfile(object):
     """
     def __init__(self, type='rpm'):
         self.pkgtype = type
-        self.pkglist = []
+        self.pkglist = {}
         
     def getPackageList(self):
         """
@@ -54,7 +54,7 @@ class PackageProfile(object):
                 # skip these for now as there isnt compelling 
                 # reason for server to know this info
                 continue
-            pkg = {
+            info = {
                 'name'          : h['name'],
                 'version'       : h['version'],
                 'release'       : h['release'],
@@ -70,8 +70,11 @@ class PackageProfile(object):
                 'Size'          : h['Size'],
                 'Vendor'        : h['Vendor'],             
             }
-            info = {self.getRpmName(pkg) : pkg}
-            self.pkglist.append(info)
+            if not self.pkglist.has_key(h['name']):
+                self.pkglist[h['name']] = [info]
+            else:
+                self.pkglist[h['name']].append(info)
+
         return self.pkglist
     
     def getRpmName(self, pkg):
