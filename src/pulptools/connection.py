@@ -114,7 +114,7 @@ class RepoConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, name, arch, feed, sync_schedule):
+    def create(self, id, name, arch, feed, sync_schedule=None):
         method = "/repositories/"
         repodata = {"id"   : id,
                     "name" : name,
