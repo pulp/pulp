@@ -127,7 +127,7 @@ class Bind(JSONController):
         @return: True on successful bind
         """
         data = self.input()
-        API.bind(id, data['repoid'])
+        API.bind(id, data)
         return self.output(True)
 
 
@@ -141,7 +141,7 @@ class Unbind(JSONController):
         @return: True on successful unbind
         """
         data = self.input()
-        API.unbind(id, data['repoid'])
+        API.unbind(id, data)
         return self.output(True)
 
 
