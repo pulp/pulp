@@ -40,6 +40,7 @@ Pulp provides replication, access, and accounting for software repositories.
 Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
+Requires:       python-simplejson
 Requires:	m2crypto
 
 %if 0%{?rhel} > 5
