@@ -68,7 +68,7 @@ class Restlib(object):
         return json.loads(rinfo)
 
     def validateResponse(self, response):
-        if str(response.status) not in ["200", "204"]:
+        if str(response.status) not in ["200", "202", "204"]:
             raise RestlibException(response.status, response.read())
             #parsed = json.loads(response.read())
 
@@ -168,6 +168,10 @@ class RepoConnection(PulpConnection):
     def all_schedules(self):
         method = "/repositories/schedules/"
         return self.conn.request_get(method)
+    
+    def sync_status(self, status_path):
+        return self.conn.request_get(status_path)
+
 
 class ConsumerConnection(PulpConnection):
     """

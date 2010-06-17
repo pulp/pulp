@@ -48,9 +48,14 @@ class consumer(BaseCore):
         self.name = "consumer"
         self.username = None
         self.password = None
-        self.cconn = ConsumerConnection(host="localhost", port=8811)
+        print dir(CFG)
+        self.cconn = None
+        self.load_server()
         self.repolib = RepoLib()
         self.generate_options()
+        
+    def load_server(self):
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
 
     def generate_options(self):
         possiblecmd = []
@@ -76,6 +81,8 @@ class consumer(BaseCore):
                            help="Consumer Identifier eg: foo.example.com")
             self.parser.add_option("--description", dest="description",
                            help="consumer description eg: foo's web server")
+            self.parser.add_option("--server", dest="server",
+                           help="Server hostname to register the consumer. Defaults to localhost")
         if self.action == "bind":
             usage = "usage: %prog consumer bind [OPTIONS]"
             BaseCore.__init__(self, "consumer bind", usage, "", "")
@@ -129,13 +136,21 @@ class consumer(BaseCore):
             sys.exit(0)
         if not self.options.description:
             self.options.description = self.options.id
+        if self.options.server:
+            CFG.server.host = self.options.server
+            f = open('/etc/pulp/client.ini', 'w')
+            print >>f, CFG
+            f.close()
+            self.load_server()
         try:
             consumer = self.cconn.create(self.options.id, self.options.description)
-            utils.writeToFile(os.path.join(CONSUMERID), consumer['id'])
+            print consumer
+            utils.writeToFile(CONSUMERID, consumer['id'])
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
+            raise
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:

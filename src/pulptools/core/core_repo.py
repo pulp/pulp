@@ -20,12 +20,15 @@
 
 import os
 import sys
+import time
+import base64
+
 import pulptools.utils as utils
 import pulptools.constants as constants
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import RepoConnection, RestlibException
 from pulptools.logutil import getLogger
-import base64
+
 import gettext
 _ = gettext.gettext
 log = getLogger(__name__)
@@ -184,10 +187,15 @@ class repo(BaseCore):
             print("repo label required. Try --help")
             sys.exit(0)
         try:
-            status = self.pconn.sync(self.options.label)
-            if status:
-                packages =  self.pconn.packages(self.options.label)
-                pkg_count = len(packages)
+            task_object = self.pconn.sync(self.options.label)
+            state = "waiting"
+            while state not in ["finished", "Error"]:
+                time.sleep(5)
+                status = self.pconn.sync_status(task_object['status_path'])
+                state= status['state']
+                print "Sync Status::",state
+            packages =  self.pconn.packages(self.options.label)
+            pkg_count = len(packages)
             print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
         except RestlibException, re:
             log.error("Error: %s" % re)
