@@ -138,9 +138,7 @@ class consumer(BaseCore):
             self.options.description = self.options.id
         if self.options.server:
             CFG.server.host = self.options.server
-            f = open('/etc/pulp/client.ini', 'w')
-            print >>f, CFG
-            f.close()
+            CFG.write()
             self.load_server()
         try:
             consumer = self.cconn.create(self.options.id, self.options.description)
