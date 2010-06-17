@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.23
+Version:        0.0.24
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -125,6 +125,9 @@ chown apache:apache /var/log/pulp
 
 
 %changelog
+* Wed Jun 16 2010 Mike McCune <mmccune@redhat.com> 0.0.24-1
+- massive amounts of changes from the last few weeks
+
 * Wed Jun 09 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.23-1
 - inlcude only pulp and juicer for pulp rpm (pkilambi@redhat.com)
 - Adding pulp-tools as a new subrpm (pkilambi@redhat.com)
