@@ -68,8 +68,9 @@ class PackageProfile(object):
                 'Platform'      : h['Platform'],
                 'URL'           : h['URL'],
                 'Size'          : h['Size'],
-                'Vendor'        : h['Vendor'],             
+                'Vendor'        : h['Vendor'], 
             }
+            info['fileName'] =   self.getRpmName(info)           
             if not self.pkglist.has_key(h['name']):
                 self.pkglist[h['name']] = [info]
             else:

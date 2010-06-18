@@ -153,3 +153,4 @@ class Profile(JSONController):
     def POST(self, id):
         API.profile_update(id, self.input())
         return self.output(None)
+
