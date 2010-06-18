@@ -14,8 +14,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-__author__ = 'Jason L Connor <jconnor@redhat.com>'
-
 from pulp.tasking.queue.fifo import mongo_fifo_queue
 
 

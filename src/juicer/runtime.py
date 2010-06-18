@@ -13,9 +13,6 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-
-__author__ = 'Jason L Connor <jconnor@redhat.com>'
-
 """
 This module contains various globals that get set at runtime.
 CONFIG - the raw configurations of juicer and pulp as a configuration parser
