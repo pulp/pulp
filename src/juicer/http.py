@@ -103,3 +103,6 @@ def status_conflict():
     """
     _status(httplib.CONFLICT)
     
+def status_internal_server_error():
+    _status(httplib.INTERNAL_SERVER_ERROR)
+    

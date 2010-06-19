@@ -50,17 +50,16 @@ class JSONController(object):
             except Exception:
                 exc_info = sys.exc_info()
                 tb_msg = ''.join(traceback.format_exception(*exc_info))
-                web.ctx.status = '500 Internal Server Error'
-                return self._output(tb_msg)
+                return self.internal_server_error(tb_msg)
         return report_error
     
-    def input(self):
+    def params(self):
         """
         JSON decode the objects in the requests body and return them
         """
         return json.loads(web.data())
     
-    def params(self):
+    def filters(self):
         """
         Fetch any arguments passed on the url
         """
@@ -135,6 +134,16 @@ class JSONController(object):
         """
         http.status_conflict()
         return self._output(msg)
+    
+    def internal_server_error(self, msg=None):
+        """
+        Return an internal server error.
+        @type msg: str
+        @param msg: optional error message
+        @return: JSON encoded response
+        """
+        http.status_internal_server_error()
+        return self._output(msg)
 
 
 class AsyncController(JSONController):
@@ -142,7 +151,6 @@ class AsyncController(JSONController):
     Base controller class with convenience methods for executing asynchronous
     tasks.
     """
-    
     def start_task(self, func, *args, **kwargs):
         """
         Execute the function and its arguments as an asynchronous task.

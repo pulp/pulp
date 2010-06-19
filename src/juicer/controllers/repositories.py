@@ -20,35 +20,21 @@ from juicer.controllers.base import JSONController, AsyncController
 from juicer.runtime import CONFIG
 from pulp.api.repo import RepoApi
 
-# web.py application ----------------------------------------------------------
-
-URLS = (
-    '/schedules/$', 'Schedules',
-    '/$', 'Root',
-    '/([^/]+)/$', 'Repository',
-    '/([^/]+)/sync/$', 'Sync',
-    '/([^/]+)/sync/([^/]+)/$', 'SyncStatus',
-    '/([^/]+)/list/$', 'Packages',
-    '/([^/]+)/upload/$', 'Upload',
-    '/([^/]+)/add_package/$', 'AddPackage',
-)
-
-application = web.application(URLS, globals())
-
 # repository api --------------------------------------------------------------
 
 API = RepoApi(CONFIG)
 
-# controllers -----------------------------------------------------------------
+# restful controllers ---------------------------------------------------------
 
-class Root(JSONController):
-    
+class Collection(JSONController):
+ 
     @JSONController.error_handler
     def GET(self):
         """
         List all available repositories.
         @return: a list of all available repositories
         """
+        # XXX implement filters
         return self.ok(API.repositories())
     
     @JSONController.error_handler
@@ -57,13 +43,13 @@ class Root(JSONController):
         Create a new repository.
         @return: repository meta data on successful creation of repository
         """
-        repo_data = self.input()
+        repo_data = self.params()
         repo = API.create(repo_data['id'],
                           repo_data['name'],
                           repo_data['arch'],
                           repo_data['feed'],
                           sync_schedule=repo_data['sync_schedule'])
-        # TODO need function to creat path
+        # TODO need function to create path
         path = None
         return self.created(path, repo)
 
@@ -75,8 +61,14 @@ class Root(JSONController):
         API.clean()
         return self.ok(None)
     
-class Repository(JSONController):
+
+class CollectionActions(AsyncController):
+    actions = (
+    )
     
+
+class Object(JSONController):
+
     @JSONController.error_handler
     def DELETE(self, id):
         """
@@ -97,64 +89,41 @@ class Repository(JSONController):
         return self.ok(API.repository(id))
     
     @JSONController.error_handler
-    def POST(self, id):
+    def PUT(self, id):
         """
         Change a repository.
         @param id: repository id
         @return: True on successful update of repository meta data
         """
-        repo_data = self.input()
+        repo_data = self.params()
         repo_data['id'] = id
         API.update(repo_data)
         return self.ok(True)
     
-    
-class Sync(AsyncController):
-    
-    @JSONController.error_handler
-    def POST(self, id):
-        """
-        Sync a repository from it's feed.
-        @param id: repository id
-        @return: True on successful sync of repository from feed
-        """
-        task_info = self.start_task(API.sync, id)
-        return self.accepted(task_info)
-    
-    
-class SyncStatus(AsyncController):
-    
-    @JSONController.error_handler
-    def GET(self, id, task_id):
-        """
-        Check the status of a sync operation.
-        @param id: repository id
-        @param task_id: sync operation id
-        @return: operation status information
-        """
-        task_info = self.task_status(task_id)
-        if task_info is None:
-            return self.not_found('No sync with id %s found' % task_id)
-        return self.ok(task_info)
 
 
-class AddPackage(JSONController):
+class ObjectActions(AsyncController):
+    actions = (
+        'list',
+        'sync',
+        'upload',
+        'add_package',
+    )
     
     @JSONController.error_handler
-    def POST(self, id):
-        """
-        @param id: repository id
-        @return: True on successful addition of package to repository
-        """
-        data = self.input()
-        API.add_package(id, data['packageid'])
-        return self.ok(True)
-       
-  
-class Packages(JSONController):
-    
-    @JSONController.error_handler
-    def GET(self, id):
+    def GET(self, id, action_name):
+        '''
+        Retrieve a map of all repository IDs to their associated synchronization
+        schedules.
+
+        @return: key - repository ID, value - synchronization schedule
+        '''
+        # XXX this returns all scheduled tasks, it should only return those
+        # tasks that are specified by the action_name
+        schedules = API.all_schedules()
+        return self.ok(schedules)
+ 
+    def list(self, id):
         """
         List all packages in a repository.
         @param id: repository id
@@ -162,32 +131,87 @@ class Packages(JSONController):
         """
         return self.ok(API.packages(id))
     
-
-class Upload(JSONController):
-
-    @JSONController.error_handler
-    def POST(self, id):
+    def sync(self, id):
+        """
+        Sync a repository from it's feed.
+        @param id: repository id
+        @return: True on successful sync of repository from feed
+        """
+        task_info = self.start_task(API.sync, id)
+        return self.accepted(task_info)
+       
+    def upload(self, id, repo=None, pkginfo=None, pkgstream=None):
         """
         Upload a package to a repository.
         @param id: repository id
         @return: True on successful upload
         """
-        data = self.input()
-        API.upload(data['repo'],
-                   data['pkginfo'],
-                   data['pkgstream'])
+        API.upload(repo,
+                   pkginfo,
+                   pkgstream)
         return self.ok(True)
-
-
-class Schedules(JSONController):
-
+    
+    def add_package(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of package to repository
+        """
+        data = self.params()
+        API.add_package(id, data['packageid'])
+        return self.ok(True)
+    
     @JSONController.error_handler
-    def GET(self):
-        '''
-        Retrieve a map of all repository IDs to their associated synchronization
-        schedules.
+    def POST(self, id, action_name):
+        """
+        Object action dispatcher. This method checks to see if the action is
+        exposed, and if so, implemented. It then calls the corresponding
+        method (named the same as the action) to handle the request.
+        @type id: str
+        @param id: repository id
+        @type action_name: str
+        @param action_name: name of the action
+        @return: http response
+        """
+        if action_name not in self.actions:
+            return self.not_found('The action %s is not defined' % action_name)
+        action = getattr(self, action_name, None)
+        if action is None:
+            return self.internal_server_error('No implementation for %s found' % action_name)
+        params = self.params()
+        return action(self, id, **params)
+    
+    
+class ObjectActionStatus(AsyncController):
+    
+    @JSONController.error_handler
+    def GET(self, id, action_name, action_id):
+        """
+        Check the status of a sync operation.
+        @param id: repository id
+        @param action_name: name of the action
+        @param action_id: action id
+        @return: action status information
+        """
+        task_info = self.task_status(action_id)
+        if task_info is None:
+            return self.not_found('No %s with id %s found' % (action_name, action_id))
+        return self.ok(task_info)
+    
+    @JSONController.error_handler
+    def DELETE(self, id, action_name, action_id):
+        """
+        Place holder to cancel an action
+        """
+        return self.not_found('Action cancellation is not yet implemented')
 
-        @return: key - repository ID, value - synchronization schedule
-        '''
-        schedules = API.all_schedules()
-        return self.ok(schedules)
+# web.py application ----------------------------------------------------------
+
+urls = (
+    '/$', 'Collection',
+    '/(%s)/$' % '|'.join(CollectionActions.actions), 'CollectionActions',
+    '/([^/]+)/$', 'Object',
+    '/([^/]+)/(%s)/$' % '|'.join(ObjectActions.actions), 'ObjectActions',
+    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ObjectActions.actions), 'ObjectActionStatus',
+)
+
+application = web.application(urls, globals())
