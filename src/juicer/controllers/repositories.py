@@ -49,10 +49,10 @@ class Root(JSONController):
         List all available repositories.
         @return: a list of all available repositories
         """
-        return self.output(API.repositories())
+        return self.ok(API.repositories())
     
     @JSONController.error_handler
-    def POST(self):
+    def PUT(self):
         """
         Create a new repository.
         @return: repository meta data on successful creation of repository
@@ -63,7 +63,9 @@ class Root(JSONController):
                           repo_data['arch'],
                           repo_data['feed'],
                           sync_schedule=repo_data['sync_schedule'])
-        return self.output(repo)
+        # TODO need function to creat path
+        path = None
+        return self.created(path, repo)
 
     @JSONController.error_handler
     def DELETE(self):
@@ -71,7 +73,7 @@ class Root(JSONController):
         @return: True on successful deletion of all repositories
         """
         API.clean()
-        return self.output(None)
+        return self.ok(None)
     
 class Repository(JSONController):
     
@@ -83,7 +85,7 @@ class Repository(JSONController):
         @return: True on successful deletion of repository
         """
         API.delete(id=id)
-        return self.output(None)
+        return self.ok(None)
 
     @JSONController.error_handler
     def GET(self, id):
@@ -92,7 +94,7 @@ class Repository(JSONController):
         @param id: repository id
         @return: repository meta data
         """
-        return self.output(API.repository(id))
+        return self.ok(API.repository(id))
     
     @JSONController.error_handler
     def POST(self, id):
@@ -104,25 +106,23 @@ class Repository(JSONController):
         repo_data = self.input()
         repo_data['id'] = id
         API.update(repo_data)
-        return self.output(True)
+        return self.ok(True)
     
     
-class Sync(JSONController, AsyncController):
+class Sync(AsyncController):
     
     @JSONController.error_handler
-    def GET(self, id):
+    def POST(self, id):
         """
         Sync a repository from it's feed.
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        task_info = self.async(API.sync, id)
-        status_info = self.accepted(task_info['_id'])
-        task_info.update(status_info)
-        return self.output(task_info)
+        task_info = self.start_task(API.sync, id)
+        return self.accepted(task_info)
     
     
-class SyncStatus(JSONController, AsyncController):
+class SyncStatus(AsyncController):
     
     @JSONController.error_handler
     def GET(self, id, task_id):
@@ -132,10 +132,10 @@ class SyncStatus(JSONController, AsyncController):
         @param task_id: sync operation id
         @return: operation status information
         """
-        task_info = self.status(task_id)
+        task_info = self.task_status(task_id)
         if task_info is None:
-            return self.not_found()
-        return self.output(task_info)
+            return self.not_found('No sync with id %s found' % task_id)
+        return self.ok(task_info)
 
 
 class AddPackage(JSONController):
@@ -148,7 +148,7 @@ class AddPackage(JSONController):
         """
         data = self.input()
         API.add_package(id, data['packageid'])
-        return self.output(True)
+        return self.ok(True)
        
   
 class Packages(JSONController):
@@ -160,7 +160,7 @@ class Packages(JSONController):
         @param id: repository id
         @return: list of all packages available in corresponding repository
         """
-        return self.output(API.packages(id))
+        return self.ok(API.packages(id))
     
 
 class Upload(JSONController):
@@ -176,7 +176,7 @@ class Upload(JSONController):
         API.upload(data['repo'],
                    data['pkginfo'],
                    data['pkgstream'])
-        return self.output(True)
+        return self.ok(True)
 
 
 class Schedules(JSONController):
@@ -190,4 +190,4 @@ class Schedules(JSONController):
         @return: key - repository ID, value - synchronization schedule
         '''
         schedules = API.all_schedules()
-        return self.output(schedules)
+        return self.ok(schedules)
