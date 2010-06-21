@@ -265,22 +265,6 @@ class RepoApi(BaseApi):
             pgc._groups[groupid] = groupid
         return pgc
 
-    def packagegroups(self, id):
-        """
-        Return list of PackageGroup objects in this Repo
-        """
-        repo = self.repository(id)
-        return repo['packagegroups']
-
-    def packagegroup(self, repoid, groupid):
-        """
-        Return a PackageGroup from this Repo
-        """
-        repo = self.repository(repoid)
-        if not repo['packagegroups'].has_key(groupid):
-            return None
-        return repo['packagegroups'][groupid]
-
     def packagegroupcategories(self, id):
         """
         Return list of PackageGroupCategory objects in this Repo
