@@ -35,10 +35,10 @@ class Repo:
 
 
 @remote
-class PackageInstaller:
+class Packages:
 
     @remotemethod
-    def installpackages(self, packagenames):
+    def install(self, packagenames):
         pass
 
 
