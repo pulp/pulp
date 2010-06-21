@@ -144,18 +144,5 @@ class package(BaseCore):
             log.error("Error: %s" % e)
             raise    
         
-        
-def getConsumer():
-    ##TODO: this will eventually be a x509 cert
-    if not os.path.exists(CONSUMERID):
-        print("Error: This client is currently not registered. Please register to continue")
-        sys.exit(0)
-    try:
-        consumerid = open(CONSUMERID).read()
-    except Exception, e:
-        print("Error reading consumer." + e)
-        sys.exit(-1)
-    return consumerid
-        
 def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
