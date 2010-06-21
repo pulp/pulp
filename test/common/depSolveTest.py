@@ -60,7 +60,7 @@ class DepSolver(YumUtilBase):
         
         toDownload = []
     
-        pkg = sys.argv[1]
+        pkg = sys.argv[3]
         if pkg:
             toActOn = []
                         
@@ -132,8 +132,8 @@ class DepSolver(YumUtilBase):
         try:
             archlist = rpmUtils.arch.getArchList(sys.argv[2])
             print "Archlist:", archlist
-            print self.repos
-            self._getSacks(archlist=archlist, thisrepo=sys.argv[3])
+            print "Existing repositories: ", self.repos
+            self._getSacks(archlist=archlist, thisrepo=sys.argv[1])
         except yum.Errors.YumBaseError, msg:
             self.logger.critical(str(msg))
             sys.exit(1)
