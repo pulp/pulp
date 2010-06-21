@@ -165,6 +165,15 @@ class TestApi(unittest.TestCase):
         packages = found['packages']
         assert(packages != None)
         assert(packages[p['id']] != None)
+        
+    def test_repo_package_by_name(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        p = self.create_package('test_pkg_by_name')
+        self.rapi.add_package(repo["id"], p['id'])
+        
+        pkg = self.rapi.package_by_name(repo['id'], p['name'])
+        assert(pkg != None)
     
     def test_repo_package_groups(self):
         repo = self.rapi.create('some-id','some name', \
