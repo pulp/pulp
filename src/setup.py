@@ -27,6 +27,7 @@ requires = [
     'web.py == 0.32',
     'grinder >= 0.0.20',
     'pymongo == 1.6',
+    'qpid >= 0.5',
 ]
 
 if minor != '6':

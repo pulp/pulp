@@ -22,6 +22,7 @@ BuildRequires:  rpm-python
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
+Requires: python-qpid
 Requires: grinder
 Requires: httpd
 Requires: mod_wsgi

@@ -125,3 +125,13 @@ class ConsumerApi(BaseApi):
             raise PulpException('consumer "%s", not-found', id)
         consumer["package_profile"] =  package_profile
         self.update(consumer)
+
+    def installpackages(self, id, packagenames=[]):
+        """
+        Install packages on the consumer.
+        @param id: A consumer id.
+        @type id: str
+        @param packagenames: The package names to install.
+        @type packagenames: [str,..]
+        """
+        pass

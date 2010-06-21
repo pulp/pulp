@@ -29,6 +29,7 @@ URLS = (
     '/([^/]+)/bind/$', 'Bind',
     '/([^/]+)/unbind/$', 'Unbind',
     '/([^/]+)/profile/$', 'Profile',
+    '/([^/]+)/installpackage/$', 'InstallPackage',
 )
 
 application = web.application(URLS, globals())
@@ -143,6 +144,20 @@ class Unbind(JSONController):
         data = self.input()
         API.unbind(id, data)
         return self.output(True)
+
+
+class InstallPackage(JSONController):
+    """
+    Install packages.
+    Body contains a list of package names.
+    """
+    @JSONController.error_handler
+    def POST(self, id):
+        data = self.input()
+        names = data.get('packagenames', [])
+        if names:
+            API.installpackages(id, names)
+        return self.output(None)
 
 
 class Profile(JSONController):
