@@ -95,7 +95,7 @@ class PackageApi(BaseApi):
         """
         Returns the package version identified by the given package and VERA.
         """
-        return self.objectdb.find_one({'packageid' : package_id, 'version' : version,
+        return self.objectdb.find_one({'name' : name, 'version' : version,
                                        'epoch' : epoch, 'release' : release, 'arch' : arch,})
                                        
     def package_descriptions(self):

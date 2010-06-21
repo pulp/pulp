@@ -165,6 +165,9 @@ class BaseSynchronizer(object):
                         retval.requires.append(dep)
                     for dep in info['provides']:
                         retval.provides.append(dep)
+                    retval.download_url = self.config.get('server', 'base_url') + "/" + \
+                                            self.config.get('server', 'relative_url') + "/" + \
+                                            repo["id"] + "/" +  file_name
                     self.package_api.update(retval)
                 return retval
             except Exception, e:

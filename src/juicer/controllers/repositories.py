@@ -29,6 +29,7 @@ URLS = (
     '/([^/]+)/sync/$', 'Sync',
     '/([^/]+)/sync/([^/]+)/$', 'SyncStatus',
     '/([^/]+)/list/$', 'Packages',
+    '/([^/]+)/package/([^/]+)/$', 'Package',
     '/([^/]+)/upload/$', 'Upload',
     '/([^/]+)/add_package/$', 'AddPackage',
 )
@@ -161,6 +162,28 @@ class Packages(JSONController):
         @return: list of all packages available in corresponding repository
         """
         return self.output(API.packages(id))
+
+class Package(JSONController):
+    
+    @JSONController.error_handler
+    def POST(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of package to repository
+        """
+        data = self.input()
+        API.add_package(id, data['packageid'])
+        return self.output(True)
+    
+    @JSONController.error_handler
+    def GET(self, id, name):
+        """
+        Get package info from a repository.
+        @param id: repository id
+        @param name: repository name
+        @return: matched package object available in corresponding repository
+        """
+        return self.output(API.package_by_name(id, name))
     
 
 class Upload(JSONController):

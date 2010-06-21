@@ -101,6 +101,19 @@ class RepoApi(BaseApi):
                     matches.append(package)
             return matches
     
+    def package_by_name(self, id, name):
+        """
+        Return matching Package object in this Repo
+        """
+        repo = self.repository(id)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % id)
+        packages = repo['packages']
+        for package in packages.values():
+            log.error(package)
+            if (package['name'] == name):
+                return package
+    
     def add_package(self, repoid, packageid):
         """
         Adds the passed in package to this repo

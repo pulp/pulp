@@ -153,6 +153,10 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/add_package/" % repoid
         print "Add info: %s" % addinfo
         return self.conn.request_post(method, params=addinfo)
+    
+    def get_package(self, repoid, pkg_name):
+        method = "/repositories/%s/package/%s/" % (repoid, pkg_name)
+        return self.conn.request_get(method)
 
     def packages(self, repoid):
         method = "/repositories/%s/list/" % repoid

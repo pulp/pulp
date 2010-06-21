@@ -84,6 +84,7 @@ class Package(Base):
         self.description = description
         self.filename = filename
         self.checksum = {checksum_type: checksum}
+        self.download_url = None
         # Add gpg keys
         self.requires = []
         self.provides = []
