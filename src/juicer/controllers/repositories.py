@@ -26,7 +26,7 @@ API = RepoApi(CONFIG)
 
 # restful controllers ---------------------------------------------------------
 
-class Collection(JSONController):
+class Repositories(JSONController):
  
     @JSONController.error_handler
     def GET(self):
@@ -62,12 +62,7 @@ class Collection(JSONController):
         return self.ok(None)
     
 
-class CollectionActions(AsyncController):
-    actions = (
-    )
-    
-
-class Object(JSONController):
+class Repository(JSONController):
 
     @JSONController.error_handler
     def DELETE(self, id):
@@ -101,9 +96,21 @@ class Object(JSONController):
         return self.ok(True)
     
 
-
-class ObjectActions(AsyncController):
-    actions = (
+class RepositoryActions(AsyncController):
+    
+    # All actions have been gathered here into one controller class for both
+    # convenience and automatically generate the regular expression that will
+    # map valid actions to this class. This also provides a single point for
+    # querying existing tasks.
+    #
+    # There are two steps to implementing a new action:
+    # 1. The action name must be added to the tuple of exposed_actions
+    # 2. You must add a method to this class with the same name as the action
+    #    that takes two positional arguments: 'self' and 'id' where id is the
+    #    the repository id. Additional parameters from the body can be
+    #    fetched and de-serialized via the self.params() call.
+    
+    exposed_actions = (
         'list',
         'sync',
         'upload',
@@ -140,15 +147,16 @@ class ObjectActions(AsyncController):
         task_info = self.start_task(API.sync, id)
         return self.accepted(task_info)
        
-    def upload(self, id, repo=None, pkginfo=None, pkgstream=None):
+    def upload(self, id, pkg_data):
         """
         Upload a package to a repository.
         @param id: repository id
         @return: True on successful upload
         """
-        API.upload(repo,
-                   pkginfo,
-                   pkgstream)
+        data = self.params()
+        API.upload(data['repo'],
+                   data['pkginfo'],
+                   data['pkgstream'])
         return self.ok(True)
     
     def add_package(self, id):
@@ -163,25 +171,22 @@ class ObjectActions(AsyncController):
     @JSONController.error_handler
     def POST(self, id, action_name):
         """
-        Object action dispatcher. This method checks to see if the action is
-        exposed, and if so, implemented. It then calls the corresponding
-        method (named the same as the action) to handle the request.
+        Action dispatcher. This method checks to see if the action is exposed,
+        and if so, implemented. It then calls the corresponding method (named
+        the same as the action) to handle the request.
         @type id: str
         @param id: repository id
         @type action_name: str
         @param action_name: name of the action
         @return: http response
         """
-        if action_name not in self.actions:
-            return self.not_found('The action %s is not defined' % action_name)
         action = getattr(self, action_name, None)
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
-        params = self.params()
-        return action(self, id, **params)
+        return action(id)
     
     
-class ObjectActionStatus(AsyncController):
+class RepositoryActionStatus(AsyncController):
     
     @JSONController.error_handler
     def GET(self, id, action_name, action_id):
@@ -207,11 +212,10 @@ class ObjectActionStatus(AsyncController):
 # web.py application ----------------------------------------------------------
 
 urls = (
-    '/$', 'Collection',
-    '/(%s)/$' % '|'.join(CollectionActions.actions), 'CollectionActions',
-    '/([^/]+)/$', 'Object',
-    '/([^/]+)/(%s)/$' % '|'.join(ObjectActions.actions), 'ObjectActions',
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ObjectActions.actions), 'ObjectActionStatus',
+    '/$', 'Repositories',
+    '/([^/]+)/$', 'Repository',
+    '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActions',
+    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActionStatus',
 )
 
 application = web.application(urls, globals())

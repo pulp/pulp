@@ -42,7 +42,7 @@ def header(hdr, value, unique=True):
             previous.append((h,v))
     if unique:
         for p in previous:
-            web.ctx.headers.pop(p)
+            web.ctx.headers.remove(p)
     web.ctx.headers.append((hdr, value))
     
     
@@ -104,5 +104,8 @@ def status_conflict():
     _status(httplib.CONFLICT)
     
 def status_internal_server_error():
+    """
+    Set the resonse code to internal server error
+    """
     _status(httplib.INTERNAL_SERVER_ERROR)
     

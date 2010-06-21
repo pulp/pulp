@@ -30,7 +30,7 @@ import web
 
 from juicer import http
 from juicer.queues import fifo
-from pulp.tasking.task import Task, task2model
+from pulp.tasking.task import Task, TaskModel, task2model
 
 
 class JSONController(object):
@@ -170,7 +170,7 @@ class AsyncController(JSONController):
         /<collection>/<object id>/<action>/<action id>/
         A GET request sent to this path will get a JSON encoded status object
         """
-        path = os.path.normpath(os.path.join(web.ctx.path, id)) # cleanly concat the current path with the id
+        path = os.path.normpath(os.path.join(web.ctx.path, id)) # cleanly concatenate the current path with the id
         path = web.http.url(path)                               # add the application prefix
         path += '/'                                             # all urls are paths, so need a trailing '/'
         return urllib.pathname2url(path)                        # make sure the path is properly encoded
@@ -181,10 +181,10 @@ class AsyncController(JSONController):
         @param id: task id
         @return: TaskModel instance
         """
-        http.status_ok()
         status = fifo.status(id)
-        status.update({'status_path': self._status_path(id)})
-        return self._output(status)
+        if isinstance(status, TaskModel):
+            status.update({'status_path': self._status_path(id)})
+        return status
     
     def accepted(self, status):
         """
