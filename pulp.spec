@@ -107,6 +107,7 @@ chown apache:apache /var/log/pulp
 %{python_sitelib}/pulp/*
 %{python_sitelib}/pulp-*
 %{python_sitelib}/juicer/*
+%{python_sitelib}/pmf/*
 %config(noreplace) /etc/pulp/juicer.ini
 %config(noreplace) /etc/pulp/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
