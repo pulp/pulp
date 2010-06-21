@@ -122,6 +122,7 @@ chown apache:apache /var/log/pulp
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/pulptools/
+%{python_sitelib}/pmf/
 %{_bindir}/pulp
 %config(noreplace) /etc/pulp/client.ini
 
