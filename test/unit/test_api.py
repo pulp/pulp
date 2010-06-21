@@ -220,6 +220,13 @@ class TestApi(unittest.TestCase):
         consumer = self.capi.consumer(cid)
         assert(rid not in consumer[key])
 
+    def test_consumer_installpackages(self):
+        cid = 'bindconsumerid'
+        packagenames = ['A','B','C']
+        self.capi.create(cid, 'test install package.')
+        result = self.capi.installpackages(cid, packagenames)
+        assert(result == packagenames)
+
     def test_bulk_create(self):
         consumers = []
         for i in range(1005):

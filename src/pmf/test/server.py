@@ -57,3 +57,4 @@ def demo(agent):
 
 if __name__ == '__main__':
     agent = Agent('123')
+    demo(agent)

@@ -134,4 +134,4 @@ class ConsumerApi(BaseApi):
         @param packagenames: The package names to install.
         @type packagenames: [str,..]
         """
-        pass
+        return packagenames

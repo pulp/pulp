@@ -29,7 +29,7 @@ URLS = (
     '/([^/]+)/bind/$', 'Bind',
     '/([^/]+)/unbind/$', 'Unbind',
     '/([^/]+)/profile/$', 'Profile',
-    '/([^/]+)/installpackage/$', 'InstallPackage',
+    '/([^/]+)/installpackages/$', 'InstallPackages',
 )
 
 application = web.application(URLS, globals())
@@ -125,11 +125,10 @@ class Bind(JSONController):
         """
         Bind (subscribe) a user to a repository.
         @param id: consumer id
-        @return: True on successful bind
         """
         data = self.input()
         API.bind(id, data)
-        return self.output(True)
+        return self.output(None)
 
 
 class Unbind(JSONController):
@@ -139,14 +138,13 @@ class Unbind(JSONController):
         """
         Unbind (unsubscribe) a user to a repository.
         @param id: consumer id
-        @return: True on successful unbind
         """
         data = self.input()
         API.unbind(id, data)
-        return self.output(True)
+        return self.output(None)
 
 
-class InstallPackage(JSONController):
+class InstallPackages(JSONController):
     """
     Install packages.
     Body contains a list of package names.
@@ -155,9 +153,7 @@ class InstallPackage(JSONController):
     def POST(self, id):
         data = self.input()
         names = data.get('packagenames', [])
-        if names:
-            API.installpackages(id, names)
-        return self.output(None)
+        return self.output(API.installpackages(id, names))
 
 
 class Profile(JSONController):
