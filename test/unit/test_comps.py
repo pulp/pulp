@@ -35,6 +35,7 @@ class TestComps(unittest.TestCase):
         self.config = pulp.util.load_config(config_file)
         self.rapi = RepoApi(self.config)
         self.rapi.clean()
+        self.dataPath = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
 
     def tearDown(self):
         self.rapi.clean()
@@ -45,7 +46,7 @@ class TestComps(unittest.TestCase):
                 'test_import_groups_data_id', 'i386', 
                 'yum:http://example.com/')
         # Parse existing comps.xml
-        compspath = "./data/rhel-i386-server-5/comps.xml"
+        compspath = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
         compsfile = open(compspath)
         base = BaseSynchronizer(self.config)
         base.import_groups_data(compsfile, repo)
