@@ -34,15 +34,15 @@ class Consumers(JSONController):
         List all available consumers.
         @return: a list of all consumers
         """
-        params = self.params()
-        if len(params) == 1:
-            pkgname = params.get('name')
+        filters = self.filters()
+        if len(filters) == 1:
+            pkgname = filters.get('name')
             if pkgname:
                 result = API.consumers_with_package_name(pkgname)
-                return self.output(result)
+                return self.ok(result)
             else:
-                return self.output([])
-        return self.output(API.consumers())
+                return self.ok([])
+        return self.ok(API.consumers())
      
     @JSONController.error_handler
     def PUT(self):
@@ -50,9 +50,9 @@ class Consumers(JSONController):
         Create a new consumer.
         @return: consumer meta data on successful creation of consumer
         """
-        consumer_data = self.input()
+        consumer_data = self.params()
         consumer = API.create(consumer_data['id'], consumer_data['description'])
-        return self.output(consumer)
+        return self.created(consumer['id'], consumer)
 
     @JSONController.error_handler
     def DELETE(self):
@@ -60,7 +60,7 @@ class Consumers(JSONController):
         @return: True on successful deletion of all consumers
         """
         API.clean()
-        return self.output(None)
+        return self.ok(True)
 
  
 class Consumer(JSONController):
@@ -72,7 +72,7 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: consumer meta data
         """
-        return self.output(API.consumer(id))
+        return self.ok(API.consumer(id))
     
     @JSONController.error_handler
     def PUT(self, id):
@@ -81,9 +81,9 @@ class Consumer(JSONController):
         @param id: The consumer id
         @type id: str
         """
-        consumer = self.input()
+        consumer = self.params()
         consumer = API.update(consumer)
-        return self.output(None)
+        return self.ok(True)
 
     @JSONController.error_handler
     def DELETE(self, id):
@@ -93,7 +93,7 @@ class Consumer(JSONController):
         @return: True on successful deletion of consumer
         """
         API.delete(id=id)
-        return self.output(None)
+        return self.ok(True)
 
 
 class Bulk(JSONController):
@@ -101,8 +101,8 @@ class Bulk(JSONController):
 
     @JSONController.error_handler
     def POST(self):
-        API.bulkcreate(self.input())
-        return self.output(None)
+        API.bulkcreate(self.params())
+        return self.ok(True)
 
 
 class ConsumerActions(JSONController):
@@ -121,9 +121,9 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         @return: True on successful bind
         """
-        data = self.input()
+        data = self.params()
         API.bind(id, data)
-        return self.output(True)
+        return self.ok(True)
     
     def unbind(self, id):
         """
@@ -131,16 +131,16 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         @return: True on successful unbind
         """
-        data = self.input()
+        data = self.params()
         API.unbind(id, data)
-        return self.output(True)
+        return self.ok(True)
     
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
         """
-        API.profile_update(id, self.input())
-        return self.output(None)
+        API.profile_update(id, self.params())
+        return self.ok(True)
     
     @JSONController.error_handler
     def POST(self, id, action_name):

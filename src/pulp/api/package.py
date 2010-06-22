@@ -54,11 +54,11 @@ class PackageApi(BaseApi):
         self.insert(p)
         return p
 
-    def delete(self, object):
+    def delete(self, id):
         """
         Delete package version object based on "_id" key
         """
-        self.objectdb.remove({"_id":object["_id"]})
+        self.objectdb.remove({"_id": id})
     
     def package(self, id):
         """
@@ -95,7 +95,7 @@ class PackageApi(BaseApi):
         """
         Returns the package version identified by the given package and VERA.
         """
-        return self.objectdb.find_one({'packageid' : package_id, 'version' : version,
+        return self.objectdb.find_one({'name' : name, 'version' : version,
                                        'epoch' : epoch, 'release' : release, 'arch' : arch,})
                                        
     def package_descriptions(self):
@@ -103,6 +103,7 @@ class PackageApi(BaseApi):
         List of all package names and descriptions (will not contain package
         version information).
         '''
-        return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
+        #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
+        return list(self.objectdb.find({}, ['name', 'description']))
                                        
         

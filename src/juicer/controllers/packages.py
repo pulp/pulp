@@ -55,7 +55,7 @@ class Packages(JSONController):
         package = API.create(data['name'], data['epoch'],data['version'],  
                              data['release'], data['arch'], data['description'],
                              data['checksum_type'], data['checksum'], data['filename'])
-        return self.output(package)
+        return self.created(None, package)
     
     
 class Package(JSONController):
@@ -67,15 +67,15 @@ class Package(JSONController):
         @param id: package id
         @return: package meta data corresponding to id
         """
-        return self.output(API.package(id))
+        return self.ok(API.package(id))
 
     @JSONController.error_handler
     def DELETE(self, id):
         '''
         @param id: package id
         '''
-        API.delete(packageid=id)
-        return self.output(None)
+        API.delete(id)
+        return self.ok(True)
     
     
 class PackageActions(JSONController):
@@ -98,7 +98,7 @@ class Versions(JSONController):
     @JSONController.error_handler
     def GET(self, name, version, release, epoch, arch):
         pv = API.package_by_ivera(name, version, epoch, release, arch)
-        return self.output(pv)
+        return self.ok(pv)
 
 # web.py application ----------------------------------------------------------
 

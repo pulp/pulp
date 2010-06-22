@@ -59,20 +59,10 @@ class Repositories(JSONController):
         @return: True on successful deletion of all repositories
         """
         API.clean()
-        return self.ok(None)
+        return self.ok(True)
     
 
 class Repository(JSONController):
-
-    @JSONController.error_handler
-    def DELETE(self, id):
-        """
-        Delete a repository.
-        @param id: repository id
-        @return: True on successful deletion of repository
-        """
-        API.delete(id=id)
-        return self.ok(None)
 
     @JSONController.error_handler
     def GET(self, id):
@@ -93,6 +83,16 @@ class Repository(JSONController):
         repo_data = self.params()
         repo_data['id'] = id
         API.update(repo_data)
+        return self.ok(True)
+
+    @JSONController.error_handler
+    def DELETE(self, id):
+        """
+        Delete a repository.
+        @param id: repository id
+        @return: True on successful deletion of repository
+        """
+        API.delete(id=id)
         return self.ok(True)
     
 
@@ -154,7 +154,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful upload
         """
         data = self.params()
-        API.upload(data['repo'],
+        API.upload(id,
                    data['pkginfo'],
                    data['pkgstream'])
         return self.ok(True)
@@ -197,6 +197,7 @@ class RepositoryActionStatus(AsyncController):
         @param action_id: action id
         @return: action status information
         """
+        # XXX there is a bug that re-appends the task id here
         task_info = self.task_status(action_id)
         if task_info is None:
             return self.not_found('No %s with id %s found' % (action_name, action_id))

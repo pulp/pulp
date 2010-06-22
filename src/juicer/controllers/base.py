@@ -170,10 +170,14 @@ class AsyncController(JSONController):
         /<collection>/<object id>/<action>/<action id>/
         A GET request sent to this path will get a JSON encoded status object
         """
-        path = os.path.normpath(os.path.join(web.ctx.path, id)) # cleanly concatenate the current path with the id
-        path = web.http.url(path)                               # add the application prefix
-        path += '/'                                             # all urls are paths, so need a trailing '/'
-        return urllib.pathname2url(path)                        # make sure the path is properly encoded
+        parts = web.ctx.path.split('/')
+        if parts[-2] == id:
+            path = web.ctx.path
+        else:
+            path = os.path.normpath(os.path.join(web.ctx.path, id)) # cleanly concatenate the current path with the id
+            path = web.http.url(path)                               # add the application prefix
+            path += '/'                                             # all urls are paths, so need a trailing '/'
+        return urllib.pathname2url(path) # make sure the path is properly encoded
     
     def task_status(self, id):
         """
