@@ -77,8 +77,10 @@ class ConsumerApi(BaseApi):
         List consumers using passed in name
         """
         
-        regex = re.compile(".*%s" % name)
-        return list(self.objectdb.find({"packageids": regex}))
+        # regex = re.compile(".*%s" % name)
+        # return list(self.objectdb.find({"package_profile": regex}))
+        key = "package_profile.%s" % name
+        return list(self.objectdb.find({key: {"$exists": True}}))
 
     def bind(self, id, repoid):
         """

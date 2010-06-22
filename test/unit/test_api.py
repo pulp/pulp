@@ -46,6 +46,8 @@ from pulp.model import PackageGroup
 from pulp.model import PackageGroupCategory
 from pulp.model import Consumer
 from pulp.util import random_string
+from pulp.util import get_rpm_information
+from pulptools.utils import generatePakageProfile
 
 from ConfigParser import ConfigParser
 
@@ -71,7 +73,8 @@ class TestApi(unittest.TestCase):
         self.clean()
         
     def tearDown(self):
-        self.clean()
+        # self.clean()
+        pass
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
@@ -243,28 +246,31 @@ class TestApi(unittest.TestCase):
         self.capi.bulkcreate(consumers)
         all = self.capi.consumers()
         n = len(all)
-        print '%d consumers found' % n
         assert(n == 1005)
             
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         repo = self.rapi.create('some-id', 'some name',
                 'i386', 'yum:http://example.com')
-        test_pkg_name = "test_consumerwithpackage"
-        #TODO: The consumer model/api needs to be updated, it's not setup to handle
-        #       tracking a package
-        package = self.create_package(test_pkg_name)
-        c['packageids'].append(package["id"])
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        
+        info1 = get_rpm_information(my_dir + "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
+        info2 = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+        
+        packages = generatePakageProfile([info1, info2])
+        
         for i in range(10):
-            package = self.create_package(random_string())
-            c['packageids'].append(package["id"])
+            randName = random_string()
+            package = self.create_package(randName)
+            packages[randName] = [package]
+            
+        c['package_profile'] = packages
         self.capi.update(c)
-        
+        self.assertTrue(c['package_profile']['pulp-test-package'] != None)
         found = self.capi.consumers_with_package_name('some-invalid-id')
-        
         assert(len(found) == 0)
 
-        found = self.capi.consumers_with_package_name('test_consumerwithpackage')
+        found = self.capi.consumers_with_package_name('pulp-test-package')
         assert(len(found) > 0)
         
     def test_json(self):
@@ -409,10 +415,10 @@ class TestApi(unittest.TestCase):
         test_version = "1.2.3"
         test_release = "1.el5"
         test_arch = "x86_64"
-        test_description = "test description text"
+        test_description = "zzz test description text zzz"
         test_checksum_type = "sha256"
         test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
-        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        test_filename = "test-filename-zzz-1.2.3-1.el5.x86_64.rpm"
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)

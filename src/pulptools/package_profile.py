@@ -16,6 +16,8 @@
 # in this software or its documentation.
 #
 from pulptools.logutil import getLogger
+import utils
+import rpm
 log = getLogger(__name__)
 
 """
@@ -43,44 +45,11 @@ class PackageProfile(object):
 
     def __getInstalledRpms(self):
         """ Accumulates list of installed rpm info """
-        
-        import rpm
         ts = rpm.TransactionSet()
         ts.setVSFlags(-1)
         installed = ts.dbMatch()
-        for h in installed:
-            if h['name'] == "gpg-pubkey":
-                #dbMatch includes imported gpg keys as well
-                # skip these for now as there isnt compelling 
-                # reason for server to know this info
-                continue
-            info = {
-                'name'          : h['name'],
-                'version'       : h['version'],
-                'release'       : h['release'],
-                'epoch'         : h['epoch'] or "",
-                'arch'          : h['arch'],
-                'installtime'   : h['installtime'],
-                'group'         : h['Group'] or "",
-                'summary'       : h['Summary'],
-                'description'   : h['description'],
-                'OS'            : h['OS'],
-                'Platform'      : h['Platform'],
-                'URL'           : h['URL'],
-                'Size'          : h['Size'],
-                'Vendor'        : h['Vendor'], 
-            }
-            info['fileName'] =   self.getRpmName(info)           
-            if not self.pkglist.has_key(h['name']):
-                self.pkglist[h['name']] = [info]
-            else:
-                self.pkglist[h['name']].append(info)
-
+        self.pkglist = utils.generatePakageProfile(installed)
         return self.pkglist
-    
-    def getRpmName(self, pkg):
-        return pkg["name"] + "-" + pkg["version"] + "-" + \
-               pkg["release"] + "." + pkg["arch"]
     
     def _getInstalledJars(self):
         pass
