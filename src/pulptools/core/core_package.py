@@ -75,7 +75,7 @@ class package(BaseCore):
         if self.action == "info":
             usage = "usage: %prog package info [OPTIONS]"
             BaseCore.__init__(self, "package info", usage, "", "")
-            self.parser.add_option("--name", dest="name",
+            self.parser.add_option("-p", "--pkgname", dest="name",
                            help="Repository Label")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
