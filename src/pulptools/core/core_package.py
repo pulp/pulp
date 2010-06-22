@@ -19,14 +19,10 @@
 
 import sys
 import os.path
-import pulptools.utils as utils
-import pulptools.constants as constants
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
-from pulptools.repolib import RepoLib
 from pulptools.logutil import getLogger
 from pulptools.config import Config
-from pulptools.package_profile import PackageProfile
 log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
@@ -119,7 +115,7 @@ class package(BaseCore):
             pkg = self.pconn.get_package(self.options.repoid, self.options.name)
             print """+-------------------------------------------+\n    Package Information \n+-------------------------------------------+"""
             for key, value in pkg.items():
-                print """%s                \t%-25s""" % (key, value)
+                print """%s:                \t%-25s""" % (key, value)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

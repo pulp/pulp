@@ -150,6 +150,7 @@ def processFile(filename, relativeDir=None, source=None):
     # Read the header
     try:
         ts = rpm.TransactionSet()
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         h = readRpmHeader(ts, filename)
     except:
         return hash

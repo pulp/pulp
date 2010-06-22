@@ -19,6 +19,7 @@ import hashlib
 import logging
 import os
 import tempfile
+import commands
 
 from api.repo_sync import BaseSynchronizer
 import util
@@ -42,9 +43,13 @@ class PackageUpload:
         try:
             store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
             self.bindPackageToRepo(pkg_path, self.repo)
+            # update/create the repodata for the repo
+            create_repo(self.repo_dir)
         except IOError, ie:
             log.error("Error writing file to filesystem %s " % ie)
             raise UploadError("Error writing to the file %s" % self.pkgname)
+        except CreateRepoError, cre:
+            log.error("Error running createrepo on repo %s. Error: %s" % (self.repo['id'], ie))
         except Exception, e:
             log.error("UnExpected Error %s " % e)
             raise UploadError("Upload Failed due to unexpected Error ")
@@ -63,6 +68,23 @@ def check_package_exists(pkg_path, hashtype, hashsum, force=0):
     if force:
         return False
     return False
+
+def create_repo(dir):
+    status, out = commands.getstatusoutput('createrepo --update %s' % (dir))
+
+    class CreateRepoError:
+        def __init__(self, output):
+            self.output = output
+
+        def __str__(self):
+            return self.output
+
+    if status != 0:
+        log.error("createrepo on %s failed" % dir)
+        raise CreateRepoError(out)
+    log.info("createrepo on %s finished" % dir)
+    return status, out
+
 
 def store_package(pkgstream, pkg_path, size, checksum, hashtype, force=None):
     """
