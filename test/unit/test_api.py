@@ -73,8 +73,7 @@ class TestApi(unittest.TestCase):
         self.clean()
         
     def tearDown(self):
-        # self.clean()
-        pass
+        self.clean()
         
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
