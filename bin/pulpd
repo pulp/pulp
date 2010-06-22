@@ -16,7 +16,12 @@
 # in this software or its documentation.
 #
 
+from time import sleep
 from pulptools.agent import Agent
 
 if __name__ == '__main__':
-    Agent()
+  while True:
+    try:
+      Agent()
+    except:
+      sleep(5)

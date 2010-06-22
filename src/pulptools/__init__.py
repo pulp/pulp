@@ -15,6 +15,10 @@
 # in this software or its documentation.
 #
 
+"""
+Pulp Tools.
+"""
+
 class ConsumerId:
     """
     Client identity

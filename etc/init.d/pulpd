@@ -1,0 +1,94 @@
+#!/bin/bash
+# pulpd         This shell script controls the pulp daemon.
+# Author:       Jeff Ortel <jortel@redhat.com>
+# chkconfig:    345 97 2
+# description:  Pulp agent responds to commands from pulp server.
+# processname:  python
+#
+
+. /etc/init.d/functions
+
+BINDIR=/usr/bin
+PROG=pulpd
+LOCK=/var/lock/subsys/$PROG
+PID=/var/run/$PROG.pid
+
+start() {
+  if [ -e $PID ]; then
+    pid=$(cat $PID)
+  fi
+  kill -0 $pid >/dev/null 2>&1
+  RETVAL=$?
+  if [ $RETVAL -eq "0" ]; then
+    echo "$PROG ($pid) already running."
+    return $RETVAL
+  fi
+  echo -n "Starting $PROG"
+  $BINDIR/$PROG &
+  RETVAL=$?
+  if [ $RETVAL -eq "0" ]; then
+    echo $! > $PID
+    touch $LOCK
+    success
+  else
+    failure
+  fi
+  echo
+  return $RETVAL
+}
+
+stop() {
+  echo -n "Stopping $PROG"
+  if [ -e $PID ]; then
+    pid=$(cat $PID)
+  fi
+  kill -9 $pid >/dev/null 2>&1
+  RETVAL=$?
+  if [ $RETVAL -eq "0" ]; then
+    rm -f $LOCK
+    rm -f $PID
+    success
+  else
+    failure
+  fi
+  echo
+  return $RETVAL
+}
+
+status() {
+  if [ -e $PID ]; then
+    pid=$(cat $PID)
+  fi
+  kill -0 $pid >/dev/null 2>&1
+  RETVAL=$?
+  if [ $RETVAL -eq "0" ]; then
+    echo "$PROG ($pid) is running."
+  else
+    echo "$PROG is not running."
+  fi
+}
+
+restart() {
+  stop
+  start
+}
+
+case "$1" in
+  start)
+  start
+  ;;
+  stop)
+  stop
+  ;;
+  restart)
+  restart
+  ;;
+  status)
+  status
+  ;;
+  *)
+  echo $"Usage: $0 {start|stop|status|restart|}"
+  exit 1
+esac
+
+exit $RETVAL

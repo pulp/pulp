@@ -41,8 +41,9 @@ Pulp provides replication, access, and accounting for software repositories.
 Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires:       python-simplejson
-Requires:	m2crypto
+Requires: python-simplejson
+Requires: m2crypto
+Requires: python-qpid
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -82,6 +83,12 @@ mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html/
 mkdir -p %{buildroot}/var/log/pulp
 ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
+
+mkdir -p %{buildroot}/usr/bin
+cp bin/pulpd %{buildroot}/usr/bin
+
+mkdir -p %{buildroot}/etc/init.d
+cp etc/init.d/pulpd %{buildroot}/etc/init.d
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
@@ -124,7 +131,19 @@ chown apache:apache /var/log/pulp
 %{python_sitelib}/pulptools/
 %{python_sitelib}/pmf/
 %{_bindir}/pulp
+%{_bindir}/pulpd
+%attr(755,root,root) %{_sysconfdir}/init.d/pulpd
 %config(noreplace) /etc/pulp/client.ini
+
+%post tools
+chkconfig --add pulpd
+/sbin/service pulpd start
+
+%preun tools
+if [ $1 = 0 ] ; then
+   /sbin/service pulpd stop >/dev/null 2>&1
+   /sbin/chkconfig --del pulpd
+fi
 
 
 %changelog
