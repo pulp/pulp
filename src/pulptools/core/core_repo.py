@@ -189,17 +189,23 @@ class repo(BaseCore):
         try:
             task_object = self.pconn.sync(self.options.label)
             state = "waiting"
-            while state not in ["finished", "Error"]:
+            while state not in ["finished", "error"]:
                 time.sleep(5)
                 status = self.pconn.sync_status(task_object['status_path'])
                 state= status['state']
                 print "Sync Status::",state
             packages =  self.pconn.packages(self.options.label)
             pkg_count = len(packages)
-            print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
+            if state == "error":
+                raise SyncError(status['traceback'][-1])
+            else:
+                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
+        except SyncError, se:
+            log.error("Error: %s" % se)
+            systemExit("Error : %s" % se)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
@@ -271,4 +277,7 @@ def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
 
 class FileError(Exception):
+    pass
+
+class SyncError(Exception):
     pass
