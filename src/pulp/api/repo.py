@@ -312,12 +312,10 @@ class RepoApi(BaseApi):
         Sync a repo from the URL contained in the feed
         """
         repo = self.repository(id)
-        print "sync.repo:: %s" % repo
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         
         repo_source = repo['source']
-        print "sync.repo_source:: %s" % repo_source
         added_packages = repo_sync.sync(self.config, repo, repo_source)
         for p in added_packages:
             self._add_package(repo, p)
