@@ -19,9 +19,6 @@
 Provides AMQP message consumer classes.
 """
 
-import qpid
-import sys
-import os
 from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import Message, RangedSet, uuid4

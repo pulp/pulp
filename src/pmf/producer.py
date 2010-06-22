@@ -19,9 +19,6 @@
 Contains AMQP message producer classes.
 """
 
-import qpid
-import sys
-import os
 from pmf.dispatcher import Return
 from qpid.util import connect
 from qpid.connection import Connection
