@@ -20,26 +20,13 @@ from juicer.controllers.base import JSONController
 from juicer.runtime import CONFIG
 from pulp.api.consumer import ConsumerApi
 
-# web.py application ----------------------------------------------------------
-
-URLS = (
-    '/$', 'Root',
-    '/bulk/$', 'Bulk',
-    '/([^/]+)/$', 'Consumer',
-    '/([^/]+)/bind/$', 'Bind',
-    '/([^/]+)/unbind/$', 'Unbind',
-    '/([^/]+)/profile/$', 'Profile',
-)
-
-application = web.application(URLS, globals())
-
 # consumers api ---------------------------------------------------------------
 
 API = ConsumerApi(CONFIG)
 
 # controllers -----------------------------------------------------------------
     
-class Root(JSONController):
+class Consumers(JSONController):
 
     @JSONController.error_handler
     def GET(self):
@@ -58,7 +45,7 @@ class Root(JSONController):
         return self.output(API.consumers())
      
     @JSONController.error_handler
-    def POST(self):
+    def PUT(self):
         """
         Create a new consumer.
         @return: consumer meta data on successful creation of consumer
@@ -88,9 +75,9 @@ class Consumer(JSONController):
         return self.output(API.consumer(id))
     
     @JSONController.error_handler
-    def POST(self, id):
+    def PUT(self, id):
         """
-        Update
+        Update consumer
         @param id: The consumer id
         @type id: str
         """
@@ -110,6 +97,7 @@ class Consumer(JSONController):
 
 
 class Bulk(JSONController):
+    # XXX this class breaks the restful practices.... (need a better solution)
 
     @JSONController.error_handler
     def POST(self):
@@ -117,10 +105,17 @@ class Bulk(JSONController):
         return self.output(None)
 
 
-class Bind(JSONController):
+class ConsumerActions(JSONController):
     
-    @JSONController.error_handler
-    def POST(self, id):
+    # See juicer.repositories.RepositoryActions for design
+    
+    exposed_actions = (
+        'bind',
+        'unbind',
+        'profile',
+    )
+    
+    def bind(self, id):
         """
         Bind (subscribe) a user to a repository.
         @param id: consumer id
@@ -129,12 +124,8 @@ class Bind(JSONController):
         data = self.input()
         API.bind(id, data)
         return self.output(True)
-
-
-class Unbind(JSONController):
     
-    @JSONController.error_handler
-    def POST(self, id):
+    def unbind(self, id):
         """
         Unbind (unsubscribe) a user to a repository.
         @param id: consumer id
@@ -143,13 +134,28 @@ class Unbind(JSONController):
         data = self.input()
         API.unbind(id, data)
         return self.output(True)
-
-
-class Profile(JSONController):
-    """
-    update/add Consumer profile information. eg:package, hardware etc
-    """
-    @JSONController.error_handler
-    def POST(self, id):
+    
+    def profile(self, id):
+        """
+        update/add Consumer profile information. eg:package, hardware etc
+        """
         API.profile_update(id, self.input())
         return self.output(None)
+    
+    @JSONController.error_handler
+    def POST(self, id, action_name):
+        action = getattr(self, action_name, None)
+        if action is None:
+            return self.internal_server_error('No implementation for %s found' % action_name)
+        return action(id)
+
+# web.py application ----------------------------------------------------------
+
+URLS = (
+    '/$', 'Consumers',
+    '/bulk/$', 'Bulk',
+    '/([^/]+)/$', 'Consumer',
+    '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions), 'ConsumerActions',
+)
+
+application = web.application(URLS, globals())

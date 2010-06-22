@@ -20,35 +20,13 @@ from juicer.controllers.base import JSONController
 from juicer.runtime import CONFIG
 from pulp.api.package import PackageApi
 
-# web.py application ----------------------------------------------------------
-
-# /packages/
-# GET    -  List of all package names and descriptions
-# POST   -  Create a new package
-# DELETE -  Delete all packages
-# 
-# /packages/<name>
-# GET    -  All packages for that package name
-# DELETE -  All packages for that package name
-# 
-# /packages/<name>/<version>/<release>/<epoch>/<arch>
-# GET    -  Package version details for that package version
-
-URLS = (
-    '/$', 'Root',
-    '/([^/]+)/$', 'Packages',
-    '/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
-)
-
-application = web.application(URLS, globals())
-
 # packages api ----------------------------------------------------------------
 
 API = PackageApi(CONFIG)
 
 # packages controllers --------------------------------------------------------
 
-class Root(JSONController):
+class Packages(JSONController):
     
     @JSONController.error_handler
     def GET(self):
@@ -56,35 +34,31 @@ class Root(JSONController):
         List available packages.
         @return: a list of packages
         """
-        return self.output(API.package_descriptions())
+        return self.ok(API.package_descriptions())
     
     @JSONController.error_handler
-    def POST(self):
+    def DELETE(self):
+        """
+        Delete all packages.
+        @return: True on success
+        """
+        API.clean()
+        return self.ok(True)
+
+    @JSONController.error_handler
+    def PUT(self):
         """
         Create a new package.
-        @return: package meta data on successful creation of new package
-        """
-        pkg_data = self.input()
-        pkg = API.create(pkg_data['id'], pkg_data['name'])
-        return self.output(pkg)
-
-    @JSONController.error_handler
-    def DELETE(self):
-        API.clean()
-        return self.output(None)
-
-    @JSONController.error_handler
-    def POST(self):
-        """
         @return: package meta data on successful creation of package
         """
-        data = self.input()
+        data = self.params()
         package = API.create(data['name'], data['epoch'],data['version'],  
                              data['release'], data['arch'], data['description'],
                              data['checksum_type'], data['checksum'], data['filename'])
         return self.output(package)
     
-class Packages(JSONController):
+    
+class Package(JSONController):
     
     @JSONController.error_handler
     def GET(self, id):
@@ -103,6 +77,21 @@ class Packages(JSONController):
         API.delete(packageid=id)
         return self.output(None)
     
+    
+class PackageActions(JSONController):
+    
+    # See juicer.repositories.RepositoryActions for design
+    
+    exposed_actions = (
+    )
+    
+    @JSONController.error_handler
+    def POST(self, id, action_name):
+        action = getattr(self, action_name, None)
+        if action is None:
+            self.internal_server_error('No implementation for %s found' % action_name)
+        return action(id)
+    
 
 class Versions(JSONController):
 
@@ -110,3 +99,14 @@ class Versions(JSONController):
     def GET(self, name, version, release, epoch, arch):
         pv = API.package_by_ivera(name, version, epoch, release, arch)
         return self.output(pv)
+
+# web.py application ----------------------------------------------------------
+
+URLS = (
+    '/$', 'Packages',
+    '/([^/]+)/$', 'Package',
+    #'/([^/]+)/(%s)/$' % '|'.join(PackageActions.exposed_actions), 'Package',
+    '/([^/]+)/nevra/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
+)
+
+application = web.application(URLS, globals())
