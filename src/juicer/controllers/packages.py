@@ -106,7 +106,7 @@ URLS = (
     '/$', 'Packages',
     '/([^/]+)/$', 'Package',
     #'/([^/]+)/(%s)/$' % '|'.join(PackageActions.exposed_actions), 'Package',
-    '/([^/]+)/nevra/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
+    '/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
 )
 
 application = web.application(URLS, globals())
