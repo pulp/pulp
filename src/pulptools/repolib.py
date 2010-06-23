@@ -412,9 +412,9 @@ def test():
     f.close()
     rapi = RepoConnection(host=host, port=port)
     capi = ConsumerConnection(host=host, port=port)
-    rapi.create('jortel', 'The jortel repository', 'noarch', 'yum:http://foo')
+    rapi.create('xyz', 'The xyz repository', 'noarch', 'yum:http://foo')
     capi.create('0', 'The local consumer.')
-    capi.bind('0', 'jortel')
+    capi.bind('0', 'xyz')
     main()
 
 def main():
