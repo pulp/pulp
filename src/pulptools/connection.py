@@ -121,7 +121,7 @@ class RepoConnection(PulpConnection):
                     "arch" : arch,
                     "feed" : feed,
                     "sync_schedule" : sync_schedule,}
-        return self.conn.request_post(method, params=repodata)
+        return self.conn.request_put(method, params=repodata)
 
     def repository(self, id):
         method = "/repositories/%s/" % str(id)
@@ -133,7 +133,7 @@ class RepoConnection(PulpConnection):
 
     def update(self, repo):
         method = "/repositories/%s/" % repo['id']
-        return self.conn.request_post(method, params=repo)
+        return self.conn.request_put(method, params=repo)
 
     def delete(self, id):
         method = "/repositories/%s/" % id
@@ -145,7 +145,7 @@ class RepoConnection(PulpConnection):
 
     def sync(self, repoid):
         method = "/repositories/%s/sync/" % repoid
-        return self.conn.request_get(method)
+        return self.conn.request_post(method)
 
     def add_package(self, repoid, packageid):
         addinfo = {'repoid' : repoid,
@@ -154,13 +154,14 @@ class RepoConnection(PulpConnection):
         print "Add info: %s" % addinfo
         return self.conn.request_post(method, params=addinfo)
     
+    # XXX no supporting server-side call
     def get_package(self, repoid, pkg_name):
         method = "/repositories/%s/package/%s/" % (repoid, pkg_name)
         return self.conn.request_get(method)
 
     def packages(self, repoid):
         method = "/repositories/%s/list/" % repoid
-        return self.conn.request_get(method)
+        return self.conn.request_post(method)
 
     def upload(self, id, pkginfo, pkgstream):
         uploadinfo = {'repo' : id,
@@ -184,11 +185,11 @@ class ConsumerConnection(PulpConnection):
     def create(self, id, description):
         consumerdata = {"id"   : id, "description" : description}
         method = "/consumers/"
-        return self.conn.request_post(method, params=consumerdata)
+        return self.conn.request_put(method, params=consumerdata)
     
     def update(self, consumer):
         method = "/consumers/%s/" % consumer['id']
-        return self.conn.request_post(method, params=consumer)
+        return self.conn.request_put(method, params=consumer)
 
     def bulkcreate(self, consumers):
         method = "/consumers/bulk/"
@@ -206,9 +207,10 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/" % str(id)
         return self.conn.request_get(method)
 
+    # XXX no supporting server-side call
     def packages(self, id):
         method = "/consumers/%s/packages/" % str(id)
-        return self.conn.request_get(method)
+        return self.conn.request_post(method)
 
     def consumers(self):
         method = "/consumers/"
@@ -253,7 +255,7 @@ class PackageConnection(PulpConnection):
                     "checksum_type" : checksum_type,
                     "checksum": checksum,
                     "filename": filename,}
-        return self.conn.request_post(method, params=repodata)
+        return self.conn.request_put(method, params=repodata)
 
     def packages(self):
         method = "/packages/"
