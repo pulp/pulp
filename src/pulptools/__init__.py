@@ -35,18 +35,18 @@ class ConsumerId:
         @ivar value: The client id.
         @type value: str
         """
+        self.uuid = None
         if uuid:
             self.uuid = uuid
-            return
-        if self.exists():
-            self.read()
         else:
-            self.uuid = None
+            self.read()
 
     def read(self):
         """
         Read identity from file.
         """
+        if not self.exists():
+            return
         f = open(self.PATH)
         try:
             self.uuid = f.read().strip()

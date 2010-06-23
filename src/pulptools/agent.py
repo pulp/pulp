@@ -85,12 +85,10 @@ class Agent(Base):
 
     def id(self):
         cid = ConsumerId()
-        while True:
-            if not cid.exists():
-                log.info('Not registered.')
-                sleep(10)
-            else:
-                break
+        while ( not cid.uuid ):
+            log.info('Not registered.')
+            sleep(10)
+            cid.read()
         return 'agent:%s' % cid
 
 
