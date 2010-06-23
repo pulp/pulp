@@ -218,6 +218,16 @@ class TestApi(unittest.TestCase):
         found = self.capi.consumer('test-consumer')
         assert(found != None)
         
+        # test that we get back the consumer from the list method
+        consumers = self.capi.consumers()
+        self.assertTrue(len(consumers) == 1)
+        c = consumers[0]
+        packages = c['package_profile']
+        self.assertTrue(packages != None)
+        link = packages['href']
+        self.assertTrue(link == "/consumers/%s/packages" % c['id'])
+        print "C: %s" % c
+        
     def test_consumer_bind(self):
         cid = 'bindconsumerid'
         rid = 'bindrepoid'
@@ -271,6 +281,10 @@ class TestApi(unittest.TestCase):
 
         found = self.capi.consumers_with_package_name('pulp-test-package')
         assert(len(found) > 0)
+        
+        packages = self.capi.packages(c['id'])
+        self.assertTrue(packages != None)
+        self.assertTrue(len(packages.keys()) > 0)
         
     def test_json(self):
         repo = self.rapi.create('some-id','some name', 

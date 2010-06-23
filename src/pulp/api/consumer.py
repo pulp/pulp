@@ -64,13 +64,23 @@ class ConsumerApi(BaseApi):
         """
         List all consumers.  Can be quite large
         """
-        return list(self.objectdb.find({},['id', 'description', 'package_profile', 'repoids']))
+        consumers = list(self.objectdb.find({},['id', 'description', 'repoids']))
+        munged = [] 
+        for c in consumers:
+            link = '/consumers/%s/packages' % c['id']
+            c['package_profile'] = {'href': link}
+            munged.append(c)
+        return munged
 
     def consumer(self, id):
         """
         Return a single Consumer object
         """
         return self.objectdb.find_one({'id': id})
+    
+    def packages(self, id):
+        consumer = self.objectdb.find_one({'id': id}) 
+        return consumer['package_profile']
     
     def consumers_with_package_name(self, name):
         """

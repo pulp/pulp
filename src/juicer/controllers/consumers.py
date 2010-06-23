@@ -27,6 +27,7 @@ URLS = (
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
     '/([^/]+)/bind/$', 'Bind',
+    '/([^/]+)/packages/$', 'Packages',
     '/([^/]+)/unbind/$', 'Unbind',
     '/([^/]+)/profile/$', 'Profile',
     '/([^/]+)/installpackages/$', 'InstallPackages',
@@ -130,6 +131,18 @@ class Bind(JSONController):
         API.bind(id, data)
         return self.output(None)
 
+
+class Packages(JSONController):
+    
+    @JSONController.error_handler
+    def GET(self, id):
+        """
+        Get a consumer's set of packages
+        @param id: consumer id
+        @return: consumer's installed packges
+        """
+        return self.output(API.packages(id))
+    
 
 class Unbind(JSONController):
     
