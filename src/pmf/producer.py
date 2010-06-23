@@ -19,10 +19,11 @@
 Contains AMQP message producer classes.
 """
 
+from pmf import *
 from pmf.dispatcher import Return
 from qpid.util import connect
 from qpid.connection import Connection
-from qpid.datatypes import Message, RangedSet, uuid4
+from qpid.datatypes import Message, RangedSet
 from qpid.queue import Empty
 
 
@@ -48,7 +49,7 @@ class Producer:
         @param port: The port of the QPID broker.
         @type port: short
         """
-        sid = str(uuid4())
+        sid = getuuid()
         socket = connect(host, port)
         connection = Connection(sock=socket)
         connection.start()

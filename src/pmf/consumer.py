@@ -19,9 +19,10 @@
 Provides AMQP message consumer classes.
 """
 
+from pmf import *
 from qpid.util import connect
 from qpid.connection import Connection
-from qpid.datatypes import Message, RangedSet, uuid4
+from qpid.datatypes import Message, RangedSet
 from qpid.queue import Empty
 
 class Consumer:
@@ -43,7 +44,7 @@ class Consumer:
         socket = connect(host, port)
         connection = Connection(sock=socket)
         connection.start()
-        sid = str(uuid4())
+        sid = getuuid()
         session = connection.session(sid)
         session.queue_declare(queue=id, exclusive=True)
         session.exchange_bind(
