@@ -21,6 +21,7 @@ Contains AMQP message producer classes.
 
 from pmf import *
 from pmf.dispatcher import Return
+from pmf.envelope import Envelope
 from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import Message, RangedSet
@@ -77,30 +78,35 @@ class Producer:
             to (block) read the reply queue.
         @type sync: bool
         """
-        sid = self.sid
-        app = dict(consumerid=self.consumerid)
+        sn = getuuid()
+        headers = dict(consumerid=self.consumerid)
         mp = self.session.message_properties()
-        mp.application_headers=app
+        mp.application_headers=headers
+        envelope = Envelope(sn=sn, payload=content)
         if sync:
-            mp.reply_to = \
-                self.session.reply_to("amq.direct", sid)
-        msg = Message(mp, content)
+            envelope.replyto = ("amq.direct", self.sid)
+        msg = Message(mp, envelope.dump())
         self.session.message_transfer(destination='amq.match', message=msg)
         if sync:
-            return self._getreply()
+            return self._getreply(sn)
         else:
             return None
 
-    def _getreply(self):
+    def _getreply(self, sn):
         """
         Read the reply from our reply queue.
-        @return: The json unencoded reply.  Or, (None) on timeout.
+        @param sn: The request serial number.
+        @type sn: str
+        @return: The json unencoded reply.
         @rtype: any
         """
         try:
-            message = self.queue.get(timeout=90)
-            self.session.message_accept(RangedSet(message.id))
-            reply = Return(message.body)
+            message, envelope = self._searchqueue(sn)
+            if not message:
+                return
+            reply = Return()
+            reply.load(envelope.payload)
+            self._accept(message.id)
             if reply.succeeded():
                 return reply.retval
             else:
@@ -108,3 +114,33 @@ class Producer:
         except Empty:
             # TODO: something better for timeouts.
             pass
+
+    def _searchqueue(self, sn):
+        """
+        Seach the reply queue for the envelope with
+        the matching serial #.
+        @param sn: The expected serial number.
+        @type sn: str
+        @return: (message, envelope)
+        @rtype: tuple
+        """
+        while True:
+            result = (None, None)
+            message = self.queue.get(timeout=90)
+            envelope = Envelope()
+            envelope.load(message.body)
+            if sn == envelope.sn:
+                result = (message, envelope)
+                break
+            else:
+                self._accept(message.id)
+        return result
+
+    def _accept(self, messageid):
+        """
+        Accept a message by id.
+        @param messageid: An AMQP message id.
+        @type messageid: str
+        """
+        messages = RangedSet(messageid)
+        self.session.message_accept(messages)

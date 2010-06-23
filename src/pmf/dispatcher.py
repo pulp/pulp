@@ -15,17 +15,23 @@
 # in this software or its documentation.
 #
 
-import simplejson as json
+from pmf.envelope import Envelope
 from pmf.decorators import mayinvoke
 
 
 class ClassNotFound(Exception):
+    """
+    Target class not found.
+    """
 
     def __init__(self, classname):
         Exception.__init__(self, classname)
 
 
 class MethodNotFound(Exception):
+    """
+    Target method not found.
+    """
 
     def __init__(self, classname, method):
         message = 'method %s.%s(), not found' % (classname, method)
@@ -33,100 +39,183 @@ class MethodNotFound(Exception):
 
 
 class NotPermitted(Exception):
+    """
+    Permission denied or not visible.
+    """
 
     def __init__(self, classname, method):
         message = 'method %s.%s(), not permitted' % (classname, method)
         Exception.__init__(self, message)
 
 
-class Return:
+class Return(Envelope):
+    """
+    Return envelope.
+    """
 
     @classmethod
     def succeed(cls, x):
-        d = dict(retval=x)
-        return json.dumps(d, indent=2)
+        """
+        Return successful
+        @param x: The returned value.
+        @type x: any
+        @return: A return envelope.
+        @rtype: L{Return}
+        """
+        return Return(retval=x)
 
     @classmethod
     def exception(cls, x):
-        d = dict(exval=repr(x))
-        return json.dumps(d, indent=2)
-
-    def __init__(self, v):
-        self.__dict__ = json.loads(v)
+        """
+        Return raised exception.
+        @param x: The raised exception.
+        @type x: any
+        @return: A return envelope.
+        @rtype: L{Return}
+        """
+        return Return(exval=repr(x))
 
     def succeeded(self):
-        return hasattr(self, 'retval')
+        """
+        Test whether the return indicates success.
+        @return: True when indicates success.
+        @rtype: bool
+        """
+        return ( 'retval' in self )
 
     def failed(self):
+        """
+        Test whether the return indicates failure.
+        @return: True when indicates failure.
+        @rtype: bool
+        """
         return ( not self.succeeded() )
 
 
+class Request(Envelope):
+    """
+    An RMI request envelope.
+    """
+    pass
+
+
 class RMI(object):
+    """
+    The RMI object performs the invocation.
+    @ivar request: The request envelope.
+    @type request: L{Request}
+    @ivar catalog: A dict of class mappings.
+    @type catalog: dict
+    """
 
-    @classmethod
-    def encode(cls, classname, method, args, kws):
-        d = dict(
-            classname=classname,
-            method=method,
-            args=args,
-            kws=kws)
-        return json.dumps(d, indent=2)
-
-    def __init__(self, content, catalog):
+    def __init__(self, request, catalog):
+        """
+        @param request: The request envelope.
+        @type request: L{Request}
+        @param catalog: A dict of class mappings.
+        @type catalog: dict
+        """
+        self.request = request
         self.catalog = catalog
-        self.__dict__.update(json.loads(content))
 
     def resolve(self):
-        inst = self.resolveclass()
-        method = self.resolvemethod(inst)
+        """
+        Resolve the class/method in the request.
+        @return: A tuple (inst, method)
+        @rtype: tuple
+        """
+        inst = self.getclass()
+        method = self.getmethod(inst)
         return (inst, method)
 
-    def resolveclass(self):
-        inst = self.catalog.find(self.classname)
+    def getclass(self):
+        """
+        Get an instance of the class specified in
+        the request using the catalog.
+        @return: An instance of the class.
+        @rtype: object
+        """
+        key = self.request.classname
+        inst = self.catalog.get(key, None)
         if inst is None:
-            raise ClassNotFound(self.classname)
+            raise ClassNotFound(key)
         return inst()
 
-    def resolvemethod(self, inst):
-        if hasattr(inst, self.method):
-            method = getattr(inst, self.method)
+    def getmethod(self, inst):
+        """
+        Get method of the class specified in the request.
+        Ensures that remote invocation is permitted.
+        @return: The requested method.
+        @rtype: instancemethod
+        """
+        cn, fn = \
+            (self.request.classname,
+             self.request.method)
+        if hasattr(inst, fn):
+            method = getattr(inst, fn)
             if not mayinvoke(method):
-                raise NotPermitted(self.classname, self.method)
+                raise NotPermitted(cn, fn)
             return method
         else:
-            raise MethodNotFound(self.classname, self.method)
+            raise MethodNotFound(cn, fn)
 
     def __call__(self):
+        """
+        Invoke the method.
+        @return: The invocation result.
+        @rtype: L{Return}
+        """
+        args, keywords = \
+            (self.request.args,
+             self.request.kws)
         try:
             inst, method = self.resolve()
-            retval = method(*self.args, **self.kws)
+            retval = method(*args, **keywords)
             return Return.succeed(retval)
         except Exception, dx:
             return Return.exception(dx)
 
     def __str__(self):
-        return '%s.%s(%s,%s)' %\
-            (self.classname,
-             self.method,
-             str(self.args),
-             str(self.kws))
+        return str(self.request)
 
     def __repr__(self):
         return str(self)
 
 
 class Dispatcher:
+    """
+    The remote invocation dispatcher.
+    @ivar classes: The (catalog) of target classes.
+    @type classes: list
+    """
 
     def __init__(self):
+        """
+        """
         self.classes = {}
 
     def dispatch(self, content):
-        rmi = RMI(content, self)
-        return rmi()
+        """
+        Dispatch the requested RMI.
+        @param content: A json encoded request.
+        @type content: str
+        @return: The json encoded result.
+        @rtype: str
+        """
+        request = Request()
+        request.load(content)
+        rmi = RMI(request, self.classes)
+        result = rmi()
+        return result.dump()
 
     def register(self, *classes):
+        """
+        Register classes exposed as RMI targets.
+        @param classes: A list of classes
+        @type classes: [cls,..]
+        @return self
+        @rtype: L{Dispatcher}
+        """
         for cls in classes:
             self.classes[cls.__name__] = cls
-
-    def find(self, classname):
-        return self.classes.get(classname)
+        return self

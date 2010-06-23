@@ -20,6 +20,7 @@ Provides AMQP message consumer classes.
 """
 
 from pmf import *
+from pmf.envelope import Envelope
 from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import Message, RangedSet
@@ -69,29 +70,34 @@ class Consumer:
         while True:
             try:
                 message = self.queue.get(timeout=10)
-                content = message.body
+                envelope = Envelope()
+                envelope.load(message.body)
+                sn = envelope.sn
+                content = envelope.payload
+                result = dispatcher.dispatch(content)
+                self.__respond(envelope, result)
                 self.session.message_accept(RangedSet(message.id))
-                reply = dispatcher.dispatch(content)
-                self.__respond(message, reply)
             except Empty:
                 pass
 
-    def __respond(self, message, content):
+    def __respond(self, request, result):
         """
         Respond to request with the specified I{content}.
         A response is send B{only} when a I{replyto} is specified
         in the I{message}.
-        @param message: An AMQP (request) message.
-        @type message: L{Message}
-        @param content: A json encoded reply
-        @type content: str
+        @param request: The request envelope.
+        @type request: L{Envelope}
+        @param result: A reply object.
+        @type result: L{pmf.Return}
         """
-        mp = message.get("message_properties")
-        if mp.reply_to is None:
+        replyto = request.replyto
+        if not replyto:
             return
-        dest = mp.reply_to.exchange
-        key = mp.reply_to.routing_key
+        envelope = Envelope(sn=request.sn)
+        envelope.payload = result
+        dest = replyto[0]
+        key = replyto[1]
         dp = self.session.delivery_properties(routing_key=key)
-        reply = Message(dp, content)
+        reply = Message(dp, envelope.dump())
         self.session.message_transfer(destination=dest, message=reply)
         return self

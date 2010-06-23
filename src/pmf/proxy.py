@@ -22,7 +22,7 @@ classes on which we invoke methods.
 """
 
 from pmf.producer import Producer
-from pmf.dispatcher import RMI
+from pmf.dispatcher import Request
 
 
 class Method:
@@ -63,12 +63,12 @@ class Method:
         if synckey in kws:
             sync = kws[synckey]
             del kws[synckey]
-        content = RMI.encode(
-            self.classname,
-            self.name,
-            args,
-            kws)
-        return self.proxy._send(content, sync)
+        req = Request(
+            classname=self.classname,
+            method=self.name,
+            args=args,
+            kws=kws)
+        return self.proxy._send(req.dump(), sync)
 
 
 class Proxy:
