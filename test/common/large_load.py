@@ -82,7 +82,8 @@ class LargeLoad(unittest.TestCase):
         a = str(package['arch'])
         nevra = '%s-%s-%s-%s' % (n,v,r,a)
         nevra = nevra.replace('.','_')
-        consumer.packages[nevra]= package
+        profile = consumer['package_profile'] 
+        profile[package['name']] = package
         
     
     def create_consumers(self):
@@ -123,8 +124,14 @@ class LargeLoad(unittest.TestCase):
         consumers = self.capi.consumers()
         c = consumers[0]
         assert(len(consumers) == self.numconsumers)
-        randomPackage = random.choice(c['packages'])
-        p = ll.papi.package(randomPackage['id'])
+        packages = self.capi.packages(c['id'])
+        randomPackageName = random.choice(packages.keys())
+        randomPackage = packages[randomPackageName]
+        p = ll.papi.package_by_ivera(randomPackage['name'],
+                                     randomPackage['version'],
+                                     randomPackage['epoch'],
+                                     randomPackage['release'],
+                                     randomPackage['arch'])
         assert(p != None)
         c2 = self.capi.consumer(last_id)
         assert(c2 != None)

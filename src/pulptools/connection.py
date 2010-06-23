@@ -206,6 +206,10 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/" % str(id)
         return self.conn.request_get(method)
 
+    def packages(self, id):
+        method = "/consumers/%s/packages/" % str(id)
+        return self.conn.request_get(method)
+
     def consumers(self):
         method = "/consumers/"
         return self.conn.request_get(method)
