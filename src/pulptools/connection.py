@@ -207,7 +207,6 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/" % str(id)
         return self.conn.request_get(method)
 
-    # XXX no supporting server-side call
     def packages(self, id):
         method = "/consumers/%s/packages/" % str(id)
         return self.conn.request_post(method)

@@ -113,6 +113,7 @@ class ConsumerActions(JSONController):
         'unbind',
         'profile',
         'installpackages',
+        'packages',
     )
     
     def bind(self, id):
@@ -148,6 +149,14 @@ class ConsumerActions(JSONController):
         data = self.input()
         names = data.get('packagenames', [])
         return self.ok(API.installpackages(id, names))
+    
+    def packages(self, id):
+        """
+        Get a consumer's set of packages
+        @param id: consumer id
+        @return: consumer's installed packages
+        """
+        return self.ok(API.packages(id))
     
     @JSONController.error_handler
     def POST(self, id, action_name):
