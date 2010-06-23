@@ -1,5 +1,5 @@
 Name: pulp-dot-2.0-test
-Version: 0.1.0
+Version: 0.1.1
 Release: 1%{?dist}
 Summary: Test package to see how we deal with packages with dots in the name
 
@@ -37,6 +37,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Jun 23 2010 Mike McCune <mmccune@redhat.com> 0.1.1-1
+- new package
+
 * Wed May 05 2010 Mike McCune <mmccune@redhat.com> 0.3.1-1
 - new package
 
