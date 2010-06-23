@@ -175,38 +175,6 @@ class RepoApi(BaseApi):
             repo['packagegroups'][item['id']] = item
         self.update(repo)
 
-    def translate_packagegroup(self, obj):
-        """
-        Translate a SON Document to an object that yum.comps.Comps can work with
-        """
-        # Main reason for doing this is that yum.comps expects the passed in 
-        # object to support dot notation references, the returned SON document
-        # does not support this, so yum.comps isn't able to read the info 
-        #TODO: More work is needed in this method before output of groups will work
-        pg = model.PackageGroup(obj['id'], obj['name'], obj['description'], 
-                user_visible=obj['user_visible'], display_order=obj['display_order'],
-                default=obj['default'], langonly=obj['langonly'])
-        pg.groupid = obj['id']  
-        pg.translated_name = {}
-        for key in obj['translated_name']:
-            pg.translated_name[key] = obj['translated_name'][key]
-        pg.translated_description = {}
-        for key in obj['translated_description']:
-            pg.translated_description[key] = obj['translated_description']
-        pg.mandatory_packages = {}
-        for pkgname in obj['mandatory_package_names']:
-            pg.mandatory_packages[pkgname] = 1 
-        pg.optional_packages = {}
-        for pkgname in obj['optional_package_names']:
-            pg.optional_packages[pkgname] = 1
-        pg.default_packages = {}
-        for pkgname in obj['default_package_names']:
-            pg.default_packages[pkgname] = 1
-        pg.conditional_packages = {}
-        for key in obj['conditional_package_names']:
-            pg.conditional_packages[key] = obj['conditional_package_names'][key]
-        return pg
-
     def packagegroups(self, id):
         """
         Return list of PackageGroup objects in this Repo
@@ -254,25 +222,6 @@ class RepoApi(BaseApi):
         for item in pgclist:
             repo['packagegroupcategories'][item['id']] = item
         self.update(repo)
-
-    def translate_packagegroupcategory(self, obj):
-        """
-        Translate a SON Document to an object that yum.comps.Comps can work with
-        """
-        #TODO: More work is needed in this method before output of categories will work
-        pgc = model.PackageGroupCategory(obj['id'], obj['name'], obj['description'], 
-                display_order=obj['display_order'])
-        pgc.categoryid = obj['id']
-        pgc.translated_name = {}
-        for key in obj['translated_name']:
-            pgc.translated_name[key] = obj['translated_name'][key]
-        pgc.translated_description = {}
-        for key in obj['translated_description']:
-            pgc.translated_description[key] = obj['translated_description'][key]
-        pgc._groups = {}
-        for groupid in obj['packagegroupids']:
-            pgc._groups[groupid] = groupid
-        return pgc
 
     def packagegroupcategories(self, id):
         """
