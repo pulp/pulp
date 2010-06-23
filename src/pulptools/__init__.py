@@ -19,24 +19,29 @@
 Pulp Tools.
 """
 
+import os
+
 class ConsumerId:
     """
     Client identity
-    @ivar id: The client id.
-    @type id: str
+    @ivar uuid: The client id.
+    @type uuid: str
     """
 
     PATH = '/etc/pulp/consumer'
 
-    def __init__(self, id=None):
+    def __init__(self, uuid=None):
         """
-        @ivar id: The client id.
-        @type id: str
+        @ivar value: The client id.
+        @type value: str
         """
-        if id:
-            self.id = id
-        else:
+        if uuid:
+            self.uuid = uuid
+            return
+        if self.exists():
             self.read()
+        else:
+            self.uuid = None
 
     def read(self):
         """
@@ -44,7 +49,8 @@ class ConsumerId:
         """
         f = open(self.PATH)
         try:
-            self.id = f.read().strip()
+            self.uuid = f.read().strip()
+            return self
         finally:
             f.close()
 
@@ -54,9 +60,13 @@ class ConsumerId:
         """
         f = open(self.PATH, 'w')
         try:
-            f.write(self.id)
+            f.write(self.uuid)
+            return self
         finally:
             f.close()
+            
+    def exists(self):
+        return os.path.exists(self.PATH)
 
     def __str__(self):
-        return self.id
+        return self.uuid

@@ -19,13 +19,17 @@
 Class for pulp agent.
 """
 
+from time import sleep
 from pmf.base import Agent as Base
 from pmf.consumer import Consumer
 from pmf.decorators import remote, remotemethod
 from pulptools import ConsumerId
 from pulptools.config import Config
 from pulptools.repolib import RepoLib
+from pulptools.logutil import getLogger
 from yum import YumBase
+
+log = getLogger(__file__)
 
 
 @remote
@@ -77,9 +81,17 @@ class Agent(Base):
         port = int(cfg.pmf.port)
         consumer = Consumer(id, host, port)
         Base.__init__(self, consumer)
+        log.info('started')
 
     def id(self):
-        return 'agent:%s' % ConsumerId()
+        cid = ConsumerId()
+        while True:
+            if not cid.exists():
+                log.info('Not registered.')
+                sleep(10)
+            else:
+                break
+        return 'agent:%s' % cid
 
 
 if __name__ == '__main__':

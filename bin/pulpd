@@ -18,10 +18,15 @@
 
 from time import sleep
 from pulptools.agent import Agent
+from pulptools.logutil import getLogger
+
+log = getLogger(__file__)
 
 if __name__ == '__main__':
   while True:
     try:
       Agent()
-    except:
+      log.info('agent started.')
+    except Exception, ex:
+      log.exception(ex)
       sleep(5)

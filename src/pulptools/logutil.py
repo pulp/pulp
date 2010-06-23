@@ -13,13 +13,18 @@
 # in this software or its documentation.
 #
 
+import os
 import logging
 from logging import Formatter
 from logging.handlers import RotatingFileHandler
 
+LOGDIR = '/var/log/pulp'
+LOGFILE = 'pulptools.log'
 
 def getLogger(name):
-    path = 'pulp.log'
+    if not os.path.exists(LOGDIR):
+        os.mkdir(LOGDIR)
+    path = os.path.join(LOGDIR,LOGFILE)
     fmt = '%(asctime)s [%(levelname)s] %(funcName)s() @%(filename)s:%(lineno)d - %(message)s'
     handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
     handler.setFormatter(Formatter(fmt))
