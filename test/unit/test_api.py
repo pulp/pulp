@@ -235,7 +235,7 @@ class TestApi(unittest.TestCase):
         consumer = self.capi.consumer(cid)
         assert(rid not in consumer[key])
 
-    def test_consumer_installpackages(self):
+    def __test_consumer_installpackages(self):
         cid = 'bindconsumerid'
         packagenames = ['A','B','C']
         self.capi.create(cid, 'test install package.')
