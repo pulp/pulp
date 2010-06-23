@@ -33,7 +33,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%config %{_sysconfdir}/pulp-test-file.txt
+%config %{_sysconfdir}/pulp-dot-test.txt
 
 
 %changelog
