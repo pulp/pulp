@@ -24,7 +24,7 @@ start() {
     return $RETVAL
   fi
   echo -n "Starting $PROG"
-  $BINDIR/$PROG &
+  $BINDIR/$PROG & >/dev/null 2>&1
   RETVAL=$?
   if [ $RETVAL -eq "0" ]; then
     echo $! > $PID

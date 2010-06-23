@@ -29,8 +29,9 @@ except:
     print "Please install python-hashlib"
     sys.exit(1)
 import base64
+from iniparse import INIConfig as Base
 
-log = logging.getLogger("pulp.util")
+log = logging.getLogger(__name__)
 
 def get_rpm_information(rpm_path):
     """
@@ -97,3 +98,22 @@ def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=N
         f.close()
     return m.hexdigest()
 
+
+class Config(Base):
+    """
+    The pulp configuration.
+    @cvar PATH: The absolute path to the config file.
+    @type PATH: str
+    """
+
+    PATH = '/etc/pulp/pulp.ini'
+
+    def __init__(self, path=PATH):
+        """
+        Open the configuration.
+        """
+        fp = open(path)
+        try:
+            Base.__init__(self, fp)
+        finally:
+            fp.close()

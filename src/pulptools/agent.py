@@ -29,7 +29,7 @@ from pulptools.repolib import RepoLib
 from pulptools.logutil import getLogger
 from yum import YumBase
 
-log = getLogger(__file__)
+log = getLogger(__name__)
 
 
 @remote
@@ -44,6 +44,7 @@ class Repo:
         Update the pulp.repo based on information
         retrieved from pulp server.
         """
+        log.info('updating yum repo')
         rlib = RepoLib()
         rlib.update()
 
@@ -61,6 +62,7 @@ class Packages:
         @param packagenames: A list of simple package names.
         @param packagenames: str
         """
+        log.info('installing packages: %s', packagenames)
         yb = YumBase()
         for n in packagenames:
             pkgs = yb.pkgSack.returnNewestByName(n)
@@ -89,7 +91,7 @@ class Agent(Base):
             log.info('Not registered.')
             sleep(10)
             cid.read()
-        return 'agent:%s' % cid
+        return cid.uuid
 
 
 if __name__ == '__main__':

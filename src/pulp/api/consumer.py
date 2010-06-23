@@ -20,6 +20,7 @@ from pulp import model
 from pulp.api.base import BaseApi
 from pulp.pexceptions import PulpException
 from pulp.util import chunks
+from pulp.agent import Agent
 
 # Pulp
 
@@ -146,4 +147,6 @@ class ConsumerApi(BaseApi):
         @param packagenames: The package names to install.
         @type packagenames: [str,..]
         """
+        agent = Agent(id)
+        agent.packages.install(packagenames)
         return packagenames
