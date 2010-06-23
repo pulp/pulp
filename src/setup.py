@@ -26,7 +26,7 @@ if major != '2' or minor not in ['4', '5', '6']:
 requires = [
     'web.py == 0.32',
     'grinder >= 0.0.20',
-    'pymongo == 1.6',
+    'pymongo == 1.6'
 ]
 
 if minor != '6':

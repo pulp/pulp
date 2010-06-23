@@ -150,6 +150,7 @@ def processFile(filename, relativeDir=None, source=None):
     # Read the header
     try:
         ts = rpm.TransactionSet()
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         h = readRpmHeader(ts, filename)
     except:
         return hash
@@ -194,3 +195,42 @@ def generatePkgMetadata(pkgFile):
     yumPkg = yumPackages.YumLocalPackage(ts, filename=pkgFile)
     primary_xml = yumPkg.xml_dump_primary_metadata()
     return base64.b64encode(primary_xml)
+
+def generatePakageProfile(rpmHeaderList):
+    """ Accumulates list of installed rpm info """
+    pkgList = {}
+    for h in rpmHeaderList:
+        if h['name'] == "gpg-pubkey":
+            #dbMatch includes imported gpg keys as well
+            # skip these for now as there isnt compelling 
+            # reason for server to know this info
+            continue
+        info = {
+            'name'          : h['name'],
+            'version'       : h['version'],
+            'release'       : h['release'],
+            'epoch'         : h['epoch'] or "",
+            'arch'          : h['arch'],
+            'installtime'   : h['installtime'],
+            'group'         : h['Group'] or "",
+            'summary'       : h['Summary'],
+            'description'   : h['description'],
+            'OS'            : h['OS'],
+            'Platform'      : h['Platform'],
+            'URL'           : h['URL'],
+            'Size'          : h['Size'],
+            'Vendor'        : h['Vendor'], 
+        }
+        info['fileName'] = getRpmName(info)           
+        if not pkgList.has_key(h['name']):
+            pkgList[h['name']] = [info]
+        else:
+            pkgList[h['name']].append(info)
+
+    return pkgList
+ 
+def getRpmName(pkg):
+    return pkg["name"] + "-" + pkg["version"] + "-" + \
+           pkg["release"] + "." + pkg["arch"]
+
+

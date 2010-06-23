@@ -41,14 +41,14 @@ class consumer(BaseCore):
         desc = ""
 
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
-        self.actions = {"register" : "Register this system as a consumer", 
-                        "unregister" : "Delete a consumer", 
-                        "bind"   : "Bind the consumer to listed repos",
-                        "unbind" : "UnBind the consumer from repos"}
+        self.actions = {"register"      : "Register this system as a consumer", 
+                        "unregister"    : "Delete a consumer", 
+                        "info"          : "Registered consumer information",
+                        "bind"          : "Bind the consumer to listed repos",
+                        "unbind"        : "UnBind the consumer from repos",}
         self.name = "consumer"
         self.username = None
         self.password = None
-        print dir(CFG)
         self.cconn = None
         self.load_server()
         self.repolib = RepoLib()
@@ -97,9 +97,9 @@ class consumer(BaseCore):
                            help="Repo Identifier")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
-        if self.action == "list":
-            usage = "usage: %prog consumer list [OPTIONS]"
-            BaseCore.__init__(self, "consumer list", usage, "", "")
+        if self.action == "info":
+            usage = "usage: %prog consumer info [OPTIONS]"
+            BaseCore.__init__(self, "consumer info", usage, "", "")
         if self.action == "unregister":
             usage = "usage: %prog consumer unregister [OPTIONS]"
             BaseCore.__init__(self, "consumer unregister", usage, "", "")
@@ -120,8 +120,8 @@ class consumer(BaseCore):
         self._validate_options()
         if self.action == "register":
             self._create()
-        if self.action == "list":
-            self._list()
+        if self.action == "info":
+            self._info()
         if self.action == "unregister":
             self._delete()
         if self.action == "bind":
@@ -155,15 +155,21 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-    def _list(self):
+    def _info(self):
         (self.options, self.args) = self.parser.parse_args()
         try:
-            cons = self.cconn.consumers()
-            columns = ["id", "description", "repoids"]
-            data = [ _sub_dict(con, columns) for con in cons]
-            print """+-------------------------------------------+\n    List of Consumers \n+-------------------------------------------+"""
+            cons = self.cconn.consumer(getConsumer())
+            pkgs = " "
+            for pkg in cons['package_profile'].values():
+                for pkgversion in pkg:
+                    pkgs += " " + pkgversion['fileName']
+            cons['package_profile'] = pkgs
+            columns = ["id", "description", "repoids", "package_profile"]
+            data = [ _sub_dict(cons, columns)]# for con in cons]
+            print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
             for con in data:
-                print constants.AVAILABLE_CONSUMER_LIST % (con["id"], con["description"], con["repoids"])
+                print constants.AVAILABLE_CONSUMER_INFO % \
+                        (con["id"], con["description"], con["repoids"], con["package_profile"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -212,6 +218,18 @@ class consumer(BaseCore):
 
     def _delete(self):
         print "under Construction"
+        
+def getConsumer():
+    ##TODO: this will eventually be a x509 cert
+    if not os.path.exists(CONSUMERID):
+        print("Error: This client is currently not registered. Please register to continue")
+        sys.exit(0)
+    try:
+        consumerid = open(CONSUMERID).read()
+    except Exception, e:
+        print("Error reading consumer." + e)
+        sys.exit(-1)
+    return consumerid
         
 def _sub_dict(datadict, subkeys, default=None) :
     return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )

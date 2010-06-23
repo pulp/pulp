@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.24
+Version:        0.0.26
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -22,6 +22,7 @@ BuildRequires:  rpm-python
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
+Requires: python-qpid
 Requires: grinder
 Requires: httpd
 Requires: mod_wsgi
@@ -40,8 +41,9 @@ Pulp provides replication, access, and accounting for software repositories.
 Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires:       python-simplejson
-Requires:	m2crypto
+Requires: python-simplejson
+Requires: m2crypto
+Requires: python-qpid
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -82,6 +84,12 @@ mkdir -p %{buildroot}/var/www/html/
 mkdir -p %{buildroot}/var/log/pulp
 ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
+mkdir -p %{buildroot}/usr/bin
+cp bin/pulpd %{buildroot}/usr/bin
+
+mkdir -p %{buildroot}/etc/init.d
+cp etc/init.d/pulpd %{buildroot}/etc/init.d
+
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
 # RHEL 5 packages don't have egg-info files, so remove the requires.txt
@@ -106,6 +114,7 @@ chown apache:apache /var/log/pulp
 %{python_sitelib}/pulp/*
 %{python_sitelib}/pulp-*
 %{python_sitelib}/juicer/*
+%{python_sitelib}/pmf/*
 %config(noreplace) /etc/pulp/juicer.ini
 %config(noreplace) /etc/pulp/pulp.ini
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
@@ -120,11 +129,27 @@ chown apache:apache /var/log/pulp
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/pulptools/
+%{python_sitelib}/pmf/
 %{_bindir}/pulp
+%{_bindir}/pulpd
+%attr(755,root,root) %{_sysconfdir}/init.d/pulpd
 %config(noreplace) /etc/pulp/client.ini
+
+%post tools
+chkconfig --add pulpd
+/sbin/service pulpd start
+
+%preun tools
+if [ $1 = 0 ] ; then
+   /sbin/service pulpd stop >/dev/null 2>&1
+   /sbin/chkconfig --del pulpd
+fi
 
 
 %changelog
+* Mon Jun 21 2010 Mike McCune <mmccune@redhat.com> 0.0.26-1
+- Weekly rebuild.  See SCM for history
+
 * Wed Jun 16 2010 Mike McCune <mmccune@redhat.com> 0.0.24-1
 - massive amounts of changes from the last few weeks
 

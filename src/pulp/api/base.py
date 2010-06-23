@@ -37,11 +37,11 @@ class BaseApi(object):
         if self.objectdb:
             # Indexes
             for index in self._get_unique_indexes():
-                log.info("'%s' ensure_index('%s', unique=True)" % (self._getcollection().name, index))
+                log.debug("'%s' ensure_index('%s', unique=True)" % (self._getcollection().name, index))
                 self.objectdb.ensure_index([(index, pymongo.DESCENDING)], unique=True, 
                                    background=True)
             for index in self._get_indexes():
-                log.info("'%s' ensure_index('%s')" % (self._getcollection().name, index))
+                log.debug("'%s' ensure_index('%s')" % (self._getcollection().name, index))
                 self.objectdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
    
     def _get_unique_indexes(self):

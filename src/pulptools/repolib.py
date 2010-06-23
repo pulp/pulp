@@ -21,6 +21,7 @@ Contains repo management (backend) classes.
 
 import os
 from iniparse import ConfigParser as Parser
+from pulptools import ConsumerId
 from pulptools.connection import ConsumerConnection, RepoConnection
 from pulptools.lock import Lock
 from pulptools.config import Config
@@ -93,11 +94,7 @@ class Pulp:
         return products
     
     def consumerId(self):
-        f = open('/etc/pulp/consumer')
-        try:
-            return f.read().strip()
-        finally:
-            f.close()
+        return str(ConsumerId())
 
 
 class Action:

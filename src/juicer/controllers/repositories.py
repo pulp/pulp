@@ -116,20 +116,6 @@ class RepositoryActions(AsyncController):
         'upload',
         'add_package',
     )
-    
-    @JSONController.error_handler
-    def GET(self, id, action_name):
-        '''
-        Retrieve a map of all repository IDs to their associated synchronization
-        schedules.
-
-        @return: key - repository ID, value - synchronization schedule
-        '''
-        # XXX this returns all scheduled tasks, it should only return those
-        # tasks that are specified by the action_name
-        schedules = API.all_schedules()
-        return self.ok(schedules)
- 
     def list(self, id):
         """
         List all packages in a repository.
@@ -187,7 +173,7 @@ class RepositoryActions(AsyncController):
     
     
 class RepositoryActionStatus(AsyncController):
-    
+
     @JSONController.error_handler
     def GET(self, id, action_name, action_id):
         """
@@ -210,6 +196,22 @@ class RepositoryActionStatus(AsyncController):
         """
         return self.not_found('Action cancellation is not yet implemented')
 
+
+class Schedules(JSONController):
+    
+    @JSONController.error_handler
+    def GET(self, id, action_name):
+        '''
+        Retrieve a map of all repository IDs to their associated synchronization
+        schedules.
+
+        @return: key - repository ID, value - synchronization schedule
+        '''
+        # XXX this returns all scheduled tasks, it should only return those
+        # tasks that are specified by the action_name
+        schedules = API.all_schedules()
+        return self.ok(schedules)
+ 
 # web.py application ----------------------------------------------------------
 
 urls = (
@@ -217,6 +219,7 @@ urls = (
     '/([^/]+)/$', 'Repository',
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActions',
     '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActionStatus',
+    '/schedules/', 'Schedules',
 )
 
 application = web.application(urls, globals())

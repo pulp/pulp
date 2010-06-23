@@ -98,7 +98,6 @@ class Consumer(JSONController):
 
 class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
-
     @JSONController.error_handler
     def POST(self):
         API.bulkcreate(self.params())
@@ -113,27 +112,26 @@ class ConsumerActions(JSONController):
         'bind',
         'unbind',
         'profile',
+        'installpackages',
     )
     
     def bind(self, id):
         """
         Bind (subscribe) a user to a repository.
         @param id: consumer id
-        @return: True on successful bind
         """
         data = self.params()
         API.bind(id, data)
         return self.ok(True)
-    
+
     def unbind(self, id):
         """
         Unbind (unsubscribe) a user to a repository.
         @param id: consumer id
-        @return: True on successful unbind
         """
         data = self.params()
         API.unbind(id, data)
-        return self.ok(True)
+        return self.ok(None)
     
     def profile(self, id):
         """
@@ -141,9 +139,25 @@ class ConsumerActions(JSONController):
         """
         API.profile_update(id, self.params())
         return self.ok(True)
+
+    def installpackages(self, id):
+        """
+        Install packages.
+        Body contains a list of package names.
+        """
+        data = self.input()
+        names = data.get('packagenames', [])
+        return self.ok(API.installpackages(id, names))
     
     @JSONController.error_handler
     def POST(self, id, action_name):
+        """
+        Consumer action dispatcher
+        @type id: str
+        @param id: controller id
+        @type action_name: str
+        @param action_name: action name
+        """
         action = getattr(self, action_name, None)
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)

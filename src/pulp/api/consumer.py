@@ -77,8 +77,10 @@ class ConsumerApi(BaseApi):
         List consumers using passed in name
         """
         
-        regex = re.compile(".*%s" % name)
-        return list(self.objectdb.find({"packageids": regex}))
+        # regex = re.compile(".*%s" % name)
+        # return list(self.objectdb.find({"package_profile": regex}))
+        key = "package_profile.%s" % name
+        return list(self.objectdb.find({key: {"$exists": True}}))
 
     def bind(self, id, repoid):
         """
@@ -125,3 +127,13 @@ class ConsumerApi(BaseApi):
             raise PulpException('consumer "%s", not-found', id)
         consumer["package_profile"] =  package_profile
         self.update(consumer)
+
+    def installpackages(self, id, packagenames=[]):
+        """
+        Install packages on the consumer.
+        @param id: A consumer id.
+        @type id: str
+        @param packagenames: The package names to install.
+        @type packagenames: [str,..]
+        """
+        return packagenames

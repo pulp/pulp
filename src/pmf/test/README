@@ -1,0 +1,19 @@
+#
+# Demo API
+# agent.dog.bark(how_many_times)
+# agent.dog.wag(how_many_times)
+# agent.dog.notpermitted() # raised exception
+# agent.repolib.update()
+#
+
+Install and start QPID
+
+Start the client (in a terminal):
+  python agent.py
+
+Start the server (in a terminal):
+  python -i server.py
+
+> test() # run demo
+>
+> agent.dog.bark(1) # play with API

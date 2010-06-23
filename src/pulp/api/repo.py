@@ -101,6 +101,19 @@ class RepoApi(BaseApi):
                     matches.append(package)
             return matches
     
+    def package_by_name(self, id, name):
+        """
+        Return matching Package object in this Repo
+        """
+        repo = self.repository(id)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % id)
+        packages = repo['packages']
+        for package in packages.values():
+            log.error(package)
+            if (package['name'] == name):
+                return package
+    
     def add_package(self, repoid, packageid):
         """
         Adds the passed in package to this repo
@@ -265,22 +278,6 @@ class RepoApi(BaseApi):
             pgc._groups[groupid] = groupid
         return pgc
 
-    def packagegroups(self, id):
-        """
-        Return list of PackageGroup objects in this Repo
-        """
-        repo = self.repository(id)
-        return repo['packagegroups']
-
-    def packagegroup(self, repoid, groupid):
-        """
-        Return a PackageGroup from this Repo
-        """
-        repo = self.repository(repoid)
-        if not repo['packagegroups'].has_key(groupid):
-            return None
-        return repo['packagegroups'][groupid]
-
     def packagegroupcategories(self, id):
         """
         Return list of PackageGroupCategory objects in this Repo
@@ -315,12 +312,10 @@ class RepoApi(BaseApi):
         Sync a repo from the URL contained in the feed
         """
         repo = self.repository(id)
-        print "sync.repo:: %s" % repo
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         
         repo_source = repo['source']
-        print "sync.repo_source:: %s" % repo_source
         added_packages = repo_sync.sync(self.config, repo, repo_source)
         for p in added_packages:
             self._add_package(repo, p)

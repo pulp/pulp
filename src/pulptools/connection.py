@@ -153,6 +153,10 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/add_package/" % repoid
         print "Add info: %s" % addinfo
         return self.conn.request_post(method, params=addinfo)
+    
+    def get_package(self, repoid, pkg_name):
+        method = "/repositories/%s/package/%s/" % (repoid, pkg_name)
+        return self.conn.request_get(method)
 
     def packages(self, repoid):
         method = "/repositories/%s/list/" % repoid
@@ -221,6 +225,11 @@ class ConsumerConnection(PulpConnection):
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
+
+    def installpackages(self, id, packagenames):
+        method = "/consumers/%s/installpackages/" % id
+        body = dict(packagenames=packagenames)
+        return self.conn.request_post(method, params=body)
 
 class PackageConnection(PulpConnection):
 
