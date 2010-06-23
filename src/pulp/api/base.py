@@ -56,11 +56,11 @@ class BaseApi(object):
         """
         self.objectdb.remove(safe=True)
         
-    def insert(self, object):
+    def insert(self, object, check_keys=False):
         """
         Insert the object document to the database
         """
-        self.objectdb.insert(object, safe=True)
+        self.objectdb.insert(object, check_keys=check_keys, safe=True)
         return object
 
     def update(self, object):

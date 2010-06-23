@@ -36,7 +36,8 @@ from pulp.model import Consumer
 from pulp.util import random_string
 import pulp.util
 from testutil import create_package
-
+from pulptools.utils import generatePakageProfile
+ 
 TEST_PACKAGE_ID = 'random-package'
 
 class LargeLoad(unittest.TestCase):
@@ -76,14 +77,15 @@ class LargeLoad(unittest.TestCase):
         return numrepos
     
     def add_package(self, consumer, package):
-        n = str(package['name'])
-        v = str(package['version'])
-        r = str(package['release'])
-        a = str(package['arch'])
-        nevra = '%s-%s-%s-%s' % (n,v,r,a)
-        nevra = nevra.replace('.','_')
-        profile = consumer['package_profile'] 
-        profile[package['name']] = package
+        profile = consumer['package_profile']
+        info = {
+            'name'          : package['name'],
+            'version'       : package['version'],
+            'release'       : package['release'],
+            'epoch'         : package['epoch'] or "",
+            'arch'          : package['arch'],
+        }
+        profile[package['name']] = info
         
     
     def create_consumers(self):
@@ -96,11 +98,9 @@ class LargeLoad(unittest.TestCase):
             repo = random.choice(repos)
             c = Consumer(random_string(), random_string())
             packages = repo['packages']
-            for p in packages.values():
-                # c.packageids.append(p['id'])
-                # c.packages.append(p)
-                self.add_package(c, p)
-            # self.capi.update(c)
+            packageProfile = generatePakageProfile(packages.values())
+            #for p in packages.values():
+            #    self.add_package(c, p)
             if (i % 100 == 0):
                 print "created [%s] consumers" % i
                 # c.packageids.append(randomPackage['id'])
@@ -125,6 +125,7 @@ class LargeLoad(unittest.TestCase):
         c = consumers[0]
         assert(len(consumers) == self.numconsumers)
         packages = self.capi.packages(c['id'])
+        print "Packages! %s" % packages
         randomPackageName = random.choice(packages.keys())
         randomPackage = packages[randomPackageName]
         p = ll.papi.package_by_ivera(randomPackage['name'],

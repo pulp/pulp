@@ -211,17 +211,7 @@ def generatePakageProfile(rpmHeaderList):
             'release'       : h['release'],
             'epoch'         : h['epoch'] or "",
             'arch'          : h['arch'],
-            'installtime'   : h['installtime'],
-            'group'         : h['Group'] or "",
-            'summary'       : h['Summary'],
-            'description'   : h['description'],
-            'OS'            : h['OS'],
-            'Platform'      : h['Platform'],
-            'URL'           : h['URL'],
-            'Size'          : h['Size'],
-            'Vendor'        : h['Vendor'], 
         }
-        info['fileName'] = getRpmName(info)           
         if not pkgList.has_key(h['name']):
             pkgList[h['name']] = [info]
         else:

@@ -244,8 +244,18 @@ class TestApi(unittest.TestCase):
 
     def test_bulk_create(self):
         consumers = []
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        info1 = get_rpm_information(my_dir + "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
+        info2 = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+        info3 = get_rpm_information(my_dir + "/data/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
+        
+        packages = generatePakageProfile([info1, info2, info3])
+
         for i in range(1005):
-            consumers.append(Consumer(random_string(), random_string()))
+            c = Consumer(random_string(), random_string())
+            c['package_profile'] = packages
+            consumers.append(c)
+            
         self.capi.bulkcreate(consumers)
         all = self.capi.consumers()
         n = len(all)
@@ -259,8 +269,9 @@ class TestApi(unittest.TestCase):
         
         info1 = get_rpm_information(my_dir + "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
         info2 = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+        info3 = get_rpm_information(my_dir + "/data/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
         
-        packages = generatePakageProfile([info1, info2])
+        packages = generatePakageProfile([info1, info2, info3])
         
         for i in range(10):
             randName = random_string()
@@ -268,6 +279,7 @@ class TestApi(unittest.TestCase):
             packages[randName] = [package]
             
         c['package_profile'] = packages
+        print "Consumer! %s" % c
         self.capi.update(c)
         self.assertTrue(c['package_profile']['pulp-test-package'] != None)
         found = self.capi.consumers_with_package_name('some-invalid-id')

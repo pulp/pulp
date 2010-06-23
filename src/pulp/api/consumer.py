@@ -57,7 +57,7 @@ class ConsumerApi(BaseApi):
         chunked = chunks(consumers, chunksize)
         inserted = 0
         for chunk in chunked:
-            self.insert(chunk)
+            self.insert(chunk, check_keys=False)
             inserted = inserted + chunksize
             print "Inserted: %s" % inserted
 
