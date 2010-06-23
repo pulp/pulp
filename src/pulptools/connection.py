@@ -58,7 +58,7 @@ class Restlib(object):
             conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
         else:
             conn = httplib.HTTPConnection(self.host, self.port)
-        conn.request(request_type, handler, body=json.dumps(info), \
+        conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
         response = conn.getresponse()
         self.validateResponse(response)
@@ -68,7 +68,7 @@ class Restlib(object):
         return json.loads(rinfo)
 
     def validateResponse(self, response):
-        if str(response.status) not in ["200", "202", "204"]:
+        if str(response.status) not in ["200", "201", "202", "204"]:
             raise RestlibException(response.status, response.read())
             #parsed = json.loads(response.read())
 
