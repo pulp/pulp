@@ -37,7 +37,6 @@ class Repo(Base):
         self._id = id
         self.id = id
         self.source = RepoSource(source)
-        self.id = id
         self.name = name
         self.arch = arch
         self.packages = dict()

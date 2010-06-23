@@ -30,8 +30,6 @@ from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp import model
 from pulp.api.package import PackageApi
-from pulp.api.package_group import PackageGroupApi
-from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.pexceptions import PulpException
 import pulp.util
 
@@ -113,8 +111,6 @@ class BaseSynchronizer(object):
     def __init__(self, config):
         self.config = config
         self.package_api = PackageApi(config)
-        self.package_group_category_api = PackageGroupCategoryApi(config)
-        self.package_group_api = PackageGroupApi(config)
 
     def add_packages_from_dir(self, dir, repo):
         dir_list = os.listdir(dir)
@@ -182,6 +178,7 @@ class BaseSynchronizer(object):
         Reads a comps.xml or comps.xml.gz under repodata from dir
         Loads PackageGroup and Category info our db
         """
+        log.debug("compsfile = %s, repo = %s" % (compsfile, repo["id"]))
         try:
             comps = yum.comps.Comps()
             comps.add(compsfile)

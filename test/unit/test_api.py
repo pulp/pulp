@@ -37,8 +37,6 @@ import pymongo.json_util
 
 from pulp.api.consumer import ConsumerApi
 from pulp.api.package import PackageApi
-from pulp.api.package_group import PackageGroupApi
-from pulp.api.package_group_category import PackageGroupCategoryApi
 from pulp.api.repo import RepoApi
 
 from pulp.model import Package
@@ -60,16 +58,12 @@ class TestApi(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
-        self.pgapi.clean()
-        self.pgcapi.clean()
         
     def setUp(self):
         self.config = testutil.load_test_config()
         self.rapi = RepoApi(self.config)
         self.papi = PackageApi(self.config)
         self.capi = ConsumerApi(self.config)
-        self.pgapi = PackageGroupApi(self.config)
-        self.pgcapi = PackageGroupCategoryApi(self.config)
         self.clean()
         
     def tearDown(self):
@@ -496,7 +490,7 @@ class TestApi(unittest.TestCase):
         self.assertTrue(len(all) > 0)
 
         # Remove from Package collection
-        self.papi.delete(found[0])
+        self.papi.delete(found[0]["_id"])
         # Verify it's deleted
         found = self.papi.packages(name=test_pkg_name, epoch=test_epoch, 
                 version=test_version, release=test_release, arch=test_arch, 
@@ -507,30 +501,6 @@ class TestApi(unittest.TestCase):
         all = self.papi.packages()
         self.assertTrue(len(all) == 0)
         
-
-    def test_package_groups(self):
-        pkggroup = self.pgapi.create('test-pkg-group-id', 'test-pkg-group-name', 
-                'test-pkg-group-description')
-        test_package_id = "test_package_id"
-        pkggroup.default_package_names.append(test_package_id)
-        self.pgapi.update(pkggroup)
-
-        found = self.pgapi.packagegroup(pkggroup.id)
-        print found
-        assert(found['default_package_names'] != None)
-        assert(test_package_id in found['default_package_names'])
-    
-    def test_package_group_categories(self):
-        ctg = self.pgcapi.create('test_pkg_group_ctg_id', 'test_pkg_group_ctg_name',
-                'test_pkg_group_description')
-        test_pkg_group_id = 'test_package_group_id'
-        ctg.packagegroupids.append(test_pkg_group_id)
-        self.pgcapi.update(ctg)
-
-        found = self.pgcapi.packagegroupcategory(ctg.id)
-        print found
-        assert(found['packagegroupids'] != None)
-        assert(test_pkg_group_id in found['packagegroupids'])
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

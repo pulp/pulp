@@ -31,8 +31,6 @@ from pulp import upload
 from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
-from pulp.api.package_group import PackageGroupApi
-from pulp.api.package_group_category import PackageGroupCategoryApi
 import pulp.api.repo_sync
 from pulp.pexceptions import PulpException
 
@@ -49,8 +47,6 @@ class RepoApi(BaseApi):
         BaseApi.__init__(self, config)
 
         self.packageApi = PackageApi(config)
-        self.packageGroupApi = PackageGroupApi(config)
-        self.packageGroupCategoryApi = PackageGroupCategoryApi(config)
         self.localStoragePath = config.get('paths', 'local_storage')
    
     def _get_indexes(self):
