@@ -25,7 +25,7 @@ Test package to see how we deal with packages with dots in the name
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/etc/
-cp  $RPM_BUILD_DIR/%{name}-%{version}/pulp-test-file.txt $RPM_BUILD_ROOT/etc/
+cp  $RPM_BUILD_DIR/%{name}-%{version}/pulp-dot-test.txt $RPM_BUILD_ROOT/etc/
 
 %clean
 rm -rf $RPM_BUILD_ROOT
