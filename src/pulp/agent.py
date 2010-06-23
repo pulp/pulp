@@ -27,13 +27,13 @@ from pmf.producer import Producer
 from pulp.util import Config
 
 
+class AgentAdmin(Proxy):
+    pass
+
 class Repo(Proxy):
     pass
 
 class Packages(Proxy):
-    pass
-
-class Dog(Proxy):
     pass
 
 
@@ -50,6 +50,6 @@ class Agent:
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         producer = Producer(uuid, host, port)
+        self.admin = AgentAdmin(producer)
         self.repo = Repo(producer)
         self.packages = Packages(producer)
-        self.dog = Dog(producer)

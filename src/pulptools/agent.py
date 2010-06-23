@@ -72,6 +72,20 @@ class Packages:
         yb.processTransaction()
 
 
+@remote
+class AgentAdmin:
+
+    @remotemethod
+    def hello(self):
+        s = []
+        cfg = Config()
+        cid = ConsumerId()
+        s.append('Hello, I am agent "%s"' % cid.uuid)
+        s.append('Here is my configuration:\n%s' % cfg)
+        s.append('Status: ready')
+        return '\n'.join(s)
+
+
 class Agent(Base):
     """
     Pulp agent.
@@ -82,8 +96,8 @@ class Agent(Base):
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         consumer = Consumer(id, host, port)
+        log.info('starting ...')
         Base.__init__(self, consumer)
-        log.info('started')
 
     def id(self):
         cid = ConsumerId()
