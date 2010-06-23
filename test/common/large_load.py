@@ -171,18 +171,27 @@ console.setLevel(logging.DEBUG)
 # logging.getLogger('pulp.api').addHandler(console)
 # logging.getLogger('pulp.api').setLevel(logging.DEBUG)
 
+## Start timing
+start = time.time()
 ll = LargeLoad(dirlist, numconsumers, config)
 ll.clean()
+cleanTime = time.time() - start 
 
+start = time.time()
 numrepos = ll.create_repos()
 repos = ll.rapi.repositories()
 packages = ll.papi.packages()
+repoTime = time.time() - start
 
 print "number of repos: %s" % len(list(repos))
 print "number of packages: %s" % len(packages)
+start = time.time()
 last_desc, last_id = ll.create_consumers()
+consumerCreateTime = time.time() - start
 print "Done creating consumers.  Listing all of them"
+start = time.time()
 ll.find_consumer(last_id)
+consumerSearchTime = time.time() - start
 # ll.find_repo()
 # ll.find_consumers_with_package()
 
@@ -190,4 +199,7 @@ numpackages = len(ll.papi.packages())
 print "Your database now has [%s] repositories with [%s] total packages and [%s] consumers" \
       % (numrepos, numpackages, numconsumers)
            
-
+print "Timings: cleanTime        : [%s]" % cleanTime 
+print "repo create and list time : [%s]" % repoTime 
+print "consumer create time      : [%s]" % consumerCreateTime
+print "consumer find time        : [%s]" % consumerSearchTime
