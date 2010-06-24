@@ -206,7 +206,7 @@ class MongoStorage(VolatileStorage):
     def task_status(self, task_id):
         task_son = self._objdb.find_one({'_id': task_id})
         if task_son is None:
-            return task_son
+            return None
         return self._task_db2model(task_son)
     
     def remove_task(self, task):
