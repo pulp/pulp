@@ -99,6 +99,18 @@ def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=N
     return m.hexdigest()
 
 
+def listdir(directory):
+    directory = os.path.abspath(os.path.normpath(directory))
+    if not os.access(directory, os.R_OK | os.X_OK):
+        raise Exception("Cannot read from directory %s" % directory)
+    if not os.path.isdir(directory):
+        raise Exception("%s not a directory" % directory)
+    # Build the package list
+    packagesList = []
+    for f in os.listdir(directory):
+        packagesList.append("%s/%s" % (directory, f))
+    return packagesList
+
 class Config(Base):
     """
     The pulp configuration.

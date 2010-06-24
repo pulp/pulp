@@ -71,14 +71,7 @@ def check_package_exists(pkg_path, hashtype, hashsum, force=0):
 
 def create_repo(dir):
     status, out = commands.getstatusoutput('createrepo --update %s' % (dir))
-
-    class CreateRepoError:
-        def __init__(self, output):
-            self.output = output
-
-        def __str__(self):
-            return self.output
-
+    
     if status != 0:
         log.error("createrepo on %s failed" % dir)
         raise CreateRepoError(out)
@@ -125,4 +118,12 @@ class UploadError(Exception):
 
 class PackageExistsError(Exception):
     pass
+
+class CreateRepoError:
+    def __init__(self, output):
+        self.output = output
+
+    def __str__(self):
+        return self.output
+
 

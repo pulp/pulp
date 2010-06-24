@@ -239,12 +239,13 @@ class RepoApi(BaseApi):
             return None
         return repo['packagegroupcategories'][categoryid]
 
-    def create(self, id, name, arch, feed, sync_schedule=None):
+    def create(self, id, name, arch, feed, symlinks=False, sync_schedule=None):
         """
         Create a new Repository object and return it
         """
         r = model.Repo(id, name, arch, feed)
         r['sync_schedule'] = sync_schedule
+        r['use_symlinks'] = symlinks
         self.insert(r)
 
         if sync_schedule:

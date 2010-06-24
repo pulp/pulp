@@ -85,6 +85,9 @@ class repo(BaseCore):
                            help="Url feed to populate the repo")
             self.parser.add_option("--schedule", dest="schedule",
                            help="Schedule for automatically synchronizing the repository")
+            self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
+                           help="Use symlinks instead of copying bits locally. \
+                            Applicable for local syncs")
         if self.action == "sync":
             usage = "usage: %prog repo sync [OPTIONS]"
             BaseCore.__init__(self, "repo sync", usage, "", "")
@@ -148,10 +151,13 @@ class repo(BaseCore):
         if not self.options.feed:
             print("repo feed required. Try --help")
             sys.exit(0)
+        symlinks = False
+        if self.options.symlinks:
+            symlinks = self.options.symlinks
         try:
             repo = self.pconn.create(self.options.label, self.options.name, \
                                      self.options.arch, self.options.feed, \
-                                     self.options.schedule)
+                                     symlinks, self.options.schedule)
             print _(" Successfully created Repo [ %s ] with feed [ %s ]" % \
                                      (repo['id'], repo["source"]))
         except RestlibException, re:

@@ -44,6 +44,7 @@ class Repo(Base):
         self.packagegroupcategories = dict()
         self.comps_xml_path = "" 
         self.sync_schedule = None
+        self.use_symlinks = None
         
     def get_repo_source(self):
         return RepoSource(self.source)

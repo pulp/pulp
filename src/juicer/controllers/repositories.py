@@ -48,6 +48,7 @@ class Repositories(JSONController):
                           repo_data['name'],
                           repo_data['arch'],
                           repo_data['feed'],
+                          symlinks = repo_data['use_symlinks'],
                           sync_schedule=repo_data['sync_schedule'])
         # TODO need function to create path
         path = None

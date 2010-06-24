@@ -19,6 +19,7 @@ import logging
 import os
 import time
 import traceback
+import shutil
 from urlparse import urlparse
 
 # 3rd Party
@@ -31,7 +32,9 @@ from grinder.RHNSync import RHNSync
 from pulp import model
 from pulp.api.package import PackageApi
 from pulp.pexceptions import PulpException
+import pulp.upload
 import pulp.util
+
 
 
 log = logging.getLogger('pulp.repo_sync')
@@ -117,7 +120,7 @@ class BaseSynchronizer(object):
         startTime = time.time()
         added_packages = []
         for fname in dir_list:
-            package = self.import_package(dir + fname, repo)
+            package = self.import_package(os.path.join(dir, fname), repo)
             if (package != None):
                 added_packages.append(package)
         endTime = time.time()
@@ -211,14 +214,38 @@ class YumSynchronizer(BaseSynchronizer):
         yfetch.fetchYumRepo(self.config.get('paths', 'local_storage'))
         repo_dir = "%s/%s/" % (self.config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
-
+    
 class LocalSynchronizer(BaseSynchronizer):
+    """
+        Sync class to synchronize a directory of rpms from a local filer
+    """
     def sync(self, repo, repo_source):
-        local_url = repo_source['url']
-        if (not local_url.endswith('/')):
-            local_url = local_url + '/'
-        parts = urlparse(local_url)
-        return parts.path
+
+        pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
+        try:
+            repo_dir = "%s/%s" % (self.config.get('paths', 'local_storage'), repo['id'])
+            if not os.path.exists(pkg_dir):
+                raise InvalidPathError("Path %s is invalid" % pkg_dir)
+            if repo['use_symlinks']:
+                log.info("create a symlink to src directory %s %s" % (pkg_dir, repo_dir))
+                os.symlink(pkg_dir, repo_dir)
+            else:
+                if not os.path.exists(repo_dir):
+                    os.makedirs(repo_dir)
+                pkglist = pulp.util.listdir(pkg_dir)
+                for pkg in pkglist:
+                    if pkg.endswith(".rpm"):
+                        shutil.copy(pkg, os.path.join(repo_dir, os.path.basename(pkg)))
+                pulp.upload.create_repo(repo_dir)
+        except InvalidPathError:
+            log.error("Sync aborted due to invalid source path %s" % (pkg_dir))
+            return
+        except IOError:
+            log.error("Unable to create repo directory %s" % repo_dir)
+        except pulp.upload.CreateRepoError:
+            log.error("Unable to run createrepo on source path %s" % (repo_dir))
+            return
+        return repo_dir
 
 class RHNSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
@@ -249,4 +276,7 @@ class RHNSynchronizer(BaseSynchronizer):
 TYPE_CLASSES = {'yum'   : YumSynchronizer,
                 'local' : LocalSynchronizer,
                 'rhn'   : RHNSynchronizer,}
+
+class InvalidPathError(Exception):
+    pass
 
