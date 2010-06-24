@@ -22,6 +22,8 @@ Name               \t%-25s
 Feed               \t%-25s
 Arch               \t%-25s
 Packages           \t%-25s
+Package Categories \t%-25s
+Package Groups     \t%-25s
 """
 
 AVAILABLE_CONSUMER_INFO="""
