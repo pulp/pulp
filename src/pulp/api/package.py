@@ -58,7 +58,7 @@ class PackageApi(BaseApi):
         """
         Delete package version object based on "_id" key
         """
-        self.objectdb.remove({"_id": id})
+        BaseApi.delete(self, _id=id)
     
     def package(self, id):
         """
