@@ -30,7 +30,7 @@ AVAILABLE_CONSUMER_INFO="""
 Id                 \t%-25s
 Description        \t%-25s
 Subscribed Repos   \t%-25s
-Profile    \t%-25s
+Profile            \t%-25s
 """
 
 REPO_SCHEDULES_LIST = """
