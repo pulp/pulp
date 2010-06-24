@@ -20,13 +20,14 @@ Provides AMQP message consumer classes.
 """
 
 from pmf import *
+from pmf.base import Endpoint
 from pmf.envelope import Envelope
 from qpid.util import connect
 from qpid.connection import Connection
 from qpid.datatypes import Message, RangedSet
 from qpid.queue import Empty
 
-class Consumer:
+class Consumer(Endpoint):
     """
     An AMQP consumer.
     @ivar queue: The primary incoming message queue.
@@ -55,7 +56,7 @@ class Consumer:
             arguments={'x-match':'any','consumerid':id})
         session.message_subscribe(queue=id, destination=id)
         self.queue = session.incoming(id)
-        self.session = session
+        Endpoint.__init__(self, session)
 
     def start(self, dispatcher):
         """
@@ -76,7 +77,7 @@ class Consumer:
                 content = envelope.payload
                 result = dispatcher.dispatch(content)
                 self.__respond(envelope, result)
-                self.session.message_accept(RangedSet(message.id))
+                self.acceptmessage(message.id)
             except Empty:
                 pass
 

@@ -21,6 +21,7 @@ Agent base classes.
 
 from pmf import decorators
 from pmf.dispatcher import Dispatcher
+from qpid.datatypes import RangedSet
 
 class Agent:
     """
@@ -40,3 +41,21 @@ class Agent:
         dispatcher = Dispatcher()
         dispatcher.register(*decorators.remoteclasses)
         consumer.start(dispatcher)
+        
+
+class Endpoint:
+    """
+    Base clase for qpid endpoint.
+    """
+    
+    def __init__(self, session):
+        self.session = session
+
+    def acceptmessage(self, id):
+        """
+        Accept a message by id.
+        @param id: An AMQP message id.
+        @type id: str
+        """
+        messages = RangedSet(id)
+        self.session.message_accept(messages)

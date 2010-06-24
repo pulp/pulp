@@ -20,15 +20,16 @@ Contains AMQP message producer classes.
 """
 
 from pmf import *
+from pmf.base import Endpoint
 from pmf.dispatcher import Return
 from pmf.envelope import Envelope
 from qpid.util import connect
 from qpid.connection import Connection
-from qpid.datatypes import Message, RangedSet
+from qpid.datatypes import Message
 from qpid.queue import Empty
 
 
-class Producer:
+class Producer(Endpoint):
     """
     An AMQP message producer.
     @ivar consumerid: The AMQP consumer (target) queue ID.
@@ -66,7 +67,7 @@ class Producer:
         self.consumerid = consumerid
         self.sid = sid
         self.queue = queue
-        self.session = session
+        Endpoint.__init__(self, session)
 
     def send(self, content, sync=True):
         """
@@ -106,7 +107,7 @@ class Producer:
                 return
             reply = Return()
             reply.load(envelope.payload)
-            self._accept(message.id)
+            self.acceptmessage(message.id)
             if reply.succeeded():
                 return reply.retval
             else:
@@ -133,14 +134,5 @@ class Producer:
                 result = (message, envelope)
                 break
             else:
-                self._accept(message.id)
+                self.acceptmessage(message.id)
         return result
-
-    def _accept(self, messageid):
-        """
-        Accept a message by id.
-        @param messageid: An AMQP message id.
-        @type messageid: str
-        """
-        messages = RangedSet(messageid)
-        self.session.message_accept(messages)
