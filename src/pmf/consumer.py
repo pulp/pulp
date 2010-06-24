@@ -47,10 +47,9 @@ class Consumer(Endpoint):
         session = self.connection.session(sid)
         session.queue_declare(queue=self.id, exclusive=True)
         session.exchange_bind(
-            exchange='amq.match',
+            exchange='amq.direct',
             queue=self.id,
-            binding_key=self.id,
-            arguments={'x-match':'any','consumerid':self.id})
+            binding_key=self.id)
         session.message_subscribe(queue=self.id, destination=self.id)
         self.session = session
         self.queue = session.incoming(self.id)

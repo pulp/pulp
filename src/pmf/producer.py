@@ -65,26 +65,27 @@ class Producer(Endpoint):
         self.session = session
         self.queue = queue
 
-    def send(self, content, sync=True):
+    def send(self, content, synchronous=True):
         """
         Send a message to the consumer.
         @param content: The json encoded payload.
         @type content: str
-        @param sync: Flag to indicate synchronous.
+        @param synchronous: Flag to indicate synchronous.
             When true the I{replyto} is set to our I{sid} and
             to (block) read the reply queue.
-        @type sync: bool
+        @type synchronous: bool
         """
         sn = getuuid()
-        headers = dict(consumerid=self.consumerid)
-        mp = self.session.message_properties()
-        mp.application_headers=headers
         envelope = Envelope(sn=sn, payload=content)
-        if sync:
+        if synchronous:
             envelope.replyto = ("amq.direct", self.sid)
-        msg = Message(mp, envelope.dump())
-        self.session.message_transfer(destination='amq.match', message=msg)
-        if sync:
+        dp = self.session.delivery_properties()
+        dp.routing_key=self.consumerid
+        message = Message(dp, envelope.dump())
+        self.session.message_transfer(
+            destination='amq.direct',
+            message=message)
+        if synchronous:
             return self._getreply(sn)
         else:
             return None
