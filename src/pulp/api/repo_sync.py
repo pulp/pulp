@@ -186,22 +186,10 @@ class BaseSynchronizer(object):
             comps = yum.comps.Comps()
             comps.add(compsfile)
             for c in comps.categories:
-                ctg = model.PackageGroupCategory(c.categoryid, c.name,
-                    c.description, c.display_order)
-                groupids = [grp for grp in c.groups]
-                ctg['packagegroupids'].extend(groupids)
-                ctg['translated_name'] = c.translated_name
-                ctg['translated_description'] = c.translated_description
+                ctg = pulp.comps_util.yum_category_to_model_category(c)
                 repo['packagegroupcategories'][ctg['id']] = ctg
             for g in comps.groups:
-                grp = model.PackageGroup(g.groupid, g.name, g.description,
-                    g.user_visible, g.display_order, g.default, g.langonly)
-                grp.mandatory_package_names.extend(g.mandatory_packages.keys())
-                grp.optional_package_names.extend(g.optional_packages.keys())
-                grp.default_package_names.extend(g.default_packages.keys())
-                grp.conditional_package_names = g.conditional_packages
-                grp.translated_name = g.translated_name
-                grp.translated_description = g.translated_description
+                grp = pulp.comps_util.yum_group_to_model_group(g)             
                 repo['packagegroups'][grp['id']] = grp
         except yum.Errors.CompsException:
             log.error("Unable to parse comps info for %s" % (compsfile))
