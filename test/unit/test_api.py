@@ -148,6 +148,14 @@ class TestApi(unittest.TestCase):
         assert(found != None)
         assert(found['id'] == 'some-id')
         
+    def test_consumer_group(self):
+        cg = self.cgapi.create('some-id','some name', 'some description')
+
+        found = self.cgapi.consumergroup('some-id')
+        assert(found != None)
+        assert(found['id'] == 'some-id')
+
+
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')

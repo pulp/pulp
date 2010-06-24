@@ -16,8 +16,9 @@
 
 import auth
 import consumers
+import consumergroups
 import packages
 import repositories
 import test
 
-__all__ = ['auth', 'consumers', 'packages', 'repositories', 'test']
+__all__ = ['auth', 'consumers', 'consumergroups', 'packages', 'repositories', 'test']

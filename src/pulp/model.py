@@ -129,3 +129,11 @@ class Consumer(Base):
         self.description = description
         self.package_profile = {}
         self.repoids = []
+
+class ConsumerGroup(Base):
+    def __init__(self, id, name, description, consumerids = []):
+        self._id = id
+        self.id = id
+        self.name = name
+        self.description = description
+        self.consumerids = consumerids
