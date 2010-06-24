@@ -23,6 +23,7 @@ Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-qpid
+Requires: python-simplejson
 Requires: grinder
 Requires: httpd
 Requires: mod_wsgi
