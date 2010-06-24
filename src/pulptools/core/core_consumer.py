@@ -27,6 +27,7 @@ from pulptools.repolib import RepoLib
 from pulptools.logutil import getLogger
 from pulptools.config import Config
 from pulptools.package_profile import PackageProfile
+import urlparse
 log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
@@ -43,7 +44,7 @@ class consumer(BaseCore):
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.actions = {"register"      : "Register this system as a consumer", 
                         "unregister"    : "Delete a consumer", 
-                        "info"          : "Registered consumer information",
+                        "list"          : "List of accessible consumer info",
                         "bind"          : "Bind the consumer to listed repos",
                         "unbind"        : "UnBind the consumer from repos",}
         self.name = "consumer"
@@ -97,9 +98,9 @@ class consumer(BaseCore):
                            help="Repo Identifier")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
-        if self.action == "info":
-            usage = "usage: %prog consumer info [OPTIONS]"
-            BaseCore.__init__(self, "consumer info", usage, "", "")
+        if self.action == "list":
+            usage = "usage: %prog consumer list [OPTIONS]"
+            BaseCore.__init__(self, "consumer list", usage, "", "")
         if self.action == "unregister":
             usage = "usage: %prog consumer unregister [OPTIONS]"
             BaseCore.__init__(self, "consumer unregister", usage, "", "")
@@ -120,8 +121,8 @@ class consumer(BaseCore):
         self._validate_options()
         if self.action == "register":
             self._create()
-        if self.action == "info":
-            self._info()
+        if self.action == "list":
+            self._list()
         if self.action == "unregister":
             self._delete()
         if self.action == "bind":
@@ -145,6 +146,7 @@ class consumer(BaseCore):
             print consumer
             utils.writeToFile(CONSUMERID, consumer['id'])
             pkginfo = PackageProfile().getPackageList()
+            print pkginfo
             self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
@@ -162,10 +164,30 @@ class consumer(BaseCore):
             pkgs = " "
             for pkg in cons['package_profile'].values():
                 for pkgversion in pkg:
-                    pkgs += " " + pkgversion['fileName']
+                    pkgs += " " + utils.getRpmName(pkgversion)
             cons['package_profile'] = pkgs
             columns = ["id", "description", "repoids", "package_profile"]
             data = [ _sub_dict(cons, columns)]# for con in cons]
+            print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
+            for con in data:
+                print constants.AVAILABLE_CONSUMER_INFO % \
+                        (con["id"], con["description"], con["repoids"], con["package_profile"])
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+        
+    def _list(self):
+        (self.options, self.args) = self.parser.parse_args()
+        try:
+            cons = self.cconn.consumers()
+            baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
+            for con in cons: 
+                con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile']['href'])
+            columns = ["id", "description", "repoids", "package_profile"]
+            data = [ _sub_dict(con, columns) for con in cons]
             print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
             for con in data:
                 print constants.AVAILABLE_CONSUMER_INFO % \
