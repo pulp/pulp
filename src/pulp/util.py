@@ -98,6 +98,24 @@ def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=N
         f.close()
     return m.hexdigest()
 
+def get_string_checksum(hashtype, data):
+    """
+    Return checksum of a string
+    @param hashtype: hashtype, example "sha256"
+    @param data: string to get checksum
+    @return: checksum
+    """
+    m = hashlib.new(hashtype)
+    m.update(data)
+    return m.hexdigest()
+
+def get_file_timestamp(filename):
+    """
+    Returns a timestamp
+    @param: filename path to file
+    @return filename's timestamp
+    """
+    return int(os.stat(filename).st_mtime)
 
 def listdir(directory):
     directory = os.path.abspath(os.path.normpath(directory))

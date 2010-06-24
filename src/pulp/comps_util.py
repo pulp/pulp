@@ -15,7 +15,9 @@
 
 
 # Python
+import os
 import logging
+import xml.dom
 
 # 3rd Party
 import yum.comps
@@ -121,3 +123,72 @@ def form_comps_xml(ctgs, grps):
         newComps.add_group(pkggrp)
     return newComps.xml()
 
+
+
+def update_repomd_xml_string(repomd_xml, compsxml_checksum,
+        compsxml_timestamp, compsxml_gz_checksum=None,
+        open_compsxml_gz_checksum=None, compsxml_gz_timestamp=None):
+    """
+    Accept input xml string of repomd data and update it with new comps info
+    @param repomd_xml: string repomd_xml
+    @param compsxml_checksum: checksum of compsxml file
+    @param compsxml_timstamp: timestamp of compsxml file
+    @param compsxml_gz_checksum: checksum of compsxml gzipped file
+    @param open_compsxml_gz_checksum: checksum of compsxml gzipped file uncompressed
+    @param compsxml_gz_timstamp: timestamp of compsxml gzipped file
+    """
+    dom = xml.dom.minidom.parseString(repomd_xml)
+    # Consider an xpath search for data type=group
+    # If no group info is present, then we need to create it.
+    for data in dom.getElementsByTagName('data'):
+        if data.getAttribute("type") == "group":
+            elem = data.getElementsByTagName("checksum")[0]
+            elem.childNodes[0].data = compsxml_checksum
+            elem = data.getElementsByTagName("timestamp")[0]
+            elem.childNodes[0].data = compsxml_timestamp
+        elif data.getAttribute("type") == "group_gz" and \
+                (compsxml_gz_checksum != None and \
+                        open_compsxml_gz_checksum != None and \
+                        compsxml_gz_timestamp != None):
+            elem = data.getElementsByTagName("checksum")[0]
+            elem.childNodes[0].data = compsxml_gz_checksum
+            elem = data.getElementsByTagName("open-checksum")[0]
+            elem.childNodes[0].data = open_compsxml_gz_checksum
+            elem = data.getElementsByTagName("timestamp")[0]
+            elem.childNodes[0].data = compsxml_gz_timestamp
+    return dom.toxml()
+
+
+def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
+    """
+    Update the repomd.xml with the checksum info for comps_path
+    @param repomd_path: repomd.xml file path
+    @param comps_path:  comps.xml file path
+    @return: True if repomd_path has been updated, False otherwise
+    """
+    # get sha256 of comps
+    # gzip comps to gz and get sha256
+    compsxml_checksum = pulp.util.get_file_checksum(hashtype="sha256",
+            filename=comps_path)
+    compsxml_timestamp = pulp.util.get_file_timestamp(comps_path)
+    compsxml_gz_checksum = None
+    open_compsxml_gz_checksum = None
+    compsxml_gz_timestamp = None
+    if comps_gz_path:
+        compsxml_gz_checksum = pulp.util.get_file_checksum(hashtype="sha256",
+                filename=comps_gz_path)
+        compsxml_gz_timestamp = pulp.util.get_file_timestamp(comps_gz_path)
+        uncompressed = gzip.open(comps_gz_path, 'r').read()
+        open_compsxml_gz_checksum = pulp.util.get_string_checksum(hashtype="sha256",
+                filename=uncompressed)
+    try:
+        repomd = open(repomd_path, "r").read()
+        updated_xml = update_repomd_xml_string(repomd,
+                compsxml_checksum, compsxml_timestamp,
+                compsxml_gz_checksum, open_compsxml_gz_checksum,
+                compsxml_gz_timestamp)
+    except xml.dom.DOMException, e:
+        log.error(e)
+        log.error("Unable to update group info for %s" % (repomd_path))
+        return False
+    return True
