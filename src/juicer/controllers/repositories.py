@@ -136,7 +136,7 @@ class RepositoryActions(AsyncController):
         task_info = self.start_task(API.sync, id)
         return self.accepted(task_info)
        
-    def upload(self, id, pkg_data):
+    def upload(self, id):
         """
         Upload a package to a repository.
         @param id: repository id
