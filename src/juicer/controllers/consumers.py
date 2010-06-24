@@ -146,7 +146,7 @@ class ConsumerActions(JSONController):
         Install packages.
         Body contains a list of package names.
         """
-        data = self.input()
+        data = self.params()
         names = data.get('packagenames', [])
         return self.ok(API.installpackages(id, names))
     
