@@ -68,7 +68,7 @@ class ConsumerApi(BaseApi):
         consumers = list(self.objectdb.find({},['id', 'description', 'repoids']))
         munged = [] 
         for c in consumers:
-            link = '/consumers/%s/packages' % c['id']
+            link = '/consumers/%s/packages/' % c['id']
             c['package_profile'] = {'href': link}
             munged.append(c)
         return munged
