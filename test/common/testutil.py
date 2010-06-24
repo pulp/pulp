@@ -36,9 +36,13 @@ def create_package(api, name):
     test_checksum_type = "sha256"
     test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
     test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
-    p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
+    p = api.package_by_ivera(name, test_version, test_epoch, test_release, test_arch)
+    if (p == None):    
+        p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
             release=test_release, arch=test_arch, description=test_description, 
             checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-    lookedUp = api.package(p['id'])
-    return lookedUp
+        lookedUp = api.package(p['id'])
+        return lookedUp
+    else:
+        return p
     

@@ -209,7 +209,7 @@ def generatePakageProfile(rpmHeaderList):
             'name'          : h['name'],
             'version'       : h['version'],
             'release'       : h['release'],
-            'epoch'         : h['epoch'] or "",
+            'epoch'         : h['epoch'] or 0,
             'arch'          : h['arch'],
         }
         if not pkgList.has_key(h['name']):

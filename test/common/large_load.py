@@ -85,7 +85,7 @@ class LargeLoad(unittest.TestCase):
             'epoch'         : package['epoch'] or "",
             'arch'          : package['arch'],
         }
-        profile[package['name']] = info
+        profile[package['name']] = [info]
         
     
     def create_consumers(self):
@@ -99,8 +99,7 @@ class LargeLoad(unittest.TestCase):
             c = Consumer(random_string(), random_string())
             packages = repo['packages']
             packageProfile = generatePakageProfile(packages.values())
-            #for p in packages.values():
-            #    self.add_package(c, p)
+            c['package_profile'] = packageProfile
             if (i % 100 == 0):
                 print "created [%s] consumers" % i
                 # c.packageids.append(randomPackage['id'])
@@ -122,12 +121,12 @@ class LargeLoad(unittest.TestCase):
         # When we initially were storing the entire package in the 
         # consumer object this call would blow out all the ram on a 8GB box
         consumers = self.capi.consumers()
+        print "consumers!"
         c = consumers[0]
-        assert(len(consumers) == self.numconsumers)
+        # assert(len(consumers) == self.numconsumers)
         packages = self.capi.packages(c['id'])
-        print "Packages! %s" % packages
         randomPackageName = random.choice(packages.keys())
-        randomPackage = packages[randomPackageName]
+        randomPackage = packages[randomPackageName][0]
         p = ll.papi.package_by_ivera(randomPackage['name'],
                                      randomPackage['version'],
                                      randomPackage['epoch'],
@@ -150,10 +149,15 @@ parser.add_option('--numconsumers', dest='numconsumers',
 
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
 parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp/pulp.ini")
+parser.add_option('--skiprepos', dest='skiprepos', action='store_true', help='Skip repo imports')
+parser.add_option('--skipclean', dest='skipclean', action='store_true', help='Skip clean')
+
 cmdoptions, args = parser.parse_args()
 dirlist = cmdoptions.dirlist
 clean = cmdoptions.clean
 numconsumers = int(cmdoptions.numconsumers)
+skiprepos = cmdoptions.skiprepos
+skipclean = cmdoptions.skipclean
 print "Attempting to load configuration from: %s" % (cmdoptions.config)
 config = pulp.util.load_config(cmdoptions.config)
 
@@ -174,12 +178,15 @@ console.setLevel(logging.DEBUG)
 ## Start timing
 start = time.time()
 ll = LargeLoad(dirlist, numconsumers, config)
-ll.clean()
+if (not skipclean):
+    ll.clean()
 cleanTime = time.time() - start 
 
 start = time.time()
-numrepos = ll.create_repos()
+if (not skiprepos):
+    ll.create_repos()
 repos = ll.rapi.repositories()
+numrepos = len(repos)
 packages = ll.papi.packages()
 repoTime = time.time() - start
 
