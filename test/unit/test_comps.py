@@ -166,7 +166,7 @@ class TestComps(unittest.TestCase):
         modify the entries, then write them out to XML
         """
         # Parse existing comps.xml
-        compsPath = "./data/rhel-i386-server-5/comps.xml"
+        compsPath = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
         comps = yum.comps.Comps()
         comps.add(compsPath)
         self.assertTrue(len(comps.get_groups()) != 0)
