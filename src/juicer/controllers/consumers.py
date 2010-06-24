@@ -62,6 +62,16 @@ class Consumers(JSONController):
         API.clean()
         return self.ok(True)
 
+class Packages(JSONController):
+    
+    def GET(self, id):
+        """
+        Get a consumer's set of packages
+        @param id: consumer id
+        @return: consumer's installed packages
+        """
+        return self.ok(API.packages(id))
+    
  
 class Consumer(JSONController):
 
@@ -149,15 +159,7 @@ class ConsumerActions(JSONController):
         data = self.params()
         names = data.get('packagenames', [])
         return self.ok(API.installpackages(id, names))
-    
-    def packages(self, id):
-        """
-        Get a consumer's set of packages
-        @param id: consumer id
-        @return: consumer's installed packages
-        """
-        return self.ok(API.packages(id))
-    
+        
     @JSONController.error_handler
     def POST(self, id, action_name):
         """
@@ -178,6 +180,7 @@ URLS = (
     '/$', 'Consumers',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
+    '/([^/]+)/packages/$', 'Packages',
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions), 'ConsumerActions',
 )
 
