@@ -19,9 +19,13 @@
 Agent base classes.
 """
 
+from pmf import *
 from pmf import decorators
 from pmf.dispatcher import Dispatcher
+from qpid.util import connect
+from qpid.connection import Connection
 from qpid.datatypes import RangedSet
+from time import sleep
 
 class Agent:
     """
@@ -45,11 +49,58 @@ class Agent:
 
 class Endpoint:
     """
-    Base clase for qpid endpoint.
+    Base class for qpid endpoint.
     """
     
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, id=getuuid(), host='localhost', port=5672):
+        """
+        @param host: The fqdn or IP of the QPID broker.
+        @type host: str
+        @param port: The port of the QPID broker.
+        @type port: short
+        """
+        self.id = id
+        self.host = host
+        self.port = port
+        self.connection = None
+        self.session = None
+        self.connect()
+        self.open()
+
+    def connect(self):
+        """
+        Connection to the broker.
+        @return: The connection.
+        @rtype: L{Connection}
+        """
+        while True:
+            try:
+                socket = connect(self.host, self.port)
+                connection = Connection(sock=socket)
+                connection.start()
+                self.connection = connection
+                return connection
+            except Exception, e:
+                if self.mustconnect():
+                    sleep(3)
+                else:
+                    raise e
+
+    def open(self):
+        """
+        Open and configure the endpoint.
+        """
+        pass
+
+    def mustconnect(self):
+        """
+        Get whether the endpoint must connect.
+        When true, calls to connect() will block until a connection
+        can be successfully made.
+        @return: True/False
+        @rtype: bool
+        """
+        return False
 
     def acceptmessage(self, id):
         """

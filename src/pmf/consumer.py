@@ -22,9 +22,8 @@ Provides AMQP message consumer classes.
 from pmf import *
 from pmf.base import Endpoint
 from pmf.envelope import Envelope
-from qpid.util import connect
-from qpid.connection import Connection
-from qpid.datatypes import Message, RangedSet
+from qpid.datatypes import Message
+from qpid.exceptions import Closed
 from qpid.queue import Empty
 
 class Consumer(Endpoint):
@@ -36,27 +35,28 @@ class Consumer(Endpoint):
     @type session: L{qpid.Session}
     """
 
-    def __init__(self, id, host='localhost', port=5672):
+    def open(self):
         """
-        @param host: The fqdn or IP of the QPID broker.
-        @type host: str
-        @param port: The port of the QPID broker.
-        @type port: short
+        Open and configure the consumer.
+          - Open the session.
+          - Declare the queue.
+          - Bind the queue to an exchange.
+          - Subscribe to the queue.
         """
-        socket = connect(host, port)
-        connection = Connection(sock=socket)
-        connection.start()
         sid = getuuid()
-        session = connection.session(sid)
-        session.queue_declare(queue=id, exclusive=True)
+        session = self.connection.session(sid)
+        session.queue_declare(queue=self.id, exclusive=True)
         session.exchange_bind(
             exchange='amq.match',
-            queue=id,
-            binding_key=id,
-            arguments={'x-match':'any','consumerid':id})
-        session.message_subscribe(queue=id, destination=id)
-        self.queue = session.incoming(id)
-        Endpoint.__init__(self, session)
+            queue=self.id,
+            binding_key=self.id,
+            arguments={'x-match':'any','consumerid':self.id})
+        session.message_subscribe(queue=self.id, destination=self.id)
+        self.session = session
+        self.queue = session.incoming(self.id)
+
+    def mustconnect(self):
+        return True
 
     def start(self, dispatcher):
         """
@@ -78,6 +78,9 @@ class Consumer(Endpoint):
                 result = dispatcher.dispatch(content)
                 self.__respond(envelope, result)
                 self.acceptmessage(message.id)
+            except Closed:
+                self.connect()
+                self.open()
             except Empty:
                 pass
 

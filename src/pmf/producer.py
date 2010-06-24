@@ -42,20 +42,16 @@ class Producer(Endpoint):
     @type session: L{qpid.Session}
     """
 
-    def __init__(self, consumerid, host='localhost', port=5672):
+    def open(self):
         """
-        @param consumerid: The (target) consumer ID.
-        @type consumerid: str
-        @param host: The fqdn or IP of the QPID broker.
-        @type host: str
-        @param port: The port of the QPID broker.
-        @type port: short
+        Open and configure the producer.
+          - Open the session.
+          - Declare the reply queue.
+          - Bind the queue to an exchange.
+          - Subscribe to the queue.
         """
         sid = getuuid()
-        socket = connect(host, port)
-        connection = Connection(sock=socket)
-        connection.start()
-        session = connection.session(sid)
+        session = self.connection.session(sid)
         session.queue_declare(queue=sid, exclusive=True)
         session.exchange_bind(
             exchange="amq.direct",
@@ -64,10 +60,10 @@ class Producer(Endpoint):
         session.message_subscribe(queue=sid, destination=sid)
         queue = session.incoming(sid)
         queue.start()
-        self.consumerid = consumerid
         self.sid = sid
+        self.consumerid = self.id
+        self.session = session
         self.queue = queue
-        Endpoint.__init__(self, session)
 
     def send(self, content, sync=True):
         """
