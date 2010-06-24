@@ -116,6 +116,7 @@ class RepositoryActions(AsyncController):
         'sync',
         'upload',
         'add_package',
+        'get_package',
     )
 
     def list(self, id):
@@ -155,6 +156,17 @@ class RepositoryActions(AsyncController):
         data = self.params()
         API.add_package(id, data['packageid'])
         return self.ok(True)
+    
+    def get_package(self, id):
+        """
+        Get package info from a repository.
+        @param id: repository id
+        @param name: repository name
+        @return: matched package object available in corresponding repository
+        """
+        name = self.params()
+        return self.ok(API.package_by_name(id, name))
+
     
     @JSONController.error_handler
     def POST(self, id, action_name):

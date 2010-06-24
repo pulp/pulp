@@ -155,10 +155,9 @@ class RepoConnection(PulpConnection):
         print "Add info: %s" % addinfo
         return self.conn.request_post(method, params=addinfo)
     
-    # XXX no supporting server-side call
     def get_package(self, repoid, pkg_name):
-        method = "/repositories/%s/package/%s/" % (repoid, pkg_name)
-        return self.conn.request_get(method)
+        method = "/repositories/%s/get_package/" % repoid
+        return self.conn.request_post(method, params=pkg_name)
 
     def packages(self, repoid):
         method = "/repositories/%s/list/" % repoid
