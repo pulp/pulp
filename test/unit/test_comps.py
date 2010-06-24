@@ -98,6 +98,32 @@ class TestComps(unittest.TestCase):
         self.assertTrue("groupid1" in found["packagegroupids"])
 
 
+    def test_remove_group_category(self):
+        repo = self.rapi.create('test_remove_group_category',
+                'test_remove_group_category', 'i386',
+                'yum:http://example.com/')
+        # Parse existing comps.xml
+        compspath = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
+        compsfile = open(compspath)
+        base = BaseSynchronizer(self.config)
+        base.import_groups_data(compsfile, repo)
+        # 'repo' object should now contain groups/categories
+        # we need to save it to the db so we can query from it
+        self.rapi.update(repo)
+        # Testing for expected values
+        found = self.rapi.packagegroup(repo['id'], "web-server")
+        self.assertTrue(found != None)
+        found = self.rapi.packagegroupcategory(repo['id'], "development")
+        self.assertTrue(found != None)
+        # Test Removal
+        self.rapi.remove_packagegroup(repo['id'], "web-server")
+        found = self.rapi.packagegroup(repo['id'], "web-server")
+        self.assertTrue(found == None)
+        self.rapi.remove_packagegroupcategory(repo['id'], "development")
+        found = self.rapi.packagegroupcategory(repo['id'], "development")
+        self.assertTrue(found == None)
+
+
     def test_model_group_to_yum_group(self):
         """
         Test translation of model.PackageGroup to yum.comps.Group
@@ -192,13 +218,6 @@ class TestComps(unittest.TestCase):
         found = self.rapi.packagegroupcategory(repo['id'], "development")
         self.assertTrue(found != None)
 
-        # Test Removal
-        #self.rapi.remove_packagegroup(repo['id'], "web-server")
-        #found = self.rapi.packagegroup(repo['id'], "web-server")
-        #self.assertTrue(found == None)
-        #self.rapi.remove_packagegroupcategory(repo['id'], "development")
-        #found = self.rapi.packagegroupcategory(repo['id'], "development")
-        #self.assertTrue(found == None)
 
         # Look up groups/categories from repo api
         ctgs = self.rapi.packagegroupcategories(repo["id"])
