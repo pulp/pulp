@@ -272,13 +272,15 @@ class TestComps(unittest.TestCase):
         os.unlink(f_name)
 
     def test_update_repomd_xml_file(self):
-        return # not yet complete
-        # Goal of this test is to ensure we can update repomd.xml with the
-        # checksum and timestamp of an updated comps.xml
+        """
+        Update repomd.xml with a newer comps.xml
+        """
         comps_path = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
         repomd_path = os.path.join(self.dataPath, "rhel-i386-server-5/repomd.xml")
+        # In case the test fails, we want the temp files left over for debugging
         f_comps = tempfile.NamedTemporaryFile(delete=False)
         f_repomd = tempfile.NamedTemporaryFile(delete=False)
+        f_repomd.close()
         tmp_comps_path = f_comps.name
         tmp_repomd_path = f_repomd.name
         log.debug("test_update_repomdxml_file temp comps.xml = %s, temp repomd.xml = %s" % \
@@ -287,22 +289,24 @@ class TestComps(unittest.TestCase):
         shutil.copy(repomd_path, tmp_repomd_path)
         # Modify temp comps.xml so we know the sha256 is different
         dom = xml.dom.minidom.parse(comps_path)
-        log.debug("TEST BEFORE = %s" % (dom.getElementsByTagName("id")[0].childNodes[0].data))
         dom.getElementsByTagName("id")[0].childNodes[0].data = "MODIFIED %s" % (time.time())
-        log.debug("TEST AFTER = %s" % (dom.getElementsByTagName("id")[0].childNodes[0].data))
         f_comps.write(dom.toxml().encode("UTF-8"))
         f_comps.close()
+        # Update repomd.xml with our newer comps.xml
         pulp.comps_util.update_repomd_xml_file(tmp_repomd_path, tmp_comps_path)
         dom = xml.dom.minidom.parse(tmp_repomd_path)
         # Checksum test
-        elem = dom.getElementsByTagName("group")[0].getElementsByTagName("checksum")[0]
-        actualChecksum = elem.childNodes[0].data
-        expectedChecksum = pulp.util.get_file_checksum(hashtype="sha256", filename=tmp_repomd_path)
+        group_elems = filter(lambda x: x.getAttribute("type") == "group", dom.getElementsByTagName("data"))
+        self.assertTrue(len(group_elems) == 1)
+        checksum_elems = group_elems[0].getElementsByTagName("checksum")
+        self.assertTrue(len(checksum_elems) == 1)
+        actualChecksum = checksum_elems[0].childNodes[0].data
+        expectedChecksum = pulp.util.get_file_checksum(hashtype="sha256", filename=tmp_comps_path)
         self.assertTrue(actualChecksum == expectedChecksum)
         # Timestamp test
-        elem = dom.getElementsByTagName("group")[0].getElementsByTagName("timestamp")[0]
-        actualTimestamp = elem.childNodes[0].data
+        timestamp_elems = group_elems[0].getElementsByTagName("timestamp")
+        actualTimestamp = timestamp_elems[0].childNodes[0].data
         expectedTimestamp = pulp.util.get_file_timestamp(tmp_repomd_path)
         self.assertTrue(actualTimestamp, expectedTimestamp)
-        os.unlink(f_repomd)
-        os.unlink(f_comps)
+        os.unlink(tmp_repomd_path)
+        os.unlink(tmp_comps_path)
