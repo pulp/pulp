@@ -105,7 +105,7 @@ class JSONController(object):
         new_results = []
         for result in results:
             is_good = True
-            for filter, criteria in filters:
+            for filter, criteria in filters.items():
                 if valid_filters is not None and filter not in valid_filters:
                     continue
                 if result[filter] not in criteria:

@@ -106,7 +106,7 @@ class RepositoryDeferredFields(JSONController):
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        packages = API.packages(id)
+        packages = API.packages(id).values()
         filtered_packages = self.filter_results(packages, filters, valid_filters)
         return self.ok(filtered_packages)
     
