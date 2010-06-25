@@ -30,14 +30,16 @@ class ConsumerApi(BaseApi):
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
-        # INDEXES
-        self.objectdb.ensure_index([("packageids", pymongo.DESCENDING)])
-
 
     def _getcollection(self):
         return self.db.consumers
 
-    
+    def _get_unique_indexes(self):
+        return ["id"]
+
+    def _get_indexes(self):
+        return ["package_profile", "repoids"]
+
     def create(self, id, description):
         """
         Create a new Consumer object and return it
@@ -53,11 +55,11 @@ class ConsumerApi(BaseApi):
         ## Have to chunk this because of issue with PyMongo and network
         ## See: http://tinyurl.com/2eyumnc
         #chunksize = 500
-        chunksize = 100
+        chunksize = 50
         chunked = chunks(consumers, chunksize)
         inserted = 0
         for chunk in chunked:
-            self.insert(chunk, check_keys=False)
+            self.objectdb.insert(chunk, check_keys=False, safe=False)
             inserted = inserted + chunksize
             print "Inserted: %s" % inserted
 

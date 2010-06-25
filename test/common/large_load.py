@@ -94,22 +94,24 @@ class LargeLoad(unittest.TestCase):
         repos = self.rapi.repositories()
         consumers = []
         randomPackage = create_package(self.papi, TEST_PACKAGE_ID)
+        repo = random.choice(repos) 
+        packages = repo['packages']
+        packageProfile = generatePakageProfile(packages.values())
         for i in range(self.numconsumers):
-            repo = random.choice(repos)
             c = Consumer(random_string(), random_string())
-            packages = repo['packages']
-            packageProfile = generatePakageProfile(packages.values())
+            start = time.time()
             c['package_profile'] = packageProfile
             if (i % 100 == 0):
-                print "created [%s] consumers" % i
-                # c.packageids.append(randomPackage['id'])
-                # c.packages.append(randomPackage)
                 self.add_package(c, randomPackage)
             last_desc = c.description
             last_id = c.id
             consumers.append(c)
-        print "BULK INSERTING size: %s" % str(sys.getsizeof(consumers))
-        
+            if (i % 100 == 0):
+                repo = random.choice(repos) 
+                packages = repo['packages']
+                packageProfile = generatePakageProfile(packages.values())
+                
+        print "BULK INSERTING length: %s" % len(consumers)
         self.capi.bulkcreate(consumers)
         print "Done bulk inserting"
         
@@ -127,6 +129,7 @@ class LargeLoad(unittest.TestCase):
         packages = self.capi.packages(c['id'])
         randomPackageName = random.choice(packages.keys())
         randomPackage = packages[randomPackageName][0]
+        print "Random package %s" % randomPackage
         p = ll.papi.package_by_ivera(randomPackage['name'],
                                      randomPackage['version'],
                                      randomPackage['epoch'],
@@ -135,7 +138,6 @@ class LargeLoad(unittest.TestCase):
         assert(p != None)
         c2 = self.capi.consumer(last_id)
         assert(c2 != None)
-        
         print "Searching for all consumers with %s package id" % TEST_PACKAGE_ID
         cwithp = ll.capi.consumers_with_package_name(TEST_PACKAGE_ID)
         print "Found [%s] consumers with packageid: [%s]" % (len(cwithp), TEST_PACKAGE_ID)

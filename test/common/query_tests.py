@@ -22,8 +22,7 @@ capi = ConsumerApi(dict())
 papi = PackageApi(dict())
 rapi = RepoApi(dict())
 
-print "listing all consumers"
-# consumers = capi.consumers()
+print "finding one consumer"
 c = capi.objectdb.find_one()
 
 start = time.time()
@@ -31,7 +30,9 @@ found = capi.consumer(c['id'])
 cFindTime = time.time() - start
 
 start = time.time()
+print "finding consumers with package installed"
 clist = capi.consumers_with_package_name(TEST_PACKAGE_ID)
+clist = [found]
 packageFindTime = time.time() - start
 
 consumerWithPackage = random.choice(clist)
