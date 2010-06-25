@@ -42,7 +42,8 @@ class Repo(Base):
         self.packages = dict()
         self.packagegroups = dict()
         self.packagegroupcategories = dict()
-        self.comps_xml_path = "" 
+        self.repomd_xml_path = ""
+        self.group_xml_path = ""
         self.sync_schedule = None
         self.use_symlinks = None
         

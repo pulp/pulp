@@ -23,6 +23,9 @@ import string
 import random
 import fnmatch
 import sys
+import yum
+import time
+
 try:
     import hashlib
 except:
@@ -116,6 +119,41 @@ def get_file_timestamp(filename):
     @return filename's timestamp
     """
     return int(os.stat(filename).st_mtime)
+
+
+def _get_yum_repomd(path):
+    """
+    @param path: path to repo
+    @return yum.yumRepo.YumRepository object initialized for querying repodata
+    """
+    r = yum.yumRepo.YumRepository("temp_repo-%s" % (time.time()))
+    r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
+    r.basecachedir = path.encode("ascii", "ignore")
+    r.baseurlSetup()
+    return r
+
+def get_repomd_filetypes(path):
+    """
+    @param path: path to repo
+    @return: List of available metadata types
+    """
+    r = _get_yum_repomd(path)
+    if not r:
+        return []
+    return r.repoXML.fileTypes()
+
+def get_repomd_filetype_path(path, filetype):
+    """
+    @param path: path to repo
+    @param filetype: metadata type to query, example "group", "primary", etc
+    @return: Path relative to repodata for filetype, or None
+    """
+    r = _get_yum_repomd(path)
+    if not r:
+        return None
+    if filetype not in r.repoXML.fileTypes():
+        return None
+    return r.retrieveMD(filetype)
 
 def listdir(directory):
     directory = os.path.abspath(os.path.normpath(directory))

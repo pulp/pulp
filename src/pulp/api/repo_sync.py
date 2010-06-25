@@ -20,6 +20,7 @@ import os
 import time
 import traceback
 import shutil
+import yum
 from urlparse import urlparse
 
 # 3rd Party
@@ -32,6 +33,7 @@ from grinder.RHNSync import RHNSync
 from pulp import model
 from pulp.api.package import PackageApi
 from pulp.pexceptions import PulpException
+import pulp.comps_util
 import pulp.upload
 import pulp.util
 
@@ -126,19 +128,22 @@ class BaseSynchronizer(object):
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" % 
                 (repo['id'], len(added_packages), endTime - startTime))
-        # TODO: Parse repomd.xml and lookup name for groups element
-        compsfile = None
-        compspath = os.path.join(dir, 'repodata/comps.xml')
-        if os.path.isfile(compspath):
-            compsfile = open(compspath, "r")
-        else:
-            compspath = os.path.join(dir, 'repodata/comps.xml.gz')
-            if os.path.isfile(compspath):
-                compsfile = gzip.open(compspath, 'r')
-        if compsfile:
-            repo['comps_xml_path'] = compspath
-            self.import_groups_data(compsfile, repo)
-            log.debug("Loaded comps info from %s" % (compspath))
+        # Import groups metadata if present
+        repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
+        if os.path.isfile(repomd_xml_path):
+            repo["repomd_xml_path"] = repomd_xml_path
+            ftypes = pulp.util.get_repomd_filetypes(dir)
+            log.debug("repodata has filetypes of %s" % (ftypes))
+            if "group" in ftypes:
+                group_xml_path = pulp.util.get_repomd_filetype_path(dir, "group")
+                log.debug("group info is located at %s" % (group_xml_path))
+                if os.path.isfile(group_xml_path):
+                    groupfile = open(group_xml_path, "r")
+                    repo['group_xml_path'] = group_xml_path
+                    self.import_groups_data(groupfile, repo)
+                    log.debug("Loaded group info from %s" % (group_xml_path))
+            else:
+                log.debug("Skipping group import, no group info present in repodata")
         return added_packages
 
     def import_package(self, pkg_path, repo):
@@ -181,7 +186,6 @@ class BaseSynchronizer(object):
         Reads a comps.xml or comps.xml.gz under repodata from dir
         Loads PackageGroup and Category info our db
         """
-        log.debug("compsfile = %s, repo = %s" % (compsfile, repo["id"]))
         try:
             comps = yum.comps.Comps()
             comps.add(compsfile)
@@ -192,7 +196,7 @@ class BaseSynchronizer(object):
                 grp = pulp.comps_util.yum_group_to_model_group(g)             
                 repo['packagegroups'][grp['id']] = grp
         except yum.Errors.CompsException:
-            log.error("Unable to parse comps info for %s" % (compsfile))
+            log.error("Unable to parse group info for %s" % (compsfile))
             return False
         return True
     
