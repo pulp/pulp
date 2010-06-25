@@ -40,7 +40,8 @@ class consumergroup(BaseCore):
 
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.actions = {"create" : "Create a consumer group",
-                        "update" : "Update a consumer group",
+                        "add_consumer" : "Add a consumer to the group",
+                        "remove_consumer" : "Remove a consumer from the group",
                         "list"   : "List available consumer groups",
                         "delete" : "Delete a consumer group",}
 
@@ -88,6 +89,20 @@ class consumergroup(BaseCore):
         if self.action == "list":
             usage = "usage: %prog consumergroup list [OPTIONS]"
             BaseCore.__init__(self, "consumergroup list", usage, "", "")
+        if self.action == "add_consumer":
+            usage = "usage: %prog consumergroup add_consumer [OPTIONS]"
+            BaseCore.__init__(self, "consumergroup add_consumer", usage, "", "")
+            self.parser.add_option("--consumerid", dest="consumerid",
+                           help="Consumer Identifier")
+            self.parser.add_option("--groupid", dest="groupid",
+                           help="Consumer Group Identifier")
+        if self.action == "delete_consumer":
+            usage = "usage: %prog consumergroup remove_consumer [OPTIONS]"
+            BaseCore.__init__(self, "consumergroup remove_consumer", usage, "", "")
+            self.parser.add_option("--consumerid", dest="consumerid",
+                           help="Consumer Identifier")
+            self.parser.add_option("--groupid", dest="groupid",
+                           help="Consumer Group Identifier")
 
     def _validate_options(self):
         pass
@@ -109,6 +124,10 @@ class consumergroup(BaseCore):
             self._list()
         if self.action == "delete":
             self._delete()
+        if self.action == "add_consumer":
+            self._add_consumer()
+        if self.action == "remove_consumer":
+            self._remove_consumer()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -173,6 +192,43 @@ class consumergroup(BaseCore):
                   self.options.id)
             log.error("Error: %s" % e)
             sys.exit(-1)
+
+
+    def _add_consumer(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.consumerid:
+            print("consumer id required. Try --help")
+            sys.exit(0)
+        if not self.options.groupid:
+            print("group id required. Try --help")
+            sys.exit(0)
+        try:
+            self.cgconn.add_consumer(self.options.groupid, self.options.consumerid)
+            print _(" Successfully added Consumer [%s] to Group [%s]" % (self.options.consumerid, self.options.groupid))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _remove_consumer(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.consumerid:
+            print("consumer id required. Try --help")
+            sys.exit(0)
+        if not self.options.groupid:
+            print("group id required. Try --help")
+            sys.exit(0)
+        try:
+            self.cgconn.remove_consumer(self.options.groupid, self.options.consumerid)
+            print _(" Successfully deleted Consumer [%s] from Group [%s]" % (self.options.consumerid, self.options.groupid))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
 
 
 def _sub_dict(datadict, subkeys, default=None) :

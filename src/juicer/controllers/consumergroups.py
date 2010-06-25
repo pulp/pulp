@@ -88,12 +88,55 @@ class ConsumerGroup(JSONController):
         API.delete(id=id)
         return self.ok(True)
 
+class ConsumerGroupActions(JSONController):
+
+    # See juicer.repositories.RepositoryActions for design
+
+    exposed_actions = (
+        'add',
+        'remove',
+    )
+
+    def add(self, id):
+        """
+        Add a consumer to the group.
+        @param id: consumer group id
+        """
+        data = self.params()
+        API.add_consumer(id, data)
+        return self.ok(True)
+
+    def remove(self, id):
+        """
+        Remove a consumer from the group.
+        @param id: consumer group id
+        """
+        data = self.params()
+        API.delete_consumer(id, data)
+        return self.ok(None)
+
+    @JSONController.error_handler
+    def POST(self, id, action_name):
+        """
+        Consumer action dispatcher
+        @type id: str
+        @param id: controller id
+        @type action_name: str
+        @param action_name: action name
+        """
+        action = getattr(self, action_name, None)
+        if action is None:
+            return self.internal_server_error('No implementation for %s found' % action_name)
+        return action(id)
+
 
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/$', 'ConsumerGroups',
-    '/([^/]+)/$', 'ConsumerGroup'
+    '/([^/]+)/$', 'ConsumerGroup',
+    '/([^/]+)/(%s)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
+    'ConsumerGroupActions',
 )
 
 application = web.application(URLS, globals())

@@ -267,6 +267,14 @@ class ConsumerGroupConnection(PulpConnection):
         method = "/consumergroups/%s/" % str(id)
         return self.conn.request_get(method)
 
+    def add_consumer(self, id, consumerid):
+        method = "/consumergroups/%s/add/" % id
+        return self.conn.request_post(method, params=consumerid)
+
+    def remove_consumer(self, id, consumerid):
+        method = "/consumers/%s/remove/" % id
+        return self.conn.request_post(method, params=consumerid)
+
 
 class PackageConnection(PulpConnection):
 
