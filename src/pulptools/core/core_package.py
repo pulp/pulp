@@ -113,6 +113,9 @@ class package(BaseCore):
             sys.exit(0)
         try:
             pkg = self.pconn.get_package(self.options.repoid, self.options.name)
+            if not pkg:
+                print("Package [%s] not found in repo [%s]" % (self.options.name, self.options.repoid))
+                sys.exit(-1)
             print """+-------------------------------------------+\n    Package Information \n+-------------------------------------------+"""
             for key, value in pkg.items():
                 print """%s:                \t%-25s""" % (key, value)

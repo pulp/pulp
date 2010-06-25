@@ -28,6 +28,8 @@ import pulptools.constants as constants
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import RepoConnection, RestlibException
 from pulptools.logutil import getLogger
+from pulptools.config import Config
+CFG = Config()
 
 import gettext
 _ = gettext.gettext
@@ -51,7 +53,8 @@ class repo(BaseCore):
         self.username = None
         self.password = None
         self.name = "repo"
-        self.pconn = RepoConnection(host="localhost", port=8811)
+        self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
+                                    port=CFG.server.port or 8811)
         self.generate_options()
 
     def generate_options(self):

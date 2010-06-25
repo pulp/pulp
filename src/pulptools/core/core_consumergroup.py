@@ -20,14 +20,13 @@
 
 import os
 import sys
-import time
-import base64
 
-import pulptools.utils as utils
 import pulptools.constants as constants
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import ConsumerGroupConnection, RestlibException
 from pulptools.logutil import getLogger
+from pulptools.config import Config
+CFG = Config()
 
 import gettext
 _ = gettext.gettext
@@ -48,7 +47,8 @@ class consumergroup(BaseCore):
         self.username = None
         self.password = None
         self.name = "consumergroup"
-        self.cgconn = ConsumerGroupConnection(host="localhost", port=8811)
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
+                                              port=CFG.server.port or 8811)
         self.generate_options()
 
     def generate_options(self):
