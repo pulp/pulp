@@ -56,14 +56,64 @@ class JSONController(object):
     def params(self):
         """
         JSON decode the objects in the requests body and return them
+        @return: dict of parameters passed in through the body
         """
         return json.loads(web.data())
     
-    def filters(self):
+    def filters(self, valid=[]):
         """
-        Fetch any arguments passed on the url
+        Fetch any parameters passed on the url
+        @type valid: list of str's
+        @param valid: list of expected query parameters
+        @return: dict of param: [value(s)] of uri query parameters
         """
-        return web.input()
+        return http.query_parameters(valid)
+    
+    def extend_path(self, suffix):
+        """
+        Return the cuttent path with the suffix appended to it
+        @type suffix: str
+        @param suffix: path fragment to be appended to the current path
+        @return: full path with the suffix appended
+        """
+        # steps:
+        # cleanly concatenate the current path with the suffix
+        # add the application prefix
+        # all urls are paths, so need a trailing '/'
+        # make sure the path is properly encoded
+        path = os.path.normpath(os.path.join(web.ctx.path, suffix))
+        path = web.http.url(path)
+        if not path.endswith('/'):
+            path += '/'
+        return urllib.pathname2url(path)
+    
+    def filter_results(self, results, filters, valid_filters=None):
+        """
+        @type results: iterable of pulp model instances
+        @param results: results from a db query
+        @type filters: dict of str: list
+        @param filters: result filters passed in, in the uri
+        @type valid_filters: list of str's
+        @param filters: reference to check the validity of the filters
+                        None means there is no check
+        @return: list of model instances that meat the criteria in the filters
+        """
+        # XXX jconnor 2010.06.24 this should be pushed down into the db for
+        # performance and not be made available here (if possible)
+        if not filters:
+            return results
+        new_results = []
+        for result in results:
+            is_good = True
+            for filter, criteria in filters:
+                if valid_filters is not None and filter not in valid_filters:
+                    continue
+                if result[filter] not in criteria:
+                    is_good = False
+                    break
+            if is_good:
+                new_results.append(result)
+        return new_results
 
     def _output(self, data):
         """
@@ -172,12 +222,8 @@ class AsyncController(JSONController):
         """
         parts = web.ctx.path.split('/')
         if parts[-2] == id:
-            path = web.ctx.path
-        else:
-            path = os.path.normpath(os.path.join(web.ctx.path, id)) # cleanly concatenate the current path with the id
-            path = web.http.url(path)                               # add the application prefix
-            path += '/'                                             # all urls are paths, so need a trailing '/'
-        return urllib.pathname2url(path) # make sure the path is properly encoded
+            return web.ctx.path
+        return self.extend_path(id)
     
     def task_status(self, id):
         """

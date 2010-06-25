@@ -22,31 +22,35 @@ from juicer.controllers.base import JSONController
 class Index(JSONController):
     
     def GET(self):
-        return self.output(True)
+        valid_filters = ('name', 'occupation')
+        filters = self.filters(valid_filters)
+        return self.ok(filters)
     
     def HEAD(self):
         # should get through, but shouldn't return the body
-        return self.output(True)
+        return self.ok(False)
     
     def POST(self):
-        return self.output(True)
+        params = self.params()
+        return self.ok(params)
     
     def PUT(self):
-        return self.output(True)
+        params = self.params()
+        return self.created(params)
     
     def DELETE(self):
-        return self.output(True)
+        return self.ok(True)
     
     def TRACE(self):
         # should get through, but shouldn't return the body
-        return self.output(True)
+        return self.ok(True)
     
     def OPTIONS(self):
-        return self.output(True)
+        return self.ok(True)
     
     def CONNECT(self):
         # proxy-only command, most likely not supported
-        return self.output(True)
+        return self.ok(False)
     
 # web.py application ----------------------------------------------------------
 

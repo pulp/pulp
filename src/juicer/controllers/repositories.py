@@ -96,6 +96,28 @@ class Repository(JSONController):
         API.delete(id=id)
         return self.ok(True)
     
+    
+class RepositoryDeferredFields(JSONController):
+    
+    # NOTE the intersection of exposed_fields and exposed_actions must be empty
+    exposed_fields = (
+        'packages',
+    )
+    
+    def packages(self, id):
+        valid_filters = ('name', 'arch')
+        filters = self.filters(valid_filters)
+        packages = API.packages(id)
+        filtered_packages = self.filter_results(packages, filters, valid_filters)
+        return self.ok(filtered_packages)
+    
+    @JSONController.error_handler
+    def GET(self, id, field_name):
+        field = getattr(self, field_name, None)
+        if field is None:
+            return self.internal_server_error('No implementation for %s found' % field_name)
+        return field(id)
+    
 
 class RepositoryActions(AsyncController):
     
@@ -111,6 +133,7 @@ class RepositoryActions(AsyncController):
     #    the repository id. Additional parameters from the body can be
     #    fetched and de-serialized via the self.params() call.
     
+    # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
         'list',
         'sync',
@@ -230,10 +253,10 @@ class Schedules(JSONController):
 
 urls = (
     '/$', 'Repositories',
+    '/schedules/', 'Schedules',
     '/([^/]+)/$', 'Repository',
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActions',
     '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActionStatus',
-    '/schedules/', 'Schedules',
 )
 
 application = web.application(urls, globals())

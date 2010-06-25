@@ -36,7 +36,7 @@ class Consumers(JSONController):
         """
         filters = self.filters()
         if len(filters) == 1:
-            pkgname = filters.get('name')
+            pkgname = filters.get('name')[0]
             if pkgname:
                 result = API.consumers_with_package_name(pkgname)
                 return self.ok(result)
@@ -61,17 +61,15 @@ class Consumers(JSONController):
         """
         API.clean()
         return self.ok(True)
+    
 
-class Packages(JSONController):
-    
-    def GET(self, id):
-        """
-        Get a consumer's set of packages
-        @param id: consumer id
-        @return: consumer's installed packages
-        """
-        return self.ok(API.packages(id))
-    
+class Bulk(JSONController):
+    # XXX this class breaks the restful practices.... (need a better solution)
+    @JSONController.error_handler
+    def POST(self):
+        API.bulkcreate(self.params())
+        return self.ok(True)
+
  
 class Consumer(JSONController):
 
@@ -106,24 +104,43 @@ class Consumer(JSONController):
         return self.ok(True)
 
 
-class Bulk(JSONController):
-    # XXX this class breaks the restful practices.... (need a better solution)
+class ConsumerDeferredFields(JSONController):
+    
+    # NOTE the intersection of exposed_fields and exposed_actions must be empty
+    exposed_fields = (
+        'packages',
+    )
+    
+    def packages(self, id):
+        """
+        Get a consumer's set of packages
+        @param id: consumer id
+        @return: consumer's installed packages
+        """
+        valid_filters = ('name', 'arch')
+        filters = self.filters(valid_filters)
+        packages = API.packages(id)
+        filtered_packages = self.filter_results(packages, filters, valid_filters)
+        return self.ok(filtered_packages)
+    
     @JSONController.error_handler
-    def POST(self):
-        API.bulkcreate(self.params())
-        return self.ok(True)
-
+    def GET(self, id, field_name):
+        field = getattr(self, field_name, None)
+        if field is None:
+            return self.internal_server_error('No implementation for %s found' % field_name)
+        return field(id)
+    
 
 class ConsumerActions(JSONController):
     
     # See juicer.repositories.RepositoryActions for design
     
+    # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
         'bind',
         'unbind',
         'profile',
         'installpackages',
-        'packages',
     )
     
     def bind(self, id):
@@ -180,7 +197,7 @@ URLS = (
     '/$', 'Consumers',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
-    '/([^/]+)/packages/$', 'Packages',
+    '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields), 'ConsumerDeferredFields',
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions), 'ConsumerActions',
 )
 

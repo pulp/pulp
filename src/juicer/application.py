@@ -29,9 +29,7 @@ URLS = (
 )
 
 
-
 def _configure_application(application, config):
-    # TODO (2010-05-04 jconnor) add configuration file options to application
     pass
 
 

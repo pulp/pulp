@@ -46,6 +46,22 @@ def header(hdr, value, unique=True):
     web.ctx.headers.append((hdr, value))
     
     
+def query_parameters(valid):
+    """
+    @type valid: list of str's
+    @param valid: list of expected query parameters
+    @return: dict of param: [value(s)] of uri query parameters
+    """
+    # NOTE If a keyword argument of foo=[] is not passed in to web.input,
+    # web.py will not record multiple parameters of 'foo' from the URI.
+    # So this line of code constructs those keyword arguments for 'valid'
+    # (ie expected) query parameters.
+    defaults = {}.fromkeys(valid, [])
+    params = web.input(**defaults)
+    # scrub out empty lists from the parameters
+    return dict((k,v) for k,v in params.items() if v)
+    
+    
 def _status(code):
     """
     Non-public function to set the web ctx status
