@@ -52,7 +52,8 @@ class Consumers(JSONController):
         """
         consumer_data = self.params()
         consumer = API.create(consumer_data['id'], consumer_data['description'])
-        return self.created(consumer['id'], consumer)
+        path = self.extend_path(consumer.id)
+        return self.created(path, consumer)
 
     @JSONController.error_handler
     def DELETE(self):
@@ -197,8 +198,12 @@ URLS = (
     '/$', 'Consumers',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
-    '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields), 'ConsumerDeferredFields',
-    '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions), 'ConsumerActions',
+    
+    '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields),
+    'ConsumerDeferredFields',
+    
+    '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions),
+    'ConsumerActions',
 )
 
 application = web.application(URLS, globals())

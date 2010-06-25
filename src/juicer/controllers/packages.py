@@ -78,10 +78,25 @@ class Package(JSONController):
         return self.ok(True)
     
     
+class PackageDeferredFields(JSONController):
+    
+    # NOTE the intersection of exposed_fields and exposed_actions must be empty
+    exposed_fields = (
+    )
+    
+    @JSONController.error_handler
+    def GET(self, id, field_name):
+        field = getattr(self, field_name, None)
+        if field is None:
+            return self.internal_server_error('No implementation for %s found' % field_name)
+        return field(id)
+    
+    
 class PackageActions(JSONController):
     
     # See juicer.repositories.RepositoryActions for design
     
+    # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
     )
     
@@ -105,7 +120,8 @@ class Versions(JSONController):
 URLS = (
     '/$', 'Packages',
     '/([^/]+)/$', 'Package',
-    #'/([^/]+)/(%s)/$' % '|'.join(PackageActions.exposed_actions), 'Package',
+    #'/([^/]+)/(%s)/$' % '|'.join(PackageDeferredFields.exposed_fields), 'PackageDeferredFields',
+    #'/([^/]+)/(%s)/$' % '|'.join(PackageActions.exposed_actions), 'PackageActions',
     '/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
 )
 

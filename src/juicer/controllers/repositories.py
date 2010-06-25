@@ -50,8 +50,7 @@ class Repositories(JSONController):
                           repo_data['feed'],
                           symlinks = repo_data['use_symlinks'],
                           sync_schedule=repo_data['sync_schedule'])
-        # TODO need function to create path
-        path = None
+        path = self.extend_path(repo.id)
         return self.created(path, repo)
 
     @JSONController.error_handler
@@ -255,8 +254,15 @@ urls = (
     '/$', 'Repositories',
     '/schedules/', 'Schedules',
     '/([^/]+)/$', 'Repository',
-    '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActions',
-    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions), 'RepositoryActionStatus',
+    
+    '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),
+    'RepositoryDeferredFields',
+    
+    '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions),
+    'RepositoryActions',
+    
+    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions),
+    'RepositoryActionStatus',
 )
 
 application = web.application(urls, globals())
