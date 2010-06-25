@@ -22,9 +22,7 @@ Agent base classes.
 from pmf import *
 from pmf import decorators
 from pmf.dispatcher import Dispatcher
-from qpid.util import connect
-from qpid.connection import Connection
-from qpid.datatypes import RangedSet
+from qpid.messaging import Connection
 from time import sleep
 
 class Agent:
@@ -54,15 +52,13 @@ class Endpoint:
     
     def __init__(self, id=getuuid(), host='localhost', port=5672):
         """
-        @param host: The fqdn or IP of the QPID broker.
+        @param host: The broker fqdn or IP.
         @type host: str
-        @param port: The port of the QPID broker.
-        @type port: short
+        @param port: The broker port.
+        @type port: str
         """
         self.id = id
-        self.host = host
-        self.port = port
-        self.connection = None
+        self.connection = Connection(host, port)
         self.session = None
         self.connect()
         self.open()
@@ -75,13 +71,11 @@ class Endpoint:
         """
         while True:
             try:
-                socket = connect(self.host, self.port)
-                connection = Connection(sock=socket)
-                connection.start()
-                self.connection = connection
-                return connection
+                self.connection.connect()
+                self.connection.start()
+                break
             except Exception, e:
-                if self.mustconnect():
+                if self.mustConnect():
                     sleep(3)
                 else:
                     raise e
@@ -92,7 +86,17 @@ class Endpoint:
         """
         pass
 
-    def mustconnect(self):
+    def close(self):
+        """
+        Close (shutdown) the endpoint.
+        """
+        try:
+            self.session.stop()
+            self.connection.close()
+        except:
+            pass
+
+    def mustConnect(self):
         """
         Get whether the endpoint must connect.
         When true, calls to connect() will block until a connection
@@ -102,11 +106,5 @@ class Endpoint:
         """
         return False
 
-    def acceptmessage(self, id):
-        """
-        Accept a message by id.
-        @param id: An AMQP message id.
-        @type id: str
-        """
-        messages = RangedSet(id)
-        self.session.message_accept(messages)
+    def queueAddress(self, name):
+        return '%s;{create:always}' % name

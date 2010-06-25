@@ -74,15 +74,20 @@ class Method:
 class Proxy:
     """
     The proxy (stub) base class for remote objects.
-    @ivar producer: An AMQP message producer.
-    @type producer: L{pmf.Producer}
+    @ivar __cid: The peer consumer ID.
+    @ivar __cid: str
+    @ivar __producer: An AMQP message producer.
+    @type __producer: L{pmf.Producer}
     """
 
-    def __init__(self, producer):
+    def __init__(self, consumerid, producer):
         """
+        @ivar consumerid: The peer consumer ID.
+        @ivar consumerid: str
         @param producer: An AMQP message producer.
         @type producer: L{pmf.Producer}
         """
+        self.__cid = consumerid
         self.__producer = producer
 
     def _send(self, content, sync):
@@ -93,7 +98,7 @@ class Proxy:
         @param sync: The synchronous/asynchronous flag.
         @type sync: bool
         """
-        return self.__producer.send(content, sync)
+        return self.__producer.send(self.__cid, content, sync)
 
     def __getattr__(self, name):
         """

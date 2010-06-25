@@ -24,9 +24,7 @@ from pmf.base import Endpoint
 from pmf.dispatcher import Return
 from pmf.envelope import Envelope
 from qpid.util import connect
-from qpid.connection import Connection
-from qpid.datatypes import Message
-from qpid.queue import Empty
+from qpid.messaging import Message, Empty
 
 
 class Producer(Endpoint):
@@ -45,27 +43,15 @@ class Producer(Endpoint):
     def open(self):
         """
         Open and configure the producer.
-          - Open the session.
-          - Declare the reply queue.
-          - Bind the queue to an exchange.
-          - Subscribe to the queue.
         """
-        sid = getuuid()
-        session = self.connection.session(sid)
-        session.queue_declare(queue=sid, exclusive=True)
-        session.exchange_bind(
-            exchange="amq.direct",
-            queue=sid,
-            binding_key=sid)
-        session.message_subscribe(queue=sid, destination=sid)
-        queue = session.incoming(sid)
-        queue.start()
-        self.sid = sid
-        self.consumerid = self.id
+        session = self.connection.session()
+        address = self.queueAddress(self.id)
+        receiver = session.receiver(address)
+        receiver.start()
+        self.receiver = receiver
         self.session = session
-        self.queue = queue
 
-    def send(self, content, synchronous=True):
+    def send(self, consumerid, content, synchronous=True):
         """
         Send a message to the consumer.
         @param content: The json encoded payload.
@@ -78,13 +64,12 @@ class Producer(Endpoint):
         sn = getuuid()
         envelope = Envelope(sn=sn, payload=content)
         if synchronous:
-            envelope.replyto = ("amq.direct", self.sid)
-        dp = self.session.delivery_properties()
-        dp.routing_key=self.consumerid
-        message = Message(dp, envelope.dump())
-        self.session.message_transfer(
-            destination='amq.direct',
-            message=message)
+            envelope.replyto = self.queueAddress(self.id)
+        message = Message(envelope.dump())
+        address = self.queueAddress(consumerid)
+        sender = self.session.sender(address)
+        message = Message(envelope.dump())
+        sender.send(message);
         if synchronous:
             return self._getreply(sn)
         else:
@@ -104,7 +89,7 @@ class Producer(Endpoint):
                 return
             reply = Return()
             reply.load(envelope.payload)
-            self.acceptmessage(message.id)
+            self.session.acknowledge()
             if reply.succeeded():
                 return reply.retval
             else:
@@ -124,12 +109,12 @@ class Producer(Endpoint):
         """
         while True:
             result = (None, None)
-            message = self.queue.get(timeout=90)
+            message = self.receiver.fetch(timeout=90)
             envelope = Envelope()
-            envelope.load(message.body)
+            envelope.load(message.content)
             if sn == envelope.sn:
                 result = (message, envelope)
                 break
             else:
-                self.acceptmessage(message.id)
+                self.session.acknowledge()
         return result

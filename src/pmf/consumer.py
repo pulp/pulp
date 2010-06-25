@@ -22,9 +22,8 @@ Provides AMQP message consumer classes.
 from pmf import *
 from pmf.base import Endpoint
 from pmf.envelope import Envelope
-from qpid.datatypes import Message
+from qpid.messaging import Message, Empty
 from qpid.exceptions import Closed
-from qpid.queue import Empty
 
 class Consumer(Endpoint):
     """
@@ -38,23 +37,15 @@ class Consumer(Endpoint):
     def open(self):
         """
         Open and configure the consumer.
-          - Open the session.
-          - Declare the queue.
-          - Bind the queue to an exchange.
-          - Subscribe to the queue.
         """
-        sid = getuuid()
-        session = self.connection.session(sid)
-        session.queue_declare(queue=self.id, exclusive=True)
-        session.exchange_bind(
-            exchange='amq.direct',
-            queue=self.id,
-            binding_key=self.id)
-        session.message_subscribe(queue=self.id, destination=self.id)
+        session = self.connection.session()
+        address = self.queueAddress(self.id)
+        receiver = session.receiver(address)
+        receiver.start()
+        self.receiver = receiver
         self.session = session
-        self.queue = session.incoming(self.id)
 
-    def mustconnect(self):
+    def mustConnect(self):
         return True
 
     def start(self, dispatcher):
@@ -66,17 +57,16 @@ class Consumer(Endpoint):
         @return: self
         @rtype: L{Consumer}
         """
-        self.queue.start()
         while True:
             try:
-                message = self.queue.get(timeout=10)
+                message = self.receiver.fetch(timeout=1)
                 envelope = Envelope()
-                envelope.load(message.body)
+                envelope.load(message.content)
                 sn = envelope.sn
                 content = envelope.payload
                 result = dispatcher.dispatch(content)
                 self.__respond(envelope, result)
-                self.acceptmessage(message.id)
+                self.session.acknowledge()
             except Closed:
                 self.connect()
                 self.open()
@@ -98,9 +88,7 @@ class Consumer(Endpoint):
             return
         envelope = Envelope(sn=request.sn)
         envelope.payload = result
-        dest = replyto[0]
-        key = replyto[1]
-        dp = self.session.delivery_properties(routing_key=key)
-        reply = Message(dp, envelope.dump())
-        self.session.message_transfer(destination=dest, message=reply)
+        sender = self.session.sender(replyto)
+        message = Message(envelope.dump())
+        sender.send(message);
         return self

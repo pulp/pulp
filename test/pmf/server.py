@@ -32,9 +32,9 @@ class Dog(Proxy):
 
 class Agent:
     def __init__(self, consumerid):
-        producer = Producer(consumerid)
-        self.repolib = RepoLib(producer)
-        self.dog = Dog(producer)
+        p = Producer()
+        self.repolib = RepoLib(consumerid, p)
+        self.dog = Dog(consumerid, p)
 
 
 def demo(agent):
