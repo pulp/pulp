@@ -83,8 +83,8 @@ class consumergroup(BaseCore):
         if self.action == "delete":
             usage = "usage: %prog consumergroup delete [OPTIONS]"
             BaseCore.__init__(self, "consumergroup delete", usage, "", "")
-            self.parser.add_option("--name", dest="name",
-                           help="Consumer group name")
+            self.parser.add_option("--id", dest="id",
+                           help="Consumer group id")
         if self.action == "list":
             usage = "usage: %prog consumergroup list [OPTIONS]"
             BaseCore.__init__(self, "consumergroup list", usage, "", "")
@@ -168,12 +168,12 @@ class consumergroup(BaseCore):
             print _(" Successful deleted Consumer Group [ %s ] " % self.options.id)
         except RestlibException, re:
             print _(" Deleted operation failed Consumer Group [ %s ] " % \
-                  self.options.label)
+                  self.options.id)
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
             print _(" Deleted operation failed on Consumer Group [ %s ]. " % \
-                  self.options.label)
+                  self.options.id)
             log.error("Error: %s" % e)
             sys.exit(-1)
 
