@@ -38,7 +38,7 @@ class ConsumerApi(BaseApi):
         return ["id"]
 
     def _get_indexes(self):
-        return ["package_profile", "repoids"]
+        return ["package_profile.name", "repoids"]
 
     def create(self, id, description):
         """
@@ -89,11 +89,7 @@ class ConsumerApi(BaseApi):
         """
         List consumers using passed in name
         """
-        
-        # regex = re.compile(".*%s" % name)
-        # return list(self.objectdb.find({"package_profile": regex}))
-        key = "package_profile.%s" % name
-        return list(self.objectdb.find({key: {"$exists": True}}))
+        return list(self.objectdb.find({'package_profile.name': name},['id', 'description', 'repoids']))
 
     def bind(self, id, repoid):
         """

@@ -23,6 +23,7 @@ import unittest
 import os
 import fileinput
 import random
+import copy
 
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
@@ -76,8 +77,7 @@ class LargeLoad(unittest.TestCase):
         
         return numrepos
     
-    def add_package(self, consumer, package):
-        profile = consumer['package_profile']
+    def add_package(self, profile, package):
         info = {
             'name'          : package['name'],
             'version'       : package['version'],
@@ -85,7 +85,7 @@ class LargeLoad(unittest.TestCase):
             'epoch'         : package['epoch'] or "",
             'arch'          : package['arch'],
         }
-        profile[package['name']] = [info]
+        profile.append(info)
         
     
     def create_consumers(self):
@@ -97,12 +97,19 @@ class LargeLoad(unittest.TestCase):
         repo = random.choice(repos) 
         packages = repo['packages']
         packageProfile = generatePakageProfile(packages.values())
+        packageProfileRand = copy.deepcopy(packageProfile)
+        self.add_package(packageProfileRand, randomPackage)
+        
+        print "Profile    : %s" % packageProfile
+        print "ProfileRand: %s" % packageProfileRand
         for i in range(self.numconsumers):
             c = Consumer(random_string(), random_string())
             start = time.time()
-            c['package_profile'] = packageProfile
             if (i % 100 == 0):
-                self.add_package(c, randomPackage)
+                c['package_profile'] = packageProfileRand
+            else:
+                c['package_profile'] = packageProfile
+                
             last_desc = c.description
             last_id = c.id
             consumers.append(c)
@@ -110,6 +117,9 @@ class LargeLoad(unittest.TestCase):
                 repo = random.choice(repos) 
                 packages = repo['packages']
                 packageProfile = generatePakageProfile(packages.values())
+            #for name in c['package_profile'].keys():
+            #    c["package_names"].append(name) 
+
                 
         print "BULK INSERTING length: %s" % len(consumers)
         self.capi.bulkcreate(consumers)
@@ -127,9 +137,7 @@ class LargeLoad(unittest.TestCase):
         c = consumers[0]
         # assert(len(consumers) == self.numconsumers)
         packages = self.capi.packages(c['id'])
-        randomPackageName = random.choice(packages.keys())
-        randomPackage = packages[randomPackageName][0]
-        print "Random package %s" % randomPackage
+        randomPackage = random.choice(packages)
         p = ll.papi.package_by_ivera(randomPackage['name'],
                                      randomPackage['version'],
                                      randomPackage['epoch'],

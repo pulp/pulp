@@ -198,7 +198,8 @@ def generatePkgMetadata(pkgFile):
 
 def generatePakageProfile(rpmHeaderList):
     """ Accumulates list of installed rpm info """
-    pkgList = {}
+    
+    pkgList = []
     for h in rpmHeaderList:
         if h['name'] == "gpg-pubkey":
             #dbMatch includes imported gpg keys as well
@@ -212,11 +213,7 @@ def generatePakageProfile(rpmHeaderList):
             'epoch'         : h['epoch'] or 0,
             'arch'          : h['arch'],
         }
-        if not pkgList.has_key(h['name']):
-            pkgList[h['name']] = [info]
-        else:
-            pkgList[h['name']].append(info)
-
+        pkgList.append(info)
     return pkgList
  
 def getRpmName(pkg):

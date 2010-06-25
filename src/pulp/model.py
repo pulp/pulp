@@ -128,7 +128,7 @@ class Consumer(Base):
         self._id = id
         self.id = id
         self.description = description
-        self.package_profile = {}
+        self.package_profile = []
         self.repoids = []
 
 class ConsumerGroup(Base):

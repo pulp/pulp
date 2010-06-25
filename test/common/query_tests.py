@@ -32,6 +32,7 @@ cFindTime = time.time() - start
 start = time.time()
 print "finding consumers with package installed"
 clist = capi.consumers_with_package_name(TEST_PACKAGE_ID)
+print "Length: %s" % len(clist)
 clist = [found]
 packageFindTime = time.time() - start
 
