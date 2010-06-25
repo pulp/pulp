@@ -23,7 +23,7 @@ URLS = (
     '/test', controllers.test.application,
     '/auth', controllers.auth.application,
     '/consumers', controllers.consumers.application,
-    '/consumersgroups', controllers.consumergroups.application,
+    '/consumergroups', controllers.consumergroups.application,
     '/packages', controllers.packages.application,
     '/repositories', controllers.repositories.application,
 )

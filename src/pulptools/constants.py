@@ -26,6 +26,14 @@ Package Categories \t%-25s
 Package Groups     \t%-25s
 """
 
+AVAILABLE_CONSUMER_GROUP_INFO="""
+Id                 \t%-25s
+Name               \t%-25s
+Description        \t%-25s
+Consumer ids       \t%-25s
+"""
+
+
 AVAILABLE_CONSUMER_INFO="""
 Id                 \t%-25s
 Description        \t%-25s

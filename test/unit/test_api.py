@@ -36,6 +36,7 @@ sys.path.insert(0, commondir)
 import pymongo.json_util 
 
 from pulp.api.consumer import ConsumerApi
+from pulp.api.consumer_group import ConsumerGroupApi
 from pulp.api.package import PackageApi
 from pulp.api.repo import RepoApi
 
@@ -58,12 +59,14 @@ class TestApi(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
+        self.cgapi.clean()
         
     def setUp(self):
         self.config = testutil.load_test_config()
         self.rapi = RepoApi(self.config)
         self.papi = PackageApi(self.config)
         self.capi = ConsumerApi(self.config)
+        self.cgapi = ConsumerGroupApi(self.config)
         self.clean()
         
     def tearDown(self):
@@ -149,12 +152,16 @@ class TestApi(unittest.TestCase):
         assert(found['id'] == 'some-id')
         
     def test_consumer_group(self):
+        print "Consumer group tests:"
         cg = self.cgapi.create('some-id','some name', 'some description')
 
         found = self.cgapi.consumergroup('some-id')
         assert(found != None)
+        print found['description']
         assert(found['id'] == 'some-id')
 
+        found = self.cgapi.consumergroup('some-id-that-doesnt-exist')
+        assert(found == None)
 
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \

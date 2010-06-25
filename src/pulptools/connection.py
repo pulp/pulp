@@ -236,6 +236,38 @@ class ConsumerConnection(PulpConnection):
         body = dict(packagenames=packagenames)
         return self.conn.request_post(method, params=body)
 
+
+class ConsumerGroupConnection(PulpConnection):
+    """
+    Connection class to access consumer group related calls
+    """
+    def create(self, id, name, description, consumerids = []):
+        consumergroup_data = {"id" : id, "name" : name, "description" : description,
+                        "consumerids" : consumerids}
+        method = "/consumergroups/"
+        return self.conn.request_put(method, params=consumergroup_data)
+
+    def update(self, consumergroup):
+        method = "/consumergroups/%s/" % consumergroup['id']
+        return self.conn.request_put(method, params=consumergroup)
+
+    def delete(self, id):
+        method = "/consumergroups/%s/" % id
+        return self.conn.request_delete(method)
+
+    def clean(self):
+        method = "/consumergroups/"
+        return self.conn.request_delete(method)
+
+    def consumergroups(self):
+        method = "/consumergroups/"
+        return self.conn.request_get(method)
+
+    def consumergroup(self, id):
+        method = "/consumergroups/%s/" % str(id)
+        return self.conn.request_get(method)
+
+
 class PackageConnection(PulpConnection):
 
     def clean(self):

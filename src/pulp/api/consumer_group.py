@@ -52,7 +52,7 @@ class ConsumerGroupApi(BaseApi):
         List all consumergroups.
         """
         consumergroups = list(self.objectdb.find())
-
+        return consumergroups
 
     def consumergroup(self, id):
         """

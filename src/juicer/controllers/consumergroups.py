@@ -89,7 +89,6 @@ class ConsumerGroup(JSONController):
         return self.ok(True)
 
 
-
 # web.py application ----------------------------------------------------------
 
 URLS = (
