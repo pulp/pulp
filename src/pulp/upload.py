@@ -29,22 +29,23 @@ log = logging.getLogger('pulp.upload')
 class PackageUpload:
     def __init__(self, config, repo, pkginfo, payload):
         self.config = config
-        self.repo = repo
         self.pkginfo = pkginfo
         self.stream = payload
         self.pkgname = pkginfo['pkgname']
         self.repo_dir = "%s/%s/" % (self.config.get('paths', 'local_storage'), repo['id'])
+        self.repo = repo
 
     def upload(self):
         pkg_path = self.repo_dir + "/" + self.pkgname
         hashtype = self.pkginfo['hashtype']
         if check_package_exists(pkg_path, self.pkginfo['hashtype'], self.pkginfo['checksum']):
+            log.error("Package %s Already Exists on the server skipping upload." % self.pkgname)
             raise PackageExistsError(pkg_path)
         try:
             store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
-            self.bindPackageToRepo(pkg_path, self.repo)
+            imp_pkg = self.bindPackageToRepo(pkg_path, self.repo)
             # update/create the repodata for the repo
-            create_repo(self.repo_dir)
+            create_repo(self.repo_dir) 
         except IOError, ie:
             log.error("Error writing file to filesystem %s " % ie)
             raise UploadError("Error writing to the file %s" % self.pkgname)
@@ -53,10 +54,13 @@ class PackageUpload:
         except Exception, e:
             log.error("UnExpected Error %s " % e)
             raise UploadError("Upload Failed due to unexpected Error ")
-
+        return imp_pkg, self.repo
+    
     def bindPackageToRepo(self, pkg_path, repo):
+        log.debug("Binding package [%s] to repo [%s]" % (pkg_path, repo))
         bsync = BaseSynchronizer(self.config)
-        bsync.import_package(pkg_path, repo)
+        pkg = bsync.import_package(pkg_path, repo)
+        return pkg
 
 def check_package_exists(pkg_path, hashtype, hashsum, force=0):
     if not os.path.exists(pkg_path):

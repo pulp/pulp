@@ -106,7 +106,7 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         packages = repo['packages']
         for package in packages.values():
-            log.error(package)
+            log.error(package['name'])
             if (package['name'] == name):
                 return package
     
@@ -133,8 +133,7 @@ class RepoApi(BaseApi):
         if (packages.has_key(p['id'])):
             # No need to update repo, this Package is already under this repo
             return
-        packages[p['id']] = p
-                     
+        packages[p['id']] = p           
 
     def remove_package(self, repoid, p):
         repo = self.repository(repoid)
@@ -275,9 +274,10 @@ class RepoApi(BaseApi):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % id)
         pkg_upload = upload.PackageUpload(self.config, repo, pkginfo, pkgstream)
-        pkg_upload.upload()
-        log.error("Upload success")
+        pkg, repo = pkg_upload.upload()
+        self._add_package(repo, pkg)
         self.update(repo)
+        log.error("Upload success %s %s" % (pkg['id'], repo['id']))
         return True
 
     def all_schedules(self):
