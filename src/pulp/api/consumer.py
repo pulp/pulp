@@ -40,6 +40,9 @@ class ConsumerApi(BaseApi):
     def _get_indexes(self):
         return ["package_profile.name", "repoids"]
 
+    def _get_basic_fields(self):
+        return ['id', 'description', 'repoids']
+        
     def create(self, id, description):
         """
         Create a new Consumer object and return it
@@ -67,7 +70,7 @@ class ConsumerApi(BaseApi):
         """
         List all consumers.  Can be quite large
         """
-        consumers = list(self.objectdb.find({},['id', 'description', 'repoids']))
+        consumers = list(self.objectdb.find({},self._get_basic_fields()))
         munged = [] 
         for c in consumers:
             link = '/consumers/%s/packages/' % c['id']
@@ -89,7 +92,7 @@ class ConsumerApi(BaseApi):
         """
         List consumers using passed in name
         """
-        return list(self.objectdb.find({'package_profile.name': name},['id', 'description', 'repoids']))
+        return list(self.objectdb.find({'package_profile.name': name}, self._get_basic_fields()))
 
     def bind(self, id, repoid):
         """

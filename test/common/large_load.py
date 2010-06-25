@@ -99,9 +99,6 @@ class LargeLoad(unittest.TestCase):
         packageProfile = generatePakageProfile(packages.values())
         packageProfileRand = copy.deepcopy(packageProfile)
         self.add_package(packageProfileRand, randomPackage)
-        
-        print "Profile    : %s" % packageProfile
-        print "ProfileRand: %s" % packageProfileRand
         for i in range(self.numconsumers):
             c = Consumer(random_string(), random_string())
             start = time.time()
@@ -117,9 +114,6 @@ class LargeLoad(unittest.TestCase):
                 repo = random.choice(repos) 
                 packages = repo['packages']
                 packageProfile = generatePakageProfile(packages.values())
-            #for name in c['package_profile'].keys():
-            #    c["package_names"].append(name) 
-
                 
         print "BULK INSERTING length: %s" % len(consumers)
         self.capi.bulkcreate(consumers)
