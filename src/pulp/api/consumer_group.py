@@ -87,9 +87,9 @@ class ConsumerGroupApi(BaseApi):
         Responsible for properly associating a Consumer to a ConsumerGroup
         """
         consumerids = consumergroup['consumerids']
-        if (consumerids.contains(consumer["id"])):
-            # No need to update group
+        if consumer["id"] in consumerids:
             return
+        
         consumerids.append(consumer["id"])
         consumergroup["consumerids"] = consumerids
 
