@@ -37,7 +37,7 @@ class package(BaseCore):
         desc = ""
 
         BaseCore.__init__(self, "package", usage, shortdesc, desc)
-        self.actions = {"info"          : "Register this system as a consumer", 
+        self.actions = {"info"          : "lookup information for a package", 
                         "install"       : "Schedule a package Install", }
         self.name = "package"
         self.username = None
