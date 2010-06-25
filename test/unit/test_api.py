@@ -234,7 +234,7 @@ class TestApi(unittest.TestCase):
         packages = c['package_profile']
         self.assertTrue(packages != None)
         link = packages['href']
-        self.assertTrue(link == "/consumers/%s/packages" % c['id'])
+        self.assertTrue(link == "/consumers/%s/packages/" % c['id'])
         print "C: %s" % c
         
     def test_consumer_bind(self):

@@ -138,24 +138,29 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
     @param compsxml_gz_timstamp: timestamp of compsxml gzipped file
     """
     dom = xml.dom.minidom.parseString(repomd_xml)
-    # Consider an xpath search for data type=group
-    # If no group info is present, then we need to create it.
-    for data in dom.getElementsByTagName('data'):
-        if data.getAttribute("type") == "group":
-            elem = data.getElementsByTagName("checksum")[0]
-            elem.childNodes[0].data = compsxml_checksum
-            elem = data.getElementsByTagName("timestamp")[0]
-            elem.childNodes[0].data = compsxml_timestamp
-        elif data.getAttribute("type") == "group_gz" and \
-                (compsxml_gz_checksum != None and \
-                        open_compsxml_gz_checksum != None and \
-                        compsxml_gz_timestamp != None):
-            elem = data.getElementsByTagName("checksum")[0]
+    group_elems = filter(lambda x: x.getAttribute("type") == "group", dom.getElementsByTagName("data"))
+    if len(group_elems) > 0:
+        elem = group_elems[0].getElementsByTagName("checksum")[0]
+        elem.childNodes[0].data = compsxml_checksum
+        elem = group_elems[0].getElementsByTagName("timestamp")[0]
+        elem.childNodes[0].data = compsxml_timestamp
+    else:
+        # If no group info is present, then we need to create it.
+        raise Exception("Not implemented, need to add support for creating group metadata info in repomd.xml")
+
+    if compsxml_gz_checksum != None and open_compsxml_gz_checksum != None \
+            and compsxml_gz_timestamp != None:
+        group_gz_elems = filter(lambda x: x.getAttribute("type") == "group",
+                dom.getElementsByTagName("data"))
+        if len(group_gz_elems) > 0:
+            elem = group_gz_elems[0].getElementsByTagName("checksum")[0]
             elem.childNodes[0].data = compsxml_gz_checksum
-            elem = data.getElementsByTagName("open-checksum")[0]
+            elem = group_gz_elems[0].getElementsByTagName("open-checksum")[0]
             elem.childNodes[0].data = open_compsxml_gz_checksum
-            elem = data.getElementsByTagName("timestamp")[0]
+            elem = group_gz_elems[0].getElementsByTagName("timestamp")[0]
             elem.childNodes[0].data = compsxml_gz_timestamp
+        else:
+            raise Exception("Not implemented, need to add support for creating group_gz metdata info in repomd.xml")
     return dom.toxml()
 
 
@@ -164,10 +169,9 @@ def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
     Update the repomd.xml with the checksum info for comps_path
     @param repomd_path: repomd.xml file path
     @param comps_path:  comps.xml file path
+    @param comps_gz_path:  optional comps.xml.gz file path
     @return: True if repomd_path has been updated, False otherwise
     """
-    # get sha256 of comps
-    # gzip comps to gz and get sha256
     compsxml_checksum = pulp.util.get_file_checksum(hashtype="sha256",
             filename=comps_path)
     compsxml_timestamp = pulp.util.get_file_timestamp(comps_path)
@@ -187,6 +191,7 @@ def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
                 compsxml_checksum, compsxml_timestamp,
                 compsxml_gz_checksum, open_compsxml_gz_checksum,
                 compsxml_gz_timestamp)
+        open(repomd_path, "w").write(updated_xml.encode("UTF-8"))
     except xml.dom.DOMException, e:
         log.error(e)
         log.error("Unable to update group info for %s" % (repomd_path))
