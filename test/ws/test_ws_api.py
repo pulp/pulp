@@ -25,6 +25,7 @@ sys.path.insert(0, commondir)
 
 from pulptools.connection import RepoConnection
 from pulptools.connection import ConsumerConnection
+from pulptools.connection import ConsumerGroupConnection
 from pulptools.connection import PackageConnection
 from pulptools.connection import PackageGroupConnection
 from pulptools.connection import PackageGroupCategoryConnection
@@ -48,6 +49,7 @@ class RemoteTestApi(TestApi):
         self.rapi = RepoConnection(**d)
         self.capi = ConsumerConnection(**d)
         self.papi = PackageConnection(**d)
+        self.cgapi = ConsumerGroupConnection(**d)
         self.pgapi = PackageGroupConnection(**d)
         self.pgcapi = PackageGroupCategoryConnection(**d)
         

@@ -136,12 +136,9 @@ class consumergroup(BaseCore):
             raise
 
     def _list(self):
-        print "In list function"
         (self.options, self.args) = self.parser.parse_args()
-        print self.options, self.args
         try:
             groups = self.cgconn.consumergroups()
-            print(groups)
             columns = ["id", "name", "description", "consumerids"]
             data = [ _sub_dict(group, columns) for group in groups]
             if not len(data):

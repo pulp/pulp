@@ -92,8 +92,8 @@ class ConsumerGroup(JSONController):
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/$', 'Consumergroups',
-    '/([^/]+)/$', 'Consumergroup'
+    '/$', 'ConsumerGroups',
+    '/([^/]+)/$', 'ConsumerGroup'
 )
 
 application = web.application(URLS, globals())
