@@ -49,7 +49,14 @@ class Agent:
         cfg = Config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
-        producer = Producer(uuid, host, port)
-        self.admin = AgentAdmin(producer)
-        self.repo = Repo(producer)
-        self.packages = Packages(producer)
+        producer = Producer(host=host, port=port)
+        self.admin = AgentAdmin(uuid, producer)
+        self.repo = Repo(uuid, producer)
+        self.packages = Packages(uuid, producer)
+        self.producer = producer
+
+    def close(self):
+        """
+        Close and release all resources.
+        """
+        self.producer.close()

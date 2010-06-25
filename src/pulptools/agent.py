@@ -109,4 +109,6 @@ class Agent(Base):
 
 
 if __name__ == '__main__':
-    Agent()
+    agent = Agent()
+    # blocks on queue consumption
+    agent.close()

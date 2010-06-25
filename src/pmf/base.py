@@ -25,29 +25,9 @@ from pmf.dispatcher import Dispatcher
 from qpid.messaging import Connection
 from time import sleep
 
-class Agent:
-    """
-    The agent base provides a dispatcher and automatic
-    registration of methods based on decorators.
-    @ivar dispatcher: An RMI dispatcher.
-    @type dispatcher: L{Dispatcher}
-    """
-
-    def __init__(self, consumer):
-        """
-        Construct the L{Dispatcher} using the specified
-        AMQP I{consumer} and I{start} the AMQP consumer.
-        @param consumer: A qpid consumer.
-        @type consumer: L{pmf.Consumer}
-        """
-        dispatcher = Dispatcher()
-        dispatcher.register(*decorators.remoteclasses)
-        consumer.start(dispatcher)
-        
-
 class Endpoint:
     """
-    Base class for qpid endpoint.
+    Base class for QPID endpoint.
     """
     
     def __init__(self, id=getuuid(), host='localhost', port=5672):
@@ -107,4 +87,69 @@ class Endpoint:
         return False
 
     def queueAddress(self, name):
+        """
+        Get a QPID queue address.
+        @param name: The queue name.
+        @type name: str
+        @return: A QPID address.
+        @rtype: str
+        """
         return '%s;{create:always}' % name
+
+    def topicAddress(self, topic):
+        """
+        Get a QPID topic address.
+        @param topic: The topic name.
+        @type topic: str
+        @return: A QPID address.
+        @rtype: str
+        """
+        return topic
+
+
+class Agent:
+    """
+    The agent base provides a dispatcher and automatic
+    registration of methods based on decorators.
+    @ivar consumer: A qpid consumer.
+    @type consumer: L{pmf.Consumer}
+    """
+
+    def __init__(self, consumer):
+        """
+        Construct the L{Dispatcher} using the specified
+        AMQP I{consumer} and I{start} the AMQP consumer.
+        @param consumer: A qpid consumer.
+        @type consumer: L{pmf.Consumer}
+        """
+        dispatcher = Dispatcher()
+        dispatcher.register(*decorators.remoteclasses)
+        consumer.start(dispatcher)
+        self.consumer = consumer
+
+    def close(self):
+        """
+        Close and release all resources.
+        """
+        self.consumer.close()
+
+
+class ProxyCollection:
+    """
+    The proxy base
+    @ivar producer: A qpid producer.
+    @type producer: L{pmf.Producer}
+    """
+
+    def __init__(self, producer):
+        """
+        @param producer: A qpid producer.
+        @type producer: L{pmf.Producer}}
+        """
+        self.producer = producer
+
+    def close(self):
+        """
+        Close and release all resources.
+        """
+        self.producer.close()
