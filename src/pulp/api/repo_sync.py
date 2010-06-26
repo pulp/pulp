@@ -24,7 +24,7 @@ import yum
 from urlparse import urlparse
 
 # 3rd Party
-import crontab
+import pulp.crontab
 import yum
 
 # Pulp
@@ -69,7 +69,7 @@ def update_schedule(config, repo):
     @param repo: repo containg the id and sync schedule; may not be None
     @type  repo: L{pulp.model.Repo}
     '''
-    tab = crontab.CronTab()
+    tab = pulp.crontab.CronTab()
 
     cmd = _cron_command(repo)
     entries = tab.find_command(cmd)
@@ -94,7 +94,7 @@ def delete_schedule(config, repo):
     @param repo: repo containg the id and sync schedule; may not be None
     @type  repo: L{pulp.model.Repo}
     '''
-    tab = crontab.CronTab()
+    tab = pulp.crontab.CronTab()
 
     cmd = _cron_command(repo)
     entries = tab.find_command(cmd)
