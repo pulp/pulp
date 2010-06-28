@@ -75,8 +75,6 @@ class consumergroup(BaseCore):
             BaseCore.__init__(self, "consumergroup create", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="consumer group id"),
-            self.parser.add_option("--name", dest="name",
-                           help="consumer group name"),
             self.parser.add_option("--description", dest="description",
                            help="description of consumer group")
             self.parser.add_option("--consumerids", dest="consumerids",
@@ -134,19 +132,16 @@ class consumergroup(BaseCore):
         if not self.options.id:
             print("consumer group id required. Try --help")
             sys.exit(0)
-        if not self.options.name:
-            print("consumer group name required. Try --help")
-            sys.exit(0)
         if not self.options.description:
             self.options.description = ""
         if not self.options.consumerids:
             print("Creating empty consumer group")
             self.options.consumerids = []
         try:
-            consumergroup = self.cgconn.create(self.options.id, self.options.name, self.options.description,
+            consumergroup = self.cgconn.create(self.options.id, self.options.description,
                                     self.options.consumerids)
             print _(" Successfully created Consumer group [ %s ] with description [ %s ]" % \
-                                     (consumergroup['name'], consumergroup["description"]))
+                                     (consumergroup['id'], consumergroup["description"]))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -158,14 +153,14 @@ class consumergroup(BaseCore):
         (self.options, self.args) = self.parser.parse_args()
         try:
             groups = self.cgconn.consumergroups()
-            columns = ["id", "name", "description", "consumerids"]
+            columns = ["id", "description", "consumerids"]
             data = [ _sub_dict(group, columns) for group in groups]
             if not len(data):
                 print _("No consumer groups available to list")
                 sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Consumer Groups \n+-------------------------------------------+"""
             for group in data:
-                    print constants.AVAILABLE_CONSUMER_GROUP_INFO % (group["id"], group["name"], group["description"], group["consumerids"] )
+                    print constants.AVAILABLE_CONSUMER_GROUP_INFO % (group["id"], group["description"], group["consumerids"] )
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
