@@ -58,6 +58,11 @@ class RepoApi(BaseApi):
     def _getcollection(self):
         return self.db.repos
 
+    def delete(self, **kwargs):
+        repo = self.repository(kwargs['id'])
+        pulp.api.repo_sync.delete_schedule(self.config, repo)
+        self.objectdb.remove(kwargs, safe=True)
+
     def update(self, repo):
         self.objectdb.save(repo, safe=True)
 
