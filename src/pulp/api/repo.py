@@ -28,6 +28,7 @@ from yum.Errors import CompsException
 from grinder.RepoFetch import YumRepoGrinder
 from pulp import model
 from pulp import upload
+from pulp import crontab
 from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
@@ -58,12 +59,24 @@ class RepoApi(BaseApi):
     def _getcollection(self):
         return self.db.repos
 
+    def _validate_schedule(self, sync_schedule):
+        '''
+        Verifies the sync schedule is in the correct cron syntax, throwing an exception if
+        it is not.
+        '''
+        if sync_schedule:
+            item = crontab.CronItem(sync_schedule + ' null') # CronItem expects a command
+            if not item.is_valid():
+                raise PulpException('Invalid sync schedule specified [%s]' % sync_schedule)
+
     def delete(self, **kwargs):
         repo = self.repository(kwargs['id'])
         pulp.api.repo_sync.delete_schedule(self.config, repo)
         self.objectdb.remove(kwargs, safe=True)
 
     def update(self, repo):
+        self._validate_schedule(repo['sync_schedule'])
+
         self.objectdb.save(repo, safe=True)
 
         if repo['sync_schedule']:
@@ -247,6 +260,8 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        self._validate_schedule(sync_schedule)
+
         r = model.Repo(id, name, arch, feed)
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
@@ -300,4 +315,3 @@ class RepoApi(BaseApi):
             result[repo['id']] = repo['sync_schedule']
 
         return result
-

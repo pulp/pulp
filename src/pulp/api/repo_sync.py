@@ -38,7 +38,6 @@ import pulp.upload
 import pulp.util
 
 
-
 log = logging.getLogger('pulp.repo_sync')
 
 
