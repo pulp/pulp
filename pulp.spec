@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.29
+Version:        0.0.30
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -149,7 +149,7 @@ fi
 
 
 %changelog
-* Mon Jun 28 2010 Mike McCune <mmccune@redhat.com> 0.0.29-1
+* Mon Jun 28 2010 Mike McCune <mmccune@redhat.com> 0.0.30-1
 - rebuild
 * Wed Jun 23 2010 Mike McCune <mmccune@redhat.com> 0.0.28-1
 - rebuild
