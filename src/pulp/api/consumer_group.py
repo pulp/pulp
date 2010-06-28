@@ -38,11 +38,11 @@ class ConsumerGroupApi(BaseApi):
         return self.db.consumergroups
 
 
-    def create(self, id, name, description, consumerids = []):
+    def create(self, id, description, consumerids = []):
         """
         Create a new ConsumerGroup object and return it
         """
-        c = model.ConsumerGroup(id, name, description, consumerids)
+        c = model.ConsumerGroup(id, description, consumerids)
         self.insert(c)
         return c
 

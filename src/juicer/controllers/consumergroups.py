@@ -44,8 +44,8 @@ class ConsumerGroups(JSONController):
         @return: consumer group metadata on successful creation
         """
         consumergroup_data = self.params()
-        consumergroup = API.create(consumergroup_data['id'], consumergroup_data['name'],
-                                   consumergroup_data['description'], consumergroup_data['consumerids'])
+        consumergroup = API.create(consumergroup_data['id'], consumergroup_data['description'],
+                                   consumergroup_data['consumerids'])
         return self.created(consumergroup['id'], consumergroup)
 
     @JSONController.error_handler

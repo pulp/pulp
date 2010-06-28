@@ -241,8 +241,8 @@ class ConsumerGroupConnection(PulpConnection):
     """
     Connection class to access consumer group related calls
     """
-    def create(self, id, name, description, consumerids = []):
-        consumergroup_data = {"id" : id, "name" : name, "description" : description,
+    def create(self, id, description, consumerids = []):
+        consumergroup_data = {"id" : id, "description" : description,
                         "consumerids" : consumerids}
         method = "/consumergroups/"
         return self.conn.request_put(method, params=consumergroup_data)
