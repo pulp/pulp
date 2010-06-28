@@ -110,6 +110,16 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Test
         self.assertRaises(Exception, self.repo_api.create, 'invalid', 'Repo Sync Schedule', 'noarch', 'yum://foo', sync_schedule='* * * * foo')
 
+    def test_update_invalid_schedule_syntax(self):
+        # Setup
+        repo_id = 'invalid-update'
+        self.repo_api.create(repo_id, 'Repo Sync Schedule', 'noarch', 'yum://foo')
+
+        # Test
+        repo = self.repo_api.repository(repo_id)
+        repo['sync_schedule'] = 'foo'
+        self.assertRaises(Exception, self.repo_api.update, repo)
+
     def test_all_schedules(self):
         # Setup
         self.repo_api.create('repo-1', 'repo-1', 'i386', 'yum:localhost', sync_schedule='1 * * * *')
