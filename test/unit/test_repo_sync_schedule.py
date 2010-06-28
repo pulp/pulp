@@ -106,15 +106,20 @@ class TestRepoSyncSchedule(unittest.TestCase):
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(0, len(items))
 
+    def test_create_invalid_schedule_syntax(self):
+        # Test
+        self.assertRaises(Exception, self.repo_api.create, 'invalid', 'Repo Sync Schedule', 'noarch', 'yum://foo', sync_schedule='* * * * foo')
+
     def test_all_schedules(self):
         # Setup
-        self.repo_api.create('repo-1', 'repo-1', 'i386', 'yum:localhost', '1 * * * *')
-        self.repo_api.create('repo-2', 'repo-2', 'i386', 'yum:localhost', '2 * * * *')
-        self.repo_api.create('repo-3', 'repo-3', 'i386', 'yum:localhost', None)
+        self.repo_api.create('repo-1', 'repo-1', 'i386', 'yum:localhost', sync_schedule='1 * * * *')
+        self.repo_api.create('repo-2', 'repo-2', 'i386', 'yum:localhost', sync_schedule='2 * * * *')
+        self.repo_api.create('repo-3', 'repo-3', 'i386', 'yum:localhost', sync_schedule=None)
         self.repo_api.create('repo-4', 'repo-4', 'i386', 'yum:localhost')
 
         # Test
         schedules = self.repo_api.all_schedules()
+        print(schedules)
 
         # Verify
         self.assertEqual(4, len(schedules))
