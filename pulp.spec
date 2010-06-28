@@ -29,7 +29,6 @@ Requires: httpd
 Requires: mod_wsgi
 Requires: mongo
 Requires: mongo-server
-Requires: m2crypto
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
