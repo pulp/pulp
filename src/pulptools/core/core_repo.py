@@ -174,7 +174,7 @@ class repo(BaseCore):
         (self.options, self.args) = self.parser.parse_args()
         try:
             repos = self.pconn.repositories()
-            columns = ["id", "name", "source", "arch", "packages", "packagegroupcategories", "packagegroups"]
+            columns = ["id", "name", "source", "arch", "sync_schedule", "packages", "packagegroupcategories", "packagegroups"]
             data = [ _sub_dict(repo, columns) for repo in repos]
             if not len(data):
                 print _("No repos available to list")
@@ -185,7 +185,8 @@ class repo(BaseCore):
                 repo["packagegroupcategories"] = repo["packagegroupcategories"].keys()
                 repo["packagegroups"] = len(repo["packagegroups"])
                 print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"],
-                                                        repo["source"], repo["arch"], repo["packages"],
+                                                        repo["source"], repo["arch"],
+                                                        repo["sync_schedule"], repo["packages"],
                                                         repo["packagegroupcategories"], repo["packagegroups"])
         except RestlibException, re:
             log.error("Error: %s" % re)
