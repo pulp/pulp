@@ -28,7 +28,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import crontab
+import pulp.crontab
 
 import pulp.api.repo
 import pulp.api.repo_sync
@@ -42,7 +42,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
     def tearDown(self):
         self.repo_api.clean()
-        tab = crontab.CronTab()
+        tab = pulp.crontab.CronTab()
 
         for entry in tab.find_command('pulp repo sync'):
             tab.remove(entry)
@@ -68,7 +68,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = crontab.CronTab()
+        tab = pulp.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(1, len(items))
 
@@ -80,7 +80,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = crontab.CronTab()
+        tab = pulp.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(1, len(items))
 
@@ -92,7 +92,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = crontab.CronTab()
+        tab = pulp.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(0, len(items))
 
@@ -102,7 +102,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = crontab.CronTab()
+        tab = pulp.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(0, len(items))
 
