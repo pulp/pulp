@@ -4,6 +4,7 @@ from threading import Thread
 import urllib
 import time
 import pycurl
+import json
 import cStringIO
 import gzip
 import StringIO
@@ -30,8 +31,19 @@ class WorkerThread(Thread):
                     print "Stopping, wait a few please!"
                     break
                 url = self.base_url + p
-                print "fetching url: [%s]" % url
-                fetchUrl(url)
+                print "Base API url: [%s]" % url
+                output = fetchUrl(url)
+                jsout = json.loads(output)
+                ids = []
+                for row in jsout:
+                    # print "ID: %s" % row['id']
+                    ids.append(row['id'])
+                print "Found all objects under [%s], fetching actual objects" % url
+                suburl = ""
+                for id in ids:
+                    suburl = url + id + "/"
+                    fetchUrl(suburl)
+                print "Done listing all objects under [%s]" % url
             if (self._stop):
                 print "Stopping, wait a few please!"
                 break
@@ -59,7 +71,8 @@ def fetchUrl(url):
     c.setopt(c.WRITEFUNCTION, response.write)
     c.setopt(pycurl.FOLLOWLOCATION, 1)
     out = c.perform()
-    print c.getinfo(pycurl.HTTP_CODE), c.getinfo(pycurl.EFFECTIVE_URL)
+    # print c.getinfo(pycurl.HTTP_CODE), c.getinfo(pycurl.EFFECTIVE_URL)
+    # print "out: %s" % out
     c.close()
 
     return response.getvalue()

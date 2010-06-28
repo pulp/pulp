@@ -75,8 +75,7 @@ class Package(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
         Base.__init__(self)
-        # self._id = str((name, epoch, version, release, arch, checksum))
-        # self.id = self._id
+        # ID is initialized in Base.__init__()
         self.name = name
         self.epoch = epoch
         self.version = version

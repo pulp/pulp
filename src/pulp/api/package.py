@@ -104,6 +104,6 @@ class PackageApi(BaseApi):
         version information).
         '''
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
-        return list(self.objectdb.find({}, ['name', 'description']))
+        return list(self.objectdb.find({}, ['id', 'name', 'description']))
                                        
         
