@@ -132,7 +132,7 @@ class Consumer(Base):
         self.repoids = []
 
 class ConsumerGroup(Base):
-    def __init__(self, id, name, description, consumerids = []):
+    def __init__(self, id, description, consumerids = []):
         self._id = id
         self.id = id
         self.description = description
