@@ -64,7 +64,6 @@ class ConsumerApi(BaseApi):
         for chunk in chunked:
             self.objectdb.insert(chunk, check_keys=False, safe=False)
             inserted = inserted + chunksize
-            print "Inserted: %s" % inserted
 
     def consumers(self):
         """

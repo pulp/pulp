@@ -291,12 +291,17 @@ class TestApi(unittest.TestCase):
         for i in range(10):
             randName = random_string()
             package = self.create_package(randName)
-            packages[randName] = [package]
+            packages.append(package)
             
         c['package_profile'] = packages
-        print "Consumer! %s" % c
+        # print "Consumer! %s" % c
         self.capi.update(c)
-        self.assertTrue(c['package_profile']['pulp-test-package'] != None)
+        self.assertTrue(c['package_profile'] != None)
+        found = False
+        for p in c['package_profile']:
+            if (p['name'] == 'pulp-test-package'):
+                found = True
+        self.assertTrue(found)
         found = self.capi.consumers_with_package_name('some-invalid-id')
         assert(len(found) == 0)
 
@@ -305,7 +310,7 @@ class TestApi(unittest.TestCase):
         
         packages = self.capi.packages(c['id'])
         self.assertTrue(packages != None)
-        self.assertTrue(len(packages.keys()) > 0)
+        self.assertTrue(len(packages) > 0)
         
     def test_json(self):
         repo = self.rapi.create('some-id','some name', 
