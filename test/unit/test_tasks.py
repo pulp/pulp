@@ -8,19 +8,19 @@ from pulp.tasking.task import (
 from pulp.tasking.queue.fifo import volatile_fifo_queue, mongo_fifo_queue
 
 
-def noop_test():
+def noop():
     pass
 
-def args_test(*args):
-    assert args
+def args(*args):
+    assert len(args) > 0
     
-def kwargs_test(**kwargs):
-    assert kwargs
+def kwargs(**kwargs):
+    assert len(kwargs) > 0
 
-def result_test():
+def result():
     return True
 
-def error_test():
+def error():
     raise Exception('Aaaargh!')
 
 
@@ -33,32 +33,32 @@ class TaskTester(unittest.TestCase):
         pass
     
     def test_task_create(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.assertTrue(task.state == task_created)
 
     def test_task_noop(self):
-        task = Task(noop_test)
+        task = Task(noop)
         task.run()
         self.assertTrue(task.state == task_finished)
 
     def test_task_args(self):
-        task = Task(args_test, 1, 2, 'foo')
+        task = Task(args, 1, 2, 'foo')
         task.run()
         self.assertTrue(task.state == task_finished)
 
     def test_task_kwargs(self):
-        task = Task(kwargs_test, arg1=1, arg2=2, argfoo='foo')
+        task = Task(kwargs, arg1=1, arg2=2, argfoo='foo')
         task.run()
         self.assertTrue(task.state == task_finished)
 
     def test_task_result(self):
-        task = Task(result_test)
+        task = Task(result)
         task.run()
         self.assertTrue(task.state == task_finished)
         self.assertTrue(task.result is True)
 
     def test_task_error(self):
-        task = Task(error_test)
+        task = Task(error)
         task.run()
         self.assertTrue(task.state == task_error)
         self.assertTrue(task.traceback is not None)
@@ -82,24 +82,24 @@ class VolatileFIFOQueueTester(QueueTester):
         pass
             
     def test_task_enqueue(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self.assertTrue(task.state == task_waiting)
 
     def test_task_dispatch(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_finished)
         
     def test_task_find(self):
-        task1 = Task(noop_test)
+        task1 = Task(noop)
         self.queue.enqueue(task1)
         task2 = self.queue.find(task1.id)
         self.assertTrue(task1 is task2)
         
     def test_task_status(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
         status = self.queue.status(task.id)
@@ -115,24 +115,24 @@ class MongoFIFOQueueTester(QueueTester):
         pass
             
     def test_task_enqueue(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self.assertTrue(task.state == task_waiting)
 
     def test_task_dispatch(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_finished)
         
     def test_task_find(self):
-        task1 = Task(noop_test)
+        task1 = Task(noop)
         self.queue.enqueue(task1)
         task2 = self.queue.find(task1.id)
         self.assertTrue(task1 is task2)
         
     def test_task_status(self):
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
         status = self.queue.status(task.id)
@@ -140,7 +140,7 @@ class MongoFIFOQueueTester(QueueTester):
         
     def test_separate_queues(self):
         new_queue = mongo_fifo_queue()
-        task = Task(noop_test)
+        task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
         status = new_queue.status(task.id)
