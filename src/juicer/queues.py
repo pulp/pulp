@@ -14,7 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.tasking.queue.fifo import mongo_fifo_queue
+from pulp.tasking.queue.fifo import volatile_fifo_queue
 
 
-fifo = mongo_fifo_queue()
+fifo = volatile_fifo_queue()
