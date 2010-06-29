@@ -54,9 +54,6 @@ class TestRepoSyncSchedule(unittest.TestCase):
         are created with no schedules.
         '''
 
-        # Temporary test breakage to test out build system
-        self.assertTrue(False)
-
         # Setup
         repo_id = 'repo-sync-schedule'
         sync_schedule = '* * * * *'
