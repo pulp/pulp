@@ -52,10 +52,12 @@ def query_parameters(valid):
     @param valid: list of expected query parameters
     @return: dict of param: [value(s)] of uri query parameters
     """
-    # NOTE If a keyword argument of foo=[] is not passed in to web.input,
+    # NOTE If a keyword argument of foo=[] is not passed into web.input,
     # web.py will not record multiple parameters of 'foo' from the URI.
     # So this line of code constructs those keyword arguments for 'valid'
     # (ie expected) query parameters.
+    # This will return a list for every valid parameter, even if it's empty or
+    # only contains one element
     defaults = {}.fromkeys(valid, [])
     params = web.input(**defaults)
     # scrub out empty lists from the parameters
