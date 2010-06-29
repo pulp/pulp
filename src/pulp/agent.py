@@ -23,6 +23,7 @@ on the agent.
 """
 
 from pmf.proxy import Proxy
+from pmf.base import AgentProxy
 from pmf.producer import RequestProducer
 from pulp.util import Config
 
@@ -37,7 +38,7 @@ class Packages(Proxy):
     pass
 
 
-class Agent:
+class Agent(AgentProxy):
     """
     A proxy for the agent.
     """
@@ -53,10 +54,4 @@ class Agent:
         self.admin = AgentAdmin(uuid, producer)
         self.repo = Repo(uuid, producer)
         self.packages = Packages(uuid, producer)
-        self.producer = producer
-
-    def close(self):
-        """
-        Close and release all resources.
-        """
-        self.producer.close()
+        AgentProxy.__init__(self, producer)

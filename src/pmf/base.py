@@ -134,7 +134,7 @@ class Agent:
         self.consumer.close()
 
 
-class ProxyCollection:
+class AgentProxy:
     """
     The proxy base
     @ivar producer: A qpid producer.
