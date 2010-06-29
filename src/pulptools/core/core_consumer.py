@@ -143,10 +143,8 @@ class consumer(BaseCore):
             self.load_server()
         try:
             consumer = self.cconn.create(self.options.id, self.options.description)
-            print consumer
             utils.writeToFile(CONSUMERID, consumer['id'])
             pkginfo = PackageProfile().getPackageList()
-            print pkginfo
             self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
