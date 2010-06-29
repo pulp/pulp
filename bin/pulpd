@@ -16,17 +16,7 @@
 # in this software or its documentation.
 #
 
-from time import sleep
-from pulptools.agent import Agent
-from pulptools.logutil import getLogger
-
-log = getLogger(__file__)
+from pulptools.agent.main import main
 
 if __name__ == '__main__':
-  while True:
-    try:
-      Agent()
-      log.info('agent started.')
-    except Exception, ex:
-      log.exception(ex)
-      sleep(5)
+    main()

@@ -20,7 +20,7 @@ import sys
 sys.path.append('../../')
 
 from pmf.proxy import Proxy
-from pmf.base import ProxyCollection as Base
+from pmf.base import AgentProxy as Base
 from pmf.producer import RequestProducer
 
 

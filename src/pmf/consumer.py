@@ -41,7 +41,6 @@ class RequestConsumer(Endpoint):
         session = self.connection.session()
         address = self.queueAddress(self.id)
         receiver = session.receiver(address)
-        receiver.start()
         self.receiver = receiver
         self.session = session
 
@@ -57,21 +56,32 @@ class RequestConsumer(Endpoint):
         @return: self
         @rtype: L{Consumer}
         """
-        while True:
-            try:
-                message = self.receiver.fetch(timeout=1)
-                envelope = Envelope()
-                envelope.load(message.content)
-                sn = envelope.sn
-                content = envelope.payload
-                result = dispatcher.dispatch(content)
-                self.__respond(envelope, result)
-                self.session.acknowledge()
-            except Closed:
-                self.connect()
-                self.open()
-            except Empty:
-                pass
+        self.dispatcher = dispatcher
+        self.receiver.listen(self.received)
+        self.receiver.start()
+
+    def stop(self):
+        """
+        Stop processing requests.
+        """
+        try:
+            self.receiver.stop()
+        except:
+            pass
+
+    def received(self, message):
+        """
+        Process received request.
+        @param message: The received message.
+        @type message: L{Message}
+        """
+        envelope = Envelope()
+        envelope.load(message.content)
+        sn = envelope.sn
+        content = envelope.payload
+        result = self.dispatcher.dispatch(content)
+        self.__respond(envelope, result)
+        self.session.acknowledge()
 
     def __respond(self, request, result):
         """

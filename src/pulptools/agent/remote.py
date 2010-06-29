@@ -16,18 +16,15 @@
 #
 
 """
-Class for pulp agent.
+Remoted class for pulp agent.
 """
 
-from time import sleep
-from pmf.base import Agent as Base
-from pmf.consumer import RequestConsumer
-from pmf.decorators import remote, remotemethod
-from pulptools import ConsumerId
-from pulptools.config import Config
+from pulptools import *
 from pulptools.repolib import RepoLib
-from pulptools.logutil import getLogger
+from pulptools.config import Config
+from pmf.decorators import remote, remotemethod
 from yum import YumBase
+from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -84,31 +81,3 @@ class AgentAdmin:
         s.append('Here is my configuration:\n%s' % cfg)
         s.append('Status: ready')
         return '\n'.join(s)
-
-
-class Agent(Base):
-    """
-    Pulp agent.
-    """
-    def __init__(self):
-        id = self.id()
-        cfg = Config()
-        host = cfg.pmf.host
-        port = int(cfg.pmf.port)
-        consumer = RequestConsumer(id, host, port)
-        log.info('starting ...')
-        Base.__init__(self, consumer)
-
-    def id(self):
-        cid = ConsumerId()
-        while ( not cid.uuid ):
-            log.info('Not registered.')
-            sleep(10)
-            cid.read()
-        return cid.uuid
-
-
-if __name__ == '__main__':
-    agent = Agent()
-    # blocks on queue consumption
-    agent.close()
