@@ -23,8 +23,8 @@ on the agent.
 """
 
 from pmf.proxy import Proxy
-from pmf.producer import Producer
-import pulp.util
+from pmf.producer import RequestProducer
+from pulp.util import Config
 
 
 class AgentAdmin(Proxy):
@@ -49,7 +49,7 @@ class Agent:
         cfg = pulp.util.load_config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
-        producer = Producer(host=host, port=port)
+        producer = RequestProducer(host=host, port=port)
         self.admin = AgentAdmin(uuid, producer)
         self.repo = Repo(uuid, producer)
         self.packages = Packages(uuid, producer)

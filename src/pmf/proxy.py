@@ -21,7 +21,6 @@ Proxies (stubs) are the I{local} representation of I{remote}
 classes on which we invoke methods.
 """
 
-from pmf.producer import Producer
 from pmf.dispatcher import Request
 
 
@@ -77,7 +76,7 @@ class Proxy:
     @ivar __cid: The peer consumer ID.
     @ivar __cid: str
     @ivar __producer: An AMQP message producer.
-    @type __producer: L{pmf.Producer}
+    @type __producer: L{pmf.RequestProducer}
     """
 
     def __init__(self, consumerid, producer):
@@ -85,7 +84,7 @@ class Proxy:
         @ivar consumerid: The peer consumer ID.
         @ivar consumerid: str
         @param producer: An AMQP message producer.
-        @type producer: L{pmf.Producer}
+        @type producer: L{pmf.RequestProducer}
         """
         self.__cid = consumerid
         self.__producer = producer

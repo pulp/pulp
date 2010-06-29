@@ -27,7 +27,7 @@ from qpid.util import connect
 from qpid.messaging import Message, Empty
 
 
-class Producer(Endpoint):
+class RequestProducer(Endpoint):
     """
     An AMQP message producer.
     @ivar consumerid: The AMQP consumer (target) queue ID.
@@ -118,3 +118,12 @@ class Producer(Endpoint):
             else:
                 self.session.acknowledge()
         return result
+
+
+class EventProducer:
+    """
+    An AMQP event producer.
+    @ivar session: An AMQP session.
+    @type session: L{qpid.Session}
+    """
+    pass

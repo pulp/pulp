@@ -21,7 +21,7 @@ sys.path.append('../../')
 
 from pmf.base import Agent as Base
 from pmf.decorators import remote, remotemethod
-from pmf.consumer import Consumer
+from pmf.consumer import RequestConsumer
 
 @remote
 class RepoLib:
@@ -48,7 +48,7 @@ class Dog:
 
 class Agent(Base):
     def __init__(self, id):
-        Base.__init__(self, Consumer(id))
+        Base.__init__(self, RequestConsumer(id))
 
 
 if __name__ == '__main__':

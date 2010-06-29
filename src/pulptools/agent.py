@@ -21,7 +21,7 @@ Class for pulp agent.
 
 from time import sleep
 from pmf.base import Agent as Base
-from pmf.consumer import Consumer
+from pmf.consumer import RequestConsumer
 from pmf.decorators import remote, remotemethod
 from pulptools import ConsumerId
 from pulptools.config import Config
@@ -95,7 +95,7 @@ class Agent(Base):
         cfg = Config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
-        consumer = Consumer(id, host, port)
+        consumer = RequestConsumer(id, host, port)
         log.info('starting ...')
         Base.__init__(self, consumer)
 

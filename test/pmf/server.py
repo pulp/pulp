@@ -21,7 +21,7 @@ sys.path.append('../../')
 
 from pmf.proxy import Proxy
 from pmf.base import ProxyCollection as Base
-from pmf.producer import Producer
+from pmf.producer import RequestProducer
 
 
 class RepoLib(Proxy):
@@ -34,7 +34,7 @@ class Dog(Proxy):
 class Agent(Base):
 
     def __init__(self, consumerid):
-        producer = Producer()
+        producer = RequestProducer()
         self.repolib = RepoLib(consumerid, producer)
         self.dog = Dog(consumerid, producer)
         Base.__init__(self, producer)

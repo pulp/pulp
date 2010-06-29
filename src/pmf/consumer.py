@@ -25,7 +25,7 @@ from pmf.envelope import Envelope
 from qpid.messaging import Message, Empty
 from qpid.exceptions import Closed
 
-class Consumer(Endpoint):
+class RequestConsumer(Endpoint):
     """
     An AMQP consumer.
     @ivar queue: The primary incoming message queue.
@@ -92,3 +92,12 @@ class Consumer(Endpoint):
         message = Message(envelope.dump())
         sender.send(message);
         return self
+
+
+class EventConsumer:
+    """
+    An AMQP consumer.
+    @ivar session: An AMQP session.
+    @type session: L{qpid.Session}
+    """
+    pass
