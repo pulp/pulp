@@ -62,7 +62,7 @@ def chunks(l, n):
     """
     return [l[i:i+n] for i in range(0, len(l), n)]
 
-def load_config(filename='/etc/pulp/pulp.ini', config=ConfigParser.SafeConfigParser()):
+def load_config(filename='/etc/pulp/pulp.conf', config=ConfigParser.SafeConfigParser()):
     config.read(filename)
     return config
 

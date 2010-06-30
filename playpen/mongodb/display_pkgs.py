@@ -15,7 +15,7 @@ if __name__ == "__main__":
     filename = "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"
 
 
-    config = pulp.util.loadConfig("../../etc/pulp.ini")
+    config = pulp.util.loadConfig("../../etc/pulp.conf")
     pApi = PackageApi(config)
 
     found = pApi.package(filename=filename, checksum_type=checksum_type, checksum=checksum)

@@ -120,8 +120,8 @@ chown apache:apache /var/log/pulp
 %{python_sitelib}/pulp-*
 %{python_sitelib}/juicer/*
 %{python_sitelib}/pmf/*
-%config(noreplace) /etc/pulp/juicer.ini
-%config(noreplace) /etc/pulp/pulp.ini
+%config(noreplace) /etc/pulp/juicer.conf
+%config(noreplace) /etc/pulp/pulp.conf
 %config(noreplace) /etc/httpd/conf.d/juicer.conf
 /etc/pulp
 /srv/juicer/juicer.wsgi
@@ -138,7 +138,7 @@ chown apache:apache /var/log/pulp
 %{_bindir}/pulp
 %{_bindir}/pulpd
 %attr(755,root,root) %{_sysconfdir}/init.d/pulpd
-%config(noreplace) /etc/pulp/client.ini
+%config(noreplace) /etc/pulp/client.conf
 
 %post tools
 chkconfig --add pulpd

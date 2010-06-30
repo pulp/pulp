@@ -37,7 +37,7 @@ log = logging.getLogger('pulp.test.testcomps')
 class TestComps(unittest.TestCase):
 
     def setUp(self):
-        config_file = os.path.join(srcdir, "../etc/pulp/pulp.ini")
+        config_file = os.path.join(srcdir, "../etc/pulp/pulp.conf")
         self.config = pulp.util.load_config(config_file)
         self.rapi = RepoApi(self.config)
         self.dataPath = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")

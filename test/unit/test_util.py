@@ -48,8 +48,8 @@ class TestUtil(unittest.TestCase):
 
     def test_load_config(self):
         # Setup
-        orig_file = os.path.abspath(os.path.dirname(__file__)) + '/../../etc/pulp/pulp.ini'
-        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-pulp.ini'
+        orig_file = os.path.abspath(os.path.dirname(__file__)) + '/../../etc/pulp/pulp.conf'
+        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-pulp.conf'
         
         # Test & Verify
         config = load_config(orig_file)

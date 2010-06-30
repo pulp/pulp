@@ -152,7 +152,7 @@ parser.add_option('--numconsumers', dest='numconsumers',
                  action='store', default=1000, help='Number of consumers you want to load')
 
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
-parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp/pulp.ini")
+parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp/pulp.conf")
 parser.add_option('--skiprepos', dest='skiprepos', action='store_true', help='Skip repo imports')
 parser.add_option('--skipclean', dest='skipclean', action='store_true', help='Skip clean')
 

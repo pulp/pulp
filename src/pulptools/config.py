@@ -27,7 +27,7 @@ class Config(Base):
     @type PATH: str
     """
 
-    PATH = '/etc/pulp/client.ini'
+    PATH = '/etc/pulp/client.conf'
 
     def __init__(self):
         """
