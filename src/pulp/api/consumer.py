@@ -47,6 +47,9 @@ class ConsumerApi(BaseApi):
         """
         Create a new Consumer object and return it
         """
+        consumer = self.consumer(id)
+        if(consumer):
+            raise PulpException("A Consumer with id %s already exists" % id)
         c = model.Consumer(id, description)
         self.insert(c)
         return c

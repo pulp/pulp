@@ -260,6 +260,9 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        repo = self.repository(id)
+        if (repo):
+            raise PulpException("A Repo with id %s already exists" % id)
         self._validate_schedule(sync_schedule)
 
         r = model.Repo(id, name, arch, feed)
