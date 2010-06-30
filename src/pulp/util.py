@@ -32,7 +32,6 @@ except:
     print "Please install python-hashlib"
     sys.exit(1)
 import base64
-from iniparse import INIConfig as Base
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +62,7 @@ def chunks(l, n):
     """
     return [l[i:i+n] for i in range(0, len(l), n)]
 
-def load_config(filename, config=ConfigParser.SafeConfigParser()):
+def load_config(filename='/etc/pulp/pulp.ini', config=ConfigParser.SafeConfigParser()):
     config.read(filename)
     return config
 
@@ -166,22 +165,3 @@ def listdir(directory):
     for f in os.listdir(directory):
         packagesList.append("%s/%s" % (directory, f))
     return packagesList
-
-class Config(Base):
-    """
-    The pulp configuration.
-    @cvar PATH: The absolute path to the config file.
-    @type PATH: str
-    """
-
-    PATH = '/etc/pulp/pulp.ini'
-
-    def __init__(self, path=PATH):
-        """
-        Open the configuration.
-        """
-        fp = open(path)
-        try:
-            Base.__init__(self, fp)
-        finally:
-            fp.close()
