@@ -19,7 +19,8 @@ _author_ = 'Jason L Connor <jconnor@redhat.com>'
 from datetime import datetime, timedelta
 
 from pulp.tasking.queue.base import SchedulingTaskQueue
-from pulp.tasking.queue.storage import VolatileStorage, MongoStorage
+from pulp.tasking.queue.storage import (
+    VolatileStorage, MongoFinishedStorage, MongoStorage)
 
 # fifo task queue -------------------------------------------------------------
 
@@ -94,4 +95,4 @@ def mongo_fifo_queue():
     Create a memory-backed fifo queue
     @return: FIFOTaskQueue instance with MongoStorage storage
     """
-    return FIFOTaskQueue(MongoStorage())
+    return FIFOTaskQueue(MongoFinishedStorage())

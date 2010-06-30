@@ -21,7 +21,7 @@ import itertools
 import pymongo
 from pymongo.son_manipulator import NamespaceInjector, AutoReference
 
-from pulp.tasking.task import task2model, TaskModel
+from pulp.tasking.task import task2model, TaskModel, task_complete_states
 
 
 class Storage(object):
@@ -160,14 +160,14 @@ class VolatileStorage(Storage):
     def complete_tasks(self):
         return self.__complete_tasks[:]
     
-# mongo database task storage -------------------------------------------------
-
-class MongoStorage(VolatileStorage):
+# hybrid mongo and volatile task storage --------------------------------------
+    
+class MongoFinishedStorage(VolatileStorage):
     """
-    Task storage that stores task status in a mongo database.
+    Task storage that store tasks in memory and finished tasks in a mongo db.
     """
     def __init__(self):
-        super(MongoStorage, self).__init__()
+        super(MongoFinishedStorage, self).__init__()
         
         self._connection = pymongo.Connection()
         
@@ -175,7 +175,7 @@ class MongoStorage(VolatileStorage):
         self._db.add_son_manipulator(NamespaceInjector())
         self._db.add_son_manipulator(AutoReference(self._db))
         
-        self._objdb = self._db.fifo_tasks
+        self._objdb = self._db.tasks
         
     def _task_db2model(self, task_son):
         """
@@ -187,6 +187,31 @@ class MongoStorage(VolatileStorage):
         model = TaskModel()
         model.update(task_son)
         return model
+    
+    def complete_task(self, task):
+        model = task2model(task)
+        self._objdb.save(model, manipulate=True, safe=True)
+        super(MongoFinishedStorage, self).complete_task(task)
+        
+    def task_status(self, task_id):
+        task_son = self._objdb.find_one({'_id': task_id})
+        if task_son is not None:
+            return self._task_db2model(task_son)
+        return super(MongoFinishedStorage, self).task_status(task_id)
+    
+    def remove_task(self, task):
+        if task.state in task_complete_states:
+            self._objdb.remove({'_id': task.id}, safe=True)
+        super(MongoFinishedStorage, self).remove_task(task)
+    
+# mongo database task storage -------------------------------------------------
+
+class MongoStorage(MongoFinishedStorage):
+    """
+    Task storage that stores task status in a mongo database.
+    """
+    def __init__(self):
+        super(MongoStorage, self).__init__()
         
     def waiting_task(self, task):
         model = task2model(task)
@@ -197,11 +222,6 @@ class MongoStorage(VolatileStorage):
         model = task2model(task)
         self._objdb.save(model, manipulate=True, safe=True)
         super(MongoStorage, self).running_task(task)
-    
-    def complete_task(self, task):
-        model = task2model(task)
-        self._objdb.save(model, manipulate=True, safe=True)
-        super(MongoStorage, self).complete_task(task)
         
     def task_status(self, task_id):
         task_son = self._objdb.find_one({'_id': task_id})
@@ -211,4 +231,4 @@ class MongoStorage(VolatileStorage):
     
     def remove_task(self, task):
         self._objdb.remove({'_id': task.id}, safe=True)
-        super(MongoStorage, self).remove_task(task)
+        super(MongoFinishedStorage, self).remove_task(task)
