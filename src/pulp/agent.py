@@ -24,7 +24,7 @@ on the agent.
 
 from pmf.proxy import Proxy
 from pmf.producer import Producer
-from pulp.util import Config
+import pulp.util
 
 
 class AgentAdmin(Proxy):
@@ -46,7 +46,7 @@ class Agent:
         @param uuid: The consumer uuid.
         @type uuid: str
         """
-        cfg = Config()
+        cfg = pulp.util.load_config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         producer = Producer(host=host, port=port)

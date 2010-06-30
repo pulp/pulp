@@ -187,7 +187,7 @@ class RepositoryActions(AsyncController):
         @return: matched package object available in corresponding repository
         """
         name = self.params()
-        return self.ok(API.package_by_name(id, name))
+        return self.ok(API.get_package(id, name))
 
     
     @JSONController.error_handler

@@ -183,7 +183,7 @@ class TestApi(unittest.TestCase):
         p = self.create_package('test_pkg_by_name')
         self.rapi.add_package(repo["id"], p['id'])
         
-        pkg = self.rapi.package_by_name(repo['id'], p['name'])
+        pkg = self.rapi.get_package(repo['id'], p['name'])
         assert(pkg != None)
     
     def test_repo_package_groups(self):
@@ -294,9 +294,10 @@ class TestApi(unittest.TestCase):
             packages.append(package)
             
         c['package_profile'] = packages
-        # print "Consumer! %s" % c
         self.capi.update(c)
         self.assertTrue(c['package_profile'] != None)
+        ## Look back up from DB
+        c = self.capi.consumer(c['id'])
         found = False
         for p in c['package_profile']:
             if (p['name'] == 'pulp-test-package'):
@@ -340,6 +341,11 @@ class TestApi(unittest.TestCase):
                                 'local:file://%s' % datadir_b)
         self.rapi.sync(repo_a["id"])
         self.rapi.sync(repo_b["id"])
+        # This will get fixed when we move the async nature of sync down into 
+        # the API layer
+        import time
+        time.sleep(5)
+        
         # Look up each repo from API
         found_a = self.rapi.repository(repo_a['id'])
         found_b = self.rapi.repository(repo_b['id'])

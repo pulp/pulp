@@ -72,7 +72,7 @@ class package(BaseCore):
             usage = "usage: %prog package info [OPTIONS]"
             BaseCore.__init__(self, "package info", usage, "", "")
             self.parser.add_option("-p", "--pkgname", dest="name",
-                           help="Repository Label")
+                           help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":

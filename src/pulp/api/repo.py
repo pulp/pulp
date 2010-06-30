@@ -35,9 +35,7 @@ from pulp.api.package import PackageApi
 import pulp.api.repo_sync
 from pulp.pexceptions import PulpException
 
-
-log = logging.getLogger('pulp.api.repo')
-
+log = logging.getLogger(__name__)
 
 class RepoApi(BaseApi):
     """
@@ -46,6 +44,7 @@ class RepoApi(BaseApi):
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
+        log.setLevel(config.get('logs', 'level'))
 
         self.packageApi = PackageApi(config)
         self.localStoragePath = config.get('paths', 'local_storage')
@@ -115,7 +114,7 @@ class RepoApi(BaseApi):
                     matches.append(package)
             return matches
     
-    def package_by_name(self, id, name):
+    def get_package(self, id, name):
         """
         Return matching Package object in this Repo
         """
@@ -260,6 +259,9 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        repo = self.repository(id)
+        if (repo):
+            raise PulpException("A Repo with id %s already exists" % id)
         self._validate_schedule(sync_schedule)
 
         r = model.Repo(id, name, arch, feed)

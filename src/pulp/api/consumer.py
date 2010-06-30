@@ -24,12 +24,13 @@ from pulp.agent import Agent
 
 # Pulp
 
-log = logging.getLogger('pulp.api.consumer')
+log = logging.getLogger(__name__)
 
 class ConsumerApi(BaseApi):
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
+        log.setLevel(config.get('logs', 'level'))
 
     def _getcollection(self):
         return self.db.consumers
@@ -47,6 +48,9 @@ class ConsumerApi(BaseApi):
         """
         Create a new Consumer object and return it
         """
+        consumer = self.consumer(id)
+        if(consumer):
+            raise PulpException("A Consumer with id %s already exists" % id)
         c = model.Consumer(id, description)
         self.insert(c)
         return c
@@ -91,7 +95,9 @@ class ConsumerApi(BaseApi):
         """
         List consumers using passed in name
         """
-        return list(self.objectdb.find({'package_profile.name': name}, self._get_basic_fields()))
+        log.debug("consumers_with_package_name : name: %s" % name)
+        return list(self.objectdb.find({'package_profile.name': name}, 
+                                       self._get_basic_fields()))
 
     def bind(self, id, repoid):
         """
