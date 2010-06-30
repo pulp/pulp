@@ -15,6 +15,7 @@
 # in this software or its documentation.
 
 import web
+import logging
 
 from juicer.controllers.base import JSONController
 from juicer.runtime import CONFIG
@@ -23,7 +24,8 @@ from pulp.api.consumer import ConsumerApi
 # consumers api ---------------------------------------------------------------
 
 API = ConsumerApi(CONFIG)
-
+log = logging.getLogger('pulp')
+             
 # controllers -----------------------------------------------------------------
     
 class Consumers(JSONController):
@@ -34,11 +36,17 @@ class Consumers(JSONController):
         List all available consumers.
         @return: a list of all consumers
         """
-        filters = self.filters()
+        filters = self.filters(['package_name'])
+        log.debug("Filters: %s" % filters)
         if len(filters) == 1:
-            pkgname = filters.get('name')[0]
+            pkgname = filters.get('package_name')[0]
             if pkgname:
+                log.debug("calling consumers_with_package_name(pkgname): %s" %
+                          pkgname)
                 result = API.consumers_with_package_name(pkgname)
+                if (log.level == logging.DEBUG):
+                    log.debug("result from consumers_with_package_name: %s"
+                           % result)
                 return self.ok(result)
             else:
                 return self.ok([])
@@ -120,7 +128,7 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        packages = API.packages(id).values()
+        packages = API.packages(id)
         filtered_packages = self.filter_results(packages, filters, valid_filters)
         return self.ok(filtered_packages)
     

@@ -35,9 +35,7 @@ from pulp.api.package import PackageApi
 import pulp.api.repo_sync
 from pulp.pexceptions import PulpException
 
-
-log = logging.getLogger('pulp.api.repo')
-
+log = logging.getLogger(__name__)
 
 class RepoApi(BaseApi):
     """
@@ -46,6 +44,7 @@ class RepoApi(BaseApi):
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
+        log.setLevel(config.get('logs', 'level'))
 
         self.packageApi = PackageApi(config)
         self.localStoragePath = config.get('paths', 'local_storage')

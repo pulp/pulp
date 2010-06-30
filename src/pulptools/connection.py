@@ -216,7 +216,7 @@ class ConsumerConnection(PulpConnection):
         return self.conn.request_get(method)
 
     def consumers_with_package_name(self, name):
-        method = '/consumers/?name=%s' % name
+        method = '/consumers/?package_name=%s' % name
         return self.conn.request_get(method)
 
     def bind(self, id, repoid):
