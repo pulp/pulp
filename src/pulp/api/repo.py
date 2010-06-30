@@ -115,7 +115,7 @@ class RepoApi(BaseApi):
                     matches.append(package)
             return matches
     
-    def package_by_name(self, id, name):
+    def get_package(self, id, name):
         """
         Return matching Package object in this Repo
         """

@@ -183,7 +183,7 @@ class TestApi(unittest.TestCase):
         p = self.create_package('test_pkg_by_name')
         self.rapi.add_package(repo["id"], p['id'])
         
-        pkg = self.rapi.package_by_name(repo['id'], p['name'])
+        pkg = self.rapi.get_package(repo['id'], p['name'])
         assert(pkg != None)
     
     def test_repo_package_groups(self):
