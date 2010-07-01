@@ -87,15 +87,12 @@ class JSONController(object):
             path += '/'
         return urllib.pathname2url(path)
     
-    def filter_results(self, results, filters, valid_filters=None):
+    def filter_results(self, results, filters):
         """
         @type results: iterable of pulp model instances
         @param results: results from a db query
         @type filters: dict of str: list
         @param filters: result filters passed in, in the uri
-        @type valid_filters: list of str's
-        @param filters: reference to check the validity of the filters
-                        None means there is no check
         @return: list of model instances that meat the criteria in the filters
         """
         # XXX jconnor 2010.06.24 this should be pushed down into the db for
@@ -106,8 +103,6 @@ class JSONController(object):
         for result in results:
             is_good = True
             for filter, criteria in filters.items():
-                if valid_filters is not None and filter not in valid_filters:
-                    continue
                 if result[filter] not in criteria:
                     is_good = False
                     break

@@ -130,7 +130,7 @@ class ConsumerDeferredFields(JSONController):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
         packages = api.packages(id)
-        filtered_packages = self.filter_results(packages, filters, valid_filters)
+        filtered_packages = self.filter_results(packages, filters)
         return self.ok(filtered_packages)
     
     @JSONController.error_handler
