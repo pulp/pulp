@@ -72,6 +72,7 @@ def writeToFile(filename, message, overwrite=True):
         msgFile.write(message)
     finally:
         msgFile.close()
+        fd.close()
 
     return True
 

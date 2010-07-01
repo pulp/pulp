@@ -43,7 +43,8 @@ class consumer(BaseCore):
 
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.actions = {"register"      : "Register this system as a consumer", 
-                        "unregister"    : "Delete a consumer", 
+                        "unregister"    : "Delete a consumer",
+                        "update"        : " Update consumer profile",
                         "list"          : "List of accessible consumer info",
                         "bind"          : "Bind the consumer to listed repos",
                         "unbind"        : "UnBind the consumer from repos",}
@@ -84,6 +85,11 @@ class consumer(BaseCore):
                            help="consumer description eg: foo's web server")
             self.parser.add_option("--server", dest="server",
                            help="Server hostname to register the consumer. Defaults to localhost")
+        if self.action == "update":
+            usage = "usage: %prog consumer update [OPTIONS]"
+            BaseCore.__init__(self, "consumer update", usage, "", "")
+            self.parser.add_option("--id", dest="id",
+                           help="Consumer Identifier eg: foo.example.com") 
         if self.action == "bind":
             usage = "usage: %prog consumer bind [OPTIONS]"
             BaseCore.__init__(self, "consumer bind", usage, "", "")
@@ -123,6 +129,8 @@ class consumer(BaseCore):
             self._create()
         if self.action == "list":
             self._list()
+        if self.action == "update":
+            self._update()
         if self.action == "unregister":
             self._delete()
         if self.action == "bind":
@@ -148,12 +156,26 @@ class consumer(BaseCore):
             self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
-            raise
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise
+            
+    def _update(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if self.options.id:
+            consumer_id = self.options.id
+        else:
+            consumer_id = getConsumer()
+        try:
+            pkginfo = PackageProfile().getPackageList()
+            self.cconn.profile(consumer_id, pkginfo)
+            print _(" Successfully updated consumer [%s] profile" % consumer_id)
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
 
     def _info(self):
         (self.options, self.args) = self.parser.parse_args()
