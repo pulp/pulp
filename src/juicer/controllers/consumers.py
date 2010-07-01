@@ -14,16 +14,17 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import web
 import logging
 
+import web
+
 from juicer.controllers.base import JSONController
-from juicer.runtime import CONFIG
+from juicer.runtime import config
 from pulp.api.consumer import ConsumerApi
 
 # consumers api ---------------------------------------------------------------
 
-API = ConsumerApi(CONFIG)
+api = ConsumerApi(config)
 log = logging.getLogger('pulp')
              
 # controllers -----------------------------------------------------------------
@@ -43,14 +44,14 @@ class Consumers(JSONController):
             if pkgname:
                 log.debug("calling consumers_with_package_name(pkgname): %s" %
                           pkgname)
-                result = API.consumers_with_package_name(pkgname)
+                result = api.consumers_with_package_name(pkgname)
                 if (log.level == logging.DEBUG):
                     log.debug("result from consumers_with_package_name: %s"
                            % result)
                 return self.ok(result)
             else:
                 return self.ok([])
-        return self.ok(API.consumers())
+        return self.ok(api.consumers())
      
     @JSONController.error_handler
     def PUT(self):
@@ -59,7 +60,7 @@ class Consumers(JSONController):
         @return: consumer meta data on successful creation of consumer
         """
         consumer_data = self.params()
-        consumer = API.create(consumer_data['id'], consumer_data['description'])
+        consumer = api.create(consumer_data['id'], consumer_data['description'])
         path = self.extend_path(consumer.id)
         return self.created(path, consumer)
 
@@ -68,7 +69,7 @@ class Consumers(JSONController):
         """
         @return: True on successful deletion of all consumers
         """
-        API.clean()
+        api.clean()
         return self.ok(True)
     
 
@@ -76,7 +77,7 @@ class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
     @JSONController.error_handler
     def POST(self):
-        API.bulkcreate(self.params())
+        api.bulkcreate(self.params())
         return self.ok(True)
 
  
@@ -89,7 +90,7 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: consumer meta data
         """
-        return self.ok(API.consumer(id))
+        return self.ok(api.consumer(id))
     
     @JSONController.error_handler
     def PUT(self, id):
@@ -99,7 +100,7 @@ class Consumer(JSONController):
         @type id: str
         """
         consumer = self.params()
-        consumer = API.update(consumer)
+        consumer = api.update(consumer)
         return self.ok(True)
 
     @JSONController.error_handler
@@ -109,7 +110,7 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: True on successful deletion of consumer
         """
-        API.delete(id=id)
+        api.delete(id=id)
         return self.ok(True)
 
 
@@ -128,7 +129,7 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        packages = API.packages(id)
+        packages = api.packages(id)
         filtered_packages = self.filter_results(packages, filters, valid_filters)
         return self.ok(filtered_packages)
     
@@ -158,7 +159,7 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        API.bind(id, data)
+        api.bind(id, data)
         return self.ok(True)
 
     def unbind(self, id):
@@ -167,14 +168,14 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        API.unbind(id, data)
+        api.unbind(id, data)
         return self.ok(None)
     
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
         """
-        API.profile_update(id, self.params())
+        api.profile_update(id, self.params())
         return self.ok(True)
 
     def installpackages(self, id):
@@ -184,7 +185,7 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         names = data.get('packagenames', [])
-        return self.ok(API.installpackages(id, names))
+        return self.ok(api.installpackages(id, names))
         
     @JSONController.error_handler
     def POST(self, id, action_name):

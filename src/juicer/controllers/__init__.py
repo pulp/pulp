@@ -15,10 +15,17 @@
 # in this software or its documentation.
 
 import auth
-import consumers
 import consumergroups
+import consumers
 import packages
 import repositories
 import test
 
-__all__ = ['auth', 'consumers', 'consumergroups', 'packages', 'repositories', 'test']
+__all__ = [
+    'auth',
+    'consumergroups',
+    'consumers', 
+    'packages', 
+    'repositories', 
+    'test',
+]

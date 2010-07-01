@@ -14,15 +14,18 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
+
 import web
 
 from juicer.controllers.base import JSONController, AsyncController
-from juicer.runtime import CONFIG
+from juicer.runtime import config
 from pulp.api.repo import RepoApi
 
 # repository api --------------------------------------------------------------
 
-API = RepoApi(CONFIG)
+api = RepoApi(config)
+log = logging.getLogger('pulp')
 
 # restful controllers ---------------------------------------------------------
 
@@ -35,7 +38,7 @@ class Repositories(JSONController):
         @return: a list of all available repositories
         """
         # XXX implement filters
-        return self.ok(API.repositories())
+        return self.ok(api.repositories())
     
     @JSONController.error_handler
     def PUT(self):
@@ -44,7 +47,7 @@ class Repositories(JSONController):
         @return: repository meta data on successful creation of repository
         """
         repo_data = self.params()
-        repo = API.create(repo_data['id'],
+        repo = api.create(repo_data['id'],
                           repo_data['name'],
                           repo_data['arch'],
                           repo_data['feed'],
@@ -58,7 +61,7 @@ class Repositories(JSONController):
         """
         @return: True on successful deletion of all repositories
         """
-        API.clean()
+        api.clean()
         return self.ok(True)
     
 
@@ -71,7 +74,7 @@ class Repository(JSONController):
         @param id: repository id
         @return: repository meta data
         """
-        return self.ok(API.repository(id))
+        return self.ok(api.repository(id))
     
     @JSONController.error_handler
     def PUT(self, id):
@@ -82,7 +85,7 @@ class Repository(JSONController):
         """
         repo_data = self.params()
         repo_data['id'] = id
-        API.update(repo_data)
+        api.update(repo_data)
         return self.ok(True)
 
     @JSONController.error_handler
@@ -92,7 +95,7 @@ class Repository(JSONController):
         @param id: repository id
         @return: True on successful deletion of repository
         """
-        API.delete(id=id)
+        api.delete(id=id)
         return self.ok(True)
     
     
@@ -106,7 +109,7 @@ class RepositoryDeferredFields(JSONController):
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        packages = API.packages(id).values()
+        packages = api.packages(id).values()
         filtered_packages = self.filter_results(packages, filters, valid_filters)
         return self.ok(filtered_packages)
     
@@ -150,7 +153,7 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: list of all packages available in corresponding repository
         """
-        return self.ok(API.packages(id))
+        return self.ok(api.packages(id))
     
     def sync(self, id):
         """
@@ -158,7 +161,7 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        task_info = self.start_task(API.sync, id)
+        task_info = self.start_task(api.sync, id)
         return self.accepted(task_info)
        
     def upload(self, id):
@@ -168,7 +171,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful upload
         """
         data = self.params()
-        API.upload(id,
+        api.upload(id,
                    data['pkginfo'],
                    data['pkgstream'])
         return self.ok(True)
@@ -179,7 +182,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful addition of package to repository
         """
         data = self.params()
-        API.add_package(id, data['packageid'])
+        api.add_package(id, data['packageid'])
         return self.ok(True)
     
     def get_package(self, id):
@@ -190,7 +193,7 @@ class RepositoryActions(AsyncController):
         @return: matched package object available in corresponding repository
         """
         name = self.params()
-        return self.ok(API.get_package(id, name))
+        return self.ok(api.get_package(id, name))
     
     def get_packagegroups(self, id):
         """
@@ -198,7 +201,7 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: package groups
         """
-        return self.ok(API.packagegroups(id))
+        return self.ok(api.packagegroups(id))
 
     def add_packagegroup(self, id):
         """
@@ -219,7 +222,7 @@ class RepositoryActions(AsyncController):
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(API.add_package_to_group(id, groupid, pkg_name, gtype))
+        return self.ok(api.add_package_to_group(id, groupid, pkg_name, gtype))
 
     def remove_package_from_group(self, id):
         """
@@ -240,7 +243,7 @@ class RepositoryActions(AsyncController):
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(API.remove_package_from_group(id, groupid, pkg_name, gtype))
+        return self.ok(api.remove_package_from_group(id, groupid, pkg_name, gtype))
 
     @JSONController.error_handler
     def POST(self, id, action_name):
@@ -297,7 +300,7 @@ class Schedules(JSONController):
         '''
         # XXX this returns all scheduled tasks, it should only return those
         # tasks that are specified by the action_name
-        schedules = API.all_schedules()
+        schedules = api.all_schedules()
         return self.ok(schedules)
  
 # web.py application ----------------------------------------------------------

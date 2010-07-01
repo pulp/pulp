@@ -14,15 +14,18 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
+
 import web
 
 from juicer.controllers.base import JSONController
-from juicer.runtime import CONFIG
+from juicer.runtime import config
 from pulp.api.package import PackageApi
 
 # packages api ----------------------------------------------------------------
 
-API = PackageApi(CONFIG)
+api = PackageApi(config)
+log = logging.getLogger('pulp')
 
 # packages controllers --------------------------------------------------------
 
@@ -34,7 +37,7 @@ class Packages(JSONController):
         List available packages.
         @return: a list of packages
         """
-        return self.ok(API.package_descriptions())
+        return self.ok(api.package_descriptions())
     
     @JSONController.error_handler
     def DELETE(self):
@@ -42,7 +45,7 @@ class Packages(JSONController):
         Delete all packages.
         @return: True on success
         """
-        API.clean()
+        api.clean()
         return self.ok(True)
 
     @JSONController.error_handler
@@ -52,7 +55,7 @@ class Packages(JSONController):
         @return: package meta data on successful creation of package
         """
         data = self.params()
-        package = API.create(data['name'], data['epoch'],data['version'],  
+        package = api.create(data['name'], data['epoch'],data['version'],  
                              data['release'], data['arch'], data['description'],
                              data['checksum_type'], data['checksum'], data['filename'])
         return self.created(None, package)
@@ -67,14 +70,14 @@ class Package(JSONController):
         @param id: package id
         @return: package meta data corresponding to id
         """
-        return self.ok(API.package(id))
+        return self.ok(api.package(id))
 
     @JSONController.error_handler
     def DELETE(self, id):
         '''
         @param id: package id
         '''
-        API.delete(id)
+        api.delete(id)
         return self.ok(True)
     
     
@@ -112,7 +115,7 @@ class Versions(JSONController):
 
     @JSONController.error_handler
     def GET(self, name, version, release, epoch, arch):
-        pv = API.package_by_ivera(name, version, epoch, release, arch)
+        pv = api.package_by_ivera(name, version, epoch, release, arch)
         return self.ok(pv)
 
 # web.py application ----------------------------------------------------------

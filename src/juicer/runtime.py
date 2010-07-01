@@ -20,7 +20,7 @@ CONFIG - the raw configurations of juicer and pulp as a configuration parser
 
 import logging
 
-CONFIG = None
+config = None
 
 
 def bootstrap(config):
