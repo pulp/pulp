@@ -93,10 +93,6 @@ cp etc/init.d/pulpd %{buildroot}/etc/init.d
 
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
-# The apache user needs to be able to write to the pulp tools log file when it runs
-# tools commands from cron
-setfacl -m user:apache:rwx /var/log/pulp
-
 # RHEL 5 packages don't have egg-info files, so remove the requires.txt
 # It isn't needed, because RPM will guarantee the dependency itself
 %if 0%{?rhel} > 0
@@ -111,6 +107,7 @@ rm -rf %{buildroot}
 %post
 chown apache:apache /var/lib/pulp
 chown apache:apache /var/log/pulp
+
 
 %files
 %defattr(-,root,root,-)
