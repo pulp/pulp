@@ -110,6 +110,8 @@ class consumer(BaseCore):
         if self.action == "unregister":
             usage = "usage: %prog consumer unregister [OPTIONS]"
             BaseCore.__init__(self, "consumer unregister", usage, "", "")
+            self.parser.add_option("--consumerid", dest="consumerid",
+                           help="Consumer Identifier")
 
     def _validate_options(self):
         pass
@@ -259,7 +261,20 @@ class consumer(BaseCore):
 
 
     def _delete(self):
-        print "under Construction"
+        (self.options, self.args) = self.parser.parse_args()
+        if self.options.consumerid:
+            consumer_id = self.options.id
+        else:
+            consumer_id = getConsumer()
+        try:
+            self.cconn.delete(consumer_id)
+            print _(" Successfully unregistered consumer [%s]" % consumer_id)
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
         
 def getConsumer():
     ##TODO: this will eventually be a x509 cert
