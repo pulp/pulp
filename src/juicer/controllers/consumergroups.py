@@ -17,12 +17,12 @@
 import web
 
 from juicer.controllers.base import JSONController
-from juicer.runtime import CONFIG
+from juicer.runtime import config
 from pulp.api.consumer_group import ConsumerGroupApi
 
 # consumers api ---------------------------------------------------------------
 
-API = ConsumerGroupApi(CONFIG)
+API = ConsumerGroupApi(config)
 
 # controllers -----------------------------------------------------------------
 
