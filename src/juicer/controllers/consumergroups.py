@@ -22,7 +22,7 @@ from pulp.api.consumer_group import ConsumerGroupApi
 
 # consumers api ---------------------------------------------------------------
 
-API = ConsumerGroupApi(config)
+api = ConsumerGroupApi(config)
 
 # controllers -----------------------------------------------------------------
 
@@ -35,7 +35,7 @@ class ConsumerGroups(JSONController):
         @return: a list of all consumergroups
         """
         # implement filters
-        return self.ok(API.consumergroups())
+        return self.ok(api.consumergroups())
 
     @JSONController.error_handler
     def PUT(self):
@@ -44,7 +44,7 @@ class ConsumerGroups(JSONController):
         @return: consumer group metadata on successful creation
         """
         consumergroup_data = self.params()
-        consumergroup = API.create(consumergroup_data['id'], consumergroup_data['description'],
+        consumergroup = api.create(consumergroup_data['id'], consumergroup_data['description'],
                                    consumergroup_data['consumerids'])
         return self.created(consumergroup['id'], consumergroup)
 
@@ -53,7 +53,7 @@ class ConsumerGroups(JSONController):
         """
         @return: True on successful deletion of all consumer groups
         """
-        API.clean()
+        api.clean()
         return self.ok(True)
 
 
@@ -66,7 +66,7 @@ class ConsumerGroup(JSONController):
         @param id: consumer group id
         @return: consumer group meta data
         """
-        return self.ok(API.consumergroup(id))
+        return self.ok(api.consumergroup(id))
 
     @JSONController.error_handler
     def PUT(self, id):
@@ -75,7 +75,7 @@ class ConsumerGroup(JSONController):
         @param id: The consumer group id
         """
         consumergroup = self.params()
-        consumergroup = API.update(consumergroup)
+        consumergroup = api.update(consumergroup)
         return self.ok(True)
 
     @JSONController.error_handler
@@ -85,7 +85,7 @@ class ConsumerGroup(JSONController):
         @param id: consumer group id
         @return: True on successful deletion of consumer
         """
-        API.delete(id=id)
+        api.delete(id=id)
         return self.ok(True)
 
 class ConsumerGroupActions(JSONController):
@@ -103,7 +103,7 @@ class ConsumerGroupActions(JSONController):
         @param id: consumer group id
         """
         data = self.params()
-        API.add_consumer(id, data)
+        api.add_consumer(id, data)
         return self.ok(True)
 
     def remove(self, id):
@@ -112,7 +112,7 @@ class ConsumerGroupActions(JSONController):
         @param id: consumer group id
         """
         data = self.params()
-        API.delete_consumer(id, data)
+        api.delete_consumer(id, data)
         return self.ok(None)
 
     @JSONController.error_handler

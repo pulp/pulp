@@ -18,6 +18,9 @@ HTTP utilities to help juicer with HTTP using the web.py framework
 """
 
 import httplib
+import os
+import urllib
+
 import web
 
 
@@ -63,7 +66,35 @@ def query_parameters(valid):
     # scrub out invalid keys and empty lists from the parameters
     return dict((k,v) for k,v in params.items() if k in valid and v)
     
-    
+   
+def uri_path():
+    """
+    Return the current URI path
+    @return: full current URI path
+    """
+    return web.http.url(web.ctx.path)
+
+
+def extend_uri_path(suffix):
+    """
+    Return the current URI path with the suffix appended to it
+    @type suffix: str
+    @param suffix: path fragment to be appended to the current path
+    @return: full path with the suffix appended
+    """
+    # steps:
+    # cleanly concatenate the current path with the suffix
+    # add the application prefix
+    # all urls are paths, so need a trailing '/'
+    # make sure the path is properly encoded
+    prefix = uri_path()
+    suffix = urllib.pathname2url(suffix)
+    path = os.path.normpath(os.path.join(prefix, suffix))
+    if not path.endswith('/'):
+        path += '/'
+    return path
+
+      
 def _status(code):
     """
     Non-public function to set the web ctx status
@@ -92,6 +123,13 @@ def status_accepted():
     Set response code to accepted
     """
     _status(httplib.ACCEPTED)
+    
+    
+def status_bad_request():
+    """
+    Set the response code to bad request
+    """
+    _status(httplib.BAD_REQUEST)
     
     
 def status_not_found():

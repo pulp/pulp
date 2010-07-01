@@ -85,17 +85,17 @@ class RepoApi(BaseApi):
 
         return repo
 
-    def repositories(self):
+    def repositories(self, spec=None, fields=None):
         """
         Return a list of Repositories
         """
-        return list(self.objectdb.find())
+        return list(self.objectdb.find(spec=spec, fields=fields))
         
-    def repository(self, id):
+    def repository(self, id, fields=None):
         """
         Return a single Repository object
         """
-        return self.objectdb.find_one({'id': id})
+        return self.objectdb.find_one({'_id': id}, fields=fields)
         
     def packages(self, id, name=None):
         """

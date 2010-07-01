@@ -14,18 +14,23 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import itertools
 import logging
 
 import web
 
+from juicer import http
 from juicer.controllers.base import JSONController, AsyncController
 from juicer.runtime import config
 from pulp.api.repo import RepoApi
 
-# repository api --------------------------------------------------------------
+# globals ---------------------------------------------------------------------
 
 api = RepoApi(config)
 log = logging.getLogger('pulp')
+
+# default fields for repositories being sent to the client
+default_fields = ['id', 'source', 'name', 'arch', 'sync_schedule', 'use_symlinks']
 
 # restful controllers ---------------------------------------------------------
 
@@ -37,8 +42,19 @@ class Repositories(JSONController):
         List all available repositories.
         @return: a list of all available repositories
         """
-        # XXX implement filters
-        return self.ok(api.repositories())
+        valid_filters = ['id', 'name', 'arch']
+        
+        filters = self.filters(valid_filters)
+        spec = self.build_spec(filters)
+        
+        repositories = api.repositories(spec, default_fields)
+        
+        for repo in repositories:
+            repo['uri_ref'] = http.extend_uri_path(repo['id'])
+            for field in RepositoryDeferredFields.exposed_fields:
+                repo[field] = http.extend_uri_path('/'.join((repo['id'], field)))
+        
+        return self.ok(repositories)
     
     @JSONController.error_handler
     def PUT(self):
@@ -47,13 +63,20 @@ class Repositories(JSONController):
         @return: repository meta data on successful creation of repository
         """
         repo_data = self.params()
-        repo = api.create(repo_data['id'],
+        
+        id = repo_data['id']
+        if api.repository(id, default_fields) is not None:
+            return self.conflict('A repository with the id, %s, already exists' % id)
+        
+        repo = api.create(id,
                           repo_data['name'],
                           repo_data['arch'],
                           repo_data['feed'],
-                          symlinks = repo_data['use_symlinks'],
-                          sync_schedule=repo_data['sync_schedule'])
-        path = self.extend_path(repo.id)
+                          symlinks=repo_data.get('use_symlinks', False),
+                          sync_schedule=repo_data.get('sync_schedule', None))
+        
+        path = http.extend_uri_path(repo.id)
+        repo['uri_ref'] = path
         return self.created(path, repo)
 
     @JSONController.error_handler
@@ -74,7 +97,11 @@ class Repository(JSONController):
         @param id: repository id
         @return: repository meta data
         """
-        return self.ok(api.repository(id))
+        repo = api.repository(id, default_fields)
+        for field in RepositoryDeferredFields.exposed_fields:
+            repo[field] = http.extend_uri_path(field)
+        repo['uri_ref'] = http.uri_path()
+        return self.ok(repo)
     
     @JSONController.error_handler
     def PUT(self, id):
@@ -84,7 +111,11 @@ class Repository(JSONController):
         @return: True on successful update of repository meta data
         """
         repo_data = self.params()
-        repo_data['id'] = id
+        if repo_data['id'] != id:
+            return self.bad_request('You cannot change a repository id')
+        for field in itertools.chain(['uri_ref'], # web services only field
+                                     RepositoryDeferredFields.exposed_fields):
+            repo_data.pop(field, None)
         api.update(repo_data)
         return self.ok(True)
 
@@ -109,6 +140,7 @@ class RepositoryDeferredFields(JSONController):
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
+        # XXX this filtering needs to be pushed down to the db
         packages = api.packages(id).values()
         filtered_packages = self.filter_results(packages, filters)
         return self.ok(filtered_packages)
@@ -150,6 +182,7 @@ class RepositoryActions(AsyncController):
     def list(self, id):
         """
         List all packages in a repository.
+        @deprecated: use deferred fields: packages without filters instead
         @param id: repository id
         @return: list of all packages available in corresponding repository
         """
@@ -188,6 +221,7 @@ class RepositoryActions(AsyncController):
     def get_package(self, id):
         """
         Get package info from a repository.
+        @deprecated: user deferred fields: packages with filters instead
         @param id: repository id
         @param name: repository name
         @return: matched package object available in corresponding repository
@@ -274,7 +308,6 @@ class RepositoryActionStatus(AsyncController):
         @param action_id: action id
         @return: action status information
         """
-        # XXX there is a bug that re-appends the task id here
         task_info = self.task_status(action_id)
         if task_info is None:
             return self.not_found('No %s with id %s found' % (action_name, action_id))
@@ -285,7 +318,7 @@ class RepositoryActionStatus(AsyncController):
         """
         Place holder to cancel an action
         """
-        return self.not_found('Action cancellation is not yet implemented')
+        return self.method_not_allowed('Action cancellation is not yet implemented')
 
 
 class Schedules(JSONController):

@@ -22,7 +22,7 @@ from juicer.controllers.base import JSONController
 from juicer.runtime import config
 from pulp.api.package import PackageApi
 
-# packages api ----------------------------------------------------------------
+# globals ---------------------------------------------------------------------
 
 api = PackageApi(config)
 log = logging.getLogger('pulp')

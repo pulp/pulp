@@ -16,6 +16,7 @@
 
 import functools
 import os
+import re
 import sys
 import traceback
 import urllib
@@ -53,6 +54,8 @@ class JSONController(object):
                 return self.internal_server_error(tb_msg)
         return report_error
     
+    # input methods -----------------------------------------------------------
+    
     def params(self):
         """
         JSON decode the objects in the requests body and return them
@@ -69,34 +72,15 @@ class JSONController(object):
         """
         return http.query_parameters(valid)
     
-    def extend_path(self, suffix):
-        """
-        Return the cuttent path with the suffix appended to it
-        @type suffix: str
-        @param suffix: path fragment to be appended to the current path
-        @return: full path with the suffix appended
-        """
-        # steps:
-        # cleanly concatenate the current path with the suffix
-        # add the application prefix
-        # all urls are paths, so need a trailing '/'
-        # make sure the path is properly encoded
-        path = os.path.normpath(os.path.join(web.ctx.path, suffix))
-        path = web.http.url(path)
-        if not path.endswith('/'):
-            path += '/'
-        return urllib.pathname2url(path)
-    
     def filter_results(self, results, filters):
         """
+        @deprecated: use build_spec and pass the result into pulp's api instead
         @type results: iterable of pulp model instances
         @param results: results from a db query
         @type filters: dict of str: list
         @param filters: result filters passed in, in the uri
         @return: list of model instances that meat the criteria in the filters
         """
-        # XXX jconnor 2010.06.24 this should be pushed down into the db for
-        # performance and not be made available here (if possible)
         if not filters:
             return results
         new_results = []
@@ -109,7 +93,22 @@ class JSONController(object):
             if is_good:
                 new_results.append(result)
         return new_results
-
+    
+    def build_spec(self, filters):
+        """
+        Build a mongodb spec from the passed in filters
+        @type filters: dict of str: list of str's pairs
+        @param filters: valid filters and the associated values passed in as
+                        query parameters
+        @return: pymongo spec for collection.find or find_one
+        """
+        # XXX this should probably be in some sort of utility module
+        if not filters:
+            return None
+        return dict((k,re.compile('^(%s)$' % '|'.join(v))) for k,v in filters.items())
+    
+    # response methods --------------------------------------------------------
+    
     def _output(self, data):
         """
         JSON encode the response and set the appropriate headers
@@ -139,6 +138,16 @@ class JSONController(object):
         http.status_created()
         http.header('Location', location)
         return self._output(data)
+    
+    def bad_request(self, msg=None):
+        """
+        Return a not found error.
+        @type msg: str
+        @param msg: optional error message
+        @return: JSON encoded response
+        """
+        http.status_bad_request()
+        return self._output(msg)
     
     def not_found(self, msg=None):
         """

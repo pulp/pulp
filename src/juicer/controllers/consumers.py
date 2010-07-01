@@ -18,11 +18,12 @@ import logging
 
 import web
 
+from juicer import http
 from juicer.controllers.base import JSONController
 from juicer.runtime import config
 from pulp.api.consumer import ConsumerApi
 
-# consumers api ---------------------------------------------------------------
+# globals ---------------------------------------------------------------------
 
 api = ConsumerApi(config)
 log = logging.getLogger('pulp')
@@ -61,7 +62,7 @@ class Consumers(JSONController):
         """
         consumer_data = self.params()
         consumer = api.create(consumer_data['id'], consumer_data['description'])
-        path = self.extend_path(consumer.id)
+        path = http.extend_uri_path(consumer.id)
         return self.created(path, consumer)
 
     @JSONController.error_handler
