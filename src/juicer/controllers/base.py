@@ -60,7 +60,7 @@ class JSONController(object):
         """
         return json.loads(web.data())
     
-    def filters(self, valid=[]):
+    def filters(self, valid):
         """
         Fetch any parameters passed on the url
         @type valid: list of str's

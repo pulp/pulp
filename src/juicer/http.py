@@ -60,8 +60,8 @@ def query_parameters(valid):
     # only contains one element
     defaults = {}.fromkeys(valid, [])
     params = web.input(**defaults)
-    # scrub out empty lists from the parameters
-    return dict((k,v) for k,v in params.items() if v)
+    # scrub out invalid keys and empty lists from the parameters
+    return dict((k,v) for k,v in params.items() if k in valid and v)
     
     
 def _status(code):
