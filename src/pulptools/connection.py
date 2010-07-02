@@ -152,7 +152,7 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/add_package/" % repoid
         print "Add info: %s" % addinfo
         return self.conn.request_post(method, params=addinfo)
-    
+
     def get_package(self, repoid, pkg_name):
         method = "/repositories/%s/get_package/" % repoid
         return self.conn.request_post(method, params=pkg_name)
@@ -160,6 +160,20 @@ class RepoConnection(PulpConnection):
     def packages(self, repoid):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_post(method)
+
+    def get_packagegroups(self, repoid):
+        method = "/repositories/%s/get_packagegroups/" % repoid
+        return self.conn.request_post(method, params=None)
+
+    def add_packagegroup(self, repoid, groupid, pkgname, gtype):
+        method = "/repositories/%s/add_packagegroup/" % repoid
+        return self.conn.request_post(method,
+                params={"groupid":groupid, "name":pkgname, "type":gtype})
+
+    def remove_package_from_group(self, repoid, groupid, pkgname, gtype):
+        method = "/repositories/%s/remove_package_from_group/" % repoid
+        return self.conn.request_post(method,
+                params={"groupid":groupid, "name":pkgname, "type":gtype})
 
     def upload(self, id, pkginfo, pkgstream):
         uploadinfo = {'repo' : id,

@@ -196,6 +196,8 @@ class RepoApi(BaseApi):
         Return list of PackageGroup objects in this Repo
         """
         repo = self.repository(id)
+        if repo == None:
+            raise PulpException("No Repo with id: %s found" % id)
         return repo['packagegroups']
     
     def packagegroup(self, repoid, groupid):
@@ -218,12 +220,68 @@ class RepoApi(BaseApi):
             del repo['packagegroupcategories'][categoryid]
         self.update(repo)
     
+    def add_package_to_group(self, repoid, groupid, pkg_name, gtype="default"):
+        """
+        @param repoid: repository id
+        @param groupid: group id
+        @param pkg_name: package name
+        @param gtype: OPTIONAL type of package group,
+            example "mandatory", "default", "optional"
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if not repo["packagegroups"].has_key(groupid):
+            raise PulpException("No PackageGroup with id: %s exists in repo %s" \
+                                % (groupid, repoid))
+        group = repo["packagegroups"][groupid]
+        if gtype == "mandatory":
+            if pkg_name not in group["mandatory_package_names"]:
+                group["mandatory_package_names"].append(pkg_name)
+        elif gtype == "conditional":
+            raise PulpException("Not Implemented:  support for creating conditional groups")
+        elif gtype == "optional":
+            if pkg_name not in group["optional_package_names"]:
+                group["optional_package_names"].append(pkg_name)
+        else:
+            if pkg_name not in group["default_package_names"]:
+                group["default_package_names"].append(pkg_name)
+        self.update(repo)
+
+    def remove_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
+        """
+        @param repoid: repository id
+        @param groupid: group id
+        @param pkg_name: package name
+        @param gtype: OPTIONAL type of package group,
+            example "mandatory", "default", "optional"
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if not repo["packagegroups"].has_key(groupid):
+            raise PulpException("No PackageGroup with id: %s exists in repo %s" \
+                                % (groupid, repoid))
+        group = repo["packagegroups"][groupid]
+        if gtype == "mandatory":
+            if pkg_name in group["mandatory_package_names"]:
+                group["mandatory_package_names"].remove(pkg_name)
+        elif gtype == "conditional":
+            raise PulpException("Not Implemented:  support for creating conditional groups")
+        elif gtype == "optional":
+            if pkg_name in group["optional_package_names"]:
+                group["optional_package_names"].remove(pkg_name)
+        else:
+            if pkg_name in group["default_package_names"]:
+                group["default_package_names"].remove(pkg_name)
+        self.update(repo)
+
     def update_packagegroupcategory(self, repoid, pgc):
         """
         Save the passed in PackageGroupCategory to this repo
         """
         repo = self.repository(repoid)
-        if (repo == None):
+        if repo == None:
             raise PulpException("No Repo with id: %s found" % repoid)
         repo['packagegroupcategories'][pgc['id']] = pgc
         self.update(repo)
@@ -233,7 +291,7 @@ class RepoApi(BaseApi):
         Save the list of passed in PackageGroupCategory objects to this repo
         """
         repo = self.repository(repoid)
-        if (repo == None):
+        if repo == None:
             raise PulpException("No Repo with id: %s found" % repoid)
         for item in pgclist:
             repo['packagegroupcategories'][item['id']] = item
@@ -244,6 +302,8 @@ class RepoApi(BaseApi):
         Return list of PackageGroupCategory objects in this Repo
         """
         repo = self.repository(id)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % id)
         return repo['packagegroupcategories']
 
     def packagegroupcategory(self, repoid, categoryid):
@@ -251,6 +311,8 @@ class RepoApi(BaseApi):
         Return a PackageGroupCategory object from this Repo
         """
         repo = self.repository(repoid)
+        if repo == None:
+            raise PulpException("No Repo with id: %s found" % repoid)
         if not repo['packagegroupcategories'].has_key(categoryid):
             return None
         return repo['packagegroupcategories'][categoryid]

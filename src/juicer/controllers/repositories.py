@@ -139,6 +139,9 @@ class RepositoryActions(AsyncController):
         'upload',
         'add_package',
         'get_package',
+        'get_packagegroups',
+        'add__packagegroup',
+        'remove_package_from_group',
     )
 
     def list(self, id):
@@ -188,8 +191,57 @@ class RepositoryActions(AsyncController):
         """
         name = self.params()
         return self.ok(API.get_package(id, name))
-
     
+    def get_packagegroups(self, id):
+        """
+        Get package group info from a repository.
+        @param id: repository id
+        @return: package groups
+        """
+        return self.ok(API.packagegroups(id))
+
+    def add_packagegroup(self, id):
+        """
+        Add a package to an existing package group
+        @param id: repository id
+        @param groupid: package group id
+        @param name: package name
+        @param type: group type example "mandatory", "optional", "default"
+        @return: True/False
+        """
+        p = self.params()
+        if "groupid" not in p:
+            return self.not_found('No groupid specified')
+        if "name" not in p:
+            return self.not_found('No package name specified')
+        groupid = p["groupid"]
+        pkg_name = p["name"]
+        gtype = "default"
+        if p.has_key("type"):
+            gtype = p["type"]
+        return self.ok(API.add_package_to_group(id, groupid, pkg_name, gtype))
+
+    def remove_package_from_group(self, id):
+        """
+        Removes a package from an existing package group
+        @param id: repository id
+        @param groupid: package group id
+        @param name: package name
+        @param type: group type example "mandatory", "optional", "default"
+        @return: True/False
+        """
+        p = self.params()
+        if "groupid" not in p:
+            return self.not_found('No groupid specified')
+        if "name" not in p:
+            return self.not_found('No package name specified')
+        groupid = p["groupid"]
+        pkg_name = p["name"]
+        gtype = "default"
+        if p.has_key("type"):
+            gtype = p["type"]
+        return self.ok(API.remove_package_from_group(id, groupid, pkg_name, gtype))
+
     @JSONController.error_handler
     def POST(self, id, action_name):
         """
