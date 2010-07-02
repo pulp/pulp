@@ -117,11 +117,12 @@ class BaseSynchronizer(object):
         self.package_api = PackageApi(config)
 
     def add_packages_from_dir(self, dir, repo):
-        dir_list = os.listdir(dir)
+        
         startTime = time.time()
+        package_list = pulp.util.get_repo_packages(dir)
         added_packages = []
-        for fname in dir_list:
-            package = self.import_package(os.path.join(dir, fname), repo)
+        for package in package_list:
+            package = self.import_package(package, repo)
             if (package != None):
                 added_packages.append(package)
         endTime = time.time()
@@ -147,40 +148,36 @@ class BaseSynchronizer(object):
                 log.debug("Skipping group import, no group info present in repodata")
         return added_packages
 
-    def import_package(self, pkg_path, repo):
-        if (pkg_path.endswith(".rpm")):
-            try:
-                retval = None
-                file_name = os.path.basename(pkg_path)
-                info = pulp.util.get_rpm_information(pkg_path)
-                hashtype = "sha256"
-                checksum = pulp.util.get_file_checksum(hashtype=hashtype, 
-                        filename=pkg_path)
-                found = self.package_api.packages(name=info['name'], 
-                        epoch=info['epoch'], version=info['version'], 
-                        release=info['release'], arch=info['arch'],filename=file_name, 
-                        checksum_type=hashtype, checksum=checksum)
-                if len(found) == 1:
-                    retval = found[0]
-                else:
-                    retval = self.package_api.create(info['name'], info['epoch'],
-                        info['version'], info['release'], info['arch'], info['description'],
-                        "sha256", checksum, file_name)
-                    for dep in info['requires']:
-                        retval.requires.append(dep)
-                    for dep in info['provides']:
-                        retval.provides.append(dep)
-                    retval.download_url = self.config.get('server', 'base_url') + "/" + \
-                                            self.config.get('server', 'relative_url') + "/" + \
-                                            repo["id"] + "/" +  file_name
-                    self.package_api.update(retval)
-                return retval
-            except Exception, e:
-                print("%s" % (traceback.format_exc()))
-                log.debug("%s" % (traceback.format_exc()))
-                log.error("error reading package %s" % (pkg_path))
-        else:
-            return None
+    def import_package(self, package, repo):
+        try:
+            retval = None
+            file_name = package.relativepath
+            hashtype = "sha256"
+            checksum = package.checksum
+            found = self.package_api.packages(name=package.name, 
+                    epoch=package.epoch, version=package.version, 
+                    release=package.release, arch=package.arch,
+                    filename=file_name, 
+                    checksum_type=hashtype, checksum=checksum)
+            if len(found) == 1:
+                retval = found[0]
+            else:
+                retval = self.package_api.create(package.name, package.epoch,
+                    package.version, package.release, package.arch, package.description,
+                    hashtype, checksum, file_name)
+                for dep in package.requires:
+                    retval.requires.append(dep[0])
+                for prov in package.provides:
+                    retval.provides.append(prov[0])
+                retval.download_url = self.config.get('server', 'base_url') + "/" + \
+                                        self.config.get('server', 'relative_url') + "/" + \
+                                        repo["id"] + "/" +  file_name
+                self.package_api.update(retval)
+            return retval
+        except Exception, e:
+            print("%s" % (traceback.format_exc()))
+            log.debug("%s" % (traceback.format_exc()))
+            log.error("error reading package %s" % (pkg_path))
 
     def import_groups_data(self, compsfile, repo):
         """

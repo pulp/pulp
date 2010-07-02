@@ -141,15 +141,20 @@ def _get_yum_repomd(path):
     return r
 
 def get_repo_packages(path):
+    """
+    @param path: path to repo's base (not the repodatadir, this api 
+    expects a path/repodata underneath this path)
+    @return: List of available packages objects in the repo.  
+    """
     r = _get_yum_repomd(path)
     if not r:
         return []
     r.getPackageSack().populate(r, 'metadata', None, 0)
     return r.getPackageSack().returnPackages()
 
-def get_repomd_filetype_path(repomd_path, filetype):
+def get_repomd_filetype_path(path, filetype):
     """
-    @param repomd_path: path to repomd.xml
+    @param path: path to repo
     @param filetype: metadata type to query, example "group", "primary", etc
     @return: Path for filetype, or None
     """

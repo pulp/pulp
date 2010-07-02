@@ -43,9 +43,9 @@ class PackageUpload:
             raise PackageExistsError(pkg_path)
         try:
             store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
-            imp_pkg = self.bindPackageToRepo(pkg_path, self.repo)
             # update/create the repodata for the repo
-            create_repo(self.repo_dir) 
+            create_repo(self.repo_dir)
+            imp_pkg = self.bindPackageToRepo(pkg_path, self.repo) 
         except IOError, ie:
             log.error("Error writing file to filesystem %s " % ie)
             raise UploadError("Error writing to the file %s" % self.pkgname)
