@@ -128,7 +128,24 @@ def get_repomd_filetypes(repomd_path):
     rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
     if rmd:
         return rmd.fileTypes()
-    return []
+
+def _get_yum_repomd(path):
+    """
+    @param path: path to repo
+    @return yum.yumRepo.YumRepository object initialized for querying repodata
+    """
+    r = yum.yumRepo.YumRepository("temp_repo-%s" % (time.time()))
+    r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
+    r.basecachedir = path.encode("ascii", "ignore")
+    r.baseurlSetup()
+    return r
+
+def get_repo_packages(path):
+    r = _get_yum_repomd(path)
+    if not r:
+        return []
+    r.getPackageSack().populate(r, 'metadata', None, 0)
+    return r.getPackageSack().returnPackages()
 
 def get_repomd_filetype_path(repomd_path, filetype):
     """
