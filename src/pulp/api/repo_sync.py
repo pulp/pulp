@@ -261,7 +261,7 @@ class RHNSynchronizer(BaseSynchronizer):
         pieces = repo_source['url'].split('/')
         if len(pieces) < 2:
             raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
-                                repo_source.url)
+                                repo_source['url'])
 
         host = 'http://' + pieces[0]
         channel = pieces[1]
