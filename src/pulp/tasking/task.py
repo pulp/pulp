@@ -14,8 +14,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-_author_ = 'Jason L Connor <jconnor@redhat.com>'
-
 import datetime
 import sys
 import time
