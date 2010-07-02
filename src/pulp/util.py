@@ -120,40 +120,28 @@ def get_file_timestamp(filename):
     """
     return int(os.stat(filename).st_mtime)
 
-
-def _get_yum_repomd(path):
+def get_repomd_filetypes(repomd_path):
     """
-    @param path: path to repo
-    @return yum.yumRepo.YumRepository object initialized for querying repodata
-    """
-    r = yum.yumRepo.YumRepository("temp_repo-%s" % (time.time()))
-    r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
-    r.basecachedir = path.encode("ascii", "ignore")
-    r.baseurlSetup()
-    return r
-
-def get_repomd_filetypes(path):
-    """
-    @param path: path to repo
+    @param repomd_path: path to repomd.xml
     @return: List of available metadata types
     """
-    r = _get_yum_repomd(path)
-    if not r:
-        return []
-    return r.repoXML.fileTypes()
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
+    if rmd:
+        return rmd.fileTypes()
+    return []
 
-def get_repomd_filetype_path(path, filetype):
+def get_repomd_filetype_path(repomd_path, filetype):
     """
-    @param path: path to repo
+    @param repomd_path: path to repomd.xml
     @param filetype: metadata type to query, example "group", "primary", etc
-    @return: Path relative to repodata for filetype, or None
+    @return: Path for filetype, or None
     """
-    r = _get_yum_repomd(path)
-    if not r:
-        return None
-    if filetype not in r.repoXML.fileTypes():
-        return None
-    return r.retrieveMD(filetype)
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
+    if rmd:
+        data = rmd.getData(filetype)
+        return data.location[1]
+    return None
+
 
 def listdir(directory):
     directory = os.path.abspath(os.path.normpath(directory))

@@ -131,16 +131,18 @@ class BaseSynchronizer(object):
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):
             repo["repomd_xml_path"] = repomd_xml_path
-            ftypes = pulp.util.get_repomd_filetypes(dir)
+            ftypes = pulp.util.get_repomd_filetypes(repomd_xml_path)
             log.debug("repodata has filetypes of %s" % (ftypes))
             if "group" in ftypes:
-                group_xml_path = pulp.util.get_repomd_filetype_path(dir, "group")
-                log.debug("group info is located at %s" % (group_xml_path))
+                group_xml_path = pulp.util.get_repomd_filetype_path(repomd_xml_path, "group")
+                group_xml_path = os.path.join(dir.encode("ascii", "ignore"), group_xml_path)
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
                     self.import_groups_data(groupfile, repo)
                     log.debug("Loaded group info from %s" % (group_xml_path))
+                else:
+                    log.info("Group info not found at file: %s" % (group_xml_path))
             else:
                 log.debug("Skipping group import, no group info present in repodata")
         return added_packages
@@ -227,7 +229,21 @@ class LocalSynchronizer(BaseSynchronizer):
                 for pkg in pkglist:
                     if pkg.endswith(".rpm"):
                         shutil.copy(pkg, os.path.join(repo_dir, os.path.basename(pkg)))
-                pulp.upload.create_repo(repo_dir)
+                groups_xml_path = None
+                src_repomd_xml = os.path.join(pkg_dir, "repodata/repomd.xml")
+                if os.path.isfile(src_repomd_xml):
+                    ftypes = pulp.util.get_repomd_filetypes(src_repomd_xml)
+                    log.debug("repodata has filetypes of %s" % (ftypes))
+                    if "group" in ftypes:
+                        g = pulp.util.get_repomd_filetype_path(src_repomd_xml, "group")
+                        src_groups = os.path.join(pkg_dir, g)
+                        if os.path.isfile(src_groups):
+                            shutil.copy(src_groups,
+                                os.path.join(repo_dir, os.path.basename(src_groups)))
+                            log.debug("Copied groups over to %s" % (repo_dir))
+                        groups_xml_path = os.path.join(repo_dir,
+                            os.path.basename(src_groups))
+                pulp.upload.create_repo(repo_dir, groups=groups_xml_path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (pkg_dir))
             return

@@ -73,8 +73,11 @@ def check_package_exists(pkg_path, hashtype, hashsum, force=0):
         return False
     return False
 
-def create_repo(dir):
-    status, out = commands.getstatusoutput('createrepo --update %s' % (dir))
+def create_repo(dir, groups=None):
+    cmd = "createrepo --update %s" % (dir)
+    if groups:
+        cmd = "createrepo -g %s --update %s" % (groups, dir)
+    status, out = commands.getstatusoutput(cmd)
     
     if status != 0:
         log.error("createrepo on %s failed" % dir)
