@@ -248,6 +248,7 @@ class RepositoryActions(AsyncController):
     def get_packagegroups(self, id):
         """
         Get package group info from a repository.
+        @deprecated: use deferred fields: packagegroups instead
         @param id: repository id
         @return: package groups
         """
