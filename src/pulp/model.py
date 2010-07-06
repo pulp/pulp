@@ -98,7 +98,7 @@ class PackageGroup(Base):
     """
     Class represents a yum.comps.Group
     """
-    def __init__(self, id, name, description, user_visible=False, 
+    def __init__(self, id, name, description, user_visible=True, 
             display_order=1024, default=True, langonly=None):
         self._id = id
         self.id = id

@@ -164,9 +164,22 @@ class RepoConnection(PulpConnection):
     def packagegroups(self, repoid):
         method = "/repositories/%s/packagegroups/" % repoid
         return self.conn.request_get(method)
+    
+    def create_packagegroup(self, repoid, groupid, groupname, description):
+        method = "/repositories/%s/create_packagegroup/" % repoid
+        return self.conn.request_post(method, params={"groupid":groupid, 
+            "groupname":groupname, "description":description})
 
-    def add_packagegroup(self, repoid, groupid, pkgname, gtype):
-        method = "/repositories/%s/add_packagegroup/" % repoid
+    def remove_packagegroup(self, repoid, groupid):
+        method = "/repositories/%s/remove_packagegroup/" % repoid
+        return self.conn.request_post(method, params={"groupid":groupid})
+    
+    def packagegroups(self, repoid):
+        method = "/repositories/%s/packagegroups/" % repoid
+        return self.conn.request_get(method)
+
+    def add_package_to_group(self, repoid, groupid, pkgname, gtype):
+        method = "/repositories/%s/add_package_to_group/" % repoid
         return self.conn.request_post(method,
                 params={"groupid":groupid, "name":pkgname, "type":gtype})
 

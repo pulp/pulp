@@ -190,8 +190,10 @@ class RepositoryActions(AsyncController):
         'upload',
         'add_package',
         'get_package',
-        'add__packagegroup',
+        'add_package_to_group',
         'remove_package_from_group',
+        'remove_packagegroup',
+        'create_packagegroup',
     )
 
     def list(self, id):
@@ -244,7 +246,7 @@ class RepositoryActions(AsyncController):
         name = self.params()
         return self.ok(api.get_package(id, name))
 
-    def add_packagegroup(self, id):
+    def add_package_to_group(self, id):
         """
         Add a package to an existing package group
         @param id: repository id
@@ -284,7 +286,42 @@ class RepositoryActions(AsyncController):
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(api.remove_package_from_group(id, groupid, pkg_name, gtype))
+        return self.ok(api.remove_package_from_group(id, groupid, pkg_name, gtype)) 
+     
+    def create_packagegroup(self, id):
+        """
+        Creates a packagegroup in the referenced repository
+        @param id: repository id
+        @param groupid: id of package group
+        @param groupname: name of package group
+        @param description: description of package group
+        @return: 
+        """
+        p = self.params()
+        if "groupid" not in p:
+            return self.not_found('No groupid specified')
+        groupid = p["groupid"]
+        if "groupname" not in p:
+            return self.not_found('No groupname specified')
+        groupname = p["groupname"]
+        if "description" not in p:
+            return self.not_found('No description specified')
+        descrp = p["description"]
+        return self.ok(api.create_packagegroup(id, groupid, groupname, 
+                                               descrp))
+        
+    def remove_packagegroup(self, id):
+        """
+        Removes a packagegroup from a repository
+        @param id: repository id
+        @param groupid: package group id
+        @return: 
+        """
+        p = self.params()
+        if "groupid" not in p:
+            return self.not_found('No groupid specified')
+        groupid = p["groupid"]
+        return self.ok(api.remove_packagegroup(id, groupid))
 
     @JSONController.error_handler
     def POST(self, id, action_name):

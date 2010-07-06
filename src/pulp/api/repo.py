@@ -247,7 +247,25 @@ class RepoApi(BaseApi):
             if pkg_name not in group["default_package_names"]:
                 group["default_package_names"].append(pkg_name)
         self.update(repo)
-
+        
+    def create_packagegroup(self, repoid, group_id, group_name, description):
+        """
+        Creates a new packagegroup saved in the referenced repo
+        @param repoid:
+        @param group_id:
+        @param group_name:
+        @param description:
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if repo["packagegroups"].has_key(group_id):
+            raise PulpException("Package group %s already exists in repo %s" % \
+                                (group_id, repoid))
+        group = pulp.model.PackageGroup(group_id, group_name, description)
+        repo["packagegroups"][group_id] = group
+        self.update(repo)
+        
     def remove_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
         @param repoid: repository id
