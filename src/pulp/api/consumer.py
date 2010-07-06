@@ -27,6 +27,9 @@ from pulp.agent import Agent
 log = logging.getLogger(__name__)
 
 class ConsumerApi(BaseApi):
+    
+    default_fields = ['id', 'description']
+    all_fields = ['id', 'descriptions', 'repoids', 'package_profile']
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
@@ -41,9 +44,6 @@ class ConsumerApi(BaseApi):
     def _get_indexes(self):
         return ["package_profile.name", "repoids"]
 
-    def _get_basic_fields(self):
-        return ['id', 'description', 'repoids']
-        
     def create(self, id, description):
         """
         Create a new Consumer object and return it
@@ -69,17 +69,12 @@ class ConsumerApi(BaseApi):
             self.objectdb.insert(chunk, check_keys=False, safe=False)
             inserted = inserted + chunksize
 
-    def consumers(self):
+    def consumers(self, spec=None, fields=ConsumerApi.default_fields):
         """
         List all consumers.  Can be quite large
         """
-        consumers = list(self.objectdb.find({},self._get_basic_fields()))
-        munged = [] 
-        for c in consumers:
-            link = '/consumers/%s/packages/' % c['id']
-            c['package_profile'] = {'href': link}
-            munged.append(c)
-        return munged
+        consumers = list(self.objectdb.find(spec=spec, fields=fields))
+        return consumers
 
     def consumer(self, id):
         """
@@ -89,15 +84,17 @@ class ConsumerApi(BaseApi):
     
     def packages(self, id):
         consumer = self.objectdb.find_one({'id': id}) 
+        if consumer is None:
+            return None
         return consumer['package_profile']
     
-    def consumers_with_package_name(self, name):
+    def consumers_with_package_name(self, name, fields=ConsumerApi.default_fields):
         """
         List consumers using passed in name
         """
         log.debug("consumers_with_package_name : name: %s" % name)
         return list(self.objectdb.find({'package_profile.name': name}, 
-                                       self._get_basic_fields()))
+                                       fields=fields))
 
     def bind(self, id, repoid):
         """
