@@ -149,9 +149,7 @@ class repo(BaseCore):
             self.options.name = self.options.label
         if not self.options.arch:
             self.options.arch = "noarch"
-        if not self.options.feed:
-            print("repo feed required. Try --help")
-            sys.exit(0)
+        
         symlinks = False
         if self.options.symlinks:
             symlinks = self.options.symlinks
@@ -159,8 +157,7 @@ class repo(BaseCore):
             repo = self.pconn.create(self.options.label, self.options.name, \
                                      self.options.arch, self.options.feed, \
                                      symlinks, self.options.schedule)
-            print _(" Successfully created Repo [ %s ] with feed [ %s ]" % \
-                                     (repo['id'], repo["source"]))
+            print _(" Successfully created Repo [ %s ]" % repo['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

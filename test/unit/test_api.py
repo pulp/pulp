@@ -77,6 +77,10 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         assert(repo != None)
 
+    def test_create_feedless(self):
+        repo = self.rapi.create('some-id-no-feed', 'some name', 'i386')
+        assert(repo != None)
+
     def test_duplicate(self):
         id = 'some-id'
         name = 'some name'
@@ -122,6 +126,15 @@ class TestApi(unittest.TestCase):
     def test_delete(self):
         id = 'some-id'
         repo = self.rapi.create(id,'some name', 'i386', 'yum:http://example.com')
+        repo = self.rapi.repository(id)
+        assert(repo is not None)
+        self.rapi.delete(id=id)
+        repo = self.rapi.repository(id)
+        assert(repo is None)
+
+    def test_delete_feedless(self):
+        id = 'some-id-no-feed'
+        repo = self.rapi.create(id,'some name', 'i386')
         repo = self.rapi.repository(id)
         assert(repo is not None)
         self.rapi.delete(id=id)
@@ -436,7 +449,19 @@ class TestApi(unittest.TestCase):
         packages = found['packages']
         assert(packages != None)
         assert(len(packages) > 0)
-        
+    
+    def test_sync_feedless(self):
+        repo = self.rapi.create('some-id-no-feed','some name', 'i386')
+        # verify repo without feed is not syncable
+        failed = False
+        try:
+            self.rapi.sync(repo['id'])
+        except Exception:
+            # raises a PulpException
+            # 'This repo is not setup for sync. Please add packages using upload.'
+            failed = True
+        assert(failed)
+
     def test_local_sync(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir = my_dir + "/data/"

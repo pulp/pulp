@@ -71,7 +71,7 @@ class Repositories(JSONController):
         repo = api.create(id,
                           repo_data['name'],
                           repo_data['arch'],
-                          repo_data['feed'],
+                          feed=repo_data.get('feed', None),
                           symlinks=repo_data.get('use_symlinks', False),
                           sync_schedule=repo_data.get('sync_schedule', None))
         

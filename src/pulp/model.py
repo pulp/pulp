@@ -33,10 +33,13 @@ class Base(dict):
     __delattr__= dict.__delitem__
 
 class Repo(Base):
-    def __init__(self, id, name, arch, source):
+    def __init__(self, id, name, arch, source=None):
         self._id = id
         self.id = id
-        self.source = RepoSource(source)
+        if source:
+            self.source = RepoSource(source)
+        else:
+            self.source = None
         self.name = name
         self.arch = arch
         self.packages = dict()
@@ -48,8 +51,10 @@ class Repo(Base):
         self.use_symlinks = None
         
     def get_repo_source(self):
+        if not self.source:
+            return None
         return RepoSource(self.source)
-    
+
         
 class RepoSource(Base):
     # yum:http://blah.bloop.com

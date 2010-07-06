@@ -317,7 +317,7 @@ class RepoApi(BaseApi):
             return None
         return repo['packagegroupcategories'][categoryid]
 
-    def create(self, id, name, arch, feed, symlinks=False, sync_schedule=None):
+    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
         """
         Create a new Repository object and return it
         """
@@ -345,6 +345,8 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         
         repo_source = repo['source']
+        if not repo_source:
+            raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         added_packages = repo_sync.sync(self.config, repo, repo_source)
         for p in added_packages:
             self._add_package(repo, p)
