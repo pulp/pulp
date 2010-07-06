@@ -98,6 +98,8 @@ class Repository(JSONController):
         @return: repository meta data
         """
         repo = api.repository(id, default_fields)
+        if repo is None:
+            return self.not_found('No repository %s' % id)
         for field in RepositoryDeferredFields.exposed_fields:
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
@@ -135,6 +137,8 @@ class RepositoryDeferredFields(JSONController):
     # NOTE the intersection of exposed_fields and exposed_actions must be empty
     exposed_fields = (
         'packages',
+        'packagegroups',
+        'packagegroupcategories'
     )
     
     def packages(self, id):
@@ -144,6 +148,18 @@ class RepositoryDeferredFields(JSONController):
         packages = api.packages(id).values()
         filtered_packages = self.filter_results(packages, filters)
         return self.ok(filtered_packages)
+    
+    def packagegroups(self, id):
+        repo = api.repository(id, ['packagegroups'])
+        if repo is None:
+            return self.not_found('No repository %s' % id)
+        return self.ok(repo['packagegroups'])
+    
+    def packagegroupcategories(self, id):
+        repo = api.repository(id, ['packagegroupcategories'])
+        if repo is None:
+            return self.not_found('No repository %s' % id)
+        return self.ok(repo['packagegroupcategories'])
     
     @JSONController.error_handler
     def GET(self, id, field_name):
