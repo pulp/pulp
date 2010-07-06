@@ -227,7 +227,7 @@ class AsyncController(JSONController):
         parts = web.ctx.path.split('/')
         if parts[-2] == id:
             return web.http.url(web.ctx.path)
-        return self.extend_path(id)
+        return http.extend_uri_path(id)
     
     def task_status(self, id):
         """
