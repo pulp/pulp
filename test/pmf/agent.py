@@ -51,7 +51,7 @@ class Agent(Base):
     def __init__(self, id):
         Base.__init__(self, RequestConsumer(id))
         while True:
-            sleep(1)
+            sleep(5)
             print 'sleeping...'
 
 if __name__ == '__main__':

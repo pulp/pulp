@@ -19,8 +19,9 @@ Contains AMQP message producer classes.
 
 from pmf import *
 from pmf.base import Endpoint
-from pmf.dispatcher import Return
 from pmf.envelope import Envelope
+from pmf.mode import Mode
+from pmf.dispatcher import Return
 from qpid.util import connect
 from qpid.messaging import Message, Empty
 
@@ -28,14 +29,8 @@ from qpid.messaging import Message, Empty
 class RequestProducer(Endpoint):
     """
     An AMQP message producer.
-    @ivar consumerid: The AMQP consumer (target) queue ID.
-    @type consumerid: str
-    @ivar sid: The unique AMQP session ID.
-    @type sid: str
-    @ivar queue: The primary incoming (reply) message queue.
-    @type queue: L{qpid.Queue}
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
+    @ivar receiver: The (reply) queue receiver.
+    @type receiver: L{qpid.messaging.Receiver}
     """
 
     def open(self):
@@ -49,29 +44,40 @@ class RequestProducer(Endpoint):
         self.receiver = receiver
         self.session = session
 
-    def send(self, consumerid, content, synchronous=True):
+    def send(self, consumerid, content, mode=Mode()):
         """
         Send a message to the consumer.
         @param content: The json encoded payload.
         @type content: str
-        @param synchronous: Flag to indicate synchronous.
+        @param mode: Flag to indicate synchronous.
             When true the I{replyto} is set to our I{sid} and
             to (block) read the reply queue.
-        @type synchronous: bool
+        @type mode: bool
         """
         sn = getuuid()
-        envelope = Envelope(sn=sn, payload=content)
-        if synchronous:
-            envelope.replyto = self.queueAddress(self.id)
+        envelope = Envelope(sn=sn, mode=mode, payload=content)
+        self._setreply(envelope)
         message = Message(envelope.dump())
         address = self.queueAddress(consumerid)
         sender = self.session.sender(address)
         message = Message(envelope.dump())
         sender.send(message);
-        if synchronous:
+        if mode.synchronous:
             return self._getreply(sn)
         else:
-            return None
+            return sn
+
+    def _setreply(self, envelope):
+        """
+        Setup the reply based on I{mode}.
+        @param envelope: A request envelope.
+        @type envelope: L{Envelope}
+        """
+        mode = envelope.mode
+        if mode.synchronous:
+            mode.group = self.id
+        if mode.group:
+            envelope.replyto = self.queueAddress(mode.group)
 
     def _getreply(self, sn):
         """

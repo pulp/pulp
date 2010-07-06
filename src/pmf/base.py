@@ -26,6 +26,12 @@ from time import sleep
 class Endpoint:
     """
     Base class for QPID endpoint.
+    @ivar id: The unique AMQP session ID.
+    @type id: str
+    @ivar connecton: An AMQP connection.
+    @type connecton: L{qpid.messaging.Connection}
+    @ivar session: An AMQP session.
+    @type session: L{qpid.messaging.Session}
     """
     
     def __init__(self, id=getuuid(), host='localhost', port=5672):

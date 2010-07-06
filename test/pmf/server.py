@@ -19,6 +19,7 @@
 import sys
 sys.path.append('../../')
 
+from pmf.mode import Mode
 from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
 from pmf.producer import RequestProducer
@@ -43,7 +44,7 @@ class Agent(Base):
 def demo(agent):
 
     print agent.dog.bark('hello')
-    print agent.dog.wag(3, __sync=0)
+    print agent.dog.wag(3, __mode=Mode(0, 'task'))
     print agent.dog.bark('hello')
     print agent.repolib.update()
 

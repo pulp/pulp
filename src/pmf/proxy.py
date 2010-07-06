@@ -19,6 +19,7 @@ Proxies (stubs) are the I{local} representation of I{remote}
 classes on which we invoke methods.
 """
 
+from pmf.mode import Mode
 from pmf.dispatcher import Request
 
 
@@ -55,17 +56,17 @@ class Method:
         @param kws: The I{keyword} arguments.
         @type kws: dict
         """
-        synckey = '__sync'
-        sync = True
-        if synckey in kws:
-            sync = kws[synckey]
-            del kws[synckey]
+        modekey = '__mode'
+        mode = Mode()
+        if modekey in kws:
+            mode = kws[modekey]
+            del kws[modekey]
         req = Request(
             classname=self.classname,
             method=self.name,
             args=args,
             kws=kws)
-        return self.proxy._send(req.dump(), sync)
+        return self.proxy._send(req.dump(), mode)
 
 
 class Proxy:
