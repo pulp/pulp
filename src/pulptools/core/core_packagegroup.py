@@ -45,16 +45,12 @@ class packagegroup(BaseCore):
                         "remove"        : "remove package(s) from an existing packagegroup"
                         }
         self.name = "packagegroup"
-        self.username = None
-        self.password = None
         self.pconn = None
-        self.cconn = None
         self.load_server()
         self.generate_options()
 
     def load_server(self):
         self.pconn = RepoConnection(host=CFG.server.host or "localhost", port=8811)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
 
     def generate_options(self):
         possiblecmd = []
@@ -158,7 +154,7 @@ class packagegroup(BaseCore):
             print("Please specify the repo")
             sys.exit(0)
         try:
-            groups = self.pconn.get_packagegroups(self.options.repoid)
+            groups = self.pconn.packagegroups(self.options.repoid)
             if not groups:
                 print("PackageGroups not found in repo [%s]" % (self.options.repoid))
                 sys.exit(-1)
@@ -166,7 +162,6 @@ class packagegroup(BaseCore):
             print "Package Group Information "
             print "+-------------------------------------------+"
             print "Repository: %s" % (self.options.repoid)
-            #print """+-------------------------------------------+\n    Package Group Information \n+-------------------------------------------+"""
             for key, value in groups.items():
                 print "\t %s" % (key)
                 #print """%s:                \t%-25s""" % (key, value)

@@ -190,7 +190,6 @@ class RepositoryActions(AsyncController):
         'upload',
         'add_package',
         'get_package',
-        'get_packagegroups',
         'add__packagegroup',
         'remove_package_from_group',
     )
@@ -244,15 +243,6 @@ class RepositoryActions(AsyncController):
         """
         name = self.params()
         return self.ok(api.get_package(id, name))
-    
-    def get_packagegroups(self, id):
-        """
-        Get package group info from a repository.
-        @deprecated: use deferred fields: packagegroups instead
-        @param id: repository id
-        @return: package groups
-        """
-        return self.ok(api.packagegroups(id))
 
     def add_packagegroup(self, id):
         """

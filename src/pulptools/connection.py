@@ -161,9 +161,9 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list/" % repoid
         return self.conn.request_post(method)
 
-    def get_packagegroups(self, repoid):
-        method = "/repositories/%s/get_packagegroups/" % repoid
-        return self.conn.request_post(method, params=None)
+    def packagegroups(self, repoid):
+        method = "/repositories/%s/packagegroups/" % repoid
+        return self.conn.request_get(method)
 
     def add_packagegroup(self, repoid, groupid, pkgname, gtype):
         method = "/repositories/%s/add_packagegroup/" % repoid
