@@ -64,7 +64,14 @@ class Agent(Base):
 
 
 def main():
-    actions = ()
+    """
+    Agent main.
+    Add recurring, time-based actions here.
+    All actions must be subclass of L{action.Action}.
+    """
+    actions = \
+    (# <add actions here>
+     )
     agent = Agent(actions)
     agent.close()
 
