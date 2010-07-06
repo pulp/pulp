@@ -15,11 +15,9 @@
 # in this software or its documentation.
 
 import functools
-import os
 import re
 import sys
 import traceback
-import urllib
 
 try:
     import json
