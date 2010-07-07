@@ -27,6 +27,7 @@ Requires: python-simplejson
 Requires: grinder
 Requires: httpd
 Requires: mod_wsgi
+Requires: mod_ssl
 Requires: mongo
 Requires: mongo-server
 
@@ -73,24 +74,29 @@ popd
 
 cp -R test %{buildroot}/%{python_sitelib}/%{name}
 
+# Pulp Configuration
+mkdir -p %{buildroot}/etc/pulp
+cp etc/pulp/* %{buildroot}/etc/pulp
+
+mkdir -p %{buildroot}/var/log/pulp
+
+# Apache Configuration
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
 
-mkdir -p %{buildroot}/etc/pulp
-cp etc/pulp/* %{buildroot}/etc/pulp
-
 mkdir -p %{buildroot}/var/lib/pulp
-mkdir -p %{buildroot}/var/www/html/
-mkdir -p %{buildroot}/var/log/pulp
+mkdir -p %{buildroot}/var/www/html
 ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
 
+# Pulp Agent
 mkdir -p %{buildroot}/usr/bin
 cp bin/pulpd %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/init.d
 cp etc/init.d/pulpd %{buildroot}/etc/init.d
 
+# Python Script Header
 find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
 # RHEL 5 packages don't have egg-info files, so remove the requires.txt
