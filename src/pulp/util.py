@@ -176,7 +176,7 @@ def get_repomd_filetype_path(path, filetype):
     @param filetype: metadata type to query, example "group", "primary", etc
     @return: Path for filetype, or None
     """
-    rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
+    rmd = yum.repoMDObject.RepoMD("temp_pulp", path)
     if rmd:
         data = rmd.getData(filetype)
         return data.location[1]
