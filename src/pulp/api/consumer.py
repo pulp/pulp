@@ -13,8 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 import logging
-import pymongo
-import re
 
 from pulp import model
 from pulp.api.base import BaseApi
@@ -25,11 +23,12 @@ from pulp.agent import Agent
 # Pulp
 
 log = logging.getLogger(__name__)
+    
+consumer_default_fields = ['id', 'description']
+consumer_all_fields = ['id', 'descriptions', 'repoids', 'package_profile']
+
 
 class ConsumerApi(BaseApi):
-    
-    default_fields = ['id', 'description']
-    all_fields = ['id', 'descriptions', 'repoids', 'package_profile']
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
@@ -69,18 +68,17 @@ class ConsumerApi(BaseApi):
             self.objectdb.insert(chunk, check_keys=False, safe=False)
             inserted = inserted + chunksize
 
-    def consumers(self, spec=None, fields=ConsumerApi.default_fields):
+    def consumers(self, spec=None, fields=consumer_default_fields):
         """
         List all consumers.  Can be quite large
         """
-        consumers = list(self.objectdb.find(spec=spec, fields=fields))
-        return consumers
+        return list(self.objectdb.find(spec=spec, fields=fields))
 
-    def consumer(self, id):
+    def consumer(self, id, fields=consumer_default_fields):
         """
         Return a single Consumer object
         """
-        return self.objectdb.find_one({'id': id})
+        return self.objectdb.find_one({'id': id}, fields=fields)
     
     def packages(self, id):
         consumer = self.objectdb.find_one({'id': id}) 
@@ -88,13 +86,15 @@ class ConsumerApi(BaseApi):
             return None
         return consumer['package_profile']
     
-    def consumers_with_package_name(self, name, fields=ConsumerApi.default_fields):
+    def consumers_with_package_names(self, names, fields=consumer_default_fields):
         """
         List consumers using passed in name
         """
-        log.debug("consumers_with_package_name : name: %s" % name)
-        return list(self.objectdb.find({'package_profile.name': name}, 
-                                       fields=fields))
+        log.debug("consumers_with_package_names : %s" % names)
+        consumers = []
+        for name in names:
+            consumers.extend(list(self.objectdb.find({'package_profile.name': name}, fields)))
+        return consumers
 
     def bind(self, id, repoid):
         """
