@@ -15,8 +15,9 @@
 
 
 # Python
-import os
+import gzip
 import logging
+import os
 import xml.dom
 
 # 3rd Party
@@ -24,7 +25,7 @@ import yum.comps
 
 import pulp
 
-log = logging.getLogger('pulp.comps_util')
+log = logging.getLogger(__name__)
 
 def yum_group_to_model_group(obj):
     """
@@ -150,7 +151,7 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
 
     if compsxml_gz_checksum != None and open_compsxml_gz_checksum != None \
             and compsxml_gz_timestamp != None:
-        group_gz_elems = filter(lambda x: x.getAttribute("type") == "group",
+        group_gz_elems = filter(lambda x: x.getAttribute("type") == "group_gz",
                 dom.getElementsByTagName("data"))
         if len(group_gz_elems) > 0:
             elem = group_gz_elems[0].getElementsByTagName("checksum")[0]
@@ -183,8 +184,7 @@ def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
                 filename=comps_gz_path)
         compsxml_gz_timestamp = pulp.util.get_file_timestamp(comps_gz_path)
         uncompressed = gzip.open(comps_gz_path, 'r').read()
-        open_compsxml_gz_checksum = pulp.util.get_string_checksum(hashtype="sha256",
-                filename=uncompressed)
+        open_compsxml_gz_checksum = compsxml_checksum
     try:
         repomd = open(repomd_path, "r").read()
         updated_xml = update_repomd_xml_string(repomd,
@@ -192,6 +192,7 @@ def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
                 compsxml_gz_checksum, open_compsxml_gz_checksum,
                 compsxml_gz_timestamp)
         open(repomd_path, "w").write(updated_xml.encode("UTF-8"))
+        log.info("update_repomd_xml_file completed")
     except xml.dom.DOMException, e:
         log.error(e)
         log.error("Unable to update group info for %s" % (repomd_path))

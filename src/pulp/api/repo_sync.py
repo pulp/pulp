@@ -145,6 +145,12 @@ class BaseSynchronizer(object):
                     log.debug("Loaded group info from %s" % (group_xml_path))
                 else:
                     log.info("Group info not found at file: %s" % (group_xml_path))
+            if "group_gz" in ftypes:
+                group_gz_xml_path = pulp.util.get_repomd_filetype_path(
+                        repomd_xml_path, "group_gz")
+                group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
+                        group_gz_xml_path)
+                repo['group_gz_xml_path'] = group_gz_xml_path
             else:
                 log.debug("Skipping group import, no group info present in repodata")
         return added_packages
@@ -241,6 +247,10 @@ class LocalSynchronizer(BaseSynchronizer):
                             log.debug("Copied groups over to %s" % (repo_dir))
                         groups_xml_path = os.path.join(repo_dir,
                             os.path.basename(src_groups))
+                    if "group_gz" in ftypes:
+                        g = pulp.util.get_repomd_filetype_path(src_repomd_xml, "group")
+                        src_groups = os.path.join(pkg_dir, g)
+
                 pulp.upload.create_repo(repo_dir, groups=groups_xml_path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (pkg_dir))

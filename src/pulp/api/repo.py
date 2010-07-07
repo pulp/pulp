@@ -18,6 +18,7 @@
 import logging
 import gzip
 import os
+import traceback
 
 # 3rd Party
 import pymongo
@@ -44,8 +45,6 @@ class RepoApi(BaseApi):
 
     def __init__(self, config):
         BaseApi.__init__(self, config)
-        log.setLevel(config.get('logs', 'level'))
-
         self.packageApi = PackageApi(config)
         self.localStoragePath = config.get('paths', 'local_storage')
    
@@ -177,6 +176,7 @@ class RepoApi(BaseApi):
         group = pulp.model.PackageGroup(group_id, group_name, description)
         repo["packagegroups"][group_id] = group
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
         return group
 
     def remove_packagegroup(self, repoid, groupid):
@@ -191,6 +191,7 @@ class RepoApi(BaseApi):
         if repo['packagegroups'].has_key(groupid):
             del repo['packagegroups'][groupid]
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
 
     def update_packagegroup(self, repoid, pg):
         """
@@ -203,6 +204,7 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % repoid)
         repo['packagegroups'][pg['id']] = pg
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
 
     def update_packagegroups(self, repoid, pglist):
         """
@@ -216,6 +218,7 @@ class RepoApi(BaseApi):
         for item in pglist:
             repo['packagegroups'][item['id']] = item
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
 
     def packagegroups(self, id):
         """
@@ -268,6 +271,7 @@ class RepoApi(BaseApi):
             if pkg_name not in group["default_package_names"]:
                 group["default_package_names"].append(pkg_name)
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
         
         
     def remove_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
@@ -297,6 +301,7 @@ class RepoApi(BaseApi):
             if pkg_name in group["default_package_names"]:
                 group["default_package_names"].remove(pkg_name)
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
 
     def remove_packagegroupcategory(self, repoid, categoryid):
         """
@@ -308,6 +313,7 @@ class RepoApi(BaseApi):
         if repo['packagegroupcategories'].has_key(categoryid):
             del repo['packagegroupcategories'][categoryid]
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
 
     def update_packagegroupcategory(self, repoid, pgc):
         """
@@ -318,6 +324,7 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % repoid)
         repo['packagegroupcategories'][pgc['id']] = pgc
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
     
     def update_packagegroupcategories(self, repoid, pgclist):
         """
@@ -329,6 +336,7 @@ class RepoApi(BaseApi):
         for item in pgclist:
             repo['packagegroupcategories'][item['id']] = item
         self.update(repo)
+        self._update_groups_metadata(repo["id"])
 
     def packagegroupcategories(self, id):
         """
@@ -350,6 +358,31 @@ class RepoApi(BaseApi):
             return None
         return repo['packagegroupcategories'][categoryid]
 
+    def _update_groups_metadata(self, repoid):
+        """
+        Updates the groups metadata (example: comps.xml) for a given repo
+        @param repoid: repo id
+        @return: True if metadata was successfully updated, otherwise False
+        """
+        repo = self.repository(repoid)
+        if repo == None:
+            raise PulpException("No Repo with id: %s found" % repoid)
+        try:
+            xml = pulp.comps_util.form_comps_xml(repo['packagegroupcategories'],
+                repo['packagegroups'])
+            f = open(repo["group_xml_path"], "w")
+            f.write(xml.encode("utf-8"))
+            f.close()
+            if repo["group_gz_xml_path"]:
+                gz = gzip.open(repo["group_gz_xml_path"], "wb")
+                gz.write(xml.encode("utf-8"))
+                gz.close()
+            return pulp.comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
+                repo["group_xml_path"], repo["group_gz_xml_path"])
+        except Exception, e:
+            log.debug("_update_groups_metadata exception caught: %s" % (e))
+            log.debug("Traceback: %s" % (traceback.format_exc()))
+            return False
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
         """
         Create a new Repository object and return it
