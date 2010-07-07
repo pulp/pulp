@@ -79,9 +79,9 @@ class repo(BaseCore):
             self.parser.add_option("--label", dest="label",
                            help="Repository Label")
             self.parser.add_option("--name", dest="name",
-                           help="common repository name")
+                           help="Common repository name")
             self.parser.add_option("--arch", dest="arch",
-                           help="package arch the repo should support.")
+                           help="Package arch the repo should support.")
             self.parser.add_option("--feed", dest="feed",
                            help="Url feed to populate the repo")
             self.parser.add_option("--schedule", dest="schedule",
