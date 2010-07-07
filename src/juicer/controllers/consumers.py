@@ -14,6 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import itertools
 import logging
 
 import web
@@ -27,6 +28,9 @@ from pulp.api.consumer import ConsumerApi
 
 api = ConsumerApi(config)
 log = logging.getLogger('pulp')
+
+# default fields for consumers being sent to a client
+default_fields = ['id', 'description']
              
 # controllers -----------------------------------------------------------------
     
@@ -38,21 +42,21 @@ class Consumers(JSONController):
         List all available consumers.
         @return: a list of all consumers
         """
-        filters = self.filters(['package_name'])
-        log.debug("Filters: %s" % filters)
-        if len(filters) == 1:
-            pkgname = filters.get('package_name')[0]
-            if pkgname:
-                log.debug("calling consumers_with_package_name(pkgname): %s" %
-                          pkgname)
-                result = api.consumers_with_package_name(pkgname)
-                if (log.level == logging.DEBUG):
-                    log.debug("result from consumers_with_package_name: %s"
-                           % result)
-                return self.ok(result)
-            else:
-                return self.ok([])
-        return self.ok(api.consumers())
+        valid_filters = ('id', 'package_name')
+        filters = self.filters(valid_filters)
+        package_names = filters.pop('package_name', None)
+        if package_names is not None:
+            result = api.consumers_with_package_names(package_names, default_fields)
+            consumers = self.filter_results(result, filters)
+        else:
+            spec = self.build_spec(filters)
+            consumers = api.consumers(spec, default_fields)
+        # add the uri ref and deferred fields
+        for c in consumers:
+            c['uri_ref'] = http.extend_uri_path(c['id'])
+            for f in ConsumerDeferredFields.exposed_fields:
+                c[f] = http.extend_uri_path('/'.join((c['id'], f)))
+        return self.ok(consumers)
      
     @JSONController.error_handler
     def PUT(self):
@@ -61,7 +65,11 @@ class Consumers(JSONController):
         @return: consumer meta data on successful creation of consumer
         """
         consumer_data = self.params()
-        consumer = api.create(consumer_data['id'], consumer_data['description'])
+        id = consumer_data['id']
+        consumer = api.consumer(id)
+        if consumer is not None:
+            return self.conflict('Consumer with id: %s, already exists' % id)
+        consumer = api.create(id, consumer_data['description'])
         path = http.extend_uri_path(consumer.id)
         return self.created(path, consumer)
 
@@ -91,7 +99,11 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: consumer meta data
         """
-        return self.ok(api.consumer(id))
+        consumer = api.consumer(id, fields=default_fields)
+        consumer['uri_ref'] = http.uri_path()
+        for field in ConsumerDeferredFields.exposed_fields:
+            consumer[field] = http.extend_uri_path(field)
+        return self.ok(consumer)
     
     @JSONController.error_handler
     def PUT(self, id):
@@ -100,8 +112,14 @@ class Consumer(JSONController):
         @param id: The consumer id
         @type id: str
         """
-        consumer = self.params()
-        consumer = api.update(consumer)
+        consumer_data = self.params()
+        if id != consumer_data['id']:
+            return self.bad_request('Cannot change the consumer id')
+        # remove the deferred fields as they are not manipulated via this method
+        for field in itertools.chain(['uri_ref'], # web services only field
+                                     ConsumerDeferredFields.exposed_fields):
+            consumer_data.pop(field, None)
+        api.update(consumer_data)
         return self.ok(True)
 
     @JSONController.error_handler
@@ -119,10 +137,11 @@ class ConsumerDeferredFields(JSONController):
     
     # NOTE the intersection of exposed_fields and exposed_actions must be empty
     exposed_fields = (
-        'packages',
+        'package_profile',
+        'repoids',
     )
     
-    def packages(self, id):
+    def package_profile(self, id):
         """
         Get a consumer's set of packages
         @param id: consumer id
@@ -131,11 +150,28 @@ class ConsumerDeferredFields(JSONController):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
         packages = api.packages(id)
-        filtered_packages = self.filter_results(packages, filters)
-        return self.ok(filtered_packages)
+        packages = self.filter_results(packages, filters)
+        return self.ok(packages)
+    
+    def repoids(self, id):
+        """
+        Get the ids of the repositories the consumer is bound to.
+        @type id: str
+        @param id: consumer id
+        @return: dict of repository id: uri reference
+        """
+        valid_filters = ('id')
+        filters = self.filters(valid_filters)
+        consumer = api.consumer(id, fields=['repoids'])
+        repoids = self.filter_results(consumer['repoids'], filters)
+        repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
+        return self.ok(repo_data)
     
     @JSONController.error_handler
     def GET(self, id, field_name):
+        """
+        Deferred field dispatcher.
+        """
         field = getattr(self, field_name, None)
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
