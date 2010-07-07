@@ -27,6 +27,8 @@ import yum
 import time
 from iniparse import INIConfig
 
+from pulp.pexceptions import PulpException
+
 try:
     import hashlib
 except:
@@ -139,6 +141,22 @@ def _get_yum_repomd(path):
     r.basecachedir = path.encode("ascii", "ignore")
     r.baseurlSetup()
     return r
+
+def get_repo_package(repo_path, package_filename):
+    """
+    @param repo_path: The file system path to the repository you wish to fetch 
+    the package metadata from
+    @param package_filename: the filename of the package you want the metadata for
+    """
+    repoPackages = get_repo_packages(repo_path)
+    found = None
+    for p in repoPackages:
+        if (p.relativepath == package_filename):
+            found = p 
+    if (found == None):
+        raise PulpException("No package with file name: %s found in repository: %s" 
+                            % (fileName, repo_path))
+    return found
 
 def get_repo_packages(path):
     """

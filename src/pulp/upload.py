@@ -45,7 +45,7 @@ class PackageUpload:
             store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
             # update/create the repodata for the repo
             create_repo(self.repo_dir)
-            imp_pkg = self.bindPackageToRepo(pkg_path, self.repo) 
+            imp_pkg = self.bindPackageToRepo(self.repo_dir, pkg_path, self.repo)
         except IOError, ie:
             log.error("Error writing file to filesystem %s " % ie)
             raise UploadError("Error writing to the file %s" % self.pkgname)
@@ -56,10 +56,12 @@ class PackageUpload:
             raise UploadError("Upload Failed due to unexpected Error ")
         return imp_pkg, self.repo
     
-    def bindPackageToRepo(self, pkg_path, repo):
+    def bindPackageToRepo(self, repo_path, pkg_path, repo):
         log.debug("Binding package [%s] to repo [%s]" % (pkg_path, repo))
         bsync = BaseSynchronizer(self.config)
-        pkg = bsync.import_package(pkg_path, repo)
+        file_name = os.path.basename(pkg_path)
+        packageInfo = util.get_repo_package(repo_path, file_name)
+        pkg = bsync.import_package(packageInfo, repo)
         return pkg
 
 def check_package_exists(pkg_path, hashtype, hashsum, force=0):

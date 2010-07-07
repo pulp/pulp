@@ -23,6 +23,7 @@ from pulp.util import chunks
 from pulp.util import get_rpm_information
 from pulp.util import load_config
 from pulp.util import get_repo_packages
+from pulp.util import get_repo_package
 import time
 import unittest
 import logging
@@ -65,6 +66,15 @@ class TestUtil(unittest.TestCase):
         self.assertTrue(len(packages) > 0)
         p = packages[0]
         self.assertTrue(p.name != None)
+        
+    def test_get_repo_package(self):
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir_a = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"
+        package = get_repo_package(datadir_a, 
+                      'pulp-test-package-same-nevra-0.1.0-1.x86_64.rpm')
+        self.assertNotEquals(package, None)
+        self.assertNotEquals(package.name, None)
+        
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
