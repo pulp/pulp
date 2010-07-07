@@ -48,7 +48,7 @@ class Agent(Base):
         while True:
             for action in self.actions:
                 action()
-            sleep(60)
+            sleep(10)
 
     def id(self):
         """
@@ -58,7 +58,7 @@ class Agent(Base):
         cid = ConsumerId()
         while ( not cid.uuid ):
             log.info('Not registered.')
-            sleep(10)
+            sleep(60)
             cid.read()
         return cid.uuid
 
@@ -70,7 +70,8 @@ def main():
     All actions must be subclass of L{action.Action}.
     """
     actions = \
-    (# <add actions here>
+    (TestAction(minutes=1),
+     # <add actions here>
      )
     agent = Agent(actions)
     agent.close()

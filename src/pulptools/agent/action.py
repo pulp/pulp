@@ -18,6 +18,7 @@ Action slass for pulp agent.
 """
 
 from datetime import datetime as dt
+from datetime import timedelta
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -26,18 +27,23 @@ log = getLogger(__name__)
 class Action:
     """
     Abstract recurring action (base).
-    @ivar interval: The run interval (minutes).
-    @type interval: timedelta
+    @keyword interval: The run interval.
+        One of:
+            - days
+            - seconds
+            - minutes
+            - hours
+            - weeks
     @ivar last: The last run timestamp.
     @ivar last: datetime
     """
 
-    def __init__(self, interval):
+    def __init__(self, **interval):
         """
         @param interval: The run interval (minutes).
         @type interval: timedelta
         """
-        self.interval = interval
+        self.interval = timedelta(**interval)
         self.last = dt.utcnow()
 
     def perform(self):
@@ -65,3 +71,9 @@ class Action:
                 self.perform()
         except Exception, e:
             log.exception(e)
+
+
+class TestAction(Action):
+    
+    def perform(self):
+        log.info('Hello')
