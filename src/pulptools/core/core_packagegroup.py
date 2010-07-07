@@ -117,7 +117,7 @@ class packagegroup(BaseCore):
             self.parser.add_option("--groupid", dest="groupid",
                             help="Group id")
             self.parser.add_option("--name", dest="pkgname",
-                            help="Package name (or list of names")
+                            help="Package name")
             self.parser.add_option("--type", dest="grouptype",
                             help="Type of list to add package to, example 'mandatory', 'optional', 'default'",
                             default="default")
@@ -129,7 +129,7 @@ class packagegroup(BaseCore):
             self.parser.add_option("--groupid", dest="groupid",
                             help="Group id")
             self.parser.add_option("--name", dest="pkgname",
-                            help="Package name (or list of names")
+                            help="Package name")
             self.parser.add_option("--type", dest="grouptype",
                             help="Type of list to remove package from, example 'mandatory', 'optional', 'default'",
                             default="default")

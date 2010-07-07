@@ -159,9 +159,31 @@ class RepoApi(BaseApi):
         del repo["packages"][p['id']]
         self.update(repo)
 
+    def create_packagegroup(self, repoid, group_id, group_name, description):
+        """
+        Creates a new packagegroup saved in the referenced repo
+        @param repoid:
+        @param group_id:
+        @param group_name:
+        @param description:
+        @return packagegroup object
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if repo["packagegroups"].has_key(group_id):
+            raise PulpException("Package group %s already exists in repo %s" % \
+                                (group_id, repoid))
+        group = pulp.model.PackageGroup(group_id, group_name, description)
+        repo["packagegroups"][group_id] = group
+        self.update(repo)
+        return group
+
     def remove_packagegroup(self, repoid, groupid):
         """
         Remove a packagegroup from a repo
+        @param repoid:
+        @param group_id:
         """
         repo = self.repository(repoid)
         if (repo == None):
@@ -173,6 +195,8 @@ class RepoApi(BaseApi):
     def update_packagegroup(self, repoid, pg):
         """
         Save the passed in PackageGroup to this repo
+        @param repoid: repo id
+        @param pg: packagegroup
         """
         repo = self.repository(repoid)
         if (repo == None):
@@ -183,6 +207,8 @@ class RepoApi(BaseApi):
     def update_packagegroups(self, repoid, pglist):
         """
         Save the list of passed in PackageGroup objects to this repo
+        @param repoid: repo id
+        @param pg: list of packagegroups
         """
         repo = self.repository(repoid)
         if (repo == None):
@@ -194,6 +220,8 @@ class RepoApi(BaseApi):
     def packagegroups(self, id):
         """
         Return list of PackageGroup objects in this Repo
+        @param id: repo id
+        @return: packagegroup or None
         """
         repo = self.repository(id)
         if repo == None:
@@ -203,22 +231,15 @@ class RepoApi(BaseApi):
     def packagegroup(self, repoid, groupid):
         """
         Return a PackageGroup from this Repo
+        @param repoid: repo id
+        @param groupid: packagegroup id
+        @return: packagegroup or None
         """
         repo = self.repository(repoid)
         if not repo['packagegroups'].has_key(groupid):
             return None
         return repo['packagegroups'][groupid]
 
-    def remove_packagegroupcategory(self, repoid, categoryid):
-        """
-        Remove a packagegroupcategory from a repo
-        """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo['packagegroupcategories'].has_key(categoryid):
-            del repo['packagegroupcategories'][categoryid]
-        self.update(repo)
     
     def add_package_to_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
@@ -248,24 +269,6 @@ class RepoApi(BaseApi):
                 group["default_package_names"].append(pkg_name)
         self.update(repo)
         
-    def create_packagegroup(self, repoid, group_id, group_name, description):
-        """
-        Creates a new packagegroup saved in the referenced repo
-        @param repoid:
-        @param group_id:
-        @param group_name:
-        @param description:
-        """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo["packagegroups"].has_key(group_id):
-            raise PulpException("Package group %s already exists in repo %s" % \
-                                (group_id, repoid))
-        group = pulp.model.PackageGroup(group_id, group_name, description)
-        repo["packagegroups"][group_id] = group
-        self.update(repo)
-        return group
         
     def remove_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
@@ -293,6 +296,17 @@ class RepoApi(BaseApi):
         else:
             if pkg_name in group["default_package_names"]:
                 group["default_package_names"].remove(pkg_name)
+        self.update(repo)
+
+    def remove_packagegroupcategory(self, repoid, categoryid):
+        """
+        Remove a packagegroupcategory from a repo
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if repo['packagegroupcategories'].has_key(categoryid):
+            del repo['packagegroupcategories'][categoryid]
         self.update(repo)
 
     def update_packagegroupcategory(self, repoid, pgc):
