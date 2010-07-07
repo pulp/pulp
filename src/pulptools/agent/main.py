@@ -24,7 +24,7 @@ from pmf.consumer import RequestConsumer
 from time import sleep
 
 log = getLogger(__name__)
-
+cfg = Config()
 
 class Agent(Base):
     """
@@ -33,7 +33,6 @@ class Agent(Base):
     def __init__(self, actions=[]):
         self.actions = actions
         id = self.id()
-        cfg = Config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         consumer = RequestConsumer(id, host, port)
@@ -70,7 +69,8 @@ def main():
     All actions must be subclass of L{action.Action}.
     """
     actions = \
-    (TestAction(minutes=1),
+     (TestAction(minutes=1),
+      ProfileUpdateAction(minutes=int(cfg.server.interval)),
      # <add actions here>
      )
     agent = Agent(actions)
