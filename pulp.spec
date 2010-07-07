@@ -87,7 +87,7 @@ cp etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
 
 mkdir -p %{buildroot}/etc/pki/juicer
-cp etc/pki/juicer %{buildroot}/etc/pki/juicer
+cp etc/pki/juicer/* %{buildroot}/etc/pki/juicer
 
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www/html
