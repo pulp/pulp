@@ -22,32 +22,51 @@ from pulptools.logutil import getLogger
 from pmf.base import Agent as Base
 from pmf.consumer import RequestConsumer
 from time import sleep
+from threading import Thread
 
 log = getLogger(__name__)
 cfg = Config()
+
+
+class ActionThread(Thread):
+    """
+    Run actions independantly of main thread.
+    @ivar actions: A list of actions to run.
+    @type actions: [L{Action},..]
+    """
+    
+    def __init__(self, actions):
+        """
+        @param actions: A list of actions to run.
+        @type actions: [L{Action},..]
+        """
+        self.actions = actions
+        Thread.__init__(self, name='Actions')
+   
+    def run(self):
+        """
+        Run actions.
+        """
+        while True:
+            for action in self.actions:
+                action()
+            sleep(10)
+            
 
 class Agent(Base):
     """
     Pulp agent.
     """
     def __init__(self, actions=[]):
-        self.actions = actions
         id = self.id()
+        actionThread = ActionThread(actions)
+        actionThread.start()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         consumer = RequestConsumer(id, host, port)
         Base.__init__(self, consumer)
         log.info('started.')
-        self.run()
-
-    def run(self):
-        """
-        Main (run) loop.
-        """
-        while True:
-            for action in self.actions:
-                action()
-            sleep(10)
+        actionThread.join()
 
     def id(self):
         """
@@ -70,9 +89,9 @@ def main():
     """
     actions = \
      (TestAction(minutes=1),
-      ProfileUpdateAction(minutes=int(cfg.server.interval)),
-     # <add actions here>
-     )
+      ProfileUpdateAction(minutes=cfg.server.interval),
+      # <add actions here>
+      )
     agent = Agent(actions)
     agent.close()
 

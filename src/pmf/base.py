@@ -22,6 +22,10 @@ from pmf import decorators
 from pmf.dispatcher import Dispatcher
 from qpid.messaging import Connection
 from time import sleep
+from logging import getLogger
+
+log = getLogger(__name__)
+
 
 class Endpoint:
     """
@@ -100,13 +104,16 @@ class Endpoint:
         """
         while True:
             try:
+                log.info('%s, connecting', self)
                 con = self.connection()
                 con.connect()
                 con.start()
+                log.info('%s, connected', self)
                 break
             except Exception, e:
+                log.exception(e)
                 if self.mustConnect():
-                    sleep(3)
+                    sleep(10)
                 else:
                     raise e
 
@@ -159,9 +166,11 @@ class Endpoint:
         return topic
 
     def __del__(self):
-        print "CLOSING"
         self.close()
-        print "CLOSED"
+        
+    def __str__(self):
+        return 'Endpoint id:%s broker @ %s:%s' % \
+            (self.id, self.host, self.port)
 
 
 class Agent:

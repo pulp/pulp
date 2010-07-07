@@ -19,13 +19,11 @@ Action slass for pulp agent.
 
 from datetime import datetime as dt
 from datetime import timedelta
-#from logging import getLogger
-from pulptools.logutil import getLogger
 from pulptools.connection import ConsumerConnection, RestlibException
 from pulptools.package_profile import PackageProfile
 from pulptools import ConsumerId
 from pulptools.config import Config
-CFG = Config()
+from pulptools.logutil import getLogger
 
 log = getLogger(__name__)
 
@@ -34,12 +32,12 @@ class Action:
     """
     Abstract recurring action (base).
     @keyword interval: The run interval.
-        One of:
-            - days
-            - seconds
-            - minutes
-            - hours
-            - weeks
+      One of:
+        - days
+        - seconds
+        - minutes
+        - hours
+        - weeks
     @ivar last: The last run timestamp.
     @ivar last: datetime
     """
@@ -49,8 +47,10 @@ class Action:
         @param interval: The run interval (minutes).
         @type interval: timedelta
         """
+        for k,v in interval.items():
+            interval[k] = int(v)
         self.interval = timedelta(**interval)
-        self.last = dt.utcnow()
+        self.last = dt(1900, 1, 1)
 
     def perform(self):
         """
@@ -78,6 +78,7 @@ class Action:
         except Exception, e:
             log.exception(e)
 
+
 class ProfileUpdateAction(Action):
     """
     Package Profile Update Action to update installed package info for a 
@@ -89,6 +90,7 @@ class ProfileUpdateAction(Action):
         Looks up the consumer id and latest pkg profile info and cals
         the api to update the consumer profile 
         """
+        CFG = Config()
         cid = ConsumerId()
         if not cid.exists():
             log.error("Not Registered")
@@ -103,6 +105,7 @@ class ProfileUpdateAction(Action):
             log.error("Error: %s" % re)
         except Exception, e:
             log.error("Error: %s" % e)
+
 
 class TestAction(Action):
     

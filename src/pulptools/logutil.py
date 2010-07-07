@@ -15,20 +15,24 @@
 
 import os
 import logging
-from logging import Formatter
+from logging import root, Formatter
 from logging.handlers import RotatingFileHandler
 
 LOGDIR = '/var/log/pulp'
 LOGFILE = 'pulptools.log'
 
+handler = None
+
 def getLogger(name):
+    global handler
     if not os.path.exists(LOGDIR):
         os.mkdir(LOGDIR)
-    path = os.path.join(LOGDIR,LOGFILE)
-    fmt = '%(asctime)s [%(levelname)s] %(funcName)s() @%(filename)s:%(lineno)d - %(message)s'
-    handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
-    handler.setFormatter(Formatter(fmt))
+    if handler is None:
+        path = os.path.join(LOGDIR,LOGFILE)
+        fmt = '%(asctime)s [%(levelname)s] %(funcName)s() @%(filename)s:%(lineno)d - %(message)s'
+        handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
+        handler.setFormatter(Formatter(fmt))
+        root.setLevel(logging.INFO)
+        root.addHandler(handler)
     log = logging.getLogger(name)
-    log.addHandler(handler)
-    log.setLevel(logging.INFO)
     return log
