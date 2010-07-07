@@ -22,6 +22,7 @@ DIRS = (
     '/etc/httpd',
     '/etc/httpd/conf.d',
     '/etc/pulp',
+    '/etc/pki/juicer',
     '/srv',
     '/srv/juicer',
     '/var/lib/pulp',
@@ -34,6 +35,9 @@ LINKS = (
     'etc/pulp/pulp.conf',
     'etc/pulp/client.conf',
     'etc/httpd/conf.d/juicer.conf',
+    'etc/pki/juicer/ca.crt',
+    'etc/pki/juicer/server.crt',
+    'etc/pki/juicer/server.key',
     'srv/juicer/juicer.wsgi',
 )
 
