@@ -21,7 +21,6 @@ sys.path.append('../../')
 
 from time import sleep
 
-from pmf.mode import Mode
 from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
 from pmf.producer import RequestProducer
