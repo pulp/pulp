@@ -167,7 +167,7 @@ def get_repo_packages(path):
     r = _get_yum_repomd(path)
     if not r:
         return []
-    r.getPackageSack().populate(r, 'metadata', None, 0)
+    r.sack.populate(r, 'metadata', None, 0)
     return r.getPackageSack().returnPackages()
 
 def get_repomd_filetype_path(path, filetype):
