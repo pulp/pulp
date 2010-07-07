@@ -19,7 +19,6 @@ Proxies (stubs) are the I{local} representation of I{remote}
 classes on which we invoke methods.
 """
 
-from pmf.mode import Mode
 from pmf.dispatcher import Request
 
 
@@ -56,17 +55,17 @@ class Method:
         @param kws: The I{keyword} arguments.
         @type kws: dict
         """
-        modekey = '__mode'
-        mode = Mode()
-        if modekey in kws:
-            mode = kws[modekey]
-            del kws[modekey]
+        synckey = '__sync'
+        synchronous = True
+        if synckey in kws:
+            synchronous = kws[synckey]
+            del kws[synckey]
         req = Request(
             classname=self.classname,
             method=self.name,
             args=args,
             kws=kws)
-        return self.proxy._send(req.dump(), mode)
+        return self.proxy._send(req.dump(), synchronous)
 
 
 class Proxy:
@@ -88,15 +87,15 @@ class Proxy:
         self.__cid = consumerid
         self.__producer = producer
 
-    def _send(self, content, sync):
+    def _send(self, content, synchronous):
         """
         Send the message using the configured producer.
         @param content: json encoded RMI request.
         @type content: str
-        @param sync: The synchronous/asynchronous flag.
-        @type sync: bool
+        @param synchronous: The synchronous/asynchronous flag.
+        @type synchronous: bool
         """
-        return self.__producer.send(self.__cid, content, sync)
+        return self.__producer.send(self.__cid, content, synchronous)
 
     def __getattr__(self, name):
         """

@@ -46,7 +46,7 @@ class Agent(Base):
 def demo(agent):
 
     print agent.dog.bark('hello')
-    print agent.dog.wag(3, __mode=Mode(0, 'task'))
+    print agent.dog.wag(3, __sync=0)
     print agent.dog.bark('hello')
     print agent.repolib.update()
 
