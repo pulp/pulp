@@ -55,7 +55,7 @@ class Restlib(object):
             context.load_cert(self.cert_file, keyfile=self.key_file)
             conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
         else:
-            conn = httplib.HTTPConnection(self.host, self.port)
+            conn = httplib.HTTPSConnection(self.host, self.port)
         conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
         response = conn.getresponse()
