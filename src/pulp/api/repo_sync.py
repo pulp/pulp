@@ -121,6 +121,7 @@ class BaseSynchronizer(object):
         startTime = time.time()
         package_list = pulp.util.get_repo_packages(dir)
         added_packages = []
+        log.debug("Processing %s potential packages" % (len(package_list)))
         for package in package_list:
             package = self.import_package(package, repo)
             if (package != None):

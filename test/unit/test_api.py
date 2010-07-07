@@ -202,18 +202,33 @@ class TestApi(unittest.TestCase):
     def test_repo_package_groups(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
-        pkggroup = PackageGroup('test-group-id', 'test-group-name', 
+        pkggroup = self.rapi.create_packagegroup(repo["id"],
+                'test-group-id', 'test-group-name',
                 'test-group-description')
         package = self.create_package('test_repo_packages')
-        pkggroup.default_package_names.append(package["id"])
-        repo['packagegroups'][pkggroup["id"]] = pkggroup
-        repo['packages'][package["id"]] = package
-        
-        self.rapi.update(repo)
-        
+        self.rapi.add_package(repo["id"], package["id"])
+        self.rapi.add_package_to_group(repo["id"], pkggroup["id"],
+                package["name"], gtype="default")
+        # Verify package is present in group
         found = self.rapi.repository('some-id')
-        assert(found['packagegroups'] != None)
-        assert(pkggroup['id'] in found['packagegroups'])
+        self.assertTrue(found['packagegroups'] != None)
+        self.assertTrue(pkggroup['id'] in found['packagegroups'])
+        self.assertTrue(package["name"] in \
+                found['packagegroups'][pkggroup['id']]['default_package_names'])
+        # Remove package from package group
+        self.rapi.remove_package_from_group(repo["id"], pkggroup["id"],
+                package["name"], gtype="default")
+        found = self.rapi.repository('some-id')
+        self.assertTrue(found['packagegroups'] != None)
+        self.assertTrue(pkggroup['id'] in found['packagegroups'])
+        self.assertTrue(package["name"] not in \
+                found['packagegroups'][pkggroup['id']]['default_package_names'])
+        # Remove packagegroup from repo
+        self.rapi.remove_packagegroup(repo["id"], pkggroup["id"])
+        found = self.rapi.repository('some-id')
+        self.assertTrue(len(found['packagegroups']) == 0)
+
+
     
     def test_repo_package_group_categories(self):
         repo = self.rapi.create('some-id_pkg_group_categories','some name', \

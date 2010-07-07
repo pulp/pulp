@@ -265,6 +265,7 @@ class RepoApi(BaseApi):
         group = pulp.model.PackageGroup(group_id, group_name, description)
         repo["packagegroups"][group_id] = group
         self.update(repo)
+        return group
         
     def remove_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
