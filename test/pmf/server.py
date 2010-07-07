@@ -19,6 +19,8 @@
 import sys
 sys.path.append('../../')
 
+from time import sleep
+
 from pmf.mode import Mode
 from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
@@ -62,4 +64,4 @@ def demo(agent):
 if __name__ == '__main__':
     agent = Agent('123')
     demo(agent)
-    agent.close()
+    agent = None

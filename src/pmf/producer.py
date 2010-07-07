@@ -37,12 +37,11 @@ class RequestProducer(Endpoint):
         """
         Open and configure the producer.
         """
-        session = self.connection.session()
+        session = self.session()
         address = self.queueAddress(self.id)
         receiver = session.receiver(address)
         receiver.start()
         self.receiver = receiver
-        self.session = session
 
     def send(self, consumerid, content, mode=Mode()):
         """
@@ -59,7 +58,7 @@ class RequestProducer(Endpoint):
         self._setreply(envelope)
         message = Message(envelope.dump())
         address = self.queueAddress(consumerid)
-        sender = self.session.sender(address)
+        sender = self.session().sender(address)
         message = Message(envelope.dump())
         sender.send(message);
         if mode.synchronous:
@@ -93,7 +92,7 @@ class RequestProducer(Endpoint):
                 return
             reply = Return()
             reply.load(envelope.payload)
-            self.session.acknowledge()
+            self.ack()
             if reply.succeeded():
                 return reply.retval
             else:
@@ -120,7 +119,7 @@ class RequestProducer(Endpoint):
                 result = (message, envelope)
                 break
             else:
-                self.session.acknowledge()
+                self.ack()
         return result
 
 
@@ -130,4 +129,22 @@ class EventProducer:
     @ivar session: An AMQP session.
     @type session: L{qpid.Session}
     """
-    pass
+
+    def open(self):
+        """
+        Open and configure the producer.
+        """
+        self.session = session()
+
+    def send(self, topic, event):
+        """
+        Send a message to the consumer.
+        @param event: An event object.
+        @type event: str
+        """
+        sn = getuuid()
+        envelope = Envelope(sn=sn, payload=event)
+        message = Message(envelope.dump())
+        address = self.topicAddress(topic)
+        sender = self.session().sender(address)
+        message = Message(envelope.dump())

@@ -12,20 +12,33 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+"""
+Provides messaging evelope classes.
+"""
 
 import simplejson as json
 
 
 class Envelope(dict):
+    """
+    Basic envelope is a json encoded/decoded dictionary
+    that provides dot (.) style access.
+    """
 
     __setattr__= dict.__setitem__
     __delattr__= dict.__delitem__
 
     def load(self, s):
+        """
+        Load using a json string.
+        """
         d = json.loads(s)
         self.update(d)
 
     def dump(self):
+        """
+        Dump to a json string.
+        """
         d = self
         return json.dumps(d, indent=2)
 

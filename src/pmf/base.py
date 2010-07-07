@@ -26,14 +26,25 @@ from time import sleep
 class Endpoint:
     """
     Base class for QPID endpoint.
+    @cvar connecton: An AMQP connection.
+    @type connecton: L{qpid.messaging.Connection}
     @ivar id: The unique AMQP session ID.
     @type id: str
-    @ivar connecton: An AMQP connection.
-    @type connecton: L{qpid.messaging.Connection}
     @ivar session: An AMQP session.
     @type session: L{qpid.messaging.Session}
     """
     
+    connections = {}
+
+    @classmethod
+    def shutdown(cls):
+        """
+        Shutdown all connections.
+        """
+        for con in cls.connections.values():
+            con.close()
+        cls.connections = {}
+
     def __init__(self, id=getuuid(), host='localhost', port=5672):
         """
         @param host: The broker fqdn or IP.
@@ -42,10 +53,44 @@ class Endpoint:
         @type port: str
         """
         self.id = id
-        self.connection = Connection(host, port)
-        self.session = None
+        self.host = host
+        self.port = port
+        self.__session = None
         self.connect()
         self.open()
+
+    def connection(self):
+        """
+        Get cached connection based on host & port.
+        @return: The global connection.
+        @rtype: L{qpid.messaging.Connection}
+        """
+        key = (self.host, self.port)
+        con = self.connections.get(key)
+        if con is None:
+            con = Connection(self.host, self.port)
+            self.connections[key] = con
+        return con
+
+    def session(self):
+        """
+        Get a session for the open connection.
+        @return: An open session.
+        @rtype: L{qpid.messaging.Session}
+        """
+        if self.__session is None:
+            con = self.connection()
+            self.__session = con.session()
+        return self.__session
+
+    def ack(self):
+        """
+        Acknowledge all messages received on the session.
+        """
+        try:
+            self.__session.acknowledge()
+        except:
+            pass
 
     def connect(self):
         """
@@ -55,8 +100,9 @@ class Endpoint:
         """
         while True:
             try:
-                self.connection.connect()
-                self.connection.start()
+                con = self.connection()
+                con.connect()
+                con.start()
                 break
             except Exception, e:
                 if self.mustConnect():
@@ -74,9 +120,11 @@ class Endpoint:
         """
         Close (shutdown) the endpoint.
         """
+        session = self.__session
+        self.__session = None
         try:
-            self.session.stop()
-            self.connection.close()
+            session.stop()
+            session.close()
         except:
             pass
 
@@ -109,6 +157,11 @@ class Endpoint:
         @rtype: str
         """
         return topic
+
+    def __del__(self):
+        print "CLOSING"
+        self.close()
+        print "CLOSED"
 
 
 class Agent:

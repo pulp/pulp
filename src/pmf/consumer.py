@@ -38,11 +38,10 @@ class RequestConsumer(Endpoint):
         """
         Open and configure the consumer.
         """
-        session = self.connection.session()
+        session = self.session()
         address = self.queueAddress(self.id)
         receiver = session.receiver(address)
         self.receiver = receiver
-        self.session = session
 
     def mustConnect(self):
         return True
@@ -78,7 +77,7 @@ class RequestConsumer(Endpoint):
         request = envelope.payload
         result = self.dispatcher.dispatch(request)
         self.respond(envelope, result)
-        self.session.acknowledge()
+        self.ack()
 
     def respond(self, request, result):
         """
@@ -95,7 +94,7 @@ class RequestConsumer(Endpoint):
             return
         envelope = Envelope(sn=request.sn)
         envelope.payload = result
-        sender = self.session.sender(replyto)
+        sender = self.session().sender(replyto)
         message = Message(envelope.dump())
         sender.send(message);
         return self
@@ -103,8 +102,8 @@ class RequestConsumer(Endpoint):
 
 class ReplyConsumer(Endpoint):
     """
-    An AMQP request/reply consumer.
-    @ivar receiver: The primary incoming message receiver.
+    An AMQP reply consumer for asynchronous requests.
+    @ivar receiver: The queue receiver.
     @type receiver: L{qpid.Queue}
     @ivar session: An AMQP session.
     @type session: L{qpid.Session}
@@ -114,11 +113,77 @@ class ReplyConsumer(Endpoint):
         """
         Open and configure the consumer.
         """
-        session = self.connection.session()
+        session = self.session()
         address = self.queueAddress(self.id)
         receiver = session.receiver(address)
         self.receiver = receiver
-        self.session = session
+
+    def mustConnect(self):
+        return True
+
+    def start(self, listener):
+        """
+        @param listener: An RMI reply listener.
+        @type listener: L{ReplyListener}
+        """
+        self.listener = listener
+        self.receiver.listen(self.received)
+        self.receiver.start()
+
+    def stop(self):
+        """
+        Stop processing requests.
+        """
+        try:
+            self.receiver.stop()
+        except:
+            pass
+
+    def received(self, message):
+        """
+        Process received request.
+        @param message: The received message.
+        @type message: L{Message}
+        """
+        envelope = Envelope()
+        envelope.load(message.content)
+        try:
+            self.notify(self.listener, envelope)
+        except:
+            pass # TODO: LOG THIS BETTER
+        self.ack()
+
+    def notify(self, listener, envelope):
+        """
+        Notify the listener that a reply has been consumed.
+        @param listener: A listener.
+        @type listener: Listener
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
+        """
+        sn = envelope.sn
+        reply = Return()
+        reply.load(envelope.payload)
+        if reply.succeeded():
+            listener.succeeded(sn, reply.retval)
+        else:
+            listener.raised(sn, Exception(reply.exval))
+
+
+class EventConsumer:
+    """
+    An AMQP topic consumer.
+    @ivar session: An AMQP session.
+    @type session: L{qpid.Session}
+    """
+    def open(self):
+        """
+        Open and configure the consumer.
+        """
+        session = session()
+        address = self.topicAddress(self.id)
+        receiver = session.receiver(address)
+        self.receiver = receiver
 
     def mustConnect(self):
         return True
@@ -149,34 +214,43 @@ class ReplyConsumer(Endpoint):
         """
         envelope = Envelope()
         envelope.load(message.content)
-        reply = Return()
-        reply.load(envelope.payload)
-        sn = envelope.sn
+        event = Event()
+        event.load(envelope.payload)
         try:
-            self.notify(self.listener, reply)
+            self.notify(self.listener, event)
         except:
             pass # TODO: LOG THIS BETTER
-        self.session.acknowledge()
+        self.ack()
 
-    def notify(self, listener, reply):
+    def notify(self, listener, event):
         """
-        Dispatch the reply to the registered listener.
+        Notify the listener that an event has been consumed.
         @param listener: A listener.
         @type listener: Listener
-        @param reply: The received reply.
-        @type reply: L{Return}
+        @param event: The received event.
+        @type event: L{Event}
         """
-        sn = reply.sn
-        if reply.succeeded():
-            listener.succeeded(sn, reply.retval)
-        else:
-            listener.raised(sn, Exception(reply.exval))
+        pass
 
 
-class EventConsumer:
-    """
-    An AMQP consumer.
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
-    """
-    pass
+class ReplyListener:
+
+    def succeeded(self, sn, retval):
+        """
+        Request succeeded.
+        @param sn: The request serial number.
+        @type sn: str
+        @param retval: The returned value.
+        @type retval: any
+        """
+        pass
+
+    def raised(self, sn, ex):
+        """
+        Request failed and raised exception.
+        @param sn: The request serial number.
+        @type sn: str
+        @param ex: The raised exception.
+        @type ex: Exception
+        """
+        pass

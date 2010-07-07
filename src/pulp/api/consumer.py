@@ -154,8 +154,5 @@ class ConsumerApi(BaseApi):
         @type packagenames: [str,..]
         """
         agent = Agent(id)
-        try:
-            agent.packages.install(packagenames)
-        finally:
-            agent.close()
+        agent.packages.install(packagenames)
         return packagenames

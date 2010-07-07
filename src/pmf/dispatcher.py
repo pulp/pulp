@@ -12,6 +12,9 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+"""
+Provides RMI dispatcher classes.
+"""
 
 from pmf.envelope import Envelope
 from pmf.decorators import mayinvoke
