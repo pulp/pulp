@@ -178,9 +178,10 @@ class packagegroup(BaseCore):
             print "Repository: %s" % (self.options.repoid)
             print "Package Group Information "
             print "+-------------------------------------------+"
-            for key, value in groups.items():
+            keys = groups.keys()
+            keys.sort()
+            for key in keys:
                 print "\t %s" % (key)
-                #print """%s:                \t%-25s""" % (key, value)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
