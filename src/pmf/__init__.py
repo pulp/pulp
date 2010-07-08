@@ -14,6 +14,39 @@
 #
 
 from uuid import uuid4
+import simplejson as json
+
 
 def getuuid():
     return str(uuid4())
+
+
+class Envelope(dict):
+    """
+    Basic envelope is a json encoded/decoded dictionary
+    that provides dot (.) style access.
+    """
+
+    __setattr__= dict.__setitem__
+    __delattr__= dict.__delitem__
+
+    def load(self, s):
+        """
+        Load using a json string.
+        """
+        d = json.loads(s)
+        self.update(d)
+        return self
+
+    def dump(self):
+        """
+        Dump to a json string.
+        """
+        d = self
+        return json.dumps(d, indent=2)
+
+    def __getattr__(self, attr):
+        return self.get(attr, None)
+
+    def __str__(self):
+        return self.dump()

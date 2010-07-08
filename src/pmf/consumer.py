@@ -18,20 +18,16 @@ Provides AMQP message consumer classes.
 """
 
 from pmf import *
-from pmf.base import Endpoint
-from pmf.envelope import Envelope
+from pmf.base import Consumer, Producer
 from pmf.dispatcher import Return
-from qpid.messaging import Message, Empty
-from qpid.exceptions import Closed
+from qpid.messaging import Empty
 
 
-class RequestConsumer(Endpoint):
+class QueueConsumer(Consumer):
     """
-    An AMQP request consumer.
-    @ivar receiver: The incoming message receiver.
-    @type receiver: L{qpid.Queue}
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
+    An AMQP (abstract) queue consumer.
+    @ivar receiver: The message receiver.
+    @type receiver: L{qpid.Receiver}
     """
 
     def open(self):
@@ -43,8 +39,58 @@ class RequestConsumer(Endpoint):
         receiver = session.receiver(address)
         self.receiver = receiver
 
-    def mustConnect(self):
-        return True
+
+class QueueReader(QueueConsumer):
+
+    def start(self):
+        """
+        Start processing messages on the queue.
+        """
+        self.receiver.start()
+
+    def next(self, timeout=90):
+        """
+        Get the next envelope from the queue.
+        @param timeout: The read timeout.
+        @type timeout: int
+        @return: The next envelope.
+        @rtype: L{Envelope}
+        """
+        try:
+            message = self.receiver.fetch(timeout=timeout)
+            envelope = Envelope()
+            envelope.load(message.content)
+            return envelope
+        except Empty:
+            pass
+
+    def search(self, sn, timeout=90):
+        """
+        Seach the reply queue for the envelope with
+        the matching serial #.
+        @param sn: The expected serial number.
+        @type sn: str
+        @param timeout: The read timeout.
+        @type timeout: int
+        @return: The next envelope.
+        @rtype: L{Envelope}
+        """
+        while True:
+            envelope = self.next(timeout)
+            if sn == envelope.sn:
+                return envelope
+            else:
+                self.ack()
+
+
+class RequestConsumer(QueueConsumer):
+    """
+    An AMQP request consumer.
+    @ivar receiver: The incoming message receiver.
+    @type receiver: L{qpid.Queue}
+    @ivar session: An AMQP session.
+    @type session: L{qpid.Session}
+    """
 
     def start(self, dispatcher):
         """
@@ -54,53 +100,24 @@ class RequestConsumer(Endpoint):
         @type dispatcher: L{pmf.Dispatcher}
         """
         self.dispatcher = dispatcher
-        self.receiver.listen(self.received)
-        self.receiver.start()
+        self.producer = Producer(host=self.host, port=self.port)
+        Consumer.start(self)
 
-    def stop(self):
+    def dispatch(self, envelope):
         """
-        Stop processing requests.
-        """
-        try:
-            self.receiver.stop()
-        except:
-            pass
-
-    def received(self, message):
-        """
-        Process received request.
+        Dispatch received request.
         @param message: The received message.
-        @type message: L{Message}
+        @type message: L{Envelope}
         """
-        envelope = Envelope()
-        envelope.load(message.content)
         request = envelope.request
         result = self.dispatcher.dispatch(request)
-        self.respond(envelope, result)
-        self.ack()
-
-    def respond(self, request, result):
-        """
-        Respond to request with the specified I{content}.
-        A response is send B{only} when a I{replyto} is specified
-        in the I{message}.
-        @param request: The request envelope.
-        @type request: L{Envelope}
-        @param result: A reply object.
-        @type result: L{pmf.Return}
-        """
-        replyto = request.replyto
-        if not replyto:
-            return
-        envelope = Envelope(sn=request.sn)
-        envelope.result = result
-        sender = self.session().sender(replyto)
-        message = Message(envelope.dump())
-        sender.send(message);
-        return self
+        sn = envelope.sn
+        replyto = envelope.replyto
+        if replyto:
+            self.producer.send(replyto, sn=sn, result=result)
 
 
-class EventConsumer(Endpoint):
+class TopicConsumer(Consumer):
     """
     An AMQP topic consumer.
     @ivar session: An AMQP session.
@@ -115,33 +132,20 @@ class EventConsumer(Endpoint):
         receiver = session.receiver(address)
         self.receiver = receiver
 
-    def mustConnect(self):
-        return True
 
-    def start(self):
-        """
-        Start listening for events.
-        """
-        self.receiver.listen(self.received)
-        self.receiver.start()
+class EventConsumer(TopicConsumer):
+    """
+    An AMQP topic consumer.
+    @ivar session: An AMQP session.
+    @type session: L{qpid.Session}
+    """
 
-    def stop(self):
-        """
-        Stop processing requests.
-        """
-        try:
-            self.receiver.stop()
-        except:
-            pass
-
-    def received(self, message):
+    def dispatch(self, envelope):
         """
         Process received request.
-        @param message: The received message.
-        @type message: L{Message}
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
         """
-        envelope = Envelope()
-        envelope.load(message.content)
         event = envelope.event
         try:
             self.notify(event)

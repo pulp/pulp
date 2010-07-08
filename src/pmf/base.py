@@ -21,6 +21,7 @@ from pmf import *
 from pmf import decorators
 from pmf.dispatcher import Dispatcher
 from qpid.messaging import Connection
+from qpid.messaging import Message
 from time import sleep
 from logging import getLogger
 
@@ -173,6 +174,77 @@ class Endpoint:
     def __str__(self):
         return 'Endpoint id:%s broker @ %s:%s' % \
             (self.id, self.host, self.port)
+
+
+class Consumer(Endpoint):
+    """
+    An AMQP (abstract) consumer.
+    """
+    def mustConnect(self):
+        return True
+
+    def start(self):
+        """
+        Start processing messages on the queue.
+        """
+        self.receiver.listen(self.received)
+        self.receiver.start()
+
+    def stop(self):
+        """
+        Stop processing requests.
+        """
+        try:
+            self.receiver.stop()
+        except:
+            pass
+
+    def received(self, message):
+        """
+        Process received request.
+        @param message: The received message.
+        @type message: L{Message}
+        """
+        envelope = Envelope()
+        envelope.load(message.content)
+        self.dispatch(envelope)
+        self.ack()
+
+    def dispatch(self, envelope):
+        """
+        Dispatch received request.
+        @param message: The received message.
+        @type message: L{Message}
+        """
+        pass
+
+
+class Producer(Endpoint):
+    """
+    An AMQP (abstract) message producer.
+    """
+
+    def open(self):
+        """
+        Open and configure the producer.
+        """
+        self.session()
+
+    def send(self, address, **body):
+        """
+        Send a message.
+        @param address: An AMQP address.
+        @type address: str
+        @keyword body: envelope body.
+        """
+        sn = getuuid()
+        envelope = Envelope(sn=sn)
+        envelope.update(body)
+        message = Message(envelope.dump())
+        sender = self.session().sender(address)
+        message = Message(envelope.dump())
+        sender.send(message);
+        return sn
 
 
 class Agent:

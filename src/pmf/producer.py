@@ -18,33 +18,47 @@ Contains AMQP message producer classes.
 """
 
 from pmf import *
-from pmf.base import Endpoint
-from pmf.envelope import Envelope
+from pmf.base import Producer
 from pmf.dispatcher import Return
-from qpid.util import connect
-from qpid.messaging import Message, Empty
+from pmf.consumer import QueueReader
 
 
-class RequestProducer(Endpoint):
+class QueueProducer(Producer):
+    """
+    An AMQP (abstract) queue producer.
+    """
+
+    def send(self, qid, **body):
+        """
+        Send a message.
+        @param qid: An AMQP queue ID.
+        @type qid: str
+        @keyword body: envelope body.
+        """
+        address = self.queueAddress(qid)
+        return Producer.send(self, address, **body)
+
+
+class RequestProducer(QueueProducer):
     """
     An AMQP message producer.
-    @ivar receiver: The (reply) queue receiver.
-    @type receiver: L{qpid.messaging.Receiver}
+    @ivar reader: The (reply) queue reader.
+    @type reader: L{QueueReader}
     """
 
     def open(self):
         """
         Open and configure the producer.
         """
-        session = self.session()
-        address = self.queueAddress(self.id)
-        receiver = session.receiver(address)
-        receiver.start()
-        self.receiver = receiver
+        self.session()
+        self.reader = QueueReader(self.id, self.host, self.port)
+        self.reader.start()
 
-    def send(self, consumerid, request, synchronous=True):
+    def send(self, qid, request, synchronous=True):
         """
         Send a message to the consumer.
+        @param qid: The destination queue id.
+        @type qid: str
         @param request: The json encoded request.
         @type request: str
         @param synchronous: Flag to indicate synchronous.
@@ -52,23 +66,17 @@ class RequestProducer(Endpoint):
             to (block) read the reply queue.
         @type synchronous: bool
         """
-        sn = getuuid()
-        envelope = Envelope(sn=sn, request=request)
         if synchronous:
-            envelope.replyto = self.queueAddress(self.id)
+            replyto = self.queueAddress(self.id)
         else:
-            envelope.replyto = None
-        message = Message(envelope.dump())
-        address = self.queueAddress(consumerid)
-        sender = self.session().sender(address)
-        message = Message(envelope.dump())
-        sender.send(message);
+            replyto = None
+        sn = QueueProducer.send(self, qid, replyto=replyto, request=request)
         if synchronous:
-            return self._getreply(sn)
+            return self.__getreply(sn)
         else:
             return sn
 
-    def _getreply(self, sn):
+    def __getreply(self, sn):
         """
         Read the reply from our reply queue.
         @param sn: The request serial number.
@@ -76,67 +84,44 @@ class RequestProducer(Endpoint):
         @return: The json unencoded reply.
         @rtype: any
         """
-        try:
-            message, envelope = self._searchqueue(sn)
-            if not message:
-                return
-            reply = Return(envelope.result)
-            self.ack()
-            if reply.succeeded():
-                return reply.retval
-            else:
-                raise Exception, reply.exval
-        except Empty:
-            # TODO: something better for timeouts.
-            pass
+        envelope = self.reader.search(sn)
+        if not envelope:
+            return
+        reply = Return(envelope.result)
+        self.ack()
+        if reply.succeeded():
+            return reply.retval
+        else:
+            raise Exception, reply.exval
 
-    def _searchqueue(self, sn):
+
+class TopicProducer(Producer):
+    """
+    An AMQP (abstract) topic producer.
+    """
+
+    def send(self, topic, **body):
         """
-        Seach the reply queue for the envelope with
-        the matching serial #.
-        @param sn: The expected serial number.
-        @type sn: str
-        @return: (message, envelope)
-        @rtype: tuple
+        Send a message.
+        @param topic: An AMQP topic.
+        @type topic: str
+        @keyword body: envelope body.
         """
-        while True:
-            result = (None, None)
-            message = self.receiver.fetch(timeout=90)
-            envelope = Envelope()
-            envelope.load(message.content)
-            if sn == envelope.sn:
-                result = (message, envelope)
-                break
-            else:
-                self.ack()
-        return result
+        address = self.topicAddress(topic)
+        return Producer.send(self, address, **body)
 
 
-class EventProducer(Endpoint):
+class EventProducer(TopicProducer):
     """
     An AMQP event producer.
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
     """
-
-    def open(self):
-        """
-        Open and configure the producer.
-        """
-        session = self.session()
 
     def send(self, topic, event):
         """
         Send a message to the consumer.
-        @param topic: An event object.
+        @param topic: An AMQP topic.
         @type topic: str
         @param event: An event body.
         @type event: str
         """
-        sn = getuuid()
-        envelope = Envelope(sn=sn, event=event)
-        message = Message(envelope.dump())
-        address = self.topicAddress(topic)
-        sender = self.session().sender(address)
-        message = Message(envelope.dump())
-        sender.send(message)
+        TopicProducer.send(self, topic, event=event)

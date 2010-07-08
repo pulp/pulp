@@ -16,7 +16,7 @@
 Provides RMI dispatcher classes.
 """
 
-from pmf.envelope import Envelope
+from pmf import *
 from pmf.decorators import mayinvoke
 
 
