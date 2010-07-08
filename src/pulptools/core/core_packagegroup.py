@@ -43,8 +43,8 @@ class packagegroup(BaseCore):
                         "info"          : "lookup information for a packagegroup",
                         "create"        : "create a packagegroup",
                         "remove"        : "remove a packagegroup",
-                        "add_package"   : "add package(s) to an existing packagegroup",
-                        "remove_package": "remove package(s) from an existing packagegroup",
+                        "add_package"   : "add package to an existing packagegroup",
+                        "remove_package": "remove package from an existing packagegroup",
                         "install"       : "Schedule a packagegroup Install",
                         }
         self.name = "packagegroup"
@@ -83,7 +83,7 @@ class packagegroup(BaseCore):
             usage = "usage: %prog packagegroup install [OPTIONS]"
             BaseCore.__init__(self, "packagegroup install", usage, "", "")
             self.parser.add_option("-p", "--pkgname", action="append", dest="pnames",
-                           help="Packages to install on a given consumer. \
+                           help="PackageGroup to install on a given consumer. \
                            To specify multiple packages use multiple -p")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
@@ -142,7 +142,7 @@ class packagegroup(BaseCore):
         print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
         print "Supported Actions:\n"
         items = self.actions.items()
-        #items.sort()
+        items.sort()
         for (name, cmd) in items:
             print("\t%-14s \t%-25s" % (name, cmd))
         print("")
