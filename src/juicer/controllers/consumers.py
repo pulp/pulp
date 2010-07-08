@@ -76,6 +76,7 @@ class Consumers(JSONController):
     @JSONController.error_handler
     def DELETE(self):
         """
+        Delete all consumers.
         @return: True on successful deletion of all consumers
         """
         api.clean()

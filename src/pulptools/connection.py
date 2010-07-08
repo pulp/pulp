@@ -15,16 +15,26 @@
 # in this software or its documentation.
 #
 
-import locale
 import httplib
-import simplejson as json
+import locale
+
+from gettext import gettext as _
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 from M2Crypto import SSL, httpslib
+
 from pulptools.logutil import getLogger
 
-import gettext
-_ = gettext.gettext
 
 log = getLogger(__name__)
+
+consumer_deferred_fields = ['package_profile', 'repoids']
+package_deferred_fields = []
+repository_deferred_fields = ['packages', 'packagegroups', 'packagegroupcategories']
 
 class RestlibException(Exception):
     def __init__(self, code, msg = ""):
@@ -32,7 +42,7 @@ class RestlibException(Exception):
         self.msg = msg
 
     def __str__(self):
-        return self.msg
+        return '%s: %s' % (str(self.code), self.msg)
 
 class Restlib(object):
     """
@@ -59,6 +69,8 @@ class Restlib(object):
         conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
         response = conn.getresponse()
+        if response.status == 404:
+            return None
         self.validateResponse(response)
         rinfo = response.read()
         if not len(rinfo):
@@ -66,7 +78,7 @@ class Restlib(object):
         return json.loads(rinfo)
 
     def validateResponse(self, response):
-        if str(response.status) not in ["200", "201", "202", "204"]:
+        if response.status not in [200, 201, 202, 204]:
             raise RestlibException(response.status, response.read())
             #parsed = json.loads(response.read())
 
@@ -122,9 +134,14 @@ class RepoConnection(PulpConnection):
                     "sync_schedule" : sync_schedule,}
         return self.conn.request_put(method, params=repodata)
 
-    def repository(self, id):
+    def repository(self, id, fields=None):
         method = "/repositories/%s/" % str(id)
-        return self.conn.request_get(method)
+        repo = self.conn.request_get(method)
+        if repo is None:
+            return None
+        for field in repository_deferred_fields:
+            repo[field] = self.conn.request_get('%s%s/' % (method, field))
+        return repo
 
     def repositories(self):
         method = "/repositories/"
@@ -174,10 +191,6 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/remove_packagegroup/" % repoid
         return self.conn.request_post(method, params={"groupid":groupid})
     
-    def packagegroups(self, repoid):
-        method = "/repositories/%s/packagegroups/" % repoid
-        return self.conn.request_get(method)
-
     def add_package_to_group(self, repoid, groupid, pkgname, gtype):
         method = "/repositories/%s/add_package_to_group/" % repoid
         return self.conn.request_post(method,
@@ -230,7 +243,10 @@ class ConsumerConnection(PulpConnection):
 
     def consumer(self, id):
         method = "/consumers/%s/" % str(id)
-        return self.conn.request_get(method)
+        consumer = self.conn.request_get(method)
+        for field in consumer_deferred_fields:
+            consumer[field] = self.conn.request_get('%s%s/' % (method, field))
+        return consumer
 
     def packages(self, id):
         method = "/consumers/%s/packages/" % str(id)

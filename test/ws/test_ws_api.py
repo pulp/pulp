@@ -73,3 +73,9 @@ class RemoteTestApi(TestApi):
 
     def test_package_group_categories(self):
         pass
+
+    def test_consumerwithpackage(self):
+        pass
+    
+    def test_sync_feedless(self):
+        pass

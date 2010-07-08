@@ -12,6 +12,7 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+import itertools
 import logging
 
 from pulp import model
@@ -68,13 +69,13 @@ class ConsumerApi(BaseApi):
             self.objectdb.insert(chunk, check_keys=False, safe=False)
             inserted = inserted + chunksize
 
-    def consumers(self, spec=None, fields=consumer_default_fields):
+    def consumers(self, spec=None, fields=None):
         """
         List all consumers.  Can be quite large
         """
         return list(self.objectdb.find(spec=spec, fields=fields))
 
-    def consumer(self, id, fields=consumer_default_fields):
+    def consumer(self, id, fields=None):
         """
         Return a single Consumer object
         """
@@ -84,16 +85,16 @@ class ConsumerApi(BaseApi):
         consumer = self.objectdb.find_one({'id': id}) 
         if consumer is None:
             return None
-        return consumer['package_profile']
+        return consumer.get('package_profile', [])
     
-    def consumers_with_package_names(self, names, fields=consumer_default_fields):
+    def consumers_with_package_names(self, names, fields=None):
         """
-        List consumers using passed in name
+        List consumers using passed in names
         """
         log.debug("consumers_with_package_names : %s" % names)
         consumers = []
         for name in names:
-            consumers.extend(list(self.objectdb.find({'package_profile.name': name}, fields)))
+            consumers.extend(self.objectdb.find({'package_profile.name': name}, fields))
         return consumers
 
     def bind(self, id, repoid):
@@ -108,7 +109,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('consumer "%s", not-found', id)
-        repoids = consumer['repoids']
+        repoids = consumer.setdefault('repoids', [])
         if repoid in repoids:
             return
         repoids.append(repoid)
@@ -126,7 +127,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('consumer "%s", not-found', id)
-        repoids = consumer['repoids']
+        repoids = consumer.setdefault('repoids', [])
         if repoid not in repoids:
             return
         repoids.remove(repoid)

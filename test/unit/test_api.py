@@ -251,19 +251,14 @@ class TestApi(unittest.TestCase):
     
     def test_consumer_create(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
-        assert(c != None)
+        self.assertTrue(c != None)
         found = self.capi.consumer('test-consumer')
-        assert(found != None)
+        self.assertTrue(found != None)
         
         # test that we get back the consumer from the list method
         consumers = self.capi.consumers()
         self.assertTrue(len(consumers) == 1)
-        c = consumers[0]
-        packages = c['package_profile']
-        self.assertTrue(packages != None)
-        link = packages['href']
-        self.assertTrue(link == "/consumers/%s/packages/" % c['id'])
-        print "C: %s" % c
+        self.assertTrue(c['id'] == consumers[0]['id'])
         
     def test_consumer_bind(self):
         cid = 'bindconsumerid'
@@ -331,10 +326,10 @@ class TestApi(unittest.TestCase):
             if (p['name'] == 'pulp-test-package'):
                 found = True
         self.assertTrue(found)
-        found = self.capi.consumers_with_package_name('some-invalid-id')
+        found = self.capi.consumers_with_package_names(['some-invalid-id'])
         assert(len(found) == 0)
 
-        found = self.capi.consumers_with_package_name('pulp-test-package')
+        found = self.capi.consumers_with_package_names(['pulp-test-package'])
         assert(len(found) > 0)
         
         packages = self.capi.packages(c['id'])

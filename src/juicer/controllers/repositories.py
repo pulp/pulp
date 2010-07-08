@@ -144,22 +144,23 @@ class RepositoryDeferredFields(JSONController):
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        # XXX this filtering needs to be pushed down to the db
-        packages = api.packages(id).values()
-        filtered_packages = self.filter_results(packages, filters)
+        repo = api.repository(id, ['packages'])
+        if repo is None:
+            return self.not_found('No repository %s' % id)
+        filtered_packages = self.filter_results(repo.get('packages', []), filters)
         return self.ok(filtered_packages)
     
     def packagegroups(self, id):
         repo = api.repository(id, ['packagegroups'])
         if repo is None:
             return self.not_found('No repository %s' % id)
-        return self.ok(repo['packagegroups'])
+        return self.ok(repo.get('packagegroups', []))
     
     def packagegroupcategories(self, id):
         repo = api.repository(id, ['packagegroupcategories'])
         if repo is None:
             return self.not_found('No repository %s' % id)
-        return self.ok(repo['packagegroupcategories'])
+        return self.ok(repo.get('packagegroupcategories', []))
     
     @JSONController.error_handler
     def GET(self, id, field_name):
