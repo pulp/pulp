@@ -43,3 +43,12 @@ REPO_SCHEDULES_LIST = """
 Label              \t%-25s
 Schedule           \t%-25s
 """
+
+PACKAGE_GROUP_INFO = """
+Name                \t%-25s
+Id                  \t%-25s
+Mandatory packages  \t%-25s
+Default packages    \t%-25s
+Optional packages   \t%-25s
+Conditional packages\t%-25s
+"""

@@ -21,6 +21,7 @@ import sys
 import os.path
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
+import pulptools.constants as constants
 from pulptools.logutil import getLogger
 from pulptools.config import Config
 log = getLogger(__name__)
@@ -143,7 +144,7 @@ class packagegroup(BaseCore):
         items = self.actions.items()
         #items.sort()
         for (name, cmd) in items:
-            print("\t%-14s %-25s" % (name, cmd))
+            print("\t%-14s \t%-25s" % (name, cmd))
         print("")
 
     def _do_core(self):
@@ -204,11 +205,9 @@ class packagegroup(BaseCore):
             print "Package Group Information"
             print "+-------------------------------------------+"
             info = groups[self.options.groupid]
-            for key, value in info.items():
-                if key in ["display_order", "user_visible", "translated_name",
-                        "translated_description", "langonly", "_id"]:
-                    continue
-                print """%s:                \t%-25s""" % (key, value)
+            print constants.PACKAGE_GROUP_INFO % (info["name"], info["id"],
+                    info["mandatory_package_names"], info["default_package_names"],
+                    info["optional_package_names"], info["conditional_package_names"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
