@@ -115,9 +115,12 @@ class Repository(JSONController):
         repo_data = self.params()
         if repo_data['id'] != id:
             return self.bad_request('You cannot change a repository id')
+        # we need to remove the substituted uri references
+        # XXX we probably need to add the original data back as well
         for field in itertools.chain(['uri_ref'], # web services only field
                                      RepositoryDeferredFields.exposed_fields):
-            repo_data.pop(field, None)
+            if field in repo_data and isinstance(repo_data[field], basestring):
+                repo_data.pop(field, None)
         api.update(repo_data)
         return self.ok(True)
 
@@ -144,20 +147,20 @@ class RepositoryDeferredFields(JSONController):
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        repo = api.repository(id, ['packages'])
+        repo = api.repository(id, ['id', 'packages'])
         if repo is None:
             return self.not_found('No repository %s' % id)
         filtered_packages = self.filter_results(repo.get('packages', []), filters)
         return self.ok(filtered_packages)
     
     def packagegroups(self, id):
-        repo = api.repository(id, ['packagegroups'])
+        repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
             return self.not_found('No repository %s' % id)
-        return self.ok(repo.get('packagegroups', []))
+        return self.ok(repo.get('packagegroups'))
     
     def packagegroupcategories(self, id):
-        repo = api.repository(id, ['packagegroupcategories'])
+        repo = api.repository(id, ['id', 'packagegroupcategories'])
         if repo is None:
             return self.not_found('No repository %s' % id)
         return self.ok(repo.get('packagegroupcategories', []))
