@@ -309,11 +309,11 @@ class ConsumerGroupConnection(PulpConnection):
         return self.conn.request_get(method)
 
     def add_consumer(self, id, consumerid):
-        method = "/consumergroups/%s/add/" % id
+        method = "/consumergroups/%s/add_consumer/" % id
         return self.conn.request_post(method, params=consumerid)
 
-    def remove_consumer(self, id, consumerid):
-        method = "/consumers/%s/remove/" % id
+    def delete_consumer(self, id, consumerid):
+        method = "/consumers/%s/delete_consumer/" % id
         return self.conn.request_post(method, params=consumerid)
 
 

@@ -42,6 +42,10 @@ class ConsumerGroupApi(BaseApi):
         """
         Create a new ConsumerGroup object and return it
         """
+        consumergroup = self.consumergroup(id)
+        if(consumergroup):
+            raise PulpException("A Consumer Group with id %s already exists" % id)
+
         c = model.ConsumerGroup(id, description, consumerids)
         self.insert(c)
         return c

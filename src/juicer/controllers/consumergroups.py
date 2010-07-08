@@ -93,11 +93,11 @@ class ConsumerGroupActions(JSONController):
     # See juicer.repositories.RepositoryActions for design
 
     exposed_actions = (
-        'add',
-        'remove',
+        'add_consumer',
+        'delete_consumer',
     )
 
-    def add(self, id):
+    def add_consumer(self, id):
         """
         Add a consumer to the group.
         @param id: consumer group id
@@ -106,9 +106,9 @@ class ConsumerGroupActions(JSONController):
         api.add_consumer(id, data)
         return self.ok(True)
 
-    def remove(self, id):
+    def delete_consumer(self, id):
         """
-        Remove a consumer from the group.
+        Delete a consumer from the group.
         @param id: consumer group id
         """
         data = self.params()

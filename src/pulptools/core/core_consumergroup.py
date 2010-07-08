@@ -39,9 +39,9 @@ class consumergroup(BaseCore):
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.actions = {"create" : "Create a consumer group",
                         "add_consumer" : "Add a consumer to the group",
-                        "remove_consumer" : "Remove a consumer from the group",
+                        "delete_consumer" : "Delete a consumer from the group",
                         "list"   : "List available consumer groups",
-                        "remove" : "Remove a consumer group",}
+                        "delete" : "Delete a consumer group",}
 
         self.username = None
         self.password = None
@@ -77,9 +77,9 @@ class consumergroup(BaseCore):
                            help="description of consumer group")
             self.parser.add_option("--consumerids", dest="consumerids",
                            help="consumer id list to be included in this group")
-        if self.action == "remove":
-            usage = "usage: %prog consumergroup remove [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup remove", usage, "", "")
+        if self.action == "delete":
+            usage = "usage: %prog consumergroup delete [OPTIONS]"
+            BaseCore.__init__(self, "consumergroup delete", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Consumer group id")
         if self.action == "list":
@@ -92,9 +92,9 @@ class consumergroup(BaseCore):
                            help="Consumer Identifier")
             self.parser.add_option("--groupid", dest="groupid",
                            help="Consumer Group Identifier")
-        if self.action == "remove_consumer":
-            usage = "usage: %prog consumergroup remove_consumer [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup remove_consumer", usage, "", "")
+        if self.action == "delete_consumer":
+            usage = "usage: %prog consumergroup delete_consumer [OPTIONS]"
+            BaseCore.__init__(self, "consumergroup delete_consumer", usage, "", "")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
             self.parser.add_option("--groupid", dest="groupid",
@@ -118,12 +118,12 @@ class consumergroup(BaseCore):
             self._create()
         if self.action == "list":
             self._list()
-        if self.action == "remove":
+        if self.action == "delete":
             self._delete()
         if self.action == "add_consumer":
             self._add_consumer()
-        if self.action == "remove_consumer":
-            self._remove_consumer()
+        if self.action == "delete_consumer":
+            self._delete_consumer()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -135,6 +135,8 @@ class consumergroup(BaseCore):
         if not self.options.consumerids:
             print("Creating empty consumer group")
             self.options.consumerids = []
+        else:
+            self.options.consumerids = self.options.consumerids.split(",")
         try:
             consumergroup = self.cgconn.create(self.options.id, self.options.description,
                                     self.options.consumerids)
@@ -172,16 +174,21 @@ class consumergroup(BaseCore):
         if not self.options.id:
             print("Group id required. Try --help")
             sys.exit(0)
+        group = self.cgconn.consumergroup(id=self.options.id)
+        if not group:
+            print _(" Consumer Group [ %s ] does not exist" % \
+                  self.options.id)
+            sys.exit(-1)
         try:
             self.cgconn.delete(id=self.options.id)
-            print _(" Successful removed Consumer Group [ %s ] " % self.options.id)
+            print _(" Successfully deleted Consumer Group [ %s ] " % self.options.id)
         except RestlibException, re:
-            print _(" Deleted operation failed Consumer Group [ %s ] " % \
+            print _(" Delete operation failed Consumer Group [ %s ] " % \
                   self.options.id)
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
-            print _(" Removed operation failed on Consumer Group [ %s ]. " % \
+            print _(" Delete operation failed on Consumer Group [ %s ]. " % \
                   self.options.id)
             log.error("Error: %s" % e)
             sys.exit(-1)
@@ -205,7 +212,7 @@ class consumergroup(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-    def _remove_consumer(self):
+    def _delete_consumer(self):
         (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
             print("consumer id required. Try --help")
@@ -214,8 +221,8 @@ class consumergroup(BaseCore):
             print("group id required. Try --help")
             sys.exit(0)
         try:
-            self.cgconn.remove_consumer(self.options.groupid, self.options.consumerid)
-            print _(" Successfully removed Consumer [%s] from Group [%s]" % (self.options.consumerid, self.options.groupid))
+            self.cgconn.delete_consumer(self.options.groupid, self.options.consumerid)
+            print _(" Successfully deleted Consumer [%s] from Group [%s]" % (self.options.consumerid, self.options.groupid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
