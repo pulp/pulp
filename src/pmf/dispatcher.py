@@ -195,19 +195,17 @@ class Dispatcher:
         """
         self.classes = {}
 
-    def dispatch(self, content):
+    def dispatch(self, request):
         """
         Dispatch the requested RMI.
-        @param content: A json encoded request.
-        @type content: str
-        @return: The json encoded result.
-        @rtype: str
+        @param request: A request.
+        @type request: L{Request}
+        @return: The result.
+        @rtype: any
         """
-        request = Request()
-        request.load(content)
+        request = Request(request)
         rmi = RMI(request, self.classes)
-        result = rmi()
-        return result.dump()
+        return rmi()
 
     def register(self, *classes):
         """

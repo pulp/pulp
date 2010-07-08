@@ -65,7 +65,7 @@ class Method:
             method=self.name,
             args=args,
             kws=kws)
-        return self.proxy._send(req.dump(), synchronous)
+        return self.proxy._send(req, synchronous)
 
 
 class Proxy:

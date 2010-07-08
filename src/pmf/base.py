@@ -153,17 +153,19 @@ class Endpoint:
         @return: A QPID address.
         @rtype: str
         """
-        return '%s;{create:always}' % name
+        return '%s;{create:always,node:{type:queue}}' % name
 
     def topicAddress(self, topic):
         """
         Get a QPID topic address.
         @param topic: The topic name.
         @type topic: str
+        @param subject: The subject.
+        @type subject: str
         @return: A QPID address.
         @rtype: str
         """
-        return topic
+        return '%s;{create:always,node:{type:topic}}' % topic
 
     def __del__(self):
         self.close()

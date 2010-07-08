@@ -42,18 +42,18 @@ class RequestProducer(Endpoint):
         receiver.start()
         self.receiver = receiver
 
-    def send(self, consumerid, content, synchronous=True):
+    def send(self, consumerid, request, synchronous=True):
         """
         Send a message to the consumer.
-        @param content: The json encoded payload.
-        @type content: str
+        @param request: The json encoded request.
+        @type request: str
         @param synchronous: Flag to indicate synchronous.
             When true the I{replyto} is set to our I{sid} and
             to (block) read the reply queue.
         @type synchronous: bool
         """
         sn = getuuid()
-        envelope = Envelope(sn=sn, payload=content)
+        envelope = Envelope(sn=sn, request=request)
         if synchronous:
             envelope.replyto = self.queueAddress(self.id)
         else:
@@ -80,8 +80,7 @@ class RequestProducer(Endpoint):
             message, envelope = self._searchqueue(sn)
             if not message:
                 return
-            reply = Return()
-            reply.load(envelope.payload)
+            reply = Return(envelope.result)
             self.ack()
             if reply.succeeded():
                 return reply.retval
@@ -113,7 +112,7 @@ class RequestProducer(Endpoint):
         return result
 
 
-class EventProducer:
+class EventProducer(Endpoint):
     """
     An AMQP event producer.
     @ivar session: An AMQP session.
@@ -124,17 +123,20 @@ class EventProducer:
         """
         Open and configure the producer.
         """
-        self.session = session()
+        session = self.session()
 
     def send(self, topic, event):
         """
         Send a message to the consumer.
-        @param event: An event object.
+        @param topic: An event object.
+        @type topic: str
+        @param event: An event body.
         @type event: str
         """
         sn = getuuid()
-        envelope = Envelope(sn=sn, payload=event)
+        envelope = Envelope(sn=sn, event=event)
         message = Message(envelope.dump())
         address = self.topicAddress(topic)
         sender = self.session().sender(address)
         message = Message(envelope.dump())
+        sender.send(message)

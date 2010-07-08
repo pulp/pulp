@@ -74,7 +74,7 @@ class RequestConsumer(Endpoint):
         """
         envelope = Envelope()
         envelope.load(message.content)
-        request = envelope.payload
+        request = envelope.request
         result = self.dispatcher.dispatch(request)
         self.respond(envelope, result)
         self.ack()
@@ -93,14 +93,14 @@ class RequestConsumer(Endpoint):
         if not replyto:
             return
         envelope = Envelope(sn=request.sn)
-        envelope.payload = result
+        envelope.result = result
         sender = self.session().sender(replyto)
         message = Message(envelope.dump())
         sender.send(message);
         return self
 
 
-class EventConsumer:
+class EventConsumer(Endpoint):
     """
     An AMQP topic consumer.
     @ivar session: An AMQP session.
@@ -110,7 +110,7 @@ class EventConsumer:
         """
         Open and configure the consumer.
         """
-        session = session()
+        session = self.session()
         address = self.topicAddress(self.id)
         receiver = session.receiver(address)
         self.receiver = receiver
@@ -118,12 +118,10 @@ class EventConsumer:
     def mustConnect(self):
         return True
 
-    def start(self, listener):
+    def start(self):
         """
-        @param listener: An RMI reply listener.
-        @type listener: I{Listener}
+        Start listening for events.
         """
-        self.listener = listener
         self.receiver.listen(self.received)
         self.receiver.start()
 
@@ -144,43 +142,17 @@ class EventConsumer:
         """
         envelope = Envelope()
         envelope.load(message.content)
-        event = Event()
-        event.load(envelope.payload)
+        event = envelope.event
         try:
-            self.notify(self.listener, event)
+            self.notify(event)
         except:
             pass # TODO: LOG THIS BETTER
         self.ack()
 
-    def notify(self, listener, event):
+    def notify(self, event):
         """
         Notify the listener that an event has been consumed.
-        @param listener: A listener.
-        @type listener: Listener
         @param event: The received event.
         @type event: L{Event}
-        """
-        pass
-
-
-class ReplyListener:
-
-    def succeeded(self, sn, retval):
-        """
-        Request succeeded.
-        @param sn: The request serial number.
-        @type sn: str
-        @param retval: The returned value.
-        @type retval: any
-        """
-        pass
-
-    def raised(self, sn, ex):
-        """
-        Request failed and raised exception.
-        @param sn: The request serial number.
-        @type sn: str
-        @param ex: The raised exception.
-        @type ex: Exception
         """
         pass
