@@ -1,6 +1,6 @@
 Name: mongo
-Version: 1.4.2
-Release: 7%{?dist}
+Version: 1.4.4
+Release: 0%{?dist}
 Summary: mongo client shell and tools
 License: AGPLv3
 URL: http://www.mongodb.org
