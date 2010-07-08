@@ -142,3 +142,12 @@ class ConsumerGroup(Base):
         self.id = id
         self.description = description
         self.consumerids = consumerids
+
+class User(Base):
+    def __init__(self, login, id, password, name, certificate):
+        self._id = id
+        self.id = id
+        self.login = login
+        self.password = password
+        self.name = name
+        self.certificate = certificate
