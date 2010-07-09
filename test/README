@@ -11,6 +11,8 @@ rhn - RHN connectivity tests. These tests require that the machine be configured
       * /etc/sysconfig/rhn/systemid
       * /etc/sysconfig/rhn/entitlement-cert.xml
 
+integration - A script that will install the latest pulp rpm and run the webservice 
+              tests and eventually a series of CLI tests.
 
 Additionally, the following directories are found in the testing root however
 do not contain test cases:
