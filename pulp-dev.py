@@ -13,8 +13,10 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+
 import optparse
 import os
+import shutil
 import sys
 
 DIRS = (
@@ -98,11 +100,15 @@ def install(opts):
         os.symlink(os.path.join(currdir, l), '/'+l)
 
     # Link between pulp and apache
-    if not os.path.exists('/var/www/html/pub'):
-        os.symlink('/var/lib/pulp', '/var/www/html/pub')
+    if not os.path.exists('/var/www/pub'):
+        os.symlink('/var/lib/pulp', '/var/www/pub')
 
     # Grant apache write access to the pulp tools log file
     os.system('setfacl -m user:apache:rwx /var/log/pulp')
+
+    # Disable existing SSL configuration
+    if os.path.exists('/etc/httpd/conf.d/ssl.conf'):
+        shutil.move('/etc/httpd/conf.d/ssl.conf', '/etc/httpd/conf.d/ssl.off')
 
     return os.EX_OK
 
@@ -116,6 +122,10 @@ def uninstall(opts):
         os.unlink('/'+l)
 
     # Link between pulp and apache
+    if os.path.exists('/var/www/pub'):
+        os.unlink('/var/www/pub')
+
+    # Old link between pulp and apache, make sure it's cleaned up
     if os.path.exists('/var/www/html/pub'):
         os.unlink('/var/www/html/pub')
 

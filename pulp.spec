@@ -90,8 +90,8 @@ mkdir -p %{buildroot}/etc/pki/juicer
 cp etc/pki/juicer/* %{buildroot}/etc/pki/juicer
 
 mkdir -p %{buildroot}/var/lib/pulp
-mkdir -p %{buildroot}/var/www/html
-ln -s /var/lib/pulp %{buildroot}/var/www/html/pub
+mkdir -p %{buildroot}/var/www
+ln -s /var/lib/pulp %{buildroot}/var/www/pub
 
 # Pulp Agent
 mkdir -p %{buildroot}/usr/bin
@@ -133,7 +133,7 @@ chown apache:apache /var/log/pulp
 /etc/pulp
 /srv/juicer/juicer.wsgi
 /var/lib/pulp
-/var/www/html/pub
+/var/www/pub
 /var/log/pulp
 /etc/pki/juicer/ca.crt
 /etc/pki/juicer/server.crt
