@@ -96,15 +96,25 @@ class TestUsers(unittest.TestCase):
         user = self.uapi.user(login)
         assert(user is None)
         
-    def test_certificate(self):
+    def test_users_with_certificate(self):
+        # read in the test cert and extract the UID for the subject
+        # so we can compare after the user is created that it matches
         test_cert = os.path.abspath(os.path.dirname(__file__)) + "/data/test_cert.pem"
         idcert = Certificate()
         idcert.read(test_cert)
+        print "IDCERT: %s" % idcert
         subject = idcert.subject()
         cert_uid = subject['UID']
+        
+        # Read the cert into a string off disk and create a 
+        # user with said certificate.  We should get back a user with an 
+        # id that matches the UID in the cert.
         certfile = open(test_cert)
         certstring = certfile.read()
+        
         user = self.uapi.create('cert-test', certificate=certstring)
+        
+        # Check that they match
         self.assertEquals(user['id'], cert_uid)
         
 if __name__ == '__main__':
