@@ -147,7 +147,27 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
         elem.childNodes[0].data = compsxml_timestamp
     else:
         # If no group info is present, then we need to create it.
-        raise Exception("Not implemented, need to add support for creating group metadata info in repomd.xml")
+        repomd_elems = dom.getElementsByTagName("repomd")
+        if len(repomd_elems) < 1:
+            raise Exception("Unable to find 'repomd' element in %s" % (repomd_xml))
+        data_elem = dom.createElement("data")
+        data_elem.setAttribute("type", "group")
+
+        loc_elem = dom.createElement("location")
+        loc_elem.setAttribute("href", "repodata/comps.xml")
+        data_elem.appendChild(loc_elem)
+
+        checksum_elem = dom.createElement("checksum")
+        checksum_elem.setAttribute("type", "sha256")
+        checksum_value = dom.createTextNode(compsxml_checksum)
+        checksum_elem.appendChild(checksum_value)
+        data_elem.appendChild(checksum_elem)
+
+        ts_elem = dom.createElement("timestamp")
+        ts_value = dom.createTextNode("%s" % (compsxml_timestamp))
+        ts_elem.appendChild(ts_value)
+        data_elem.appendChild(ts_elem)
+        repomd_elems[0].appendChild(data_elem)
 
     if compsxml_gz_checksum != None and open_compsxml_gz_checksum != None \
             and compsxml_gz_timestamp != None:

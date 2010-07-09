@@ -40,7 +40,7 @@ class TestComps(unittest.TestCase):
         config_file = os.path.join(srcdir, "../etc/pulp/pulp.conf")
         self.config = pulp.util.load_config(config_file)
         self.rapi = RepoApi(self.config)
-        self.dataPath = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
 
     def tearDown(self):
         self.rapi.clean()
@@ -50,7 +50,7 @@ class TestComps(unittest.TestCase):
                 'test_import_groups_data_id', 'i386', 
                 'yum:http://example.com/')
         # Parse existing comps.xml
-        compspath = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
+        compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         compsfile = open(compspath)
         base = BaseSynchronizer(self.config)
         base.import_groups_data(compsfile, repo)
@@ -70,6 +70,32 @@ class TestComps(unittest.TestCase):
         self.assertTrue(found == None)
         found = self.rapi.packagegroupcategory(repo['id'], "development")
         self.assertTrue(found != None)
+
+    def test_create_groups_metadata(self):
+        repo_path = os.path.join(self.data_path, "no_groups_repo")
+        repo = self.rapi.create("test_create_groups_metadata_id",
+                'test_import_groups_data_id', 'i386',
+                'local:file://%s' % (repo_path))
+        self.rapi.sync(repo["id"])
+        found = self.rapi.packagegroups(repo['id'])
+        self.assertTrue(len(found) == 0)
+        self.assertTrue(repo["group_xml_path"] == "")
+        self.assertTrue(repo["group_gz_xml_path"] == "")
+        pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
+                "test_group_name", "test description")
+        self.rapi.add_package_to_group(repo["id"], pkg_group["id"], "test_package_name")
+        found = self.rapi.packagegroups(repo['id'])
+        # Update repo object so we can test that group_xml_path was set
+        repo = self.rapi.repository(repo["id"])
+        self.assertTrue(repo["group_xml_path"] != "")
+        comps = yum.comps.Comps()
+        comps.add(repo["group_xml_path"])
+        groups = comps.get_groups()
+        self.assertTrue(len(groups) == 1)
+        self.assertTrue(groups[0].groupid == pkg_group["id"])
+        self.assertTrue(groups[0].name == pkg_group["name"])
+        self.assertTrue("test_package_name" in groups[0].default_packages)
+        self.assertTrue("test_package_name" not in groups[0].mandatory_packages)
 
     def test_basic_comps(self):
         repo = self.rapi.create('test_comps_id','test_comps_name', 
@@ -106,7 +132,7 @@ class TestComps(unittest.TestCase):
                 'test_remove_group_category', 'i386',
                 'yum:http://example.com/')
         # Parse existing comps.xml
-        compspath = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
+        compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         compsfile = open(compspath)
         base = BaseSynchronizer(self.config)
         base.import_groups_data(compsfile, repo)
@@ -169,7 +195,7 @@ class TestComps(unittest.TestCase):
         modify the entries, then write them out to XML
         """
         # Parse existing comps.xml
-        compsPath = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
+        compsPath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         comps = yum.comps.Comps()
         comps.add(compsPath)
         self.assertTrue(len(comps.get_groups()) != 0)
@@ -275,8 +301,8 @@ class TestComps(unittest.TestCase):
         """
         Update repomd.xml with a newer comps.xml
         """
-        comps_path = os.path.join(self.dataPath, "rhel-i386-server-5/comps.xml")
-        repomd_path = os.path.join(self.dataPath, "rhel-i386-server-5/repomd.xml")
+        comps_path = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
+        repomd_path = os.path.join(self.data_path, "rhel-i386-server-5/repomd.xml")
         # In case the test fails, we want the temp files left over for debugging
         f_comps = tempfile.NamedTemporaryFile(delete=False)
         f_repomd = tempfile.NamedTemporaryFile(delete=False)

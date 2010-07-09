@@ -370,6 +370,11 @@ class RepoApi(BaseApi):
         try:
             xml = pulp.comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
+            if repo["group_xml_path"] == "":
+                repo["group_xml_path"] = os.path.dirname(repo["repomd_xml_path"])
+                repo["group_xml_path"] = os.path.join(os.path.dirname(repo["repomd_xml_path"]),
+                                                      "comps.xml")
+                self.update(repo)
             f = open(repo["group_xml_path"], "w")
             f.write(xml.encode("utf-8"))
             f.close()
