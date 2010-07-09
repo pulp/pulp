@@ -48,54 +48,49 @@ class Method:
 
     def __call__(self, *args, **kws):
         """
-        Invoke the method.
-        Strip the "__sync" keyword then send.
+        Invoke the method .
         @param args: The args.
         @type args: list
         @param kws: The I{keyword} arguments.
         @type kws: dict
         """
-        synckey = '__sync'
-        synchronous = True
-        if synckey in kws:
-            synchronous = kws[synckey]
-            del kws[synckey]
         req = Request(
             classname=self.classname,
             method=self.name,
             args=args,
             kws=kws)
-        return self.proxy._send(req, synchronous)
+        return self.proxy._send(req)
 
 
 class Proxy:
     """
     The proxy (stub) base class for remote objects.
-    @ivar __cid: The peer consumer ID.
-    @ivar __cid: str
-    @ivar __producer: An AMQP message producer.
-    @type __producer: L{pmf.RequestProducer}
+    @ivar __pid: The peer queue ID.
+    @ivar __pid: str
+    @ivar __reqmethod: An AMQP message producer.
+    @type __reqmethod: L{pmf.policy.RequestMethod}
     """
 
-    def __init__(self, consumerid, producer):
+    def __init__(self, peer, reqmethod):
         """
-        @ivar consumerid: The peer consumer ID.
-        @ivar consumerid: str
-        @param producer: An AMQP message producer.
-        @type producer: L{pmf.RequestProducer}
+        @ivar peer: The peer consumer ID.
+        @ivar peer: str
+        @param reqmethod: An AMQP message producer.
+        @type reqmethod: L{pmf.policy.RequestMethod}
         """
-        self.__cid = consumerid
-        self.__producer = producer
+        self.__pid = peer
+        self.__reqmethod = reqmethod
 
-    def _send(self, content, synchronous):
+    def _send(self, request):
         """
-        Send the message using the configured producer.
-        @param content: json encoded RMI request.
-        @type content: str
-        @param synchronous: The synchronous/asynchronous flag.
-        @type synchronous: bool
+        Send the request using the configured request method.
+        @param request: An RMI request.
+        @type request: str
         """
-        return self.__producer.send(self.__cid, content, synchronous)
+        if isinstance(self.__pid, (list,tuple)):
+            return self.__reqmethod.broadcast(self.__pid, request)
+        else:
+            return self.__reqmethod.send(self.__pid, request)
 
     def __getattr__(self, name):
         """

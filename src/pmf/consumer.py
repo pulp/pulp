@@ -18,16 +18,60 @@ Provides AMQP message consumer classes.
 """
 
 from pmf import *
-from pmf.base import Consumer, Producer
+from pmf.base import Endpoint
+from pmf.producer import Producer
 from pmf.dispatcher import Return
 from qpid.messaging import Empty
+
+
+class Consumer(Endpoint):
+    """
+    An AMQP (abstract) consumer.
+    """
+    def mustConnect(self):
+        return True
+
+    def start(self):
+        """
+        Start processing messages on the queue.
+        """
+        self.receiver.listen(self.received)
+        self.receiver.start()
+
+    def stop(self):
+        """
+        Stop processing requests.
+        """
+        try:
+            self.receiver.stop()
+        except:
+            pass
+
+    def received(self, message):
+        """
+        Process received request.
+        @param message: The received message.
+        @type message: L{Message}
+        """
+        envelope = Envelope()
+        envelope.load(message.content)
+        self.dispatch(envelope)
+        self.ack()
+
+    def dispatch(self, envelope):
+        """
+        Dispatch received request.
+        @param envelope: The received envelope.
+        @type envelope: L{Message}
+        """
+        pass
 
 
 class QueueConsumer(Consumer):
     """
     An AMQP (abstract) queue consumer.
     @ivar receiver: The message receiver.
-    @type receiver: L{qpid.Receiver}
+    @type receiver: L{qpid.messaging.Receiver}
     """
 
     def open(self):
@@ -86,10 +130,10 @@ class QueueReader(QueueConsumer):
 class RequestConsumer(QueueConsumer):
     """
     An AMQP request consumer.
-    @ivar receiver: The incoming message receiver.
-    @type receiver: L{qpid.Queue}
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
+    @ivar producer: A reply producer.
+    @type producer: L{pmf.producer.QueueProducer}
+    @ivar dispatcher: An RMI dispatcher.
+    @type dispatcher: L{pmf.dispatcher.Dispatcher}
     """
 
     def start(self, dispatcher):
@@ -106,8 +150,8 @@ class RequestConsumer(QueueConsumer):
     def dispatch(self, envelope):
         """
         Dispatch received request.
-        @param message: The received message.
-        @type message: L{Envelope}
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
         """
         request = envelope.request
         result = self.dispatcher.dispatch(request)
@@ -117,12 +161,47 @@ class RequestConsumer(QueueConsumer):
             self.producer.send(replyto, sn=sn, result=result)
 
 
+class ReplyConsumer(QueueConsumer):
+    """
+    A request, reply consumer.
+    @ivar listener: An reply listener.
+    @type listener: any
+    """
+
+    def start(self, listener):
+        """
+        Start processing messages on the queue and
+        forward to the listener.
+        @param listener: An reply listener.
+        @type listener: any
+        """
+        self.listener = listener
+        Consumer.start(self)
+
+    def dispatch(self, envelope):
+        """
+        Dispatch received request.
+        @param message: The received message.
+        @type message: L{Envelope}
+        """
+        sn = envelope.sn
+        reply = Return(envelope.result)
+        try:
+            if reply.succeeded():
+                self.listener.succeeded(sn, reply.retval)
+            else:
+                self.listener.failed(sn, reply.exval)
+        except:
+            pass
+
+
 class TopicConsumer(Consumer):
     """
     An AMQP topic consumer.
     @ivar session: An AMQP session.
     @type session: L{qpid.Session}
     """
+
     def open(self):
         """
         Open and configure the consumer.

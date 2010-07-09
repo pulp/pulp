@@ -18,9 +18,49 @@ Contains AMQP message producer classes.
 """
 
 from pmf import *
-from pmf.base import Producer
-from pmf.dispatcher import Return
-from pmf.consumer import QueueReader
+from pmf.base import Endpoint
+from qpid.messaging import Message
+
+
+class Producer(Endpoint):
+    """
+    An AMQP (abstract) message producer.
+    """
+
+    def open(self):
+        """
+        Open and configure the producer.
+        """
+        pass
+
+    def send(self, address, **body):
+        """
+        Send a message.
+        @param address: An AMQP address.
+        @type address: str
+        @keyword body: envelope body.
+        """
+        sn = getuuid()
+        envelope = Envelope(sn=sn)
+        envelope.update(body)
+        message = Message(envelope.dump())
+        sender = self.session().sender(address)
+        message = Message(envelope.dump())
+        sender.send(message);
+        return sn
+
+    def broadcast(self, addrlist, **body):
+        """
+        Broadcast a message to (N) queues.
+        @param addrlist: A list of AMQP address.
+        @type addrlist: [str,..]
+        @keyword body: envelope body.
+        """
+        sns = []
+        for addr in addrlist:
+            sn = Producer.send(self, addr, **body)
+            sns.append(sn)
+        return sns
 
 
 class QueueProducer(Producer):
@@ -34,65 +74,23 @@ class QueueProducer(Producer):
         @param qid: An AMQP queue ID.
         @type qid: str
         @keyword body: envelope body.
+        @return: The sent envelope serial number.
+        @rtype: str
         """
         address = self.queueAddress(qid)
         return Producer.send(self, address, **body)
 
-
-class RequestProducer(QueueProducer):
-    """
-    An AMQP message producer.
-    @ivar reader: The (reply) queue reader.
-    @type reader: L{QueueReader}
-    """
-
-    def open(self):
+    def broadcast(self, qids, **body):
         """
-        Open and configure the producer.
+        Broadcast a message to (N) queues.
+        @param qids: An list of AMQP queue IDs.
+        @type qids: [qid,..]
+        @keyword body: envelope body.
         """
-        self.session()
-        self.reader = QueueReader(self.id, self.host, self.port)
-        self.reader.start()
-
-    def send(self, qid, request, synchronous=True):
-        """
-        Send a message to the consumer.
-        @param qid: The destination queue id.
-        @type qid: str
-        @param request: The json encoded request.
-        @type request: str
-        @param synchronous: Flag to indicate synchronous.
-            When true the I{replyto} is set to our I{sid} and
-            to (block) read the reply queue.
-        @type synchronous: bool
-        """
-        if synchronous:
-            replyto = self.queueAddress(self.id)
-        else:
-            replyto = None
-        sn = QueueProducer.send(self, qid, replyto=replyto, request=request)
-        if synchronous:
-            return self.__getreply(sn)
-        else:
-            return sn
-
-    def __getreply(self, sn):
-        """
-        Read the reply from our reply queue.
-        @param sn: The request serial number.
-        @type sn: str
-        @return: The json unencoded reply.
-        @rtype: any
-        """
-        envelope = self.reader.search(sn)
-        if not envelope:
-            return
-        reply = Return(envelope.result)
-        self.ack()
-        if reply.succeeded():
-            return reply.retval
-        else:
-            raise Exception, reply.exval
+        lst = []
+        for qid in qids:
+            lst.append(self.queueAddress(qid))
+        return Producer.broadcast(self, lst, **body)
 
 
 class TopicProducer(Producer):

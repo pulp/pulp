@@ -23,7 +23,8 @@ from time import sleep
 
 from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
-from pmf.producer import RequestProducer
+from pmf.producer import QueueProducer
+from pmf.policy import *
 
 
 class RepoLib(Proxy):
@@ -35,17 +36,21 @@ class Dog(Proxy):
 
 class Agent(Base):
 
-    def __init__(self, consumerid):
-        producer = RequestProducer()
-        self.repolib = RepoLib(consumerid, producer)
-        self.dog = Dog(consumerid, producer)
-        Base.__init__(self, producer)
+    def __init__(self, id, tag=None):
+        producer = QueueProducer()
+        if tag or isinstance(id, (tuple,list)):
+            method = Asynchronous(producer, tag)
+        else:
+            method = Synchronous(producer)
+        self.repolib = RepoLib(id, method)
+        self.dog = Dog(id, method)
+        Base.__init__(self, method)
 
 
 def demo(agent):
 
     print agent.dog.bark('hello')
-    print agent.dog.wag(3, __sync=0)
+    print agent.dog.wag(3)
     print agent.dog.bark('hello')
     print agent.repolib.update()
 
@@ -61,6 +66,12 @@ def demo(agent):
 
 
 if __name__ == '__main__':
-    agent = Agent('123')
+    #agent = DirectAgent('123')
+    #demo(agent)
+    #agent = None
+
+    tag = 'jortel'
+    ids = ('123', '456')
+    agent = Agent(ids, tag)
     demo(agent)
     agent = None

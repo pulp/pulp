@@ -44,15 +44,15 @@ class Dog:
         return 'Yes master.  I will wag my tail because that is what dogs do.'
 
     def notpermitted(self):
-        pass
+        print 'not permitted.'
 
 
 class Agent(Base):
     def __init__(self, id):
         Base.__init__(self, RequestConsumer(id))
         while True:
-            sleep(5)
-            print 'sleeping...'
+            sleep(10)
+            print 'Agent: sleeping...'
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
