@@ -45,7 +45,12 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if(consumergroup):
             raise PulpException("A Consumer Group with id %s already exists" % id)
-
+        
+        for consumerid in consumerids:
+            consumer = self.consumerApi.consumer(consumerid)
+            if (consumer == None):
+                raise PulpException("No Consumer with id: %s found" % consumerid)
+                
         c = model.ConsumerGroup(id, description, consumerids)
         self.insert(c)
         return c
@@ -105,4 +110,5 @@ class ConsumerGroupApi(BaseApi):
         if consumerid not in consumerids:
             return
         consumerids.remove(consumerid)
+        consumergroup["consumerids"] = consumerids
         self.update(consumergroup)

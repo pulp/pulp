@@ -166,7 +166,7 @@ class TestApi(unittest.TestCase):
         
     def test_consumer_group(self):
         print "Consumer group tests:"
-        cg = self.cgapi.create('some-id','some name', 'some description')
+        cg = self.cgapi.create('some-id','some description')
 
         found = self.cgapi.consumergroup('some-id')
         assert(found != None)
