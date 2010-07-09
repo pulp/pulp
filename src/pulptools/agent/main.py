@@ -65,7 +65,7 @@ class Agent(Base):
         port = int(cfg.pmf.port)
         consumer = RequestConsumer(id, host, port)
         Base.__init__(self, consumer)
-        log.info('started.')
+        log.info('%s - started.', id)
         actionThread.join()
 
     def id(self):

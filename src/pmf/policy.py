@@ -22,6 +22,15 @@ from pmf.dispatcher import Return
 from pmf.consumer import QueueReader
 
 
+class RequestTimeout(Exception):
+    """
+    Request timeout.
+    """
+
+    def __init__(self, sn):
+        Exception.__init__(self, sn)
+
+
 class RequestMethod:
     """
     Base class for request methods.
@@ -36,23 +45,25 @@ class RequestMethod:
         """
         self.producer = producer
 
-    def send(self, qid, request):
+    def send(self, qid, request, **any):
         """
         Send the request..
         @param qid: The destination queue id.
         @type qid: str
         @param request: A request to send.
-        @type request: any
+        @type request: object
+        @keyword any: Any (extra) data.
         """
         pass
 
-    def broadcast(self, qids, request):
+    def broadcast(self, qids, request, **any):
         """
         Broadcast the request.
         @param qids: A list of destination queue ids.
         @type qids: [str,..]
         @param request: A request to send.
-        @type request: any
+        @type request: object
+        @keyword any: Any (extra) data.
         """
         pass
 
@@ -84,22 +95,24 @@ class Synchronous(RequestMethod):
         reader.start()
         self.reader = reader
 
-    def send(self, qid, request):
+    def send(self, qid, request, **any):
         """
         Send the request then read the reply.
         @param qid: The destination queue id.
         @type qid: str
         @param request: A request to send.
-        @type request: any
+        @type request: object
+        @keyword any: Any (extra) data.
         @return: The result of the request.
-        @rtype: any
+        @rtype: object
         @raise Exception: returned by the peer.
         """
         replyto = self.producer.queueAddress(self.producer.id)
         sn = self.producer.send(
             qid,
             replyto=replyto,
-            request=request)
+            request=request,
+            **any)
         return self.__getreply(sn)
 
     def __getreply(self, sn):
@@ -112,7 +125,7 @@ class Synchronous(RequestMethod):
         """
         envelope = self.reader.search(sn)
         if not envelope:
-            return
+            raise RequestTimeout(sn)
         reply = Return(envelope.result)
         self.reader.ack()
         if reply.succeeded():
@@ -136,14 +149,15 @@ class Asynchronous(RequestMethod):
         RequestMethod.__init__(self, producer)
         self.tag = tag
 
-    def send(self, qid, request):
+    def send(self, qid, request, **any):
         """
         Send the specified request and redirect the reply to the
         queue for the specified reply I{correlation} tag.
         @param qid: The destination queue id.
         @type qid: str
         @param request: A request to send.
-        @type request: any
+        @type request: object
+        @keyword any: Any (extra) data.
         @return: The request serial number.
         @rtype: str
         """
@@ -152,22 +166,25 @@ class Asynchronous(RequestMethod):
         sn = self.producer.send(
                 qid,
                 replyto=replyto,
-                request=request)
+                request=request,
+                **any)
         return sn
 
-    def broadcast(self, qids, request):
+    def broadcast(self, qids, request, **any):
         """
         Send the specified request and redirect the reply to the
         queue for the specified reply I{correlation} tag.
         @param qids: A list of destination queue ids.
         @type qids: [str,..]
         @param request: A request to send.
-        @type request: anyr
+        @type request: object
+        @keyword any: Any (extra) data.
         """
         replyto = \
             self.producer.queueAddress(self.tag)
         sns = self.producer.broadcast(
                 qids,
                 replyto=replyto,
-                request=request)
+                request=request,
+                **any)
         return sns

@@ -42,15 +42,25 @@ class Agent(Base):
             method = Asynchronous(producer, tag)
         else:
             method = Synchronous(producer)
-        self.repolib = RepoLib(id, method)
-        self.dog = Dog(id, method)
-        Base.__init__(self, method)
+        Base.__init__(self,
+            id,
+            method,
+            repolib=RepoLib,
+            dog=Dog)
 
 
 def demo(agent):
 
+    agent.setAny(dict(task=22))
+
     print agent.dog.bark('hello')
+
+    agent.setAny('Hello-Data')
+
     print agent.dog.wag(3)
+
+    agent.setAny(None)
+
     print agent.dog.bark('hello')
     print agent.repolib.update()
 
@@ -66,12 +76,13 @@ def demo(agent):
 
 
 if __name__ == '__main__':
-    #agent = DirectAgent('123')
-    #demo(agent)
-    #agent = None
-
+    # synchronous
+    agent = Agent('123')
+    demo(agent)
+    agent = None
+    # asynchronous
     tag = 'jortel'
-    ids = ('123', '456')
+    ids = ('123',)
     agent = Agent(ids, tag)
     demo(agent)
     agent = None

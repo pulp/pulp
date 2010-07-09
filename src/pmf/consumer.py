@@ -121,6 +121,8 @@ class QueueReader(QueueConsumer):
         """
         while True:
             envelope = self.next(timeout)
+            if not envelope:
+                return
             if sn == envelope.sn:
                 return envelope
             else:
@@ -156,9 +158,14 @@ class RequestConsumer(QueueConsumer):
         request = envelope.request
         result = self.dispatcher.dispatch(request)
         sn = envelope.sn
+        any = envelope.any
         replyto = envelope.replyto
         if replyto:
-            self.producer.send(replyto, sn=sn, result=result)
+            self.producer.send(
+                replyto,
+                sn=sn,
+                any=any,
+                result=result)
 
 
 class ReplyConsumer(QueueConsumer):
@@ -184,13 +191,14 @@ class ReplyConsumer(QueueConsumer):
         @param message: The received message.
         @type message: L{Envelope}
         """
-        sn = envelope.sn
-        reply = Return(envelope.result)
         try:
+            sn = envelope.sn
+            any = envelope.any
+            reply = Return(envelope.result)
             if reply.succeeded():
-                self.listener.succeeded(sn, reply.retval)
+                self.listener.succeeded(sn, reply.retval, any)
             else:
-                self.listener.failed(sn, reply.exval)
+                self.listener.failed(sn, reply.exval, any)
         except:
             pass
 

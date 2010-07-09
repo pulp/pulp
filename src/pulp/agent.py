@@ -22,7 +22,8 @@ on the agent.
 
 from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
-from pmf.producer import RequestProducer
+from pmf.producer import QueueProducer
+from pmf.policy import *
 from pulp.util import Config
 
 
@@ -40,16 +41,24 @@ class Agent(Base):
     """
     A proxy for the agent.
     """
-    def __init__(self, uuid):
+    def __init__(self, uuid, tag=None):
         """
         @param uuid: The consumer uuid.
-        @type uuid: str
+        @type uuid: str|list
+        @param tag: An (optional) asynchronous correlation tag.
+        @type tag: str
         """
         cfg = Config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
-        producer = RequestProducer(host=host, port=port)
-        self.admin = AgentAdmin(uuid, producer)
-        self.repo = Repo(uuid, producer)
-        self.packages = Packages(uuid, producer)
-        Base.__init__(self, producer)
+        producer = QueueProducer(host=host, port=port)
+        if tag or isinstance(uuid, (tuple,list)):
+            method = Asynchronous(producer, tag)
+        else:
+            method = Synchronous(producer)
+        Base.__init__(self,
+            uuid,
+            method,
+            admin=AgentAdmin,
+            repo=Repo,
+            packages=Packages)

@@ -24,11 +24,11 @@ from pmf.consumer import ReplyConsumer
 
 class Listener:
 
-    def succeeded(self, sn, result):
-        print 'succeeded: %s\n\t%s' % (sn, result)
+    def succeeded(self, sn, result, extra):
+        print 'succeeded: %s\n\t%s\n\tEXTRA:%s' % (sn, result, extra)
 
-    def failed(self, sn, ex):
-        print 'failed: %s\n\t%s' % (sn, ex)
+    def failed(self, sn, ex, extra):
+        print 'failed: %s\n\t%s\n\tEXTRA:%s' % (sn, ex, extra)
 
 
 if __name__ == '__main__':

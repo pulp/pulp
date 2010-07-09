@@ -205,16 +205,46 @@ class Agent:
 class AgentProxy:
     """
     The proxy base
+    @ivar id: The peer ID.
+    @type id: str
     @ivar reqmethod: A request method.
     @type reqmethod: L{pmf.policy.RequestMethod}
     """
 
-    def __init__(self, reqmethod):
+    def __init__(self, id, reqmethod, **namespaces):
         """
+        @param id: The peer id.
+        @type id: str
         @param reqmethod: A request method.
         @type reqmethod: L{pmf.policy.RequestMethod}
+        @keyword namespaces: A list of namespaces where
+            values are proxy classes.
         """
+        self.id = id
         self.reqmethod = reqmethod
+        self.proxies = []
+        for ns, pclass in namespaces.items():
+            proxy = pclass(id, reqmethod)
+            setattr(self, ns, proxy)
+            self.proxies.append(proxy)
+
+    def setWindow(self, window):
+        """
+        Define a maintenance winwow for all operations.
+        @param window: A window (start,end)
+        @type window: (datetime, datatime)
+        """
+        for p in self.proxies:
+            p._Proxy__window = window
+
+    def setAny(self, any):
+        """
+        Set user defined data to be round-tripped.
+        @param any: User defined data.
+        @type any: object
+        """
+        for p in self.proxies:
+            p._Proxy__any = any
 
     def close(self):
         """

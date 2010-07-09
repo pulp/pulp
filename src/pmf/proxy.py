@@ -80,6 +80,8 @@ class Proxy:
         """
         self.__pid = peer
         self.__reqmethod = reqmethod
+        self.__any = None
+        self.__window = None
 
     def _send(self, request):
         """
@@ -87,10 +89,19 @@ class Proxy:
         @param request: An RMI request.
         @type request: str
         """
+        any = self.__any
+        window = self.__window
         if isinstance(self.__pid, (list,tuple)):
-            return self.__reqmethod.broadcast(self.__pid, request)
+            return self.__reqmethod.broadcast(
+                        self.__pid,
+                        request,
+                        window=self.__window,
+                        any=self.__any)
         else:
-            return self.__reqmethod.send(self.__pid, request)
+            return self.__reqmethod.send(
+                        self.__pid,
+                        request,
+                        window=self.__window)
 
     def __getattr__(self, name):
         """
