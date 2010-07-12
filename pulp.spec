@@ -27,6 +27,7 @@ Requires: python-simplejson
 Requires: grinder
 Requires: httpd
 Requires: mod_wsgi
+Requires: mod_python
 Requires: mod_ssl
 Requires: mongo
 Requires: mongo-server
