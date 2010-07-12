@@ -20,6 +20,7 @@ import logging
 import web
 
 from juicer import http
+from juicer import mongo
 from juicer.controllers.base import JSONController, AsyncController
 from juicer.runtime import config
 from pulp.api.repo import RepoApi
@@ -45,7 +46,7 @@ class Repositories(JSONController):
         valid_filters = ['id', 'name', 'arch']
         
         filters = self.filters(valid_filters)
-        spec = self.build_spec(filters)
+        spec = mongo.filters_to_re_spec(filters)
         
         repositories = api.repositories(spec, default_fields)
         

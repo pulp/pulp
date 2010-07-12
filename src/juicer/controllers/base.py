@@ -72,7 +72,7 @@ class JSONController(object):
     
     def filter_results(self, results, filters):
         """
-        @deprecated: use build_spec and pass the result into pulp's api instead
+        @deprecated: use mongo.filters_to_re_spec and pass the result into pulp's api instead
         @type results: iterable of pulp model instances
         @param results: results from a db query
         @type filters: dict of str: list
@@ -91,19 +91,6 @@ class JSONController(object):
             if is_good:
                 new_results.append(result)
         return new_results
-    
-    def build_spec(self, filters):
-        """
-        Build a mongodb spec from the passed in filters
-        @type filters: dict of str: list of str's pairs
-        @param filters: valid filters and the associated values passed in as
-                        query parameters
-        @return: pymongo spec for collection.find or find_one
-        """
-        # XXX this should probably be in some sort of utility module
-        if not filters:
-            return None
-        return dict((k,re.compile('^(%s)$' % '|'.join(v))) for k,v in filters.items())
     
     # response methods --------------------------------------------------------
     

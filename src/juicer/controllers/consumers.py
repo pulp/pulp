@@ -20,6 +20,7 @@ import logging
 import web
 
 from juicer import http
+from juicer import mongo
 from juicer.controllers.base import JSONController
 from juicer.runtime import config
 from pulp.api.consumer import ConsumerApi
@@ -49,7 +50,7 @@ class Consumers(JSONController):
             result = api.consumers_with_package_names(package_names, default_fields)
             consumers = self.filter_results(result, filters)
         else:
-            spec = self.build_spec(filters)
+            spec = mongo.filters_to_re_spec(filters)
             consumers = api.consumers(spec, default_fields)
         # add the uri ref and deferred fields
         for c in consumers:
