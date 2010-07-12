@@ -37,7 +37,7 @@ class Packages(JSONController):
         List available packages.
         @return: a list of packages
         """
-        valid_filters = ('name', 'epoch', 'version', 'release', 'arch')
+        valid_filters = ('id', 'name')
         filters = self.filters(valid_filters)
         return self.ok(api.package_descriptions())
     
