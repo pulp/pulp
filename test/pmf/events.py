@@ -22,6 +22,9 @@ sys.path.append('../../')
 from pmf.producer import EventProducer
 from pmf.consumer import EventConsumer
 from time import sleep
+from logging import INFO, basicConfig
+
+basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 class MyConsumer(EventConsumer):
     def notify(self, event):

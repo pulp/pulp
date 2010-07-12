@@ -25,6 +25,9 @@ from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
 from pmf.producer import QueueProducer
 from pmf.policy import *
+from logging import INFO, basicConfig
+
+basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 
 class RepoLib(Proxy):

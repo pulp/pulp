@@ -22,6 +22,10 @@ from pmf.dispatcher import Return
 from pmf.consumer import QueueReader
 from datetime import datetime as dt
 from datetime import timedelta as delta
+from logging import getLogger
+
+log = getLogger(__name__)
+
 
 
 class RequestTimeout(Exception):

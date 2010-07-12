@@ -106,6 +106,9 @@ class Endpoint:
             try:
                 log.info('%s, connecting', self)
                 con = self.connection()
+                if con.connected():
+                    log.info('%s, already connected', self)
+                    return
                 con.connect()
                 con.start()
                 log.info('%s, connected', self)

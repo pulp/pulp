@@ -18,6 +18,9 @@ Provides RMI dispatcher classes.
 
 from pmf import *
 from pmf.decorators import mayinvoke
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 class ClassNotFound(Exception):
@@ -205,6 +208,7 @@ class Dispatcher:
         """
         request = Request(request)
         rmi = RMI(request, self.classes)
+        log.info('dispatching:%s', rmi)
         return rmi()
 
     def register(self, *classes):

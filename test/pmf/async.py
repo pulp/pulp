@@ -21,6 +21,9 @@ sys.path.append('../../')
 
 from time import sleep
 from pmf.consumer import ReplyConsumer
+from logging import INFO, basicConfig
+
+basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 class Listener:
 

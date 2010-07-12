@@ -23,6 +23,9 @@ from time import sleep
 from pmf.base import Agent as Base
 from pmf.decorators import remote, remotemethod
 from pmf.consumer import RequestConsumer
+from logging import INFO, basicConfig
+
+basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 @remote
 class RepoLib:

@@ -20,6 +20,9 @@ Contains AMQP message producer classes.
 from pmf import *
 from pmf.base import Endpoint
 from qpid.messaging import Message
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 class Producer(Endpoint):
@@ -49,6 +52,7 @@ class Producer(Endpoint):
         sender = self.session().sender(address)
         message = Message(envelope.dump())
         sender.send(message);
+        log.info('{%s} sent:(%s)\n%s', self.id, address, envelope)
         return sn
 
     def broadcast(self, addrlist, **body):

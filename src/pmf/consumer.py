@@ -22,6 +22,9 @@ from pmf.base import Endpoint
 from pmf.producer import Producer
 from pmf.dispatcher import Return
 from qpid.messaging import Empty
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 class Consumer(Endpoint):
@@ -55,6 +58,7 @@ class Consumer(Endpoint):
         """
         envelope = Envelope()
         envelope.load(message.content)
+        log.info('{%s} received:\n%s', self.id, envelope)
         self.dispatch(envelope)
         self.ack()
 
@@ -104,6 +108,7 @@ class QueueReader(QueueConsumer):
             message = self.receiver.fetch(timeout=timeout)
             envelope = Envelope()
             envelope.load(message.content)
+            log.info('{%s} read next:\n%s', self.id, envelope)
             return envelope
         except Empty:
             pass
@@ -119,13 +124,16 @@ class QueueReader(QueueConsumer):
         @return: The next envelope.
         @rtype: L{Envelope}
         """
+        log.info('{%s} searching for: sn=%s', self.id, sn)
         while True:
             envelope = self.next(timeout)
             if not envelope:
                 return
             if sn == envelope.sn:
+                log.info('{%s} search found:\n%s', self.id, envelope)
                 return envelope
             else:
+                log.info('{%s} search discarding:\n%s', self.id, envelope)
                 self.ack()
 
 
@@ -236,8 +244,8 @@ class EventConsumer(TopicConsumer):
         event = envelope.event
         try:
             self.notify(event)
-        except:
-            pass # TODO: LOG THIS BETTER
+        except Exception, e:
+            log.exception(e)
         self.ack()
 
     def notify(self, event):
