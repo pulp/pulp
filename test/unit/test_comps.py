@@ -31,6 +31,7 @@ import pulp.util
 import pulp.model
 from pulp.api.repo import RepoApi
 from pulp.api.repo_sync import BaseSynchronizer
+from pulp.pexceptions import PulpException
 
 log = logging.getLogger('pulp.test.testcomps')
 
@@ -131,27 +132,20 @@ class TestComps(unittest.TestCase):
         repo = self.rapi.create('test_delete_group_category',
                 'test_delete_group_category', 'i386',
                 'yum:http://example.com/')
-        # Parse existing comps.xml
-        compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
-        compsfile = open(compspath)
-        base = BaseSynchronizer(self.config)
-        base.import_groups_data(compsfile, repo)
-        # 'repo' object should now contain groups/categories
-        # we need to save it to the db so we can query from it
-        self.rapi.update(repo)
-        # Testing for expected values
-        found = self.rapi.packagegroup(repo['id'], "web-server")
+        cat = self.rapi.create_packagegroupcategory(repo["id"], 
+                "test_cat", "test_cat_name", "test description")
+        grp = self.rapi.create_packagegroup(repo["id"], 
+                "test_group", "test_group_name", "test description")
+        found = self.rapi.packagegroupcategory(repo['id'], cat["id"])
         self.assertTrue(found != None)
-        found = self.rapi.packagegroupcategory(repo['id'], "development")
+        found = self.rapi.packagegroup(repo['id'], grp["id"])
         self.assertTrue(found != None)
-        # Test Delete
-        self.rapi.delete_packagegroup(repo['id'], "web-server")
-        found = self.rapi.packagegroup(repo['id'], "web-server")
+        self.rapi.delete_packagegroup(repo['id'], grp["id"])
+        found = self.rapi.packagegroup(repo['id'], grp["id"])
         self.assertTrue(found == None)
-        self.rapi.delete_packagegroupcategory(repo['id'], "development")
-        found = self.rapi.packagegroupcategory(repo['id'], "development")
+        self.rapi.delete_packagegroupcategory(repo['id'], cat["id"])
+        found = self.rapi.packagegroupcategory(repo['id'], cat["id"])
         self.assertTrue(found == None)
-
 
     def test_model_group_to_yum_group(self):
         """
@@ -336,3 +330,68 @@ class TestComps(unittest.TestCase):
         self.assertTrue(actualTimestamp, expectedTimestamp)
         os.unlink(tmp_repomd_path)
         os.unlink(tmp_comps_path)
+
+    def test_immutable_groups(self):
+        repo_path = os.path.join(self.data_path, "repo_with_groups")
+        # Create repo with 1 group
+        repo = self.rapi.create('test_immutable_groups_id',
+                'test_import_groups_data_id', 'i386', 
+                'local:file://%s' % (repo_path))
+        self.rapi.sync(repo["id"])
+        # Ensure groups/categories were found and they are all immutable
+        found = self.rapi.packagegroups(repo['id'])
+        self.assertTrue(len(found) > 0)
+        for key in found:
+            self.assertTrue(found[key]["immutable"] == True)
+        found = self.rapi.packagegroupcategories(repo['id'])
+        self.assertTrue(len(found) > 0)
+        for key in found:
+            self.assertTrue(found[key]["immutable"] == True)
+        found = self.rapi.packagegroup(repo['id'], "admin-tools")
+        self.assertTrue(found != None)
+        self.assertTrue("system-config-boot" in found['default_package_names'])
+        # Verify we cannot delete a package from an immutable group
+        caught = False
+        try:
+            self.rapi.delete_package_from_group(repo["id"], found["id"], 
+                "system-config-boot", gtype="default")
+        except PulpException, e:
+            caught = True
+        self.assertTrue(caught)
+        # Verify we cannot add a package
+        caught = False
+        try:
+            self.rapi.add_package_to_group(repo["id"], "admin-tools", 
+                "newPackage", gtype="default")
+        except PulpException, e:
+            caught = True
+        self.assertTrue(caught)
+        # Verify we cannot update package group with same name
+        caught = False
+        try:
+            found = self.rapi.packagegroup(repo["id"], "admin-tools")
+            self.assertTrue(found != None)
+            found["default_package_names"].append("newPackage1")
+            self.rapi.update_packagegroup(repo["id"], found)
+        except PulpException, e:
+            caught = True
+        self.assertTrue(caught)
+        # Verify if we create a new package group, we can add/delete packages
+        pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
+                "test_group_name", "test description")
+        self.rapi.add_package_to_group(repo["id"], pkg_group["id"], 
+                "test_package_name", gtype="default")
+        found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
+        self.assertTrue(found != None)
+        self.assertTrue("test_package_name" in found["default_package_names"])
+        self.rapi.delete_package_from_group(repo["id"], pkg_group["id"], 
+                "test_package_name", gtype="default")
+        found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
+        self.assertTrue(found != None)
+        self.assertTrue("test_package_name" not in found["default_package_names"])
+        # Verify we can remove package group
+        self.rapi.delete_packagegroup(repo["id"], pkg_group["id"])
+        found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
+        self.assertTrue(found == None)
+
+

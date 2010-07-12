@@ -189,6 +189,8 @@ class RepoApi(BaseApi):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
         if repo['packagegroups'].has_key(groupid):
+            if repo['packagegroups'][groupid]["immutable"]:
+                raise PulpException("Changes to immutable groups are not supported: %s" % (groupid))
             del repo['packagegroups'][groupid]
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -202,6 +204,9 @@ class RepoApi(BaseApi):
         repo = self.repository(repoid)
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
+        if repo["packagegroups"].has_key(pg["id"]):
+            if repo["packagegroups"][pg["id"]]["immutable"]:
+                raise PulpException("Changes to immutable groups are not supported: %s" % (pg["id"]))
         repo['packagegroups'][pg['id']] = pg
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -216,6 +221,9 @@ class RepoApi(BaseApi):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
         for item in pglist:
+            if repo['packagegroups'].has_key(item["id"]):
+                if repo['packagegroups'][item["id"]]["immutable"]:
+                    raise PulpException("Changes to immutable groups are not supported: %s" % (item["id"]))
             repo['packagegroups'][item['id']] = item
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -259,6 +267,8 @@ class RepoApi(BaseApi):
             raise PulpException("No PackageGroup with id: %s exists in repo %s" \
                                 % (groupid, repoid))
         group = repo["packagegroups"][groupid]
+        if group["immutable"]:
+            raise PulpException("Changes to immutable groups are not supported: %s" % (group["id"]))
         if gtype == "mandatory":
             if pkg_name not in group["mandatory_package_names"]:
                 group["mandatory_package_names"].append(pkg_name)
@@ -289,6 +299,8 @@ class RepoApi(BaseApi):
             raise PulpException("No PackageGroup with id: %s exists in repo %s" \
                                 % (groupid, repoid))
         group = repo["packagegroups"][groupid]
+        if group["immutable"]:
+            raise PulpException("Changes to immutable groups are not supported: %s" % (group["id"]))
         if gtype == "mandatory":
             if pkg_name in group["mandatory_package_names"]:
                 group["mandatory_package_names"].remove(pkg_name)
@@ -302,7 +314,28 @@ class RepoApi(BaseApi):
                 group["default_package_names"].remove(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
-
+    
+    def create_packagegroupcategory(self, repoid, cat_id, cat_name, description):
+        """
+        Creates a new packagegroupcategory saved in the referenced repo
+        @param repoid:
+        @param cat_id:
+        @param cat_name:
+        @param description:
+        @return packagegroupcategory object
+        """
+        repo = self.repository(repoid)
+        if (repo == None):
+            raise PulpException("No Repo with id: %s found" % repoid)
+        if repo["packagegroupcategories"].has_key(cat_id):
+            raise PulpException("Package group category %s already exists in repo %s" % \
+                                (cat_id, repoid))
+        cat = pulp.model.PackageGroupCategory(cat_id, cat_name, description)
+        repo["packagegroupcategories"][cat_id] = cat
+        self.update(repo)
+        self._update_groups_metadata(repo["id"])
+        return cat
+    
     def delete_packagegroupcategory(self, repoid, categoryid):
         """
         Remove a packagegroupcategory from a repo
@@ -311,6 +344,8 @@ class RepoApi(BaseApi):
         if (repo == None):
             raise PulpException("No Repo with id: %s found" % repoid)
         if repo['packagegroupcategories'].has_key(categoryid):
+            if repo['packagegroupcategories'][categoryid]["immutable"]:
+                raise PulpException("Changes to immutable categories are not supported: %s" % (categoryid))
             del repo['packagegroupcategories'][categoryid]
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -322,6 +357,9 @@ class RepoApi(BaseApi):
         repo = self.repository(repoid)
         if repo == None:
             raise PulpException("No Repo with id: %s found" % repoid)
+        if repo["packagegroupcategories"].has_key(pgc["id"]):
+            if repo["packagegroupcategories"][pgc["id"]]["immutable"]:
+                raise PulpException("Changes to immutable categories are not supported: %s" % (pgc["id"]))
         repo['packagegroupcategories'][pgc['id']] = pgc
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -334,6 +372,9 @@ class RepoApi(BaseApi):
         if repo == None:
             raise PulpException("No Repo with id: %s found" % repoid)
         for item in pgclist:
+            if repo["packagegroupcategories"].has_key(item["id"]):
+                if repo["packagegroupcategories"][item["id"]]["immutable"]:
+                    raise PulpException("Changes to immutable categories are not supported: %s" % item["id"])
             repo['packagegroupcategories'][item['id']] = item
         self.update(repo)
         self._update_groups_metadata(repo["id"])

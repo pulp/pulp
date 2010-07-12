@@ -184,7 +184,7 @@ class BaseSynchronizer(object):
         except Exception, e:
             print("%s" % (traceback.format_exc()))
             log.debug("%s" % (traceback.format_exc()))
-            log.error("error reading package %s" % (pkg_path))
+            log.error("error reading package %s" % (file_name))
 
     def import_groups_data(self, compsfile, repo):
         """
@@ -196,9 +196,11 @@ class BaseSynchronizer(object):
             comps.add(compsfile)
             for c in comps.categories:
                 ctg = pulp.comps_util.yum_category_to_model_category(c)
+                ctg["immutable"] = True
                 repo['packagegroupcategories'][ctg['id']] = ctg
             for g in comps.groups:
-                grp = pulp.comps_util.yum_group_to_model_group(g)             
+                grp = pulp.comps_util.yum_group_to_model_group(g)
+                grp["immutable"] = True
                 repo['packagegroups'][grp['id']] = grp
         except yum.Errors.CompsException:
             log.error("Unable to parse group info for %s" % (compsfile))
