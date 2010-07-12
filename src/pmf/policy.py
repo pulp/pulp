@@ -20,6 +20,8 @@ Contains request delivery policies.
 from pmf import *
 from pmf.dispatcher import Return
 from pmf.consumer import QueueReader
+from datetime import datetime as dt
+from datetime import timedelta as delta
 
 
 class RequestTimeout(Exception):
@@ -188,3 +190,98 @@ class Asynchronous(RequestMethod):
                 request=request,
                 **any)
         return sns
+
+
+class Window:
+    """
+    Represents a maintenance (time) window.
+    @cvar FORMAT: The datetime format. ISO 8601
+    @type FORMAT: str
+    @ivar begin: The window beginning datetime
+    @type begin: L{dt}
+    @ivar end: The window ending datetime
+    @type end: L{dt}
+    """
+
+    FORMAT = '%Y-%m-%dT%H:%M:%S'
+
+    @classmethod
+    def window(cls, begin=None, **duration):
+        """
+        Build a window based on a beginning datetime and a duration.
+        @param begin: The window beginning datetime
+        @type begin: L{dt}
+        @keyword duration: The diration:
+          One of:
+            - days
+            - seconds
+            - minutes
+            - hours
+            - weeks
+        """
+        begin = (begin or dt.utcnow() )
+        end = begin+delta(**duration)
+        return Window(begin, end)
+
+    def __init__(self, begin, end):
+        """
+        @param begin: The (inclusive) beginning datetime
+        @type begin: L{dt}
+        @param end: The (inclusive) ending datetime
+        @type end: L{dt}
+        """
+        self.begin = begin
+        self.end = end
+
+    def dump(self):
+        """
+        Dump to JSON string.
+        @return: A json string.
+        @rtype: str
+        """
+        begin = self.begin.strftime(self.FORMAT)
+        end = self.end.strftime(self.FORMAT)
+        env = Envelope(begin=begin, end=end)
+        return env.dump()
+
+    def load(self, s):
+        """
+        Load using a json string.
+        @param s: A json encoded string.
+        @type s: str
+        """
+        env = Envelope()
+        env.load(s)
+        self.begin = dt.strptime(env.begin, self.FORMAT)
+        self.end = dt.strptime(env.end, self.FORMAT)
+
+    def match(self):
+        """
+        Get whether the current datetime (UTC) falls
+        within the window.
+        @return: True when matched.
+        @rtype: bool
+        """
+        now = dt.utcnow()
+        return ( now >= self.begin and now <= self.end )
+
+    def future(self):
+        """
+        Get whether window is in the future.
+        @return: True if I{begin} > I{utcnow()}.
+        @rtype: bool
+        """
+        now = dt.utcnow()
+        return ( now < self.begin )
+
+    def past(self):
+        """
+        Get whether window is in the past.
+        @return: True if I{utcnow()} > I{end}.
+        @rtype: bool
+        """
+        now = dt.utcnow()
+        return ( now > self.end )
+
+    def __str__(self):
+        return self.dump()

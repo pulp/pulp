@@ -33,6 +33,8 @@ class Envelope(dict):
     def load(self, s):
         """
         Load using a json string.
+        @param s: A json encoded string.
+        @type s: str
         """
         d = json.loads(s)
         self.update(d)
@@ -41,6 +43,8 @@ class Envelope(dict):
     def dump(self):
         """
         Dump to a json string.
+        @return: A json encoded string.
+        @rtype: str
         """
         d = self
         return json.dumps(d, indent=2)
