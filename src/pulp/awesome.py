@@ -17,9 +17,18 @@
 This had to be done...
 """
 
+import functools
+
+
 def is_awesome():
     return True
 
 
 def is_bogus():
     return False
+
+
+def awesome(function):
+    @functools.wraps(function)
+    def make_more_awesome(*args, **kwargs):
+        return function(*args, **kwargs)
