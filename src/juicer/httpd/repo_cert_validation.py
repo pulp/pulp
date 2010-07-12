@@ -13,10 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import logging
-
-import pulp.certificate
-
 '''
 Logic for determining if an entitlement certificate has permission to access a particular
 URL.
@@ -24,6 +20,11 @@ URL.
 This logic exists in a separate module from the httpd authentication handler to prevent issues
 with mod_python imports not being available at unit test time.
 '''
+
+import logging
+
+import pulp.certificate
+
 
 log = logging.getLogger(__name__)
 
