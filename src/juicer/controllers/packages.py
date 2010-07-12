@@ -18,6 +18,7 @@ import logging
 
 import web
 
+from juicer import mongo
 from juicer.controllers.base import JSONController
 from juicer.runtime import config
 from pulp.api.package import PackageApi
@@ -39,7 +40,8 @@ class Packages(JSONController):
         """
         valid_filters = ('id', 'name')
         filters = self.filters(valid_filters)
-        return self.ok(api.package_descriptions())
+        spec = mongo.filters_to_re_spec(filters)
+        return self.ok(api.package_descriptions(spec))
     
     @JSONController.error_handler
     def DELETE(self):

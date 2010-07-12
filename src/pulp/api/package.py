@@ -98,12 +98,12 @@ class PackageApi(BaseApi):
         return self.objectdb.find_one({'name' : name, 'version' : version,
                                        'epoch' : epoch, 'release' : release, 'arch' : arch,})
                                        
-    def package_descriptions(self):
+    def package_descriptions(self, spec=None):
         '''
         List of all package names and descriptions (will not contain package
         version information).
         '''
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
-        return list(self.objectdb.find({}, ['id', 'name', 'description']))
+        return list(self.objectdb.find(spec, ['id', 'name', 'description']))
                                        
         
