@@ -27,4 +27,6 @@ def filters_to_re_spec(filters):
     @param filters: http request query parameters
     @return: dict of field: regex of possible str values
     """
+    if not filters:
+        return None
     return dict((k, re.compile('(%s)' % '|'.join(v))) for k,v in filters.items())
