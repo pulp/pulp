@@ -39,6 +39,8 @@ class Producer(Endpoint):
         @param address: An AMQP address.
         @type address: str
         @keyword body: envelope body.
+        @return: The message serial number.
+        @rtype: str
         """
         sn = getuuid()
         envelope = Envelope(sn=sn)
@@ -55,11 +57,13 @@ class Producer(Endpoint):
         @param addrlist: A list of AMQP address.
         @type addrlist: [str,..]
         @keyword body: envelope body.
+        @return: A list of (addr,sn).
+        @rtype: list
         """
         sns = []
         for addr in addrlist:
             sn = Producer.send(self, addr, **body)
-            sns.append(sn)
+            sns.append((addr,sn))
         return sns
 
 
@@ -73,7 +77,7 @@ class QueueProducer(Producer):
         Send a message.
         @param qid: An AMQP queue ID.
         @type qid: str
-        @keyword body: envelope body.
+        @keyword body: Envelope body.
         @return: The sent envelope serial number.
         @rtype: str
         """
@@ -85,12 +89,18 @@ class QueueProducer(Producer):
         Broadcast a message to (N) queues.
         @param qids: An list of AMQP queue IDs.
         @type qids: [qid,..]
-        @keyword body: envelope body.
+        @keyword body: Envelope body.
+        @return: A list of (qid,sn).
+        @rtype: list
         """
         lst = []
         for qid in qids:
             lst.append(self.queueAddress(qid))
-        return Producer.broadcast(self, lst, **body)
+        sns = []
+        for addr, sn in Producer.broadcast(self, lst, **body):
+            qid = addr.split(';', 1)[0]
+            sns.append((qid,sn))
+        return sns
 
 
 class TopicProducer(Producer):
