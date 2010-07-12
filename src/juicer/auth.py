@@ -14,22 +14,15 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import web
+from juicer import http
 
 
-class login(object):
-    
-    def POST(self):
-        # TODO authorize and set a session cookie
-        pass
-    
-
-class logout(object):
-    
-    def POST(self):
-        # TODO end session
-        pass
-    
-# web.py application ----------------------------------------------------------
-
-application = web.auto_application()
+def check_roles(roles):
+    """
+    Check the http headers for valid authentication information
+    """
+    # simple check to see if we're even receiving the credentials for now
+    credentials = http.http_authorization()
+    if credentials is None:
+        return False
+    return True

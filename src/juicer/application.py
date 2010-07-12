@@ -20,8 +20,7 @@ from juicer import controllers
 
 
 URLS = (
-    '/test', controllers.test.application,
-    '/auth', controllers.auth.application,
+    #'/test', controllers.test.application,
     '/consumers', controllers.consumers.application,
     '/consumergroups', controllers.consumergroups.application,
     '/packages', controllers.packages.application,

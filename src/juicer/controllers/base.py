@@ -15,7 +15,6 @@
 # in this software or its documentation.
 
 import functools
-import re
 import sys
 import traceback
 
@@ -27,6 +26,7 @@ except ImportError:
 import pymongo.json_util 
 import web
 
+from juicer import auth
 from juicer import http
 from juicer.queues import fifo
 from pulp.tasking.task import Task, TaskModel, task2model
@@ -39,8 +39,8 @@ class JSONController(object):
     @staticmethod
     def error_handler(method):
         """
-        Controller class method wrapper that catches internal errors and reports
-        them as JSON serialized trace back strings
+        Static controller method wrapper that catches internal errors and
+        reports them as JSON serialized trace back strings
         """
         @functools.wraps(method)
         def report_error(self, *args, **kwargs):
@@ -51,6 +51,20 @@ class JSONController(object):
                 tb_msg = ''.join(traceback.format_exception(*exc_info))
                 return self.internal_server_error(tb_msg)
         return report_error
+    
+    @staticmethod
+    def user_auth_required(roles=[]):
+        """
+        Static Controller method to check user permissions on web service calls
+        """
+        def _user_auth_required(method):
+            @functools.wraps(method)
+            def check_user_auth(self, *args, **kwargs):
+                if not auth.check_roles(roles):
+                    return self.unauthorized('You do not have permission for this URI')
+                return method(self, *args, **kwargs)
+            return check_user_auth
+        return _user_auth_required
     
     # input methods -----------------------------------------------------------
     
@@ -134,6 +148,12 @@ class JSONController(object):
         http.status_bad_request()
         return self._output(msg)
     
+    def unauthorized(self, msg=None):
+        """
+        """
+        http.status_unauthorized()
+        return self._output(msg)
+    
     def not_found(self, msg=None):
         """
         Return a not found error.
@@ -211,7 +231,7 @@ class AsyncController(JSONController):
         """
         parts = web.ctx.path.split('/')
         if parts[-2] == id:
-            return web.http.url(web.ctx.path)
+            return http.uri_path()
         return http.extend_uri_path(id)
     
     def task_status(self, id):
