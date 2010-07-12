@@ -32,3 +32,4 @@ def awesome(function):
     @functools.wraps(function)
     def make_more_awesome(*args, **kwargs):
         return function(*args, **kwargs)
+    return make_more_awesome
