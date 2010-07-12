@@ -28,8 +28,14 @@ def is_bogus():
     return False
 
 
+class BogusError(Exception):
+    pass
+
+
 def awesome(function):
     @functools.wraps(function)
     def make_more_awesome(*args, **kwargs):
-        return function(*args, **kwargs)
+        if is_awesome():
+            return function(*args, **kwargs)
+        raise BogusError('Your code is bogus')
     return make_more_awesome
