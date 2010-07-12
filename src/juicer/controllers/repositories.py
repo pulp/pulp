@@ -196,8 +196,8 @@ class RepositoryActions(AsyncController):
         'add_package',
         'get_package',
         'add_package_to_group',
-        'remove_package_from_group',
-        'remove_packagegroup',
+        'delete_package_from_group',
+        'delete_packagegroup',
         'create_packagegroup',
     )
 
@@ -272,7 +272,7 @@ class RepositoryActions(AsyncController):
             gtype = p["type"]
         return self.ok(api.add_package_to_group(id, groupid, pkg_name, gtype))
 
-    def remove_package_from_group(self, id):
+    def delete_package_from_group(self, id):
         """
         Removes a package from an existing package group
         @param id: repository id
@@ -291,7 +291,7 @@ class RepositoryActions(AsyncController):
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(api.remove_package_from_group(id, groupid, pkg_name, gtype)) 
+        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype)) 
      
     def create_packagegroup(self, id):
         """
@@ -315,7 +315,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.create_packagegroup(id, groupid, groupname, 
                                                descrp))
         
-    def remove_packagegroup(self, id):
+    def delete_packagegroup(self, id):
         """
         Removes a packagegroup from a repository
         @param id: repository id
@@ -326,7 +326,7 @@ class RepositoryActions(AsyncController):
         if "groupid" not in p:
             return self.not_found('No groupid specified')
         groupid = p["groupid"]
-        return self.ok(api.remove_packagegroup(id, groupid))
+        return self.ok(api.delete_packagegroup(id, groupid))
 
     @JSONController.error_handler
     def POST(self, id, action_name):

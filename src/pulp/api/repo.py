@@ -179,7 +179,7 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
         return group
 
-    def remove_packagegroup(self, repoid, groupid):
+    def delete_packagegroup(self, repoid, groupid):
         """
         Remove a packagegroup from a repo
         @param repoid:
@@ -274,7 +274,7 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
         
         
-    def remove_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
+    def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
         @param repoid: repository id
         @param groupid: group id
@@ -303,7 +303,7 @@ class RepoApi(BaseApi):
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
-    def remove_packagegroupcategory(self, repoid, categoryid):
+    def delete_packagegroupcategory(self, repoid, categoryid):
         """
         Remove a packagegroupcategory from a repo
         """
@@ -368,6 +368,12 @@ class RepoApi(BaseApi):
         if repo == None:
             raise PulpException("No Repo with id: %s found" % repoid)
         try:
+            # If the repomd file is not valid, or if we are missingg
+            # a group metadata file, no point in continuing. 
+            if not os.path.exists(repo["repomd_xml_path"]):
+                log.debug("Skipping update of groups metadata since missing repomd file: '%s'" % \
+                          (repo["repomd_xml_path"]))
+                return False
             xml = pulp.comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
             if repo["group_xml_path"] == "":
@@ -388,6 +394,7 @@ class RepoApi(BaseApi):
             log.debug("_update_groups_metadata exception caught: %s" % (e))
             log.debug("Traceback: %s" % (traceback.format_exc()))
             return False
+        
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
         """
         Create a new Repository object and return it

@@ -127,9 +127,9 @@ class TestComps(unittest.TestCase):
         self.assertTrue("groupid1" in found["packagegroupids"])
 
 
-    def test_remove_group_category(self):
-        repo = self.rapi.create('test_remove_group_category',
-                'test_remove_group_category', 'i386',
+    def test_delete_group_category(self):
+        repo = self.rapi.create('test_delete_group_category',
+                'test_delete_group_category', 'i386',
                 'yum:http://example.com/')
         # Parse existing comps.xml
         compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
@@ -144,11 +144,11 @@ class TestComps(unittest.TestCase):
         self.assertTrue(found != None)
         found = self.rapi.packagegroupcategory(repo['id'], "development")
         self.assertTrue(found != None)
-        # Test Removal
-        self.rapi.remove_packagegroup(repo['id'], "web-server")
+        # Test Delete
+        self.rapi.delete_packagegroup(repo['id'], "web-server")
         found = self.rapi.packagegroup(repo['id'], "web-server")
         self.assertTrue(found == None)
-        self.rapi.remove_packagegroupcategory(repo['id'], "development")
+        self.rapi.delete_packagegroupcategory(repo['id'], "development")
         found = self.rapi.packagegroupcategory(repo['id'], "development")
         self.assertTrue(found == None)
 

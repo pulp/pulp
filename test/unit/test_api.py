@@ -216,7 +216,7 @@ class TestApi(unittest.TestCase):
         self.assertTrue(package["name"] in \
                 found['packagegroups'][pkggroup['id']]['default_package_names'])
         # Remove package from package group
-        self.rapi.remove_package_from_group(repo["id"], pkggroup["id"],
+        self.rapi.delete_package_from_group(repo["id"], pkggroup["id"],
                 package["name"], gtype="default")
         found = self.rapi.repository('some-id')
         self.assertTrue(found['packagegroups'] != None)
@@ -224,7 +224,7 @@ class TestApi(unittest.TestCase):
         self.assertTrue(package["name"] not in \
                 found['packagegroups'][pkggroup['id']]['default_package_names'])
         # Remove packagegroup from repo
-        self.rapi.remove_packagegroup(repo["id"], pkggroup["id"])
+        self.rapi.delete_packagegroup(repo["id"], pkggroup["id"])
         found = self.rapi.repository('some-id')
         self.assertTrue(len(found['packagegroups']) == 0)
 

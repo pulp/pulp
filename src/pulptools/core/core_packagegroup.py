@@ -42,9 +42,9 @@ class packagegroup(BaseCore):
                         "list"          : "list available packagegroups",
                         "info"          : "lookup information for a packagegroup",
                         "create"        : "create a packagegroup",
-                        "remove"        : "remove a packagegroup",
+                        "delete"        : "delete a packagegroup",
                         "add_package"   : "add package to an existing packagegroup",
-                        "remove_package": "remove package from an existing packagegroup",
+                        "delete_package": "delete package from an existing packagegroup",
                         "install"       : "Schedule a packagegroup Install",
                         }
         self.name = "packagegroup"
@@ -103,9 +103,9 @@ class packagegroup(BaseCore):
                             help="Group name")
             self.parser.add_option("--description", dest="description",
                             help="Group description, default is ''", default="")
-        if self.action == "remove":
-            usage = "usage: %prog packagegroup remove [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup remove", usage, "", "")
+        if self.action == "delete":
+            usage = "usage: %prog packagegroup delete [OPTIONS]"
+            BaseCore.__init__(self, "packagegroup delete", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
             self.parser.add_option("--groupid", dest="groupid",
@@ -122,9 +122,9 @@ class packagegroup(BaseCore):
             self.parser.add_option("--type", dest="grouptype",
                             help="Type of list to add package to, example 'mandatory', 'optional', 'default'",
                             default="default")
-        if self.action == "remove_package":
-            usage = "usage: %prog packagegroup remove_package [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup remove_package", usage, "", "")
+        if self.action == "delete_package":
+            usage = "usage: %prog packagegroup delete_package [OPTIONS]"
+            BaseCore.__init__(self, "packagegroup delete_package", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
             self.parser.add_option("--groupid", dest="groupid",
@@ -132,7 +132,7 @@ class packagegroup(BaseCore):
             self.parser.add_option("--name", dest="pkgname",
                             help="Package name")
             self.parser.add_option("--type", dest="grouptype",
-                            help="Type of list to remove package from, example 'mandatory', 'optional', 'default'",
+                            help="Type of list to delete package from, example 'mandatory', 'optional', 'default'",
                             default="default")
 
     def _validate_options(self):
@@ -157,12 +157,12 @@ class packagegroup(BaseCore):
             self._list()
         if self.action == "create":
             self._create()
-        if self.action == "remove":
-            self._remove()
+        if self.action == "delete":
+            self._delete()
         if self.action == "add_package":
             self._add_package()
-        if self.action == "remove_package":
-            self._remove_package()
+        if self.action == "delete_package":
+            self._delete_package()
 
     def _list(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -259,7 +259,7 @@ class packagegroup(BaseCore):
             log.error("Error: %s" % e)
             raise
     
-    def _remove(self):
+    def _delete(self):
         (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
@@ -268,8 +268,8 @@ class packagegroup(BaseCore):
             print("Please specify the package group id")
             sys.exit(0)
         try:
-            status = self.pconn.remove_packagegroup(self.options.repoid, self.options.groupid)
-            print "PackageGroup [%s] removed from repository [%s]" % (self.options.groupid, 
+            status = self.pconn.delete_packagegroup(self.options.repoid, self.options.groupid)
+            print "PackageGroup [%s] deleted from repository [%s]" % (self.options.groupid, 
                     self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -301,7 +301,7 @@ class packagegroup(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-    def _remove_package(self):
+    def _delete_package(self):
         (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
@@ -313,9 +313,9 @@ class packagegroup(BaseCore):
             print("Please specify the package group id")
             sys.exit(0)
         try:
-            status = self.pconn.remove_package_from_group(self.options.repoid, self.options.groupid,
+            status = self.pconn.delete_package_from_group(self.options.repoid, self.options.groupid,
                     self.options.pkgname, self.options.grouptype)
-            print "Package [%s] removed from group [%s] in repository [%s]" % (self.options.pkgname,
+            print "Package [%s] deleted from group [%s] in repository [%s]" % (self.options.pkgname,
                     self.options.groupid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
