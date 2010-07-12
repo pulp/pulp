@@ -49,14 +49,14 @@ class Endpoint:
             con.close()
         cls.connections = {}
 
-    def __init__(self, id=getuuid(), host='localhost', port=5672):
+    def __init__(self, id=None, host='localhost', port=5672):
         """
         @param host: The broker fqdn or IP.
         @type host: str
         @param port: The broker port.
         @type port: str
         """
-        self.id = id
+        self.id = ( id or getuuid() )
         self.host = host
         self.port = port
         self.__session = None
