@@ -26,7 +26,6 @@ from threading import Thread, RLock
 from logging import getLogger
 
 log = getLogger(__name__)
-lock = RLock()
 
 
 class PendingQueue:
@@ -56,6 +55,7 @@ class PendingQueue:
         self.id = id
         self.pending = []
         self.uncommitted = []
+        self.__lock = RLock()
         self.mkdir()
         self.load()
 
@@ -71,11 +71,11 @@ class PendingQueue:
         f.write(envelope.dump())
         f.close()
         log.info('{%s} add pending:\n%s', self.id, envelope)
-        lock.acquire()
+        self.lock()
         try:
             self.pending.insert(0, envelope)
         finally:
-            lock.release()
+            self.unlock()
 
     def next(self, wait=1):
         """
@@ -85,11 +85,11 @@ class PendingQueue:
         @return envelope: An L{Envelope}
         @rtype: L{Envelope}
         """
-        lock.acquire()
+        self.lock()
         try:
             queue = self.pending[:]
         finally:
-            lock.release()
+            self.unlock()
         while wait:
             if queue:
                 envelope = queue.pop()
@@ -110,12 +110,12 @@ class PendingQueue:
         @return envelope: An L{Envelope}
         @rtype: L{Envelope}
         """
-        lock.acquire()
+        self.lock()
         try:
             self.pending.remove(envelope)
             self.uncommitted.append(envelope)
         finally:
-            lock.release()
+            self.unlock()
 
     def commit(self):
         """
@@ -123,11 +123,11 @@ class PendingQueue:
         @return: self
         @rtype: L{PendingQueue}
         """
-        lock.acquire()
+        self.lock()
         try:
             uncommitted = self.uncommitted[:]
         finally:
-            lock.release()
+            self.unlock()
         for envelope in uncommitted:
             fn = self.fn(envelope)
             log.info('{%s} commit:%s', self.id, envelope.sn)
@@ -135,11 +135,11 @@ class PendingQueue:
                 os.remove(fn)
             except Exception, e:
                 log.exception(e)
-        lock.acquire()
+        self.lock()
         try:
             self.uncommitted = []
         finally:
-            lock.release()
+            self.unlock()
         return self
 
     def load(self):
@@ -159,11 +159,11 @@ class PendingQueue:
             ctime = self.created(path)
             pending.append((ctime, envelope))
         pending.sort()
-        lock.acquire()
+        self.lock()
         try:
             self.pending = [p[1] for p in pending]
         finally:
-            lock.release()
+            self.unlock()
 
     def created(self, path):
         """
@@ -200,6 +200,12 @@ class PendingQueue:
         @rtype: str
         """
         return os.path.join(self.ROOT, self.id, envelope.sn)
+    
+    def lock(self):
+        self.__lock.acquire()
+        
+    def unlock(self):
+        self.__lock.release()
 
 
 class PendingReceiver(Thread):
