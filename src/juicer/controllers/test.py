@@ -14,10 +14,13 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 import web
 
 from juicer.controllers.base import JSONController
+from juicer.role_check import RoleCheck
 
+log = logging.getLogger('pulp')
 
 class Index(JSONController):
     
@@ -52,10 +55,20 @@ class Index(JSONController):
         # proxy-only command, most likely not supported
         return self.ok(False)
     
+    
+class AuthTest(JSONController):
+
+    @RoleCheck(admin=True, consumer=True)
+    def GET(self, id):
+        log.error("AuthTest.GET")
+        ret = {'idparam': id}
+        return self.ok(ret)
+    
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/.*', 'Index',
+    '/$', 'Index',
+    '/([^/]+)/auth/$', 'AuthTest'
 )
 
 application = web.application(URLS, globals())
