@@ -24,6 +24,7 @@ from pulp.agent import Agent
 
 # Pulp
 from pulp.api.consumer import ConsumerApi
+from pulp.api.repo import RepoApi
 
 
 log = logging.getLogger('pulp.api.consumergroup')
@@ -124,8 +125,12 @@ class ConsumerGroupApi(BaseApi):
         """
         consumergroup = self.consumergroup(id)
         if consumergroup is None:
-            raise PulpException('consumer group "%s", not-found', id)
-        consumerids = consumergroup.consumers(id)
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        repo = self.repoApi.repo(repoid)
+        if repo is None:
+            raise PulpException("No Repository with id: %s found" % repoid)
+
+        consumerids = consumergroup['consumerids']
         for consumerid in consumerids:
             self.consumerApi.bind(consumerid, repoid)
 
@@ -140,7 +145,11 @@ class ConsumerGroupApi(BaseApi):
         """
         consumergroup = self.consumergroup(id)
         if consumergroup is None:
-            raise PulpException('consumer group "%s", not-found', id)
-        consumerids = consumergroup.consumers(id)
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        repo = self.repoApi.repo(repoid)
+        if (repo == None):
+            raise PulpException("No Repository with id: %s found" % repoid)
+
+        consumerids = consumergroup['consumerids']
         for consumerid in consumerids:
             self.consumerApi.unbind(consumerid, repoid)
