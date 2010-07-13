@@ -34,6 +34,7 @@ class ConsumerGroupApi(BaseApi):
     def __init__(self, config):
         BaseApi.__init__(self, config)
         self.consumerApi = ConsumerApi(config)
+        self.repoApi = RepoApi(config)
 
     def _getcollection(self):
         return self.db.consumergroups
@@ -126,7 +127,7 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
-        repo = self.repoApi.repo(repoid)
+        repo = self.repoApi.repository(repoid)
         if repo is None:
             raise PulpException("No Repository with id: %s found" % repoid)
 
@@ -146,7 +147,7 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
-        repo = self.repoApi.repo(repoid)
+        repo = self.repoApi.repository(repoid)
         if (repo == None):
             raise PulpException("No Repository with id: %s found" % repoid)
 
