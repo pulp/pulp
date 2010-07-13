@@ -8,6 +8,7 @@ License: MIT
 URL: https://fedorahosted.org/pulp/		
 Source0: %{name}-%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}
+BuildArch:  noarch
 
 # BuildRequires:	
 # Requires:	
