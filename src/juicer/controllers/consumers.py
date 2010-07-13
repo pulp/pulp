@@ -38,7 +38,6 @@ default_fields = ['id', 'description']
 class Consumers(JSONController):
 
     @JSONController.error_handler
-    @JSONController.user_auth_required()
     def GET(self):
         """
         List all available consumers.
