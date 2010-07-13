@@ -20,7 +20,7 @@
 import sys
 import os.path
 from pulptools.core.basecore import BaseCore, systemExit
-from pulptools.connection import RepoConnection, RestlibException
+from pulptools.connection import ConsumerConnection, RepoConnection, RestlibException
 import pulptools.constants as constants
 from pulptools.logutil import getLogger
 from pulptools.config import Config
@@ -54,6 +54,7 @@ class packagegroup(BaseCore):
 
     def load_server(self):
         self.pconn = RepoConnection(host=CFG.server.host or "localhost", port=8811)
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
 
     def generate_options(self):
         possiblecmd = []
@@ -82,7 +83,7 @@ class packagegroup(BaseCore):
         if self.action == "install":
             usage = "usage: %prog packagegroup install [OPTIONS]"
             BaseCore.__init__(self, "packagegroup install", usage, "", "")
-            self.parser.add_option("-p", "--pkgname", action="append", dest="pnames",
+            self.parser.add_option("-p", "--pkgid", action="append", dest="pkgid",
                            help="PackageGroup to install on a given consumer. \
                            To specify multiple packages use multiple -p")
             self.parser.add_option("--consumerid", dest="consumerid",
@@ -219,14 +220,14 @@ class packagegroup(BaseCore):
     def _install(self):
         (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
-            print("Please specify a consumer to install the package")
+            print("Please specify a consumer to install the package group")
             sys.exit(0)
-        if not self.options.pnames:
-            print("Nothing to Upload.")
+        if not self.options.pkgid:
+            print("Please specify a package group id")
             sys.exit(0)
         try:
-            raise Exception("Not Implemented")
-            print self.cconn.installpackages(self.options.consumerid, self.options.pnames)
+            print self.cconn.installpackagegroups(self.options.consumerid, 
+                                             self.options.pkgid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

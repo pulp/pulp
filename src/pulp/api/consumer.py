@@ -157,3 +157,15 @@ class ConsumerApi(BaseApi):
         agent = Agent(id)
         agent.packages.install(packagenames)
         return packagenames
+    
+    def installpackagegroups(self, id, packageids=[]):
+        """
+        Install package groups on the consumer.
+        @param id: A consumer id.
+        @type id: str
+        @param packageids: The package ids to install.
+        @type packageids: [str,..]
+        """
+        agent = Agent(id)
+        agent.packagegroups.install(packageids)
+        return packageids

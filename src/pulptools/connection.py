@@ -276,7 +276,11 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installpackages/" % id
         body = dict(packagenames=packagenames)
         return self.conn.request_post(method, params=body)
-
+    
+    def installpackagegroups(self, id, packageids):
+        method = "/consumers/%s/installpackagegroups/" % id
+        body = dict(packageids=packageids)
+        return self.conn.request_post(method, params=body)
 
 class ConsumerGroupConnection(PulpConnection):
     """

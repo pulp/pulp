@@ -66,7 +66,30 @@ class Packages:
         yb.resolveDeps()
         yb.processTransaction()
 
-
+@remote
+class PackageGroups:
+    """
+    PackageGroup management object
+    """
+    
+    @remotemethod
+    def install(self, packagegroupids):
+        """
+        Install packagegroups by id.
+        @param packageids: A list of package ids.
+        @param packageids: str
+        """
+        log.info('installing packagegroups: %s', packagegroupids)
+        yb = YumBase()
+        for grp_id in packagegroupids:
+            log.info("Need to add yum API calls to do package group install for: %s" % (grp_id))
+            #pkgs = yb.pkgSack.returnNewestByName(n)
+            #for p in pkgs:
+            #    yb.tsInfo.addInstall(p)
+        yb.resolveDeps()
+        yb.processTransaction()
+        
+        
 @remote
 class AgentAdmin:
 

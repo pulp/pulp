@@ -36,6 +36,8 @@ class Repo(Proxy):
 class Packages(Proxy):
     pass
 
+class PackageGroups(Proxy):
+    pass
 
 class Agent(Base):
     """
@@ -61,4 +63,5 @@ class Agent(Base):
             method,
             admin=AgentAdmin,
             repo=Repo,
-            packages=Packages)
+            packages=Packages,
+            packagegroups=PackageGroups)
