@@ -205,7 +205,7 @@ class consumer(BaseCore):
             cons = self.cconn.consumers()
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
             for con in cons: 
-                con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile']['href'])
+                con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile'])
             columns = ["id", "description", "repoids", "package_profile"]
             data = [ _sub_dict(con, columns) for con in cons]
             print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
