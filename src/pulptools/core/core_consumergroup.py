@@ -23,6 +23,7 @@ import pulptools.constants as constants
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import ConsumerGroupConnection, RestlibException
 from pulptools.logutil import getLogger
+from pulptools.repolib import RepoLib
 from pulptools.config import Config
 CFG = Config()
 
@@ -41,13 +42,16 @@ class consumergroup(BaseCore):
                         "add_consumer" : "Add a consumer to the group",
                         "delete_consumer" : "Delete a consumer from the group",
                         "list"   : "List available consumer groups",
-                        "delete" : "Delete a consumer group",}
+                        "delete" : "Delete a consumer group",
+                        "bind"   : "Bind the consumer group to listed repos",
+                        "unbind" : "UnBind the consumer group from repos",}
 
         self.username = None
         self.password = None
         self.name = "consumergroup"
         self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
                                               port=CFG.server.port or 8811)
+        self.repolib = RepoLib()
         self.generate_options()
 
     def generate_options(self):
@@ -99,6 +103,20 @@ class consumergroup(BaseCore):
                            help="Consumer Identifier")
             self.parser.add_option("--groupid", dest="groupid",
                            help="Consumer Group Identifier")
+        if self.action == "bind":
+            usage = "usage: %prog consumergroup bind [OPTIONS]"
+            BaseCore.__init__(self, "consumergroup bind", usage, "", "")
+            self.parser.add_option("--repoid", dest="repoid",
+                           help="Repo Identifier")
+            self.parser.add_option("--groupid", dest="groupid",
+                           help="Consumer Group Identifier")
+        if self.action == "unbind":
+            usage = "usage: %prog consumergroup unbind [OPTIONS]"
+            BaseCore.__init__(self, "consumergroup unbind", usage, "", "")
+            self.parser.add_option("--repoid", dest="repoid",
+                           help="Repo Identifier")
+            self.parser.add_option("--groupid", dest="groupid",
+                           help="Consumer Group Identifier")
 
     def _validate_options(self):
         pass
@@ -124,6 +142,10 @@ class consumergroup(BaseCore):
             self._add_consumer()
         if self.action == "delete_consumer":
             self._delete_consumer()
+        if self.action == "bind":
+            self._bind()
+        if self.action == "unbind":
+            self._unbind()
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
@@ -223,6 +245,44 @@ class consumergroup(BaseCore):
         try:
             self.cgconn.delete_consumer(self.options.groupid, self.options.consumerid)
             print _(" Successfully deleted Consumer [%s] from Group [%s]" % (self.options.consumerid, self.options.groupid))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _bind(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.groupid:
+            print("consumer group id required. Try --help")
+            sys.exit(0)
+        if not self.options.repoid:
+            print("repo id required. Try --help")
+            sys.exit(0)
+        try:
+            self.cgconn.bind(self.options.groupid, self.options.repoid)
+            self.repolib.update()
+            print _(" Successfully subscribed Consumer Group [%s] to Repo [%s]" % (self.options.groupid, self.options.repoid))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+
+    def _unbind(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.groupid:
+            print("consumer group id required. Try --help")
+            sys.exit(0)
+        if not self.options.repoid:
+            print("repo id required. Try --help")
+            sys.exit(0)
+        try:
+            self.cgconn.unbind(self.options.groupid, self.options.repoid)
+            self.repolib.update()
+            print _(" Successfully unsubscribed Consumer  Group [%s] from Repo [%s]" % (self.options.groupid, self.options.repoid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

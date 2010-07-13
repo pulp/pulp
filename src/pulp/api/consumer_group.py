@@ -112,3 +112,35 @@ class ConsumerGroupApi(BaseApi):
         consumerids.remove(consumerid)
         consumergroup["consumerids"] = consumerids
         self.update(consumergroup)
+
+    def bind(self, id, repoid):
+        """
+        Bind (subscribe) a consumer group to a repo.
+        @param id: A consumer group id.
+        @type id: str
+        @param repoid: A repo id to bind.
+        @type repoid: str
+        @raise PulpException: When consumer group is not found.
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:
+            raise PulpException('consumer group "%s", not-found', id)
+        consumerids = consumergroup.consumers(id)
+        for consumerid in consumerids:
+            self.consumerApi.bind(consumerid, repoid)
+
+    def unbind(self, id, repoid):
+        """
+        Unbind (unsubscribe) a consumer group from a repo.
+        @param id: A consumer group id.
+        @type id: str
+        @param repoid: A repo id to unbind.
+        @type repoid: str
+        @raise PulpException: When consumer group not found.
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:
+            raise PulpException('consumer group "%s", not-found', id)
+        consumerids = consumergroup.consumers(id)
+        for consumerid in consumerids:
+            self.consumerApi.unbind(consumerid, repoid)

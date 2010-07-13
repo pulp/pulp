@@ -316,6 +316,14 @@ class ConsumerGroupConnection(PulpConnection):
         method = "/consumers/%s/delete_consumer/" % id
         return self.conn.request_post(method, params=consumerid)
 
+    def bind(self, id, repoid):
+        method = "/consumergroups/%s/bind/" % id
+        return self.conn.request_post(method, params=repoid)
+
+    def unbind(self, id, repoid):
+        method = "/consumergroups/%s/unbind/" % id
+        return self.conn.request_post(method, params=repoid)
+
 
 class PackageConnection(PulpConnection):
 

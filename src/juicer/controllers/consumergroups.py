@@ -93,9 +93,30 @@ class ConsumerGroupActions(JSONController):
     # See juicer.repositories.RepositoryActions for design
 
     exposed_actions = (
+        'bind',
+        'unbind',
         'add_consumer',
         'delete_consumer',
     )
+
+    def bind(self, id):
+        """
+        Bind (subscribe) all the consumers in a consumergroup to a repository.
+        @param id: consumer group id
+        """
+        data = self.params()
+        api.bind(id, data)
+        return self.ok(True)
+
+    def unbind(self, id):
+        """
+        Unbind (unsubscribe) all the consumers in a consumergroup from a repository.
+        @param id: consumer group id
+        """
+        data = self.params()
+        api.unbind(id, data)
+        return self.ok(None)
+
 
     def add_consumer(self, id):
         """
