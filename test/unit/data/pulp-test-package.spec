@@ -1,5 +1,5 @@
 Name: pulp-test-package
-Version: 0.3.1	
+Version: 0.4.1	
 Release: 1%{?dist}
 Summary: Test package	
 
@@ -39,6 +39,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Jul 13 2010 Mike McCune <mmccune@redhat.com> 0.4.1-1
+- forcing noarch (mmccune@redhat.com)
 * Wed May 05 2010 Mike McCune <mmccune@redhat.com> 0.3.1-1
 - new package
 
