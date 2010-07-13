@@ -14,26 +14,23 @@
 # in this software or its documentation.
 
 # Python
-import gzip
 import logging
 import os
 import time
 import traceback
 import shutil
-import yum
 from urlparse import urlparse
 
 # 3rd Party
-import pulp.crontab
 import yum
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
-from pulp import model
 from pulp.api.package import PackageApi
 from pulp.pexceptions import PulpException
 import pulp.comps_util
+import pulp.crontab
 import pulp.upload
 import pulp.util
 
@@ -141,7 +138,7 @@ class BaseSynchronizer(object):
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
-                    self.import_groups_data(groupfile, repo)
+                    self.sync_groups_data(groupfile, repo)
                     log.debug("Loaded group info from %s" % (group_xml_path))
                 else:
                     log.info("Group info not found at file: %s" % (group_xml_path))
@@ -182,25 +179,34 @@ class BaseSynchronizer(object):
                 self.package_api.update(retval)
             return retval
         except Exception, e:
-            print("%s" % (traceback.format_exc()))
-            log.debug("%s" % (traceback.format_exc()))
             log.error("error reading package %s" % (file_name))
+            log.debug("%s" % (traceback.format_exc()))
 
-    def import_groups_data(self, compsfile, repo):
+    def sync_groups_data(self, compsfile, repo):
         """
-        Reads a comps.xml or comps.xml.gz under repodata from dir
-        Loads PackageGroup and Category info our db
+        Synchronizes package group/category info from a repo's group metadata
+        Caller is responsible for saving repo to db.
         """
         try:
             comps = yum.comps.Comps()
             comps.add(compsfile)
+            # Remove all "repo_defined" groups/categories
+            for grp_id in repo["packagegroups"]:
+                if repo["packagegroups"][grp_id]["repo_defined"]:
+                    del repo["packagegroups"][grp_id]
+            for cat_id in repo["packagegroupcategories"]:
+                if repo["packagegroupcategories"][cat_id]["repo_defined"]:
+                    del repo["packagegroupcategories"][cat_id]
+            # Add all groups/categories from repo
             for c in comps.categories:
                 ctg = pulp.comps_util.yum_category_to_model_category(c)
                 ctg["immutable"] = True
+                ctg["repo_defined"] = True
                 repo['packagegroupcategories'][ctg['id']] = ctg
             for g in comps.groups:
                 grp = pulp.comps_util.yum_group_to_model_group(g)
                 grp["immutable"] = True
+                grp["repo_defined"] = True
                 repo['packagegroups'][grp['id']] = grp
         except yum.Errors.CompsException:
             log.error("Unable to parse group info for %s" % (compsfile))

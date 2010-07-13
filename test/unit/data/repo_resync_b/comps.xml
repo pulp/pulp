@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE comps PUBLIC "-//Red Hat, Inc.//DTD Comps info//EN" "comps.dtd">
+<comps>
+  <group>
+    <id>admin-tools</id>
+    <name>Administration Tools</name>
+    <name xml:lang="af">Administrasienutsgoed</name>
+    <name xml:lang="zu">Amathuluzi Okuphatha</name>
+    <description>This group is a collection of graphical administration tools for the system, such as for managing user accounts and configuring system hardware.</description>
+    <description xml:lang="af">Hierdie groep is 'n versameling grafiese administrasienutsgoed vir die rekenaar, byvoorbeeld vir die bestuur van gebruikersrekeninge en die opstelling van rekenaarhardeware.</description>
+    <default>true</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="default">system-config-boot</packagereq>
+      <packagereq type="default">system-config-date</packagereq>
+      <packagereq type="optional">cacti</packagereq>
+      <packagereq type="optional">yumex</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>dns-server</id>
+    <name>DNS Name Server</name>
+    <name xml:lang="af">DNS-naambediener</name>
+    <description>This package group allows you to run a DNS name server (BIND) on the system.</description>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">dnssec-conf</packagereq>
+      <packagereq type="default">bind-chroot</packagereq>
+      <packagereq type="optional">bind</packagereq>
+      <packagereq type="optional">dnsperf</packagereq>
+    </packagelist>
+  </group>
+  <category>
+    <id>desktops</id>
+    <name>Desktop Environments</name>
+    <description>Desktop environments</description>
+    <display_order>10</display_order>
+    <grouplist>
+      <groupid>gnome-desktop</groupid>
+      <groupid>kde-desktop</groupid>
+      <groupid>lxde-desktop</groupid>
+      <groupid>moblin-desktop</groupid>
+      <groupid>sugar-desktop</groupid>
+      <groupid>window-managers</groupid>
+      <groupid>xfce-desktop</groupid>
+    </grouplist>
+  </category>
+  <category>
+    <id>apps</id>
+    <name>Applications</name>
+    <description>Applications to perform a variety of tasks</description>
+    <display_order>20</display_order>
+    <grouplist>
+      <groupid>authoring-and-publishing</groupid>
+      <groupid>editors</groupid>
+      <groupid>education</groupid>
+      <groupid>engineering-and-scientific</groupid>
+      <groupid>font-design</groupid>
+      <groupid>games</groupid>
+      <groupid>graphical-internet</groupid>
+      <groupid>graphics</groupid>
+      <groupid>office</groupid>
+      <groupid>sound-and-video</groupid>
+      <groupid>text-internet</groupid>
+    </grouplist>
+  </category>
+  <category>
+    <id>development</id>
+    <name>Development</name>
+    <description>Packages which provide functionality for developing and building applications.</description>
+    <display_order>70</display_order>
+    <grouplist>
+      <groupid>books</groupid>
+      <groupid>development-libs</groupid>
+      <groupid>development-tools</groupid>
+      <groupid>eclipse</groupid>
+      <groupid>electronic-lab</groupid>
+      <groupid>fedora-packager</groupid>
+      <groupid>gnome-software-development</groupid>
+      <groupid>haskell</groupid>
+      <groupid>java-development</groupid>
+      <groupid>kde-software-development</groupid>
+      <groupid>legacy-software-development</groupid>
+      <groupid>mingw32</groupid>
+      <groupid>ocaml</groupid>
+      <groupid>perl</groupid>
+      <groupid>ruby</groupid>
+      <groupid>web-development</groupid>
+      <groupid>x-software-development</groupid>
+      <groupid>xfce-software-development</groupid>
+    </grouplist>
+  </category>
+</comps>

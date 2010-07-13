@@ -46,15 +46,15 @@ class TestComps(unittest.TestCase):
     def tearDown(self):
         self.rapi.clean()
 
-    def test_import_groups_data(self):
-        repo = self.rapi.create('test_import_groups_data_id',
-                'test_import_groups_data_id', 'i386', 
+    def test_sync_groups_data(self):
+        repo = self.rapi.create('test_sync_groups_data_id',
+                'test_sync_groups_data_id', 'i386', 
                 'yum:http://example.com/')
         # Parse existing comps.xml
         compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         compsfile = open(compspath)
         base = BaseSynchronizer(self.config)
-        base.import_groups_data(compsfile, repo)
+        base.sync_groups_data(compsfile, repo)
         # 'repo' object should now contain groups/categories
         # we need to save it to the db so we can query from it
         self.rapi.update(repo)
@@ -394,4 +394,50 @@ class TestComps(unittest.TestCase):
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found == None)
 
+
+    def test_comps_resync_with_group_changes(self):
+        
+        repo_path = os.path.join(self.data_path, "repo_resync_a")
+        repo = self.rapi.create('test_comps_resync_with_group_changes',
+                'test_comps_resync_with_group_changes_name', 'i386', 
+                'local:file://%s' % (repo_path))
+        self.rapi.sync(repo["id"])
+        found = self.rapi.packagegroups(repo['id'])
+        # Verify expected groups/categories
+        self.assertTrue(len(found) == 3)
+        self.assertTrue(self.rapi.packagegroup(repo["id"], "admin-tools") != None)
+        self.assertTrue(self.rapi.packagegroup(repo["id"], "dns-server") != None)
+        self.assertTrue(self.rapi.packagegroup(repo["id"], "haskell") != None)
+        found = self.rapi.packagegroup(repo["id"], "dns-server")
+        self.assertTrue(found != None)
+        self.assertTrue("bind" in found["optional_package_names"])
+        self.assertTrue("dnssec-conf" not in found["mandatory_package_names"])
+        found = self.rapi.packagegroupcategories(repo['id'])
+        self.assertTrue(len(found) == 2)
+        self.assertTrue(self.rapi.packagegroupcategory(repo["id"], "desktops") != None)
+        self.assertTrue(self.rapi.packagegroupcategory(repo["id"], "apps") != None)
+        # Simulate a change to comps.xml from repo source 
+        # Changes:  removed the haskell group 
+        #           added a package to the dns-server group
+        #           added a new category, 'development'
+        repo_path = os.path.join(self.data_path, "repo_resync_b")
+        repo = self.rapi.repository(repo["id"])
+        repo["source"] = pulp.model.RepoSource("local:file://%s" % (repo_path))
+        self.rapi.update(repo)
+        self.rapi.sync(repo["id"])
+        found = self.rapi.packagegroups(repo['id'])
+        self.assertTrue(len(found) == 2)
+        self.assertTrue(self.rapi.packagegroup(repo["id"], "admin-tools") != None)
+        self.assertTrue(self.rapi.packagegroup(repo["id"], "dns-server") != None)
+        found = self.rapi.packagegroup(repo["id"], "dns-server")
+        self.assertTrue("bind" in found["optional_package_names"])
+        self.assertTrue("dnssec-conf" in found["mandatory_package_names"])
+        found = self.rapi.packagegroupcategories(repo['id'])
+        self.assertTrue(len(found) == 3)
+        self.assertTrue(self.rapi.packagegroupcategory(
+            repo["id"], "desktops") != None)
+        self.assertTrue(self.rapi.packagegroupcategory(
+            repo["id"],"apps") != None)
+        self.assertTrue(self.rapi.packagegroupcategory(
+            repo["id"],"development") != None)
 

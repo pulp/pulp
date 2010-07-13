@@ -20,7 +20,7 @@
 import sys
 import os.path
 from pulptools.core.basecore import BaseCore, systemExit
-from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
+from pulptools.connection import RepoConnection, RestlibException
 import pulptools.constants as constants
 from pulptools.logutil import getLogger
 from pulptools.config import Config
@@ -246,11 +246,12 @@ class packagegroup(BaseCore):
             print ("Please specify the group name")
             sys.exit(0)
         try:
-            status = self.pconn.create_packagegroup(self.options.repoid, 
+            self.pconn.create_packagegroup(self.options.repoid, 
                     self.options.groupid, self.options.groupname, 
                     self.options.description)
             print "+-------------------------------------------+"
-            print "Package Group [%s] created in repository [%s]" % (self.options.groupid, self.options.repoid)
+            print "Package Group [%s] created in repository [%s]" % \
+                    (self.options.groupid, self.options.repoid)
             print "+-------------------------------------------+"
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -268,9 +269,9 @@ class packagegroup(BaseCore):
             print("Please specify the package group id")
             sys.exit(0)
         try:
-            status = self.pconn.delete_packagegroup(self.options.repoid, self.options.groupid)
-            print "PackageGroup [%s] deleted from repository [%s]" % (self.options.groupid, 
-                    self.options.repoid)
+            self.pconn.delete_packagegroup(self.options.repoid, self.options.groupid)
+            print "PackageGroup [%s] deleted from repository [%s]" % \
+                    (self.options.groupid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -290,10 +291,12 @@ class packagegroup(BaseCore):
             print("Please specify the package group id")
             sys.exit(0)
         try:
-            status = self.pconn.add_package_to_group(self.options.repoid, self.options.groupid,
-                    self.options.pkgname, self.options.grouptype)
-            print "Package [%s] added to group [%s] in repository [%s]" % (self.options.pkgname,
-                    self.options.groupid, self.options.repoid)
+            self.pconn.add_package_to_group(self.options.repoid, 
+                    self.options.groupid, self.options.pkgname, 
+                    self.options.grouptype)
+            print "Package [%s] added to group [%s] in repository [%s]" % \
+                    (self.options.pkgname, self.options.groupid, 
+                            self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -313,10 +316,12 @@ class packagegroup(BaseCore):
             print("Please specify the package group id")
             sys.exit(0)
         try:
-            status = self.pconn.delete_package_from_group(self.options.repoid, self.options.groupid,
-                    self.options.pkgname, self.options.grouptype)
-            print "Package [%s] deleted from group [%s] in repository [%s]" % (self.options.pkgname,
-                    self.options.groupid, self.options.repoid)
+            self.pconn.delete_package_from_group(self.options.repoid, 
+                    self.options.groupid, self.options.pkgname, 
+                    self.options.grouptype)
+            print "Package [%s] deleted from group [%s] in repository [%s]" % \
+                    (self.options.pkgname, self.options.groupid, 
+                            self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

@@ -100,7 +100,8 @@ class PackageGroup(Base):
     Class represents a yum.comps.Group
     """
     def __init__(self, id, name, description, user_visible=True, 
-            display_order=1024, default=True, langonly=None, immutable=False):
+            display_order=1024, default=True, langonly=None, 
+            immutable=False, repo_defined=False):
         self._id = id
         self.id = id
         self.name = name
@@ -116,10 +117,12 @@ class PackageGroup(Base):
         self.translated_name = {}
         self.translated_description = {}
         self.immutable = immutable
+        self.repo_defined = repo_defined
 
 class PackageGroupCategory(Base):
 
-    def __init__(self, id, name, description, display_order=99, immutable=False):
+    def __init__(self, id, name, description, display_order=99, 
+            immutable=False, repo_defined=False):
         self._id = id
         self.id = id
         self.name = name
@@ -129,6 +132,7 @@ class PackageGroupCategory(Base):
         self.translated_description = {}
         self.packagegroupids = []
         self.immutable = immutable
+        self.repo_defined = repo_defined
 
 class Consumer(Base):
     def __init__(self, id, description):

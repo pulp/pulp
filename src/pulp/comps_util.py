@@ -17,7 +17,6 @@
 # Python
 import gzip
 import logging
-import os
 import xml.dom
 
 # 3rd Party
