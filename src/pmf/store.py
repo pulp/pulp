@@ -19,12 +19,19 @@ Provides (local) message storage classes.
 
 import os
 from pmf import *
+from pmf.window import Window
 from time import sleep
 from stat import *
+from threading import Thread, RLock
+from logging import getLogger
+
+log = getLogger(__name__)
+lock = RLock()
+
 
 class PendingQueue:
     """
-    File based storage of I{pending} envelopes that have
+    Persistent (local) storage of I{pending} envelopes that have
     been processed of an AMQP queue.  Most likely use is for messages
     with a future I{window} which cannot be processed immediately.
     @cvar ROOT: The root directory used for storage.
@@ -39,7 +46,7 @@ class PendingQueue:
     @type uncommitted: [path,..]
     """
 
-    ROOT = '/tmp/pmf'
+    ROOT = '/tmp/pmf' # TODO: Change to /var/lib/pmf
 
     def __init__(self, id):
         """
@@ -47,71 +54,116 @@ class PendingQueue:
         @type id: str
         """
         self.id = id
-        self.lastmod = 0
         self.pending = []
         self.uncommitted = []
         self.mkdir()
+        self.load()
 
-    def enqueue(self, envelope):
+    def add(self, envelope):
         """
         Enqueue the specified envelope.
         @param envelope: An L{Envelope}
         @type envelope: L{Envelope}
         """
-        path = os.path.join(self.ROOT, self.id, envelope.sn)
-        f = open(path, 'w')
+
+        fn = self.fn(envelope)
+        f = open(fn, 'w')
         f.write(envelope.dump())
         f.close()
-        self.load()
+        log.info('{%s} add pending:\n%s', self.id, envelope)
+        lock.acquire()
+        try:
+            self.pending.insert(0, envelope)
+        finally:
+            lock.release()
 
-    def next(self, block=True):
+    def next(self, wait=1):
         """
         Get the next pending envelope.
-        @param block: Indicates if call should block when empty.
-        @type block: bool
+        @param wait: The number of seconds to wait for a pending item.
+        @type wait: int
         @return envelope: An L{Envelope}
         @rtype: L{Envelope}
         """
-        while block:
-            self.load()
-            if self.pending:
-                p = self.pending[-1]
-                f = open(p[1])
-                s = f.read()
-                f.close()
-                envelope = Envelope()
-                envelope.load(s)
-                self.pending.remove(p)
-                self.uncommitted.append(p[1])
+        lock.acquire()
+        try:
+            queue = self.pending[:]
+        finally:
+            lock.release()
+        while wait:
+            if queue:
+                envelope = queue.pop()
+                window = Window(envelope.window)
+                if window.future():
+                    log.info('{%s} deferring:\n%s', self.id, envelope)
+                    continue
+                self.remove(envelope)
+                log.info('{%s} next:\n%s', self.id, envelope)
                 return envelope
             else:
                 sleep(1)
+                wait -= 1
+
+    def remove(self, envelope):
+        """
+        Remove the specified envelope and place on the uncommitted list.
+        @return envelope: An L{Envelope}
+        @rtype: L{Envelope}
+        """
+        lock.acquire()
+        try:
+            self.pending.remove(envelope)
+            self.uncommitted.append(envelope)
+        finally:
+            lock.release()
 
     def commit(self):
         """
-        Commit items removed from the queue.
+        Commit envelopes removed from the queue.
+        @return: self
+        @rtype: L{PendingQueue}
         """
-        for path in self.uncommitted():
-            os.remove(path)
+        lock.acquire()
+        try:
+            uncommitted = self.uncommitted[:]
+        finally:
+            lock.release()
+        for envelope in uncommitted:
+            fn = self.fn(envelope)
+            log.info('{%s} commit:%s', self.id, envelope.sn)
+            try:
+                os.remove(fn)
+            except Exception, e:
+                log.exception(e)
+        lock.acquire()
+        try:
+            self.uncommitted = []
+        finally:
+            lock.release()
         return self
 
     def load(self):
         """
         Load the in-memory queue from filesystem.
-        Only when directory has been modified since last load.
         """
+
         path = os.path.join(self.ROOT, self.id)
-        mtime = self.modified(path)
-        if mtime == self.lastmod:
-            return
-        self.pending = []
-        self.uncommitted = []
-        self.lastmod = mtime
+        pending = []
         for fn in os.listdir(path):
             path = os.path.join(self.ROOT, self.id, fn)
+            envelope = Envelope()
+            f = open(path)
+            s = f.read()
+            f.close()
+            envelope.load(s)
             ctime = self.created(path)
-            self.pending.append((ctime, path))
-        self.pending.sort()
+            pending.append((ctime, envelope))
+        pending.sort()
+        lock.acquire()
+        try:
+            self.pending = [p[1] for p in pending]
+        finally:
+            lock.release()
 
     def created(self, path):
         """
@@ -138,3 +190,61 @@ class PendingQueue:
         path = os.path.join(self.ROOT, self.id)
         if not os.path.exists(path):
             os.makedirs(path)
+
+    def fn(self, envelope):
+        """
+        Get the qualified file name for the envelope.
+        @return envelope: An L{Envelope}
+        @rtype: L{Envelope}
+        @return: The absolute file path.
+        @rtype: str
+        """
+        return os.path.join(self.ROOT, self.id, envelope.sn)
+
+
+class PendingReceiver(Thread):
+    """
+    A pending queue receiver.
+    @ivar __run: The main run loop flag.
+    @type __run: bool
+    @ivar queue: The L{PendingQueue} being read.
+    @type queue: L{PendingQueue)
+    @ivar consumer: The queue listener.
+    @type consumer: L{pmf.consumer.Consumer}
+    """
+
+    def __init__(self, queue, listener):
+        self.__run = True
+        self.queue = queue
+        self.listener = listener
+        Thread.__init__(self, name='pending:%s' % queue.id)
+
+    def run(self):
+        """
+        Main receiver (thread).
+        Read and dispatch envelopes.
+        """
+        log.info('{%s} started', self.name)
+        while self.__run:
+            envelope = self.queue.next(3)
+            if envelope:
+                self.dispatch(envelope)
+                self.queue.commit()
+
+    def dispatch(self, envelope):
+        """
+        Dispatch the envelope to the listener.
+        @return envelope: An L{Envelope} to be dispatched.
+        @rtype: L{Envelope}
+        """
+        try:
+            self.listener.dispatch(envelope)
+        except Exception, e:
+            log.exception(e)
+
+    def stop(self):
+        """
+        Stop the receiver.
+        """
+        self.__run = False
+        log.info('{%s} stopping', self.name)

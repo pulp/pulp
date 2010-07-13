@@ -25,6 +25,9 @@ from pmf.proxy import Proxy
 from pmf.base import AgentProxy as Base
 from pmf.producer import QueueProducer
 from pmf.policy import *
+from pmf.window import *
+from datetime import datetime as dt
+from datetime import timedelta as delta
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
@@ -53,20 +56,10 @@ class Agent(Base):
 
 
 def demo(agent):
-
-    agent.setAny(dict(task=22))
-
     print agent.dog.bark('hello')
-
-    agent.setAny('Hello-Data')
-
     print agent.dog.wag(3)
-
-    agent.setAny(None)
-
     print agent.dog.bark('hello')
     print agent.repolib.update()
-
     try:
         print agent.repolib.updated()
     except Exception, e:
@@ -87,5 +80,16 @@ if __name__ == '__main__':
     tag = 'jortel'
     ids = ('123',)
     agent = Agent(ids, tag)
+    agent.setWindow(Window.create(minutes=1))
+    demo(agent)
+    # future
+    print 'FUTURE'
+    agent.setAny('group 2')
+    later = dt.utcnow()+delta(seconds=20)
+    agent.setWindow(Window.create(later, minutes=10))
+    demo(agent)
+    agent.setAny('group 1')
+    later = dt.utcnow()+delta(seconds=10)
+    agent.setWindow(Window.create(later, minutes=10))
     demo(agent)
     agent = None

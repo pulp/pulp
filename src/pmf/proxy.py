@@ -20,6 +20,7 @@ classes on which we invoke methods.
 """
 
 from pmf.dispatcher import Request
+from pmf.window import Window
 
 
 class Method:
@@ -69,6 +70,10 @@ class Proxy:
     @ivar __pid: str
     @ivar __reqmethod: An AMQP message producer.
     @type __reqmethod: L{pmf.policy.RequestMethod}
+    @ivar __window: An valid window.
+    @type __window: L{Window}
+    @ivar __any: Any user defined data.
+    @type __any: object
     """
 
     def __init__(self, peer, reqmethod):
@@ -80,8 +85,8 @@ class Proxy:
         """
         self.__pid = peer
         self.__reqmethod = reqmethod
+        self.__window = Window()
         self.__any = None
-        self.__window = None
 
     def _send(self, request):
         """

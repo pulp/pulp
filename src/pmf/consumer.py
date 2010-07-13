@@ -21,6 +21,8 @@ from pmf import *
 from pmf.base import Endpoint
 from pmf.producer import Producer
 from pmf.dispatcher import Return
+from pmf.window import *
+from pmf.store import PendingQueue, PendingReceiver
 from qpid.messaging import Empty
 from logging import getLogger
 
@@ -153,9 +155,12 @@ class RequestConsumer(QueueConsumer):
         @param dispatcher: An RMI dispatcher.
         @type dispatcher: L{pmf.Dispatcher}
         """
+        q = PendingQueue(self.id)
+        self.pending = PendingReceiver(q, self)
         self.dispatcher = dispatcher
         self.producer = Producer(host=self.host, port=self.port)
         Consumer.start(self)
+        self.pending.start()
 
     def dispatch(self, envelope):
         """
@@ -163,8 +168,24 @@ class RequestConsumer(QueueConsumer):
         @param envelope: The received envelope.
         @type envelope: L{Envelope}
         """
-        request = envelope.request
-        result = self.dispatcher.dispatch(request)
+        try:
+            self.checkwindow(envelope)
+            request = envelope.request
+            result = self.dispatcher.dispatch(request)
+        except WindowMissed, m:
+            result = Return.exception(m)
+        except WindowPending:
+            return
+        self.sendreply(envelope, result)
+
+    def sendreply(self, envelope, result):
+        """
+        Send the reply if requested.
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
+        @param result: The request result.
+        @type result: object
+        """
         sn = envelope.sn
         any = envelope.any
         replyto = envelope.replyto
@@ -174,6 +195,27 @@ class RequestConsumer(QueueConsumer):
                 sn=sn,
                 any=any,
                 result=result)
+
+    def checkwindow(self, envelope):
+        """
+        Check the window.
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
+        """
+        window = Window(envelope.window)
+        if window.future():
+            pending = self.pending.queue
+            pending.add(envelope)
+            raise WindowPending(envelope.sn)
+        if window.past():
+            raise WindowMissed(envelope.sn)
+
+    def __del__(self):
+        try:
+            self.pending.stop()
+            self.pending.join(10)
+        except:
+            pass
 
 
 class ReplyConsumer(QueueConsumer):
