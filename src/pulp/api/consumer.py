@@ -79,7 +79,10 @@ class ConsumerApi(BaseApi):
         """
         Return a single Consumer object
         """
-        return self.objectdb.find_one({'id': id}, fields=fields)
+        consumers = list(self.objectdb.find(spec={'id': id}, fields=fields))
+        if not consumers:
+            return None
+        return consumers[0]
     
     def packages(self, id):
         consumer = self.objectdb.find_one({'id': id}) 
