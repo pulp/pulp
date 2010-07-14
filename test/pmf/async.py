@@ -25,6 +25,11 @@ from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
 
+
+def callback(reply):
+    print 'CB:\n%s' % reply
+
+
 class Listener:
 
     def succeeded(self, reply):
@@ -37,7 +42,8 @@ class Listener:
 if __name__ == '__main__':
     tag = 'jortel'
     c = ReplyConsumer(tag)
-    c.start(Listener())
+    #c.start(Listener())
+    c.start(callback)
     while True:
         print 'ReplyListener: sleeping...'
         sleep(10)

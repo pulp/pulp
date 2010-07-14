@@ -49,11 +49,18 @@ class ReplyConsumer(QueueConsumer):
         @type envelope: L{Envelope}
         """
         try:
-            reply = Return(envelope.result)
-            if reply.succeeded():
-                self.listener.succeeded(Succeeded(envelope))
+            result = Return(envelope.result)
+            if result.succeeded():
+                reply = Succeeded(envelope)
             else:
-                self.listener.failed(Failed(envelope))
+                reply = Failed(envelope)
+            if callable(self.listener):
+                self.listener(reply)
+                return
+            if result.succeeded():
+                self.listener.succeeded(reply)
+            else:
+                self.listener.failed(reply)
         except Exception, e:
             log.exception(e)
 
