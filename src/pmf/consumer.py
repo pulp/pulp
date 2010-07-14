@@ -218,47 +218,6 @@ class RequestConsumer(QueueConsumer):
             pass
 
 
-class ReplyConsumer(QueueConsumer):
-    """
-    A request, reply consumer.
-    @ivar listener: An reply listener.
-    @type listener: any
-    """
-
-    def start(self, listener):
-        """
-        Start processing messages on the queue and
-        forward to the listener.
-        @param listener: An reply listener.
-        @type listener: any
-        """
-        self.listener = listener
-        Consumer.start(self)
-
-    def dispatch(self, envelope):
-        """
-        Dispatch received request.
-        @param message: The received message.
-        @type message: L{Envelope}
-        """
-        try:
-            reply = Return(envelope.result)
-            if reply.succeeded():
-                self.listener.succeeded(
-                    envelope.sn,
-                    envelope.sender,
-                    reply.retval,
-                    envelope.any)
-            else:
-                self.listener.failed(
-                    envelope.sn,
-                    envelope.sender,
-                    reply.exval,
-                    envelope.any)
-        except Exception, e:
-            log.exception(e)
-
-
 class TopicConsumer(Consumer):
     """
     An AMQP topic consumer.

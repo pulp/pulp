@@ -20,20 +20,18 @@ import sys
 sys.path.append('../../')
 
 from time import sleep
-from pmf.consumer import ReplyConsumer
+from pmf.async import ReplyConsumer
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 class Listener:
 
-    def succeeded(self, sn, sender, result, extra):
-        print 'succeeded: %s:%s\n\t%s\n\tEXTRA:%s' % \
-            (sn,sender, result, extra)
+    def succeeded(self, reply):
+        print reply
 
-    def failed(self, sn, sender, ex, extra):
-        print 'failed: %s:%s\n\t%s\n\tEXTRA:%s' % \
-            (sn,sender, ex, extra)
+    def failed(self, reply):
+        print reply
 
 
 if __name__ == '__main__':
