@@ -46,7 +46,7 @@ class Producer(Endpoint):
         @rtype: str
         """
         sn = getuuid()
-        envelope = Envelope(sn=sn)
+        envelope = Envelope(sn=sn, sender=self.id)
         envelope.update(body)
         message = Message(envelope.dump())
         sender = self.session().sender(address)

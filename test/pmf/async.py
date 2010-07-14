@@ -27,11 +27,13 @@ basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 class Listener:
 
-    def succeeded(self, sn, result, extra):
-        print 'succeeded: %s\n\t%s\n\tEXTRA:%s' % (sn, result, extra)
+    def succeeded(self, sn, sender, result, extra):
+        print 'succeeded: %s:%s\n\t%s\n\tEXTRA:%s' % \
+            (sn,sender, result, extra)
 
-    def failed(self, sn, ex, extra):
-        print 'failed: %s\n\t%s\n\tEXTRA:%s' % (sn, ex, extra)
+    def failed(self, sn, sender, ex, extra):
+        print 'failed: %s:%s\n\t%s\n\tEXTRA:%s' % \
+            (sn,sender, ex, extra)
 
 
 if __name__ == '__main__':

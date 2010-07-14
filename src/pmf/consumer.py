@@ -158,7 +158,7 @@ class RequestConsumer(QueueConsumer):
         q = PendingQueue(self.id)
         self.pending = PendingReceiver(q, self)
         self.dispatcher = dispatcher
-        self.producer = Producer(host=self.host, port=self.port)
+        self.producer = Producer(self.id, self.host, self.port)
         Consumer.start(self)
         self.pending.start()
 
@@ -242,15 +242,21 @@ class ReplyConsumer(QueueConsumer):
         @type message: L{Envelope}
         """
         try:
-            sn = envelope.sn
-            any = envelope.any
             reply = Return(envelope.result)
             if reply.succeeded():
-                self.listener.succeeded(sn, reply.retval, any)
+                self.listener.succeeded(
+                    envelope.sn,
+                    envelope.sender,
+                    reply.retval,
+                    envelope.any)
             else:
-                self.listener.failed(sn, reply.exval, any)
-        except:
-            pass
+                self.listener.failed(
+                    envelope.sn,
+                    envelope.sender,
+                    reply.exval,
+                    envelope.any)
+        except Exception, e:
+            log.exception(e)
 
 
 class TopicConsumer(Consumer):
