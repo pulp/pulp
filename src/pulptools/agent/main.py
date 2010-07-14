@@ -88,7 +88,7 @@ def main():
     All actions must be subclass of L{action.Action}.
     """
     actions = \
-     (TestAction(minutes=1),
+     (TestAction(minutes=5),
       ProfileUpdateAction(minutes=cfg.server.interval),
       # <add actions here>
       )

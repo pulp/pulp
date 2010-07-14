@@ -17,6 +17,7 @@
 Remoted class for pulp agent.
 """
 
+import os
 from pulptools import *
 from pulptools.repolib import RepoLib
 from pulptools.config import Config
@@ -102,3 +103,23 @@ class AgentAdmin:
         s.append('Here is my configuration:\n%s' % cfg)
         s.append('Status: ready')
         return '\n'.join(s)
+
+
+@remote
+class Shell:
+    
+    @remotemethod
+    def run(self, cmd):
+        """
+        Run a shell command.
+        @param cmd: The command & arguments.
+        @type cmd: str
+        @return: The command output.
+        @rtype: str
+        """
+        f = os.popen(cmd)
+        try:
+            return f.read()
+        finally:
+            f.close()
+

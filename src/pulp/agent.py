@@ -39,6 +39,9 @@ class Packages(Proxy):
 class PackageGroups(Proxy):
     pass
 
+class Shell(Proxy):
+    pass
+
 class Agent(Base):
     """
     A proxy for the agent.
@@ -64,4 +67,5 @@ class Agent(Base):
             admin=AgentAdmin,
             repo=Repo,
             packages=Packages,
-            packagegroups=PackageGroups)
+            packagegroups=PackageGroups,
+            shell=Shell,)
