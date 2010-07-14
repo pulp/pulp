@@ -19,13 +19,17 @@ Action slass for pulp agent.
 
 from datetime import datetime as dt
 from datetime import timedelta
-from pulptools.connection import ConsumerConnection, RestlibException
-from pulptools.package_profile import PackageProfile
-from pulptools import ConsumerId
-from pulptools.config import Config
 from pulptools.logutil import getLogger
 
 log = getLogger(__name__)
+
+
+
+def action(**interval):
+    def decorator(cls):
+        Action.actions.append((cls, interval))
+        return cls
+    return decorator
 
 
 class Action:
@@ -41,6 +45,8 @@ class Action:
     @ivar last: The last run timestamp.
     @ivar last: datetime
     """
+    
+    actions = []
 
     def __init__(self, **interval):
         """
@@ -77,37 +83,3 @@ class Action:
                 self.perform()
         except Exception, e:
             log.exception(e)
-
-
-class ProfileUpdateAction(Action):
-    """
-    Package Profile Update Action to update installed package info for a 
-    registered consumer
-    """
-
-    def perform(self):
-        """ 
-        Looks up the consumer id and latest pkg profile info and cals
-        the api to update the consumer profile 
-        """
-        CFG = Config()
-        cid = ConsumerId()
-        if not cid.exists():
-            log.error("Not Registered")
-            return
-        try:
-            cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
-                                       port=CFG.server.port or 8811)
-            pkginfo = PackageProfile().getPackageList()
-            cconn.profile(cid.read(), pkginfo)
-            log.info("Profile updated successfully for consumer %s" % cid.read())
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-        except Exception, e:
-            log.error("Error: %s" % e)
-
-
-class TestAction(Action):
-    
-    def perform(self):
-        log.info('Hello')

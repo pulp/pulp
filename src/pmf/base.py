@@ -18,7 +18,7 @@ Agent base classes.
 """
 
 from pmf import *
-from pmf import decorators
+from pmf.decorators import Remote
 from pmf.dispatcher import Dispatcher
 from qpid.messaging import Connection
 from time import sleep
@@ -194,7 +194,7 @@ class Agent:
         @type consumer: L{pmf.Consumer}
         """
         dispatcher = Dispatcher()
-        dispatcher.register(*decorators.remoteclasses)
+        dispatcher.register(*Remote.classes)
         consumer.start(dispatcher)
         self.consumer = consumer
 

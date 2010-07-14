@@ -15,9 +15,9 @@
 
 from pulptools import *
 from pulptools.agent import *
+from pulptools.agent.action import Action
+from pulptools.agent.actions import *
 from pulptools.agent.remote import *
-from pulptools.agent.action import *
-from pulptools.config import Config
 from pulptools.logutil import getLogger
 from pmf.base import Agent as Base
 from pmf.consumer import RequestConsumer
@@ -25,7 +25,6 @@ from time import sleep
 from threading import Thread
 
 log = getLogger(__name__)
-cfg = Config()
 
 
 class ActionThread(Thread):
@@ -61,6 +60,7 @@ class Agent(Base):
         id = self.id()
         actionThread = ActionThread(actions)
         actionThread.start()
+        cfg = Config()
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         consumer = RequestConsumer(id, host, port)
@@ -87,11 +87,10 @@ def main():
     Add recurring, time-based actions here.
     All actions must be subclass of L{action.Action}.
     """
-    actions = \
-     (TestAction(minutes=5),
-      ProfileUpdateAction(minutes=cfg.server.interval),
-      # <add actions here>
-      )
+    actions = []
+    for cls, interval in Action.actions:
+        action = cls(**interval)
+        actions.append(action)
     agent = Agent(actions)
     agent.close()
 

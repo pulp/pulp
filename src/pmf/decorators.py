@@ -21,8 +21,13 @@ B{remotemethods} contain the list of methods on I{remote} classes
 that may be invoked remotely.
 """
 
-remoteclasses = []
-remotemethods = []
+class Remote:
+    """
+    @cvar classes: A list of remoted classes.
+    @cvar methods: A list of remoted methods.
+    """
+    classes = []
+    methods = []
 
 def remote(cls):
     """
@@ -30,8 +35,7 @@ def remote(cls):
     @param cls: A class to register.
     @type cls: python class.
     """
-    global remoteclasses
-    remoteclasses.append(cls)
+    Remote.classes.append(cls)
     return cls
 
 def remotemethod(fn):
@@ -41,8 +45,7 @@ def remotemethod(fn):
     Decorator used to register methods that may
     be invoked remotely.
     """
-    global remotemethods
-    remotemethods.append(fn)
+    Remote.methods.append(fn)
     return fn
 
 def mayinvoke(im):
@@ -54,4 +57,4 @@ def mayinvoke(im):
     @return: True if exposed via @remotemethod decorator.
     @rtype: bool
     """
-    return im.im_func in remotemethods
+    return im.im_func in Remote.methods
