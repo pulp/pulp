@@ -23,7 +23,7 @@ from pulptools.agent.action import *
 from pulptools.connection import ConsumerConnection, RestlibException
 from pulptools.package_profile import PackageProfile
 from pulptools.config import Config
-from pulptools.logutil import getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 cfg = Config()

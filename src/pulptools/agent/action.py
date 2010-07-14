@@ -19,7 +19,7 @@ Action slass for pulp agent.
 
 from datetime import datetime as dt
 from datetime import timedelta
-from pulptools.logutil import getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 

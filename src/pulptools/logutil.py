@@ -29,7 +29,7 @@ def getLogger(name):
         os.mkdir(LOGDIR)
     if handler is None:
         path = os.path.join(LOGDIR,LOGFILE)
-        fmt = '%(asctime)s [%(levelname)s] %(funcName)s() @%(filename)s:%(lineno)d - %(message)s'
+        fmt = '%(asctime)s [%(levelname)s][%(threadName)s] %(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
         handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
         handler.setFormatter(Formatter(fmt))
         root.setLevel(logging.INFO)
