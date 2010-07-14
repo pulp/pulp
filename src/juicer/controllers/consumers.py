@@ -102,6 +102,8 @@ class Consumer(JSONController):
         @return: consumer meta data
         """
         consumer = api.consumer(id, fields=default_fields)
+        if consumer is None:
+            return self.not_found('No consumer %s' % id)
         consumer['uri_ref'] = http.uri_path()
         for field in ConsumerDeferredFields.exposed_fields:
             consumer[field] = http.extend_uri_path(field)
