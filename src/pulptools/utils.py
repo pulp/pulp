@@ -67,7 +67,7 @@ def writeToFile(filename, message, overwrite=True):
             return False
 
     fd = os.open(filename, os.O_WRONLY | os.O_CREAT, 0644)
-    msgFile = os.fdopen(fd, 'w')
+    msgFile = open(filename, 'w')
     try:
         msgFile.write(message)
     finally:
