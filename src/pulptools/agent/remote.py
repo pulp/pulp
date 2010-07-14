@@ -83,13 +83,10 @@ class PackageGroups:
         log.info('installing packagegroups: %s', packagegroupids)
         yb = YumBase()
         for grp_id in packagegroupids:
-            log.info("Need to add yum API calls to do package group install for: %s" % (grp_id))
-            #pkgs = yb.pkgSack.returnNewestByName(n)
-            #for p in pkgs:
-            #    yb.tsInfo.addInstall(p)
+            txmbrs = yb.selectGroup(grp_id)
+            log.info("Added '%s' group to transaction, packages: %s" % (grp_id, txmbrs))
         yb.resolveDeps()
         yb.processTransaction()
-        
         
 @remote
 class AgentAdmin:
