@@ -16,6 +16,8 @@
 from uuid import uuid4
 import simplejson as json
 
+version = '0.1'
+
 
 def getuuid():
     return str(uuid4())

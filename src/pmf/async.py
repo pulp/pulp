@@ -96,6 +96,7 @@ class AsyncReply:
         s.append(self.__class__.__name__)
         s.append('  sn : %s' % self.sn)
         s.append('  sender : %s' % self.sender)
+        s.append('  user data : %s' % self.any)
         return '\n'.join(s)
         
 

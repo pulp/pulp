@@ -61,8 +61,22 @@ class Consumer(Endpoint):
         envelope = Envelope()
         envelope.load(message.content)
         log.info('{%s} received:\n%s', self.id, envelope)
-        self.dispatch(envelope)
+        if self.valid(envelope):
+            self.dispatch(envelope)
         self.ack()
+
+    def valid(self, envelope):
+        """
+        Check to see if the envelope is valid.
+        @param envelope: The received envelope.
+        @type envelope: L{Message}
+        """
+        valid = True
+        if envelope.version != version:
+            valid = False
+            log.info('{%s} version mismatch (discarded):\n%s',
+                self.id, envelope)
+        return valid
 
     def dispatch(self, envelope):
         """
