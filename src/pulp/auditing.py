@@ -58,18 +58,20 @@ def audit(method):
         params.extend(kwargs.items())
         params_repr = ', '.join(pformat(p) for p in params)
         action = '%s.%s: %s' % (api, method_name, params_repr)
-        event = Event(principal, action, api, method_name, params)
+        #event = Event(principal, action, api, method_name, params)
+        event = Event(principal, action, api, method_name)
         
         def _record_event():
             _objdb.insert(event, safe=False, check_keys=False)
-            _log.info('%s called %s.%s on %s' % (principal, api, method_name, params_repr))
+            #_log.info('%s called %s.%s on %s' % (principal, api, method_name, params_repr))
+            _log.info('%s called %s.%s' % (principal, api, method_name))
             
         try:
             result = method(self, *args, **kwargs)
         except Exception, e:
             event.exception = pformat(e)
             exc = sys.exc_info()
-            tb = ''.join(traceback.format_exception_only(*exc))
+            tb = ''.join(traceback.format_exception(*exc))
             event.traceback = tb
             _record_event()
             raise
