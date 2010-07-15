@@ -12,7 +12,8 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
+
+import datetime
 import uuid
 
 from pulp.pexceptions import PulpException
@@ -167,6 +168,7 @@ class Event(Base):
     """
     def __init__(self, principal, action, api=None, method=None, params=[]):
         super(Event, self).__init__()
+        self.timestamp = datetime.datetime.now()
         self.principal_type = unicode(type(principal))
         self.principal_id = unicode(principal)
         self.action = action

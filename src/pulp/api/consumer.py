@@ -45,7 +45,6 @@ class ConsumerApi(BaseApi):
     def _get_indexes(self):
         return ["package_profile.name", "repoids"]
 
-    @audit
     def create(self, id, description):
         """
         Create a new Consumer object and return it
