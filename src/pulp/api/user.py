@@ -24,7 +24,7 @@ from pulp.pexceptions import PulpException
 
 
 log = logging.getLogger('pulp.api.user')
-user_fields = model.User(None, None, None, None, None).keys()
+user_fields = model.User(None, None, None, None).keys()
 
 
 class UserApi(BaseApi):
@@ -44,21 +44,13 @@ class UserApi(BaseApi):
             self.create(self.default_login, password=default_password)
 
     @audit
-    def create(self, login, id=None, password=None, name=None, certificate=None):
+    def create(self, login, id=None, password=None, name=None):
         """
         Create a new User object and return it
         """
-        if id is None and certificate is None:
-            raise PulpException('An id or a certificate must be specified')
-        if None not in (id, certificate):
-            raise PulpException("Specify either an id or a certificate string but not both")
-        if certificate is not None:
-            idcert = Certificate(content=certificate)
-            subject = idcert.subject()
-            id = subject['UID']
-        elif id is None:
+        if id is None:
             id = str(uuid.uuid4())
-        user = model.User(login, id, password, name, certificate)
+        user = model.User(login, id, password, name)
         self.insert(user)
         return user
 

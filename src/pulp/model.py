@@ -151,13 +151,12 @@ class ConsumerGroup(Base):
         self.consumerids = consumerids
 
 class User(Base):
-    def __init__(self, login, id, password, name, certificate):
+    def __init__(self, login, id, password, name):
         self._id = id
         self.id = id
         self.login = login
         self.password = password
         self.name = name
-        self.certificate = certificate
         
     def __unicode__(self):
         return unicode(self.name)
