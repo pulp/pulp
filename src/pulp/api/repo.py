@@ -146,7 +146,7 @@ class RepoApi(BaseApi):
         # otherwise we are returning a list!
         if name is None:
             return packages
-        return [p for p in packages.values() if p['name'].index(name) >= 0]
+        return [p for p in packages.values() if p['name'].find(name) >= 0]
     
     def get_package(self, id, name):
         """
