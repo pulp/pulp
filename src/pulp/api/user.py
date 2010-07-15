@@ -43,6 +43,7 @@ class UserApi(BaseApi):
             default_password = self.config.get('server', 'default_password') 
             self.create(self.default_login, password=default_password)
 
+    @audit
     def create(self, login, id=None, password=None, name=None, certificate=None):
         """
         Create a new User object and return it
@@ -77,6 +78,7 @@ class UserApi(BaseApi):
             return None
         return users[0]
 
+    @audit
     def clean(self):
         """
         Delete all the Users in the database except the default admin user.  default 
