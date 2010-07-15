@@ -327,6 +327,11 @@ class ConsumerGroupConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumergroups/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
+    
+    def installpackages(self, id, packagenames):
+        method = "/consumergroups/%s/installpackages/" % id
+        body = dict(packagenames=packagenames)
+        return self.conn.request_post(method, params=body)
 
 
 class PackageConnection(PulpConnection):

@@ -19,6 +19,7 @@ import sys
 import os.path
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
+from pulptools.connection import ConsumerGroupConnection
 from pulptools.logutil import getLogger
 from pulptools.config import Config
 log = getLogger(__name__)
@@ -48,6 +49,7 @@ class package(BaseCore):
     def load_server(self):
         self.pconn = RepoConnection(host=CFG.server.host or "localhost", port=8811)
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", port=8811)
 
     def generate_options(self):
         possiblecmd = []
@@ -77,10 +79,12 @@ class package(BaseCore):
             usage = "usage: %prog package install [OPTIONS]"
             BaseCore.__init__(self, "package install", usage, "", "")
             self.parser.add_option("-p", "--pkgname", action="append", dest="pnames",
-                           help="Packages to install on a given consumer. \
+                           help="Packages to be installed. \
                            To specify multiple packages use multiple -p")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
+            self.parser.add_option("--consumergroupid", dest="consumergroupid",
+                           help="Consumer Group Id")
 
     def _validate_options(self):
         pass
@@ -126,14 +130,17 @@ class package(BaseCore):
     
     def _install(self):
         (self.options, self.args) = self.parser.parse_args()
-        if not self.options.consumerid:
-            print("Please specify a consumer to install the package")
+        if not self.options.consumerid and not self.options.consumergroupid:
+            print("Please specify a consumer or a consumer group to install the package")
             sys.exit(0)
         if not self.options.pnames:
             print("Nothing to Upload.")
             sys.exit(0)
         try:
-            print self.cconn.installpackages(self.options.consumerid, self.options.pnames)
+            if self.options.consumergroupid:
+                print self.cgconn.installpackages(self.options.consumergroupid, self.options.pnames)
+            else:     
+                print self.cconn.installpackages(self.options.consumerid, self.options.pnames)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

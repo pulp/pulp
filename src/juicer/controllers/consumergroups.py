@@ -97,6 +97,7 @@ class ConsumerGroupActions(JSONController):
         'unbind',
         'add_consumer',
         'delete_consumer',
+        'installpackages',
     )
 
     def bind(self, id):
@@ -135,6 +136,16 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         api.delete_consumer(id, data)
         return self.ok(None)
+    
+    
+    def installpackages(self, id):
+        """
+        Install packages.
+        Body contains a list of package names.
+        """
+        data = self.params()
+        names = data.get('packagenames', [])
+        return self.ok(api.installpackages(id, names))
 
     @JSONController.error_handler
     def POST(self, id, action_name):

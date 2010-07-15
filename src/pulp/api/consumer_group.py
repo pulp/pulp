@@ -154,3 +154,21 @@ class ConsumerGroupApi(BaseApi):
         consumerids = consumergroup['consumerids']
         for consumerid in consumerids:
             self.consumerApi.unbind(consumerid, repoid)
+            
+            
+    def installpackages(self, id, packagenames=[]):
+        """
+        Install packages on the consumers in a consumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param packagenames: The package names to install.
+        @type packagenames: [str,..]
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:   
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        consumerids = consumergroup['consumerids']
+        for consumerid in consumerids:
+            agent = Agent(consumerid)
+            agent.packages.install(packagenames)
+        return packagenames
