@@ -52,8 +52,7 @@ def audit(method):
     @functools.wraps(method)
     def _audit(self, *args, **kwargs):
         principal = kwargs.pop('principal', None)
-        params = []
-        params.extend(args)
+        params = args[:]
         params.extend(kwargs.values())
         params_repr = ', '.join(params)
         action = '%s.%s: %s' % (api, method_name, params_repr)
