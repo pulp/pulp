@@ -16,6 +16,8 @@
 
 import functools
 import logging
+import sys
+import traceback
 from pprint import pformat
 
 import pymongo
@@ -45,9 +47,8 @@ def audit(method):
     passed in that represents the user or other entity making the call.
     This optional keyword argument is *not* passed to the underlying method.
     """
-    #ns_class = getattr(method, 'ns_class', None)
-    #api = getattr(ns_class, '__name__', None)
-    api = getattr(method, 'ns_class', None)
+    api = None
+    #api = method.im_class.__name__
     method_name = method.__name__
     
     @functools.wraps(method)
@@ -58,8 +59,23 @@ def audit(method):
         params_repr = ', '.join(pformat(p) for p in params)
         action = '%s.%s: %s' % (api, method_name, params_repr)
         event = Event(principal, action, api, method_name, params)
-        _objdb.insert(event, safe=False)
-        _log.info('%s called %s.%s on %s' % (principal, api, method_name, params_repr))
-        return method(self, *args, **kwargs)
+        
+        def _record_event():
+            _objdb.insert(event, safe=False, check_keys=False)
+            _log.info('%s called %s.%s on %s' % (principal, api, method_name, params_repr))
+            
+        try:
+            result = method(self, *args, **kwargs)
+        except Exception, e:
+            event.exception = pformat(e)
+            exc = sys.exc_info()
+            tb = ''.join(traceback.format_exception_only(*exc))
+            event.traceback = tb
+            _record_event()
+            raise
+        else:
+            event.result = pformat(result)
+            _record_event()
+            return result
     
     return _audit

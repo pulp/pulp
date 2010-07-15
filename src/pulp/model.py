@@ -175,4 +175,7 @@ class Event(Base):
         self.api = api
         self.method = method
         self.params = params
+        self.result = None
+        self.exception = None
+        self.traceback = None
         
