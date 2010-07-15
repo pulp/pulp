@@ -20,13 +20,7 @@ import gzip
 import os
 import traceback
 
-# 3rd Party
-import pymongo
-import yum.comps
-from yum.Errors import CompsException
-
 # Pulp
-from grinder.RepoFetch import YumRepoGrinder
 from pulp import comps_util
 from pulp import crontab
 from pulp import model
@@ -34,7 +28,7 @@ from pulp import upload
 from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
-#from pulp.auditing import audit
+from pulp.auditing import audit
 from pulp.pexceptions import PulpException
 
 
@@ -71,6 +65,16 @@ class RepoApi(BaseApi):
             item = crontab.CronItem(sync_schedule + ' null') # CronItem expects a command
             if not item.is_valid():
                 raise PulpException('Invalid sync schedule specified [%s]' % sync_schedule)
+            
+    def _get_existing_repo(self, id):
+        """
+        Protected helper function to look up a repository by id and raise a
+        PulpException if it is not found.
+        """
+        repo = self.repository(id)
+        if repo is None:
+            raise PulpException("No Repo with id: %s found" % id)
+        return repo
  
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
         """
@@ -92,14 +96,13 @@ class RepoApi(BaseApi):
         return r
 
     def delete(self, **kwargs):
-        repo = self.repository(kwargs['id'])
-        if repo is None:
-            raise PulpException("No Repo with id %s exists" % id)
+        # XXX remove this **kwargs magic, we only need the id
+        repo = self._get_existing_repo(kwargs['id'])
         repo_sync.delete_schedule(self.config, repo)
         self.objectdb.remove(repo, safe=True)
 
     def update(self, repo_data):
-        repo = self.repository(repo_data['id'])
+        repo = self._get_existing_repo(repo_data['id'])
         # make sure we're only updating the fields in the model
         for field in repo_fields:
             #default to the existing value if the field isn't in the data
@@ -134,9 +137,7 @@ class RepoApi(BaseApi):
         """
         Return list of Package objects in this Repo
         """
-        repo = self.repository(id)
-        if repo is None:
-            raise PulpException("No Repo with id: %s found" % id)
+        repo = self._get_existing_repo(id)
         packages = repo['packages']
         # XXX this is WRONG!!!!, we are returning a dict if name is None
         # otherwise we are returning a list!
@@ -157,9 +158,7 @@ class RepoApi(BaseApi):
         """
         Adds the passed in package to this repo
         """
-        repo = self.repository(repoid)
-        if repo is None:
-            raise PulpException("No Repo with id: %s found" % repoid)
+        repo = self._get_existing_repo(repoid)
         package = self.packageApi.package(packageid)
         if package is None:
             raise PulpException("No Package with id: %s found" % packageid)
@@ -179,9 +178,7 @@ class RepoApi(BaseApi):
         packages[p['id']] = p           
 
     def remove_package(self, repoid, p):
-        repo = self.repository(repoid)
-        if repo is None:
-            raise PulpException("No Repo with id: %s found" % repoid)
+        repo = self._get_existing_repo(repoid)
         # this won't fail even if the package is not in the repo's packages
         repo['packages'].pop(p['id'], None)
         self.update(repo)
@@ -195,11 +192,9 @@ class RepoApi(BaseApi):
         @param description:
         @return packagegroup object
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo["packagegroups"].has_key(group_id):
-            raise PulpException("Package group %s already exists in repo %s" % \
+        repo = self._get_existing_repo(repoid)
+        if group_id in repo['packagegroups']:
+            raise PulpException("Package group %s already exists in repo %s" %
                                 (group_id, repoid))
         group = model.PackageGroup(group_id, group_name, description)
         repo["packagegroups"][group_id] = group
@@ -213,13 +208,12 @@ class RepoApi(BaseApi):
         @param repoid:
         @param group_id:
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo['packagegroups'].has_key(groupid):
-            if repo['packagegroups'][groupid]["immutable"]:
-                raise PulpException("Changes to immutable groups are not supported: %s" % (groupid))
-            del repo['packagegroups'][groupid]
+        repo = self._get_existing_repo(repoid)
+        if groupid not in repo['packagegroups']:
+            return
+        if repo['packagegroups'][groupid]["immutable"]:
+            raise PulpException("Changes to immutable groups are not supported: %s" % (groupid))
+        del repo['packagegroups'][groupid]
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -229,13 +223,12 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @param pg: packagegroup
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo["packagegroups"].has_key(pg["id"]):
-            if repo["packagegroups"][pg["id"]]["immutable"]:
+        repo = self._get_existing_repo(repoid)
+        pg_id = pg['id']
+        if pg_id in repo['packagegroups']:
+            if repo["packagegroups"][pg_id]["immutable"]:
                 raise PulpException("Changes to immutable groups are not supported: %s" % (pg["id"]))
-        repo['packagegroups'][pg['id']] = pg
+        repo['packagegroups'][pg_id] = pg
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -245,11 +238,9 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @param pg: list of packagegroups
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
+        repo = self._get_existing_repo(repoid)
         for item in pglist:
-            if repo['packagegroups'].has_key(item["id"]):
+            if item['id'] in repo['packagegroups']:
                 if repo['packagegroups'][item["id"]]["immutable"]:
                     raise PulpException("Changes to immutable groups are not supported: %s" % (item["id"]))
             repo['packagegroups'][item['id']] = item
@@ -262,9 +253,7 @@ class RepoApi(BaseApi):
         @param id: repo id
         @return: packagegroup or None
         """
-        repo = self.repository(id)
-        if repo == None:
-            raise PulpException("No Repo with id: %s found" % id)
+        repo = self._get_existing_repo(id)
         return repo['packagegroups']
     
     def packagegroup(self, repoid, groupid):
@@ -274,10 +263,8 @@ class RepoApi(BaseApi):
         @param groupid: packagegroup id
         @return: packagegroup or None
         """
-        repo = self.repository(repoid)
-        if not repo['packagegroups'].has_key(groupid):
-            return None
-        return repo['packagegroups'][groupid]
+        repo = self._get_existing_repo(repoid)
+        return repo['packagegroups'].get(groupid, None)
 
     
     def add_package_to_group(self, repoid, groupid, pkg_name, gtype="default"):
@@ -288,11 +275,9 @@ class RepoApi(BaseApi):
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional"
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packagegroups"].has_key(groupid):
-            raise PulpException("No PackageGroup with id: %s exists in repo %s" \
+        repo = self._get_existing_repo(repoid)
+        if groupid not in repo['packagegroups']:
+            raise PulpException("No PackageGroup with id: %s exists in repo %s" 
                                 % (groupid, repoid))
         group = repo["packagegroups"][groupid]
         if group["immutable"]:
@@ -301,7 +286,7 @@ class RepoApi(BaseApi):
             if pkg_name not in group["mandatory_package_names"]:
                 group["mandatory_package_names"].append(pkg_name)
         elif gtype == "conditional":
-            raise PulpException("Not Implemented:  support for creating conditional groups")
+            raise NotImplementedError("No support for creating conditional groups")
         elif gtype == "optional":
             if pkg_name not in group["optional_package_names"]:
                 group["optional_package_names"].append(pkg_name)
@@ -320,11 +305,9 @@ class RepoApi(BaseApi):
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional"
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo["packagegroups"].has_key(groupid):
-            raise PulpException("No PackageGroup with id: %s exists in repo %s" \
+        repo = self._get_existing_repo(repoid)
+        if groupid not in repo['packagegroups']:
+            raise PulpException("No PackageGroup with id: %s exists in repo %s" 
                                 % (groupid, repoid))
         group = repo["packagegroups"][groupid]
         if group["immutable"]:
@@ -333,7 +316,7 @@ class RepoApi(BaseApi):
             if pkg_name in group["mandatory_package_names"]:
                 group["mandatory_package_names"].remove(pkg_name)
         elif gtype == "conditional":
-            raise PulpException("Not Implemented:  support for creating conditional groups")
+            raise NotImplementedError("No support for creating conditional groups")
         elif gtype == "optional":
             if pkg_name in group["optional_package_names"]:
                 group["optional_package_names"].remove(pkg_name)
@@ -352,11 +335,9 @@ class RepoApi(BaseApi):
         @param description:
         @return packagegroupcategory object
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo["packagegroupcategories"].has_key(cat_id):
-            raise PulpException("Package group category %s already exists in repo %s" % \
+        repo = self._get_existing_repo(repoid)
+        if cat_id in repo['packagegroupcategories']:
+            raise PulpException("Package group category %s already exists in repo %s" %
                                 (cat_id, repoid))
         cat = model.PackageGroupCategory(cat_id, cat_name, description)
         repo["packagegroupcategories"][cat_id] = cat
@@ -368,13 +349,12 @@ class RepoApi(BaseApi):
         """
         Remove a packagegroupcategory from a repo
         """
-        repo = self.repository(repoid)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo['packagegroupcategories'].has_key(categoryid):
-            if repo['packagegroupcategories'][categoryid]["immutable"]:
-                raise PulpException("Changes to immutable categories are not supported: %s" % (categoryid))
-            del repo['packagegroupcategories'][categoryid]
+        repo = self._get_existing_repo(repoid)
+        if categoryid not in repo['packagegroupcategories']:
+            return
+        if repo['packagegroupcategories'][categoryid]["immutable"]:
+            raise PulpException("Changes to immutable categories are not supported: %s" % (categoryid))
+        del repo['packagegroupcategories'][categoryid]
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -382,10 +362,8 @@ class RepoApi(BaseApi):
         """
         Save the passed in PackageGroupCategory to this repo
         """
-        repo = self.repository(repoid)
-        if repo == None:
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if repo["packagegroupcategories"].has_key(pgc["id"]):
+        repo = self._get_existing_repo(repoid)
+        if pgc['id'] in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][pgc["id"]]["immutable"]:
                 raise PulpException("Changes to immutable categories are not supported: %s" % (pgc["id"]))
         repo['packagegroupcategories'][pgc['id']] = pgc
@@ -396,11 +374,9 @@ class RepoApi(BaseApi):
         """
         Save the list of passed in PackageGroupCategory objects to this repo
         """
-        repo = self.repository(repoid)
-        if repo == None:
-            raise PulpException("No Repo with id: %s found" % repoid)
+        repo = self._get_existing_repo(repoid)
         for item in pgclist:
-            if repo["packagegroupcategories"].has_key(item["id"]):
+            if item['id'] in repo['packagegroupcategories']:
                 if repo["packagegroupcategories"][item["id"]]["immutable"]:
                     raise PulpException("Changes to immutable categories are not supported: %s" % item["id"])
             repo['packagegroupcategories'][item['id']] = item
@@ -411,21 +387,15 @@ class RepoApi(BaseApi):
         """
         Return list of PackageGroupCategory objects in this Repo
         """
-        repo = self.repository(id)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % id)
+        repo = self._get_existing_repo(id)
         return repo['packagegroupcategories']
 
     def packagegroupcategory(self, repoid, categoryid):
         """
         Return a PackageGroupCategory object from this Repo
         """
-        repo = self.repository(repoid)
-        if repo == None:
-            raise PulpException("No Repo with id: %s found" % repoid)
-        if not repo['packagegroupcategories'].has_key(categoryid):
-            return None
-        return repo['packagegroupcategories'][categoryid]
+        repo = self._get_existing_repo(repoid)
+        return repo['packagegroupcategories'].get(categoryid, None)
 
     def _update_groups_metadata(self, repoid):
         """
@@ -433,14 +403,12 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @return: True if metadata was successfully updated, otherwise False
         """
-        repo = self.repository(repoid)
-        if repo == None:
-            raise PulpException("No Repo with id: %s found" % repoid)
+        repo = self._get_existing_repo(repoid)
         try:
             # If the repomd file is not valid, or if we are missingg
             # a group metadata file, no point in continuing. 
             if not os.path.exists(repo["repomd_xml_path"]):
-                log.debug("Skipping update of groups metadata since missing repomd file: '%s'" % \
+                log.debug("Skipping update of groups metadata since missing repomd file: '%s'" % 
                           (repo["repomd_xml_path"]))
                 return False
             xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
@@ -468,10 +436,7 @@ class RepoApi(BaseApi):
         """
         Sync a repo from the URL contained in the feed
         """
-        repo = self.repository(id)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % id)
-        
+        repo = self._get_existing_repo(id)
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
@@ -484,14 +449,12 @@ class RepoApi(BaseApi):
         """
         Store the uploaded package and associate to this repo
         """
-        repo = self.repository(id)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % id)
+        repo = self._get_existing_repo(id)
         pkg_upload = upload.PackageUpload(self.config, repo, pkginfo, pkgstream)
         pkg, repo = pkg_upload.upload()
         self._add_package(repo, pkg)
         self.update(repo)
-        log.error("Upload success %s %s" % (pkg['id'], repo['id']))
+        log.info("Upload success %s %s" % (pkg['id'], repo['id']))
         return True
 
     def all_schedules(self):
@@ -501,11 +464,4 @@ class RepoApi(BaseApi):
         @rtype:  dict
         @return: key - repo name, value - sync schedule
         '''
-        repo_api = RepoApi(self.config)
-        all_repos = repo_api.repositories()
-
-        result = {}
-        for repo in all_repos:
-            result[repo['id']] = repo['sync_schedule']
-
-        return result
+        return dict((r['id'], r['sync_schedule']) for r in self.repositories())
