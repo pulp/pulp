@@ -12,23 +12,20 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-import uuid
+
 import logging
-import pymongo
-import re
+import uuid
 
 from pulp import model
 from pulp.api.base import BaseApi
-from pulp.pexceptions import PulpException
-from pulp.util import chunks
-from pulp.agent import Agent
+from pulp.auditing import audit
 from pulp.certificate import Certificate
-
-# Pulp
-from pulp.api.consumer import ConsumerApi
+from pulp.pexceptions import PulpException
 
 
 log = logging.getLogger('pulp.api.user')
+user_fields = model.User(None, None, None, None, None).keys()
+
 
 class UserApi(BaseApi):
 
@@ -50,31 +47,35 @@ class UserApi(BaseApi):
         """
         Create a new User object and return it
         """
-        if (id != None and certificate != None):
-            raise PulpException(
-                "Specify either an id or a certificate string but not both")
-        if (certificate != None):
+        if id is None and certificate is None:
+            raise PulpException('An id or a certificate must be specified')
+        if None not in (id, certificate):
+            raise PulpException("Specify either an id or a certificate string but not both")
+        if certificate is not None:
             idcert = Certificate(content=certificate)
             subject = idcert.subject()
             id = subject['UID']
-        elif (id == None):
+        elif id is None:
             id = str(uuid.uuid4())
         user = model.User(login, id, password, name, certificate)
         self.insert(user)
         return user
 
-    def users(self):
+    def users(self, spec=None, fields=None):
         """
         List all users.
         """
-        users = list(self.objectdb.find())
+        users = list(self.objectdb.find(spec=spec, fields=fields))
         return users
 
-    def user(self, login):
+    def user(self, login, fields=None):
         """
         Return a single User object
         """
-        return self.objectdb.find_one({'login': login})
+        users = self.users({'login': login}, fields)
+        if not users:
+            return None
+        return users[0]
 
     def clean(self):
         """
