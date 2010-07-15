@@ -31,6 +31,7 @@ Requires: mod_python
 Requires: mod_ssl
 Requires: mongo
 Requires: mongo-server
+Requires: m2crypto
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib

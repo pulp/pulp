@@ -23,7 +23,9 @@ from juicer import http
 from juicer import mongo
 from juicer.controllers.base import JSONController
 from juicer.runtime import config
+from juicer.role_check import RoleCheck
 from pulp.api.consumer import ConsumerApi
+
 
 # globals ---------------------------------------------------------------------
 
@@ -95,6 +97,7 @@ class Bulk(JSONController):
 class Consumer(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -110,6 +113,7 @@ class Consumer(JSONController):
         return self.ok(consumer)
     
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self, id):
         """
         Update consumer
@@ -127,6 +131,7 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self, id):
         """
         Delete a consumer.

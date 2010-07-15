@@ -16,7 +16,8 @@
 
 import logging
 import web
-
+from pulp.certificate import Certificate
+from juicer import http
 log = logging.getLogger('pulp')
 
 
@@ -46,12 +47,15 @@ class RoleCheck(object):
             log.error("Role checking start")
             for key in self.dec_kw.keys():
                 log.debug("Role Name [%s], check? [%s]" % (key, self.dec_kw[key]))
-            
-            for arg in fargs:
-                log.debug("Arg [%s]" % arg)
 
-            environment = web.ctx
-            log.error("check_roles env: %s" % str(environment))
+            ## First check cert
+            validation_failed = self.check_consumer_id(*fargs)
+            log.debug("validation_failed? %s " % validation_failed)
+            if (validation_failed):
+                return http.status_unauthorized()
+
+            ## If not using cert check uname and password
+            # TODO: Implement uname/pass checking
             
             # Does this wrap a class instance?
             if fargs and getattr(fargs[0], '__class__', None):
@@ -69,4 +73,38 @@ class RoleCheck(object):
         check_roles.__dict__.update(f.__dict__)
         check_roles.__doc__ = f.__doc__
         return check_roles
-    
+
+    def check_consumer_id(self, *fargs): 
+        ## This is where we will extract CERT fields
+        environment = web.ctx.environ
+        for key in environment.keys():
+            if (key.startswith('SSL_')):
+                value = str(environment.get(key, None))
+                log.debug("SSL k: " + key + ", v: " + value)
+        cs = environment.get('SSL_CLIENT_CERT', None)
+        
+        validation_failed = False
+        if (cs != None):
+            idcert = Certificate(content=cs)
+            log.debug("parsed ID CERT: %s" % idcert)
+            subject = idcert.subject()
+            consumer_cert_uid = subject.get('UID', None)
+            if (consumer_cert_uid == None):
+                log.error("Consumer UID not found in certificate")
+                return
+            log.error("Consumer UID: %s " % consumer_cert_uid)
+            # Check the consumer_id matches 
+            validation_failed = True
+            for arg in fargs:
+                log.debug("Arg [%s]" % arg)
+                if (arg == consumer_cert_uid):
+                    validation_failed = False
+                    break
+            consumer_id = arg
+            if (not validation_failed):
+                log.error("Certificate UID doesnt match the consumer UID you passed in") 
+            else:
+                log.error("Certificate UID matched.  continue")
+
+        return validation_failed
+            

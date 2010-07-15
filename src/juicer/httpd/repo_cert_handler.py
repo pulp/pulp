@@ -20,7 +20,6 @@ from mod_python import apache
 import juicer.httpd.repo_cert_validation as validation
 import pulp.util
 
-
 # Logging
 format = logging.Formatter('%(asctime)s  %(message)s')
 file_handler = logging.FileHandler('/var/log/pulp/repo_entitlement.log')
@@ -32,7 +31,6 @@ log = logging.getLogger(__name__)
 
 # Pulp Configuration
 config = pulp.util.Config(path='/etc/pulp/juicer.conf')
-
 
 def authenhandler(req):
     # Needed to stuff the SSL variables into the request
