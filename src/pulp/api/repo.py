@@ -27,16 +27,21 @@ from yum.Errors import CompsException
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
+from pulp import comps_util
+from pulp import crontab
 from pulp import model
 from pulp import upload
-from pulp import crontab
 from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
-import pulp.api.repo_sync
+#from pulp.auditing import audit
 from pulp.pexceptions import PulpException
 
+
 log = logging.getLogger(__name__)
+
+repo_fields = model.Repo(None, None, None).keys()
+
 
 class RepoApi(BaseApi):
     """
@@ -66,21 +71,47 @@ class RepoApi(BaseApi):
             item = crontab.CronItem(sync_schedule + ' null') # CronItem expects a command
             if not item.is_valid():
                 raise PulpException('Invalid sync schedule specified [%s]' % sync_schedule)
+ 
+    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
+        """
+        Create a new Repository object and return it
+        """
+        repo = self.repository(id)
+        if repo is not None:
+            raise PulpException("A Repo with id %s already exists" % id)
+        self._validate_schedule(sync_schedule)
+
+        r = model.Repo(id, name, arch, feed)
+        r['sync_schedule'] = sync_schedule
+        r['use_symlinks'] = symlinks
+        self.insert(r)
+
+        if sync_schedule:
+            repo_sync.update_schedule(self.config, r)
+
+        return r
 
     def delete(self, **kwargs):
         repo = self.repository(kwargs['id'])
-        pulp.api.repo_sync.delete_schedule(self.config, repo)
-        self.objectdb.remove(kwargs, safe=True)
+        if repo is None:
+            raise PulpException("No Repo with id %s exists" % id)
+        repo_sync.delete_schedule(self.config, repo)
+        self.objectdb.remove(repo, safe=True)
 
-    def update(self, repo):
+    def update(self, repo_data):
+        repo = self.repository(repo_data['id'])
+        # make sure we're only updating the fields in the model
+        for field in repo_fields:
+            #default to the existing value if the field isn't in the data
+            repo[field] = repo_data.get(field, repo[field])
         self._validate_schedule(repo['sync_schedule'])
 
         self.objectdb.save(repo, safe=True)
 
         if repo['sync_schedule']:
-            pulp.api.repo_sync.update_schedule(self.config, repo)
+            repo_sync.update_schedule(self.config, repo)
         else:
-            pulp.api.repo_sync.delete_schedule(self.config, repo)
+            repo_sync.delete_schedule(self.config, repo)
 
         return repo
 
@@ -94,47 +125,43 @@ class RepoApi(BaseApi):
         """
         Return a single Repository object
         """
-        return self.objectdb.find_one({'_id': id}, fields=fields)
+        repos = self.repositories({'id': id}, fields)
+        if not repos:
+            return None
+        return repos[0]
         
     def packages(self, id, name=None):
         """
         Return list of Package objects in this Repo
         """
         repo = self.repository(id)
-        if (repo == None):
+        if repo is None:
             raise PulpException("No Repo with id: %s found" % id)
-        if (name == None):
-            return repo['packages']
-        else:
-            matches = []
-            packages = repo['packages']
-            for package in packages.values():
-                if (package['name'].index(name) >= 0):
-                    matches.append(package)
-            return matches
+        packages = repo['packages']
+        # XXX this is WRONG!!!!, we are returning a dict if name is None
+        # otherwise we are returning a list!
+        if name is None:
+            return packages
+        return [p for p in packages.values() if p['name'].index(name) >= 0]
     
     def get_package(self, id, name):
         """
         Return matching Package object in this Repo
         """
-        repo = self.repository(id)
-        if (repo == None):
-            raise PulpException("No Repo with id: %s found" % id)
-        packages = repo['packages']
-        for package in packages.values():
-            log.error(package['name'])
-            if (package['name'] == name):
-                return package
+        packages = self.packages(id, name)
+        if not packages:
+            return None
+        return packages[0]
     
     def add_package(self, repoid, packageid):
         """
         Adds the passed in package to this repo
         """
         repo = self.repository(repoid)
-        if (repo == None):
+        if repo is None:
             raise PulpException("No Repo with id: %s found" % repoid)
         package = self.packageApi.package(packageid)
-        if (package == None):
+        if package is None:
             raise PulpException("No Package with id: %s found" % packageid)
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
@@ -146,16 +173,17 @@ class RepoApi(BaseApi):
         Responsible for properly associating a Package to a Repo
         """
         packages = repo['packages']
-        if (packages.has_key(p['id'])):
+        if p['id'] in packages:
             # No need to update repo, this Package is already under this repo
             return
         packages[p['id']] = p           
 
     def remove_package(self, repoid, p):
         repo = self.repository(repoid)
-        if (repo == None):
+        if repo is None:
             raise PulpException("No Repo with id: %s found" % repoid)
-        del repo["packages"][p['id']]
+        # this won't fail even if the package is not in the repo's packages
+        repo['packages'].pop(p['id'], None)
         self.update(repo)
 
     def create_packagegroup(self, repoid, group_id, group_name, description):
@@ -173,7 +201,7 @@ class RepoApi(BaseApi):
         if repo["packagegroups"].has_key(group_id):
             raise PulpException("Package group %s already exists in repo %s" % \
                                 (group_id, repoid))
-        group = pulp.model.PackageGroup(group_id, group_name, description)
+        group = model.PackageGroup(group_id, group_name, description)
         repo["packagegroups"][group_id] = group
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -330,7 +358,7 @@ class RepoApi(BaseApi):
         if repo["packagegroupcategories"].has_key(cat_id):
             raise PulpException("Package group category %s already exists in repo %s" % \
                                 (cat_id, repoid))
-        cat = pulp.model.PackageGroupCategory(cat_id, cat_name, description)
+        cat = model.PackageGroupCategory(cat_id, cat_name, description)
         repo["packagegroupcategories"][cat_id] = cat
         self.update(repo)
         self._update_groups_metadata(repo["id"])
@@ -415,7 +443,7 @@ class RepoApi(BaseApi):
                 log.debug("Skipping update of groups metadata since missing repomd file: '%s'" % \
                           (repo["repomd_xml_path"]))
                 return False
-            xml = pulp.comps_util.form_comps_xml(repo['packagegroupcategories'],
+            xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
             if repo["group_xml_path"] == "":
                 repo["group_xml_path"] = os.path.dirname(repo["repomd_xml_path"])
@@ -429,32 +457,13 @@ class RepoApi(BaseApi):
                 gz = gzip.open(repo["group_gz_xml_path"], "wb")
                 gz.write(xml.encode("utf-8"))
                 gz.close()
-            return pulp.comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
+            return comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
                 repo["group_xml_path"], repo["group_gz_xml_path"])
         except Exception, e:
             log.debug("_update_groups_metadata exception caught: %s" % (e))
             log.debug("Traceback: %s" % (traceback.format_exc()))
             return False
-        
-    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
-        """
-        Create a new Repository object and return it
-        """
-        repo = self.repository(id)
-        if (repo):
-            raise PulpException("A Repo with id %s already exists" % id)
-        self._validate_schedule(sync_schedule)
-
-        r = model.Repo(id, name, arch, feed)
-        r['sync_schedule'] = sync_schedule
-        r['use_symlinks'] = symlinks
-        self.insert(r)
-
-        if sync_schedule:
-            pulp.api.repo_sync.update_schedule(self.config, r)
-
-        return r
-
+       
     def sync(self, id):
         """
         Sync a repo from the URL contained in the feed

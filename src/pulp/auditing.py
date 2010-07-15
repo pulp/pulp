@@ -16,6 +16,7 @@
 
 import functools
 import logging
+from pprint import pformat
 
 import pymongo
 
@@ -26,7 +27,7 @@ _connection = pymongo.Connection()
 _objdb = _connection._database.events
 
 _log_formatter = logging.Formatter('[%(asctime)s] %(messages)s')
-_log_file_handler = logging.FileHandler('/var/log/pulp/pulp_events.log')
+_log_file_handler = logging.FileHandler('/var/log/pulp/events.log')
 _log_file_handler.setFormatter(_log_formatter)
 _log = logging.getLogger(__name__)
 _log.addHandler(_log_file_handler)
@@ -53,8 +54,8 @@ def audit(method):
     def _audit(self, *args, **kwargs):
         principal = kwargs.pop('principal', None)
         params = args[:]
-        params.extend(kwargs.values())
-        params_repr = ', '.join(params)
+        params.extend(kwargs.items())
+        params_repr = ', '.join(pformat(p) for p in params)
         action = '%s.%s: %s' % (api, method_name, params_repr)
         event = Event(principal, action, api, method_name, params)
         _objdb.insert(event, safe=False)

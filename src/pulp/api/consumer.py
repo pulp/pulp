@@ -17,7 +17,7 @@ import logging
 
 from pulp import model
 from pulp.api.base import BaseApi
-from pulp.auditing import audit
+#from pulp.auditing import audit
 from pulp.pexceptions import PulpException
 from pulp.util import chunks
 from pulp.agent import Agent
@@ -26,8 +26,7 @@ from pulp.agent import Agent
 
 log = logging.getLogger(__name__)
     
-consumer_default_fields = ['id', 'description']
-consumer_all_fields = ['id', 'descriptions', 'repoids', 'package_profile']
+consumer_fields = model.Consumer(None, None).keys()
 
 
 class ConsumerApi(BaseApi):
@@ -59,10 +58,11 @@ class ConsumerApi(BaseApi):
     def bulkcreate(self, consumers):
         """
         Create a set of Consumer objects in a bulk manner
+        @type consumers: list of dictionaries
+        @param consumers: dictionaries representing new consumers
         """
         ## Have to chunk this because of issue with PyMongo and network
         ## See: http://tinyurl.com/2eyumnc
-        #chunksize = 500
         chunksize = 50
         chunked = chunks(consumers, chunksize)
         inserted = 0
@@ -80,15 +80,15 @@ class ConsumerApi(BaseApi):
         """
         Return a single Consumer object
         """
-        consumers = list(self.objectdb.find(spec={'id': id}, fields=fields))
+        consumers = self.consumers({'id': id}, fields)
         if not consumers:
             return None
         return consumers[0]
     
     def packages(self, id):
-        consumer = self.objectdb.find_one({'id': id}) 
+        consumer = self.consumer(id)
         if consumer is None:
-            return None
+            raise PulpException('consumer "%s", not-found', id)
         return consumer.get('package_profile', [])
     
     def consumers_with_package_names(self, names, fields=None):
@@ -98,7 +98,8 @@ class ConsumerApi(BaseApi):
         log.debug("consumers_with_package_names : %s" % names)
         consumers = []
         for name in names:
-            consumers.extend(self.objectdb.find({'package_profile.name': name}, fields))
+            #consumers.extend(self.objectdb.find({'package_profile.name': name}, fields))
+            consumers.extend(self.consumers({'package_profile.name': name}, fields))
         return consumers
 
     def bind(self, id, repoid):
