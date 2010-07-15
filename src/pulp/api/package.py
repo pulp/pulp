@@ -18,6 +18,11 @@ import pymongo
 # Pulp
 from pulp import model
 from pulp.api.base import BaseApi
+from pulp.auditing import audit
+
+
+package_fields = model.Package(None, None, None, None, None, None, None, None, None).keys()
+
 
 class PackageApi(BaseApi):
 
@@ -44,6 +49,7 @@ class PackageApi(BaseApi):
         return self.db.packages
         
         
+    @audit
     def create(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
         """
@@ -54,6 +60,7 @@ class PackageApi(BaseApi):
         self.insert(p)
         return p
 
+    @audit
     def delete(self, id):
         """
         Delete package version object based on "_id" key
