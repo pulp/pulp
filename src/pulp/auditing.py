@@ -76,7 +76,7 @@ def audit(method):
             _record_event()
             raise
         else:
-            event.result = pformat(result)
+            #event.result = pformat(result)
             _record_event()
             return result
     
