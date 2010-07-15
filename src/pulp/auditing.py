@@ -26,9 +26,9 @@ from pulp.model import Event
 _connection = pymongo.Connection()
 _objdb = _connection._database.events
 
-_log_formatter = logging.Formatter('[%(asctime)s] %(messages)s')
+#_log_formatter = logging.Formatter('%(asctime)s %(messages)s')
 _log_file_handler = logging.FileHandler('/var/log/pulp/events.log')
-_log_file_handler.setFormatter(_log_formatter)
+#_log_file_handler.setFormatter(_log_formatter)
 _log = logging.getLogger(__name__)
 _log.addHandler(_log_file_handler)
 _log.setLevel(logging.DEBUG)
@@ -53,7 +53,7 @@ def audit(method):
     @functools.wraps(method)
     def _audit(self, *args, **kwargs):
         principal = kwargs.pop('principal', None)
-        params = args[:]
+        params = list(args[:])
         params.extend(kwargs.items())
         params_repr = ', '.join(pformat(p) for p in params)
         action = '%s.%s: %s' % (api, method_name, params_repr)
