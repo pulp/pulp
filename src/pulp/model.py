@@ -157,14 +157,19 @@ class User(Base):
         self.password = password
         self.name = name
         self.certificate = certificate
+        
+    def __unicode__(self):
+        return unicode(self.name)
 
 class Event(Base):
     """
     Auditing models used to log and persist events in the database
     """
-    def __init__(self, user, api, method, params=[]):
-        self.user_id = user.id
-        self.user_source = None
+    def __init__(self, principal, action, api=None, method=None, params=[]):
+        super(Event, self).__init__()
+        self.principal_type = unicode(type(principal))
+        self.principal_id = unicode(principal)
+        self.action = action
         self.api = api
         self.method = method
         self.params = params

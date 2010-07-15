@@ -17,6 +17,7 @@ import logging
 
 from pulp import model
 from pulp.api.base import BaseApi
+from pulp.auditing import audit
 from pulp.pexceptions import PulpException
 from pulp.util import chunks
 from pulp.agent import Agent
@@ -44,6 +45,7 @@ class ConsumerApi(BaseApi):
     def _get_indexes(self):
         return ["package_profile.name", "repoids"]
 
+    @audit
     def create(self, id, description):
         """
         Create a new Consumer object and return it
