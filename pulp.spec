@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.36
+Version:        0.0.37
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -164,6 +164,20 @@ fi
 
 
 %changelog
+* Thu Jul 15 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.37-1
+- Turned off client side SSL cert checking (jason.dobies@redhat.com)
+- changed string index to find so that the logic will work (jconnor@redhat.com)
+- added auditing to users api (jconnor@redhat.com)
+- added spec and fields to users api some code clean up added check for neither
+  id or certificate in create (jconnor@redhat.com)
+- added auditing to packages api (jconnor@redhat.com)
+- added auditing to consumer api (jconnor@redhat.com)
+- added auditing to the repo api (jconnor@redhat.com)
+- fixed bug in copy that doesnt return a list (jconnor@redhat.com)
+- finished general code review and cleanup added _get_existing_repo to
+  standardize exception message and reduce cut-copy-paste code
+  (jconnor@redhat.com)
+
 * Thu Jul 15 2010 Mike McCune <mmccune@redhat.com> 0.0.36-1
 - rebuild
 * Thu Jul 01 2010 Mike McCune <mmccune@redhat.com> 0.0.35-1
