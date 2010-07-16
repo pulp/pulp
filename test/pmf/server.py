@@ -78,8 +78,7 @@ if __name__ == '__main__':
 
     # asynchronous
     print '(demo) asynchronous'
-    tag = 'jortel'
-    ids = ('123',)
+    tag = 'xyz'
     window = Window.create(minutes=1)
     agent = Agent('123', ctag=tag, window=window)
     demo(agent)
@@ -88,6 +87,7 @@ if __name__ == '__main__':
     print 'maintenance window'
 
     # group 2
+    print 'group 2'
     window = Window.create(later(seconds=20), minutes=10)
     opts = dict(window=window, any='group 2')
     print agent.dog.bark('hello', **opts)
@@ -95,6 +95,8 @@ if __name__ == '__main__':
     print agent.dog.bark('hello again', **opts)
 
     # group 1
+    
+    print 'group 1'
     window = Window.create(later(seconds=10), minutes=10)
     opts = dict(window=window, any='group 1')
     print agent.dog.bark('hello', **opts)

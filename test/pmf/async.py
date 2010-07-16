@@ -40,7 +40,7 @@ class Listener:
 
 
 if __name__ == '__main__':
-    tag = 'jortel'
+    tag = 'xyz'
     c = ReplyConsumer(tag)
     #c.start(Listener())
     c.start(callback)

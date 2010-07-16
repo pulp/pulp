@@ -24,9 +24,51 @@ from pmf.dispatcher import Return
 from pmf.window import *
 from pmf.store import PendingQueue, PendingReceiver
 from qpid.messaging import Empty
+from threading import Thread
 from logging import getLogger
 
 log = getLogger(__name__)
+
+
+class ReceiverThread(Thread):
+    """
+    Consumer (worker) thread.
+    @ivar __run: The main run/read flag.
+    @type __run: bool
+    @ivar consumer: A consumer that is notified when
+        messages are read.
+    @type consumer: L{Consumer}
+    """
+    
+    def __init__(self, consumer):
+        """
+        @param consumer: A consumer that is notified when
+            messages are read.
+        @type consumer: L{Consumer}
+        """
+        self.__run = True
+        self.consumer = consumer
+        Thread.__init__(self, name=consumer.id)
+
+    def run(self):
+        """
+        Messages are read from consumer.receiver and
+        dispatched to the consumer.received().
+        """
+        receiver = self.consumer.receiver
+        while self.__run:
+            try:
+                m = receiver.fetch(timeout=1)
+                self.consumer.received(m)
+            except Empty:
+                pass
+            
+    def stop(self):
+        """
+        Stop reading the receiver and terminate
+        the thread.
+        """
+        self.__run = False
 
 
 class Consumer(Endpoint):
@@ -40,15 +82,15 @@ class Consumer(Endpoint):
         """
         Start processing messages on the queue.
         """
-        self.receiver.listen(self.received)
-        self.receiver.start()
+        self.thread = ReceiverThread(self)
+        self.thread.start()
 
     def stop(self):
         """
         Stop processing requests.
         """
         try:
-            self.receiver.stop()
+            self.thread.stop()
         except:
             pass
 
