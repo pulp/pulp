@@ -14,20 +14,18 @@
 #
 
 """
-Provides decorator functions.
-B{remoteclasses} contain the list of registered classes that may
-be accessed remotely.
-B{remotemethods} contain the list of methods on I{remote} classes
-that may be invoked remotely.
+Provides decorator classes & funcitons.
 """
 
 class Remote:
     """
     @cvar classes: A list of remoted classes.
     @cvar methods: A list of remoted methods.
+    @cvar stubs: A dict of stubs.
     """
     classes = []
     methods = []
+    stubs = {}
 
 
 def remote(cls):
@@ -60,16 +58,6 @@ def mayinvoke(im):
     """
     return im.im_func in Remote.methods
 
-
-class Stubs:
-    """
-    Stubs
-    @ivar classes: List of subs classes.
-    @type classes: list
-    """
-    stubs = {}
-
-
 def stub(ns):
     """
     Decorator used to register sub classes.
@@ -77,6 +65,6 @@ def stub(ns):
     @type ns: str.
     """
     def decorator(cls):
-        Stubs.stubs[ns] = cls
+        Remote.stubs[ns] = cls
         return cls
     return decorator

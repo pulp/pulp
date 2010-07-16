@@ -18,7 +18,7 @@ Agent base classes.
 """
 
 from pmf import *
-from pmf.decorators import Remote, Stubs
+from pmf.decorators import Remote
 from pmf.dispatcher import Dispatcher
 from pmf.window import Window
 from pmf.policy import *
@@ -102,7 +102,7 @@ class Container:
         Add stubs found in the I{stubs} dictionary.
         Each is added as an attribute matching the dictionary key.
         """
-        for ns, sclass in Stubs.stubs.items():
+        for ns, sclass in Remote.stubs.items():
             stub = sclass(self.__id, self.__options)
             setattr(self, ns, stub)
             self.__stubs.append(stub)
