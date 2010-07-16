@@ -61,11 +61,10 @@ class Agent(Base):
         actionThread = ActionThread(actions)
         actionThread.start()
         cfg = Config()
-        host = cfg.pmf.host
-        port = int(cfg.pmf.port)
-        consumer = RequestConsumer(id, host, port)
+        url = '%s:%s' % (cfg.pmf.host, cfg.pmf.port)
+        consumer = RequestConsumer(id, url)
         Base.__init__(self, consumer)
-        log.info('%s - started.', id)
+        log.info('agent {%s} - started.', id)
         actionThread.join()
 
     def id(self):

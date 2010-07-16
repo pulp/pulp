@@ -44,33 +44,34 @@ class Endpoint:
         Shutdown all connections.
         """
         for con in cls.connections.values():
-            con.close()
+            try:
+                con.close()
+            except:
+                pass
         cls.connections = {}
 
-    def __init__(self, id=None, host='localhost', port=5672):
+    def __init__(self, id=None, url='localhost:5672'):
         """
-        @param host: The broker fqdn or IP.
-        @type host: str
-        @param port: The broker port.
-        @type port: str
+        @param url: The broker url <user>/<pass>@<host>:<port>.
+        @type url: str
         """
         self.id = ( id or getuuid() )
-        self.host = host
-        self.port = port
+        self.url = url
         self.__session = None
-        self.connect()
         self.open()
 
     def connection(self):
         """
-        Get cached connection based on host & port.
+        Get cached connection based on I{url}.
         @return: The global connection.
         @rtype: L{qpid.messaging.Connection}
         """
-        key = (self.host, self.port)
+        key = self.url
         con = self.connections.get(key)
         if con is None:
-            con = Connection(self.host, self.port)
+            con = Connection(self.url, reconnect=True)
+            con.attach()
+            log.info('{%s} connected to AMQP' % self.id)
             self.connections[key] = con
         return con
 
@@ -93,30 +94,6 @@ class Endpoint:
             self.__session.acknowledge()
         except:
             pass
-
-    def connect(self):
-        """
-        Connection to the broker.
-        @return: The connection.
-        @rtype: L{Connection}
-        """
-        while True:
-            try:
-                log.info('%s, connecting', self)
-                con = self.connection()
-                if con.connected():
-                    log.info('%s, already connected', self)
-                    return
-                con.connect()
-                con.start()
-                log.info('%s, connected', self)
-                break
-            except Exception, e:
-                log.exception(e)
-                if self.mustConnect():
-                    sleep(10)
-                else:
-                    raise e
 
     def open(self):
         """
@@ -154,7 +131,11 @@ class Endpoint:
         @return: A QPID address.
         @rtype: str
         """
-        return '%s;{create:always,node:{type:queue}}' % name
+        basic = 'create:always'
+        node = 'node:{type:queue}'
+        link = 'link:{x-subscribe:{exclusive:True}}'
+        flags = ','.join((basic, node, link))
+        return '%s;{%s}' % (name, flags)
 
     def topicAddress(self, topic):
         """
@@ -172,5 +153,4 @@ class Endpoint:
         self.close()
 
     def __str__(self):
-        return 'Endpoint id:%s broker @ %s:%s' % \
-            (self.id, self.host, self.port)
+        return 'Endpoint id:%s broker @ %s' % (self.id, self.url)

@@ -149,10 +149,10 @@ class QueueConsumer(Consumer):
 class QueueReader(QueueConsumer):
 
     def start(self):
-        """
-        Start processing messages on the queue.
-        """
-        self.receiver.start()
+        pass
+
+    def stop(self):
+        pass
 
     def next(self, timeout=90):
         """
@@ -214,7 +214,7 @@ class RequestConsumer(QueueConsumer):
         q = PendingQueue(self.id)
         self.pending = PendingReceiver(q, self)
         self.dispatcher = dispatcher
-        self.producer = Producer(self.id, self.host, self.port)
+        self.producer = Producer(self.id, self.url)
         Consumer.start(self)
         self.pending.start()
 

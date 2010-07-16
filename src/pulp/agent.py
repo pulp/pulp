@@ -61,7 +61,6 @@ class Agent(Container):
         @type tag: str
         """
         cfg = Config()
-        host = cfg.pmf.host
-        port = int(cfg.pmf.port)
-        producer = QueueProducer(host=host, port=port)
+        url = '%s:%s' % (cfg.pmf.host, cfg.pmf.port)
+        producer = QueueProducer(url)
         Container.__init__(self, uuid, producer, **options)

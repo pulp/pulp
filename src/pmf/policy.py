@@ -92,10 +92,7 @@ class Synchronous(RequestMethod):
         @type producer: L{pmf.producer.QueueProducer}
         """
         RequestMethod.__init__(self, producer)
-        reader = QueueReader(
-            self.producer.id,
-            self.producer.host,
-            self.producer.port)
+        reader = QueueReader(self.producer.id, self.producer.url)
         reader.start()
         self.reader = reader
 
