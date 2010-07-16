@@ -169,7 +169,7 @@ class Event(Base):
         super(Event, self).__init__()
         self.timestamp = datetime.datetime.now()
         self.principal_type = unicode(type(principal))
-        self.principal_id = unicode(principal)
+        self.principal = unicode(principal)
         self.action = action
         self.api = api
         self.method = method

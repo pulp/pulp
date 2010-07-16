@@ -14,29 +14,93 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import datetime
 import functools
+import inspect
 import logging
 import sys
 import traceback
+
 from pprint import pformat
 
 import pymongo
 
 from pulp.model import Event
 
+# globals ---------------------------------------------------------------------
 
+# setup the database connection, collection, and indices
 _connection = pymongo.Connection()
 _objdb = _connection._database.events
+_objdb.ensure_index([('id', pymongo.DESCENDING)], unique=True, background=True)
+for index in ['timestamp', 'principal', 'api']:
+    _objdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
 
-#_log_formatter = logging.Formatter('%(asctime)s %(messages)s')
+# setup logging format, file, and level
 _log_file_handler = logging.FileHandler('/var/log/pulp/events.log')
-#_log_file_handler.setFormatter(_log_formatter)
 _log = logging.getLogger(__name__)
 _log.addHandler(_log_file_handler)
 _log.setLevel(logging.DEBUG)
 
+# auditing decorator ----------------------------------------------------------
 
-def audit(method):
+class MethodSpec(object):
+    """
+    Class for method inspection.
+    """
+    def __init__(self, method, params):
+        """
+        @type method: unbound class instance method
+        @param method: method to build spec of
+        @type params: list of str's
+        @param params: ordered list of method parameters of interest
+        """
+        self.api = method.im_class.__name__
+        self.method = method.__name__
+        self.params = params
+        
+        spec = inspect.getargspec(method)
+        
+        args = spec[0]
+        self.__param_to_index = dict((a,i) for i,a in
+                                     enumerate(args) if a in params)
+            
+        defaults = spec[3]
+        self.__param_defaults = dict((a,d) for a,d in
+                                     zip(args[0-len(defaults):], defaults))
+            
+        def param_index(self, param):
+            """
+            Get the index of a parameter from the order of arguments.
+            @type param: str
+            @param param: parameter name
+            @return: integer index if the parameter is of interest, None otherwise
+            """
+            return self.__param_to_index.get(param, None)
+        
+        def param_values(self, args, kwargs):
+            """
+            Grep through passed in arguments and keyword arguments and return
+            a list of values corresponding to the parameters of interest.
+            @type args: list or tuple
+            @param args: positional arguments
+            @type kwargs: dict
+            @param kwargs: keyword arguments
+            @return: list of values corresponding to parameters of interest
+            """
+            values = []
+            for p in self.params:
+                i = self.param_index(p)
+                assert i is not None
+                if i < len(args):
+                    values.append(args[i])
+                else:
+                    value = kwargs.get(p, self.__param_defaults[p])
+                    values.append(value)
+            return values
+        
+
+def audit(params=[], record_result=False, pass_principal=False):
     """
     API class instance method decorator meant to log calls that constitute
     events on pulp's model instances.
@@ -45,39 +109,168 @@ def audit(method):
     
     A decorated method may have an optional keyword argument, 'principal',
     passed in that represents the user or other entity making the call.
-    This optional keyword argument is *not* passed to the underlying method.
+    This optional keyword argument is not passed to the underlying method,
+    unless the pass_principal flag is True.
+    
+    @type params: list or tuple of str's
+    @param params: list of names of parameters to record the values of
+    @type record_result: bool
+    @param record_result: whether or not to record the result
+    @type pass_principal: bool
+    @param pass_principal: whether or not to pass the principal as a key word
+                           argument to the method
     """
-    api = None
-    #api = method.im_class.__name__
-    method_name = method.__name__
     
-    @functools.wraps(method)
-    def _audit(self, *args, **kwargs):
-        principal = kwargs.pop('principal', None)
-        params = list(args[:])
-        params.extend(kwargs.items())
-        params_repr = ', '.join(pformat(p) for p in params)
-        action = '%s.%s: %s' % (api, method_name, params_repr)
-        #event = Event(principal, action, api, method_name, params)
-        event = Event(principal, action, api, method_name)
+    def _audit_decorator(method):
+        spec = MethodSpec(method)
         
-        def _record_event():
-            _objdb.insert(event, safe=False, check_keys=False)
-            #_log.info('%s called %s.%s on %s' % (principal, api, method_name, params_repr))
-            _log.info('%s called %s.%s' % (principal, api, method_name))
-            
-        try:
-            result = method(self, *args, **kwargs)
-        except Exception, e:
-            event.exception = pformat(e)
-            exc = sys.exc_info()
-            tb = ''.join(traceback.format_exception(*exc))
-            event.traceback = tb
-            _record_event()
-            raise
-        else:
-            #event.result = pformat(result)
-            _record_event()
-            return result
+        @functools.wraps(method)
+        def _audit(*args, **kwargs):
+            principal = kwargs.get('principal', None)
+            if not pass_principal:
+                kwargs.pop('principal', None)
+            param_values = spec.param_values(args, kwargs)
+            action = '%s.%s: %s' % (spec.api, spec.method, param_values)
+            event = Event(principal, action, spec.api, spec.method, param_values)
+                
+            def _record_event():
+                _objdb.insert(event, safe=False, check_keys=False)
+                _log.info('[%s] %s called %s.%s' %
+                          (event.timestamp,
+                           principal,
+                           spec.api,
+                           spec.method,
+                           pformat(param_values)))
+                
+            try:
+                result = method(*args, **kwargs)
+            except Exception, e:
+                event.exception = pformat(e)
+                exc = sys.exc_info()
+                tb = ''.join(traceback.format_exception(*exc))
+                event.traceback = tb
+                _record_event()
+                raise
+            else:
+                event.result = pformat(result) if record_result else None
+                _record_event()
+                return result
     
-    return _audit
+        return _audit
+    return _audit_decorator
+
+# auditing api ----------------------------------------------------------------
+
+def events(spec=None, fields=None, errors_only=False):
+    """
+    Query function that returns events according to the pymongo spec.
+    @type spec: dict or pymongo.son.SON instance
+    @param sepc: pymongo spec for filtering events
+    @type fields: list or tuple of str
+    @param fields: iterable of fields to include from each document
+    @type errors_only: bool
+    @param errors_only: if True, only return events that match the spec and have 
+                        an exception associated with them, otherwise return all
+                        events that match spec
+    @return: list of events containing fields and matching spec
+    """
+    assert isinstance(spec, dict) or isinstance(spec, pymongo.son.SON)
+    assert isinstance(fields, list) or isinstance(fields, tuple)
+    if errors_only:
+        spec = spec or {}                           # ensure spec is a dict
+        spec['exception'].setdefault({'$ne': None}) # don't overwrite existing
+    events_ = _objdb.find(spec=spec, fields=fields)
+    return list(events_)
+
+
+def events_on_api(api, fields=None, errors_only=False):
+    """
+    Return all recorded events for a given api.
+    @type api: str
+    @param api: name of the api
+    @type fields: list or tuple of str
+    @param fields: iterable of fields to include from each document
+    @type errors_only: bool
+    @param errors_only: if True, only return events that match the spec and have 
+                        an exception associated with them, otherwise return all
+                        events that match spec
+    @return: list of events for the given api containing fields
+    """
+    return events({'api': api}, fields, errors_only)
+
+
+def events_by_principal(principal, fields=None, errors_only=False):
+    """
+    Return all recorded events for a given principal (caller).
+    @type api: model object or dict
+    @param api: principal that triggered the event (i.e. User instance)
+    @type fields: list or tuple of str
+    @param fields: iterable of fields to include from each document
+    @type errors_only: bool
+    @param errors_only: if True, only return events that match the spec and have 
+                        an exception associated with them, otherwise return all
+                        events that match spec
+    @return: list of events for the given principal containing fields
+    """
+    return events({'principal': unicode(principal)}, fields, errors_only)
+
+
+def events_in_datetime_range(lower_bound=None, upper_bound=None, fields=None, errors_only=False):
+    """
+    Return all events in a given time range.
+    @type lower_bound: datetime.datetime instance or None
+    @param lower_bound: lower time bound, None = oldest in db
+    @type lower_bound: datetime.datetime instance or None
+    @param lower_bound: upper time bound, None = newest in db
+    @type fields: list or tuple of str
+    @param fields: iterable of fields to include from each document
+    @type errors_only: bool
+    @param errors_only: if True, only return events that match the spec and have 
+                        an exception associated with them, otherwise return all
+                        events that match spec
+    @return: list of events in the given time range containing fields
+    """
+    assert isinstance(lower_bound, datetime.datetime) or lower_bound is None
+    assert isinstance(upper_bound, datetime.datetime) or upper_bound is None
+    timestamp_range = {}
+    if lower_bound is not None:
+        timestamp_range['$gt'] = lower_bound
+    if upper_bound is not None:
+        timestamp_range['$lt'] = upper_bound
+    spec = {'timestamp': timestamp_range} if timestamp_range else None
+    return events(spec, fields, errors_only)
+
+def events_since_delta(delta, fields=None, errors_only=False):
+    """
+    Return all the events that occurred in the last time delta from now.
+    @type delta: datetime.timedelta instance
+    @param delta: length of time frame to return events from
+    @type fields: list or tuple of str
+    @param fields: iterable of fields to include from each document
+    @type errors_only: bool
+    @param errors_only: if True, only return events that match the spec and have 
+                        an exception associated with them, otherwise return all
+                        events that match spec
+    @return: list of events in the given length of time containing fields
+    """
+    assert isinstance(delta, datetime.timedelta)
+    now = datetime.datetime.now()
+    lower_bound = now - delta
+    return events({'timestamp': {'$gt': lower_bound}}, fields, errors_only)
+
+
+def cull_events(delta):
+    """
+    Reaper function that removes all events older than a given length of time
+    from the database.
+    @type delta: datetime.timedelta instance
+    @param delta: length of time frame to remove events before
+    @return: the number of events removed from the database
+    """
+    assert isinstance(delta, datetime.timedelta)
+    now = datetime.datetime.now()
+    upper_bound = now - delta
+    events_ = events({'timestamp': {'$lt': upper_bound}})
+    for e in events_:
+        _objdb.remove(e, safe=False)
+    return len(events_)
