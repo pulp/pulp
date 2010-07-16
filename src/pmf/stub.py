@@ -14,11 +14,12 @@
 #
 
 """
-Contains proxy classes.
+Contains stub classes.
 Proxies (stubs) are the I{local} representation of I{remote}
 classes on which we invoke methods.
 """
 
+from pmf import *
 from pmf.dispatcher import Request
 from pmf.window import Window
 
@@ -30,22 +31,22 @@ class Method:
     @type classname: str
     @ivar name: The target method name.
     @type name: str
-    @ivar proxy: The proxy object used to send the AMQP message.
-    @type proxy: L{Proxy}
+    @ivar stub: The stub object used to send the AMQP message.
+    @type stub: L{Stub}
     """
 
-    def __init__(self, classname, name, proxy):
+    def __init__(self, classname, name, stub):
         """
         @param classname: The target class name.
         @type classname: str
         @param name: The target method name.
         @type name: str
-        @param proxy: The proxy object used to send the AMQP message.
-        @type proxy: L{Proxy}
+        @param stub: The stub object used to send the AMQP message.
+        @type stub: L{Stub}
         """
         self.classname = classname
         self.name = name
-        self.proxy = proxy
+        self.stub = stub
 
     def __call__(self, *args, **kws):
         """
@@ -55,58 +56,59 @@ class Method:
         @param kws: The I{keyword} arguments.
         @type kws: dict
         """
-        req = Request(
+        opts = Options()
+        for k,v in kws.items():
+            if k in ('window', 'any',):
+                opts[k] = v
+                del kws[k]
+        request = Request(
             classname=self.classname,
             method=self.name,
             args=args,
             kws=kws)
-        return self.proxy._send(req)
+        return self.stub._send(request, opts)
 
 
-class Proxy:
+class Stub:
     """
-    The proxy (stub) base class for remote objects.
-    @ivar __pid: The peer queue ID.
+    The stub class for remote objects.
+    @ivar __pid: The peer ID.
     @ivar __pid: str
-    @ivar __reqmethod: An AMQP message producer.
-    @type __reqmethod: L{pmf.policy.RequestMethod}
-    @ivar __window: An valid window.
-    @type __window: L{Window}
-    @ivar __any: Any user defined data.
-    @type __any: object
+    @ivar __options: Stub options.
+    @type __options: dict.
     """
 
-    def __init__(self, peer, reqmethod):
+    def __init__(self, pid, options):
         """
-        @ivar peer: The peer consumer ID.
-        @ivar peer: str
-        @param reqmethod: An AMQP message producer.
-        @type reqmethod: L{pmf.policy.RequestMethod}
+        @ivar pid: The peer ID.
+        @ivar pid: str
+        @param options: Stub options.
+        @type options: dict
         """
-        self.__pid = peer
-        self.__reqmethod = reqmethod
-        self.__window = Window()
-        self.__any = None
+        self.__pid = pid
+        self.__options = options
 
-    def _send(self, request):
+    def _send(self, request, options):
         """
         Send the request using the configured request method.
         @param request: An RMI request.
         @type request: str
         """
-        any = self.__any
-        window = self.__window
+        opts = Options(self.__options)
+        opts.update(options)
+        method = self.__options.method
         if isinstance(self.__pid, (list,tuple)):
-            return self.__reqmethod.broadcast(
+            return method.broadcast(
                         self.__pid,
                         request,
-                        window=self.__window,
-                        any=self.__any)
+                        window=opts.window,
+                        any=opts.any)
         else:
-            return self.__reqmethod.send(
+            return method.send(
                         self.__pid,
                         request,
-                        window=self.__window)
+                        window=opts.window,
+                        any=opts.any)
 
     def __getattr__(self, name):
         """

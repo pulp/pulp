@@ -19,77 +19,85 @@
 import sys
 sys.path.append('../../')
 
-from time import sleep
-
-from pmf.proxy import Proxy
-from pmf.base import AgentProxy as Base
+from pmf.stub import Stub
+from pmf.decorators import stub
+from pmf.base import Container
 from pmf.producer import QueueProducer
-from pmf.policy import *
 from pmf.window import *
+from time import sleep
 from datetime import datetime as dt
 from datetime import timedelta as delta
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
 
-
-class RepoLib(Proxy):
+@stub('repolib')
+class RepoLib(Stub):
     pass
 
-class Dog(Proxy):
+@stub('dog')
+class Dog(Stub):
     pass
 
 
-class Agent(Base):
+class Agent(Container):
 
-    def __init__(self, id, tag=None):
+    def __init__(self, id, **options):
         producer = QueueProducer()
-        if tag or isinstance(id, (tuple,list)):
-            method = Asynchronous(producer, tag)
-        else:
-            method = Synchronous(producer)
-        Base.__init__(self,
-            id,
-            method,
-            repolib=RepoLib,
-            dog=Dog)
+        Container.__init__(self, id, producer, **options)
 
 
 def demo(agent):
     print agent.dog.bark('hello')
     print agent.dog.wag(3)
-    print agent.dog.bark('hello')
+    print agent.dog.bark('hello again')
     print agent.repolib.update()
     try:
         print agent.repolib.updated()
     except Exception, e:
         print repr(e)
-
     try:
         print agent.dog.notpermitted()
     except Exception, e:
         print repr(e)
 
+def later(**offset):
+    return dt.utcnow()+delta(**offset)
 
 if __name__ == '__main__':
     # synchronous
+    print '(demo) synchronous'
     agent = Agent('123')
     demo(agent)
     agent = None
+
+    # asynchronous (fire and forget)
+    print '(demo) asynchronous fire-and-forget'
+    agent = Agent('123', async=True)
+    demo(agent)
+
     # asynchronous
+    print '(demo) asynchronous'
     tag = 'jortel'
     ids = ('123',)
-    agent = Agent(ids, tag)
-    agent.setWindow(Window.create(minutes=1))
+    window = Window.create(minutes=1)
+    agent = Agent('123', ctag=tag, window=window)
     demo(agent)
+
     # future
-    print 'FUTURE'
-    agent.setAny('group 2')
-    later = dt.utcnow()+delta(seconds=20)
-    agent.setWindow(Window.create(later, minutes=10))
-    demo(agent)
-    agent.setAny('group 1')
-    later = dt.utcnow()+delta(seconds=10)
-    agent.setWindow(Window.create(later, minutes=10))
-    demo(agent)
+    print 'maintenance window'
+
+    # group 2
+    window = Window.create(later(seconds=20), minutes=10)
+    opts = dict(window=window, any='group 2')
+    print agent.dog.bark('hello', **opts)
+    print agent.dog.wag(3, **opts)
+    print agent.dog.bark('hello again', **opts)
+
+    # group 1
+    window = Window.create(later(seconds=10), minutes=10)
+    opts = dict(window=window, any='group 1')
+    print agent.dog.bark('hello', **opts)
+    print agent.dog.wag(3, **opts)
+    print agent.dog.bark('hello again', **opts)
     agent = None

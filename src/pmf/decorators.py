@@ -29,6 +29,7 @@ class Remote:
     classes = []
     methods = []
 
+
 def remote(cls):
     """
     Decorator used to register remotable classes.
@@ -58,3 +59,24 @@ def mayinvoke(im):
     @rtype: bool
     """
     return im.im_func in Remote.methods
+
+
+class Stubs:
+    """
+    Stubs
+    @ivar classes: List of subs classes.
+    @type classes: list
+    """
+    stubs = {}
+
+
+def stub(ns):
+    """
+    Decorator used to register sub classes.
+    @param ns: The stub namespace.
+    @type ns: str.
+    """
+    def decorator(cls):
+        Stubs.stubs[ns] = cls
+        return cls
+    return decorator

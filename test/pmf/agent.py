@@ -38,7 +38,7 @@ class Dog:
     @remotemethod
     def bark(self, words):
         print 'Ruf %s' % words
-        return 'Yes master.  I will bark because that is what dogs do.'
+        return 'Yes master.  I will bark because that is what dogs do. "%s"' % words
 
     @remotemethod
     def wag(self, n):

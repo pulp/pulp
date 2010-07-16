@@ -18,164 +18,14 @@ Agent base classes.
 """
 
 from pmf import *
-from pmf.decorators import Remote
+from pmf.decorators import Remote, Stubs
 from pmf.dispatcher import Dispatcher
-from qpid.messaging import Connection
-from time import sleep
+from pmf.window import Window
+from pmf.policy import *
 from logging import getLogger
 
 log = getLogger(__name__)
 
-
-class Endpoint:
-    """
-    Base class for QPID endpoint.
-    @cvar connecton: An AMQP connection.
-    @type connecton: L{qpid.messaging.Connection}
-    @ivar id: The unique AMQP session ID.
-    @type id: str
-    @ivar session: An AMQP session.
-    @type session: L{qpid.messaging.Session}
-    """
-    
-    connections = {}
-
-    @classmethod
-    def shutdown(cls):
-        """
-        Shutdown all connections.
-        """
-        for con in cls.connections.values():
-            con.close()
-        cls.connections = {}
-
-    def __init__(self, id=None, host='localhost', port=5672):
-        """
-        @param host: The broker fqdn or IP.
-        @type host: str
-        @param port: The broker port.
-        @type port: str
-        """
-        self.id = ( id or getuuid() )
-        self.host = host
-        self.port = port
-        self.__session = None
-        self.connect()
-        self.open()
-
-    def connection(self):
-        """
-        Get cached connection based on host & port.
-        @return: The global connection.
-        @rtype: L{qpid.messaging.Connection}
-        """
-        key = (self.host, self.port)
-        con = self.connections.get(key)
-        if con is None:
-            con = Connection(self.host, self.port)
-            self.connections[key] = con
-        return con
-
-    def session(self):
-        """
-        Get a session for the open connection.
-        @return: An open session.
-        @rtype: L{qpid.messaging.Session}
-        """
-        if self.__session is None:
-            con = self.connection()
-            self.__session = con.session()
-        return self.__session
-
-    def ack(self):
-        """
-        Acknowledge all messages received on the session.
-        """
-        try:
-            self.__session.acknowledge()
-        except:
-            pass
-
-    def connect(self):
-        """
-        Connection to the broker.
-        @return: The connection.
-        @rtype: L{Connection}
-        """
-        while True:
-            try:
-                log.info('%s, connecting', self)
-                con = self.connection()
-                if con.connected():
-                    log.info('%s, already connected', self)
-                    return
-                con.connect()
-                con.start()
-                log.info('%s, connected', self)
-                break
-            except Exception, e:
-                log.exception(e)
-                if self.mustConnect():
-                    sleep(10)
-                else:
-                    raise e
-
-    def open(self):
-        """
-        Open and configure the endpoint.
-        """
-        pass
-
-    def close(self):
-        """
-        Close (shutdown) the endpoint.
-        """
-        session = self.__session
-        self.__session = None
-        try:
-            session.stop()
-            session.close()
-        except:
-            pass
-
-    def mustConnect(self):
-        """
-        Get whether the endpoint must connect.
-        When true, calls to connect() will block until a connection
-        can be successfully made.
-        @return: True/False
-        @rtype: bool
-        """
-        return False
-
-    def queueAddress(self, name):
-        """
-        Get a QPID queue address.
-        @param name: The queue name.
-        @type name: str
-        @return: A QPID address.
-        @rtype: str
-        """
-        return '%s;{create:always,node:{type:queue}}' % name
-
-    def topicAddress(self, topic):
-        """
-        Get a QPID topic address.
-        @param topic: The topic name.
-        @type topic: str
-        @param subject: The subject.
-        @type subject: str
-        @return: A QPID address.
-        @rtype: str
-        """
-        return '%s;{create:always,node:{type:topic}}' % topic
-
-    def __del__(self):
-        self.close()
-        
-    def __str__(self):
-        return 'Endpoint id:%s broker @ %s:%s' % \
-            (self.id, self.host, self.port)
 
 
 class Agent:
@@ -205,52 +55,69 @@ class Agent:
         self.consumer.close()
 
 
-class AgentProxy:
+class Container:
     """
-    The proxy base
-    @ivar id: The peer ID.
-    @type id: str
-    @ivar reqmethod: A request method.
-    @type reqmethod: L{pmf.policy.RequestMethod}
+    The stub container base
+    @ivar __id: The peer ID.
+    @type __id: str
+    @ivar __producer: An AMQP producer.
+    @type __producer: L{pmf.producer.Producer}
+    @ivar __stubs: A list of L{Stub} objects.
+    @type __stubs: [{Stub,..]
+    @ivar __options: Container options.
+    @type __options: L{Options}
     """
 
-    def __init__(self, id, reqmethod, **namespaces):
+    def __init__(self, id, producer, **options):
         """
-        @param id: The peer id.
+        @ivar id: The peer ID.
         @type id: str
-        @param reqmethod: A request method.
-        @type reqmethod: L{pmf.policy.RequestMethod}
-        @keyword namespaces: A list of namespaces where
-            values are proxy classes.
+        @ivar producer: An AMQP producer.
+        @type producer: L{pmf.producer.Producer}
+        @ivar options: keyword options.
+        @type options: dict
         """
-        self.id = id
-        self.reqmethod = reqmethod
-        self.proxies = []
-        for ns, pclass in namespaces.items():
-            proxy = pclass(id, reqmethod)
-            setattr(self, ns, proxy)
-            self.proxies.append(proxy)
+        self.__id = id
+        self.__options = Options(window=Window())
+        self.__stubs = []
+        self.__options.update(options)
+        self.__setmethod(producer)
+        self.__addstubs()
 
-    def setWindow(self, window):
+    def __setmethod(self, producer):
         """
-        Define a maintenance winwow for all operations.
-        @param window: A window (start,end)
-        @type window: (datetime, datatime)
+        Set the request method based on options.
+        The selected method is added to I{options}.
+        @param producer: An AMQP producer.
+        @type producer: L{pmf.producer.Producer}
         """
-        for p in self.proxies:
-            p._Proxy__window = window
+        if self.__async():
+            ctag = self.__options.ctag
+            self.__options.method = Asynchronous(producer, ctag)
+        else:
+            self.__options.method = Synchronous(producer)
 
-    def setAny(self, any):
+    def __addstubs(self):
         """
-        Set user defined data to be round-tripped.
-        @param any: User defined data.
-        @type any: object
+        Add stubs found in the I{stubs} dictionary.
+        Each is added as an attribute matching the dictionary key.
         """
-        for p in self.proxies:
-            p._Proxy__any = any
+        for ns, sclass in Stubs.stubs.items():
+            stub = sclass(self.__id, self.__options)
+            setattr(self, ns, stub)
+            self.__stubs.append(stub)
 
-    def close(self):
+    def __async(self):
         """
-        Close and release all resources.
+        Get whether an I{asynchronous} request method
+        should be used based on selected options.
+        @return: True if async.
+        @rtype: bool
         """
-        self.reqmethod.close()
+        if ( self.__options.ctag
+             or self.__options.async ):
+            return True
+        return isinstance(self.__id, (list,tuple))
+
+    def __str__(self):
+        return '{%s} opt:%s' % (self.__id, str(self.__options))

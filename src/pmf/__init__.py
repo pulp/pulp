@@ -23,6 +23,14 @@ def getuuid():
     return str(uuid4())
 
 
+class Options(dict):
+    """
+    Container options.
+    """
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+
+
 class Envelope(dict):
     """
     Basic envelope is a json encoded/decoded dictionary

@@ -20,33 +20,40 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
-from pmf.proxy import Proxy
-from pmf.base import AgentProxy as Base
+from pmf.stub import Stub
+from pmf.decorators import stub
+from pmf.base import Container
 from pmf.producer import QueueProducer
-from pmf.policy import *
 from pulp.util import Config
 
 
-class AgentAdmin(Proxy):
+@stub('admin')
+class AgentAdmin(Stub):
     pass
 
-class Repo(Proxy):
+@stub('repo')
+class Repo(Stub):
     pass
 
-class Packages(Proxy):
+@stub('packages')
+class Packages(Stub):
     pass
 
-class PackageGroups(Proxy):
+@stub('packagegroups')
+class PackageGroups(Stub):
     pass
 
-class Shell(Proxy):
+@stub('shell')
+class Shell(Stub):
     pass
 
-class Agent(Base):
+
+class Agent(Container):
     """
-    A proxy for the agent.
+    A collection of stubs that represent the agent.
     """
-    def __init__(self, uuid, tag=None):
+
+    def __init__(self, uuid, **options):
         """
         @param uuid: The consumer uuid.
         @type uuid: str|list
@@ -57,15 +64,4 @@ class Agent(Base):
         host = cfg.pmf.host
         port = int(cfg.pmf.port)
         producer = QueueProducer(host=host, port=port)
-        if tag or isinstance(uuid, (tuple,list)):
-            method = Asynchronous(producer, tag)
-        else:
-            method = Synchronous(producer)
-        Base.__init__(self,
-            uuid,
-            method,
-            admin=AgentAdmin,
-            repo=Repo,
-            packages=Packages,
-            packagegroups=PackageGroups,
-            shell=Shell,)
+        Container.__init__(self, uuid, producer, **options)

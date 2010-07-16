@@ -18,7 +18,7 @@ Provides AMQP message consumer classes.
 """
 
 from pmf import *
-from pmf.base import Endpoint
+from pmf.endpoint import Endpoint
 from pmf.producer import Producer
 from pmf.dispatcher import Return
 from pmf.window import *
