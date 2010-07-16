@@ -18,12 +18,14 @@ import consumergroups
 import consumers
 import packages
 import repositories
+import users
 import test
 
 __all__ = [
     'consumergroups',
     'consumers', 
     'packages', 
-    'repositories', 
+    'repositories',
+    'users' 
     'test',
 ]

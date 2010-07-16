@@ -382,6 +382,38 @@ class PackageGroupCategoryConnection(PulpConnection):
         pass
 
 
+class UserConnection(PulpConnection):
+    """
+    Connection class to access consumer group related calls
+    """
+    def create(self, login, id=None, password=None, name=None):
+        user_data = {"login" : login, "password" : password,
+                        "name" : name}
+        method = "/users/"
+        return self.conn.request_put(method, params=user_data)
+
+    def update(self, user):
+        method = "/users/%s/" % consumergroup['id']
+        return self.conn.request_put(method, params=user)
+
+    def delete(self, **kwargs):
+        login = kwargs['login']
+        method = "/users/%s/" % login
+        return self.conn.request_delete(method)
+
+    def clean(self):
+        method = "/users/"
+        return self.conn.request_delete(method)
+
+    def users(self):
+        method = "/users/"
+        return self.conn.request_get(method)
+
+    def user(self, id):
+        method = "/users/%s/" % str(id)
+        return self.conn.request_get(method)
+
+
 if __name__ == '__main__':
     rconn = RepoConnection()
     print "+--------------------------------+"

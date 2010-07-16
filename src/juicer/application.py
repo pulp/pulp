@@ -19,12 +19,15 @@ import web
 from juicer import controllers
 
 
+# NOTE: If you add a item here make sure you also add 
+#       it to controllers/__init__.py
 URLS = (
     '/test', controllers.test.application,
     '/consumers', controllers.consumers.application,
     '/consumergroups', controllers.consumergroups.application,
     '/packages', controllers.packages.application,
     '/repositories', controllers.repositories.application,
+    '/users', controllers.users.application,    
 )
 
 
