@@ -29,7 +29,7 @@ log = getLogger(__name__)
 cfg = Config()
 
 
-@action(seconds=10)
+@action(minutes=10)
 class TestAction(Action):
     
     def perform(self):

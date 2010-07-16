@@ -83,6 +83,14 @@ if __name__ == '__main__':
     agent = Agent('123', ctag=tag, window=window)
     demo(agent)
 
+    # asynchronous
+    print '(demo) group asynchronous'
+    tag = 'xyz'
+    group = ('123', 'ABC',)
+    window = Window.create(minutes=1)
+    agent = Agent(group, ctag=tag)
+    demo(agent)
+
     # future
     print 'maintenance window'
 
