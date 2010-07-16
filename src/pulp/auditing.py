@@ -37,6 +37,7 @@ for index in ['timestamp', 'principal', 'api']:
     _objdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
 
 # setup logging format, file, and level
+# TODO put in rotating file handler
 _log_file_handler = logging.FileHandler('/var/log/pulp/events.log')
 _log = logging.getLogger(__name__)
 _log.addHandler(_log_file_handler)
@@ -59,6 +60,7 @@ class MethodSpec(object):
         self.method = method.__name__
         self.params = params
         
+        # returns a tuple: (args, varargs, keywords, defaults)
         spec = inspect.getargspec(method)
         
         args = spec[0]
@@ -69,15 +71,6 @@ class MethodSpec(object):
         self.__param_defaults = dict((a,d) for a,d in
                                      zip(args[0-len(defaults):], defaults))
             
-        def param_index(self, param):
-            """
-            Get the index of a parameter from the order of arguments.
-            @type param: str
-            @param param: parameter name
-            @return: integer index if the parameter is of interest, None otherwise
-            """
-            return self.__param_to_index.get(param, None)
-        
         def param_values(self, args, kwargs):
             """
             Grep through passed in arguments and keyword arguments and return
@@ -90,8 +83,7 @@ class MethodSpec(object):
             """
             values = []
             for p in self.params:
-                i = self.param_index(p)
-                assert i is not None
+                i = self.__param_to_index[p]
                 if i < len(args):
                     values.append(args[i])
                 else:
@@ -122,6 +114,7 @@ def audit(params=[], record_result=False, pass_principal=False):
     """
     
     def _audit_decorator(method):
+        
         spec = MethodSpec(method)
         
         @functools.wraps(method)
@@ -130,25 +123,31 @@ def audit(params=[], record_result=False, pass_principal=False):
             if not pass_principal:
                 kwargs.pop('principal', None)
             param_values = spec.param_values(args, kwargs)
-            action = '%s.%s: %s' % (spec.api, spec.method, param_values)
-            event = Event(principal, action, spec.api, spec.method, param_values)
+            param_values_repr = pformat(param_values)
+            action = '%s.%s: %s' % (spec.api,
+                                    spec.method,
+                                    param_values_repr)
+            event = Event(principal,
+                          action,
+                          spec.api,
+                          spec.method,
+                          param_values)
                 
             def _record_event():
                 _objdb.insert(event, safe=False, check_keys=False)
-                _log.info('[%s] %s called %s.%s' %
+                _log.info('[%s] %s called %s.%s on %s' %
                           (event.timestamp,
                            principal,
                            spec.api,
                            spec.method,
-                           pformat(param_values)))
+                           param_values_repr))
                 
             try:
                 result = method(*args, **kwargs)
             except Exception, e:
                 event.exception = pformat(e)
                 exc = sys.exc_info()
-                tb = ''.join(traceback.format_exception(*exc))
-                event.traceback = tb
+                event.traceback = ''.join(traceback.format_exception(*exc))
                 _record_event()
                 raise
             else:
@@ -157,6 +156,7 @@ def audit(params=[], record_result=False, pass_principal=False):
                 return result
     
         return _audit
+    
     return _audit_decorator
 
 # auditing api ----------------------------------------------------------------
