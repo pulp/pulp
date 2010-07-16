@@ -45,7 +45,7 @@ class packagegroup(BaseCore):
                         "delete"        : "delete a packagegroup",
                         "add_package"   : "add package to an existing packagegroup",
                         "delete_package": "delete package from an existing packagegroup",
-                        "install"       : "Schedule a packagegroup Install",
+                        "install"       : "Schedule a packagegroup install",
                         }
         self.name = "packagegroup"
         self.pconn = None
