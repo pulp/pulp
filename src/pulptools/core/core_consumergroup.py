@@ -118,20 +118,7 @@ class consumergroup(BaseCore):
             self.parser.add_option("--groupid", dest="groupid",
                            help="Consumer Group Identifier")
 
-    def _validate_options(self):
-        pass
-
-    def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
-        print "Supported Actions:\n"
-        items = self.actions.items()
-        items.sort()
-        for (name, cmd) in items:
-            print("\t%-14s %-25s" % (name, cmd))
-        print("")
-
     def _do_core(self):
-        self._validate_options()
         if self.action == "create":
             self._create()
         if self.action == "list":
@@ -175,13 +162,11 @@ class consumergroup(BaseCore):
         (self.options, self.args) = self.parser.parse_args()
         try:
             groups = self.cgconn.consumergroups()
-            columns = ["id", "description", "consumerids"]
-            data = [ _sub_dict(group, columns) for group in groups]
-            if not len(data):
+            if not len(groups):
                 print _("No consumer groups available to list")
                 sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Consumer Groups \n+-------------------------------------------+"""
-            for group in data:
+            for group in groups:
                     print constants.AVAILABLE_CONSUMER_GROUP_INFO % (group["id"], group["description"], group["consumerids"] )
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -289,7 +274,3 @@ class consumergroup(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-
-
-def _sub_dict(datadict, subkeys, default=None) :
-    return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )

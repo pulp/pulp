@@ -90,8 +90,9 @@ class RoleCheck(object):
             subject = idcert.subject()
             consumer_cert_uid = subject.get('UID', None)
             if (consumer_cert_uid == None):
-                log.error("Consumer UID not found in certificate")
-                return
+                log.error("Consumer UID not found in certificate.  " + \
+                          "Not a valid Consumer certificate")
+                return validation_failed
             log.error("Consumer UID: %s " % consumer_cert_uid)
             # Check the consumer_id matches 
             validation_failed = True

@@ -136,20 +136,7 @@ class packagegroup(BaseCore):
                             help="Type of list to delete package from, example 'mandatory', 'optional', 'default'",
                             default="default")
 
-    def _validate_options(self):
-        pass
-
-    def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
-        print "Supported Actions:\n"
-        items = self.actions.items()
-        items.sort()
-        for (name, cmd) in items:
-            print("\t%-14s \t%-25s" % (name, cmd))
-        print("")
-
     def _do_core(self):
-        self._validate_options()
         if self.action == "info":
             self._info()
         if self.action == "install":
@@ -330,5 +317,3 @@ class packagegroup(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-def _sub_dict(datadict, subkeys, default=None) :
-    return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )

@@ -409,8 +409,8 @@ class UserConnection(PulpConnection):
         method = "/users/"
         return self.conn.request_get(method)
 
-    def user(self, id):
-        method = "/users/%s/" % str(id)
+    def user(self, login):
+        method = "/users/%s/" % str(login)
         return self.conn.request_get(method)
 
 

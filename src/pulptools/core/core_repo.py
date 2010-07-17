@@ -113,20 +113,7 @@ class repo(BaseCore):
             usage = "usage: %prog repo schedules"
             BaseCore.__init__(self, "repo schedules", usage, "", "")
 
-    def _validate_options(self):
-        pass
-
-    def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
-        print "Supported Actions:\n"
-        items = self.actions.items()
-        items.sort()
-        for (name, cmd) in items:
-            print("\t%-14s %-25s" % (name, cmd))
-        print("")
-
     def _do_core(self):
-        self._validate_options()
         if self.action == "create":
             self._create()
         if self.action == "list":
@@ -169,13 +156,11 @@ class repo(BaseCore):
         (self.options, self.args) = self.parser.parse_args()
         try:
             repos = self.pconn.repositories()
-            columns = ["id", "name", "source", "arch", "sync_schedule", "packages"]
-            data = [ _sub_dict(repo, columns) for repo in repos]
-            if not len(data):
+            if not len(repos):
                 print _("No repos available to list")
                 sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
-            for repo in data:
+            for repo in repos:
                 repo["packages"] = len(repo["packages"])
                 print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"],
                                                         repo["source"], repo["arch"],
@@ -279,8 +264,6 @@ class repo(BaseCore):
         for label in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (label, schedules[label]))
 
-def _sub_dict(datadict, subkeys, default=None) :
-    return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )
 
 class FileError(Exception):
     pass

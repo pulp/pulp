@@ -111,20 +111,7 @@ class consumer(BaseCore):
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
 
-    def _validate_options(self):
-        pass
-
-    def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
-        print "Supported Actions:\n"
-        items = self.actions.items()
-        #items.sort()
-        for (name, cmd) in items:
-            print("\t%-14s %-25s" % (name, cmd))
-        print("")
-
     def _do_core(self):
-        self._validate_options()
         if self.action == "register":
             self._create()
         if self.action == "list":
@@ -186,10 +173,8 @@ class consumer(BaseCore):
                 for pkgversion in pkg:
                     pkgs += " " + utils.getRpmName(pkgversion)
             cons['package_profile'] = pkgs
-            columns = ["id", "description", "repoids", "package_profile"]
-            data = [ _sub_dict(cons, columns)]# for con in cons]
             print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
-            for con in data:
+            for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], con["repoids"], con["package_profile"])
         except RestlibException, re:
@@ -206,10 +191,8 @@ class consumer(BaseCore):
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
             for con in cons: 
                 con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile'])
-            columns = ["id", "description", "repoids", "package_profile"]
-            data = [ _sub_dict(con, columns) for con in cons]
             print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
-            for con in data:
+            for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], con["repoids"], con["package_profile"])
         except RestlibException, re:
@@ -285,6 +268,3 @@ def getConsumer():
         print("Error reading consumer." + e)
         sys.exit(-1)
     return consumerid
-        
-def _sub_dict(datadict, subkeys, default=None) :
-    return dict([ (k, datadict.get(k, default) ) for k in subkeys ] )

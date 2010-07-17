@@ -15,6 +15,7 @@
 # in this software or its documentation.
 #
 
+import os
 import sys
 from optparse import OptionParser
 
@@ -33,6 +34,35 @@ class BaseCore(object):
     def _add_common_options(self):
         """ Common options to all modules. """
         pass
+
+    def validate_args(self):
+        """ Validate the arguments passed in and determine what action to take """
+        action = None
+        possiblecmd = []
+        for arg in sys.argv[1:]:
+            if not arg.startswith("-"):
+                possiblecmd.append(arg)
+        if len(possiblecmd) > 1:
+            action = possiblecmd[1]
+        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
+            self._usage()
+            sys.exit(0)
+        else:
+            return None 
+        if action not in self.actions.keys():
+            self._usage()
+            sys.exit(0)
+        
+        return action 
+
+    def _usage(self):
+        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
+        print "Supported Actions:\n"
+        items = self.actions.items()
+        items.sort()
+        for (name, cmd) in items:
+            print("\t%-14s %-25s" % (name, cmd))
+        print("")
 
     def _do_core(self):
         pass
