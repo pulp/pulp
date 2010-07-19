@@ -61,6 +61,7 @@ class Restlib(object):
     def _request(self, request_type, method, info=None):
         handler = self.apihandler + method
         if self.cert_file:
+            log.info("Using SSLv3 context")
             context = SSL.Context("sslv3")
             context.load_cert(self.cert_file, keyfile=self.key_file)
             conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
@@ -115,6 +116,7 @@ class PulpConnection:
     def setUp(self):
         self.conn = Restlib(self.host, self.port, self.handler, self.cert_file, self.key_file)
         log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" % (self.host, self.port, self.handler))
+        log.info("Using cert_file: %s and key_file: %s" % (self.cert_file, self.key_file))
 
     def shutDown(self):
         self.conn.close()

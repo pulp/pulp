@@ -15,6 +15,7 @@
 #
 
 import os
+import logging
 import sys
 import pkgutil
 from pulptools.logutil import getLogger
@@ -102,4 +103,8 @@ class PulpCore:
         cmd.main()
 
 if __name__ == "__main__":
+    # TODO: Make logging configurable
+    
+    logging.root.addHandler(logging.StreamHandler())
+    logging.root.setLevel(logging.ERROR)
     PulpCore().main()

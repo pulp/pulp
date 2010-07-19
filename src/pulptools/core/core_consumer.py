@@ -55,7 +55,13 @@ class consumer(BaseCore):
         self.generate_options()
         
     def load_server(self):
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
+        # /etc/pki/consumer/cert.pem
+        # /etc/pki/consumer/key.pem
+        cert_file = "/etc/pki/consumer/cert.pem"
+        key_file = "/etc/pki/consumer/key.pem"
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
+                                        port=8811, cert_file=cert_file,
+                                        key_file=key_file)
 
     def generate_options(self):
         possiblecmd = []
@@ -137,10 +143,13 @@ class consumer(BaseCore):
             CFG.write()
             self.load_server()
         try:
+            print "Trying to create consumer"
             consumer = self.cconn.create(self.options.id, self.options.description)
+            print "Created"
             utils.writeToFile(CONSUMERID, consumer['id'])
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer['id'], pkginfo)
+            
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)

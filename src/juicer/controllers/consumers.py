@@ -120,6 +120,7 @@ class Consumer(JSONController):
         @param id: The consumer id
         @type id: str
         """
+        log.debug("PUT called.")
         consumer_data = self.params()
         if id != consumer_data['id']:
             return self.bad_request('Cannot change the consumer id')
@@ -131,7 +132,6 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck()
     def DELETE(self, id):
         """
         Delete a consumer.
@@ -218,10 +218,12 @@ class ConsumerActions(JSONController):
         api.unbind(id, data)
         return self.ok(None)
     
+    @RoleCheck()
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
         """
+        log.debug("consumers.py profile() with id: %s" % id)
         api.profile_update(id, self.params())
         return self.ok(True)
 
@@ -253,7 +255,9 @@ class ConsumerActions(JSONController):
         @type action_name: str
         @param action_name: action name
         """
+        
         action = getattr(self, action_name, None)
+        log.debug("consumers.py POST.  Action: %s" % action_name)
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         return action(id)

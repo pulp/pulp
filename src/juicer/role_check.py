@@ -16,6 +16,12 @@
 
 import logging
 import web
+try:
+    import json
+except ImportError:
+    import simplejson as json
+import pymongo.json_util 
+
 from pulp.certificate import Certificate
 from juicer import http
 log = logging.getLogger('pulp')
@@ -44,7 +50,7 @@ class RoleCheck(object):
               the "self" will be the first argument.
             '''
             # Check the roles
-            log.error("Role checking start")
+            log.debug("Role checking start")
             for key in self.dec_kw.keys():
                 log.debug("Role Name [%s], check? [%s]" % (key, self.dec_kw[key]))
 
@@ -52,7 +58,10 @@ class RoleCheck(object):
             validation_failed = self.check_consumer_id(*fargs)
             log.debug("validation_failed? %s " % validation_failed)
             if (validation_failed):
-                return http.status_unauthorized()
+                # TODO: Figure out how to re-use the same return function in base.py
+                http.status_unauthorized()
+                http.header('Content-Type', 'application/json')
+                return json.dumps("Certificate Validation Failed", default=pymongo.json_util.default)
 
             ## If not using cert check uname and password
             # TODO: Implement uname/pass checking
@@ -102,7 +111,7 @@ class RoleCheck(object):
                     validation_failed = False
                     break
             consumer_id = arg
-            if (not validation_failed):
+            if (validation_failed):
                 log.error("Certificate UID doesnt match the consumer UID you passed in") 
             else:
                 log.error("Certificate UID matched.  continue")
