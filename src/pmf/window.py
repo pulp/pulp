@@ -26,82 +26,151 @@ from datetime import timedelta as delta
 class Window(Envelope):
     """
     Represents a maintenance (time) window.
+    An empty L{Window} defines an unbounded window.
+    A I{begin} of 'None' = UTC now.
+    An I{end} of 'None' = begin plus 1 hour.
     @cvar FORMAT: The datetime format. ISO 8601
     @type FORMAT: str
-    @ivar begin: The window beginning datetime
-    @type begin: L{dt}
-    @ivar end: The window ending datetime
-    @type end: L{dt}
+    @cvar BEGIN: The beginning keyword
+    @type BEGIN: str
+    @cvar END: The ending keyword
+    @type END: str
     """
 
     FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-    @classmethod
-    def create(cls, begin=None, **duration):
+    def __init__(self, *D, **window):
         """
-        Build a window based on a beginning datetime and a duration.
-        @param begin: The window beginning datetime
-        @type begin: L{dt}
-        @keyword duration: The diration:
+        @param D: A (optional) dictionary.
+        @type D: [dict,..]
+        @note: An empty I{window} indicates an unbounded window.
+        @keyword window: The window specification:
+            - begin
           One of:
+            - end
             - days
             - seconds
             - minutes
             - hours
             - weeks
         """
-        begin = ( begin or dt.utcnow() )
-        end = begin+delta(**duration)
-        begin = begin.strftime(cls.FORMAT)
-        end = end.strftime(cls.FORMAT)
-        return Window(begin=begin, end=end)
-
-    def dates(self):
-        """
-        Convert to datetime objects.
-        @return: (begin, end)
-        @rtype: (datetime, datetime)
-        """
-        begin = dt.strptime(self.begin, self.FORMAT)
-        end = dt.strptime(self.end, self.FORMAT)
-        return (begin, end)
+        if not D:
+            self.__setbegin(window)
+            self.__setend(window)
+            dict.__init__(self, **window)
+        else:
+            dict.__init__(self, *D)
 
     def match(self):
         """
         Get whether the current datetime (UTC) falls
         within the window.
+        @note: Empty = match ALL.
         @return: True when matched.
         @rtype: bool
         """
-        if not self:
+        if self:
+            now = dt.utcnow()
+            begin, end = self.__dates()
+            return ( now >= begin and now <= end )
+        else:
             return True
-        now = dt.utcnow()
-        begin, end = self.dates()
-        return ( now >= begin and now <= end )
 
     def future(self):
         """
         Get whether window is in the future.
+        @note: Empty = match ALL.
         @return: True if I{begin} > I{utcnow()}.
         @rtype: bool
         """
-        if not self:
+        if self:
+            now = dt.utcnow()
+            begin, end = self.__dates()
+            return ( now < begin )
+        else:
             return False
-        now = dt.utcnow()
-        begin, end = self.dates()
-        return ( now < begin )
 
     def past(self):
         """
         Get whether window is in the past.
+        @note: Empty = match ALL.
         @return: True if I{utcnow()} > I{end}.
         @rtype: bool
         """
-        if not self:
+        if self:
+            now = dt.utcnow()
+            begin, end = self.__dates()
+            return ( now > end )
+        else:
             return False
-        now = dt.utcnow()
-        begin, end = self.dates()
-        return ( now > end )
+
+    def __setbegin(self, window):
+        """
+        Set the proper window beginning.
+        Performs:
+          - Convert to string if L{dt} object.
+          - Default to UTC (now) when value is (None).
+        @param window: The window specification.
+        @type window: dict
+        @return: The updated I{window}.
+        @rtype: dict
+        """
+        BEGIN = 'begin'
+        if BEGIN in window:
+            v = window[BEGIN]
+            if not v:
+                v = dt.utcnow()
+            if isinstance(v, dt):
+                v = v.strftime(self.FORMAT)
+            window[BEGIN] = v
+        return window
+
+    def __setend(self, window):
+        """
+        Set the proper window ending.
+        Performs:
+          - Convert to string if L{dt} object.
+          - Default begin plus 1 hour when value is (None).
+        @param window: The window specification.
+        @type window: dict
+        @return: The updated I{window}.
+        @rtype: dict
+        """
+        END = 'end'
+        if END in window:
+            v = window[END]
+            if not v:
+                v = dt.utcnow()+delta(hours=1)
+            if isinstance(v, dt):
+                v = v.strftime(self.FORMAT)
+            window[END] = v
+        return window
+
+    def __dates(self):
+        """
+        Convert to datetime objects.
+        @return: (begin, end)
+        @rtype: (datetime, datetime)
+        """
+        DURATION = ('days', 'seconds', 'minutes', 'hours', 'weeks')
+        if self.begin:
+            begin = dt.strptime(self.begin, self.FORMAT)
+        else:
+            begin = dt.utcnow()
+        if self.end:
+            end = dt.strptime(self.begin, self.FORMAT)
+        else:
+            end = begin
+        for k,v in self.items():
+            if k in DURATION:
+                end = end+delta(**{k:v})
+        return (begin, end)
+
+    def __str__(self):
+        if self:
+            return str(self.__dates())
+        else:
+            return 'Empty'
 
 
 class WindowMissed(Exception):
