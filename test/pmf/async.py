@@ -38,6 +38,9 @@ class Listener:
     def failed(self, reply):
         print reply
 
+    def status(self, reply):
+        print reply
+
 
 if __name__ == '__main__':
     tag = 'xyz'
@@ -45,5 +48,6 @@ if __name__ == '__main__':
     #c.start(Listener())
     c.start(callback)
     while True:
-        print 'ReplyListener: sleeping...'
+        #print 'ReplyListener: sleeping...'
         sleep(10)
+    c.stop()

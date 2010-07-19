@@ -91,8 +91,9 @@ class Synchronous(RequestMethod):
         @param producer: A queue producer.
         @type producer: L{pmf.producer.QueueProducer}
         """
+        self.id = getuuid()
         RequestMethod.__init__(self, producer)
-        reader = QueueReader(self.producer.id, self.producer.url)
+        reader = QueueReader(self.id, self.producer.url)
         reader.start()
         self.reader = reader
 
@@ -108,13 +109,21 @@ class Synchronous(RequestMethod):
         @rtype: object
         @raise Exception: returned by the peer.
         """
-        replyto = self.producer.queueAddress(self.producer.id)
+        replyto = self.producer.queueAddress(self.id)
         sn = self.producer.send(
             qid,
             replyto=replyto,
             request=request,
             **any)
+        self.__getstarted(sn)
         return self.__getreply(sn)
+
+    def __getstarted(self, sn):
+        envelope = self.reader.search(sn)
+        if envelope:
+            log.info('request (%s), started', sn)
+        else:
+            raise RequestTimeout(sn)
 
     def __getreply(self, sn):
         """

@@ -227,6 +227,7 @@ class RequestConsumer(QueueConsumer):
         try:
             self.checkwindow(envelope)
             request = envelope.request
+            self.sendstarted(envelope)
             result = self.dispatcher.dispatch(request)
         except WindowMissed, m:
             result = Return.exception(m)
@@ -251,6 +252,22 @@ class RequestConsumer(QueueConsumer):
                 sn=sn,
                 any=any,
                 result=result)
+
+    def sendstarted(self, envelope):
+        """
+        Send the a status update if requested.
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
+        """
+        sn = envelope.sn
+        any = envelope.any
+        replyto = envelope.replyto
+        if replyto:
+            self.producer.send(
+                replyto,
+                sn=sn,
+                any=any,
+                status='started')
 
     def checkwindow(self, envelope):
         """

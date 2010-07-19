@@ -49,20 +49,20 @@ class ReplyConsumer(QueueConsumer):
         @type envelope: L{Envelope}
         """
         try:
-            result = Return(envelope.result)
-            if result.succeeded():
-                reply = Succeeded(envelope)
-            else:
-                reply = Failed(envelope)
-            if callable(self.listener):
-                self.listener(reply)
-                return
-            if result.succeeded():
-                self.listener.succeeded(reply)
-            else:
-                self.listener.failed(reply)
+            reply = self.__getreply(envelope)
+            reply.notify(self.listener)
         except Exception, e:
             log.exception(e)
+
+    def __getreply(self, envelope):
+        if envelope.status:
+            return Status(envelope)
+        result = Return(envelope.result)
+        if result.succeeded():
+            return Succeeded(envelope)
+        else:
+            return Failed(envelope)
+
 
 
 class AsyncReply:
@@ -84,10 +84,12 @@ class AsyncReply:
         self.sn = envelope.sn
         self.sender = envelope.sender
         self.any = envelope.any
-        
-    def throw(self):
+
+    def notify(self, listener):
         """
-        Throw (re-raise) exceptions contained in the reply.
+        Notify the specified listener.
+        @param listener: The listener to notify.
+        @type listener: L{Listener} or callable.
         """
         pass
     
@@ -98,10 +100,47 @@ class AsyncReply:
         s.append('  sender : %s' % self.sender)
         s.append('  user data : %s' % self.any)
         return '\n'.join(s)
-        
+
+
+class FinalReply(AsyncReply):
+    """
+    A (final) reply.
+    """
+
+    def notify(self, listener):
+        if callable(listener):
+            listener(self)
+            return
+        if self.succeeded():
+            listener.succeeded(self)
+        else:
+            listener.failed(self)
+
+    def succeeded(self):
+        """
+        Get whether the reply indicates success.
+        @rtype: True when succeeded.
+        @rtype bool:
+        """
+        return False
+
+    def failed(self):
+        """
+        Get whether the reply indicates failure.
+        @rtype: True when failed.
+        @rtype bool:
+        """
+        return ( not self.succeeded() )
+
+    def throw(self):
+        """
+        Throw contained exception.
+        @raise Exception: When contained.
+        """
+        pass
 
    
-class Succeeded(AsyncReply):
+class Succeeded(FinalReply):
     """
     Successful reply to asynchronous operation.
     @ivar retval: The returned value.
@@ -116,6 +155,9 @@ class Succeeded(AsyncReply):
         AsyncReply.__init__(self, envelope)
         reply = Return(envelope.result)
         self.retval = reply.retval
+
+    def succeeded(self):
+        return True
     
     def __str__(self):
         s = []
@@ -123,9 +165,9 @@ class Succeeded(AsyncReply):
         s.append('  retval:')
         s.append(str(self.retval))
         return '\n'.join(s)
-        
 
-class Failed(AsyncReply):
+
+class Failed(FinalReply):
     """
     Failed reply to asynchronous operation.  This reply
     indicates an exception was raised.
@@ -154,6 +196,35 @@ class Failed(AsyncReply):
         return '\n'.join(s)
 
 
+class Status(AsyncReply):
+    """
+    Status changed for an asynchronous operation.
+    @ivar retval: The returned value.
+    @type retval: object
+    @see: L{throw}
+    """
+
+    def __init__(self, envelope):
+        """
+        @param envelope: The received envelope.
+        @type envelope: L{Envelope}
+        """
+        AsyncReply.__init__(self, envelope)
+        self.status = 'started'
+
+    def notify(self, listener):
+        if callable(listener):
+            listener(self)
+        else:
+            listener.status(self)
+
+    def __str__(self):
+        s = []
+        s.append(AsyncReply.__str__(self))
+        s.append('  status: %s' % str(self.status))
+        return '\n'.join(s)
+
+
 class Listener:
     """
     An asynchronous operation callback listener.
@@ -172,5 +243,13 @@ class Listener:
         Async request failed (raised an exception).
         @param reply: The reply data.
         @type reply: L{Failed}.
+        """
+        pass
+
+    def status(self, reply):
+        """
+        Async request has started.
+        @param reply: The request.
+        @type reply: L{Status}.
         """
         pass
