@@ -16,11 +16,11 @@
 import logging
 
 from pulp import model
+from pulp.agent import Agent
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
 from pulp.pexceptions import PulpException
 from pulp.util import chunks
-from pulp.agent import Agent
 
 # Pulp
 
@@ -44,7 +44,7 @@ class ConsumerApi(BaseApi):
     def _get_indexes(self):
         return ["package_profile.name", "repoids"]
 
-    @audit
+    @audit('ConsumerApi', params=['id'])
     def create(self, id, description):
         """
         Create a new Consumer object and return it
@@ -56,7 +56,7 @@ class ConsumerApi(BaseApi):
         self.insert(c)
         return c
         
-    @audit
+    @audit('ConsumerApi', params=['consumers'])
     def bulkcreate(self, consumers):
         """
         Create a set of Consumer objects in a bulk manner
@@ -104,7 +104,7 @@ class ConsumerApi(BaseApi):
             consumers.extend(self.consumers({'package_profile.name': name}, fields))
         return consumers
 
-    @audit
+    @audit('ConsumerApi', params=['id', 'repoid'])
     def bind(self, id, repoid):
         """
         Bind (subscribe) a consumer to a repo.
@@ -123,7 +123,7 @@ class ConsumerApi(BaseApi):
         repoids.append(repoid)
         self.update(consumer)
 
-    @audit
+    @audit('ConsumerApi', params=['id', 'repoid'])
     def unbind(self, id, repoid):
         """
         Unbind (unsubscribe) a consumer to a repo.
@@ -142,7 +142,7 @@ class ConsumerApi(BaseApi):
         repoids.remove(repoid)
         self.update(consumer)
         
-    @audit
+    @audit('ConsumerApi', params=['id'])
     def profile_update(self, id, package_profile):
         """
         Update the consumer information such as package profile
@@ -153,7 +153,7 @@ class ConsumerApi(BaseApi):
         consumer["package_profile"] =  package_profile
         self.update(consumer)
 
-    @audit
+    @audit('ConsumerApi', params=['id', 'packagenames'])
     def installpackages(self, id, packagenames=[]):
         """
         Install packages on the consumer.
@@ -166,7 +166,7 @@ class ConsumerApi(BaseApi):
         agent.packages.install(packagenames)
         return packagenames
     
-    @audit
+    @audit('ConsumerApi', params=['id', 'packageids'])
     def installpackagegroups(self, id, packageids=[]):
         """
         Install package groups on the consumer.

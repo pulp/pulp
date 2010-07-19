@@ -45,18 +45,18 @@ _log.setLevel(logging.DEBUG)
 
 # auditing decorator ----------------------------------------------------------
 
-class MethodSpec(object):
+class MethodInspector(object):
     """
     Class for method inspection.
     """
-    def __init__(self, method, params):
+    def __init__(self, api, method, params):
         """
         @type method: unbound class instance method
         @param method: method to build spec of
         @type params: list of str's
         @param params: ordered list of method parameters of interest
         """
-        self.api = method.im_class.__name__
+        self.api = api
         self.method = method.__name__
         self.params = params
         
@@ -68,31 +68,35 @@ class MethodSpec(object):
                                      enumerate(args) if a in params)
             
         defaults = spec[3]
-        self.__param_defaults = dict((a,d) for a,d in
-                                     zip(args[0-len(defaults):], defaults))
+        if defaults:
+            self.__param_defaults = dict((a,d) for a,d in
+                                         zip(args[0-len(defaults):], defaults)
+                                         if a in params)
+        else:
+            self.__param_defaults = {}
             
-        def param_values(self, args, kwargs):
-            """
-            Grep through passed in arguments and keyword arguments and return
-            a list of values corresponding to the parameters of interest.
-            @type args: list or tuple
-            @param args: positional arguments
-            @type kwargs: dict
-            @param kwargs: keyword arguments
-            @return: list of values corresponding to parameters of interest
-            """
-            values = []
-            for p in self.params:
-                i = self.__param_to_index[p]
-                if i < len(args):
-                    values.append(args[i])
-                else:
-                    value = kwargs.get(p, self.__param_defaults[p])
-                    values.append(value)
-            return values
+    def param_values(self, args, kwargs):
+        """
+        Grep through passed in arguments and keyword arguments and return
+        a list of values corresponding to the parameters of interest.
+        @type args: list or tuple
+        @param args: positional arguments
+        @type kwargs: dict
+        @param kwargs: keyword arguments
+        @return: list of values corresponding to parameters of interest
+        """
+        values = []
+        for p in self.params:
+            i = self.__param_to_index[p]
+            if i < len(args):
+                values.append(args[i])
+            else:
+                value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Param: %s' % p))
+                values.append(value)
+        return values
         
 
-def audit(params=[], record_result=False, pass_principal=False):
+def audit(api, params=[], record_result=False, pass_principal=False):
     """
     API class instance method decorator meant to log calls that constitute
     events on pulp's model instances.
@@ -104,6 +108,8 @@ def audit(params=[], record_result=False, pass_principal=False):
     This optional keyword argument is not passed to the underlying method,
     unless the pass_principal flag is True.
     
+    @type api: str
+    @param api: the name of the api class
     @type params: list or tuple of str's
     @param params: list of names of parameters to record the values of
     @type record_result: bool
@@ -115,7 +121,7 @@ def audit(params=[], record_result=False, pass_principal=False):
     
     def _audit_decorator(method):
         
-        spec = MethodSpec(method)
+        spec = MethodInspector(api, method, params)
         
         @functools.wraps(method)
         def _audit(*args, **kwargs):
@@ -123,7 +129,8 @@ def audit(params=[], record_result=False, pass_principal=False):
             if not pass_principal:
                 kwargs.pop('principal', None)
             param_values = spec.param_values(args, kwargs)
-            param_values_repr = pformat(param_values)
+            #param_values_repr = pformat(param_values)
+            param_values_repr = ', '.join(pformat(v) for v in param_values)
             action = '%s.%s: %s' % (spec.api,
                                     spec.method,
                                     param_values_repr)
@@ -174,10 +181,10 @@ def events(spec=None, fields=None, errors_only=False):
                         events that match spec
     @return: list of events containing fields and matching spec
     """
-    assert isinstance(spec, dict) or isinstance(spec, pymongo.son.SON)
-    assert isinstance(fields, list) or isinstance(fields, tuple)
+    assert isinstance(spec, dict) or isinstance(spec, pymongo.son.SON) or spec is None
+    assert isinstance(fields, list) or isinstance(fields, tuple) or fields is None
     if errors_only:
-        spec = spec or {}                           # ensure spec is a dict
+        spec = spec or {}
         spec['exception'].setdefault({'$ne': None}) # don't overwrite existing
     events_ = _objdb.find(spec=spec, fields=fields)
     return list(events_)

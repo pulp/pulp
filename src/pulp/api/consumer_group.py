@@ -13,14 +13,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 import logging
-import pymongo
-import re
 
 from pulp import model
-from pulp.api.base import BaseApi
-from pulp.pexceptions import PulpException
-from pulp.util import chunks
 from pulp.agent import Agent
+from pulp.api.base import BaseApi
+from pulp.auditing import audit
+from pulp.pexceptions import PulpException
 
 # Pulp
 from pulp.api.consumer import ConsumerApi
@@ -40,7 +38,8 @@ class ConsumerGroupApi(BaseApi):
         return self.db.consumergroups
 
 
-    def create(self, id, description, consumerids = []):
+    @audit('ConsumerGroupApi', params=['id', 'consumerids'])
+    def create(self, id, description, consumerids=[]):
         """
         Create a new ConsumerGroup object and return it
         """
@@ -80,6 +79,7 @@ class ConsumerGroupApi(BaseApi):
         return consumer['consumerids']
 
 
+    @audit('ConsumerGroupApi', params=['groupid', 'consumerid'])
     def add_consumer(self, groupid, consumerid):
         """
         Adds the passed in consumer to this group
@@ -104,6 +104,7 @@ class ConsumerGroupApi(BaseApi):
         consumerids.append(consumer["id"])
         consumergroup["consumerids"] = consumerids
 
+    @audit('ConsumerGroupApi', params=['groupid', 'consumerid'])
     def delete_consumer(self, groupid, consumerid):
         consumergroup = self.consumergroup(groupid)
         if (consumergroup == None):
@@ -115,6 +116,7 @@ class ConsumerGroupApi(BaseApi):
         consumergroup["consumerids"] = consumerids
         self.update(consumergroup)
 
+    @audit('ConsumerGroupApi', params=['id', 'repoid'])
     def bind(self, id, repoid):
         """
         Bind (subscribe) a consumer group to a repo.
@@ -135,6 +137,7 @@ class ConsumerGroupApi(BaseApi):
         for consumerid in consumerids:
             self.consumerApi.bind(consumerid, repoid)
 
+    @audit('ConsumerGroupApi', params=['id', 'repoid'])
     def unbind(self, id, repoid):
         """
         Unbind (unsubscribe) a consumer group from a repo.
@@ -156,6 +159,7 @@ class ConsumerGroupApi(BaseApi):
             self.consumerApi.unbind(consumerid, repoid)
             
             
+    @audit('ConsumerGroupApi', params=['id', 'packagenames'])
     def installpackages(self, id, packagenames=[]):
         """
         Install packages on the consumers in a consumer group.

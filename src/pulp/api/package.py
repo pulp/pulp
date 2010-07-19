@@ -49,7 +49,8 @@ class PackageApi(BaseApi):
         return self.db.packages
         
         
-    @audit
+    @audit('PackageApi', params=['name', 'epoch', 'version', 'release', 'arch',
+                                 'checksum_type', 'checksum', 'filename'])
     def create(self, name, epoch, version, release, arch, description, 
             checksum_type, checksum, filename):
         """
@@ -60,7 +61,7 @@ class PackageApi(BaseApi):
         self.insert(p)
         return p
 
-    @audit
+    @audit('PackageApi', params=['id'])
     def delete(self, id):
         """
         Delete package version object based on "_id" key
