@@ -75,8 +75,6 @@ class Consumer(Endpoint):
     """
     An AMQP (abstract) consumer.
     """
-    def mustConnect(self):
-        return True
 
     def start(self):
         """

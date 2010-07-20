@@ -113,16 +113,6 @@ class Endpoint:
         except:
             pass
 
-    def mustConnect(self):
-        """
-        Get whether the endpoint must connect.
-        When true, calls to connect() will block until a connection
-        can be successfully made.
-        @return: True/False
-        @rtype: bool
-        """
-        return False
-
     def queueAddress(self, name):
         """
         Get a QPID queue address.
