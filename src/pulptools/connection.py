@@ -393,7 +393,7 @@ class UserConnection(PulpConnection):
         return self.conn.request_put(method, params=user_data)
 
     def update(self, user):
-        method = "/users/%s/" % consumergroup['id']
+        method = "/users/%s/" % user['id']
         return self.conn.request_put(method, params=user)
 
     def delete(self, **kwargs):
