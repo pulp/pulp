@@ -26,10 +26,10 @@ except ImportError:
 import pymongo.json_util 
 import web
 
-from juicer import auth
-from juicer import http
-from juicer.queues import fifo
 from pulp.tasking.task import Task, TaskModel, task2model
+from pulp.webservices import auth
+from pulp.webservices import http
+from pulp.webservices.queues import fifo
 
 
 class JSONController(object):

@@ -15,7 +15,7 @@
 # in this software or its documentation.
 """
 This module contains various globals that get set at runtime.
-CONFIG - the raw configurations of juicer and pulp as a configuration parser
+CONFIG - the raw configurations of web.services and pulp as a configuration parser
 """
 
 import logging
@@ -28,7 +28,7 @@ def bootstrap(cfg):
     # the global CONFIG must be set *before* the application is imported
     global config
     config = cfg
-    from juicer.application import wsgi_application
+    from pulp.webservices.application import wsgi_application
 
     # Logging
     LEVELS = {'debug':    logging.DEBUG,

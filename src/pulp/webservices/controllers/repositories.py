@@ -19,11 +19,11 @@ import logging
 
 import web
 
-from juicer import http
-from juicer import mongo
-from juicer.controllers.base import JSONController, AsyncController
-from juicer.runtime import config
 from pulp.api.repo import RepoApi
+from pulp.webservices import http
+from pulp.webservices import mongo
+from pulp.webservices.controllers.base import JSONController, AsyncController
+from pulp.webservices.runtime import config
 
 # globals ---------------------------------------------------------------------
 

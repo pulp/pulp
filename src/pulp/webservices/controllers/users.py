@@ -16,9 +16,9 @@
 
 import web
 
-from juicer.controllers.base import JSONController
-from juicer.runtime import config
 from pulp.api.user import UserApi
+from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.runtime import config
 
 # users api ---------------------------------------------------------------
 

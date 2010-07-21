@@ -18,10 +18,10 @@ import logging
 
 import web
 
-from juicer import mongo
-from juicer.controllers.base import JSONController
-from juicer.runtime import config
 from pulp.api.package import PackageApi
+from pulp.webservices import mongo
+from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.runtime import config
 
 # globals ---------------------------------------------------------------------
 
@@ -101,7 +101,7 @@ class PackageDeferredFields(JSONController):
     
 class PackageActions(JSONController):
     
-    # See juicer.repositories.RepositoryActions for design
+    # See pulp.webservices.repositories.RepositoryActions for design
     
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (

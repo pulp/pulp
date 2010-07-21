@@ -17,8 +17,8 @@
 import logging
 import web
 
-from juicer.controllers.base import JSONController
-from juicer.role_check import RoleCheck
+from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.role_check import RoleCheck
 
 log = logging.getLogger('pulp')
 

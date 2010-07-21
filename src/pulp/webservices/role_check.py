@@ -15,15 +15,18 @@
 # in this software or its documentation.
 
 import logging
-import web
 try:
     import json
 except ImportError:
     import simplejson as json
+
 import pymongo.json_util 
+import web
 
 from pulp.certificate import Certificate
-from juicer import http
+from pulp.webservices import http
+
+
 log = logging.getLogger('pulp')
 
 

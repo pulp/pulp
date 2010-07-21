@@ -16,9 +16,9 @@
 
 import web
 
-from juicer.controllers.base import JSONController
-from juicer.runtime import config
 from pulp.api.consumer_group import ConsumerGroupApi
+from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.runtime import config
 
 # consumers api ---------------------------------------------------------------
 
@@ -90,7 +90,7 @@ class ConsumerGroup(JSONController):
 
 class ConsumerGroupActions(JSONController):
 
-    # See juicer.repositories.RepositoryActions for design
+    # See pulp.webservices.repositories.RepositoryActions for design
 
     exposed_actions = (
         'bind',

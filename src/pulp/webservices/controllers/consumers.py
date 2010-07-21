@@ -19,12 +19,12 @@ import logging
 
 import web
 
-from juicer import http
-from juicer import mongo
-from juicer.controllers.base import JSONController
-from juicer.runtime import config
-from juicer.role_check import RoleCheck
 from pulp.api.consumer import ConsumerApi
+from pulp.webservices import http
+from pulp.webservices import mongo
+from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.runtime import config
+from pulp.webservices.role_check import RoleCheck
 
 
 # globals ---------------------------------------------------------------------
@@ -189,7 +189,7 @@ class ConsumerDeferredFields(JSONController):
 
 class ConsumerActions(JSONController):
     
-    # See juicer.repositories.RepositoryActions for design
+    # See pulp.webservices.repositories.RepositoryActions for design
     
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (

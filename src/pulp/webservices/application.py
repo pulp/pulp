@@ -16,7 +16,7 @@
 
 import web
 
-from juicer import controllers
+from pulp.webservices import controllers
 
 
 # NOTE: If you add a item here make sure you also add 
