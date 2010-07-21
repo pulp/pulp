@@ -2,8 +2,8 @@
 %{!?python_version: %global python_version %(%{__python} -c "from distutils.sysconfig import get_python_version; print get_python_version()")}
 
 Name:           python-qpid
-Version:        0.7.946106
-Release:        9%{?dist}
+Version:        0.7.946107
+Release:        1%{?dist}
 Summary:        Python client library for AMQP
 
 Group:          Development/Python
@@ -99,6 +99,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Wed Jul 21 2010 Mike McCune <mmccune@redhat.com> 0.7.946107-1
+- new package
+
 * Wed Jul 14 2010 Rafael Schloming <rafaels@redhat.com> - 0.7.946106-9
 - Fix for bz614344
 
