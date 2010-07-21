@@ -35,9 +35,12 @@ class Window(Envelope):
     @type BEGIN: str
     @cvar END: The ending keyword
     @type END: str
+    @cvar END: The duration keywords
+    @type END: [str,..]
     """
 
     FORMAT = '%Y-%m-%dT%H:%M:%S'
+    DURATION = ('days', 'seconds', 'minutes', 'hours', 'weeks')
 
     def __init__(self, *D, **window):
         """
@@ -54,12 +57,13 @@ class Window(Envelope):
             - hours
             - weeks
         """
-        if not D:
+        if D:
+            dict.__init__(self, *D)
+            return
+        if window:
             self.__setbegin(window)
             self.__setend(window)
-            dict.__init__(self, **window)
-        else:
-            dict.__init__(self, *D)
+        dict.__init__(self, **window)
 
     def match(self):
         """
@@ -123,6 +127,8 @@ class Window(Envelope):
             if isinstance(v, dt):
                 v = v.strftime(self.FORMAT)
             window[BEGIN] = v
+        else:
+            raise Exception, 'Window() must specify "begin"'
         return window
 
     def __setend(self, window):
@@ -144,7 +150,26 @@ class Window(Envelope):
             if isinstance(v, dt):
                 v = v.strftime(self.FORMAT)
             window[END] = v
+        else:
+            if not self.__hasduration(window):
+                raise Exception,\
+                    'Window() must have "end" or one of: %s' % \
+                    str(self.DURATION)
         return window
+
+    def __hasduration(self, window):
+        """
+        Get whether one of the duration keywords are specified
+        in the I{window} definition.
+        @param window: The window specification.
+        @type window: dict
+        @return: True if found.
+        @rtype: bool
+        """
+        for k in self.DURATION:
+            if k in window:
+                return True
+        return False
 
     def __dates(self):
         """
