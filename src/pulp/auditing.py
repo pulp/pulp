@@ -77,8 +77,8 @@ class MethodInspector(object):
             
     def param_values(self, args, kwargs):
         """
-        Grep through passed in arguments and keyword arguments and return
-        a list of values corresponding to the parameters of interest.
+        Grep through passed in arguments and keyword arguments and return a list
+        of values corresponding to the parameters of interest.
         @type args: list or tuple
         @param args: positional arguments
         @type kwargs: dict
@@ -118,18 +118,17 @@ def audit(api, params=[], record_result=False, pass_principal=False):
     @param pass_principal: whether or not to pass the principal as a key word
                            argument to the method
     """
-    
     def _audit_decorator(method):
         
         spec = MethodInspector(api, method, params)
         
         @functools.wraps(method)
         def _audit(*args, **kwargs):
+            # build up the data to record
             principal = kwargs.get('principal', None)
             if not pass_principal:
                 kwargs.pop('principal', None)
             param_values = spec.param_values(args, kwargs)
-            #param_values_repr = pformat(param_values)
             param_values_repr = ', '.join(pformat(v) for v in param_values)
             action = '%s.%s: %s' % (spec.api,
                                     spec.method,
@@ -140,6 +139,7 @@ def audit(api, params=[], record_result=False, pass_principal=False):
                           spec.method,
                           param_values)
                 
+            # convenience function for recording
             def _record_event():
                 _objdb.insert(event, safe=False, check_keys=False)
                 _log.info('[%s] %s called %s.%s on %s' %
@@ -149,6 +149,7 @@ def audit(api, params=[], record_result=False, pass_principal=False):
                            spec.method,
                            param_values_repr))
                 
+            # execute the wrapped method and record the results
             try:
                 result = method(*args, **kwargs)
             except Exception, e:
@@ -279,5 +280,5 @@ def cull_events(delta):
     upper_bound = now - delta
     events_ = events({'timestamp': {'$lt': upper_bound}})
     for e in events_:
-        _objdb.remove(e, safe=False)
+        _objdb.remove(e, safe=True)
     return len(events_)
