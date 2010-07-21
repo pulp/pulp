@@ -17,11 +17,10 @@
 import ConfigParser
 import os
 
-from juicer.runtime import bootstrap
+from pulp.webservices.runtime import bootstrap
 
 # added potential paths to configuration files here
 config_file_paths = [
-    '/etc/pulp/juicer.conf',
     '/etc/pulp/pulp.conf',
 ]
 
