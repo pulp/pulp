@@ -29,7 +29,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.certificate import Certificate
-from juicer.role_check import RoleCheck
+from pulp.webservices.role_check import RoleCheck
 
 from ConfigParser import ConfigParser
 

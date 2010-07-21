@@ -30,7 +30,7 @@ logging.getLogger('pulp.webservices').setLevel(logging.DEBUG)
 log = logging.getLogger(__name__)
 
 # Pulp Configuration
-config = pulp.util.Config(path='/etc/pulp/pulp.webservices.conf')
+config = pulp.util.Config(path='/etc/pulp/pulp.conf')
 
 def authenhandler(req):
     # Needed to stuff the SSL variables into the request

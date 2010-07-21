@@ -14,7 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 """
-HTTP utilities to help juicer with HTTP using the web.py framework
+HTTP utilities to help pulp web services with HTTP using the web.py framework
 """
 
 import httplib

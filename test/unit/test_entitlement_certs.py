@@ -15,7 +15,7 @@
 
 import unittest
 
-import juicer.httpd.repo_cert_validation as validation
+import pulp.webservices.httpd.repo_cert_validation as validation
 import pulp.certificate
 
 ENTITLED_CERT = '''

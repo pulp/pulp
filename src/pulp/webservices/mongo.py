@@ -15,7 +15,7 @@
 # in this software or its documentation.
 
 """
-Mongo utility module to help juicer deal with the mongo db.
+Mongo utility module to help pulp web services deal with the mongo db.
 """
 
 import re

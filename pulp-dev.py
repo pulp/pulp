@@ -24,23 +24,22 @@ DIRS = (
     '/etc/httpd',
     '/etc/httpd/conf.d',
     '/etc/pulp',
-    '/etc/pki/juicer',
+    '/etc/pki/pulp',
     '/srv',
-    '/srv/juicer',
+    '/srv/pulp',
     '/var/lib/pulp',
     '/var/log/pulp',
     '/var/www/.python-eggs',    # needed for older versions of mod_wsgi
 )
 
 LINKS = (
-    'etc/pulp/juicer.conf',
     'etc/pulp/pulp.conf',
     'etc/pulp/client.conf',
-    'etc/httpd/conf.d/juicer.conf',
-    'etc/pki/juicer/ca.crt',
-    'etc/pki/juicer/server.crt',
-    'etc/pki/juicer/server.key',
-    'srv/juicer/juicer.wsgi',
+    'etc/httpd/conf.d/pulp.conf',
+    'etc/pki/pulp/ca.crt',
+    'etc/pki/pulp/server.crt',
+    'etc/pki/pulp/server.key',
+    'srv/pulp/webservices.wsgi',
 )
 
 def parse_cmdline():
