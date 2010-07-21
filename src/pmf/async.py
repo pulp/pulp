@@ -82,7 +82,7 @@ class AsyncReply:
         @type envelope: L{Envelope}
         """
         self.sn = envelope.sn
-        self.sender = envelope.sender
+        self.origin = envelope.origin
         self.any = envelope.any
 
     def notify(self, listener):
@@ -97,7 +97,7 @@ class AsyncReply:
         s = []
         s.append(self.__class__.__name__)
         s.append('  sn : %s' % self.sn)
-        s.append('  sender : %s' % self.sender)
+        s.append('  origin : %s' % self.origin)
         s.append('  user data : %s' % self.any)
         return '\n'.join(s)
 

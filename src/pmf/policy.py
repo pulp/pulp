@@ -109,10 +109,9 @@ class Synchronous(RequestMethod):
         @rtype: object
         @raise Exception: returned by the peer.
         """
-        replyto = self.producer.queueAddress(self.id)
         sn = self.producer.send(
             qid,
-            replyto=replyto,
+            replyto=self.id,
             request=request,
             **any)
         self.__getstarted(sn)
@@ -171,11 +170,9 @@ class Asynchronous(RequestMethod):
         @return: The request serial number.
         @rtype: str
         """
-        replyto = \
-            self.producer.queueAddress(self.tag)
         sn = self.producer.send(
                 qid,
-                replyto=replyto,
+                replyto=self.tag,
                 request=request,
                 **any)
         return sn
@@ -190,11 +187,9 @@ class Asynchronous(RequestMethod):
         @type request: object
         @keyword any: Any (extra) data.
         """
-        replyto = \
-            self.producer.queueAddress(self.tag)
         sns = self.producer.broadcast(
                 qids,
-                replyto=replyto,
+                replyto=self.tag,
                 request=request,
                 **any)
         return sns

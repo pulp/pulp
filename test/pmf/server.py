@@ -79,7 +79,7 @@ if __name__ == '__main__':
     # asynchronous
     print '(demo) asynchronous'
     tag = 'xyz'
-    window = Window(minutes=1)
+    window = Window(begin=dt.utcnow(), minutes=1)
     agent = Agent('123', ctag=tag, window=window)
     demo(agent)
 
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     print '(demo) group asynchronous'
     tag = 'xyz'
     group = ('123', 'ABC',)
-    window = Window(minutes=1)
+    window = Window(begin=dt.utcnow(), minutes=1)
     agent = Agent(group, ctag=tag)
     demo(agent)
 
