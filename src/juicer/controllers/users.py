@@ -20,7 +20,7 @@ from juicer.controllers.base import JSONController
 from juicer.runtime import config
 from pulp.api.user import UserApi
 
-# consumers api ---------------------------------------------------------------
+# users api ---------------------------------------------------------------
 
 api = UserApi(config)
 
@@ -63,8 +63,8 @@ class User(JSONController):
     def GET(self, login):
         """
         Get a users information
-        @param login: consumer group id
-        @return: consumer group meta data
+        @param login: user login
+        @return: user metadata
         """
         return self.ok(api.user(login))
 
@@ -81,9 +81,9 @@ class User(JSONController):
     @JSONController.error_handler
     def DELETE(self, login):
         """
-        Delete a consumer group.
-        @param id: consumer group id
-        @return: True on successful deletion of consumer
+        Delete a user
+        @param login: login of user to delete
+        @return: True on successful deletion of user
         """
         api.delete(login=login)
         return self.ok(True)

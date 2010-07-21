@@ -57,11 +57,15 @@ class consumer(BaseCore):
     def load_server(self):
         # /etc/pki/consumer/cert.pem
         # /etc/pki/consumer/key.pem
-        cert_file = "/etc/pki/consumer/cert.pem"
-        key_file = "/etc/pki/consumer/key.pem"
+        cert_path = None 
+        key_path = None
+        if (os.path.exists("/etc/pki/consumer/cert.pem") and
+                os.path.exists("/etc/pki/consumer/key.pem")):
+            cert_path = "/etc/pki/consumer/cert.pem"
+            key_path = "/etc/pki/consumer/key.pem"
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
-                                        port=8811, cert_file=cert_file,
-                                        key_file=key_file)
+                                        port=8811, cert_file=cert_path,
+                                        key_file=key_path)
 
     def generate_options(self):
         possiblecmd = []
@@ -143,13 +147,10 @@ class consumer(BaseCore):
             CFG.write()
             self.load_server()
         try:
-            print "Trying to create consumer"
             consumer = self.cconn.create(self.options.id, self.options.description)
-            print "Created"
             utils.writeToFile(CONSUMERID, consumer['id'])
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer['id'], pkginfo)
-            
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -253,7 +254,7 @@ class consumer(BaseCore):
     def _delete(self):
         (self.options, self.args) = self.parser.parse_args()
         if self.options.consumerid:
-            consumer_id = self.options.id
+            consumer_id = self.options.consumerid
         else:
             consumer_id = getConsumer()
         try:

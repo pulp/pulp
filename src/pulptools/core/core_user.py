@@ -37,10 +37,10 @@ class user(BaseCore):
         shortdesc = "user specific actions to pulp server."
         desc = ""
 
-        BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
+        BaseCore.__init__(self, "user", usage, shortdesc, desc)
         self.actions = {"create" : "Create a user",
                         "list"   : "List available users",
-                        "delete" : "Delete a consumer group",}
+                        "delete" : "Delete a user",}
 
         self.username = None
         self.password = None
@@ -57,7 +57,7 @@ class user(BaseCore):
             usage = "usage: %prog user create [OPTIONS]"
             BaseCore.__init__(self, "user create", usage, "", "")
             self.parser.add_option("--login", dest="login",
-                           help="consumer group id"),
+                           help="login to assign to user"),
             self.parser.add_option("--password", dest="password",
                            help="password for authentication")
             self.parser.add_option("--name", dest="name",

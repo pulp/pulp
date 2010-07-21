@@ -104,7 +104,6 @@ class PulpCore:
 
 if __name__ == "__main__":
     # TODO: Make logging configurable
-    
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.ERROR)
     PulpCore().main()
