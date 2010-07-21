@@ -1,0 +1,30 @@
+From 5c3a50f97f327161fd5bd991c8ef4a8b6aece62a Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Wed, 30 Jun 2010 14:36:43 +0000
+Subject: [PATCH 18/26] BZ-609258 fixed auth username for sasl
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@959333 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/sasl.py |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/qpid/python/qpid/sasl.py b/qpid/python/qpid/sasl.py
+index 6645903..d4c15bd 100644
+--- a/qpid/python/qpid/sasl.py
++++ b/qpid/python/qpid/sasl.py
+@@ -66,7 +66,11 @@ class WrapperClient:
+       raise SASLError(self._cli.getError())
+ 
+   def auth_username(self):
+-    return self._cli.getUserId()
++    status, result = self._cli.getUserId()
++    if status:
++      return result
++    else:
++      raise SASLError(self._cli.getError())
+ 
+ class PlainClient:
+ 
+-- 
+1.7.1.1
+

@@ -1,0 +1,37 @@
+From 0e2870b1d18706721055ddf73fc4e7a6b84cf674 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Wed, 14 Jul 2010 19:47:37 +0000
+Subject: [PATCH 26/26] BZ-614344 default ports for reconnect_urls
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@964151 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index 1e1055a..9b34a46 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -31,7 +31,7 @@ from qpid.messaging.exceptions import *
+ from qpid.messaging.message import get_codec, Disposition, Message
+ from qpid.ops import *
+ from qpid.selector import Selector
+-from qpid.util import URL
++from qpid.util import URL, default
+ from qpid.validator import And, Context, List, Map, Types, Values
+ from threading import Condition, Thread
+ 
+@@ -347,8 +347,8 @@ class Driver:
+ 
+   def _next_host(self):
+     urls = [URL(u) for u in self.connection.reconnect_urls]
+-    hosts = [(self.connection.host, self.connection.port)] + \
+-        [(u.host, u.port) for u in urls]
++    hosts = [(self.connection.host, default(self.connection.port, 5672))] + \
++        [(u.host, default(u.port, 5672)) for u in urls]
+     if self._host >= len(hosts):
+       self._host = 0
+     result = hosts[self._host]
+-- 
+1.7.1.1
+

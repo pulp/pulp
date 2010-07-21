@@ -1,0 +1,31 @@
+From 7f006841387b54cb0165cfa6d1423cd3fae06ce2 Mon Sep 17 00:00:00 2001
+From: Gordon Sim <gsim@apache.org>
+Date: Tue, 1 Jun 2010 09:25:23 +0000
+Subject: [PATCH 01/26] BZ-597066
+
+Don't use guest/guest default username/password, use None instead (this allows sasl implementation to infer the correct choice while retaining the ability to override it should that be desired)
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@949971 13f79535-47bb-0310-9956-ffa450edef68
+(cherry picked from commit 5d7e22ba6f96a800a0af166559bea35652665951)
+---
+ qpid/python/qpid/messaging/endpoints.py |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/endpoints.py b/qpid/python/qpid/messaging/endpoints.py
+index 3016543..f5f957c 100644
+--- a/qpid/python/qpid/messaging/endpoints.py
++++ b/qpid/python/qpid/messaging/endpoints.py
+@@ -127,8 +127,8 @@ class Connection:
+     else:
+       self.port = default(url.port, options.get("port", AMQP_PORT))
+     self.heartbeat = options.get("heartbeat")
+-    self.username = default(url.user, options.get("username", "guest"))
+-    self.password = default(url.password, options.get("password", "guest"))
++    self.username = default(url.user, options.get("username", None))
++    self.password = default(url.password, options.get("password", None))
+ 
+     self.sasl_mechanisms = options.get("sasl_mechanisms")
+     self.sasl_service = options.get("sasl_service", "qpidd")
+-- 
+1.7.1.1
+

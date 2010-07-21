@@ -1,0 +1,46 @@
+From 1834e02e7dd0abd92d4bee09818f86f4fb6af89b Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Fri, 25 Jun 2010 19:06:05 +0000
+Subject: [PATCH 14/26] BZ-607798 add uuid prefix to addresses beginning with hash(#)
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@958083 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/endpoints.py |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/endpoints.py b/qpid/python/qpid/messaging/endpoints.py
+index 30f51fe..8bddc96 100644
+--- a/qpid/python/qpid/messaging/endpoints.py
++++ b/qpid/python/qpid/messaging/endpoints.py
+@@ -543,6 +543,7 @@ class Session:
+     @rtype: Sender
+     @return: a new Sender for the specified target
+     """
++    target = _mangle(target)
+     sender = Sender(self, self.next_sender_id, target, options)
+     self.next_sender_id += 1
+     self.senders.append(sender)
+@@ -566,6 +567,7 @@ class Session:
+     @rtype: Receiver
+     @return: a new Receiver for the specified source
+     """
++    source = _mangle(source)
+     receiver = Receiver(self, self.next_receiver_id, source, options)
+     self.next_receiver_id += 1
+     self.receivers.append(receiver)
+@@ -707,6 +709,12 @@ class Session:
+     finally:
+       self.connection._remove_session(self)
+ 
++def _mangle(addr):
++  if addr.startswith("#"):
++    return str(uuid4()) + addr
++  else:
++    return addr
++
+ class Sender:
+ 
+   """
+-- 
+1.7.1.1
+

@@ -1,0 +1,63 @@
+From d31918432748c8e6f3596548796fb45bf778b20e Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Wed, 30 Jun 2010 14:25:03 +0000
+Subject: [PATCH 17/26] BZ-609258 added accessor for auth_username
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@959326 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py    |    1 +
+ qpid/python/qpid/messaging/endpoints.py |    1 +
+ qpid/python/qpid/sasl.py                |    6 ++++++
+ 3 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index a732a60..2175715 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -674,6 +674,7 @@ class Engine:
+     self._sasl_encode = True
+ 
+   def do_connection_open_ok(self, open_ok):
++    self.connection.auth_username = self._sasl.auth_username()
+     self._connected = True
+     self._sasl_decode = True
+     self.connection._transport_connected = True
+diff --git a/qpid/python/qpid/messaging/endpoints.py b/qpid/python/qpid/messaging/endpoints.py
+index f7afc66..f989d6c 100644
+--- a/qpid/python/qpid/messaging/endpoints.py
++++ b/qpid/python/qpid/messaging/endpoints.py
+@@ -137,6 +137,7 @@ class Connection(Endpoint):
+     self.heartbeat = options.get("heartbeat")
+     self.username = default(url.user, options.get("username", None))
+     self.password = default(url.password, options.get("password", None))
++    self.auth_username = None
+ 
+     self.sasl_mechanisms = options.get("sasl_mechanisms")
+     self.sasl_service = options.get("sasl_service", "qpidd")
+diff --git a/qpid/python/qpid/sasl.py b/qpid/python/qpid/sasl.py
+index 6b00dda..6645903 100644
+--- a/qpid/python/qpid/sasl.py
++++ b/qpid/python/qpid/sasl.py
+@@ -65,6 +65,9 @@ class WrapperClient:
+     else:
+       raise SASLError(self._cli.getError())
+ 
++  def auth_username(self):
++    return self._cli.getUserId()
++
+ class PlainClient:
+ 
+   def __init__(self):
+@@ -92,6 +95,9 @@ class PlainClient:
+   def decode(self, bytes):
+     return bytes
+ 
++  def auth_username(self):
++    return self.attrs.get("username")
++
+ try:
+   from saslwrapper import Client as _Client
+   Client = WrapperClient
+-- 
+1.7.1.1
+

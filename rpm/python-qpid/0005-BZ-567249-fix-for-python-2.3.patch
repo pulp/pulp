@@ -1,0 +1,31 @@
+From 4e05457ddfe178ac4cfa55bb1dcd6986c272e500 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Tue, 15 Jun 2010 14:13:15 +0000
+Subject: [PATCH 05/26] BZ-567249 fix for python 2.3
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@954901 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/ops.py |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/qpid/python/qpid/ops.py b/qpid/python/qpid/ops.py
+index 8c9f8a0..390552b 100644
+--- a/qpid/python/qpid/ops.py
++++ b/qpid/python/qpid/ops.py
+@@ -25,10 +25,12 @@ class Primitive(object):
+ class Enum(object):
+ 
+   # XXX: for backwards compatibility
+-  @classmethod
+   def values(cls):
+     print >> sys.stderr, "warning, please use .VALUES instead of .values()"
+     return cls.VALUES
++  # we can't use the backport preprocessor here because this code gets
++  # called by setup.py
++  values = classmethod(values)
+ 
+ class Field:
+ 
+-- 
+1.7.1.1
+

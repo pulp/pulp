@@ -1,0 +1,74 @@
+From a0e4c21893973aea53b773381ee6ca2c7e6dbcb2 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Thu, 8 Jul 2010 15:53:49 +0000
+Subject: [PATCH 20/26] BZ-612615 convert ttl from seconds to milliseconds
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@961824 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py  |    8 ++++++--
+ qpid/python/qpid/messaging/message.py |    8 ++++++++
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index 2175715..a3c565f 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -980,6 +980,7 @@ class Engine:
+         break
+ 
+     for snd in ssn.senders:
++      # XXX: should included snd.acked in this
+       if snd.synced >= snd.queued and sst.need_sync:
+         sst.write_cmd(ExecutionSync(), sync_noop)
+ 
+@@ -1182,9 +1183,11 @@ class Engine:
+     if msg.priority is not None:
+       dp.priority = msg.priority
+     if msg.ttl is not None:
+-      dp.ttl = msg.ttl
++      dp.ttl = long(msg.ttl*1000)
+     enc, dec = get_codec(msg.content_type)
+     body = enc(msg.content)
++
++    # XXX: this is not safe for out of order, can this be triggered by pre_ack?
+     def msg_acked():
+       # XXX: should we log the ack somehow too?
+       snd.acked += 1
+@@ -1243,7 +1246,8 @@ class Engine:
+     if dp.delivery_mode is not None:
+       msg.durable = dp.delivery_mode == delivery_mode.persistent
+     msg.priority = dp.priority
+-    msg.ttl = dp.ttl
++    if dp.ttl is not None:
++      msg.ttl = dp.ttl/1000.0
+     msg.redelivered = dp.redelivered
+     msg.properties = mp.application_headers or {}
+     if mp.app_id is not None:
+diff --git a/qpid/python/qpid/messaging/message.py b/qpid/python/qpid/messaging/message.py
+index a96a6da..e2406f1 100644
+--- a/qpid/python/qpid/messaging/message.py
++++ b/qpid/python/qpid/messaging/message.py
+@@ -74,12 +74,20 @@ class Message:
+ 
+   @type id: str
+   @ivar id: the message id
++  @type subject: str
++  @ivar subject: message subject
+   @type user_id: str
+   @ivar user_id: the user-id of the message producer
+   @type reply_to: str
+   @ivar reply_to: the address to send replies
+   @type correlation_id: str
+   @ivar correlation_id: a correlation-id for the message
++  @type durable: bool
++  @ivar durable: message durability
++  @type priority: int
++  @ivar priority: message priority
++  @type ttl: float
++  @ivar ttl: time-to-live measured in seconds
+   @type properties: dict
+   @ivar properties: application specific message properties
+   @type content_type: str
+-- 
+1.7.1.1
+

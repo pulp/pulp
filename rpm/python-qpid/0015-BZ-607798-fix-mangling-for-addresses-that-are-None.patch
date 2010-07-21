@@ -1,0 +1,26 @@
+From dcc6c20a11f1dffac6708a128517757e7b1e0324 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Mon, 28 Jun 2010 11:35:59 +0000
+Subject: [PATCH 15/26] BZ-607798 fix mangling for addresses that are None
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@958547 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/endpoints.py |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/endpoints.py b/qpid/python/qpid/messaging/endpoints.py
+index 8bddc96..62423ca 100644
+--- a/qpid/python/qpid/messaging/endpoints.py
++++ b/qpid/python/qpid/messaging/endpoints.py
+@@ -710,7 +710,7 @@ class Session:
+       self.connection._remove_session(self)
+ 
+ def _mangle(addr):
+-  if addr.startswith("#"):
++  if addr and addr.startswith("#"):
+     return str(uuid4()) + addr
+   else:
+     return addr
+-- 
+1.7.1.1
+

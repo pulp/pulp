@@ -1,0 +1,28 @@
+From 9e7d9497b8665b51075ddcfd1d01d805f009f78b Mon Sep 17 00:00:00 2001
+From: Gordon Sim <gsim@apache.org>
+Date: Wed, 2 Jun 2010 10:24:10 +0000
+Subject: [PATCH 02/26] Bug 538188 - Fixed connection.start() hangs if connection is not accepted
+
+QPID-2637: Mark connection as failed if read from socket fails
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@950472 13f79535-47bb-0310-9956-ffa450edef68
+(cherry picked from commit ee264c0fdaede4c4fee624b289aad475c9bd31b0)
+---
+ qpid/python/qpid/connection.py |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/qpid/python/qpid/connection.py b/qpid/python/qpid/connection.py
+index 2c61e5a..7dbefb8 100644
+--- a/qpid/python/qpid/connection.py
++++ b/qpid/python/qpid/connection.py
+@@ -132,6 +132,7 @@ class Connection(Framer):
+ 
+   def detach_all(self):
+     self.lock.acquire()
++    self.failed = True
+     try:
+       for ssn in self.attached.values():
+         if self.close_code[0] != 200:
+-- 
+1.7.1.1
+

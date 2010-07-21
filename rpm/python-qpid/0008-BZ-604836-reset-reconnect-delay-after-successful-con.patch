@@ -1,0 +1,25 @@
+From df73fc4c6a53f8b266fb88af60ea68df03057668 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Thu, 17 Jun 2010 02:18:24 +0000
+Subject: [PATCH 08/26] BZ-604836 reset reconnect delay after successful connect
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@955462 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index a6170c0..7f04903 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -480,6 +480,7 @@ class Driver:
+       self._timeout = None
+       self._attempts = 0
+       self._host = 0
++      self._delay = self.connection.reconnect_interval_min
+       self._retrying = False
+     except socket.error, e:
+       self._host = (self._host + 1) % len(self._hosts)
+-- 
+1.7.1.1
+

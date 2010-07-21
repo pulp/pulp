@@ -1,0 +1,58 @@
+From ee2dcac6734efed72b2379cf22437799e8f39efc Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Mon, 12 Jul 2010 13:43:27 +0000
+Subject: [PATCH 21/26] BZ-613216 fixed payload of None for text/plain messages
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@963280 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/message.py       |   16 ++++++++++++++--
+ qpid/python/qpid/tests/messaging/message.py |    6 ++++++
+ 2 files changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/message.py b/qpid/python/qpid/messaging/message.py
+index e2406f1..b70b365 100644
+--- a/qpid/python/qpid/messaging/message.py
++++ b/qpid/python/qpid/messaging/message.py
+@@ -49,11 +49,23 @@ TYPE_MAPPINGS={
+ 
+ DEFAULT_CODEC = (lambda x: x, lambda x: x)
+ 
++def encode_text_plain(x):
++  if x is None:
++    return None
++  else:
++    return x.encode("utf8")
++
++def decode_text_plain(x):
++  if x is None:
++    return None
++  else:
++    return x.decode("utf8")
++
+ TYPE_CODEC={
+   "amqp/map": codec("map"),
+   "amqp/list": codec("list"),
+-  "text/plain; charset=utf8": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
+-  "text/plain": (lambda x: x.encode("utf8"), lambda x: x.decode("utf8")),
++  "text/plain; charset=utf8": (encode_text_plain, decode_text_plain),
++  "text/plain": (encode_text_plain, decode_text_plain),
+   "": DEFAULT_CODEC,
+   None: DEFAULT_CODEC
+   }
+diff --git a/qpid/python/qpid/tests/messaging/message.py b/qpid/python/qpid/tests/messaging/message.py
+index 91aab5f..526a5cf 100644
+--- a/qpid/python/qpid/tests/messaging/message.py
++++ b/qpid/python/qpid/tests/messaging/message.py
+@@ -111,3 +111,9 @@ class MessageEchoTests(Base):
+   def testContentTypeUnknown(self):
+     msg = Message(content_type = "this-content-type-does-not-exist")
+     self.check(msg)
++
++  def testTextPlain(self):
++    self.check(Message(content_type="text/plain", content="asdf"))
++
++  def testTextPlainEmpty(self):
++    self.check(Message(content_type="text/plain"))
+-- 
+1.7.1.1
+

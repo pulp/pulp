@@ -1,0 +1,26 @@
+From d5086ed9cd510ce9f1dc80da90315518d5c3ebd2 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Fri, 25 Jun 2010 18:26:14 +0000
+Subject: [PATCH 12/26] BZ-608118 make sure we initialize properties even if application_headers is None
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@958060 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index ed6b602..a732a60 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -1244,7 +1244,7 @@ class Engine:
+     msg.priority = dp.priority
+     msg.ttl = dp.ttl
+     msg.redelivered = dp.redelivered
+-    msg.properties = mp.application_headers
++    msg.properties = mp.application_headers or {}
+     if mp.app_id is not None:
+       msg.properties["x-amqp-0-10.app-id"] = mp.app_id
+     if mp.content_encoding is not None:
+-- 
+1.7.1.1
+

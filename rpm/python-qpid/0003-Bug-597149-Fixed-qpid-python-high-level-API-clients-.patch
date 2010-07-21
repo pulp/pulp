@@ -1,0 +1,82 @@
+From 4ee966781844a3757eaa44ebf4690105c2f18850 Mon Sep 17 00:00:00 2001
+From: Gordon Sim <gsim@apache.org>
+Date: Wed, 9 Jun 2010 15:37:02 +0000
+Subject: [PATCH 03/26] Bug 597149 - Fixed - qpid python high level API clients not runnable on RHEL4 incompatible with python 2.3.4 OptionParser
+
+Minor adjustment to option definitions for Python 2.3
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@953044 13f79535-47bb-0310-9956-ffa450edef68
+(cherry picked from commit 4f7efe697023e9b654e5ceef9648204a322ce779)
+---
+ qpid/python/examples/api/drain  |    8 ++++----
+ qpid/python/examples/api/server |    4 ++--
+ qpid/python/examples/api/spout  |    8 ++++----
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/qpid/python/examples/api/drain b/qpid/python/examples/api/drain
+index eaf86f9..5e30153 100755
+--- a/qpid/python/examples/api/drain
++++ b/qpid/python/examples/api/drain
+@@ -27,17 +27,17 @@ parser = optparse.OptionParser(usage="usage: %prog [options] ADDRESS ...",
+                                description="Drain messages from the supplied address.")
+ parser.add_option("-b", "--broker", default="localhost",
+                   help="connect to specified BROKER (default %default)")
+-parser.add_option("-c", "--count", type=int,
++parser.add_option("-c", "--count", type="int",
+                   help="number of messages to drain")
+ parser.add_option("-f", "--forever", action="store_true",
+                   help="ignore timeout and wait forever")
+ parser.add_option("-r", "--reconnect", action="store_true",
+                   help="enable auto reconnect")
+-parser.add_option("-i", "--reconnect-interval", type=float, default=3,
++parser.add_option("-i", "--reconnect-interval", type="float", default=3,
+                   help="interval between reconnect attempts")
+-parser.add_option("-l", "--reconnect-limit", type=int,
++parser.add_option("-l", "--reconnect-limit", type="int",
+                   help="maximum number of reconnect attempts")
+-parser.add_option("-t", "--timeout", type=float, default=0,
++parser.add_option("-t", "--timeout", type="float", default=0,
+                   help="timeout in seconds to wait before exiting (default %default)")
+ parser.add_option("-p", "--print", dest="format", default="%(M)s",
+                   help="format string for printing messages (default %default)")
+diff --git a/qpid/python/examples/api/server b/qpid/python/examples/api/server
+index 0500e6f..3b9a356 100755
+--- a/qpid/python/examples/api/server
++++ b/qpid/python/examples/api/server
+@@ -30,9 +30,9 @@ parser.add_option("-b", "--broker", default="localhost",
+                   help="connect to specified BROKER (default %default)")
+ parser.add_option("-r", "--reconnect", action="store_true",
+                   help="enable auto reconnect")
+-parser.add_option("-i", "--reconnect-interval", type=float, default=3,
++parser.add_option("-i", "--reconnect-interval", type="float", default=3,
+                   help="interval between reconnect attempts")
+-parser.add_option("-l", "--reconnect-limit", type=int,
++parser.add_option("-l", "--reconnect-limit", type="int",
+                   help="maximum number of reconnect attempts")
+ parser.add_option("-v", dest="verbose", action="store_true",
+                   help="enable logging")
+diff --git a/qpid/python/examples/api/spout b/qpid/python/examples/api/spout
+index dacebb5..c2dc4db 100755
+--- a/qpid/python/examples/api/spout
++++ b/qpid/python/examples/api/spout
+@@ -39,13 +39,13 @@ parser.add_option("-b", "--broker", default="localhost",
+                   help="connect to specified BROKER (default %default)")
+ parser.add_option("-r", "--reconnect", action="store_true",
+                   help="enable auto reconnect")
+-parser.add_option("-i", "--reconnect-interval", type=float, default=3,
++parser.add_option("-i", "--reconnect-interval", type="float", default=3,
+                   help="interval between reconnect attempts")
+-parser.add_option("-l", "--reconnect-limit", type=int,
++parser.add_option("-l", "--reconnect-limit", type="int",
+                   help="maximum number of reconnect attempts")
+-parser.add_option("-c", "--count", type=int, default=1,
++parser.add_option("-c", "--count", type="int", default=1,
+                   help="stop after count messages have been sent, zero disables (default %default)")
+-parser.add_option("-t", "--timeout", type=float, default=None,
++parser.add_option("-t", "--timeout", type="float", default=None,
+                   help="exit after the specified time")
+ parser.add_option("-I", "--id", help="use the supplied id instead of generating one")
+ parser.add_option("-S", "--subject", help="specify a subject")
+-- 
+1.7.1.1
+

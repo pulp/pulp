@@ -1,0 +1,26 @@
+From ee19a4688911a9fc55dea5f3176e99d6b77acafe Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Fri, 25 Jun 2010 18:57:59 +0000
+Subject: [PATCH 13/26] BZ-569515 fix timeout tests to not leave queues lying around
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@958077 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/tests/messaging/endpoints.py |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qpid/python/qpid/tests/messaging/endpoints.py b/qpid/python/qpid/tests/messaging/endpoints.py
+index b064d62..c01f16e 100644
+--- a/qpid/python/qpid/tests/messaging/endpoints.py
++++ b/qpid/python/qpid/tests/messaging/endpoints.py
+@@ -267,7 +267,7 @@ class TimeoutTests(Base):
+     return self.ssn.sender("amq.topic")
+ 
+   def setup_receiver(self):
+-    return self.ssn.receiver("amq.topic")
++    return self.ssn.receiver("amq.topic; {link: {reliability: unreliable}}")
+ 
+   def teardown_connection(self, conn):
+     try:
+-- 
+1.7.1.1
+

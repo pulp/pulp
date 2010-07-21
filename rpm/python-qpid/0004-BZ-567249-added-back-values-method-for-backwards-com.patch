@@ -1,0 +1,39 @@
+From 38ce79eee4d48e2be75c6d74ded2c383fba5810c Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Tue, 15 Jun 2010 10:11:39 +0000
+Subject: [PATCH 04/26] BZ-567249 added back values method for backwards compatibility
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@954787 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/ops.py |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/qpid/python/qpid/ops.py b/qpid/python/qpid/ops.py
+index acb54ae..8c9f8a0 100644
+--- a/qpid/python/qpid/ops.py
++++ b/qpid/python/qpid/ops.py
+@@ -16,14 +16,19 @@
+ # specific language governing permissions and limitations
+ # under the License.
+ #
+-import os, mllib, cPickle as pickle
++import os, mllib, cPickle as pickle, sys
+ from util import fill
+ 
+ class Primitive(object):
+   pass
+ 
+ class Enum(object):
+-  pass
++
++  # XXX: for backwards compatibility
++  @classmethod
++  def values(cls):
++    print >> sys.stderr, "warning, please use .VALUES instead of .values()"
++    return cls.VALUES
+ 
+ class Field:
+ 
+-- 
+1.7.1.1
+

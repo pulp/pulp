@@ -1,0 +1,59 @@
+From ba83c5fd4c4cccae42240c70473d8d37fd8d3fcb Mon Sep 17 00:00:00 2001
+From: Alan Conway <aconway@apache.org>
+Date: Mon, 5 Jul 2010 20:12:08 +0000
+Subject: [PATCH 19/26] Bug 611543  - Assertion when raising a link established event on clustered broker
+
+Defer delivery of messages in cluster-unsafe context.
+
+Messages enqueued in a cluster-safe context are synchronized across
+the cluster.  However some messages are delivered in a cluster-unsafe
+context, for example raising a link established event occurs the
+connection thread of the establishing connection.
+
+This fix deferrs such messages by multicasting them so they can be
+re-delived in a cluster safe context.
+
+See https://bugzilla.redhat.com/show_bug.cgi?id=611543
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@960681 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/brokertest.py |   16 +++++++---------
+ 1 files changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/qpid/python/qpid/brokertest.py b/qpid/python/qpid/brokertest.py
+index 2242dcb..fddeefa 100644
+--- a/qpid/python/qpid/brokertest.py
++++ b/qpid/python/qpid/brokertest.py
+@@ -250,6 +250,12 @@ def checkenv(name):
+     if not value: raise Exception("Environment variable %s is not set" % name)
+     return value
+ 
++def find_in_file(str, filename):
++    if not os.path.exists(filename): return False
++    f = open(filename)
++    try: return str in f.read()
++    finally: f.close()
++
+ class Broker(Popen):
+     "A broker process. Takes care of start, stop and logging."
+     _broker_count = 0
+@@ -366,15 +372,7 @@ class Broker(Popen):
+     def log_ready(self):
+         """Return true if the log file exists and contains a broker ready message"""
+         if self._log_ready: return True
+-        if not os.path.exists(self.log): return False
+-        f = open(self.log)
+-        try:
+-            for l in f:
+-                if "notice Broker running" in l:
+-                    self._log_ready = True
+-                    return True
+-            return False
+-        finally: f.close()
++        self._log_ready = find_in_file("notice Broker running", self.log)
+ 
+     def ready(self):
+         """Wait till broker is ready to serve clients"""
+-- 
+1.7.1.1
+

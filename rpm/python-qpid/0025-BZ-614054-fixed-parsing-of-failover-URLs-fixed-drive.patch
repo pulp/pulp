@@ -1,0 +1,98 @@
+From 5387d39d66787509b3d687be7247dcf8a2d4b207 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Wed, 14 Jul 2010 13:36:03 +0000
+Subject: [PATCH 25/26] BZ-614054 fixed parsing of failover URLs; fixed driver to notice when reconnect_urls is dynamically changed
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@964044 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py |   25 +++++++++++++++++--------
+ qpid/python/qpid/messaging/util.py   |    9 +++++----
+ 2 files changed, 22 insertions(+), 12 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index ff988c2..1e1055a 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -336,9 +336,6 @@ class Driver:
+     self._selector = Selector.default()
+     self._attempts = 0
+     self._delay = self.connection.reconnect_interval_min
+-    urls = [URL(u) for u in self.connection.reconnect_urls]
+-    self._hosts = [(self.connection.host, self.connection.port)] + \
+-        [(u.host, u.port) for u in urls]
+     self._reconnect_log = self.connection.reconnect_log
+     self._host = 0
+     self._retrying = False
+@@ -348,6 +345,21 @@ class Driver:
+ 
+     self.engine = None
+ 
++  def _next_host(self):
++    urls = [URL(u) for u in self.connection.reconnect_urls]
++    hosts = [(self.connection.host, self.connection.port)] + \
++        [(u.host, u.port) for u in urls]
++    if self._host >= len(hosts):
++      self._host = 0
++    result = hosts[self._host]
++    if self._host == 0:
++      self._attempts += 1
++    self._host = self._host + 1
++    return result
++
++  def _num_hosts(self):
++    return len(self.connection.reconnect_urls) + 1
++
+   @synchronized
+   def wakeup(self):
+     self.dispatch()
+@@ -409,7 +421,7 @@ class Driver:
+         (self.connection.reconnect_limit is None or
+          self.connection.reconnect_limit <= 0 or
+          self._attempts <= self.connection.reconnect_limit)):
+-      if self._host > 0:
++      if self._host < self._num_hosts():
+         delay = 0
+       else:
+         delay = self._delay
+@@ -475,9 +487,7 @@ class Driver:
+   def connect(self):
+     try:
+       # XXX: should make this non blocking
+-      if self._host == 0:
+-        self._attempts += 1
+-      host, port = self._hosts[self._host]
++      host, port = self._next_host()
+       if self._retrying and self._reconnect_log:
+         log.warn("trying: %s:%s", host, port)
+       self.engine = Engine(self.connection)
+@@ -496,7 +506,6 @@ class Driver:
+       self._delay = self.connection.reconnect_interval_min
+       self._retrying = False
+     except socket.error, e:
+-      self._host = (self._host + 1) % len(self._hosts)
+       self.close_engine(ConnectError(text=str(e)))
+ 
+ DEFAULT_DISPOSITION = Disposition(None)
+diff --git a/qpid/python/qpid/messaging/util.py b/qpid/python/qpid/messaging/util.py
+index 44833f7..265cf7d 100644
+--- a/qpid/python/qpid/messaging/util.py
++++ b/qpid/python/qpid/messaging/util.py
+@@ -50,10 +50,11 @@ def set_reconnect_urls(conn, msg):
+   reconnect_urls = []
+   urls = msg.properties["amq.failover"]
+   for u in urls:
+-    if u.startswith("amqp:tcp:"):
+-      parts = u.split(":")
+-      host, port = parts[2:4]
+-      reconnect_urls.append("%s:%s" % (host, port))
++    if u.startswith("amqp:"):
++      for p in u[5:].split(","):
++        parts = p.split(":")
++        host, port = parts[1:3]
++        reconnect_urls.append("%s:%s" % (host, port))
+   conn.reconnect_urls = reconnect_urls
+   log.warn("set reconnect_urls for conn %s: %s", conn, reconnect_urls)
+ 
+-- 
+1.7.1.1
+

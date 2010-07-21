@@ -1,0 +1,51 @@
+From 69472698c9455b198d70e7b61ae2f1f06a8ff783 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Tue, 13 Jul 2010 19:07:22 +0000
+Subject: [PATCH 24/26] BZ-614054 eliminate spurious error logging and reconnect attempts
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@963825 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py |    2 +-
+ qpid/python/qpid/messaging/util.py   |    6 +++++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index 15eaf1f..ff988c2 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -463,7 +463,7 @@ class Driver:
+   def dispatch(self):
+     try:
+       if self._transport is None:
+-        if self.connection._connected:
++        if self.connection._connected and not self.connection.error:
+           self.connect()
+       else:
+         self.engine.dispatch()
+diff --git a/qpid/python/qpid/messaging/util.py b/qpid/python/qpid/messaging/util.py
+index 42bc280..44833f7 100644
+--- a/qpid/python/qpid/messaging/util.py
++++ b/qpid/python/qpid/messaging/util.py
+@@ -21,6 +21,7 @@
+ Add-on utilities for the L{qpid.messaging} API.
+ """
+ 
++from qpid.messaging import *
+ from logging import getLogger
+ from threading import Thread
+ 
+@@ -33,7 +34,10 @@ def auto_fetch_reconnect_urls(conn):
+ 
+   def main():
+     while True:
+-      msg = rcv.fetch()
++      try:
++        msg = rcv.fetch()
++      except LinkClosed:
++        return
+       set_reconnect_urls(conn, msg)
+       ssn.acknowledge(msg, sync=False)
+ 
+-- 
+1.7.1.1
+

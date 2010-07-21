@@ -1,0 +1,78 @@
+From dee1c0cebff68b694ed6e80be79b8943ebb40574 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Tue, 13 Jul 2010 17:58:44 +0000
+Subject: [PATCH 23/26] BZ-613912 fixed missign import and added test case for reconnect_urls
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@963803 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py          |    1 +
+ qpid/python/qpid/tests/messaging/endpoints.py |    7 +++++++
+ qpid/python/qpid/util.py                      |   21 ++++++++++++++-------
+ 3 files changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index a3c565f..15eaf1f 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -31,6 +31,7 @@ from qpid.messaging.exceptions import *
+ from qpid.messaging.message import get_codec, Disposition, Message
+ from qpid.ops import *
+ from qpid.selector import Selector
++from qpid.util import URL
+ from qpid.validator import And, Context, List, Map, Types, Values
+ from threading import Condition, Thread
+ 
+diff --git a/qpid/python/qpid/tests/messaging/endpoints.py b/qpid/python/qpid/tests/messaging/endpoints.py
+index 52ca9f3..bc17068 100644
+--- a/qpid/python/qpid/tests/messaging/endpoints.py
++++ b/qpid/python/qpid/tests/messaging/endpoints.py
+@@ -39,6 +39,13 @@ class SetupTests(Base):
+     self.conn.open()
+     self.ping(self.conn.session())
+ 
++  def testOpenReconnectURLs(self):
++    options = self.connection_options()
++    options["reconnect_urls"] = [self.broker, self.broker]
++    self.conn = Connection(self.broker, **options)
++    self.conn.open()
++    self.ping(self.conn.session())
++
+   def testConnectError(self):
+     try:
+       # Specifying port 0 yields a bad address on Windows; port 4 is unassigned
+diff --git a/qpid/python/qpid/util.py b/qpid/python/qpid/util.py
+index 3409d77..e62bebd 100644
+--- a/qpid/python/qpid/util.py
++++ b/qpid/python/qpid/util.py
+@@ -109,14 +109,21 @@ class URL:
+   AMQP = "amqp"
+ 
+   def __init__(self, s):
+-    match = URL.RE.match(s)
+-    if match is None:
+-      raise ValueError(s)
+-    self.scheme, self.user, self.password, self.host, port = match.groups()
+-    if port is None:
+-      self.port = None
++    if isinstance(s, URL):
++      self.scheme = s.scheme
++      self.user = s.user
++      self.password = s.password
++      self.host = s.host
++      self.port = s.port
+     else:
+-      self.port = int(port)
++      match = URL.RE.match(s)
++      if match is None:
++        raise ValueError(s)
++      self.scheme, self.user, self.password, self.host, port = match.groups()
++      if port is None:
++        self.port = None
++      else:
++        self.port = int(port)
+ 
+   def __repr__(self):
+     return "URL(%r)" % str(self)
+-- 
+1.7.1.1
+

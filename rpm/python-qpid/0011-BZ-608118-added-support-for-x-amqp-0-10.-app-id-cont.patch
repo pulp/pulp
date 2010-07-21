@@ -1,0 +1,102 @@
+From 9201b99100d8d47b3ed92573eea0e71969996418 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Fri, 25 Jun 2010 18:12:28 +0000
+Subject: [PATCH 11/26] BZ-608118 added support for x-amqp-0-10.{app-id,content-encoding,routing-key}
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@958055 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/qpid/messaging/driver.py         |    9 +++++++++
+ qpid/python/qpid/tests/messaging/__init__.py |   14 ++++++++++----
+ qpid/python/qpid/tests/messaging/message.py  |    4 +++-
+ 3 files changed, 22 insertions(+), 5 deletions(-)
+
+diff --git a/qpid/python/qpid/messaging/driver.py b/qpid/python/qpid/messaging/driver.py
+index 6dab24d..ed6b602 100644
+--- a/qpid/python/qpid/messaging/driver.py
++++ b/qpid/python/qpid/messaging/driver.py
+@@ -1159,12 +1159,15 @@ class Engine:
+       rt = addr2reply_to(msg.reply_to)
+     else:
+       rt = None
++    content_encoding = msg.properties.get("x-amqp-0-10.content-encoding")
+     dp = DeliveryProperties(routing_key=rk)
+     mp = MessageProperties(message_id=msg.id,
+                            user_id=msg.user_id,
+                            reply_to=rt,
+                            correlation_id=msg.correlation_id,
++                           app_id = msg.properties.get("x-amqp-0-10.app-id"),
+                            content_type=msg.content_type,
++                           content_encoding=content_encoding,
+                            application_headers=msg.properties)
+     if subject is not None:
+       if mp.application_headers is None:
+@@ -1242,6 +1245,12 @@ class Engine:
+     msg.ttl = dp.ttl
+     msg.redelivered = dp.redelivered
+     msg.properties = mp.application_headers
++    if mp.app_id is not None:
++      msg.properties["x-amqp-0-10.app-id"] = mp.app_id
++    if mp.content_encoding is not None:
++      msg.properties["x-amqp-0-10.content-encoding"] = mp.content_encoding
++    if dp.routing_key is not None:
++      msg.properties["x-amqp-0-10.routing-key"] = dp.routing_key
+     msg.content_type = mp.content_type
+     msg._transfer_id = xfr.id
+     return msg
+diff --git a/qpid/python/qpid/tests/messaging/__init__.py b/qpid/python/qpid/tests/messaging/__init__.py
+index 2c1dce9..a160f38 100644
+--- a/qpid/python/qpid/tests/messaging/__init__.py
++++ b/qpid/python/qpid/tests/messaging/__init__.py
+@@ -88,16 +88,22 @@ class Base(Test):
+       self.assertEchos(expected, messages, redelivered)
+     return messages
+ 
+-  def diff(self, m1, m2):
++  def diff(self, m1, m2, excluded_properties=()):
+     result = {}
+     for attr in ("id", "subject", "user_id", "reply_to",
+                  "correlation_id", "durable", "priority", "ttl",
+-                 "redelivered", "properties", "content_type",
+-                 "content"):
++                 "redelivered", "content_type", "content"):
+       a1 = getattr(m1, attr)
+       a2 = getattr(m2, attr)
+       if a1 != a2:
+         result[attr] = (a1, a2)
++    p1 = dict(m1.properties)
++    p2 = dict(m2.properties)
++    for ep in excluded_properties:
++      p1.pop(ep, None)
++      p2.pop(ep, None)
++    if p1 != p2:
++      result["properties"] = (p1, p2)
+     return result
+ 
+   def assertEcho(self, msg, echo, redelivered=False):
+@@ -108,7 +114,7 @@ class Base(Test):
+         echo = echo.content
+         assert msg == echo, "expected %s, got %s" % (msg, echo)
+     else:
+-      delta = self.diff(msg, echo)
++      delta = self.diff(msg, echo, ("x-amqp-0-10.routing-key",))
+       mttl, ettl = delta.pop("ttl", (0, 0))
+       if redelivered:
+         assert echo.redelivered, \
+diff --git a/qpid/python/qpid/tests/messaging/message.py b/qpid/python/qpid/tests/messaging/message.py
+index 2ca1fbf..91aab5f 100644
+--- a/qpid/python/qpid/tests/messaging/message.py
++++ b/qpid/python/qpid/tests/messaging/message.py
+@@ -85,7 +85,9 @@ class MessageEchoTests(Base):
+               "key6": -3.14,
+               "key7": ["one", 2, 3.14],
+               "key8": [],
+-              "key9": {"sub-key0": 3}}
++              "key9": {"sub-key0": 3},
++              "x-amqp-0-10.app-id": "test-app-id",
++              "x-amqp-0-10.content-encoding": "test-content-encoding"}
+ 
+   def testMapContent(self):
+     self.check(Message(MessageEchoTests.TEST_MAP))
+-- 
+1.7.1.1
+

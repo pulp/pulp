@@ -1,0 +1,3137 @@
+From 3d0eebd14b24321d5c91662c873c1b689c360150 Mon Sep 17 00:00:00 2001
+From: Rafael H. Schloming <rhs@apache.org>
+Date: Tue, 13 Jul 2010 16:33:24 +0000
+Subject: [PATCH 22/26] removed old python examples
+
+git-svn-id: https://svn.apache.org/repos/asf/qpid/trunk@963786 13f79535-47bb-0310-9956-ffa450edef68
+---
+ qpid/python/examples/README                        |  335 ++------------------
+ qpid/python/examples/datatypes/client.py           |  122 -------
+ qpid/python/examples/datatypes/server.py           |  124 -------
+ qpid/python/examples/datatypes/testdata.py         |  201 ------------
+ qpid/python/examples/direct/declare_queues.py      |   76 -----
+ qpid/python/examples/direct/direct_consumer.py     |   94 ------
+ qpid/python/examples/direct/direct_producer.py     |   73 -----
+ qpid/python/examples/direct/listener.py            |  109 -------
+ qpid/python/examples/direct/verify                 |   22 --
+ qpid/python/examples/direct/verify.in              |   14 -
+ qpid/python/examples/fanout/fanout_consumer.py     |   99 ------
+ qpid/python/examples/fanout/fanout_producer.py     |   72 -----
+ qpid/python/examples/fanout/listener.py            |  117 -------
+ qpid/python/examples/fanout/verify                 |   24 --
+ qpid/python/examples/fanout/verify.in              |   27 --
+ qpid/python/examples/headers/declare_queues.py     |   77 -----
+ qpid/python/examples/headers/headers_consumer.py   |  107 -------
+ qpid/python/examples/headers/headers_producer.py   |   79 -----
+ qpid/python/examples/headers/verify                |   22 --
+ qpid/python/examples/headers/verify.in             |   25 --
+ qpid/python/examples/pubsub/topic_publisher.py     |   92 ------
+ qpid/python/examples/pubsub/topic_subscriber.py    |  154 ---------
+ qpid/python/examples/pubsub/verify                 |   23 --
+ qpid/python/examples/pubsub/verify.in              |   55 ----
+ qpid/python/examples/request-response/client.py    |  131 --------
+ qpid/python/examples/request-response/server.py    |  110 -------
+ qpid/python/examples/request-response/verify       |   24 --
+ qpid/python/examples/request-response/verify.in    |   14 -
+ .../python/examples/xml-exchange/declare_queues.py |   90 ------
+ qpid/python/examples/xml-exchange/listener.py      |  105 ------
+ qpid/python/examples/xml-exchange/verify           |   22 --
+ qpid/python/examples/xml-exchange/verify.in        |   15 -
+ qpid/python/examples/xml-exchange/xml_consumer.py  |   96 ------
+ qpid/python/examples/xml-exchange/xml_producer.py  |   92 ------
+ 34 files changed, 29 insertions(+), 2813 deletions(-)
+ delete mode 100755 qpid/python/examples/datatypes/client.py
+ delete mode 100755 qpid/python/examples/datatypes/server.py
+ delete mode 100644 qpid/python/examples/datatypes/testdata.py
+ delete mode 100755 qpid/python/examples/direct/declare_queues.py
+ delete mode 100755 qpid/python/examples/direct/direct_consumer.py
+ delete mode 100755 qpid/python/examples/direct/direct_producer.py
+ delete mode 100755 qpid/python/examples/direct/listener.py
+ delete mode 100644 qpid/python/examples/direct/verify
+ delete mode 100644 qpid/python/examples/direct/verify.in
+ delete mode 100755 qpid/python/examples/fanout/fanout_consumer.py
+ delete mode 100755 qpid/python/examples/fanout/fanout_producer.py
+ delete mode 100755 qpid/python/examples/fanout/listener.py
+ delete mode 100644 qpid/python/examples/fanout/verify
+ delete mode 100644 qpid/python/examples/fanout/verify.in
+ delete mode 100755 qpid/python/examples/headers/declare_queues.py
+ delete mode 100755 qpid/python/examples/headers/headers_consumer.py
+ delete mode 100755 qpid/python/examples/headers/headers_producer.py
+ delete mode 100644 qpid/python/examples/headers/verify
+ delete mode 100644 qpid/python/examples/headers/verify.in
+ delete mode 100755 qpid/python/examples/pubsub/topic_publisher.py
+ delete mode 100755 qpid/python/examples/pubsub/topic_subscriber.py
+ delete mode 100644 qpid/python/examples/pubsub/verify
+ delete mode 100644 qpid/python/examples/pubsub/verify.in
+ delete mode 100755 qpid/python/examples/request-response/client.py
+ delete mode 100755 qpid/python/examples/request-response/server.py
+ delete mode 100644 qpid/python/examples/request-response/verify
+ delete mode 100644 qpid/python/examples/request-response/verify.in
+ delete mode 100755 qpid/python/examples/xml-exchange/declare_queues.py
+ delete mode 100755 qpid/python/examples/xml-exchange/listener.py
+ delete mode 100644 qpid/python/examples/xml-exchange/verify
+ delete mode 100644 qpid/python/examples/xml-exchange/verify.in
+ delete mode 100755 qpid/python/examples/xml-exchange/xml_consumer.py
+ delete mode 100755 qpid/python/examples/xml-exchange/xml_producer.py
+
+diff --git a/qpid/python/examples/README b/qpid/python/examples/README
+index bd30b2a..4395160 100644
+--- a/qpid/python/examples/README
++++ b/qpid/python/examples/README
+@@ -1,319 +1,42 @@
+-Running the Python Examples
+-============================
++The Python Examples
++===================
+ 
++README.txt                 -- This file.
+ 
+-Running the Direct Examples
+-----------------------------
++api                        -- Directory containing drain, spout,
++                              sever, hello, and hello_xml examples.
+ 
+-To run the direct examples, do the following:
++api/drain                  -- A simple messaging client that prints
++                              messages from the source specified on
++                              the command line.
+ 
+-1. Make sure that a qpidd broker is running:
++api/spout                  -- A simple messaging client that sends
++                              messages to the target specified on the
++                              command line.
+ 
+- $ ps -eaf | grep qpidd
++api/server                 -- An example server that process incoming
++                              messages and sends replies.
+ 
+-  If a broker is running, you should see the qpidd process in the output of the above command. 
++api/hello                  -- An example client that sends a message
++                              and then receives it.
+ 
+-2.Declare a message queue and bind it to an exchange by running declare_queues.py, as follows:
++api/hello_xml              -- An example client that sends a message
++                              to the xml exchange and then receives
++                              it.
+ 
+- $ python declare_queues.py
+ 
+- This program has no output. After this program has been run, all messages sent to the amq.direct exchange using the routing key routing_key are sent to the queue named message_queue.
++reservations               -- Directory containing an example machine
++                              reservation system.
+ 
+-3.Publish a series of messages to the amq.direct exchange by running direct_producer.py, as follows:
++reservations/common.py     -- Utility code used by reserve,
++                              machine-agent, and inventory scripts.
+ 
+- $ python direct_producer.py
++reservations/reserve       -- Messaging client for listing, reserving,
++                              and releasing machines.
+ 
+-This program has no output; the messages are routed to the message queue, as instructed by the binding.
++reservations/machine-agent -- Messaging server that tracks and reports
++                              on the status of its host machine and
++                              listens for reservation requests.
+ 
+-4. Read the messages from the message queue using direct_consumer.py or listener.py, as follows:
+-
+- $ python direct_consumer.py
+-
+- or
+-
+- $ python listener.py
+-
+-You should see the following output:
+-
+-message 0
+-message 1
+-message 2
+-message 3
+-message 4
+-message 5
+-message 6
+-message 7
+-message 8
+-message 9
+-That's all, folks!
+-
+-
+-
+-Running the Fanout Examples
+-----------------------------
+-
+-To run the programs for the Fanout example, do the following:
+-
+-1. Make sure that a qpidd broker is running:
+-
+-  $ ps -eaf | grep qpidd
+-
+-If a broker is running, you should see the qpidd process in the output of the above command.  
+-
+-2. In separate windows, start two or more fanout consumers or fanout listeners as follows:
+-
+-  $ python fanout_consumer.py
+-
+-  or
+-
+-  $ python listener.py
+-
+-These programs each create a private queue, bind it to the amq.fanout exchange, and wait for messages to arrive on their queue.
+-
+-3. In a separate window, publish a series of messages to the amq.fanout exchange by running fanout_producer.py, as follows:
+-
+-  $ python fanout_producer.py
+-
+-This program has no output; the messages are routed to the message queue, as instructed by the binding.
+- 
+-4. Go to the windows where you are running consumers or listeners. You should see the following output for each listener or consumer:
+-
+-      message 0
+-      message 1
+-      message 2
+-      message 3
+-      message 4
+-      message 5
+-      message 6
+-      message 7
+-      message 8
+-      message 9
+-      That's all, folks!
+-
+-
+-
+-Running the Publish-Subscribe Examples
+----------------------------------------
+-
+-To run the programs for the Publish-Subscribe example, do the following:
+-
+-1. Make sure that a qpidd broker is running:
+-
+-  $ ps -eaf | grep qpidd
+-
+-If a broker is running, you should see the qpidd process in the output of the above command. 
+-
+-2. In separate windows, start one or more topic subscribers by running topic_subscriber.py, as follows:
+-
+-  $ python topic_subscriber.py
+-
+-You will see output similar to this:
+-
+-  Queues created - please start the topic producer
+-  Subscribing local queue 'local_news' to news-53408183-fcee-4b92-950b-90abb297e739'
+-  Subscribing local queue 'local_weather' to weather-53408183-fcee-4b92-950b-90abb297e739'
+-  Subscribing local queue 'local_usa' to usa-53408183-fcee-4b92-950b-90abb297e739'
+-  Subscribing local queue 'local_europe' to europe-53408183-fcee-4b92-950b-90abb297e739'
+-  Messages on 'news' queue:
+-
+-Each topic consumer creates a set of private queues, and binds each queue to the amq.topic exchange together with a binding that indicates which messages should be routed to the queue.
+-
+-3.In another window, start the topic publisher, which publishes messages to the amq.topic exchange, as follows:
+-
+-  $ python topic_publisher.py
+-
+-This program has no output; the messages are routed to the message queues for each topic_consumer as specified by the bindings the consumer created.
+-
+-4. Go back to the window for each topic consumer. You should see output like this:
+-
+-      Messages on 'news' queue:
+-      usa.news 0
+-      usa.news 1
+-      usa.news 2
+-      usa.news 3
+-      usa.news 4
+-      europe.news 0
+-      europe.news 1
+-      europe.news 2
+-      europe.news 3
+-      europe.news 4
+-      That's all, folks!
+-      Messages on 'weather' queue:
+-      usa.weather 0
+-      usa.weather 1
+-      usa.weather 2
+-      usa.weather 3
+-      usa.weather 4
+-      europe.weather 0
+-      europe.weather 1
+-      europe.weather 2
+-      europe.weather 3
+-      europe.weather 4
+-      That's all, folks!
+-      Messages on 'usa' queue:
+-      usa.news 0
+-      usa.news 1
+-      usa.news 2
+-      usa.news 3
+-      usa.news 4
+-      usa.weather 0
+-      usa.weather 1
+-      usa.weather 2
+-      usa.weather 3
+-      usa.weather 4
+-      That's all, folks!
+-      Messages on 'europe' queue:
+-      europe.news 0
+-      europe.news 1
+-      europe.news 2
+-      europe.news 3
+-      europe.news 4
+-      europe.weather 0
+-      europe.weather 1
+-      europe.weather 2
+-      europe.weather 3
+-      europe.weather 4
+-      That's all, folks!
+-
+-
+-Running the Request/Response Examples
+---------------------------------------
+-
+-To run the programs for the Request/Response example, do the following:
+-
+-1. Make sure that a qpidd broker is running:
+-
+-  $ ps -eaf | grep qpidd
+-
+-If a broker is running, you should see the qpidd process in the output of the above command.
+-
+-2. Run the server.
+-
+-  $ python server.py
+-
+-You should see the following output:
+-
+-  Request server running - run your client now.
+-  (Times out after 100 seconds ...)
+-
+-3. In a separate window, start a client:
+-
+-  $ python client.py
+-
+-You should see the following output:
+-
+-      Request: Twas brillig, and the slithy toves
+-      Request: Did gyre and gimble in the wabe.
+-      Request: All mimsy were the borogroves,
+-      Request: And the mome raths outgrabe.
+-      Messages on queue: reply_to:db0f862e-6b36-4e0f-a4b2-ad049eb435ce
+-      Response: TWAS BRILLIG, AND THE SLITHY TOVES
+-      Response: DID GYRE AND GIMBLE IN THE WABE.
+-      Response: ALL MIMSY WERE THE BOROGROVES,
+-      Response: AND THE MOME RATHS OUTGRABE.
+-      No more messages!
+-
+-
+-Running the XML-based Routing Examples
+----------------------------------------
+-
+-To run the programs for the XML-based Routing example, do the following:
+-
+-1. Make sure that a qpidd broker is running:
+-
+-  $ ps -eaf | grep qpidd
+-
+-If a broker is running, you should see the qpidd process in the output of the above command.
+-
+-2. Declare an XML exchange and a message queue, then bind the queue to the exchange by running declare_queues.py, as follows:
+-
+-  $ python declare_queues.py
+-
+-This program has no output. After this program has been run, all messages sent to the xml exchange using the routing key weather are sent to the queue named message_queue if they satisfy the conditions specified in the following XQuery, which is used in the binding:
+-
+- let $w := ./weather
+- return $w/station = 'Raleigh-Durham International Airport (KRDU)'
+-    and $w/temperature_f > 50
+-    and $w/temperature_f - $w/dewpoint > 5
+-    and $w/wind_speed_mph > 7
+-    and $w/wind_speed_mph < 20
+-
+-3. Publish a series of messages to the xml exchange by running xml_producer.py, as follows:
+-
+-  $ python xml_producer.py
+-
+-The messages are routed to the message queue, as prescribed by the binding. Each message represents a weather report, such as this one:
+-
+-  <weather>
+-      <station>Raleigh-Durham International Airport (KRDU)</station>
+-      <wind_speed_mph>16</wind_speed_mph>
+-      <temperature_f>70</temperature_f>
+-      <dewpoint>35</dewpoint>
+-  </weather>
+-
+-4. Read the messages from the message queue using direct_consumer.py or listener.py, as follows:
+-
+-  $ python xml_consumer.py
+-
+-  or
+-
+-  $ python listener.py
+-
+-You should see the following output:
+-
+-<weather><station>Raleigh-Durham International Airport (KRDU)</station>
+-<wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f>
+-<dewpoint>35</dewpoint></weather>
+-
+-
+-Running the Headers Examples
+------------------------------
+-
+-To run the headers examples, do the following:
+-
+-1. Make sure that a qpidd broker is running:
+-
+- $ ps -eaf | grep qpidd
+-
+-  If a broker is running, you should see the qpidd process in the output of the above command. 
+-
+-2.Declare a message queues and bind them to an exchange by running declare_queues.py, as follows:
+-
+- $ python declare_queues.py
+-
+- This program has no output. After this program has been run, all messages sent to the amq.match exchange with an application-header of {'class': 'first'} will be routed to the queue named "first" and messages with an application-header of {'class': 'second'} will be routed to the queue named "second".
+-
+-3.Publish a series of messages to the amq.match exchange by running headers_producer.py, as follows:
+-
+- $ python headers_producer.py
+-
+-This program has no output; the messages are routed to the message queues, as instructed by the bindings.
+-
+-4. Read the messages from the message queues using headers_consumer.py as follows:
+-
+- $ python headers_consumer.py
+-
+-You should see the following output:
+-
+-message(first) 0
+-message(first) 1
+-message(first) 2
+-message(first) 3
+-message(first) 4
+-message(first) 5
+-message(first) 6
+-message(first) 7
+-message(first) 8
+-message(first) 9
+-That's all, folks!
+-message(second) 0
+-message(second) 1
+-message(second) 2
+-message(second) 3
+-message(second) 4
+-message(second) 5
+-message(second) 6
+-message(second) 7
+-message(second) 8
+-message(second) 9
+-That's all, folks!
++reservations/inventory     -- Messaging server that tracks the last
++                              known status of machines.
+diff --git a/qpid/python/examples/datatypes/client.py b/qpid/python/examples/datatypes/client.py
+deleted file mode 100755
+index 088e529..0000000
+--- a/qpid/python/examples/datatypes/client.py
++++ /dev/null
+@@ -1,122 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- client.py
+-
+- Client for testing use of Unicode and datatypes.
+-
+- Both client and server will be written in C++ and Python.
+- Tests can run clients and servers written in different
+- languages, and they can be run on 32-bit and 64-bit architectures.
+-
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-import testdata
+-
+-#----- Initialization --------------------------------------
+-
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-
+-#----- Main Body -- ----------------------------------------
+-
+-# Create a response queue for the server to send responses to. Use the
+-# same string as the name of the queue and the name of the routing
+-# key.
+-
+-reply_to = "reply_to:" + session.name
+-session.queue_declare(queue=reply_to, exclusive=True)
+-session.exchange_bind(exchange="amq.direct", queue=reply_to, binding_key=reply_to)
+-
+-# Create a local queue and subscribe it to the response queue
+-
+-local_queue_name = "local_queue"
+-queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the broker to deliver messages from
+-# the server's reply_to queue to our local client queue. The server
+-# will start delivering messages as soon as message credit is
+-# available.
+-
+-session.message_subscribe(queue=reply_to, destination=local_queue_name)
+-queue.start()
+-
+-# Set up the properties. Perhaps a few application headers?
+-
+-delivery_properties = session.delivery_properties(routing_key="request")
+-
+-message_properties = session.message_properties()
+-
+-message_properties.content_encoding="text/plain; charset='utf-8'"
+-
+-testdata.set_application_headers(message_properties)
+-message_properties.reply_to = session.reply_to("amq.direct", reply_to)
+-
+-# deliver the message - remember to encode the Unicode string!
+-request = Message(message_properties, delivery_properties, testdata.String_Greek.encode("utf8"))
+-session.message_transfer(destination="amq.direct", message=request)
+-
+-# Now see what messages the server sent to our reply_to queue
+-
+-try:
+-  response = queue.get(timeout=10)
+-  content = response.body
+-  session.message_accept(RangedSet(response.id))
+-  testdata.check_message(response)
+-  print "Response: " + content
+-except Empty:
+-  print "No more messages!"
+-  exit(1)
+-except:
+-  print "Unexpected exception!"
+-  exit(1)
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/datatypes/server.py b/qpid/python/examples/datatypes/server.py
+deleted file mode 100755
+index 18e6fa4..0000000
+--- a/qpid/python/examples/datatypes/server.py
++++ /dev/null
+@@ -1,124 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- server.py
+-
+- Server for testing use of Unicode and datatypes.
+-
+- Both client and server will be written in C++ and Python.
+- Tests can run clients and servers written in different
+- languages, and they can be run on 32-bit and 64-bit architectures.
+-"""
+-
+-import testdata
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Functions -------------------------------------------
+-def respond(session, request):
+-
+-    # The routing key for the response is the request's reply-to
+-    # property.  The body for the response is the request's body,
+-    # converted to upper case.
+-
+-    testdata.check_message(request)
+-
+-    message_properties = request.get("message_properties")
+-    reply_to = message_properties.reply_to
+-
+-    testdata.set_application_headers(message_properties)
+-
+-    if reply_to == None:
+-       raise Exception("This message is missing the 'reply_to' property, which is required")   
+-   
+-    delivery_properties = session.delivery_properties(routing_key=reply_to["routing_key"]) 
+-    response = Message(delivery_properties, message_properties, testdata.String_Greek.encode("utf8"))
+-    print "Sending response ..."
+-    session.message_transfer(destination=reply_to["exchange"], message=response)
+-
+-#----- Initialization --------------------------------------
+-
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Main Body -- ----------------------------------------
+-
+-# Create a request queue and subscribe to it
+-
+-session.queue_declare(queue="request", exclusive=True)
+-session.exchange_bind(exchange="amq.direct", queue="request", binding_key="request")
+-
+-local_queue_name = "local_queue"
+-
+-session.message_subscribe(queue="request", destination=local_queue_name)
+-
+-queue = session.incoming(local_queue_name)
+-queue.start()
+-
+-# Remind the user to start the client program
+-
+-print "Request server running - run your client now."
+-print "(Times out after 100 seconds ...)"
+-sys.stdout.flush()
+-
+-# Respond to each request
+-
+-# If we get a message, send it back to the user (as indicated in the
+-# ReplyTo property)
+-
+-while True:
+-  try:
+-    request = queue.get(timeout=100)
+-    session.message_accept(RangedSet(request.id))
+-
+-    respond(session, request)
+-  except Empty:
+-    print "No more messages!"
+-    break;
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/datatypes/testdata.py b/qpid/python/examples/datatypes/testdata.py
+deleted file mode 100644
+index 251872f..0000000
+--- a/qpid/python/examples/datatypes/testdata.py
++++ /dev/null
+@@ -1,201 +0,0 @@
+-#
+-# 
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-# 
+-#
+-
+-# -*- encoding: utf-8 -*-
+-
+-from qpid.datatypes import uuid4, timestamp
+-
+-#----- Some variables to test boundary conditions on various data types
+-
+-void = None
+-boolean_true = True
+-boolean_false = False
+-Uint8_0 = 0
+-Uint8_max = 255
+-Uint16_0 = 0
+-Uint16_max = 65535
+-Uint32_0 = 0
+-Uint32_max = 4294967295
+-Uint64_0 = 0
+-Uint64_max = 18446744073709551615
+-Int8_min = -128
+-Int8_0 = 0
+-Int8_max = 127
+-Int16_min = -32768
+-Int16_0 = 0
+-Int16_max = 32767
+-Int32_min = -2147483648
+-Int32_0 = 0
+-Int32_max = 2147483647
+-Int64_min = -9223372036854775808
+-Int64_0 = 0
+-Int64_max = 9223372036854775807
+-
+-Float_pi = 3.14159265
+-Float_neg = -1E4
+-Float_big = 1267.43233E12
+-Float_small = 12.78e-12
+-Float_neg0 = -0
+-Float_pos0 = 0
+-Float_INF = float('inf')
+-Float_Negative_INF = float('-inf')
+-
+-Double_pi = 3.1415926535897932384626433832795
+-Double_neg = -1E4
+-Double_big = 1267.43233E12
+-Double_small = 12.78e-2
+-Double_neg0 = -0
+-Double_pos0 = 0
+-Double_INF = float('inf')
+-Double_Negative_INF = float('-inf')
+-
+-char_1byte = u'0024' # $
+-char_2byte = u'00A2' # ¢
+-char_3byte = u'20AC' # €
+-char_4byte = u'10ABCD'
+-
+-timestamp = timestamp()
+-
+-UUID = uuid4()
+-
+-String_Greek = u"ἐξίσταντο δὲ πάντες καὶ διηπόρουν, ἄλλος πρὸς ἄλλον λέγοντες, Τί θέλει τοῦτο εἶναι;"
+-
+-String_Empty = ""
+-
+-#----- A few functions ----------------------------------------------------------
+-
+-def near_enough(float1, float2, delta):
+-  return abs(float1-float2) < delta
+-
+-def set_application_headers(message_properties):
+-
+-  message_properties.application_headers = {}
+-  message_properties.application_headers["void"] = None
+-  message_properties.application_headers["boolean_true"] =  boolean_true
+-  message_properties.application_headers["boolean_false"] = boolean_false
+-  message_properties.application_headers["Uint8_0"] = Uint8_0
+-  message_properties.application_headers["Uint8_max"] = Uint8_max
+-  message_properties.application_headers["Uint16_0"] = Uint16_0
+-  message_properties.application_headers["Uint16_max"] = Uint16_max
+-  message_properties.application_headers["Uint32_0"] = Uint32_0
+-  message_properties.application_headers["Uint32_max"] = Uint32_max
+-  message_properties.application_headers["Uint64_0"] = Uint64_0
+-#  message_properties.application_headers["Uint64_max"] = Uint64_max
+-  message_properties.application_headers["Int8_min"] = Int8_min
+-  message_properties.application_headers["Int8_0"] = Int8_0
+-  message_properties.application_headers["Int8_max"] = Int8_max
+-  message_properties.application_headers["Int16_min"] = Int16_min
+-  message_properties.application_headers["Int16_0"] = Int16_0
+-  message_properties.application_headers["Int16_max"] = Int16_max
+-  message_properties.application_headers["Int32_min"] = Int32_min
+-  message_properties.application_headers["Int32_0"] = Int32_0
+-  message_properties.application_headers["Int32_max"] = Int32_max
+-  message_properties.application_headers["Int64_min"] = Int64_min
+-  message_properties.application_headers["Int64_0"] = Int64_0
+-  message_properties.application_headers["Int64_max"] = Int64_max
+- 
+-  message_properties.application_headers["Float_pi"] = Float_pi
+-  message_properties.application_headers["Float_neg"] = Float_neg
+-  message_properties.application_headers["Float_big"] = Float_big
+-  message_properties.application_headers["Float_small"] = Float_small
+-  message_properties.application_headers["Float_neg0"] = Float_neg0
+-  message_properties.application_headers["Float_pos0"] = Float_pos0
+-  message_properties.application_headers["Float_INF"] = Float_INF
+-  message_properties.application_headers["Float_Negative_INF"] = Float_Negative_INF
+-
+-  message_properties.application_headers["Double_pi"] = Double_pi
+-  message_properties.application_headers["Double_neg"] = Double_neg
+-  message_properties.application_headers["Double_big"] = Double_big
+-  message_properties.application_headers["Double_small"] = Double_small
+-  message_properties.application_headers["Double_neg0"] = Double_neg0
+-  message_properties.application_headers["Double_pos0"] = Double_pos0
+-  message_properties.application_headers["Double_INF"] = Double_INF
+-  message_properties.application_headers["Double_Negative_INF"] = Double_Negative_INF
+-
+-  message_properties.application_headers["char_1byte"] = char_1byte
+-  message_properties.application_headers["char_2byte"] = char_2byte
+-  message_properties.application_headers["char_3byte"] = char_3byte
+-  message_properties.application_headers["char_4byte"] = char_4byte
+-
+-  message_properties.application_headers["timestamp"] = timestamp
+-  message_properties.application_headers["UUID"] = uuid4() 
+-  message_properties.application_headers["String_Greek"] = String_Greek 
+-  message_properties.application_headers["String_Empty"] = String_Empty
+-
+-def check_message(message):
+-
+-#  message_properties = message.message_properties()
+-  message_properties = message.get("message_properties")
+-  assert message_properties.application_headers["void"] == None
+-  assert message_properties.application_headers["boolean_true"] == boolean_true
+-  assert message_properties.application_headers["boolean_false"] == boolean_false
+-  assert message_properties.application_headers["Uint8_0"] == Uint8_0
+-  assert message_properties.application_headers["Uint8_max"] == Uint8_max
+-  assert message_properties.application_headers["Uint16_0"] == Uint16_0
+-  assert message_properties.application_headers["Uint16_max"] == Uint16_max
+-  assert message_properties.application_headers["Uint32_0"] == Uint32_0
+-  assert message_properties.application_headers["Uint32_max"] == Uint32_max
+-  assert message_properties.application_headers["Uint64_0"] == Uint64_0
+-#  assert message_properties.application_headers["Uint64_max"] == Uint64_max
+-  assert message_properties.application_headers["Int8_min"] == Int8_min
+-  assert message_properties.application_headers["Int8_0"] == Int8_0
+-  assert message_properties.application_headers["Int8_max"] == Int8_max
+-  assert message_properties.application_headers["Int16_min"] == Int16_min
+-  assert message_properties.application_headers["Int16_0"] == Int16_0
+-  assert message_properties.application_headers["Int16_max"] == Int16_max
+-  assert message_properties.application_headers["Int32_min"] == Int32_min
+-  assert message_properties.application_headers["Int32_0"] == Int32_0
+-  assert message_properties.application_headers["Int32_max"] == Int32_max
+-  assert message_properties.application_headers["Int64_min"] == Int64_min
+-  assert message_properties.application_headers["Int64_0"] == Int64_0
+-  assert message_properties.application_headers["Int64_max"] == Int64_max
+-  
+-# Change floating point comparisons to allow inexactness
+-
+-  assert near_enough(message_properties.application_headers["Float_pi"], Float_pi, 0.00001)
+-  assert near_enough(message_properties.application_headers["Float_neg"], Float_neg, 0.00001)
+-  assert near_enough(message_properties.application_headers["Float_big"], Float_big, Float_big/1000000)
+-  assert near_enough(message_properties.application_headers["Float_small"], Float_small, 0.00001)
+-  assert message_properties.application_headers["Float_neg0"] == Float_neg0
+-  assert message_properties.application_headers["Float_pos0"] == Float_pos0
+-  assert message_properties.application_headers["Float_INF"] == Float_INF
+-  assert message_properties.application_headers["Float_Negative_INF"] == Float_Negative_INF
+-
+-  assert near_enough(message_properties.application_headers["Double_pi"], Double_pi, 0.00001)
+-  assert near_enough(message_properties.application_headers["Double_neg"], Double_neg, 0.00001)
+-  assert near_enough(message_properties.application_headers["Double_big"], Double_big, Double_big/1000000)
+-  assert near_enough(message_properties.application_headers["Double_small"], Double_small, 0.00001)
+-  assert message_properties.application_headers["Double_neg0"] == Double_neg0
+-  assert message_properties.application_headers["Double_pos0"] == Double_pos0
+-  assert message_properties.application_headers["Double_INF"] == Double_INF
+-  assert message_properties.application_headers["Double_Negative_INF"] == Double_Negative_INF
+-
+-  assert message_properties.application_headers["char_1byte"] == char_1byte
+-  assert message_properties.application_headers["char_2byte"] == char_2byte
+-  assert message_properties.application_headers["char_3byte"] == char_3byte
+-  assert message_properties.application_headers["char_4byte"] == char_4byte
+-
+-#  assert message_properties.application_headers["timestamp"] == timestamp
+-#  assert message_properties.application_headers["UUID"] == UUID
+-  assert message_properties.application_headers["String_Greek"] == String_Greek
+-  assert message_properties.application_headers["String_Empty"] == String_Empty
+-
+-
+diff --git a/qpid/python/examples/direct/declare_queues.py b/qpid/python/examples/direct/declare_queues.py
+deleted file mode 100755
+index 13818ee..0000000
+--- a/qpid/python/examples/direct/declare_queues.py
++++ /dev/null
+@@ -1,76 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- declare_queues.py 
+-
+- Creates and binds a queue on an AMQP direct exchange.
+-
+- All messages using the routing key "routing_key" are
+- sent to the queue named "message_queue".
+-"""
+-
+-# Common includes
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Create a queue -------------------------------------
+-
+-# queue_declare() creates an AMQP queue, which is held
+-# on the broker. Published messages are sent to the AMQP queue, 
+-# from which messages are delivered to consumers. 
+-# 
+-# exchange_bind() determines which messages are routed to a queue. 
+-# Route all messages with the binding key "routing_key" to
+-# the AMQP queue named "message_queue".
+-
+-session.queue_declare(queue="message_queue")
+-session.exchange_bind(exchange="amq.direct", queue="message_queue", binding_key="routing_key")
+-
+-#----- Cleanup ---------------------------------------------
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/direct/direct_consumer.py b/qpid/python/examples/direct/direct_consumer.py
+deleted file mode 100755
+index b07e53c..0000000
+--- a/qpid/python/examples/direct/direct_consumer.py
++++ /dev/null
+@@ -1,94 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- direct_consumer.py
+-
+- This AMQP client reads messages from a message
+- queue named "message_queue".
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from random import randint
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Read from queue --------------------------------------------
+-
+-# Now let's create a local client queue and tell it to read
+-# incoming messages.
+-
+-# The consumer tag identifies the client-side queue.
+-
+-local_queue_name = "local_queue"
+-queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the broker to deliver messages
+-# from the AMQP queue to this local client queue. The broker will
+-# start delivering messages as soon as credit is allocated using
+-# queue.start().
+-
+-session.message_subscribe(queue="message_queue", destination=local_queue_name)
+-queue.start()
+-
+-#  Initialize 'final' and 'content', variables used to identify the last message.
+-
+-final = "That's all, folks!"   # In a message body, signals the last message
+-content = ""		       # Content of the last message read
+-
+-message = None
+-while content != final:
+-	message = queue.get(timeout=10)
+-	content = message.body          
+-        session.message_accept(RangedSet(message.id))
+-	print content
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/direct/direct_producer.py b/qpid/python/examples/direct/direct_producer.py
+deleted file mode 100755
+index fcbb467..0000000
+--- a/qpid/python/examples/direct/direct_producer.py
++++ /dev/null
+@@ -1,73 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- direct_producer.py
+-
+- Publishes messages to an AMQP direct exchange, using
+- the routing key "routing_key"
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message
+-from qpid.datatypes import uuid4
+-from qpid.queue import Empty
+-
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Publish some messages ------------------------------
+-
+-# Create some messages and put them on the broker.
+-props = session.delivery_properties(routing_key="routing_key")
+-
+-for i in range(10):
+-     session.message_transfer(destination="amq.direct", message=Message(props,"message " + str(i)))
+-
+-session.message_transfer(destination="amq.direct", message=Message(props,"That's all, folks!"))
+-
+-#----- Cleanup --------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/direct/listener.py b/qpid/python/examples/direct/listener.py
+deleted file mode 100755
+index 9d06bd3..0000000
+--- a/qpid/python/examples/direct/listener.py
++++ /dev/null
+@@ -1,109 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- listener.py
+-
+- This AMQP client reads messages from a message
+- queue named "message_queue". It is implemented
+- as a message listener.
+-"""
+-
+-# Common includes
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-# Includes specific to this example
+-
+-from time         import sleep
+-
+-
+-#----- Message Receive Handler -----------------------------
+-class Receiver:
+-  def __init__ (self):
+-    self.finalReceived = False
+-
+-  def isFinal (self):
+-    return self.finalReceived
+-    
+-  def Handler (self, message):
+-    content = message.body
+-    session.message_accept(RangedSet(message.id)) 
+-    print content
+-    if content == "That's all, folks!":
+-      self.finalReceived = True
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Read from queue --------------------------------------------
+-
+-# Now let's create a local client queue and tell it to read
+-# incoming messages.
+-
+-# The local_queue_name identifies the client-side queue.
+-
+-local_queue_name = "local_queue"
+-queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the broker to deliver messages
+-# from the AMQP queue to this local client queue. The broker will
+-# start delivering messages as soon as message_subscribe() is called.
+-
+-session.message_subscribe(queue="message_queue", destination=local_queue_name)
+-queue.start()
+-
+-receiver = Receiver()
+-queue.listen (receiver.Handler)
+-
+-while not receiver.isFinal() :
+-  sleep (1)
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/direct/verify b/qpid/python/examples/direct/verify
+deleted file mode 100644
+index 92f87bf..0000000
+--- a/qpid/python/examples/direct/verify
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+-clients ./declare_queues.py ./direct_producer.py ./direct_consumer.py
+-outputs ./declare_queues.py.out ./direct_producer.py.out ./direct_consumer.py.out
+diff --git a/qpid/python/examples/direct/verify.in b/qpid/python/examples/direct/verify.in
+deleted file mode 100644
+index 5e69161..0000000
+--- a/qpid/python/examples/direct/verify.in
++++ /dev/null
+@@ -1,14 +0,0 @@
+-==== declare_queues.py.out
+-==== direct_producer.py.out
+-==== direct_consumer.py.out
+-message 0
+-message 1
+-message 2
+-message 3
+-message 4
+-message 5
+-message 6
+-message 7
+-message 8
+-message 9
+-That's all, folks!
+diff --git a/qpid/python/examples/fanout/fanout_consumer.py b/qpid/python/examples/fanout/fanout_consumer.py
+deleted file mode 100755
+index 0452baa..0000000
+--- a/qpid/python/examples/fanout/fanout_consumer.py
++++ /dev/null
+@@ -1,99 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- fanout_consumer.py
+-
+- This AMQP client reads messages from a message
+- queue named "message_queue".
+-"""
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Initialization --------------------------------------
+-
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-     host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-     port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-
+-#----- Main Body -------------------------------------------
+-
+-# Create a server-side queue and route messages to it.
+-# The server-side queue must have a unique name. Use the
+-# session id for that.
+-server_queue_name = session.name
+-session.queue_declare(queue=server_queue_name)
+-session.exchange_bind(queue=server_queue_name, exchange="amq.fanout")
+-
+-# Create a local queue to receive messages from the server-side
+-# queue.
+-local_queue_name = "local_queue"
+-local_queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the server to deliver messages
+-# from the AMQP queue to this local client queue. 
+-
+-session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
+-local_queue.start()
+-
+-print "Subscribed to queue " + server_queue_name
+-sys.stdout.flush()
+-
+-#  Initialize 'final' and 'content', variables used to identify the last message.
+-final = "That's all, folks!"   # In a message body, signals the last message
+-content = ""		       # Content of the last message read
+-
+-# Read the messages - acknowledge each one
+-message = None
+-while content != final:
+-	message = local_queue.get(timeout=10)
+-	content = message.body          
+-        session.message_accept(RangedSet(message.id))
+-	print content
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/fanout/fanout_producer.py b/qpid/python/examples/fanout/fanout_producer.py
+deleted file mode 100755
+index c4df252..0000000
+--- a/qpid/python/examples/fanout/fanout_producer.py
++++ /dev/null
+@@ -1,72 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- fanout_producer.py
+-
+- Publishes messages to an AMQP direct exchange, using
+- the routing key "routing_key"
+-"""
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, uuid4
+-from qpid.queue import Empty
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-     host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-     port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-
+-#----- Publish some messages ------------------------------
+-
+-# Create some messages and put them on the broker.
+-
+-delivery_properties = session.delivery_properties(routing_key="routing_key")
+-
+-for i in range(10):
+-     session.message_transfer(destination="amq.fanout", message=Message(delivery_properties,"message " + str(i)))
+-
+-session.message_transfer(destination="amq.fanout", message=Message(delivery_properties, "That's all, folks!"))
+-
+-#----- Cleanup --------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/fanout/listener.py b/qpid/python/examples/fanout/listener.py
+deleted file mode 100755
+index 29db402..0000000
+--- a/qpid/python/examples/fanout/listener.py
++++ /dev/null
+@@ -1,117 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- listener.py
+-
+- This AMQP client reads messages from a message
+- queue named "message_queue".
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-# 
+-
+-from time         import sleep
+-
+-#----- Message Receive Handler -----------------------------
+-class Receiver:
+-  def __init__ (self):
+-    self.finalReceived = False
+-
+-  def isFinal (self):
+-    return self.finalReceived
+-    
+-  def Handler (self, message):
+-    content = message.body
+-    session.message_accept(RangedSet(message.id))
+-    print content
+-    if content == "That's all, folks!":
+-      self.finalReceived = True
+-
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Read from queue --------------------------------------------
+-
+-# Create a server-side queue and route messages to it.
+-# The server-side queue must have a unique name. Use the
+-# session id for that.
+-
+-server_queue_name = session.name
+-session.queue_declare(queue=server_queue_name)
+-session.exchange_bind(queue=server_queue_name, exchange="amq.fanout")
+-
+-# Create a local queue to receive messages from the server-side
+-# queue.
+-local_queue_name = "local_queue"
+-local_queue = session.incoming(local_queue_name)
+-
+-
+-# The local queue name identifies the client-side queue.
+-
+-local_queue_name = "local_queue"
+-local_queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the broker to deliver messages
+-# from the AMQP queue to this local client queue. The broker will
+-# start delivering messages as soon as local_queue.start() is called.
+-
+-session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
+-local_queue.start()
+-
+-receiver = Receiver ()
+-local_queue.listen (receiver.Handler)
+-
+-while not receiver.isFinal ():
+-  sleep (1)
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close()
+diff --git a/qpid/python/examples/fanout/verify b/qpid/python/examples/fanout/verify
+deleted file mode 100644
+index 9e5c364..0000000
+--- a/qpid/python/examples/fanout/verify
++++ /dev/null
+@@ -1,24 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+-background "Subscribed" ./fanout_consumer.py
+-background "Subscribed" ./fanout_consumer.py
+-clients ./fanout_producer.py
+-outputs ./fanout_producer.py.out "./fanout_consumer.py.out | remove_uuid" "./fanout_consumer.pyX.out | remove_uuid"
+diff --git a/qpid/python/examples/fanout/verify.in b/qpid/python/examples/fanout/verify.in
+deleted file mode 100644
+index d4b8670..0000000
+--- a/qpid/python/examples/fanout/verify.in
++++ /dev/null
+@@ -1,27 +0,0 @@
+-==== fanout_producer.py.out
+-==== fanout_consumer.py.out | remove_uuid
+-Subscribed to queue 
+-message 0
+-message 1
+-message 2
+-message 3
+-message 4
+-message 5
+-message 6
+-message 7
+-message 8
+-message 9
+-That's all, folks!
+-==== fanout_consumer.pyX.out | remove_uuid
+-Subscribed to queue 
+-message 0
+-message 1
+-message 2
+-message 3
+-message 4
+-message 5
+-message 6
+-message 7
+-message 8
+-message 9
+-That's all, folks!
+diff --git a/qpid/python/examples/headers/declare_queues.py b/qpid/python/examples/headers/declare_queues.py
+deleted file mode 100755
+index e976f71..0000000
+--- a/qpid/python/examples/headers/declare_queues.py
++++ /dev/null
+@@ -1,77 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- declare_queues.py 
+-
+- Creates and binds a queue on an AMQP headers exchange.
+-
+- All messages with an application header of {'class': 'first'} are sent to queue "first".
+- All messages with an application header of {'class': 'second'} are sent to queue "second".
+-"""
+-
+-# Common includes
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Create queues -------------------------------------
+-
+-# queue_declare() creates an AMQP queue, which is held
+-# on the broker. Published messages are sent to the AMQP queue, 
+-# from which messages are delivered to consumers. 
+-# 
+-# exchange_bind() determines which messages are routed to a queue. 
+-
+-session.queue_declare(queue="first")
+-session.exchange_bind(exchange="amq.match", queue="first", binding_key="first", arguments={'x-match':'any', 'class':'first'})
+-
+-session.queue_declare(queue="second")
+-session.exchange_bind(exchange="amq.match", queue="second", binding_key="second", arguments={'x-match':'any', 'class':'second'})
+-
+-#----- Cleanup ---------------------------------------------
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/headers/headers_consumer.py b/qpid/python/examples/headers/headers_consumer.py
+deleted file mode 100755
+index 8f5ce3c..0000000
+--- a/qpid/python/examples/headers/headers_consumer.py
++++ /dev/null
+@@ -1,107 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- headers_consumer.py
+-
+- This AMQP client reads messages from two message
+- queues named "first" and "second".
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from random import randint
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Read from queue --------------------------------------------
+-
+-# Now let's create two local client queues and tell them to read
+-# incoming messages.
+-
+-# The consumer tag identifies the client-side queue.
+-
+-local_queue_name_first  = "local_queue_first"
+-local_queue_name_second = "local_queue_second"
+-
+-queue_first  = session.incoming(local_queue_name_first)
+-queue_second = session.incoming(local_queue_name_second)
+-
+-# Call message_subscribe() to tell the broker to deliver messages
+-# from the AMQP queue to these local client queues. The broker will
+-# start delivering messages as soon as credit is allocated using
+-# queue.start().
+-
+-session.message_subscribe(queue="first",  destination=local_queue_name_first)
+-session.message_subscribe(queue="second", destination=local_queue_name_second)
+-
+-queue_first.start()
+-queue_second.start()
+-
+-#  Initialize 'final' and 'content', variables used to identify the last message.
+-
+-final = "That's all, folks!"   # In a message body, signals the last message
+-content = ""		       # Content of the last message read
+-
+-message = None
+-while content != final:
+-        message = queue_first.get(timeout=10)
+-        content = message.body          
+-        session.message_accept(RangedSet(message.id))
+-        print content
+-
+-content = ""
+-while content != final:
+-        message = queue_second.get(timeout=10)
+-        content = message.body          
+-        session.message_accept(RangedSet(message.id))
+-        print content
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/headers/headers_producer.py b/qpid/python/examples/headers/headers_producer.py
+deleted file mode 100755
+index 43130d5..0000000
+--- a/qpid/python/examples/headers/headers_producer.py
++++ /dev/null
+@@ -1,79 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- headers_producer.py
+-
+- Publishes messages to an AMQP headers exchange, using
+- various application header values.
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message
+-from qpid.datatypes import uuid4
+-from qpid.queue import Empty
+-
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Publish some messages ------------------------------
+-
+-# Create some messages and put them on the broker.
+-props_first = session.message_properties(application_headers={'class':'first'})
+-props_second = session.message_properties(application_headers={'class':'second'})
+-props_third = session.message_properties(application_headers={'class':'third'})
+-
+-for i in range(10):
+-     session.message_transfer(destination="amq.match", message=Message(props_first,"message(first) " + str(i)))
+-     session.message_transfer(destination="amq.match", message=Message(props_second,"message(second) " + str(i)))
+-     session.message_transfer(destination="amq.match", message=Message(props_third,"message(third) " + str(i)))
+-
+-session.message_transfer(destination="amq.match", message=Message(props_first,"That's all, folks!"))
+-session.message_transfer(destination="amq.match", message=Message(props_second,"That's all, folks!"))
+-session.message_transfer(destination="amq.match", message=Message(props_third,"That's all, folks!"))
+-
+-#----- Cleanup --------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/headers/verify b/qpid/python/examples/headers/verify
+deleted file mode 100644
+index 5fe96c5..0000000
+--- a/qpid/python/examples/headers/verify
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+-clients ./declare_queues.py ./headers_producer.py ./headers_consumer.py
+-outputs ./declare_queues.py.out ./headers_producer.py.out ./headers_consumer.py.out
+diff --git a/qpid/python/examples/headers/verify.in b/qpid/python/examples/headers/verify.in
+deleted file mode 100644
+index 90ffd0a..0000000
+--- a/qpid/python/examples/headers/verify.in
++++ /dev/null
+@@ -1,25 +0,0 @@
+-==== declare_queues.py.out
+-==== headers_producer.py.out
+-==== headers_consumer.py.out
+-message(first) 0
+-message(first) 1
+-message(first) 2
+-message(first) 3
+-message(first) 4
+-message(first) 5
+-message(first) 6
+-message(first) 7
+-message(first) 8
+-message(first) 9
+-That's all, folks!
+-message(second) 0
+-message(second) 1
+-message(second) 2
+-message(second) 3
+-message(second) 4
+-message(second) 5
+-message(second) 6
+-message(second) 7
+-message(second) 8
+-message(second) 9
+-That's all, folks!
+diff --git a/qpid/python/examples/pubsub/topic_publisher.py b/qpid/python/examples/pubsub/topic_publisher.py
+deleted file mode 100755
+index b50d5fa..0000000
+--- a/qpid/python/examples/pubsub/topic_publisher.py
++++ /dev/null
+@@ -1,92 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- topic_publisher.py
+-
+- This is a simple AMQP publisher application that uses a 
+- Topic exchange. The publisher specifies the routing key
+- and the exchange for each message.
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Functions ----------------------------------------
+-
+-def send_msg(routing_key):
+-  props = session.delivery_properties(routing_key=routing_key)
+-  for i in range(5):
+-     session.message_transfer(destination="amq.topic", message=Message(props,routing_key + " " + str(i)))
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Publish some messages ------------------------------
+-
+-# Create some messages and put them on the broker. Use the
+-# topic exchange.  The routing keys are "usa.news", "usa.weather", 
+-# "europe.news", and "europe.weather".
+-
+-# usa.news
+-send_msg("usa.news")
+-
+-# usa.weather
+-send_msg("usa.weather")
+-
+-# europe.news
+-send_msg("europe.news")
+-
+-# europe.weather
+-send_msg("europe.weather")
+-
+-# Signal termination
+-props = session.delivery_properties(routing_key="control")
+-session.message_transfer(destination="amq.topic", message=Message(props,"That's all, folks!"))
+-
+-
+-#----- Cleanup --------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/pubsub/topic_subscriber.py b/qpid/python/examples/pubsub/topic_subscriber.py
+deleted file mode 100755
+index 489c7cb..0000000
+--- a/qpid/python/examples/pubsub/topic_subscriber.py
++++ /dev/null
+@@ -1,154 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- topic_subscriber.py
+-
+- This subscriber creates private queues and binds them
+- to the topics 'usa.#', 'europe.#', '#.news', and '#.weather'.
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Functions -------------------------------------------
+-
+-def dump_queue(queue):
+-
+-  content = ""		         # Content of the last message read
+-  final = "That's all, folks!"   # In a message body, signals the last message
+-  message = 0
+-
+-  while content != final:
+-    try:
+-      message = queue.get(timeout=10)
+-      content = message.body
+-      session.message_accept(RangedSet(message.id)) 
+-      print content
+-    except Empty:
+-      print "No more messages!"
+-      return
+-
+-
+-
+-def subscribe_queue(server_queue_name, local_queue_name):
+-
+-  print "Subscribing local queue '" + local_queue_name + "' to " + server_queue_name + "'"
+-
+-  queue = session.incoming(local_queue_name)
+-
+-  session.message_subscribe(queue=server_queue_name, destination=local_queue_name)
+-  queue.start()
+-
+-  return queue
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Main Body -- ----------------------------------------
+-
+-# declare queues on the server
+-
+-news = "news-" + session.name
+-weather = "weather-" + session.name
+-usa = "usa-" + session.name
+-europe = "europe-" + session.name
+-
+-session.queue_declare(queue=news, exclusive=True)
+-session.queue_declare(queue=weather, exclusive=True)
+-session.queue_declare(queue=usa, exclusive=True)
+-session.queue_declare(queue=europe, exclusive=True)
+-
+-# Routing keys may be "usa.news", "usa.weather", "europe.news", or "europe.weather".
+-
+-# The '#' symbol matches one component of a multipart name, e.g. "#.news" matches
+-# "europe.news" or "usa.news".
+-
+-session.exchange_bind(exchange="amq.topic", queue=news, binding_key="#.news")
+-session.exchange_bind(exchange="amq.topic", queue=weather, binding_key="#.weather")
+-session.exchange_bind(exchange="amq.topic", queue=usa, binding_key="usa.#")
+-session.exchange_bind(exchange="amq.topic", queue=europe, binding_key="europe.#")
+-
+-# Bind each queue to the control queue so we know when to stop
+-
+-session.exchange_bind(exchange="amq.topic", queue=news, binding_key="control")
+-session.exchange_bind(exchange="amq.topic", queue=weather, binding_key="control")
+-session.exchange_bind(exchange="amq.topic", queue=usa, binding_key="control")
+-session.exchange_bind(exchange="amq.topic", queue=europe, binding_key="control")
+-
+-# Remind the user to start the topic producer
+-
+-print "Queues created - please start the topic producer"
+-sys.stdout.flush()
+-
+-# Subscribe local queues to server queues
+-
+-local_news = "local_news"
+-local_weather = "local_weather"
+-local_usa = "local_usa" 
+-local_europe = "local_europe"
+-
+-local_news_queue = subscribe_queue(news, local_news)
+-local_weather_queue = subscribe_queue(weather, local_weather)
+-local_usa_queue = subscribe_queue(usa, local_usa)
+-local_europe_queue = subscribe_queue(europe, local_europe)
+-
+-# Call dump_queue to print messages from each queue
+-
+-print "Messages on 'news' queue:"
+-dump_queue(local_news_queue)
+-
+-print "Messages on 'weather' queue:"
+-dump_queue(local_weather_queue)
+-
+-print "Messages on 'usa' queue:"
+-dump_queue(local_usa_queue)
+-
+-print "Messages on 'europe' queue:"
+-dump_queue(local_europe_queue)
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/pubsub/verify b/qpid/python/examples/pubsub/verify
+deleted file mode 100644
+index cf1bade..0000000
+--- a/qpid/python/examples/pubsub/verify
++++ /dev/null
+@@ -1,23 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+-background "Queues created" ./topic_subscriber.py
+-clients ./topic_publisher.py
+-outputs ./topic_publisher.py.out "topic_subscriber.py.out | remove_uuid | sort"
+diff --git a/qpid/python/examples/pubsub/verify.in b/qpid/python/examples/pubsub/verify.in
+deleted file mode 100644
+index ac1506b..0000000
+--- a/qpid/python/examples/pubsub/verify.in
++++ /dev/null
+@@ -1,55 +0,0 @@
+-==== topic_publisher.py.out
+-==== topic_subscriber.py.out | remove_uuid | sort
+-Messages on 'europe' queue:
+-Messages on 'news' queue:
+-Messages on 'usa' queue:
+-Messages on 'weather' queue:
+-Queues created - please start the topic producer
+-Subscribing local queue 'local_europe' to europe-'
+-Subscribing local queue 'local_news' to news-'
+-Subscribing local queue 'local_usa' to usa-'
+-Subscribing local queue 'local_weather' to weather-'
+-That's all, folks!
+-That's all, folks!
+-That's all, folks!
+-That's all, folks!
+-europe.news 0
+-europe.news 0
+-europe.news 1
+-europe.news 1
+-europe.news 2
+-europe.news 2
+-europe.news 3
+-europe.news 3
+-europe.news 4
+-europe.news 4
+-europe.weather 0
+-europe.weather 0
+-europe.weather 1
+-europe.weather 1
+-europe.weather 2
+-europe.weather 2
+-europe.weather 3
+-europe.weather 3
+-europe.weather 4
+-europe.weather 4
+-usa.news 0
+-usa.news 0
+-usa.news 1
+-usa.news 1
+-usa.news 2
+-usa.news 2
+-usa.news 3
+-usa.news 3
+-usa.news 4
+-usa.news 4
+-usa.weather 0
+-usa.weather 0
+-usa.weather 1
+-usa.weather 1
+-usa.weather 2
+-usa.weather 2
+-usa.weather 3
+-usa.weather 3
+-usa.weather 4
+-usa.weather 4
+diff --git a/qpid/python/examples/request-response/client.py b/qpid/python/examples/request-response/client.py
+deleted file mode 100755
+index b29fcf3..0000000
+--- a/qpid/python/examples/request-response/client.py
++++ /dev/null
+@@ -1,131 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- client.py
+-
+- Client for a client/server example
+-
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Functions -------------------------------------------
+-
+-def dump_queue(queue_name):
+-
+-  print "Messages on queue: " + queue_name 
+-
+-  message = 0
+-
+-  while True:
+-    try:
+-      message = queue.get(timeout=10)
+-      content = message.body
+-      session.message_accept(RangedSet(message.id))
+-      print "Response: " + content
+-    except Empty:
+-      print "No more messages!"
+-      break
+-    except:
+-      print "Unexpected exception!"
+-      break
+-
+-
+-#----- Initialization --------------------------------------
+-
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-
+-#----- Main Body -- ----------------------------------------
+-
+-# Create a response queue for the server to send responses to. Use the
+-# same string as the name of the queue and the name of the routing
+-# key.
+-
+-reply_to = "reply_to:" + session.name
+-session.queue_declare(queue=reply_to, exclusive=True)
+-session.exchange_bind(exchange="amq.direct", queue=reply_to, binding_key=reply_to)
+-
+-# Create a local queue and subscribe it to the response queue
+-
+-local_queue_name = "local_queue"
+-queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the broker to deliver messages from
+-# the server's reply_to queue to our local client queue. The server
+-# will start delivering messages as soon as message credit is
+-# available.
+-
+-session.message_subscribe(queue=reply_to, destination=local_queue_name)
+-queue.start()
+-
+-# Send some messages to the server's request queue
+-
+-lines = ["Twas brillig, and the slithy toves",
+-         "Did gyre and gimble in the wabe.",
+-         "All mimsy were the borogroves,",
+-         "And the mome raths outgrabe."]
+-
+-# We will use the same reply_to and routing key
+-# for each message
+-
+-message_properties = session.message_properties()
+-message_properties.reply_to = session.reply_to("amq.direct", reply_to)
+-delivery_properties = session.delivery_properties(routing_key="request")
+-
+-for line in lines:
+-  print "Request: " + line
+-  session.message_transfer(destination="amq.direct", message=Message(message_properties, delivery_properties, line))
+-
+-# Now see what messages the server sent to our reply_to queue
+-
+-dump_queue(reply_to)
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/request-response/server.py b/qpid/python/examples/request-response/server.py
+deleted file mode 100755
+index a80c454..0000000
+--- a/qpid/python/examples/request-response/server.py
++++ /dev/null
+@@ -1,110 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- server.py
+-
+- Server for a client/server example
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Functions -------------------------------------------
+-def respond(session, request):
+-
+-    # The routing key for the response is the request's reply-to
+-    # property.  The body for the response is the request's body,
+-    # converted to upper case.
+-
+-    message_properties = request.get("message_properties")
+-    reply_to = message_properties.reply_to
+-    if reply_to == None:
+-       raise Exception("This message is missing the 'reply_to' property, which is required")   
+-   
+-    props = session.delivery_properties(routing_key=reply_to["routing_key"]) 
+-    session.message_transfer(destination=reply_to["exchange"], message=Message(props,request.body.upper()))
+-
+-#----- Initialization --------------------------------------
+-
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Main Body -- ----------------------------------------
+-
+-# Create a request queue and subscribe to it
+-
+-session.queue_declare(queue="request", exclusive=True)
+-session.exchange_bind(exchange="amq.direct", queue="request", binding_key="request")
+-
+-local_queue_name = "local_queue"
+-
+-session.message_subscribe(queue="request", destination=local_queue_name)
+-
+-queue = session.incoming(local_queue_name)
+-queue.start()
+-
+-# Remind the user to start the client program
+-
+-print "Request server running - run your client now."
+-print "(Times out after 100 seconds ...)"
+-sys.stdout.flush()
+-
+-# Respond to each request
+-
+-# If we get a message, send it back to the user (as indicated in the
+-# ReplyTo property)
+-
+-while True:
+-  try:
+-    request = queue.get(timeout=100)
+-    respond(session, request)
+-    session.message_accept(RangedSet(request.id))
+-  except Empty:
+-    print "No more messages!"
+-    break;
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close(timeout=10)
+diff --git a/qpid/python/examples/request-response/verify b/qpid/python/examples/request-response/verify
+deleted file mode 100644
+index 3c058fe..0000000
+--- a/qpid/python/examples/request-response/verify
++++ /dev/null
+@@ -1,24 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+-background "Request server running" ./server.py
+-clients ./client.py
+-kill %% 			# Must kill the server.
+-outputs "./client.py.out | remove_uuid" " server.py.out | remove_uuid"
+diff --git a/qpid/python/examples/request-response/verify.in b/qpid/python/examples/request-response/verify.in
+deleted file mode 100644
+index 4c31128..0000000
+--- a/qpid/python/examples/request-response/verify.in
++++ /dev/null
+@@ -1,14 +0,0 @@
+-==== client.py.out | remove_uuid
+-Request: Twas brillig, and the slithy toves
+-Request: Did gyre and gimble in the wabe.
+-Request: All mimsy were the borogroves,
+-Request: And the mome raths outgrabe.
+-Messages on queue: reply_to:
+-Response: TWAS BRILLIG, AND THE SLITHY TOVES
+-Response: DID GYRE AND GIMBLE IN THE WABE.
+-Response: ALL MIMSY WERE THE BOROGROVES,
+-Response: AND THE MOME RATHS OUTGRABE.
+-No more messages!
+-==== server.py.out | remove_uuid
+-Request server running - run your client now.
+-(Times out after 100 seconds ...)
+diff --git a/qpid/python/examples/xml-exchange/declare_queues.py b/qpid/python/examples/xml-exchange/declare_queues.py
+deleted file mode 100755
+index ca40af5..0000000
+--- a/qpid/python/examples/xml-exchange/declare_queues.py
++++ /dev/null
+@@ -1,90 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- declare_queues.py 
+-
+- Creates and binds a queue on an AMQP direct exchange.
+-
+- All messages using the routing key "routing_key" are
+- sent to the queue named "message_queue".
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Initialization -----------------------------------
+-
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Create a queue -------------------------------------
+-
+-# queue_declare() creates an AMQP queue, which is held
+-# on the broker. Published messages are sent to the AMQP queue, 
+-# from which messages are delivered to consumers. 
+-# 
+-# queue_bind() determines which messages are routed to a queue. 
+-# Route all messages with the routing key "routing_key" to
+-# the AMQP queue named "message_queue".
+-
+-session.exchange_declare(exchange="xml", type="xml")
+-session.queue_declare(queue="message_queue")
+-
+-binding = {}
+-binding["xquery"] = """
+-   let $w := ./weather
+-   return $w/station = 'Raleigh-Durham International Airport (KRDU)'
+-      and $w/temperature_f > 50
+-      and $w/temperature_f - $w/dewpoint > 5
+-      and $w/wind_speed_mph > 7
+-      and $w/wind_speed_mph < 20 """
+-                      
+-
+-session.exchange_bind(exchange="xml", queue="message_queue", binding_key="weather", arguments=binding)
+-
+-
+-#----- Cleanup ---------------------------------------------
+-
+-session.close()
+-
+-
+diff --git a/qpid/python/examples/xml-exchange/listener.py b/qpid/python/examples/xml-exchange/listener.py
+deleted file mode 100755
+index a56f5d6..0000000
+--- a/qpid/python/examples/xml-exchange/listener.py
++++ /dev/null
+@@ -1,105 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- listener.py
+-
+- This AMQP client reads messages from a message
+- queue named "message_queue". It is implemented
+- as a message listener.
+-"""
+-
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-# 
+-
+-from time         import sleep
+-
+-
+-#----- Message Receive Handler -----------------------------
+-class Receiver:
+-  def __init__ (self):
+-    self.finalReceived = False
+-
+-  def isFinal (self):
+-    return self.finalReceived
+-    
+-  def Handler (self, message):
+-    content = message.body
+-    session.message_accept(RangedSet(message.id))
+-    print content
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Read from queue --------------------------------------------
+-
+-# Now let's create a local client queue and tell it to read
+-# incoming messages.
+-
+-# The consumer tag identifies the client-side queue.
+-
+-local_queue_name = "local_queue"
+-local_queue = session.incoming(local_queue_name)
+-
+-# Call message_subscribe() to tell the broker to deliver messages
+-# from the AMQP queue to this local client queue. The broker will
+-# start delivering messages as soon as local_queue.start() is called.
+-
+-session.message_subscribe(queue="message_queue", destination=local_queue_name)
+-local_queue.start()
+-
+-receiver = Receiver ()
+-local_queue.listen (receiver.Handler)
+-
+-sleep (10)
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close()
+diff --git a/qpid/python/examples/xml-exchange/verify b/qpid/python/examples/xml-exchange/verify
+deleted file mode 100644
+index a93a32d..0000000
+--- a/qpid/python/examples/xml-exchange/verify
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-
+-# See https://svn.apache.org/repos/asf/incubator/qpid/trunk/qpid/bin/verify 
+-clients ./declare_queues.py ./xml_producer.py ./xml_consumer.py
+-outputs ./declare_queues.py.out ./xml_producer.py.out ./xml_consumer.py.out
+diff --git a/qpid/python/examples/xml-exchange/verify.in b/qpid/python/examples/xml-exchange/verify.in
+deleted file mode 100644
+index e5b9909..0000000
+--- a/qpid/python/examples/xml-exchange/verify.in
++++ /dev/null
+@@ -1,15 +0,0 @@
+-==== declare_queues.py.out
+-==== xml_producer.py.out
+-<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>0</wind_speed_mph><temperature_f>30</temperature_f><dewpoint>35</dewpoint></weather>
+-<weather><station>New Bern, Craven County Regional Airport (KEWN)</station><wind_speed_mph>2</wind_speed_mph><temperature_f>40</temperature_f><dewpoint>40</dewpoint></weather>
+-<weather><station>Boone, Watauga County Hospital Heliport (KTNB)</station><wind_speed_mph>5</wind_speed_mph><temperature_f>50</temperature_f><dewpoint>45</dewpoint></weather>
+-<weather><station>Hatteras, Mitchell Field (KHSE)</station><wind_speed_mph>10</wind_speed_mph><temperature_f>60</temperature_f><dewpoint>50</dewpoint></weather>
+-<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f><dewpoint>35</dewpoint></weather>
+-<weather><station>New Bern, Craven County Regional Airport (KEWN)</station><wind_speed_mph>22</wind_speed_mph><temperature_f>80</temperature_f><dewpoint>40</dewpoint></weather>
+-<weather><station>Boone, Watauga County Hospital Heliport (KTNB)</station><wind_speed_mph>28</wind_speed_mph><temperature_f>90</temperature_f><dewpoint>45</dewpoint></weather>
+-<weather><station>Hatteras, Mitchell Field (KHSE)</station><wind_speed_mph>35</wind_speed_mph><temperature_f>100</temperature_f><dewpoint>50</dewpoint></weather>
+-<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>42</wind_speed_mph><temperature_f>30</temperature_f><dewpoint>35</dewpoint></weather>
+-<weather><station>New Bern, Craven County Regional Airport (KEWN)</station><wind_speed_mph>51</wind_speed_mph><temperature_f>40</temperature_f><dewpoint>40</dewpoint></weather>
+-==== xml_consumer.py.out
+-<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f><dewpoint>35</dewpoint></weather>
+-No more messages!
+diff --git a/qpid/python/examples/xml-exchange/xml_consumer.py b/qpid/python/examples/xml-exchange/xml_consumer.py
+deleted file mode 100755
+index cd89110..0000000
+--- a/qpid/python/examples/xml-exchange/xml_consumer.py
++++ /dev/null
+@@ -1,96 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- direct_consumer.py
+-
+- This AMQP client reads messages from a message
+- queue named "message_queue".
+-"""
+-
+-import qpid
+-import sys
+-import os
+-from random import randint
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-
+-#----- Initialization --------------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-
+-#----- Read from queue --------------------------------------------
+-
+-# Now let's create a local client queue and tell it to read
+-# incoming messages.
+-
+-# The consumer tag identifies the client-side queue.
+-
+-local_queue_name = "local_queue"
+-local_queue = session.incoming(local_queue_name)
+-
+-# Call message_consume() to tell the broker to deliver messages
+-# from the AMQP queue to this local client queue. The broker will
+-# start delivering messages as soon as local_queue.start() is called.
+-
+-session.message_subscribe(queue="message_queue", destination=local_queue_name)
+-local_queue.start()
+-
+-#  Initialize 'final' and 'content', variables used to identify the last message.
+-
+-message = None
+-while True:
+-   try:
+-	message = local_queue.get(timeout=10)
+-        session.message_accept(RangedSet(message.id))
+-	content = message.body
+-	print content
+-   except Empty:
+-        print "No more messages!"
+-        break
+-
+-
+-#----- Cleanup ------------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-#
+-
+-session.close()
+diff --git a/qpid/python/examples/xml-exchange/xml_producer.py b/qpid/python/examples/xml-exchange/xml_producer.py
+deleted file mode 100755
+index fa97cab..0000000
+--- a/qpid/python/examples/xml-exchange/xml_producer.py
++++ /dev/null
+@@ -1,92 +0,0 @@
+-#!/usr/bin/env python
+-#
+-# Licensed to the Apache Software Foundation (ASF) under one
+-# or more contributor license agreements.  See the NOTICE file
+-# distributed with this work for additional information
+-# regarding copyright ownership.  The ASF licenses this file
+-# to you under the Apache License, Version 2.0 (the
+-# "License"); you may not use this file except in compliance
+-# with the License.  You may obtain a copy of the License at
+-# 
+-#   http://www.apache.org/licenses/LICENSE-2.0
+-# 
+-# Unless required by applicable law or agreed to in writing,
+-# software distributed under the License is distributed on an
+-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-# KIND, either express or implied.  See the License for the
+-# specific language governing permissions and limitations
+-# under the License.
+-#
+-"""
+- xml_producer.py
+-
+- Publishes messages to an XML exchange, using
+- the routing key "weather"
+-"""
+-
+-
+-import qpid
+-import sys
+-import os
+-from qpid.util import connect
+-from qpid.connection import Connection
+-from qpid.datatypes import Message, RangedSet, uuid4
+-from qpid.queue import Empty
+-
+-#----- Functions ----------------------------------------
+-
+-# Data for weather reports
+-
+-station = ("Raleigh-Durham International Airport (KRDU)", 
+-           "New Bern, Craven County Regional Airport (KEWN)", 
+-           "Boone, Watauga County Hospital Heliport (KTNB)",
+-           "Hatteras, Mitchell Field (KHSE)")
+-wind_speed_mph = ( 0, 2, 5, 10, 16, 22, 28, 35, 42, 51, 61, 70, 80 )
+-temperature_f = ( 30, 40, 50, 60, 70, 80, 90, 100 )
+-dewpoint = ( 35, 40, 45, 50 )
+-
+-def pick_one(list, i):
+-  return str( list [ i % len(list)] )
+-
+-def report(i):
+-  return "<weather>" + "<station>" + pick_one(station,i)+ "</station>"  + "<wind_speed_mph>" + pick_one(wind_speed_mph,i) + "</wind_speed_mph>"  + "<temperature_f>" + pick_one(temperature_f,i) + "</temperature_f>" + "<dewpoint>" + pick_one(dewpoint,i) + "</dewpoint>" + "</weather>"
+-
+-
+-#----- Initialization -----------------------------------
+-
+-#  Set parameters for login
+-
+-host="127.0.0.1"
+-port=5672
+-user="guest"
+-password="guest"
+-
+-# If an alternate host or port has been specified, use that instead
+-# (this is used in our unit tests)
+-if len(sys.argv) > 1 :
+-  host=sys.argv[1]
+-if len(sys.argv) > 2 :
+-  port=int(sys.argv[2])
+-
+-#  Create a connection.
+-socket = connect(host, port)
+-connection = Connection (sock=socket, username=user, password=password)
+-connection.start()
+-session = connection.session(str(uuid4()))
+-
+-#----- Publish some messages ------------------------------
+-
+-# Create some messages and put them on the broker.
+-
+-props = session.delivery_properties(routing_key="weather")
+-
+-for i in range(10):
+-  print report(i)
+-  session.message_transfer(destination="xml", message=Message(props, report(i)))
+-
+-
+-#----- Cleanup --------------------------------------------
+-
+-# Clean up before exiting so there are no open threads.
+-
+-session.close()
+-- 
+1.7.1.1
+
