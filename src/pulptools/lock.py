@@ -24,6 +24,10 @@ import fcntl
 from threading import RLock as Mutex
 
 
+class LockFailed(Exception):
+    pass
+
+
 class LockFile:
     """
     File based locking.
@@ -151,9 +155,11 @@ class Lock:
         if not os.path.exists(dir):
             os.makedirs(dir)
 
-    def acquire(self):
+    def acquire(self, wait=True):
         """
         Acquire the lock.
+        @param wait: Indicates call will block and wait for the lock.
+        @type wait: boolean
         """
         f = LockFile(self.path)
         try:
@@ -165,7 +171,10 @@ class Lock:
                     return
                 if f.valid():
                     f.close()
-                    time.sleep(0.5)
+                    if wait:
+                        time.sleep(0.5)
+                    else:
+                        raise LockFailed()
                 else:
                     break
             self.P()

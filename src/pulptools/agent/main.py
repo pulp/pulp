@@ -14,6 +14,7 @@
 #
 
 from pulptools import *
+from pulptools.lock import Lock, LockFailed
 from pulptools.agent import *
 from pulptools.agent.action import Action
 from pulptools.agent.actions import *
@@ -80,18 +81,39 @@ class Agent(Base):
         return cid.uuid
 
 
+class AgentLock(Lock):
+    """
+    Agent lock ensure that agent only has single instance running.
+    @cvar PATH: The lock file absolute path.
+    @type PATH: str
+    """
+
+    PATH = '/var/run/subsys/pulp/pulpd.pid'
+
+    def __init__(self):
+        Lock.__init__(self, self.PATH)
+
+
 def main():
     """
     Agent main.
     Add recurring, time-based actions here.
     All actions must be subclass of L{action.Action}.
     """
-    actions = []
-    for cls, interval in Action.actions:
-        action = cls(**interval)
-        actions.append(action)
-    agent = Agent(actions)
-    agent.close()
+    lock = AgentLock()
+    try:
+        lock.acquire(wait=False)
+    except LockFailed, e:
+        raise Exception('Agent already running')
+    try:
+        actions = []
+        for cls, interval in Action.actions:
+            action = cls(**interval)
+            actions.append(action)
+        agent = Agent(actions)
+        agent.close()
+    finally:
+        lock.release()
 
 
 if __name__ == '__main__':
