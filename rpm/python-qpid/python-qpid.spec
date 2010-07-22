@@ -100,7 +100,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Thu Jul 22 2010 Mike McCune <mmccune@redhat.com> 0.7.946106-1
-- matching rev (mmccune@redhat.com)
+- switching to orig (mmccune@redhat.com)
 
 * Wed Jul 14 2010 Rafael Schloming <rafaels@redhat.com> - 0.7.946106-9
 - Fix for bz614344
