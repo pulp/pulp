@@ -10,3 +10,7 @@ branches = RHEL-5-CLOUDE-1
 [mongo]
 default_builder = tito.builder.NoTgzBuilder
 default_tagger = tito.tagger.VersionTagger
+
+[python-qpid]
+default_builder = tito.builder.NoTgzBuilder
+default_tagger = tito.tagger.VersionTagger
