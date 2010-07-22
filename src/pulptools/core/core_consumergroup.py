@@ -94,28 +94,28 @@ class consumergroup(BaseCore):
             BaseCore.__init__(self, "consumergroup add_consumer", usage, "", "")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "delete_consumer":
             usage = "usage: %prog consumergroup delete_consumer [OPTIONS]"
             BaseCore.__init__(self, "consumergroup delete_consumer", usage, "", "")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "bind":
             usage = "usage: %prog consumergroup bind [OPTIONS]"
             BaseCore.__init__(self, "consumergroup bind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "unbind":
             usage = "usage: %prog consumergroup unbind [OPTIONS]"
             BaseCore.__init__(self, "consumergroup unbind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
 
     def _do_core(self):

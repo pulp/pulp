@@ -71,14 +71,14 @@ class package(BaseCore):
         if self.action == "info":
             usage = "usage: %prog package info [OPTIONS]"
             BaseCore.__init__(self, "package info", usage, "", "")
-            self.parser.add_option("-p", "--pkgname", dest="name",
+            self.parser.add_option("-p", "--name", dest="name",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":
             usage = "usage: %prog package install [OPTIONS]"
             BaseCore.__init__(self, "package install", usage, "", "")
-            self.parser.add_option("-p", "--pkgname", action="append", dest="pnames",
+            self.parser.add_option("-p", "--name", action="append", dest="pnames",
                            help="Packages to be installed. \
                            To specify multiple packages use multiple -p")
             self.parser.add_option("--consumerid", dest="consumerid",

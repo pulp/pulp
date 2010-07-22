@@ -76,16 +76,16 @@ class packagegroup(BaseCore):
         if self.action == "info":
             usage = "usage: %prog packagegroup info [OPTIONS]"
             BaseCore.__init__(self, "packagegroup info", usage, "", "")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":
             usage = "usage: %prog packagegroup install [OPTIONS]"
             BaseCore.__init__(self, "packagegroup install", usage, "", "")
-            self.parser.add_option("-p", "--pkgid", action="append", dest="pkgid",
+            self.parser.add_option("-p", "--pkggroupid", action="append", dest="pkggroupid",
                            help="PackageGroup to install on a given consumer. \
-                           To specify multiple packages use multiple -p")
+                           To specify multiple package groups use multiple -p")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
         if self.action == "list":
@@ -98,9 +98,9 @@ class packagegroup(BaseCore):
             BaseCore.__init__(self, "packagegroup create", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                             help="Group id")
-            self.parser.add_option("--groupname", dest="groupname",
+            self.parser.add_option("--name", dest="groupname",
                             help="Group name")
             self.parser.add_option("--description", dest="description",
                             help="Group description, default is ''", default="")
@@ -109,16 +109,16 @@ class packagegroup(BaseCore):
             BaseCore.__init__(self, "packagegroup delete", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                             help="Group id")
         if self.action == "add_package":
             usage = "usage: %prog packagegroup add_package [OPTIONS]"
             BaseCore.__init__(self, "packagegroup add_package", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                             help="Group id")
-            self.parser.add_option("--name", dest="pkgname",
+            self.parser.add_option("--pkgname", dest="pkgname",
                             help="Package name")
             self.parser.add_option("--type", dest="grouptype",
                             help="Type of list to add package to, example 'mandatory', 'optional', 'default'",
@@ -128,9 +128,9 @@ class packagegroup(BaseCore):
             BaseCore.__init__(self, "packagegroup delete_package", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--id", dest="groupid",
                             help="Group id")
-            self.parser.add_option("--name", dest="pkgname",
+            self.parser.add_option("--pkgname", dest="pkgname",
                             help="Package name")
             self.parser.add_option("--type", dest="grouptype",
                             help="Type of list to delete package from, example 'mandatory', 'optional', 'default'",
@@ -209,12 +209,12 @@ class packagegroup(BaseCore):
         if not self.options.consumerid:
             print("Please specify a consumer to install the package group")
             sys.exit(0)
-        if not self.options.pkgid:
+        if not self.options.pkggroupid:
             print("Please specify a package group id")
             sys.exit(0)
         try:
             print self.cconn.installpackagegroups(self.options.consumerid, 
-                                             self.options.pkgid)
+                                             self.options.pkggroupid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

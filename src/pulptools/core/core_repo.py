@@ -76,8 +76,8 @@ class repo(BaseCore):
         if self.action == "create":
             usage = "usage: %prog repo create [OPTIONS]"
             BaseCore.__init__(self, "repo create", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
+            self.parser.add_option("--id", dest="id",
+                           help="Repository Id")
             self.parser.add_option("--name", dest="name",
                            help="Common repository name")
             self.parser.add_option("--arch", dest="arch",
@@ -92,21 +92,21 @@ class repo(BaseCore):
         if self.action == "sync":
             usage = "usage: %prog repo sync [OPTIONS]"
             BaseCore.__init__(self, "repo sync", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
+            self.parser.add_option("--id", dest="id",
+                           help="Repository Id")
         if self.action == "delete":
             usage = "usage: %prog repo delete [OPTIONS]"
             BaseCore.__init__(self, "repo delete", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
+            self.parser.add_option("--id", dest="id",
+                           help="Repository Id")
         if self.action == "list":
             usage = "usage: %prog repo list [OPTIONS]"
             BaseCore.__init__(self, "repo list", usage, "", "")
         if self.action == "upload":
             usage = "usage: %prog repo upload [OPTIONS] <package>"
             BaseCore.__init__(self, "repo upload", usage, "", "")
-            self.parser.add_option("--label", dest="label",
-                           help="Repository Label")
+            self.parser.add_option("--id", dest="id",
+                           help="Repository Id")
             self.parser.add_option("--dir", dest="dir",
                            help="Process packages from this directory")
         if self.action == "schedules":
@@ -129,11 +129,11 @@ class repo(BaseCore):
 
     def _create(self):
         (self.options, self.args) = self.parser.parse_args()
-        if not self.options.label:
-            print("repo label required. Try --help")
+        if not self.options.id:
+            print("repo id required. Try --help")
             sys.exit(0)
         if not self.options.name:
-            self.options.name = self.options.label
+            self.options.name = self.options.id
         if not self.options.arch:
             self.options.arch = "noarch"
         
@@ -141,7 +141,7 @@ class repo(BaseCore):
         if self.options.symlinks:
             symlinks = self.options.symlinks
         try:
-            repo = self.pconn.create(self.options.label, self.options.name, \
+            repo = self.pconn.create(self.options.id, self.options.name, \
                                      self.options.arch, self.options.feed, \
                                      symlinks, self.options.schedule)
             print _(" Successfully created Repo [ %s ]" % repo['id'])
@@ -174,23 +174,23 @@ class repo(BaseCore):
 
     def _sync(self):
         (self.options, self.args) = self.parser.parse_args()
-        if not self.options.label:
-            print("repo label required. Try --help")
+        if not self.options.id:
+            print("repo id required. Try --help")
             sys.exit(0)
         try:
-            task_object = self.pconn.sync(self.options.label)
+            task_object = self.pconn.sync(self.options.id)
             state = "waiting"
             while state not in ["finished", "error"]:
                 time.sleep(5)
                 status = self.pconn.sync_status(task_object['status_path'])
                 state= status['state']
                 print "Sync Status::",state
-            packages =  self.pconn.packages(self.options.label)
+            packages =  self.pconn.packages(self.options.id)
             pkg_count = len(packages)
             if state == "error":
                 raise SyncError(status['traceback'][-1])
             else:
-                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.label, pkg_count))
+                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.id, pkg_count))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -203,20 +203,20 @@ class repo(BaseCore):
 
     def _delete(self):
         (self.options, self.args) = self.parser.parse_args()
-        if not self.options.label:
-            print("repo label required. Try --help")
+        if not self.options.id:
+            print("repo id required. Try --help")
             sys.exit(0)
         try:
-            self.pconn.delete(id=self.options.label)
-            print _(" Successful deleted Repo [ %s ] " % self.options.label)
+            self.pconn.delete(id=self.options.id)
+            print _(" Successful deleted Repo [ %s ] " % self.options.id)
         except RestlibException, re:
             print _(" Deleted operation failed on Repo [ %s ] " % \
-                  self.options.label)
+                  self.options.id)
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
             print _(" Deleted operation failed on Repo [ %s ]. " % \
-                  self.options.label)
+                  self.options.id)
             log.error("Error: %s" % e)
             sys.exit(-1)
 
@@ -224,8 +224,8 @@ class repo(BaseCore):
         (self.options, files) = self.parser.parse_args()
         # ignore the command and pick the files
         files = files[2:]
-        if not self.options.label:
-            print("repo label required. Try --help")
+        if not self.options.id:
+            print("repo id required. Try --help")
             sys.exit(0)
         if self.options.dir:
             files += utils.processDirectory(self.options.dir, "rpm")
@@ -233,7 +233,7 @@ class repo(BaseCore):
             print("Need to provide atleast one file to perform upload")
             sys.exit(0)
         uploadinfo = {}
-        uploadinfo['repo'] = self.options.label
+        uploadinfo['repo'] = self.options.id
         for frpm in files:
             try: 
                 pkginfo = utils.processFile(frpm)
@@ -245,11 +245,11 @@ class repo(BaseCore):
                 continue
             pkgstream = base64.b64encode(open(frpm).read())
             try:
-                status = self.pconn.upload(self.options.label, pkginfo, pkgstream)
+                status = self.pconn.upload(self.options.id, pkginfo, pkgstream)
                 if status:
-                    print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.label))
+                    print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.id))
                 else:
-                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.label)
+                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.id)
             except RestlibException, re:
                 log.error("Error: %s" % re)
                 raise #continue
@@ -261,8 +261,8 @@ class repo(BaseCore):
         print("""+-------------------------------------+\n    Available Repository Schedules \n+-------------------------------------+""")
 
         schedules = self.pconn.all_schedules()
-        for label in schedules.keys():
-            print(constants.REPO_SCHEDULES_LIST % (label, schedules[label]))
+        for id in schedules.keys():
+            print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
 
 
 class FileError(Exception):

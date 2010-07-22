@@ -40,9 +40,9 @@ class consumer(BaseCore):
         desc = ""
 
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
-        self.actions = {"register"      : "Register this system as a consumer", 
-                        "unregister"    : "Delete a consumer",
-                        "update"        : " Update consumer profile",
+        self.actions = {"create"        : "Register this system as a consumer",
+                        "delete"        : "Delete a consumer",
+                        "update"        : "Update consumer profile",
                         "list"          : "List of accessible consumer info",
                         "bind"          : "Bind the consumer to listed repos",
                         "unbind"        : "UnBind the consumer from repos",}
@@ -84,9 +84,9 @@ class consumer(BaseCore):
         if self.action not in self.actions.keys():
             self._usage()
             sys.exit(0)
-        if self.action == "register":
-            usage = "usage: %prog consumer register [OPTIONS]"
-            BaseCore.__init__(self, "consumer register", usage, "", "")
+        if self.action == "create":
+            usage = "usage: %prog consumer create [OPTIONS]"
+            BaseCore.__init__(self, "consumer create", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Consumer Identifier eg: foo.example.com")
             self.parser.add_option("--description", dest="description",
@@ -103,32 +103,32 @@ class consumer(BaseCore):
             BaseCore.__init__(self, "consumer bind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
-            self.parser.add_option("--consumerid", dest="consumerid",
+            self.parser.add_option("--id", dest="consumerid",
                            help="Consumer Identifier")
         if self.action == "unbind":
             usage = "usage: %prog consumer unbind [OPTIONS]"
             BaseCore.__init__(self, "consumer unbind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
-            self.parser.add_option("--consumerid", dest="consumerid",
+            self.parser.add_option("--id", dest="consumerid",
                            help="Consumer Identifier")
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             BaseCore.__init__(self, "consumer list", usage, "", "")
-        if self.action == "unregister":
-            usage = "usage: %prog consumer unregister [OPTIONS]"
-            BaseCore.__init__(self, "consumer unregister", usage, "", "")
-            self.parser.add_option("--consumerid", dest="consumerid",
+        if self.action == "delete":
+            usage = "usage: %prog consumer delete [OPTIONS]"
+            BaseCore.__init__(self, "consumer delete", usage, "", "")
+            self.parser.add_option("--id", dest="consumerid",
                            help="Consumer Identifier")
 
     def _do_core(self):
-        if self.action == "register":
+        if self.action == "create":
             self._create()
         if self.action == "list":
             self._list()
         if self.action == "update":
             self._update()
-        if self.action == "unregister":
+        if self.action == "delete":
             self._delete()
         if self.action == "bind":
             self._bind()
@@ -259,7 +259,7 @@ class consumer(BaseCore):
             consumer_id = getConsumer()
         try:
             self.cconn.delete(consumer_id)
-            print _(" Successfully unregistered consumer [%s]" % consumer_id)
+            print _(" Successfully deleted consumer [%s]" % consumer_id)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
