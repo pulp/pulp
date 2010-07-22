@@ -22,7 +22,7 @@ BuildRequires:  rpm-python
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-qpid
+Requires: python-qpid >= 0.7
 Requires: python-simplejson
 Requires: grinder
 Requires: httpd
@@ -47,7 +47,7 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
-Requires: python-qpid
+Requires: python-qpid >= 0.7
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
