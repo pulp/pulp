@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.39
+Version:        0.0.40
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -84,12 +84,12 @@ mkdir -p %{buildroot}/var/log/pulp
 
 # Apache Configuration
 mkdir -p %{buildroot}/etc/httpd/conf.d/
-cp etc/httpd/conf.d/juicer.conf %{buildroot}/etc/httpd/conf.d/
+cp etc/httpd/conf.d/pulp.conf %{buildroot}/etc/httpd/conf.d/
 
 cp -R srv %{buildroot}
 
-mkdir -p %{buildroot}/etc/pki/juicer
-cp etc/pki/juicer/* %{buildroot}/etc/pki/juicer
+mkdir -p %{buildroot}/etc/pki/pulp
+cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www
@@ -127,19 +127,17 @@ chown apache:apache /var/log/pulp
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/*
 %{python_sitelib}/pulp-*
-%{python_sitelib}/juicer/*
 %{python_sitelib}/pmf/*
-%config(noreplace) /etc/pulp/juicer.conf
 %config(noreplace) /etc/pulp/pulp.conf
-%config(noreplace) /etc/httpd/conf.d/juicer.conf
+%config(noreplace) /etc/httpd/conf.d/pulp.conf
 /etc/pulp
-/srv/juicer/juicer.wsgi
+/srv/pulp/webservices.wsgi
 /var/lib/pulp
 /var/www/pub
 /var/log/pulp
-/etc/pki/juicer/ca.crt
-/etc/pki/juicer/server.crt
-/etc/pki/juicer/server.key
+/etc/pki/pulp/ca.crt
+/etc/pki/pulp/server.crt
+/etc/pki/pulp/server.key
 
 
 %files tools
@@ -165,6 +163,9 @@ fi
 
 
 %changelog
+* Thu Jul 22 2010 Jason L Connor <jconnor@redhat.com> 0.0.40-1
+- removed juicer from configuration
+
 * Fri Jul 16 2010 Mike McCune <mmccune@redhat.com> 0.0.39-1
 - rebuild
 * Thu Jul 15 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.37-1
