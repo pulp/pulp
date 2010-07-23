@@ -14,6 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import base64
 import logging
 try:
     import json
@@ -23,12 +24,14 @@ except ImportError:
 import pymongo.json_util 
 import web
 
+from pulp.api.user import UserApi
 from pulp.certificate import Certificate
+from pulp.pexceptions import PulpException
+from pulp.webservices.runtime import config
 from pulp.webservices import http
 
-
 log = logging.getLogger('pulp')
-
+userApi = UserApi(config)
 
 class RoleCheck(object):
     '''decorator class to check Roles of caller.  Copied and modified from:
@@ -64,10 +67,27 @@ class RoleCheck(object):
                 # TODO: Figure out how to re-use the same return function in base.py
                 http.status_unauthorized()
                 http.header('Content-Type', 'application/json')
-                return json.dumps("Certificate Validation Failed", default=pymongo.json_util.default)
+                return json.dumps("Certificate Validation Failed", 
+                                  default=pymongo.json_util.default)
 
             ## If not using cert check uname and password
             # TODO: Implement uname/pass checking
+            log.debug("Checking username/pass")
+            validation_failed = False
+            try:
+                validation_failed = self.check_username_pass(*fargs)
+                log.debug("Unamepass vfail: %s" % validation_failed)
+            except PulpException, pe:
+                # TODO: Figure out how to re-use the same return function in base.py
+                http.status_unauthorized()
+                http.header('Content-Type', 'application/json')
+                return json.dumps(pe.value, default=pymongo.json_util.default)
+            if (validation_failed):
+                http.status_unauthorized()
+                http.header('Content-Type', 'application/json')
+                return json.dumps("Username/password combination is not correct", 
+                                  default=pymongo.json_util.default)
+                 
             
             # Does this wrap a class instance?
             if fargs and getattr(fargs[0], '__class__', None):
@@ -86,9 +106,30 @@ class RoleCheck(object):
         check_roles.__doc__ = f.__doc__
         return check_roles
 
+    def check_username_pass(self, *fargs):
+        environment = web.ctx.environ
+        auth_string = environment.get('HTTP_AUTHORIZATION', None)
+        if (auth_string != None and auth_string.startswith("Basic")) :
+            log.debug("auth_string string: %s" % auth_string)
+            encoded_auth = auth_string.split(" ")[1]
+            auth_string = base64.decodestring(encoded_auth)
+            uname_pass = auth_string.split(":")
+            username = uname_pass[0]
+            password = uname_pass[1]
+            user = userApi.user(username)
+            if (user == None):
+                raise PulpException("User with login [%s] does not exist" 
+                                    % username)
+            log.debug("Username: %s" % username)
+            return (user['password'] != password)
+        return False
+        
+        
+
     def check_consumer_id(self, *fargs): 
         ## This is where we will extract CERT fields
         environment = web.ctx.environ
+        # log.debug("Env: %s" % environment)
         for key in environment.keys():
             if (key.startswith('SSL_')):
                 value = str(environment.get(key, None))

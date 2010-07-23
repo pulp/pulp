@@ -29,7 +29,7 @@ def bootstrap(cfg):
     global config
     config = cfg
     from pulp.webservices.application import wsgi_application
-
+    print "Global config: %s" % config
     # Logging
     LEVELS = {'debug':    logging.DEBUG,
               'info':     logging.INFO,

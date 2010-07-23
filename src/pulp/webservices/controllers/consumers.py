@@ -24,8 +24,6 @@ from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
 from pulp.webservices.runtime import config
-from pulp.webservices.role_check import RoleCheck
-
 
 # globals ---------------------------------------------------------------------
 
@@ -97,7 +95,6 @@ class Bulk(JSONController):
 class Consumer(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -113,7 +110,6 @@ class Consumer(JSONController):
         return self.ok(consumer)
     
     @JSONController.error_handler
-    @RoleCheck()
     def PUT(self, id):
         """
         Update consumer
@@ -218,7 +214,6 @@ class ConsumerActions(JSONController):
         api.unbind(id, data)
         return self.ok(None)
     
-    @RoleCheck()
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
