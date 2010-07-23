@@ -53,10 +53,10 @@ class TestRoleCheck(unittest.TestCase):
         test_cert = my_dir + "/data/test_cert.pem"
         cert = Certificate()
         cert.read(test_cert)
+        web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
         retval = self.some_method('somevalue')
-        self.assertTrue(retval == None)
         self.assertTrue(web.ctx.status.startswith('401'))
         
 
