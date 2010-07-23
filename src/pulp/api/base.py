@@ -19,14 +19,15 @@ from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
 log = logging.getLogger(__name__)
 
+CONN = pymongo.Connection()
+
 class BaseApi(object):
 
     def __init__(self, config):
         self.config = config
 
         # Mongo DB
-        self.connection = pymongo.Connection()
-        #self.db = self.connection._database
+        self.connection = CONN
         self.db = self.connection._database
         # Inject the collection's namespace into each object
         self.db.add_son_manipulator(NamespaceInjector())
