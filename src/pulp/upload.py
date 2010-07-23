@@ -24,7 +24,7 @@ import commands
 from api.repo_sync import BaseSynchronizer
 import util
 
-log = logging.getLogger('pulp.upload')
+log = logging.getLogger(__name__)
 
 class PackageUpload:
     def __init__(self, config, repo, pkginfo, payload):

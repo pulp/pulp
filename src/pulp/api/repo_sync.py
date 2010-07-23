@@ -35,7 +35,7 @@ import pulp.upload
 import pulp.util
 
 
-log = logging.getLogger('pulp.repo_sync')
+log = logging.getLogger(__name__)
 
 
 def sync(config, repo, repo_source):

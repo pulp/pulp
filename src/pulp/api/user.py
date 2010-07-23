@@ -23,7 +23,7 @@ from pulp.certificate import Certificate
 from pulp.pexceptions import PulpException
 
 
-log = logging.getLogger('pulp.api.user')
+log = logging.getLogger(__name__)
 user_fields = model.User(None, None, None, None).keys()
 
 

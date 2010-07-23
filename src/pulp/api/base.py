@@ -17,7 +17,7 @@ import logging
 import pymongo
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
-log = logging.getLogger('pulp.api.base')
+log = logging.getLogger(__name__)
 
 class BaseApi(object):
 

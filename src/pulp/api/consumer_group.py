@@ -25,7 +25,7 @@ from pulp.api.consumer import ConsumerApi
 from pulp.api.repo import RepoApi
 
 
-log = logging.getLogger('pulp.api.consumergroup')
+log = logging.getLogger(__name__)
 
 class ConsumerGroupApi(BaseApi):
 
