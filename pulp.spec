@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.40
+Version:        0.0.41
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -163,6 +163,8 @@ fi
 
 
 %changelog
+* Fri Jul 23 2010 Mike McCune <mmccune@redhat.com> 0.0.41-1
+- rebuild
 * Thu Jul 22 2010 Jason L Connor <jconnor@redhat.com> 0.0.40-1
 - removed juicer from configuration
 
