@@ -42,6 +42,10 @@ config_files = ['/etc/pulp/pulp.conf']
 # configuration api -----------------------------------------------------------
 
 def check_config_files():
+    """
+    Check for read permissions on the configuration files. Raise a runtime error
+    if the file doesn't exist or the read permissions are lacking.
+    """
     for file in config_files:
         if not os.access(file, os.F_OK):
             raise RuntimeError('Cannot find configuration file: %s' % file)
@@ -51,6 +55,9 @@ def check_config_files():
 
 
 def load_configuration():
+    """
+    Check the configuration files and load the global 'config' object from them.
+    """
     global config
     check_config_files()
     config = SafeConfigParser()
@@ -58,6 +65,13 @@ def load_configuration():
         
 
 def add_config_file(file_path):
+    """
+    Convenience function to add a new file to the list of configuration files,
+    then re-load the global config and re-configure logging.
+    
+    @type file_path: str
+    @param file_path: full path to the new file to add
+    """
     global config_files
     if file_path in config_files:
         raise RuntimeError('File, %s, already in configuration files' % file_path)
@@ -68,6 +82,13 @@ def add_config_file(file_path):
     
 
 def remove_config_file(file_path):
+    """
+    Convenience function to remove a file from the list of configuration files,
+    then re-load the global config and re-configure logging.
+    
+    @type file_path: str
+    @param file_path: full path to the file to remove
+    """
     global config_files
     if file_path not in config_files:
         raise RuntimeError('File, %s, not in configuration files' % file_path)
@@ -78,12 +99,22 @@ def remove_config_file(file_path):
     
     
 def log_configuration(files):
+    """
+    Log the list of configuration files that were successfully read.
+    
+    @type fiels: list or tuple
+    @param files: list of configuration files that were read
+    """
     log = logging.getLogger('pulp.config')
     log.info('Successfully loaded configuration from: %s' % ', '.join(files))
 
 # logging configuration api ---------------------------------------------------
 
 def check_log_file(file_path):
+    """
+    Check the write permissions on log files and their parent directory. Raise
+    a runtime error if the write permissions are lacking.
+    """
     if os.path.exists(file_path) and not os.access(file_path, os.W_OK):
         raise RuntimeError('Cannot write to log file: %s' % file_path)
     dir_path = os.path.dirname(file_path)
@@ -93,6 +124,10 @@ def check_log_file(file_path):
 
 
 def configure_pulp_grinder_logging():
+    """
+    Pull the log file configurations from the global config and/or default
+    config and initialize the top-level logging for both pulp and grinder.
+    """
     default_config = default_values['logs']
     log_config = {}
     if config.has_section('logs'):
@@ -127,6 +162,10 @@ def configure_pulp_grinder_logging():
     
     
 def configure_audit_logging():
+    """
+    Pull the audit logging configuration from the global config and/or default
+    config and initialize pulp's audit logging.
+    """
     default_config = default_values['auditing']
     audit_config = {}
     if config.has_section('auditing'):
@@ -147,6 +186,9 @@ def configure_audit_logging():
     
     
 def configure_logging():
+    """
+    Convenience function to initialize pulp's different logging mechanisms.
+    """
     configure_pulp_grinder_logging()
     configure_audit_logging()
 

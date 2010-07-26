@@ -37,6 +37,12 @@ def _configure_application(application, config):
 
 
 def wsgi_application():
+    """
+    Application factory to create, configure, and return a WSGI application
+    using the web.py framework.
+    
+    @return: wsgi application callable
+    """
     application = web.subdir_application(URLS)
     _configure_application(application, config)
     return application.wsgifunc()
