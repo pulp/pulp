@@ -30,18 +30,15 @@ from pulp.model import Event
 # globals ---------------------------------------------------------------------
 
 # setup the database connection, collection, and indices
+# XXX this use a centralized connection manager....
 _connection = pymongo.Connection()
 _objdb = _connection._database.events
 _objdb.ensure_index([('id', pymongo.DESCENDING)], unique=True, background=True)
 for index in ['timestamp', 'principal', 'api']:
     _objdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
 
-# setup logging format, file, and level
-# TODO put in rotating file handler
-_log_file_handler = logging.FileHandler('/var/log/pulp/events.log')
+# setup log
 _log = logging.getLogger(__name__)
-_log.addHandler(_log_file_handler)
-_log.setLevel(logging.DEBUG)
 
 # auditing decorator ----------------------------------------------------------
 
