@@ -84,6 +84,12 @@ class repo(BaseCore):
                            help="Package arch the repo should support.")
             self.parser.add_option("--feed", dest="feed",
                            help="Url feed to populate the repo")
+            self.parser.add_option("--cacert", dest="cacert",
+                           help="Path location to CA Certificate.")
+            self.parser.add_option("--cert", dest="cert",
+                           help="Path location to Entitlement Certificate.")
+            self.parser.add_option("--key", dest="key",
+                           help="Path location to Entitlement Cert Key.")
             self.parser.add_option("--schedule", dest="schedule",
                            help="Schedule for automatically synchronizing the repository")
             self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
@@ -140,10 +146,17 @@ class repo(BaseCore):
         symlinks = False
         if self.options.symlinks:
             symlinks = self.options.symlinks
+
+        cert_data = None
+        if self.options.cacert and self.options.cert and self.options.key:
+            cert_data = {"ca" : utils.readFile(self.options.cacert),
+                         "cert"    : utils.readFile(self.options.cert),
+                         "key"     : utils.readFile(self.options.key)}
+
         try:
             repo = self.pconn.create(self.options.id, self.options.name, \
                                      self.options.arch, self.options.feed, \
-                                     symlinks, self.options.schedule)
+                                     symlinks, self.options.schedule, cert_data=cert_data)
             print _(" Successfully created Repo [ %s ]" % repo['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -236,7 +249,7 @@ class repo(BaseCore):
         uploadinfo['repo'] = self.options.id
         for frpm in files:
             try: 
-                pkginfo = utils.processFile(frpm)
+                pkginfo = utils.processRPM(frpm)
             except FileError, e:
                 print('Error: %s' % e)
                 continue

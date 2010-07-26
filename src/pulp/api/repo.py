@@ -77,7 +77,7 @@ class RepoApi(BaseApi):
         return repo
  
     @audit('RepoApi', params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None):
+    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None):
         """
         Create a new Repository object and return it
         """
@@ -89,6 +89,21 @@ class RepoApi(BaseApi):
         r = model.Repo(id, name, arch, feed)
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
+        if cert_data:
+            cert_dir = "/etc/pki/content/" + name
+            
+            if not os.path.exists(cert_dir):
+                os.makedirs(cert_dir)
+            for key, value in cert_data.items():
+                fname = os.path.join(cert_dir, name + "." + key)
+                try:
+                    log.error("storing file %s" % fname)
+                    f = open(fname, 'w')
+                    f.write(value)
+                    f.close()
+                    r[key] = fname
+                except:
+                    raise PulpException("Error storing file %s " % key)
         self.insert(r)
 
         if sync_schedule:

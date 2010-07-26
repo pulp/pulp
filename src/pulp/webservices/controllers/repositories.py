@@ -74,7 +74,8 @@ class Repositories(JSONController):
                           repo_data['arch'],
                           feed=repo_data.get('feed', None),
                           symlinks=repo_data.get('use_symlinks', False),
-                          sync_schedule=repo_data.get('sync_schedule', None))
+                          sync_schedule=repo_data.get('sync_schedule', None),
+                          cert_data=repo_data.get('cert_data', None))
         
         path = http.extend_uri_path(repo.id)
         repo['uri_ref'] = path

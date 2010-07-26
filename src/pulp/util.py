@@ -155,7 +155,7 @@ def get_repo_package(repo_path, package_filename):
             found = p 
     if (found == None):
         raise PulpException("No package with file name: %s found in repository: %s" 
-                            % (fileName, repo_path))
+                            % (package_filename, repo_path))
     return found
 
 def get_repo_packages(path):

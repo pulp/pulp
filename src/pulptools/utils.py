@@ -133,7 +133,7 @@ def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=Non
 class FileError(Exception):
     pass
 
-def processFile(filename, relativeDir=None, source=None):
+def processRPM(filename, relativeDir=None, source=None):
     # Is this a file?
     if not os.access(filename, os.R_OK):
         raise FileError("Could not stat the file %s" % filename)
@@ -221,4 +221,16 @@ def getRpmName(pkg):
     return pkg["name"] + "-" + pkg["version"] + "-" + \
            pkg["release"] + "." + pkg["arch"]
 
+def readFile(filepath):
+    # Is this a file?
+    if not os.access(filepath, os.R_OK):
+        raise FileError("Could not stat the file %s" % filepath)
+    if not os.path.isfile(filepath):
+        raise FileError("%s is not a file" % filepath)
+    
+    try:
+        f = open(filepath)
+        return f.read()
+    except:
+        return None
 

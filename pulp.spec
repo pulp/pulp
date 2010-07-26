@@ -91,6 +91,8 @@ cp -R srv %{buildroot}
 mkdir -p %{buildroot}/etc/pki/pulp
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
+mkdir -p %{buildroot}/etc/pki/content
+
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp %{buildroot}/var/www/pub
@@ -119,7 +121,7 @@ rm -rf %{buildroot}
 %post
 chown apache:apache /var/lib/pulp
 chown apache:apache /var/log/pulp
-
+setfacl -m u:apache:rwx /etc/pki/content/
 
 %files
 %defattr(-,root,root,-)

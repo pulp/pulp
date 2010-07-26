@@ -51,6 +51,9 @@ class Repo(Base):
         self.group_gz_xml_path = ""
         self.sync_schedule = None
         self.use_symlinks = None
+        self.ca = None
+        self.cert = None
+        self.key  = None
         
     def get_repo_source(self):
         if not self.source:
