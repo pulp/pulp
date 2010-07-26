@@ -26,8 +26,8 @@ import web
 
 from pulp.api.user import UserApi
 from pulp.certificate import Certificate
+from pulp.config import config
 from pulp.pexceptions import PulpException
-from pulp.webservices.runtime import config
 from pulp.webservices import http
 
 log = logging.getLogger('pulp')

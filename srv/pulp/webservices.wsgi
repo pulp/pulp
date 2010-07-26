@@ -14,17 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import ConfigParser
-import os
+from pulp.webservices.application import wsgi_application
 
-from pulp.webservices.runtime import bootstrap
 
-# added potential paths to configuration files here
-config_file_paths = [
-    '/etc/pulp/pulp.conf',
-]
-
-parser = ConfigParser.SafeConfigParser()
-parser.read(f for f in config_file_paths if os.access(f, os.F_OK|os.R_OK))
-
-application = bootstrap(parser)
+application = wsgi_application()

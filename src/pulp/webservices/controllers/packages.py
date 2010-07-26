@@ -19,9 +19,9 @@ import logging
 import web
 
 from pulp.api.package import PackageApi
+from pulp.config import config
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.runtime import config
 
 # globals ---------------------------------------------------------------------
 

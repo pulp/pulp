@@ -20,10 +20,10 @@ import logging
 import web
 
 from pulp.api.consumer import ConsumerApi
+from pulp.config import config
 from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.runtime import config
 
 # globals ---------------------------------------------------------------------
 

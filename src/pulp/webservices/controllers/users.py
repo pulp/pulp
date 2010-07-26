@@ -17,8 +17,8 @@
 import web
 
 from pulp.api.user import UserApi
+from pulp.config import config
 from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.runtime import config
 
 # users api ---------------------------------------------------------------
 

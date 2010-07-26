@@ -17,8 +17,8 @@
 import web
 
 from pulp.api.consumer_group import ConsumerGroupApi
+from pulp.config import config
 from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.runtime import config
 
 # consumers api ---------------------------------------------------------------
 

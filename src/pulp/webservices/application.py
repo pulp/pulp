@@ -16,6 +16,7 @@
 
 import web
 
+from pulp.config import config
 from pulp.webservices import controllers
 
 
@@ -35,7 +36,7 @@ def _configure_application(application, config):
     pass
 
 
-def wsgi_application(config):
+def wsgi_application():
     application = web.subdir_application(URLS)
     _configure_application(application, config)
     return application.wsgifunc()
