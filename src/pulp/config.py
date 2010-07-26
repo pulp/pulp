@@ -25,14 +25,14 @@ config = None # ConfigParser.SafeConfigParser instance
 default_values = {
     'logs': {
         'level': 'info',
-        'max_size': '20480',
+        'max_size': '1048576',
         'backups': '4',
         'pulp_file': '/var/log/pulp/pulp.log',
         'grinder_file': '/var/log/pulp/grinder.log',
     },
     'auditing': {
         'events_file': '/var/log/pulp/events.log',
-        'lifetime': '365',
+        'lifetime': '90',
         'backups': '4',
     }
 }
