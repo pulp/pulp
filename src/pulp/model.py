@@ -54,6 +54,7 @@ class Repo(Base):
         self.ca = None
         self.cert = None
         self.key  = None
+        self.errata = []
         
     def get_repo_source(self):
         if not self.source:
@@ -180,4 +181,28 @@ class Event(Base):
         self.result = None
         self.exception = None
         self.traceback = None
-        
+
+class Errata(Base):
+    """
+    Errata model to represent software updates
+    maps to yum.update_md.UpdateNotice fields
+    """
+    def __init__(self, id, title, description, version, release, type, status="",
+            updated="", issued="", pushcount="", update_id="", from_str="",
+            reboot_suggested="", references=[], pkglist=[]):
+        self._id = id
+        self.id = id
+        self.title = title
+        self.description = description
+        self.version = version
+        self.release = release
+        self.type = type
+        self.status = status
+        self.updated = updated
+        self.issued = issued
+        self.pushcount = pushcount
+        self.update_id = update_id
+        self.from_str = from_str
+        self.reboot_suggested = reboot_suggested
+        self.references = references
+        self.pkglist = pkglist
