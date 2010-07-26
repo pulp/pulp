@@ -16,25 +16,19 @@
 #
 
 import ConfigParser
-import rpm
-import os
+import hashlib # 3rd party on RHEL 5
 import logging
-import string
+import os
 import random
-import fnmatch
-import sys
-import yum
+import string
 import time
+
+import rpm
+import yum
 from iniparse import INIConfig
 
 from pulp.pexceptions import PulpException
 
-try:
-    import hashlib
-except:
-    print "Please install python-hashlib"
-    sys.exit(1)
-import base64
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +39,7 @@ def get_rpm_information(rpm_path):
     @param rpm_path: Full path to the RPM to inspect
     """
     log.debug("rpm_path: %s" % rpm_path)
-    ts = rpm.ts();
+    ts = rpm.ts()
     ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES) 
     file_descriptor_number = os.open(rpm_path, os.O_RDONLY)
     rpm_info = ts.hdrFromFdno(file_descriptor_number);
