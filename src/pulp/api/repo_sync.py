@@ -215,10 +215,13 @@ class BaseSynchronizer(object):
     
 class YumSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
+        cacert = clicert = clikey = None
+        if repo['ca'] and repo['cert'] and repo['key']:
+            cacert = repo['ca'].encode('utf8')
+            clicert=repo['cert'].encode('utf8')
+            clikey=repo['key'].encode('utf8')
         yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'), 
-                                1, cacert=repo['ca'].encode('utf8'), 
-                                clicert=repo['cert'].encode('utf8'), 
-                                clikey=repo['key'].encode('utf8'))
+                                1, cacert=cacert, clicert=clicert, clikey=clikey)
         yfetch.fetchYumRepo(self.config.get('paths', 'local_storage'))
         repo_dir = "%s/%s/" % (self.config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
