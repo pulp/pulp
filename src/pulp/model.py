@@ -54,7 +54,7 @@ class Repo(Base):
         self.ca = None
         self.cert = None
         self.key  = None
-        self.errata = []
+        self.errata = {}
         
     def get_repo_source(self):
         if not self.source:

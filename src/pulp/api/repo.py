@@ -28,6 +28,7 @@ from pulp import upload
 from pulp.api import repo_sync
 from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
+from pulp.api.errata import ErrataApi
 from pulp.auditing import audit
 from pulp.pexceptions import PulpException
 
@@ -45,6 +46,7 @@ class RepoApi(BaseApi):
     def __init__(self, config):
         BaseApi.__init__(self, config)
         self.packageApi = PackageApi(config)
+        self.errataapi  = ErrataApi(config)
         self.localStoragePath = config.get('paths', 'local_storage')
    
     def _get_indexes(self):
@@ -162,6 +164,7 @@ class RepoApi(BaseApi):
             return packages
         return [p for p in packages.values() if p['name'].find(name) >= 0]
     
+    
     def get_package(self, id, name):
         """
         Return matching Package object in this Repo
@@ -200,6 +203,42 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         # this won't fail even if the package is not in the repo's packages
         repo['packages'].pop(p['id'], None)
+        self.update(repo)
+        
+    def errata(self, id, type=None):
+        """
+         Look up all applicable errata for a given repo id
+        """
+        repo = self._get_existing_repo(id)
+        errata = repo['errata']
+        if not errata:
+            return None
+        if type: 
+            try:
+                return errata[type]
+            except KeyError, ke:
+                log.debug("Invalid errata type requested :[%s]" % (ke))
+                raise PulpException("Invalid errata type requested :[%s]" % (ke))
+        return [ item for etype in errata.values() for item in etype ]
+        
+    def add_errata(self, repoid, erratumid):
+        """
+        Adds in erratum to this repo
+        """
+        repo = self._get_existing_repo(repoid)
+        erratum = self.errataapi.erratum(erratumid)
+        if erratum is None:
+            raise PulpException("No Erratum with id: %s found" % erratumid)
+
+        errata = repo['errata']
+        try:
+            if erratum['id'] in errata[erratum['type']]:
+                #errata already in repo, continue
+                return
+        except KeyError:
+            errata[erratum['type']] = []
+
+        errata[erratum['type']].append(erratum)          
         self.update(repo)
 
     @audit('RepoApi', params=['repoid', 'group_id', 'group_name'])
@@ -496,3 +535,4 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
+        

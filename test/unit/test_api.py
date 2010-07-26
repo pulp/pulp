@@ -39,6 +39,7 @@ from pulp.api.consumer import ConsumerApi
 from pulp.api.consumer_group import ConsumerGroupApi
 from pulp.api.package import PackageApi
 from pulp.api.repo import RepoApi
+from pulp.api.errata import ErrataApi
 
 from pulp.model import Package
 from pulp.model import PackageGroup
@@ -60,6 +61,7 @@ class TestApi(unittest.TestCase):
         self.papi.clean()
         self.capi.clean()
         self.cgapi.clean()
+        self.eapi.clean()
         
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -67,6 +69,7 @@ class TestApi(unittest.TestCase):
         self.papi = PackageApi(self.config)
         self.capi = ConsumerApi(self.config)
         self.cgapi = ConsumerGroupApi(self.config)
+        self.eapi  = ErrataApi(self.config)
         self.clean()
         
     def tearDown(self):
@@ -189,6 +192,22 @@ class TestApi(unittest.TestCase):
         packages = found['packages']
         assert(packages != None)
         assert(packages[p['id']] != None)
+    
+    def test_repo_errata(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        id = 'test_errata_id'
+        title = 'test_errata_title'
+        description = 'test_errata_description'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        sample_errata = self.eapi.create(id, title, description, version, release, type)
+        assert(sample_errata != None)
+        self.rapi.add_errata(repo['id'], sample_errata['id'])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        assert(errata != None)
         
     def test_repo_package_by_name(self):
         repo = self.rapi.create('some-id','some name', \
