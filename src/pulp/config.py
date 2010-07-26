@@ -22,7 +22,8 @@ from ConfigParser import SafeConfigParser
 
 config = None # ConfigParser.SafeConfigParser instance
 
-default_values = {
+# to guarantee that a section and/or setting exists, add a default value here
+_default_values = {
     'logs': {
         'level': 'info',
         'max_size': '1048576',
@@ -34,10 +35,11 @@ default_values = {
         'events_file': '/var/log/pulp/events.log',
         'lifetime': '90',
         'backups': '4',
-    }
+    },
 }
 
-config_files = ['/etc/pulp/pulp.conf']
+# to add a default configuration file, list the full path here
+_config_files = ['/etc/pulp/pulp.conf']
 
 # configuration api -----------------------------------------------------------
 
@@ -46,7 +48,7 @@ def check_config_files():
     Check for read permissions on the configuration files. Raise a runtime error
     if the file doesn't exist or the read permissions are lacking.
     """
-    for file in config_files:
+    for file in _config_files:
         if not os.access(file, os.F_OK):
             raise RuntimeError('Cannot find configuration file: %s' % file)
         if not os.access(file, os.R_OK):
@@ -61,7 +63,13 @@ def load_configuration():
     global config
     check_config_files()
     config = SafeConfigParser()
-    return config.read(config_files)
+    # add the defaults first
+    for section, settings in _default_values.items():
+        config.add_section(section)
+        for option, value in settings.items():
+            config.set(section, option, value)
+    # read the config files
+    return config.read(_config_files)
         
 
 def add_config_file(file_path):
@@ -72,10 +80,10 @@ def add_config_file(file_path):
     @type file_path: str
     @param file_path: full path to the new file to add
     """
-    global config_files
-    if file_path in config_files:
+    global _config_files
+    if file_path in _config_files:
         raise RuntimeError('File, %s, already in configuration files' % file_path)
-    config_files.append(file_path)
+    _config_files.append(file_path)
     files = load_configuration()
     configure_logging()
     log_configuration(files)
@@ -89,10 +97,10 @@ def remove_config_file(file_path):
     @type file_path: str
     @param file_path: full path to the file to remove
     """
-    global config_files
-    if file_path not in config_files:
+    global _config_files
+    if file_path not in _config_files:
         raise RuntimeError('File, %s, not in configuration files' % file_path)
-    config_files.remove(file_path)
+    _config_files.remove(file_path)
     files = load_configuration()
     configure_logging()
     log_configuration(files)
@@ -128,19 +136,14 @@ def configure_pulp_grinder_logging():
     Pull the log file configurations from the global config and/or default
     config and initialize the top-level logging for both pulp and grinder.
     """
-    default_config = default_values['logs']
-    log_config = {}
-    if config.has_section('logs'):
-        log_config = dict(config.items('logs'))
-        
-    level_name = log_config.get('level', default_config['level']).upper()
+    level_name = config.get('logs', 'level').upper()
     level = getattr(logging, level_name, logging.INFO)
-    max_size = int(log_config.get('max_size', default_config['max_size']))
-    backups = int(log_config.get('backups', default_config['backups']))
+    max_size = config.getint('logs', 'max_size')
+    backups = config.getint('logs', 'backups')
     
     formatter = logging.Formatter('%(asctime)s  %(message)s')
     
-    pulp_file = log_config.get('pulp_file', default_config['pulp_file'])
+    pulp_file = config.get('logs', 'pulp_file')
     check_log_file(pulp_file)
     pulp_logger = logging.getLogger('pulp')
     pulp_logger.setLevel(level)
@@ -150,7 +153,7 @@ def configure_pulp_grinder_logging():
     pulp_handler.setFormatter(formatter)
     pulp_logger.addHandler(pulp_handler)
     
-    grinder_file = log_config.get('grinder_file', default_config['grinder_file'])
+    grinder_file = config.get('logs', 'grinder_file')
     check_log_file(grinder_file)
     grinder_logger = logging.getLogger('grinder')
     grinder_logger.setLevel(level)
@@ -166,15 +169,10 @@ def configure_audit_logging():
     Pull the audit logging configuration from the global config and/or default
     config and initialize pulp's audit logging.
     """
-    default_config = default_values['auditing']
-    audit_config = {}
-    if config.has_section('auditing'):
-        audit_config = dict(config.items('auditing'))
-        
-    file = audit_config.get('events_file', default_config['events_file'])
+    file = config.get('auditing', 'events_file')
     check_log_file(file)
-    lifetime = int(audit_config.get('lifetime', default_config['lifetime']))
-    backups = int(audit_config.get('backups', default_config['backups']))
+    lifetime = config.getint('auditing', 'lifetime')
+    backups = config.getint('auditing', 'backups')
     
     logger = logging.getLogger('pulp.auditing')
     logger.setLevel(logging.INFO)
