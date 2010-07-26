@@ -138,8 +138,8 @@ class BaseSynchronizer(object):
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
                     repo['group_xml_path'] = group_xml_path
-                    self.sync_groups_data(groupfile, repo)
-                    log.debug("Loaded group info from %s" % (group_xml_path))
+#                    self.sync_groups_data(groupfile, repo)
+#                    log.debug("Loaded group info from %s" % (group_xml_path))
                 else:
                     log.info("Group info not found at file: %s" % (group_xml_path))
             if "group_gz" in ftypes:
