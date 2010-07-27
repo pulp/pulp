@@ -248,6 +248,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     if pkg.endswith(".rpm"):
                         shutil.copy(pkg, os.path.join(repo_dir, os.path.basename(pkg)))
                 groups_xml_path = None
+                updateinfo_path = None
                 src_repomd_xml = os.path.join(pkg_dir, "repodata/repomd.xml")
                 if os.path.isfile(src_repomd_xml):
                     ftypes = pulp.util.get_repomd_filetypes(src_repomd_xml)
@@ -261,19 +262,31 @@ class LocalSynchronizer(BaseSynchronizer):
                             log.debug("Copied groups over to %s" % (repo_dir))
                         groups_xml_path = os.path.join(repo_dir,
                             os.path.basename(src_groups))
-                    if "group_gz" in ftypes:
-                        g = pulp.util.get_repomd_filetype_path(src_repomd_xml, "group")
-                        src_groups = os.path.join(pkg_dir, g)
-
+                    if "updateinfo" in ftypes:
+                        f = pulp.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
+                        src_updateinfo_path = os.path.join(pkg_dir, f)
+                        if os.path.isfile(src_updateinfo_path):
+                            # Copy the updateinfo metadata to 'updateinfo.xml'
+                            # This is intentional, we want to ensure when modifyrepo
+                            # is run, it tags this as 'updateinfo' and not
+                            # 'e4384753023nfuhgf9494...98439-updateinfo'
+                            shutil.copy(src_updateinfo_path,
+                                    os.path.join(repo_dir, "updateinfo.xml"))
+                            log.debug("Copied %s to %s" % (src_updateinfo_path, repo_dir))
+                            updateinfo_path = os.path.join(repo_dir, "updateinfo.xml")
                 pulp.upload.create_repo(repo_dir, groups=groups_xml_path)
+                if updateinfo_path:
+                    pulp.upload.modify_repo(os.path.join(repo_dir, "repodata"),
+                            updateinfo_path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (pkg_dir))
-            return
+            raise
         except IOError:
             log.error("Unable to create repo directory %s" % repo_dir)
-        except pulp.upload.CreateRepoError:
-            log.error("Unable to run createrepo on source path %s" % (repo_dir))
-            return
+            raise
+        except pulp.upload.CreateRepoError, e:
+            log.error(e)
+            raise
         return repo_dir
 
 class RHNSynchronizer(BaseSynchronizer):
@@ -293,12 +306,16 @@ class RHNSynchronizer(BaseSynchronizer):
         # Create and configure the grinder hook to RHN
         s = RHNSync()
         s.setURL(host)
+        s.setParallel(self.config.get('rhn', 'threads'))
 
         # Perform the sync
         dest_dir = '%s/%s/' % (self.config.get('paths', 'local_storage'), repo['id'])
         s.syncPackages(channel, savePath=dest_dir)
         s.createRepo(dest_dir)
-        s.setParallel(self.config.get('rhn', 'threads'))
+        updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
+        if os.path.isfile(updateinfo_path):
+            log.info("updateinfo_path is found, calling updateRepo")
+            s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
 
         return dest_dir
         

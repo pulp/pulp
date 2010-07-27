@@ -22,6 +22,7 @@ import tempfile
 import commands
 
 from api.repo_sync import BaseSynchronizer
+from pexceptions import PulpException
 import util
 
 log = logging.getLogger(__name__)
@@ -87,6 +88,16 @@ def create_repo(dir, groups=None):
     log.info("createrepo on %s finished" % dir)
     return status, out
 
+def modify_repo(dir, new_file):
+    cmd = "modifyrepo %s %s" % (new_file, dir)
+    status, out = commands.getstatusoutput(cmd)
+    if status != 0:
+        log.error("modifyrepo on %s failed" % dir)
+        raise ModifyRepoError(out)
+    log.info("modifyrepo with %s on %s finished" % (new_file, dir))
+    return status, out
+
+
 
 def store_package(pkgstream, pkg_path, size, checksum, hashtype, force=None):
     """
@@ -122,17 +133,20 @@ def store_package(pkgstream, pkg_path, size, checksum, hashtype, force=None):
         os.remove(pkg_path)
         raise UploadError("%s md5sum mismatch, read md5sum of: %s expected md5sum of %s" % (os.path.basename(pkg_path), savedChecksum, checksum))
 
-class UploadError(Exception):
+class UploadError(PulpException):
     pass
 
-class PackageExistsError(Exception):
+class PackageExistsError(PulpException):
     pass
 
-class CreateRepoError:
+class CreateRepoError(PulpException):
     def __init__(self, output):
         self.output = output
 
     def __str__(self):
         return self.output
+
+class ModifyRepoError(CreateRepoError):
+    pass
 
 
