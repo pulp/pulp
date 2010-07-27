@@ -119,8 +119,6 @@ rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
 rm -rf %{buildroot}
 
 %post
-chown apache:apache /var/lib/pulp
-chown apache:apache /var/log/pulp
 setfacl -m u:apache:rwx /etc/pki/content/
 
 %files
@@ -132,11 +130,11 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{python_sitelib}/pmf/*
 %config(noreplace) /etc/pulp/pulp.conf
 %config(noreplace) /etc/httpd/conf.d/pulp.conf
-/etc/pulp
-/srv/pulp/webservices.wsgi
-/var/lib/pulp
-/var/www/pub
-/var/log/pulp
+%attr(775, apache, apache) /etc/pulp
+%attr(750, apache, apache) /srv/pulp/webservices.wsgi
+%attr(3775, apache, apache) /var/lib/pulp
+%attr(3775, apache, apache) /var/www/pub
+%attr(3775, apache, apache) /var/log/pulp
 /etc/pki/pulp/ca.crt
 /etc/pki/pulp/server.crt
 /etc/pki/pulp/server.key

@@ -104,6 +104,10 @@ def install(opts):
 
     # Grant apache write access to the pulp tools log file
     os.system('setfacl -m user:apache:rwx /var/log/pulp')
+    # guarantee apache always has write permissions
+    os.system('chmod 3775 /var/log/pulp')
+    os.system('chmod 3775 /var/www/pulp')
+    os.system('chmod 3775 /var/lib/pulp')
 
     # Disable existing SSL configuration
     if os.path.exists('/etc/httpd/conf.d/ssl.conf'):
