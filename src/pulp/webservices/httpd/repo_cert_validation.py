@@ -22,6 +22,7 @@ with mod_python imports not being available at unit test time.
 '''
 
 import logging
+import re
 
 import pulp.certificate
 
@@ -49,14 +50,10 @@ def is_valid(dest, cert_pem):
         if is_download_url_ext(e):
             oid_url = extensions[e]
 
-            log.debug('OID URL     [%s]' % oid_url)
-
-            # This logic isn't final (or really all that good). Need to clean this up when we
-            # figure out what the OID values will really look like.
-            if oid_url in dest:
+            if _validate(oid_url, dest):
                 valid = True
                 break
-            
+
     return valid
 
 def is_download_url_ext(ext_oid):
@@ -71,3 +68,19 @@ def is_download_url_ext(ext_oid):
     '''
     result = ext_oid.match('1.3.6.1.4.1.2312.9.2.') and ext_oid.match('.1.6')
     return result
+
+def _validate(oid_url, dest):
+    log.debug('OID URL     [%s]' % oid_url)
+
+    # Swap out all $ variables (e.g. $basearch, $version) for a reg ex wildcard in that location
+    #
+    # For example, the following entitlement:
+    #   content/dist/rhel/server/$version/$basearch/os
+    #
+    # Should allow any value for the variables:
+    #   content/dist/rhel/server/.+?/.+?/os
+
+    oid_re = re.sub(r'\$.+?/', '.+?/', oid_url)
+    log.debug('OID Reg Ex  [%s]' % oid_re)
+
+    return re.search(oid_re, dest) is not None
