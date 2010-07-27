@@ -14,7 +14,9 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 import logging.handlers
+import os
 import os.path
 from ConfigParser import SafeConfigParser
 
@@ -84,9 +86,7 @@ def add_config_file(file_path):
     if file_path in _config_files:
         raise RuntimeError('File, %s, already in configuration files' % file_path)
     _config_files.append(file_path)
-    files = load_configuration()
-    configure_logging()
-    log_configuration(files)
+    _initialize()
     
 
 def remove_config_file(file_path):
@@ -101,21 +101,8 @@ def remove_config_file(file_path):
     if file_path not in _config_files:
         raise RuntimeError('File, %s, not in configuration files' % file_path)
     _config_files.remove(file_path)
-    files = load_configuration()
-    configure_logging()
-    log_configuration(files)
+    _initialize()
     
-    
-def log_configuration(files):
-    """
-    Log the list of configuration files that were successfully read.
-    
-    @type fiels: list or tuple
-    @param files: list of configuration files that were read
-    """
-    log = logging.getLogger('pulp.config')
-    log.info('Successfully loaded configuration from: %s' % ', '.join(files))
-
 # logging configuration api ---------------------------------------------------
 
 def check_log_file(file_path):
@@ -190,8 +177,18 @@ def configure_logging():
     configure_pulp_grinder_logging()
     configure_audit_logging()
 
-# bootstrap -------------------------------------------------------------------
+# initialization --------------------------------------------------------------
 
-files = load_configuration()    
-configure_logging()
-log_configuration(files)
+def _initialize():
+    """
+    Initialize pulp's configuration and logging.
+    """
+    global config
+    config = None
+    files = load_configuration()    
+    configure_logging()
+    log = logging.getLogger('pulp.config')
+    log.info('Successfully loaded configuration from: %s' % ', '.join(files))
+    
+# initialize on import
+_initialize()
