@@ -193,7 +193,7 @@ class TestApi(unittest.TestCase):
         assert(packages != None)
         assert(packages[p['id']] != None)
     
-    def test_repo_errata(self):
+    def test_repo_erratum(self):
         repo = self.rapi.create('some-id','some name', \
             'i386', 'yum:http://example.com')
         id = 'test_errata_id'
@@ -202,12 +202,64 @@ class TestApi(unittest.TestCase):
         version = '1.0'
         release = '0'
         type = 'test_errata_type'
-        sample_errata = self.eapi.create(id, title, description, version, release, type)
-        assert(sample_errata != None)
-        self.rapi.add_errata(repo['id'], sample_errata['id'])
+        test_errata = self.eapi.create(id, title, description, version, release, type)
+        assert(test_errata != None)
+        self.rapi.add_erratum(repo['id'], test_errata['id'])
         
         errata = self.rapi.errata('some-id', type='test_errata_type')
         assert(errata != None)
+        
+    def test_repo_erratum(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        id = 'test_errata_id_1'
+        title = 'test_errata_title_1'
+        description = 'test_errata_description_1'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_1 = self.eapi.create(id, title, description, version, release, type)
+
+        self.assertTrue(test_errata_1 != None)
+        self.rapi.add_erratum(repo['id'], test_errata_1['id'])
+
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 1)
+        
+        self.rapi.delete_erratum(repo['id'], test_errata_1['id'])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 0)
+        
+    def test_repo_errata(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        id = 'test_errata_id_1'
+        title = 'test_errata_title_1'
+        description = 'test_errata_description_1'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_1 = self.eapi.create(id, title, description, version, release, type)
+        self.assertTrue(test_errata_1 != None)
+        
+        id = 'test_errata_id_2'
+        title = 'test_errata_title_2'
+        description = 'test_errata_description_2'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_2 = self.eapi.create(id, title, description, version, release, type)
+        self.assertTrue(test_errata_2 != None)
+        self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 2)
+
+        self.rapi.delete_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 0)
         
     def test_repo_package_by_name(self):
         repo = self.rapi.create('some-id','some name', \

@@ -219,13 +219,30 @@ class RepoApi(BaseApi):
             except KeyError, ke:
                 log.debug("Invalid errata type requested :[%s]" % (ke))
                 raise PulpException("Invalid errata type requested :[%s]" % (ke))
-        return [ item for etype in errata.values() for item in etype ]
-        
-    def add_errata(self, repoid, erratumid):
+        return [ item for etype in errata.values() for item in etype ]      
+      
+    @audit('RepoApi', params=['repoid', 'erratumid'])
+    def add_erratum(self, repoid, erratumid):
         """
         Adds in erratum to this repo
         """
         repo = self._get_existing_repo(repoid)
+        self._add_erratum(repo, erratumid)
+        self.update(repo)
+        
+    def add_errata(self, repoid, errataids):
+        """
+         Adds a list of errata to this repo
+        """
+        repo = self._get_existing_repo(repoid)
+        for erratumid in errataids:
+            self._add_erratum(repo, erratumid)
+        self.update(repo)
+        
+    def _add_erratum(self, repo, erratumid):
+        """
+        Responsible for properly associating an Erratum to a Repo
+        """
         erratum = self.errataapi.erratum(erratumid)
         if erratum is None:
             raise PulpException("No Erratum with id: %s found" % erratumid)
@@ -238,8 +255,41 @@ class RepoApi(BaseApi):
         except KeyError:
             errata[erratum['type']] = []
 
-        errata[erratum['type']].append(erratum)          
+        errata[erratum['type']].append(erratum['id'])
+        
+    @audit('RepoApi', params=['repoid', 'erratumid'])    
+    def delete_erratum(self, repoid, erratumid):
+        """
+        delete erratum from this repo
+        """
+        repo = self._get_existing_repo(repoid)
+        self._delete_erratum(repo, erratumid)
         self.update(repo)
+        
+    def delete_errata(self, repoid, errataids):
+        """
+        delete list of errata from this repo
+        """
+        repo = self._get_existing_repo(repoid)
+        for erratumid in errataids:
+            self._delete_erratum(repo, erratumid)
+        self.update(repo)
+        
+    def _delete_erratum(self, repo, erratumid):
+        """
+        Responsible for properly removing an Erratum from a Repo
+        """
+        erratum = self.errataapi.erratum(erratumid)
+        if erratum is None:
+            raise PulpException("No Erratum with id: %s found" % erratumid)
+        try:
+            curr_errata = repo['errata'][erratum['type']]
+            if erratum['id'] not in curr_errata:
+                log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'] )
+                return
+            del curr_errata[curr_errata.index(erratum['id'])]
+        except Exception, e:
+            raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
 
     @audit('RepoApi', params=['repoid', 'group_id', 'group_name'])
     def create_packagegroup(self, repoid, group_id, group_name, description):
