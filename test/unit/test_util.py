@@ -21,7 +21,6 @@ sys.path.insert(0, srcdir)
 
 from pulp.util import chunks
 from pulp.util import get_rpm_information
-from pulp.util import load_config
 from pulp.util import get_repo_packages
 from pulp.util import get_repo_package
 import time
@@ -47,18 +46,6 @@ class TestUtil(unittest.TestCase):
             total = total + len(chunk)
         assert(total == 1003)
 
-    def test_load_config(self):
-        # Setup
-        orig_file = os.path.abspath(os.path.dirname(__file__)) + '/../../etc/pulp/pulp.conf'
-        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-pulp.conf'
-        
-        # Test & Verify
-        config = load_config(orig_file)
-        self.assertEqual(config.get('paths', 'local_storage'), '/var/lib/pulp')
-
-        config = load_config(override_file, config=config)
-        self.assertEqual(config.get('paths', 'local_storage'), '/tmp/pulp')
-       
     def test_get_repo_packages(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir_a = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"

@@ -30,9 +30,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import testutil
-
-from pulp.webservices.runtime import bootstrap
-bootstrap(testutil.load_test_config())
+testutil.load_test_config()
 
 from pulp.api.user import UserApi
 from pulp.certificate import Certificate

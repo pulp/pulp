@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+import logging.handlers
+import os.path
+
+from pulp.config import config
+
+# logging configuration -------------------------------------------------------
+
+def check_log_file(file_path):
+    """
+    Check the write permissions on log files and their parent directory. Raise
+    a runtime error if the write permissions are lacking.
+    """
+    if os.path.exists(file_path) and not os.access(file_path, os.W_OK):
+        raise RuntimeError('Cannot write to log file: %s' % file_path)
+    dir_path = os.path.dirname(file_path)
+    if not os.access(dir_path, os.W_OK):
+        raise RuntimeError('Cannot write to log directory: %s' % dir_path)
+    return 'Yeah!'
+
+
+def configure_pulp_grinder_logging():
+    """
+    Pull the log file configurations from the global config and/or default
+    config and initialize the top-level logging for both pulp and grinder.
+    """
+    level_name = config.get('logs', 'level').upper()
+    level = getattr(logging, level_name, logging.INFO)
+    max_size = config.getint('logs', 'max_size')
+    backups = config.getint('logs', 'backups')
+    
+    formatter = logging.Formatter('%(asctime)s  %(message)s')
+    
+    pulp_file = config.get('logs', 'pulp_file')
+    check_log_file(pulp_file)
+    pulp_logger = logging.getLogger('pulp')
+    pulp_logger.setLevel(level)
+    pulp_handler = logging.handlers.RotatingFileHandler(pulp_file,
+                                                        maxBytes=max_size,
+                                                        backupCount=backups)
+    pulp_handler.setFormatter(formatter)
+    pulp_logger.addHandler(pulp_handler)
+    
+    grinder_file = config.get('logs', 'grinder_file')
+    check_log_file(grinder_file)
+    grinder_logger = logging.getLogger('grinder')
+    grinder_logger.setLevel(level)
+    grinder_handler = logging.handlers.RotatingFileHandler(grinder_file,
+                                                           maxBytes=max_size,
+                                                           backupCount=backups)
+    grinder_handler.setFormatter(formatter)
+    grinder_logger.addHandler(grinder_handler)
+    
+    
+def configure_audit_logging():
+    """
+    Pull the audit logging configuration from the global config and/or default
+    config and initialize pulp's audit logging.
+    """
+    file = config.get('auditing', 'events_file')
+    check_log_file(file)
+    lifetime = config.getint('auditing', 'lifetime')
+    backups = config.getint('auditing', 'backups')
+    
+    logger = logging.getLogger('pulp.auditing')
+    logger.setLevel(logging.INFO)
+    handler = logging.handlers.TimedRotatingFileHandler(file,
+                                                        when='D',
+                                                        interval=lifetime,
+                                                        backupCount=backups)
+    logger.addHandler(handler)
+    
+# pulp logging api ------------------------------------------------------------
+    
+def start_logging():
+    """
+    Convenience function to start pulp's different logging mechanisms.
+    """
+    assert config is not None
+    configure_pulp_grinder_logging()
+    configure_audit_logging()
+    
+    
+def stop_logging():
+    """
+    Convenience function to stop pulp's different logging mechanisms.
+    """
+    logging.shutdown()
+    
+    
+def restart_logging():
+    """
+    Convenience function to restart pulp's different logging mechanisms.
+    """
+    stop_logging()
+    start_logging()

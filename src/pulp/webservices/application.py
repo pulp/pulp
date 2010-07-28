@@ -17,6 +17,7 @@
 import web
 
 from pulp.config import config
+from pulp.logs import start_logging
 from pulp.webservices import controllers
 
 
@@ -45,4 +46,5 @@ def wsgi_application():
     """
     application = web.subdir_application(URLS)
     _configure_application(application, config)
+    start_logging()
     return application.wsgifunc()

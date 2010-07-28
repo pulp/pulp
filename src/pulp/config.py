@@ -14,10 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import logging
-import logging.handlers
 import os
-import os.path
 from ConfigParser import SafeConfigParser
 
 # global configuration --------------------------------------------------------
@@ -86,7 +83,7 @@ def add_config_file(file_path):
     if file_path in _config_files:
         raise RuntimeError('File, %s, already in configuration files' % file_path)
     _config_files.append(file_path)
-    _initialize()
+    load_configuration()
     
 
 def remove_config_file(file_path):
@@ -101,94 +98,8 @@ def remove_config_file(file_path):
     if file_path not in _config_files:
         raise RuntimeError('File, %s, not in configuration files' % file_path)
     _config_files.remove(file_path)
-    _initialize()
+    load_configuration()
     
-# logging configuration api ---------------------------------------------------
+# initialize on import --------------------------------------------------------
 
-def check_log_file(file_path):
-    """
-    Check the write permissions on log files and their parent directory. Raise
-    a runtime error if the write permissions are lacking.
-    """
-    if os.path.exists(file_path) and not os.access(file_path, os.W_OK):
-        raise RuntimeError('Cannot write to log file: %s' % file_path)
-    dir_path = os.path.dirname(file_path)
-    if not os.access(dir_path, os.W_OK):
-        raise RuntimeError('Cannot write to log directory: %s' % dir_path)
-    return 'Yeah!'
-
-
-def configure_pulp_grinder_logging():
-    """
-    Pull the log file configurations from the global config and/or default
-    config and initialize the top-level logging for both pulp and grinder.
-    """
-    level_name = config.get('logs', 'level').upper()
-    level = getattr(logging, level_name, logging.INFO)
-    max_size = config.getint('logs', 'max_size')
-    backups = config.getint('logs', 'backups')
-    
-    formatter = logging.Formatter('%(asctime)s  %(message)s')
-    
-    pulp_file = config.get('logs', 'pulp_file')
-    check_log_file(pulp_file)
-    pulp_logger = logging.getLogger('pulp')
-    pulp_logger.setLevel(level)
-    pulp_handler = logging.handlers.RotatingFileHandler(pulp_file,
-                                                        maxBytes=max_size,
-                                                        backupCount=backups)
-    pulp_handler.setFormatter(formatter)
-    pulp_logger.addHandler(pulp_handler)
-    
-    grinder_file = config.get('logs', 'grinder_file')
-    check_log_file(grinder_file)
-    grinder_logger = logging.getLogger('grinder')
-    grinder_logger.setLevel(level)
-    grinder_handler = logging.handlers.RotatingFileHandler(grinder_file,
-                                                           maxBytes=max_size,
-                                                           backupCount=backups)
-    grinder_handler.setFormatter(formatter)
-    grinder_logger.addHandler(grinder_handler)
-    
-    
-def configure_audit_logging():
-    """
-    Pull the audit logging configuration from the global config and/or default
-    config and initialize pulp's audit logging.
-    """
-    file = config.get('auditing', 'events_file')
-    check_log_file(file)
-    lifetime = config.getint('auditing', 'lifetime')
-    backups = config.getint('auditing', 'backups')
-    
-    logger = logging.getLogger('pulp.auditing')
-    logger.setLevel(logging.INFO)
-    handler = logging.handlers.TimedRotatingFileHandler(file,
-                                                        when='D',
-                                                        interval=lifetime,
-                                                        backupCount=backups)
-    logger.addHandler(handler)
-    
-    
-def configure_logging():
-    """
-    Convenience function to initialize pulp's different logging mechanisms.
-    """
-    configure_pulp_grinder_logging()
-    configure_audit_logging()
-
-# initialization --------------------------------------------------------------
-
-def _initialize():
-    """
-    Initialize pulp's configuration and logging.
-    """
-    global config
-    config = None
-    files = load_configuration()    
-    configure_logging()
-    log = logging.getLogger('pulp.config')
-    log.info('Successfully loaded configuration from: %s' % ', '.join(files))
-    
-# initialize on import
-_initialize()
+load_configuration()

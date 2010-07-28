@@ -15,15 +15,15 @@
 
 import os
 
-import pulp.util
+from pulp.config import config, _config_files, add_config_file
+from pulp.logs import start_logging, stop_logging
 
 def load_test_config():
-    base_file = os.path.abspath(os.path.dirname(__file__)) + '../../etc/pulp/pulp.conf'
-    config = pulp.util.load_config(base_file)
-
     override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.conf'
-    config = pulp.util.load_config(override_file, config=config)
-
+    if override_file not in _config_files:
+        stop_logging()
+        add_config_file(override_file)
+        start_logging()
     return config
 
 def create_package(api, name):
