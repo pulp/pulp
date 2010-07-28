@@ -74,8 +74,6 @@ pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
-cp -R test %{buildroot}/%{python_sitelib}/%{name}
-
 # Pulp Configuration
 mkdir -p %{buildroot}/etc/pulp
 cp etc/pulp/* %{buildroot}/etc/pulp
@@ -103,9 +101,6 @@ cp bin/pulpd %{buildroot}/usr/bin
 
 mkdir -p %{buildroot}/etc/init.d
 cp etc/init.d/pulpd %{buildroot}/etc/init.d
-
-# Python Script Header
-find %{buildroot} -name \*.py | xargs sed -i -e '/^#!\/usr\/bin\/env python/d' -e '/^#!\/usr\/bin\/python/d' 
 
 # RHEL 5 packages don't have egg-info files, so remove the requires.txt
 # It isn't needed, because RPM will guarantee the dependency itself
