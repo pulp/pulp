@@ -17,12 +17,11 @@
 import web
 
 from pulp.api.consumer_group import ConsumerGroupApi
-from pulp.config import config
 from pulp.webservices.controllers.base import JSONController
 
 # consumers api ---------------------------------------------------------------
 
-api = ConsumerGroupApi(config)
+api = ConsumerGroupApi()
 
 # controllers -----------------------------------------------------------------
 

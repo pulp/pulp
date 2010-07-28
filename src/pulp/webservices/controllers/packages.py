@@ -19,13 +19,12 @@ import logging
 import web
 
 from pulp.api.package import PackageApi
-from pulp.config import config
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
 
 # globals ---------------------------------------------------------------------
 
-api = PackageApi(config)
+api = PackageApi()
 log = logging.getLogger('pulp')
 
 # packages controllers --------------------------------------------------------

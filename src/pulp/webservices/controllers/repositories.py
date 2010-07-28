@@ -20,14 +20,13 @@ import logging
 import web
 
 from pulp.api.repo import RepoApi
-from pulp.config import config
 from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController, AsyncController
 
 # globals ---------------------------------------------------------------------
 
-api = RepoApi(config)
+api = RepoApi()
 log = logging.getLogger('pulp')
 
 # default fields for repositories being sent to the client
