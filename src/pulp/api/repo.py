@@ -30,6 +30,7 @@ from pulp.api.base import BaseApi
 from pulp.api.package import PackageApi
 from pulp.api.errata import ErrataApi
 from pulp.auditing import audit
+from pulp.config import config
 from pulp.pexceptions import PulpException
 
 
@@ -43,10 +44,10 @@ class RepoApi(BaseApi):
     API for create/delete/syncing of Repo objects
     """
 
-    def __init__(self, config):
-        BaseApi.__init__(self, config)
-        self.packageApi = PackageApi(config)
-        self.errataapi  = ErrataApi(config)
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.packageApi = PackageApi()
+        self.errataapi  = ErrataApi()
         self.localStoragePath = config.get('paths', 'local_storage')
    
     def _get_indexes(self):
@@ -109,14 +110,14 @@ class RepoApi(BaseApi):
         self.insert(r)
 
         if sync_schedule:
-            repo_sync.update_schedule(self.config, r)
+            repo_sync.update_schedule(r)
 
         return r
 
     @audit('RepoApi', params=['id'])
     def delete(self, id):
         repo = self._get_existing_repo(id)
-        repo_sync.delete_schedule(self.config, repo)
+        repo_sync.delete_schedule(repo)
         self.objectdb.remove(repo, safe=True)
 
     @audit('RepoApi', params=['repo_data'])
@@ -131,9 +132,9 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
 
         if repo['sync_schedule']:
-            repo_sync.update_schedule(self.config, repo)
+            repo_sync.update_schedule(repo)
         else:
-            repo_sync.delete_schedule(self.config, repo)
+            repo_sync.delete_schedule(repo)
 
         return repo
 
@@ -559,7 +560,7 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        added_packages = repo_sync.sync(self.config, repo, repo_source)
+        added_packages = repo_sync.sync(repo, repo_source)
         for p in added_packages:
             self._add_package(repo, p)
         self.update(repo)
@@ -570,7 +571,7 @@ class RepoApi(BaseApi):
         Store the uploaded package and associate to this repo
         """
         repo = self._get_existing_repo(id)
-        pkg_upload = upload.PackageUpload(self.config, repo, pkginfo, pkgstream)
+        pkg_upload = upload.PackageUpload(repo, pkginfo, pkgstream)
         pkg, repo = pkg_upload.upload()
         self._add_package(repo, pkg)
         self.update(repo)

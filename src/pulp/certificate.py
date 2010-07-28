@@ -23,11 +23,12 @@ support for custom v3 extensions.  It is not intended to be a
 replacement of full wrapper but instead and extension.
 """
 
-import os, re
-import base64
-from M2Crypto import X509
+import os
+import re
 from datetime import datetime as dt
 from datetime import tzinfo, timedelta
+
+from M2Crypto import X509
 
 
 class Certificate(object):

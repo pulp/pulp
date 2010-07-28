@@ -14,15 +14,11 @@
 # in this software or its documentation.
 
 
-# Python
 import sys
 import logging
 
-# 3rd Party
 from yum.update_md import UpdateMetadata
 
-import pulp
-from pulp.api.errata import ErrataApi
 
 log = logging.getLogger(__name__)
 

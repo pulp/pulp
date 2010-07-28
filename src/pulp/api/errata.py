@@ -13,9 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import pymongo
-
-# Pulp
 from pulp import model
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
@@ -26,8 +23,8 @@ errata_fields = model.Errata(None, None, None, None, None, None).keys()
 
 class ErrataApi(BaseApi):
 
-    def __init__(self, config):
-        BaseApi.__init__(self, config)
+    def __init__(self):
+        BaseApi.__init__(self)
 
     def _get_indexes(self):
         return ["title", "description", "version", "release", "type", "status",

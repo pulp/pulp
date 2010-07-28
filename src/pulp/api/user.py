@@ -19,8 +19,7 @@ import uuid
 from pulp import model
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
-from pulp.certificate import Certificate
-from pulp.pexceptions import PulpException
+from pulp.config import config
 
 
 log = logging.getLogger(__name__)
@@ -29,9 +28,9 @@ user_fields = model.User(None, None, None, None).keys()
 
 class UserApi(BaseApi):
 
-    def __init__(self, config):
-        BaseApi.__init__(self, config)
-        self.default_login = self.config.get('server', 'default_login')
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.default_login = self.get('server', 'default_login')
         self._ensure_default_admin()
 
     def _getcollection(self):
@@ -40,7 +39,7 @@ class UserApi(BaseApi):
     def _ensure_default_admin(self):
         admin = self.user(self.default_login)
         if (admin == None):
-            default_password = self.config.get('server', 'default_password') 
+            default_password = config.get('server', 'default_password') 
             self.create(self.default_login, password=default_password)
 
     @audit('UserApi', params=['login', 'name'])

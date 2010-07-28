@@ -13,7 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-# Python
 import logging
 import os
 import time
@@ -21,25 +20,25 @@ import traceback
 import shutil
 from urlparse import urlparse
 
-# 3rd Party
 import yum
 
-# Pulp
-from grinder.RepoFetch import YumRepoGrinder
-from grinder.RHNSync import RHNSync
-from pulp import updateinfo
-from pulp.api.package import PackageApi
-from pulp.pexceptions import PulpException
 import pulp.comps_util
 import pulp.crontab
 import pulp.upload
 import pulp.util
+from grinder.RepoFetch import YumRepoGrinder
+from grinder.RHNSync import RHNSync
+from pulp import updateinfo
+from pulp.api.package import PackageApi
+from pulp.config import config
+from pulp.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
 
+# sync api --------------------------------------------------------------------
 
-def sync(config, repo, repo_source):
+def sync(repo, repo_source):
     '''
     Synchronizes content for the given RepoSource.
 
@@ -49,19 +48,18 @@ def sync(config, repo, repo_source):
     @param repo_source: indicates the source from which the repo data will be syncced; may not be None
     @type  repo_source: L{pulp.model.RepoSource}
     '''
-    if not TYPE_CLASSES.has_key(repo_source['type']):
-        raise PulpException('Could not find synchronizer for repo type [%s]', repo_source['type'])
+    source_type = repo_source['type']
+    if source_type not in type_classes:
+        raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
 
-    synchronizer = TYPE_CLASSES[repo_source['type']](config)
+    synchronizer = type_classes[source_type]()
     repo_dir = synchronizer.sync(repo, repo_source)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
 
-def update_schedule(config, repo):
+
+def update_schedule(repo):
     '''
     Updates the repo sync scheduler entry with the schedule for the given repo.
-
-    @param config: pulp configuration values; may not be None
-    @type  config: L{ConfigParser}
 
     @param repo: repo containg the id and sync schedule; may not be None
     @type  repo: L{pulp.model.Repo}
@@ -81,12 +79,10 @@ def update_schedule(config, repo):
     log.debug('Writing updated cron entry [%s]' % entry.render())
     tab.write()
 
-def delete_schedule(config, repo):
+
+def delete_schedule(repo):
     '''
     Deletes the repo sync schedule file for the given repo.
-
-    @param config: pulp configuration values; may not be None
-    @type  config: L{ConfigParser}
 
     @param repo: repo containg the id and sync schedule; may not be None
     @type  repo: L{pulp.model.Repo}
@@ -107,12 +103,16 @@ def delete_schedule(config, repo):
 def _cron_command(repo):
     return 'pulp repo sync %s' % repo['id']
 
+# synchronization classes -----------------------------------------------------
+
+class InvalidPathError(Exception):
+    pass
+
 
 class BaseSynchronizer(object):
 
-    def __init__(self, config):
-        self.config = config
-        self.package_api = PackageApi(config)
+    def __init__(self):
+        self.package_api = PackageApi()
 
     def add_packages_from_dir(self, dir, repo):
         
@@ -180,9 +180,9 @@ class BaseSynchronizer(object):
                     retval.requires.append(dep[0])
                 for prov in package.provides:
                     retval.provides.append(prov[0])
-                retval.download_url = self.config.get('server', 'base_url') + "/" + \
-                                        self.config.get('server', 'relative_url') + "/" + \
-                                        repo["id"] + "/" +  file_name
+                retval.download_url = config.get('server', 'base_url') + "/" + \
+                                      config.get('server', 'relative_url') + "/" + \
+                                      repo["id"] + "/" +  file_name
                 self.package_api.update(retval)
             return retval
         except Exception, e:
@@ -220,26 +220,27 @@ class BaseSynchronizer(object):
             return False
         return True
 
-    def sync_updateinfo_data(updateinfo_xml_path, repo):
+    def sync_updateinfo_data(self, updateinfo_xml_path, repo):
         """
         @param updateinfo_xml_path: path to updateinfo metadata xml file
         @param repo:    model.Repo object we want to sync 
         """
         try:
             uinfo = updateinfo.get_errata(updateinfo_xml_path)
-            log.debug("Parsed %s, %s UpdateNotices were returned." % \
-                    (updateinfo_xml_path, len(uinfo))
+            log.debug("Parsed %s, %s UpdateNotices were returned." %
+                      (updateinfo_xml_path, len(uinfo)))
             # Remove all "repo_defined" errata?
             # Add all groups/categories from repo
                 #ctg["immutable"] = True
                 #ctg["repo_defined"] = True
-        except yum.Errors.YumBaseError, e
+        except yum.Errors.YumBaseError, e:
             log.error("Unable to parse updateinfo file %s for %s" % (updateinfo_xml_path, repo["id"]))
             return False
         return True
 
 
 class YumSynchronizer(BaseSynchronizer):
+
     def sync(self, repo, repo_source):
         cacert = clicert = clikey = None
         if repo['ca'] and repo['cert'] and repo['key']:
@@ -248,19 +249,20 @@ class YumSynchronizer(BaseSynchronizer):
             clikey=repo['key'].encode('utf8')
         yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'), 
                                 1, cacert=cacert, clicert=clicert, clikey=clikey)
-        yfetch.fetchYumRepo(self.config.get('paths', 'local_storage'))
-        repo_dir = "%s/%s/" % (self.config.get('paths', 'local_storage'), repo['id'])
+        yfetch.fetchYumRepo(config.get('paths', 'local_storage'))
+        repo_dir = "%s/%s/" % (config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
     
+
 class LocalSynchronizer(BaseSynchronizer):
     """
-        Sync class to synchronize a directory of rpms from a local filer
+    Sync class to synchronize a directory of rpms from a local filer
     """
     def sync(self, repo, repo_source):
 
         pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         try:
-            repo_dir = "%s/%s" % (self.config.get('paths', 'local_storage'), repo['id'])
+            repo_dir = "%s/%s" % (config.get('paths', 'local_storage'), repo['id'])
             if not os.path.exists(pkg_dir):
                 raise InvalidPathError("Path %s is invalid" % pkg_dir)
             if repo['use_symlinks']:
@@ -316,6 +318,7 @@ class LocalSynchronizer(BaseSynchronizer):
         return repo_dir
 
 class RHNSynchronizer(BaseSynchronizer):
+
     def sync(self, repo, repo_source):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
@@ -332,10 +335,10 @@ class RHNSynchronizer(BaseSynchronizer):
         # Create and configure the grinder hook to RHN
         s = RHNSync()
         s.setURL(host)
-        s.setParallel(self.config.get('rhn', 'threads'))
+        s.setParallel(config.get('rhn', 'threads'))
 
         # Perform the sync
-        dest_dir = '%s/%s/' % (self.config.get('paths', 'local_storage'), repo['id'])
+        dest_dir = '%s/%s/' % (config.get('paths', 'local_storage'), repo['id'])
         s.syncPackages(channel, savePath=dest_dir)
         s.createRepo(dest_dir)
         updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
@@ -344,11 +347,11 @@ class RHNSynchronizer(BaseSynchronizer):
             s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
 
         return dest_dir
+    
+# synchronization type map ----------------------------------------------------
         
-TYPE_CLASSES = {'yum'   : YumSynchronizer,
-                'local' : LocalSynchronizer,
-                'rhn'   : RHNSynchronizer,}
-
-class InvalidPathError(Exception):
-    pass
-
+type_classes = {
+    'yum': YumSynchronizer,
+    'local': LocalSynchronizer,
+    'rhn': RHNSynchronizer,
+}

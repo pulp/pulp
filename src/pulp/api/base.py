@@ -14,20 +14,27 @@
 # in this software or its documentation.
 
 import logging
+
 import pymongo
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
+from pulp.config import config
+
+# logging and db connection
+
 log = logging.getLogger(__name__)
 
-CONN = pymongo.Connection()
+_connection = pymongo.Connection()
+
+# base api class --------------------------------------------------------------
 
 class BaseApi(object):
 
-    def __init__(self, config):
+    def __init__(self):
         self.config = config
 
         # Mongo DB
-        self.connection = CONN
+        self.connection = _connection
         self.db = self.connection._database
         # Inject the collection's namespace into each object
         self.db.add_son_manipulator(NamespaceInjector())

@@ -26,8 +26,8 @@ package_fields = model.Package(None, None, None, None, None, None, None, None, N
 
 class PackageApi(BaseApi):
 
-    def __init__(self, config):
-        BaseApi.__init__(self, config)
+    def __init__(self):
+        BaseApi.__init__(self)
         self.objectdb.ensure_index([('name', pymongo.DESCENDING), 
             ('epoch', pymongo.DESCENDING), 
             ('version', pymongo.DESCENDING),

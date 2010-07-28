@@ -20,7 +20,6 @@ import inspect
 import logging
 import sys
 import traceback
-
 from pprint import pformat
 
 import pymongo

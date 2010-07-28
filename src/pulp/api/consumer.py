@@ -31,9 +31,8 @@ consumer_fields = model.Consumer(None, None).keys()
 
 class ConsumerApi(BaseApi):
 
-    def __init__(self, config):
-        BaseApi.__init__(self, config)
-        log.setLevel(config.get('logs', 'level'))
+    def __init__(self):
+        BaseApi.__init__(self)
 
     def _getcollection(self):
         return self.db.consumers

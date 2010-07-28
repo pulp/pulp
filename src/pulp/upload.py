@@ -15,30 +15,29 @@
 # in this software or its documentation.
 
 import base64
+import commands
 import hashlib
 import logging
 import os
 import tempfile
-import commands
 
-from api.repo_sync import BaseSynchronizer
-from pexceptions import PulpException
-import util
+from pulp import util
+from pulp.api.repo_sync import BaseSynchronizer
+from pulp.config import config
+from pulp.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
 class PackageUpload:
-    def __init__(self, config, repo, pkginfo, payload):
-        self.config = config
+    def __init__(self, repo, pkginfo, payload):
         self.pkginfo = pkginfo
         self.stream = payload
         self.pkgname = pkginfo['pkgname']
-        self.repo_dir = "%s/%s/" % (self.config.get('paths', 'local_storage'), repo['id'])
+        self.repo_dir = "%s/%s/" % (config.get('paths', 'local_storage'), repo['id'])
         self.repo = repo
 
     def upload(self):
         pkg_path = self.repo_dir + "/" + self.pkgname
-        hashtype = self.pkginfo['hashtype']
         if check_package_exists(pkg_path, self.pkginfo['hashtype'], self.pkginfo['checksum']):
             log.error("Package %s Already Exists on the server skipping upload." % self.pkgname)
             raise PackageExistsError(pkg_path)
@@ -47,19 +46,20 @@ class PackageUpload:
             # update/create the repodata for the repo
             create_repo(self.repo_dir)
             imp_pkg = self.bindPackageToRepo(self.repo_dir, pkg_path, self.repo)
-        except IOError, ie:
-            log.error("Error writing file to filesystem %s " % ie)
-            raise UploadError("Error writing to the file %s" % self.pkgname)
-        except CreateRepoError, cre:
-            log.error("Error running createrepo on repo %s. Error: %s" % (self.repo['id'], ie))
+        except IOError, e:
+            log.error("Error writing file to filesystem %s " % e)
+            raise
+        except CreateRepoError, e:
+            log.error("Error running createrepo on repo %s. Error: %s" % (self.repo['id'], e))
+            # XXX do we want to re-raise here?
         except Exception, e:
-            log.error("UnExpected Error %s " % e)
-            raise UploadError("Upload Failed due to unexpected Error ")
+            log.error("Unexpected Error %s " % e)
+            raise
         return imp_pkg, self.repo
     
     def bindPackageToRepo(self, repo_path, pkg_path, repo):
         log.debug("Binding package [%s] to repo [%s]" % (pkg_path, repo))
-        bsync = BaseSynchronizer(self.config)
+        bsync = BaseSynchronizer()
         file_name = os.path.basename(pkg_path)
         packageInfo = util.get_repo_package(repo_path, file_name)
         pkg = bsync.import_package(packageInfo, repo)

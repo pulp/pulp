@@ -29,10 +29,10 @@ log = logging.getLogger(__name__)
 
 class ConsumerGroupApi(BaseApi):
 
-    def __init__(self, config):
-        BaseApi.__init__(self, config)
-        self.consumerApi = ConsumerApi(config)
-        self.repoApi = RepoApi(config)
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.consumerApi = ConsumerApi()
+        self.repoApi = RepoApi()
 
     def _getcollection(self):
         return self.db.consumergroups
