@@ -17,8 +17,8 @@ import logging
 
 from mod_python import apache
 
-import pulp.util
-import pulp.webservices.httpd.repo_cert_validation as validation
+from pulp.config import config
+from pulp.webservices.httpd import repo_cert_validation as validation
 
 # Logging
 format = logging.Formatter('%(asctime)s  %(message)s')
@@ -29,15 +29,13 @@ logging.getLogger('pulp.webservices').setLevel(logging.DEBUG)
 
 log = logging.getLogger(__name__)
 
-# Pulp Configuration
-config = pulp.util.Config(path='/etc/pulp/pulp.conf')
 
 def authenhandler(req):
     # Needed to stuff the SSL variables into the request
     req.add_common_vars()
 
     # Only apply the entitlement certificate logic if pulp.webservices is configured to do so
-    if config.repos.use_entitlement_certs.lower() == 'true':
+    if config.getboolean('repos', 'use_entitlement_certs'):
         log.debug('Verifying client entitlement')
         cert_pem = req.ssl_var_lookup('SSL_CLIENT_CERT')
 

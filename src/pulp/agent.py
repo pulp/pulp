@@ -24,7 +24,7 @@ from pmf.stub import Stub
 from pmf.decorators import stub
 from pmf.base import Container
 from pmf.producer import QueueProducer
-from pulp.util import Config
+from pulp.config import config
 
 
 @stub('admin')
@@ -60,7 +60,6 @@ class Agent(Container):
         @param tag: An (optional) asynchronous correlation tag.
         @type tag: str
         """
-        cfg = Config()
-        url = '%s:%s' % (cfg.pmf.host, cfg.pmf.port)
+        url = '%s:%s' % (config.get('pmf', 'host'), config.get('pmf', 'port'))
         producer = QueueProducer(url)
         Container.__init__(self, uuid, producer, **options)

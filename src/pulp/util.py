@@ -25,7 +25,6 @@ import time
 
 import rpm
 import yum
-from iniparse import INIConfig
 
 from pulp.pexceptions import PulpException
 
@@ -188,26 +187,3 @@ def listdir(directory):
     for f in os.listdir(directory):
         packagesList.append("%s/%s" % (directory, f))
     return packagesList
-
-
-class Config(INIConfig):
-    """
-    The pulp configuration.
-    To override location, change I{PATH} to point to a 
-    non-standard configuration file.
-    @note: Intended to replace load_config().
-    @cvar PATH: The absolute path to the config file.
-    @type PATH: str
-    """
-
-    PATH = '/etc/pulp/pulp.conf'
-
-    def __init__(self, path=PATH):
-        """
-        Open the configuration.
-        """
-        fp = open(path)
-        try:
-            INIConfig.__init__(self, fp)
-        finally:
-            fp.close()
