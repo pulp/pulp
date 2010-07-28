@@ -55,7 +55,7 @@ class TestErrata(unittest.TestCase):
         # Test against expected updateinfo.xml from RHEL 5 i386
         updateinfo_path = os.path.join(self.data_path, "rhel-i386-server-5")
         updateinfo_path = os.path.join(updateinfo_path, "updateinfo.xml")
-        notices = updateinfo.getUpdateInfo(updateinfo_path)
+        notices = updateinfo.get_update_notices(updateinfo_path)
         self.assertTrue(len(notices) == 1504)
         expectedKeys = ['status', 'updated', 'description', 'issued',
                 'pushcount', 'update_id', 'from', 'title', 'version',
@@ -84,6 +84,15 @@ class TestErrata(unittest.TestCase):
                         for pkg in p['packages']:
                             for key in expectedPkgListKeys:
                                 self.assertTrue(key in pkg.keys())
+
+
+    def test_get_errata(self):
+        updateinfo_path = os.path.join(self.data_path, "rhel-i386-server-5")
+        updateinfo_path = os.path.join(updateinfo_path, "updateinfo.xml")
+        errata = updateinfo.get_errata(updateinfo_path)
+        self.assertTrue(len(errata) == 1504)
+
+
 
     def test_create(self):
         id = 'test_create_errata_id'

@@ -22,10 +22,11 @@ import logging
 from yum.update_md import UpdateMetadata
 
 import pulp
+from pulp.api.errata import ErrataApi
 
 log = logging.getLogger(__name__)
 
-def getUpdateInfo(path_to_updateinfo):
+def get_update_notices(path_to_updateinfo):
     """
     path_to_updateinfo:  path to updateinfo.xml
 
@@ -39,13 +40,32 @@ def getUpdateInfo(path_to_updateinfo):
         notices.append(info.get_metadata())
     return notices
 
+def get_errata(path_to_updateinfo):
+    """
+    @param path_to_updateinfo: path to updateinfo metadata xml file
+
+    Returns a list of pulp.model.Errata objects
+    Parses updateinfo xml file and converts yum.update_md.UpdateNotice
+    objects to pulp.model.Errata objects
+    """
+    errata = []
+    uinfos = get_update_notices(path_to_updateinfo)
+    for u in uinfos:
+        e = _translate_updatenotice_to_erratum(u)
+        errata.append(e)
+    return errata
+
+def _translate_updatenotice_to_erratum(unotice):
+    #erratum = ErrataApi.create()
+    return unotice
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "Usage: %s <PATH_TO/updateinfo.xml>"
         sys.exit(1)
     updateinfo_path = sys.argv[1]
-    notices = getUpdateInfo(updateinfo_path)
+    notices = get_update_notices(updateinfo_path)
     if len(notices) < 1:
         print "Error parsing %s" % (updateinfo_path)
         print "Ensure you are specifying the path to updateinfo.xml"

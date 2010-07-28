@@ -27,6 +27,7 @@ import yum
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
+from pulp import updateinfo
 from pulp.api.package import PackageApi
 from pulp.pexceptions import PulpException
 import pulp.comps_util
@@ -148,8 +149,14 @@ class BaseSynchronizer(object):
                 group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
                         group_gz_xml_path)
                 repo['group_gz_xml_path'] = group_gz_xml_path
-            else:
-                log.debug("Skipping group import, no group info present in repodata")
+            if "updateinfo" in ftypes:
+                updateinfo_xml_path = pulp.util.get_repomd_filetype_path(
+                        repomd_xml_path, "updateinfo")
+                updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
+                        updateinfo_xml_path)
+                self.sync_updateinfo_data(updateinfo_xml_path, repo)
+                log.debug("Loaded updateinfo from %s for %s" % \
+                        (updateinfo_xml_path, repo["id"]))
         return added_packages
 
     def import_package(self, package, repo):
@@ -212,7 +219,26 @@ class BaseSynchronizer(object):
             log.error("Unable to parse group info for %s" % (compsfile))
             return False
         return True
-    
+
+    def sync_updateinfo_data(updateinfo_xml_path, repo):
+        """
+        @param updateinfo_xml_path: path to updateinfo metadata xml file
+        @param repo:    model.Repo object we want to sync 
+        """
+        try:
+            uinfo = updateinfo.get_errata(updateinfo_xml_path)
+            log.debug("Parsed %s, %s UpdateNotices were returned." % \
+                    (updateinfo_xml_path, len(uinfo))
+            # Remove all "repo_defined" errata?
+            # Add all groups/categories from repo
+                #ctg["immutable"] = True
+                #ctg["repo_defined"] = True
+        except yum.Errors.YumBaseError, e
+            log.error("Unable to parse updateinfo file %s for %s" % (updateinfo_xml_path, repo["id"]))
+            return False
+        return True
+
+
 class YumSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source):
         cacert = clicert = clikey = None
