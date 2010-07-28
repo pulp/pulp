@@ -15,7 +15,6 @@
 # in this software or its documentation.
 #
 
-import ConfigParser
 import hashlib # 3rd party on RHEL 5
 import logging
 import os
@@ -31,6 +30,7 @@ from pulp.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
+
 def get_rpm_information(rpm_path):
     """
     Get metadata about an RPM.
@@ -45,6 +45,7 @@ def get_rpm_information(rpm_path):
     os.close(file_descriptor_number)
     return rpm_info
 
+
 def random_string():
     '''
     Generates a random string suitable for using as a password.
@@ -52,15 +53,13 @@ def random_string():
     chars = string.ascii_letters + string.digits
     return "".join(random.choice(chars) for x in range(random.randint(8, 16)))     
 
+
 def chunks(l, n):
     """
     Split an array into n# of chunks.  Taken from : http://tinyurl.com/y8v5q2j
     """
     return [l[i:i+n] for i in range(0, len(l), n)]
 
-def load_config(filename='/etc/pulp/pulp.conf', config=ConfigParser.SafeConfigParser()):
-    config.read(filename)
-    return config
 
 def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
     """
@@ -96,6 +95,7 @@ def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=N
         f.close()
     return m.hexdigest()
 
+
 def get_string_checksum(hashtype, data):
     """
     Return checksum of a string
@@ -107,6 +107,7 @@ def get_string_checksum(hashtype, data):
     m.update(data)
     return m.hexdigest()
 
+
 def get_file_timestamp(filename):
     """
     Returns a timestamp
@@ -114,6 +115,7 @@ def get_file_timestamp(filename):
     @return filename's timestamp
     """
     return int(os.stat(filename).st_mtime)
+
 
 def get_repomd_filetypes(repomd_path):
     """
@@ -123,6 +125,7 @@ def get_repomd_filetypes(repomd_path):
     rmd = yum.repoMDObject.RepoMD("temp_pulp", repomd_path)
     if rmd:
         return rmd.fileTypes()
+
 
 def _get_yum_repomd(path):
     """
@@ -134,6 +137,7 @@ def _get_yum_repomd(path):
     r.basecachedir = path.encode("ascii", "ignore")
     r.baseurlSetup()
     return r
+
 
 def get_repo_package(repo_path, package_filename):
     """
@@ -151,6 +155,7 @@ def get_repo_package(repo_path, package_filename):
                             % (package_filename, repo_path))
     return found
 
+
 def get_repo_packages(path):
     """
     @param path: path to repo's base (not the repodatadir, this api 
@@ -162,6 +167,7 @@ def get_repo_packages(path):
         return []
     r.sack.populate(r, 'metadata', None, 0)
     return r.getPackageSack().returnPackages()
+
 
 def get_repomd_filetype_path(path, filetype):
     """
@@ -177,6 +183,12 @@ def get_repomd_filetype_path(path, filetype):
 
 
 def listdir(directory):
+    """
+    List the packages in the given directory.
+    @type directory: str
+    @param directory: name of the directory
+    @return: list of 'directory/package name'
+    """
     directory = os.path.abspath(os.path.normpath(directory))
     if not os.access(directory, os.R_OK | os.X_OK):
         raise Exception("Cannot read from directory %s" % directory)
