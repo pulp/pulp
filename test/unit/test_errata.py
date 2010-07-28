@@ -45,7 +45,7 @@ class TestErrata(unittest.TestCase):
         self.config = testutil.load_test_config()
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
-        self.eapi = ErrataApi(self.config)
+        self.eapi = ErrataApi()
         self.clean()
 
     def tearDown(self):

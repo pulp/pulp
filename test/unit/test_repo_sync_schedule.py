@@ -38,7 +38,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.repo_api = pulp.api.repo.RepoApi(self.config)
+        self.repo_api = pulp.api.repo.RepoApi()
 
     def tearDown(self):
         self.repo_api.clean()

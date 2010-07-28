@@ -9,7 +9,7 @@ from pulp.model import Package
 from pulp.model import Consumer
 from pulp.model import Repo
 
-capi = ConsumerApi(dict())
-papi = PackageApi(dict())
-rapi = RepoApi(dict())
+capi = ConsumerApi()
+papi = PackageApi()
+rapi = RepoApi()
 

@@ -46,7 +46,7 @@ class TestUsers(unittest.TestCase):
         
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.uapi = UserApi(self.config)
+        self.uapi = UserApi()
         self.clean()
         
     def tearDown(self):

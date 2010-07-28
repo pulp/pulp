@@ -44,8 +44,8 @@ class TestRhnSync(unittest.TestCase):
     def setUp(self):
         self.config = util.load_test_config()
 
-        self.rapi = pulp.api.repo.RepoApi(self.config)
-        self.papi = pulp.api.package.PackageApi(self.config)
+        self.rapi = pulp.api.repo.RepoApi()
+        self.papi = pulp.api.package.PackageApi()
 
         self.clean()
         

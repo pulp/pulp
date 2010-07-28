@@ -46,7 +46,7 @@ class TestRoleCheck(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.uapi = UserApi(self.config)
+        self.uapi = UserApi()
         
     @RoleCheck(consumer=True)
     def some_method(self, someparam):

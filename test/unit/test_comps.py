@@ -40,7 +40,7 @@ class TestComps(unittest.TestCase):
     def setUp(self):
         config_file = os.path.join(srcdir, "../etc/pulp/pulp.conf")
         self.config = pulp.util.load_config(config_file)
-        self.rapi = RepoApi(self.config)
+        self.rapi = RepoApi()
         self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
 
     def tearDown(self):
@@ -53,7 +53,7 @@ class TestComps(unittest.TestCase):
         # Parse existing comps.xml
         compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         compsfile = open(compspath)
-        base = BaseSynchronizer(self.config)
+        base = BaseSynchronizer()
         base.sync_groups_data(compsfile, repo)
         # 'repo' object should now contain groups/categories
         # we need to save it to the db so we can query from it

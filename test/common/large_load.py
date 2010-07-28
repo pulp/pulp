@@ -48,9 +48,9 @@ class LargeLoad(unittest.TestCase):
     """
     def __init__(self, dir_list_path, numconsumers, config):
         self.config = config
-        self.rapi = RepoApi(self.config)
-        self.papi = PackageApi(self.config)
-        self.capi = ConsumerApi(self.config)
+        self.rapi = RepoApi()
+        self.papi = PackageApi()
+        self.capi = ConsumerApi()
         self.numconsumers = numconsumers
         self.dirlist = []
         if (dir_list_path != None):
@@ -163,7 +163,8 @@ numconsumers = int(cmdoptions.numconsumers)
 skiprepos = cmdoptions.skiprepos
 skipclean = cmdoptions.skipclean
 print "Attempting to load configuration from: %s" % (cmdoptions.config)
-config = pulp.util.load_config(cmdoptions.config)
+pulp.config.add_config_file(cmdoptions.config)
+config = pulp.config.config
 
 if (clean):
     ll = LargeLoad(None, None, dict())

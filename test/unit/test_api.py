@@ -49,7 +49,6 @@ from pulp.util import random_string
 from pulp.util import get_rpm_information
 from pulptools.utils import generatePakageProfile
 
-from ConfigParser import ConfigParser
 
 import testutil
 
@@ -65,11 +64,11 @@ class TestApi(unittest.TestCase):
         
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.rapi = RepoApi(self.config)
-        self.papi = PackageApi(self.config)
-        self.capi = ConsumerApi(self.config)
-        self.cgapi = ConsumerGroupApi(self.config)
-        self.eapi  = ErrataApi(self.config)
+        self.rapi = RepoApi()
+        self.papi = PackageApi()
+        self.capi = ConsumerApi()
+        self.cgapi = ConsumerGroupApi()
+        self.eapi  = ErrataApi()
         self.clean()
         
     def tearDown(self):
