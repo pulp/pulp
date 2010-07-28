@@ -33,13 +33,15 @@ from pulp.api.repo import RepoApi
 from pulp.api.repo_sync import BaseSynchronizer
 from pulp.pexceptions import PulpException
 
+import testutil
+
 log = logging.getLogger('pulp.test.testcomps')
 
 class TestComps(unittest.TestCase):
 
     def setUp(self):
         config_file = os.path.join(srcdir, "../etc/pulp/pulp.conf")
-        self.config = pulp.util.load_config(config_file)
+        self.config = testutil.load_test_config()
         self.rapi = RepoApi()
         self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
 

@@ -30,7 +30,7 @@ class UserApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.default_login = self.get('server', 'default_login')
+        self.default_login = config.get('server', 'default_login')
         self._ensure_default_admin()
 
     def _getcollection(self):

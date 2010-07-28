@@ -26,12 +26,13 @@ import web
 
 from pulp.api.user import UserApi
 from pulp.certificate import Certificate
-from pulp.config import config
 from pulp.pexceptions import PulpException
 from pulp.webservices import http
 
+
 log = logging.getLogger('pulp')
-userApi = UserApi(config)
+userApi = UserApi()
+
 
 class RoleCheck(object):
     '''decorator class to check Roles of caller.  Copied and modified from:
