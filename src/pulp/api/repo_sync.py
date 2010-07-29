@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import gzip
 import logging
 import os
 import time
@@ -29,6 +30,7 @@ import pulp.util
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp import updateinfo
+from pulp.api.errata import ErrataApi
 from pulp.api.package import PackageApi
 from pulp.config import config
 from pulp.pexceptions import PulpException
@@ -51,7 +53,6 @@ def sync(repo, repo_source):
     source_type = repo_source['type']
     if source_type not in type_classes:
         raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
-
     synchronizer = type_classes[source_type]()
     repo_dir = synchronizer.sync(repo, repo_source)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
@@ -113,10 +114,12 @@ class BaseSynchronizer(object):
 
     def __init__(self):
         self.package_api = PackageApi()
+        self.errata_api = ErrataApi()
 
     def add_packages_from_dir(self, dir, repo):
         
         startTime = time.time()
+        log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
         package_list = pulp.util.get_repo_packages(dir)
         added_packages = []
         log.debug("Processing %s potential packages" % (len(package_list)))
@@ -154,6 +157,8 @@ class BaseSynchronizer(object):
                         repomd_xml_path, "updateinfo")
                 updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
                         updateinfo_xml_path)
+                log.info("updateinfo is found in repomd.xml, it's path is %s" % \
+                        (updateinfo_xml_path))
                 self.sync_updateinfo_data(updateinfo_xml_path, repo)
                 log.debug("Loaded updateinfo from %s for %s" % \
                         (updateinfo_xml_path, repo["id"]))
@@ -226,13 +231,36 @@ class BaseSynchronizer(object):
         @param repo:    model.Repo object we want to sync 
         """
         try:
-            uinfo = updateinfo.get_errata(updateinfo_xml_path)
+            start = time.time()
+            errata = updateinfo.get_errata(updateinfo_xml_path)
             log.debug("Parsed %s, %s UpdateNotices were returned." %
-                      (updateinfo_xml_path, len(uinfo)))
-            # Remove all "repo_defined" errata?
-            # Add all groups/categories from repo
-                #ctg["immutable"] = True
-                #ctg["repo_defined"] = True
+                      (updateinfo_xml_path, len(errata)))
+            eids = []
+            for e in errata:
+                # Replace existing errata if the update date is newer
+                # Should we restrict the update of an errata to 'from_str' or
+                # concept of product?
+                found = self.errata_api.erratum(e['id'])
+                if found:
+                    if found['updated'] <= e['updated']:
+                        continue
+                    self.errata_api.delete(e['id'])
+                # Need to look up packages and add a pymongo DBRef() per
+                # matched NEVRA,Vendor for package
+                pkglist = e['pkglist']
+                self.errata_api.create(id=e['id'], title=e['title'],
+                        description=e['description'], version=e['version'],
+                        release=e['release'], type=e['type'],
+                        status=e['status'], updated=e['updated'],
+                        issued=e['issued'], pushcount=e['pushcount'],
+                        from_str=e['from_str'], reboot_suggested=e['reboot_suggested'],
+                        references=e['references'], pkglist=pkglist,
+                        repo_defined=True, immutable=True)
+                eids.append(e['id'])
+                # Add Errata ids to repo
+                # Need to address problem importing RepoApi, so we can call add errata
+            end = time.time()
+            log.debug("%s new/updated errata imported in %s seconds" % (len(eids), (end - start)))
         except yum.Errors.YumBaseError, e:
             log.error("Unable to parse updateinfo file %s for %s" % (updateinfo_xml_path, repo["id"]))
             return False
@@ -259,8 +287,8 @@ class LocalSynchronizer(BaseSynchronizer):
     Sync class to synchronize a directory of rpms from a local filer
     """
     def sync(self, repo, repo_source):
-
         pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
+        log.debug("sync of %s for repo %s" % (pkg_dir, repo['id']))
         try:
             repo_dir = "%s/%s" % (config.get('paths', 'local_storage'), repo['id'])
             if not os.path.exists(pkg_dir):
@@ -272,8 +300,11 @@ class LocalSynchronizer(BaseSynchronizer):
                 if not os.path.exists(repo_dir):
                     os.makedirs(repo_dir)
                 pkglist = pulp.util.listdir(pkg_dir)
-                for pkg in pkglist:
+                log.debug("Found %s packages in %s" % (len(pkglist), pkg_dir))
+                for count, pkg in enumerate(pkglist):
                     if pkg.endswith(".rpm"):
+                        if count % 500 == 0:
+                            log.debug("Working on %s/%s" % (count, len(pkglist)))
                         shutil.copy(pkg, os.path.join(repo_dir, os.path.basename(pkg)))
                 groups_xml_path = None
                 updateinfo_path = None
@@ -295,15 +326,27 @@ class LocalSynchronizer(BaseSynchronizer):
                         src_updateinfo_path = os.path.join(pkg_dir, f)
                         if os.path.isfile(src_updateinfo_path):
                             # Copy the updateinfo metadata to 'updateinfo.xml'
-                            # This is intentional, we want to ensure when modifyrepo
-                            # is run, it tags this as 'updateinfo' and not
-                            # 'e4384753023nfuhgf9494...98439-updateinfo'
-                            shutil.copy(src_updateinfo_path,
-                                    os.path.join(repo_dir, "updateinfo.xml"))
+                            # We want to ensure modifyrepo is run with updateinfo
+                            # called 'updateinfo.xml', this result in correct
+                            # metadata type
+                            #
+                            # updateinfo reported from repomd.xml may be gzipped,
+                            # if it is uncompress and copy to updateinfo.xml
+                            # along side of packages in repo
+                            #
+                            f = src_updateinfo_path.endswith('.gz') and gzip.open(src_updateinfo_path) \
+                                    or open(src_updateinfo_path, 'rt')
+                            shutil.copyfileobj(f, open(
+                                os.path.join(repo_dir, "updateinfo.xml"),"wt"))
                             log.debug("Copied %s to %s" % (src_updateinfo_path, repo_dir))
                             updateinfo_path = os.path.join(repo_dir, "updateinfo.xml")
+                log.info("Running createrepo, this may take a few minutes to complete.")
+                start = time.time()
                 pulp.upload.create_repo(repo_dir, groups=groups_xml_path)
+                end = time.time()
+                log.info("Createrepo finished in %s seconds" % (end - start))
                 if updateinfo_path:
+                    log.debug("Modifying repo for updateinfo")
                     pulp.upload.modify_repo(os.path.join(repo_dir, "repodata"),
                             updateinfo_path)
         except InvalidPathError:
@@ -311,9 +354,6 @@ class LocalSynchronizer(BaseSynchronizer):
             raise
         except IOError:
             log.error("Unable to create repo directory %s" % repo_dir)
-            raise
-        except pulp.upload.CreateRepoError, e:
-            log.error(e)
             raise
         return repo_dir
 

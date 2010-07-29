@@ -28,7 +28,7 @@ class ErrataApi(BaseApi):
 
     def _get_indexes(self):
         return ["title", "description", "version", "release", "type", "status",
-                "updated", "issued", "pushcount", "update_id", "from_str",
+                "updated", "issued", "pushcount", "from_str",
                 "reboot_suggested"]
 
     def _getcollection(self):
@@ -36,18 +36,19 @@ class ErrataApi(BaseApi):
 
     @audit('ErrataApi', params=['id', 'title', 'description', 'version',
         'release', 'type', 'status', 'updated', 'issued', 'pushcount',
-        'update_id', 'from_str', 'reboot_suggested', 'references',
-        'pkglist'])
+        'from_str', 'reboot_suggested', 'references',
+        'pkglist', 'repo_defined', 'immutable'])
     def create(self, id, title, description, version, release, type,
-            status="", updated="", issued="", pushcount="", update_id="",
-            from_str="", reboot_suggested="", references=[],
-            pkglist=[]):
+            status="", updated="", issued="", pushcount="", from_str="",
+            reboot_suggested="", references=[], pkglist=[],
+            repo_defined=False, immutable=False):
         """
         Create a new Errata object and return it
         """
         e = model.Errata(id, title, description, version, release, type,
-                status, updated, issued, pushcount, update_id, from_str,
-                reboot_suggested, references, pkglist)
+                status, updated, issued, pushcount, from_str,
+                reboot_suggested, references, pkglist, repo_defined,
+                immutable)
         self.insert(e)
         return e
 

@@ -189,8 +189,9 @@ class Errata(Base):
     maps to yum.update_md.UpdateNotice fields
     """
     def __init__(self, id, title, description, version, release, type, status="",
-            updated="", issued="", pushcount="", update_id="", from_str="",
-            reboot_suggested="", references=[], pkglist=[], immutable=False):
+            updated="", issued="", pushcount="", from_str="",
+            reboot_suggested="", references=[], pkglist=[], repo_defined=False,
+            immutable=False):
         self._id = id
         self.id = id
         self.title = title
@@ -202,9 +203,9 @@ class Errata(Base):
         self.updated = updated
         self.issued = issued
         self.pushcount = pushcount
-        self.update_id = update_id
         self.from_str = from_str
         self.reboot_suggested = reboot_suggested
         self.references = references
         self.pkglist = pkglist
+        self.repo_defined = repo_defined
         self.immutable = immutable

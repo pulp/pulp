@@ -104,7 +104,6 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(len(errata) == 1504)
 
 
-
     def test_create(self):
         id = 'test_create_errata_id'
         title = 'test_create_title'
@@ -116,14 +115,13 @@ class TestErrata(unittest.TestCase):
         updated = 'test_create_status'
         issued = 'test_create_issued'
         pushcount = 'test_create_pushcount'
-        update_id = 'test_create_uppdate_id'
         from_str = 'test_create_from_str'
         reboot_suggested = 'test_create_reboot_suggested'
         references = ['test_create_references']
         pkglist = [{'packages':{'src':'test_src'}}]
         sample_errata = self.eapi.create(id, title, description, version, release,
                 type, status=status, updated=updated, issued=issued,
-                pushcount=pushcount, update_id=update_id, from_str=from_str,
+                pushcount=pushcount, from_str=from_str,
                 reboot_suggested=reboot_suggested, references=references,
                 pkglist=pkglist)
         assert(sample_errata != None)
@@ -137,7 +135,6 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(sample_errata["updated"] == updated)
         self.assertTrue(sample_errata["issued"] == issued)
         self.assertTrue(sample_errata["pushcount"] == pushcount)
-        self.assertTrue(sample_errata["update_id"] == update_id)
         self.assertTrue(sample_errata["from_str"] == from_str)
         self.assertTrue(sample_errata["reboot_suggested"] == reboot_suggested)
         self.assertTrue(sample_errata["references"] == references)

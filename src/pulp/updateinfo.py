@@ -19,8 +19,10 @@ import logging
 
 from yum.update_md import UpdateMetadata
 
+from pulp.model import Errata
 
 log = logging.getLogger(__name__)
+
 
 def get_update_notices(path_to_updateinfo):
     """
@@ -52,9 +54,24 @@ def get_errata(path_to_updateinfo):
     return errata
 
 def _translate_updatenotice_to_erratum(unotice):
-    #erratum = ErrataApi.create()
-    return unotice
-
+    id = unotice['update_id']
+    title = unotice['title']
+    description = unotice['description']
+    version = unotice['version']
+    release = unotice['release']
+    type = unotice['type']
+    status = unotice['status']
+    updated = unotice['updated']
+    issued = unotice['issued']
+    pushcount = unotice['pushcount']
+    from_str = unotice['from']
+    reboot_suggested = unotice['reboot_suggested']
+    references = unotice['references']
+    pkglist = unotice['pkglist']
+    erratum = Errata(id, title, description, version, release, type,
+        status, updated, issued, pushcount, from_str, reboot_suggested,
+        references, pkglist)
+    return erratum
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -68,6 +85,6 @@ if __name__ == "__main__":
         sys.exit(1)
     print "UpdateInfo has been parsed for %s notices." % (len(notices))
     example = notices[0]
-    print "Available keys are: %s" % (example.keys())
     for key in example.keys():
         print "%s: %s" % (key, example[key])
+    print "Available keys are: %s" % (example.keys())
