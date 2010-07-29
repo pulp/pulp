@@ -27,15 +27,24 @@ class BaseCore(object):
         if shortdesc is not None and description is None:
             description = shortdesc
         self.debug = 0
-        self.parser = OptionParser(usage=usage, description=description)
+        self.usage = "usage: %prog --auth=<login:password> " + usage
+        self.parser = OptionParser(usage=self.usage, description=description)
         self._add_common_options()
         self.name = name
+        (self.options, self.args) = self.parser.parse_args()
+        if not self.options.auth:
+            print("auth required. Try --help")
+            sys.exit(1)
+        self.args = self.args[1:]
 
     def _add_common_options(self):
         """ Common options to all modules. """
-        pass
+        help = "<REQUIRED> username:password combination for access to Pulp."  
+        help = help + "Default user admin is included with base install."
+        self.parser.add_option("--auth", dest="auth",
+                       help=help)
 
-    def validate_args(self):
+    def _get_action(self):
         """ Validate the arguments passed in and determine what action to take """
         action = None
         possiblecmd = []
@@ -54,9 +63,9 @@ class BaseCore(object):
             sys.exit(0)
         
         return action 
-
+    
     def _usage(self):
-        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
+        print self.usage.replace("%prog", os.path.basename(sys.argv[0]))
         print "Supported Actions:\n"
         items = self.actions.items()
         items.sort()
@@ -68,8 +77,6 @@ class BaseCore(object):
         pass
 
     def main(self):
-        (self.options, self.args) = self.parser.parse_args()
-        self.args = self.args[1:]
         self._do_core()
 
 def systemExit(code, msgs=None):

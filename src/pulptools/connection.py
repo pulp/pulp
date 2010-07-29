@@ -15,6 +15,7 @@
 # in this software or its documentation.
 #
 
+import base64
 import httplib
 import locale
 
@@ -48,13 +49,18 @@ class Restlib(object):
     """
      A wrapper around httplib to make rest calls easier
     """
-    def __init__(self, host, port, apihandler, cert_file=None, key_file=None,):
+    def __init__(self, host, port, apihandler, cert_file=None, key_file=None, auth=None):
         self.host = host
         self.port = port
         self.apihandler = apihandler
+        self.auth = auth
+        base64string = base64.encodestring(auth)[:-1]
+        auth = "Basic %s" % base64string
         self.headers = {"Content-type":"application/json",
+                        "Authorization": auth,
                         "Accept": "application/json",
                         "Accept-Language": locale.getdefaultlocale()[0].lower().replace('_', '-')}
+
         self.cert_file = cert_file
         self.key_file  = key_file
 
@@ -67,6 +73,7 @@ class Restlib(object):
             conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
         else:
             conn = httplib.HTTPSConnection(self.host, self.port)
+        print "Handler: %s" % handler
         conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
         response = conn.getresponse()
@@ -103,18 +110,19 @@ class PulpConnection:
     Proxy connection to Pulp Server
     """
 
-    def __init__(self, host='localhost', port=8811, handler="", cert_file=None, key_file=None):
+    def __init__(self, host='localhost', port=8811, handler="", cert_file=None, key_file=None, auth=None):
         self.host = host
         self.port = port
         self.handler = handler
         self.conn = None
         self.cert_file = cert_file
         self.key_file = key_file
+        self.auth = auth
         # initialize connection
         self.setUp()
 
     def setUp(self):
-        self.conn = Restlib(self.host, self.port, self.handler, self.cert_file, self.key_file)
+        self.conn = Restlib(self.host, self.port, self.handler, self.cert_file, self.key_file, self.auth)
         log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" % (self.host, self.port, self.handler))
         log.info("Using cert_file: %s and key_file: %s" % (self.cert_file, self.key_file))
 

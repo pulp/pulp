@@ -122,8 +122,10 @@ class RoleCheck(object):
                 raise PulpException("User with login [%s] does not exist" 
                                     % username)
             log.debug("Username: %s" % username)
-            return (user['password'] != password)
-        return False
+            badPassword = (user['password'] != password) 
+            log.debug("Bad Password? [%s]" % badPassword)
+            return badPassword
+        return True
         
         
 

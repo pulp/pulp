@@ -33,7 +33,7 @@ _ = gettext.gettext
 
 class packagegroup(BaseCore):
     def __init__(self):
-        usage = "usage: %prog packagegroup [OPTIONS]"
+        usage = "packagegroup [OPTIONS]"
         shortdesc = "packagegroup specific actions to pulp server."
         desc = ""
 
@@ -57,31 +57,16 @@ class packagegroup(BaseCore):
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
 
     def generate_options(self):
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
+        self.action = self._get_action()
         if self.action == "info":
-            usage = "usage: %prog packagegroup info [OPTIONS]"
+            usage = "packagegroup info [OPTIONS]"
             BaseCore.__init__(self, "packagegroup info", usage, "", "")
             self.parser.add_option("--id", dest="groupid",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":
-            usage = "usage: %prog packagegroup install [OPTIONS]"
+            usage = "packagegroup install [OPTIONS]"
             BaseCore.__init__(self, "packagegroup install", usage, "", "")
             self.parser.add_option("-p", "--pkggroupid", action="append", dest="pkggroupid",
                            help="PackageGroup to install on a given consumer. \
@@ -89,12 +74,12 @@ class packagegroup(BaseCore):
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
         if self.action == "list":
-            usage = "usage: %prog packagegroup list [OPTIONS]"
+            usage = "packagegroup list [OPTIONS]"
             BaseCore.__init__(self, "packagegroup list", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "create":
-            usage = "usage: %prog packagegroup create [OPTIONS]"
+            usage = "packagegroup create [OPTIONS]"
             BaseCore.__init__(self, "packagegroup create", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
@@ -105,14 +90,14 @@ class packagegroup(BaseCore):
             self.parser.add_option("--description", dest="description",
                             help="Group description, default is ''", default="")
         if self.action == "delete":
-            usage = "usage: %prog packagegroup delete [OPTIONS]"
+            usage = "packagegroup delete [OPTIONS]"
             BaseCore.__init__(self, "packagegroup delete", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
             self.parser.add_option("--id", dest="groupid",
                             help="Group id")
         if self.action == "add_package":
-            usage = "usage: %prog packagegroup add_package [OPTIONS]"
+            usage = "packagegroup add_package [OPTIONS]"
             BaseCore.__init__(self, "packagegroup add_package", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
@@ -124,7 +109,7 @@ class packagegroup(BaseCore):
                             help="Type of list to add package to, example 'mandatory', 'optional', 'default'",
                             default="default")
         if self.action == "delete_package":
-            usage = "usage: %prog packagegroup delete_package [OPTIONS]"
+            usage = "packagegroup delete_package [OPTIONS]"
             BaseCore.__init__(self, "packagegroup delete_package", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
@@ -153,7 +138,6 @@ class packagegroup(BaseCore):
             self._delete_package()
 
     def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
             sys.exit(0)
@@ -178,7 +162,6 @@ class packagegroup(BaseCore):
             raise
 
     def _info(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.groupid:
             print("Please specify the package group id to lookup")
             sys.exit(0)
@@ -205,7 +188,6 @@ class packagegroup(BaseCore):
             raise
 
     def _install(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
             print("Please specify a consumer to install the package group")
             sys.exit(0)
@@ -223,7 +205,6 @@ class packagegroup(BaseCore):
             raise
 
     def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
             sys.exit(0)
@@ -249,7 +230,6 @@ class packagegroup(BaseCore):
             raise
     
     def _delete(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
             sys.exit(0)
@@ -268,7 +248,6 @@ class packagegroup(BaseCore):
             raise
     
     def _add_package(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
             sys.exit(0)
@@ -293,7 +272,6 @@ class packagegroup(BaseCore):
             raise
 
     def _delete_package(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.repoid:
             print("Please specify the repo")
             sys.exit(0)

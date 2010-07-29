@@ -33,7 +33,7 @@ log = getLogger(__name__)
 
 class user(BaseCore):
     def __init__(self):
-        usage = "usage: %prog user [OPTIONS]"
+        usage = "user [OPTIONS]"
         shortdesc = "user specific actions to pulp server."
         desc = ""
 
@@ -46,29 +46,29 @@ class user(BaseCore):
         self.password = None
         self.name = "user"
         self.userconn = UserConnection(host=CFG.server.host or "localhost", 
-                                              port=CFG.server.port or 8811)
+                                              port=CFG.server.port or 8811,
+                                              auth=self.options.auth)
         self.repolib = RepoLib()
         self.generate_options()
 
     def generate_options(self):
-        
-        self.action = self.validate_args()
+        self.action = self._get_action()
         if self.action == "create":
-            usage = "usage: %prog user create [OPTIONS]"
+            usage = "user create [OPTIONS]"
             BaseCore.__init__(self, "user create", usage, "", "")
-            self.parser.add_option("--login", dest="login",
-                           help="login to assign to user"),
-            self.parser.add_option("--password", dest="password",
+            self.parser.add_option("--userlogin", dest="userlogin",
+                           help="new login to create"),
+            self.parser.add_option("--userpassword", dest="userpassword",
                            help="password for authentication")
             self.parser.add_option("--name", dest="name",
                            help="name of user for display purposes")
         if self.action == "delete":
-            usage = "usage: %prog user delete [OPTIONS]"
+            usage = "user delete [OPTIONS]"
             BaseCore.__init__(self, "user delete", usage, "", "")
-            self.parser.add_option("--login", dest="login",
+            self.parser.add_option("--userlogin", dest="userlogin",
                            help="Login of user you wish to delete")
         if self.action == "list":
-            usage = "usage: %prog user list [OPTIONS]"
+            usage = "user list [OPTIONS]"
             BaseCore.__init__(self, "user list", usage, "", "")
 
 
@@ -81,16 +81,15 @@ class user(BaseCore):
             self._delete()
 
     def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.login:
-            print("login required. Try --help")
+        if not self.options.userlogin:
+            print("userlogin required. Try --help")
             sys.exit(0)
         if not self.options.name:
             self.options.name = ""
-        if not self.options.password:
-            self.options.password = ""
+        if not self.options.userpassword:
+            self.options.userpassword = ""
         try:
-            user = self.userconn.create(self.options.login, self.options.password,
+            user = self.userconn.create(self.options.login, self.options.userpassword,
                                     self.options.name)
             print _(" Successfully created User [ %s ] with name [ %s ]" % \
                                      (user['login'], user["name"]))
@@ -102,7 +101,6 @@ class user(BaseCore):
             raise
 
     def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
         try:
             users = self.userconn.users()
             columns = ["login", "name"]
@@ -123,8 +121,7 @@ class user(BaseCore):
 
 
     def _delete(self):
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.login:
+        if not self.options.userlogin:
             print("User's login required. Try --help")
             sys.exit(0)
         user = self.userconn.user(login=self.options.login)

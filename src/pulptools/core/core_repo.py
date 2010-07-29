@@ -35,7 +35,7 @@ log = getLogger(__name__)
 
 class repo(BaseCore):
     def __init__(self):
-        usage = "usage: %prog repo [OPTIONS]"
+        usage = "repo [OPTIONS]"
         shortdesc = "repository specifc actions to pulp server."
         desc = ""
 
@@ -56,25 +56,9 @@ class repo(BaseCore):
         self.generate_options()
 
     def generate_options(self):
-
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
+        self.action = self._get_action()
         if self.action == "create":
-            usage = "usage: %prog repo create [OPTIONS]"
+            usage = "repo create [OPTIONS]"
             BaseCore.__init__(self, "repo create", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
@@ -96,27 +80,27 @@ class repo(BaseCore):
                            help="Use symlinks instead of copying bits locally. \
                             Applicable for local syncs")
         if self.action == "sync":
-            usage = "usage: %prog repo sync [OPTIONS]"
+            usage = "repo sync [OPTIONS]"
             BaseCore.__init__(self, "repo sync", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
         if self.action == "delete":
-            usage = "usage: %prog repo delete [OPTIONS]"
+            usage = "repo delete [OPTIONS]"
             BaseCore.__init__(self, "repo delete", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
         if self.action == "list":
-            usage = "usage: %prog repo list [OPTIONS]"
+            usage = "repo list [OPTIONS]"
             BaseCore.__init__(self, "repo list", usage, "", "")
         if self.action == "upload":
-            usage = "usage: %prog repo upload [OPTIONS] <package>"
+            usage = "repo upload [OPTIONS] <package>"
             BaseCore.__init__(self, "repo upload", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
             self.parser.add_option("--dir", dest="dir",
                            help="Process packages from this directory")
         if self.action == "schedules":
-            usage = "usage: %prog repo schedules"
+            usage = "repo schedules"
             BaseCore.__init__(self, "repo schedules", usage, "", "")
 
     def _do_core(self):
@@ -134,7 +118,6 @@ class repo(BaseCore):
             self._schedules()
 
     def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.id:
             print("repo id required. Try --help")
             sys.exit(0)
@@ -166,7 +149,6 @@ class repo(BaseCore):
             systemExit(e.code, e.msg)
 
     def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
         try:
             repos = self.pconn.repositories()
             if not len(repos):
@@ -186,7 +168,6 @@ class repo(BaseCore):
             raise
 
     def _sync(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.id:
             print("repo id required. Try --help")
             sys.exit(0)
@@ -215,7 +196,6 @@ class repo(BaseCore):
             raise
 
     def _delete(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.id:
             print("repo id required. Try --help")
             sys.exit(0)
@@ -234,7 +214,6 @@ class repo(BaseCore):
             sys.exit(-1)
 
     def _upload(self):
-        (self.options, files) = self.parser.parse_args()
         # ignore the command and pick the files
         files = files[2:]
         if not self.options.id:

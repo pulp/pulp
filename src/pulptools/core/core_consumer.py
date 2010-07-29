@@ -65,27 +65,12 @@ class consumer(BaseCore):
             key_path = "/etc/pki/consumer/key.pem"
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
                                         port=8811, cert_file=cert_path,
-                                        key_file=key_path)
+                                        key_file=key_path, auth=self.options.auth)
 
     def generate_options(self):
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
+        self.action = self._get_action()
         if self.action == "create":
-            usage = "usage: %prog consumer create [OPTIONS]"
+            usage = "consumer create [OPTIONS]"
             BaseCore.__init__(self, "consumer create", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Consumer Identifier eg: foo.example.com")
@@ -136,7 +121,6 @@ class consumer(BaseCore):
             self._unbind()
 
     def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.id:
             print("consumer id required. Try --help")
             sys.exit(0)
@@ -159,7 +143,6 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
             
     def _update(self):
-        (self.options, self.args) = self.parser.parse_args()
         if self.options.id:
             consumer_id = self.options.id
         else:
@@ -175,7 +158,6 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
 
     def _info(self):
-        (self.options, self.args) = self.parser.parse_args()
         try:
             cons = self.cconn.consumer(getConsumer())
             pkgs = " "
@@ -195,7 +177,6 @@ class consumer(BaseCore):
             raise
         
     def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
         try:
             cons = self.cconn.consumers()
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
@@ -213,7 +194,6 @@ class consumer(BaseCore):
             raise
 
     def _bind(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
             print("consumer id required. Try --help")
             sys.exit(0)
@@ -232,7 +212,6 @@ class consumer(BaseCore):
             raise
 
     def _unbind(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
             print("consumer id required. Try --help")
             sys.exit(0)
@@ -252,7 +231,6 @@ class consumer(BaseCore):
 
 
     def _delete(self):
-        (self.options, self.args) = self.parser.parse_args()
         if self.options.consumerid:
             consumer_id = self.options.consumerid
         else:

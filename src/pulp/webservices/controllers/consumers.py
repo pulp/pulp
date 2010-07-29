@@ -23,6 +23,7 @@ from pulp.api.consumer import ConsumerApi
 from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -37,6 +38,7 @@ default_fields = ['id', 'description']
 class Consumers(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self):
         """
         List all available consumers.

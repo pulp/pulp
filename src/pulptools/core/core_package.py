@@ -31,7 +31,7 @@ _ = gettext.gettext
 
 class package(BaseCore):
     def __init__(self):
-        usage = "usage: %prog package [OPTIONS]"
+        usage = "package [OPTIONS]"
         shortdesc = "package specific actions to pulp server."
         desc = ""
 
@@ -52,31 +52,16 @@ class package(BaseCore):
         self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", port=8811)
 
     def generate_options(self):
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
+        self.action = self._get_action()
         if self.action == "info":
-            usage = "usage: %prog package info [OPTIONS]"
+            usage = "package info [OPTIONS]"
             BaseCore.__init__(self, "package info", usage, "", "")
             self.parser.add_option("-p", "--name", dest="name",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":
-            usage = "usage: %prog package install [OPTIONS]"
+            usage = "package install [OPTIONS]"
             BaseCore.__init__(self, "package install", usage, "", "")
             self.parser.add_option("-p", "--name", action="append", dest="pnames",
                            help="Packages to be installed. \
@@ -93,7 +78,6 @@ class package(BaseCore):
             self._install()
 
     def _info(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.name:
             print("Please specify the pkg name to lookup")
             sys.exit(0)
@@ -116,7 +100,6 @@ class package(BaseCore):
             raise
     
     def _install(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid and not self.options.consumergroupid:
             print("Please specify a consumer or a consumer group to install the package")
             sys.exit(0)

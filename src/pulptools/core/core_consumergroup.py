@@ -33,7 +33,7 @@ log = getLogger(__name__)
 
 class consumergroup(BaseCore):
     def __init__(self):
-        usage = "usage: %prog consumergroup [OPTIONS]"
+        usage = "consumergroup [OPTIONS]"
         shortdesc = "consumer group specific actions to pulp server."
         desc = ""
 
@@ -55,25 +55,9 @@ class consumergroup(BaseCore):
         self.generate_options()
 
     def generate_options(self):
-
-        possiblecmd = []
-
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        self.action = None
-        if len(possiblecmd) > 1:
-            self.action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
-            self._usage()
-            sys.exit(0)
-        else:
-            return
-        if self.action not in self.actions.keys():
-            self._usage()
-            sys.exit(0)
+        self.action = self._get_action()
         if self.action == "create":
-            usage = "usage: %prog consumergroup create [OPTIONS]"
+            usage = "consumergroup create [OPTIONS]"
             BaseCore.__init__(self, "consumergroup create", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="consumer group id"),
@@ -82,36 +66,36 @@ class consumergroup(BaseCore):
             self.parser.add_option("--consumerids", dest="consumerids",
                            help="consumer id list to be included in this group")
         if self.action == "delete":
-            usage = "usage: %prog consumergroup delete [OPTIONS]"
+            usage = "consumergroup delete [OPTIONS]"
             BaseCore.__init__(self, "consumergroup delete", usage, "", "")
             self.parser.add_option("--id", dest="id",
                            help="Consumer group id")
         if self.action == "list":
-            usage = "usage: %prog consumergroup list [OPTIONS]"
+            usage = "consumergroup list [OPTIONS]"
             BaseCore.__init__(self, "consumergroup list", usage, "", "")
         if self.action == "add_consumer":
-            usage = "usage: %prog consumergroup add_consumer [OPTIONS]"
+            usage = "consumergroup add_consumer [OPTIONS]"
             BaseCore.__init__(self, "consumergroup add_consumer", usage, "", "")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "delete_consumer":
-            usage = "usage: %prog consumergroup delete_consumer [OPTIONS]"
+            usage = "consumergroup delete_consumer [OPTIONS]"
             BaseCore.__init__(self, "consumergroup delete_consumer", usage, "", "")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "bind":
-            usage = "usage: %prog consumergroup bind [OPTIONS]"
+            usage = "consumergroup bind [OPTIONS]"
             BaseCore.__init__(self, "consumergroup bind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "unbind":
-            usage = "usage: %prog consumergroup unbind [OPTIONS]"
+            usage = "consumergroup unbind [OPTIONS]"
             BaseCore.__init__(self, "consumergroup unbind", usage, "", "")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
@@ -135,7 +119,6 @@ class consumergroup(BaseCore):
             self._unbind()
 
     def _create(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.id:
             print("consumer group id required. Try --help")
             sys.exit(0)
@@ -159,7 +142,6 @@ class consumergroup(BaseCore):
             raise
 
     def _list(self):
-        (self.options, self.args) = self.parser.parse_args()
         try:
             groups = self.cgconn.consumergroups()
             if not len(groups):
@@ -177,7 +159,6 @@ class consumergroup(BaseCore):
 
 
     def _delete(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.id:
             print("Group id required. Try --help")
             sys.exit(0)
@@ -202,7 +183,6 @@ class consumergroup(BaseCore):
 
 
     def _add_consumer(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
             print("consumer id required. Try --help")
             sys.exit(0)
@@ -220,7 +200,6 @@ class consumergroup(BaseCore):
             raise
 
     def _delete_consumer(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.consumerid:
             print("consumer id required. Try --help")
             sys.exit(0)
@@ -238,7 +217,6 @@ class consumergroup(BaseCore):
             raise
 
     def _bind(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.groupid:
             print("consumer group id required. Try --help")
             sys.exit(0)
@@ -257,7 +235,6 @@ class consumergroup(BaseCore):
             raise
 
     def _unbind(self):
-        (self.options, self.args) = self.parser.parse_args()
         if not self.options.groupid:
             print("consumer group id required. Try --help")
             sys.exit(0)

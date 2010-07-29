@@ -18,6 +18,7 @@ import os
 import logging
 import sys
 import pkgutil
+from optparse import OptionParser
 from pulptools.logutil import getLogger
 import pulptools.core as core
 import gettext
@@ -30,14 +31,26 @@ class PulpCore:
     """
     def __init__(self):
         self.cli_cores = {}
-        if len(sys.argv) > 2:
-            self.cli_cores[sys.argv[1]] = self._load_core(sys.argv[1])()
+
+        self.parser = OptionParser()
+        self.args = self._find_args(sys.argv)
+        if len(self.args) > 2:
+            self.cli_cores[self.args[1]] = self._load_core(self.args[1])()
         else:
             for cls in self._load_all_cores():
                 cmd = cls()
                 if cmd.name != "cli":
                     self.cli_cores[cmd.name] = cmd 
     
+    def _find_args(self, args):
+        foundargs = []
+        options = {}
+        for arg in args:
+            if (not arg.startswith("-")):
+                foundargs.append(arg)
+        return foundargs
+                
+        
     def _add_core(self, cmd):
         self.cli_cores[cmd.name] = cmd
         
@@ -59,7 +72,7 @@ class PulpCore:
         return cls
 
     def _usage(self):
-        print "\nUsage: %s [options] MODULENAME --help\n" % os.path.basename(sys.argv[0])
+        print "\nUsage: %s --auth=<login:password> MODULENAME --help\n" % os.path.basename(sys.argv[0])
         print "Supported modules:\n"
         items = self.cli_cores.items()
         for (name, cmd) in items:

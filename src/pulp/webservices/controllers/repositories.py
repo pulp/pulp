@@ -205,16 +205,6 @@ class RepositoryActions(AsyncController):
     )
 
     @JSONController.error_handler
-    def list(self, id):
-        """
-        List all packages in a repository.
-        @deprecated: use deferred fields: packages without filters instead
-        @param id: repository id
-        @return: list of all packages available in corresponding repository
-        """
-        return self.ok(api.packages(id))
-
-    @JSONController.error_handler
     def sync(self, id):
         """
         Sync a repository from it's feed.

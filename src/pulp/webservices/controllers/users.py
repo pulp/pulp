@@ -18,6 +18,7 @@ import web
 
 from pulp.api.user import UserApi
 from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.role_check import RoleCheck
 
 # users api ---------------------------------------------------------------
 
@@ -28,6 +29,7 @@ api = UserApi()
 class Users(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self):
         """
         List all available users.
