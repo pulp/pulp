@@ -77,7 +77,10 @@ def configure_audit_logging():
     lifetime = config.getint('auditing', 'lifetime')
     backups = config.getint('auditing', 'backups')
     
-    logger = logging.getLogger('pulp.auditing')
+    # NOTE, this cannot be a descendant of the pulp log as it will inherit
+    # pulp's rotating log and handler and log to both files. Yes, I've tried
+    # removing the handler to no avail...
+    logger = logging.getLogger('auditing')
     logger.setLevel(logging.INFO)
     handler = logging.handlers.TimedRotatingFileHandler(file,
                                                         when='D',

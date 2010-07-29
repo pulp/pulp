@@ -36,8 +36,8 @@ _objdb.ensure_index([('id', pymongo.DESCENDING)], unique=True, background=True)
 for index in ['timestamp', 'principal', 'api']:
     _objdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
 
-# setup log
-_log = logging.getLogger(__name__)
+# setup log - do not change this to __name__
+_log = logging.getLogger('auditing')
 
 # auditing decorator ----------------------------------------------------------
 
