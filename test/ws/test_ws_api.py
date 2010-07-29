@@ -26,6 +26,7 @@ sys.path.insert(0, commondir)
 from pulptools.connection import RepoConnection
 from pulptools.connection import ConsumerConnection
 from pulptools.connection import ConsumerGroupConnection
+from pulptools.connection import ErrataConnection
 from pulptools.connection import PackageConnection
 from pulptools.connection import PackageGroupConnection
 from pulptools.connection import PackageGroupCategoryConnection
@@ -49,6 +50,7 @@ class RemoteTestApi(TestApi):
                  cert_file='/etc/pki/pulp/server.crt', 
                  key_file='/etc/pki/pulp/server.key')
         self.config = testutil.load_test_config()
+        self.eapi = ErrataConnection(**d)
         self.rapi = RepoConnection(**d)
         self.capi = ConsumerConnection(**d)
         self.papi = PackageConnection(**d)
@@ -82,3 +84,25 @@ class RemoteTestApi(TestApi):
     
     def test_sync_feedless(self):
         pass
+
+
+    # Package group syncing is currently disabled,
+    # it will be fixed later portion of Sprint 14
+    # after that change below two package group
+    # tests should be enabled
+    def test_repo_package_groups(self):
+        pass
+    def test_repo_package_group_categories(self):
+        pass
+
+    # Errata API work is on-going, below errata
+    # tests should be skipped through WS until
+    # WS work is completed, planned completion is end
+    # of sprint 14
+    def test_repo_erratum(self):
+        pass
+
+    def test_repo_errata(self):
+        pass
+
+

@@ -418,6 +418,27 @@ class UserConnection(PulpConnection):
         return self.conn.request_get(method)
 
 
+class ErrataConnection(PulpConnection):
+    """
+    Connection class to access errata related calls
+    """
+    def clean(self):
+        pass
+
+    def create(self, id, title, description, version, release, type,
+            status="", updated="", issued="", pushcount="", update_id="",
+            from_str="", reboot_suggested="", references=[],
+            pkglist=[]):
+        pass
+
+    def erratum(self, id):
+        pass
+
+    def errata(self, id=None, title=None, description=None, version=None,
+            release=None, type=None, status=None, updated=None, issued=None,
+            pushcount=None, from_str=None, reboot_suggested=None):
+        pass
+
 if __name__ == '__main__':
     rconn = RepoConnection()
     print "+--------------------------------+"
