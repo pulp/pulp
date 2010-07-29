@@ -15,6 +15,7 @@
 # in this software or its documentation.
 
 import functools
+import logging
 import sys
 import traceback
 
@@ -31,6 +32,7 @@ from pulp.webservices import auth
 from pulp.webservices import http
 from pulp.webservices.queues import fifo
 
+log = logging.getLogger(__name__)
 
 class JSONController(object):
     """
@@ -49,6 +51,7 @@ class JSONController(object):
             except Exception:
                 exc_info = sys.exc_info()
                 tb_msg = ''.join(traceback.format_exception(*exc_info))
+                log.error("%s" % (traceback.format_exc()))
                 return self.internal_server_error(tb_msg)
         return report_error
     

@@ -15,6 +15,7 @@
 # in this software or its documentation.
 
 import datetime
+import logging
 import sys
 import time
 import traceback
@@ -23,6 +24,7 @@ import uuid
 from pulp.model import Base
 from pulp.tasking.queue.base import SimpleTaskQueue
 
+log = logging.getLogger(__name__)
 # task states -----------------------------------------------------------------
 
 task_created = 'created'
@@ -109,6 +111,8 @@ class Task(object):
             # format_exception takes 3 arguments (class, exception, traceback)
             exc_info = sys.exc_info()
             self.traceback = traceback.format_exception(*exc_info)
+            log.error("Task id:%s, method_name:%s:  %s" % (self.id,
+                self.method_name, traceback.format_exc()))
         else:
             self.state = task_finished
             self.result = result
