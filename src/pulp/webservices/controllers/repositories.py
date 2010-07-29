@@ -145,6 +145,7 @@ class RepositoryDeferredFields(JSONController):
         'packagegroupcategories'
     )
     
+    @JSONController.error_handler
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
@@ -154,12 +155,14 @@ class RepositoryDeferredFields(JSONController):
         filtered_packages = self.filter_results(repo.get('packages', []), filters)
         return self.ok(filtered_packages)
     
+    @JSONController.error_handler
     def packagegroups(self, id):
         repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
             return self.not_found('No repository %s' % id)
         return self.ok(repo.get('packagegroups'))
     
+    @JSONController.error_handler
     def packagegroupcategories(self, id):
         repo = api.repository(id, ['id', 'packagegroupcategories'])
         if repo is None:
@@ -201,6 +204,7 @@ class RepositoryActions(AsyncController):
         'create_packagegroup',
     )
 
+    @JSONController.error_handler
     def list(self, id):
         """
         List all packages in a repository.
@@ -209,7 +213,8 @@ class RepositoryActions(AsyncController):
         @return: list of all packages available in corresponding repository
         """
         return self.ok(api.packages(id))
-    
+
+    @JSONController.error_handler
     def sync(self, id):
         """
         Sync a repository from it's feed.
@@ -219,6 +224,7 @@ class RepositoryActions(AsyncController):
         task_info = self.start_task(api.sync, id)
         return self.accepted(task_info)
        
+    @JSONController.error_handler
     def upload(self, id):
         """
         Upload a package to a repository.
@@ -231,6 +237,7 @@ class RepositoryActions(AsyncController):
                    data['pkgstream'])
         return self.ok(True)
     
+    @JSONController.error_handler
     def add_package(self, id):
         """
         @param id: repository id
@@ -240,6 +247,7 @@ class RepositoryActions(AsyncController):
         api.add_package(id, data['packageid'])
         return self.ok(True)
     
+    @JSONController.error_handler
     def get_package(self, id):
         """
         Get package info from a repository.
@@ -251,6 +259,7 @@ class RepositoryActions(AsyncController):
         name = self.params()
         return self.ok(api.get_package(id, name))
 
+    @JSONController.error_handler
     def add_package_to_group(self, id):
         """
         Add a package to an existing package group
@@ -272,6 +281,7 @@ class RepositoryActions(AsyncController):
             gtype = p["type"]
         return self.ok(api.add_package_to_group(id, groupid, pkg_name, gtype))
 
+    @JSONController.error_handler
     def delete_package_from_group(self, id):
         """
         Removes a package from an existing package group
@@ -293,6 +303,7 @@ class RepositoryActions(AsyncController):
             gtype = p["type"]
         return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype)) 
      
+    @JSONController.error_handler
     def create_packagegroup(self, id):
         """
         Creates a packagegroup in the referenced repository
@@ -315,6 +326,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.create_packagegroup(id, groupid, groupname, 
                                                descrp))
         
+    @JSONController.error_handler
     def delete_packagegroup(self, id):
         """
         Removes a packagegroup from a repository
