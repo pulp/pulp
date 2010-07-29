@@ -20,7 +20,10 @@ from pulp.agent import Agent
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
 from pulp.pexceptions import PulpException
-from pulp.util import chunks
+from pulp.util import chunks, compare_packages
+from pulp.api.errata import ErrataApi
+from pulp.api.repo import RepoApi
+from pulp.api.package import PackageApi
 
 # Pulp
 
@@ -33,6 +36,9 @@ class ConsumerApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
+        self.errataapi  = ErrataApi()
+        self.repoapi    = RepoApi()
+        self.packageapi = PackageApi()
 
     def _getcollection(self):
         return self.db.consumers
@@ -177,3 +183,53 @@ class ConsumerApi(BaseApi):
         agent = Agent(id)
         agent.packagegroups.install(packageids)
         return packageids
+    
+    def listerrata(self, id, type=None):
+        """
+        List applicable errata for a given consumer id
+        """
+        consumer = self.consumer(id)
+        return self._applicable_errata(consumer, type).keys()
+    
+    def list_package_updates(self, id, type=None):
+        """
+        List applicable package updates for a given consumer id
+        """
+        consumer = self.consumer(id)
+        return [ item for etype in self._applicable_errata(consumer, type).values() \
+                for item in etype ]
+    
+    def _applicable_errata(self, consumer, type=None):
+        """ 
+        Logic to filter applicable errata for a consumer
+        """
+        #TODO: Note to self, test query for large pkg profile and check performance
+        applicable_errata = {}
+        pkg_profile = consumer["package_profile"]
+
+        for repoid in consumer["repoids"]:
+            errataids = self.repoapi.errata(repoid, type)
+            for erratumid in errataids:
+                erratum = self.errataapi.erratum(erratumid)
+
+                applicable_errata[erratumid] = []
+                for pkgid in erratum["pkglist"]:
+                    for ppkg in pkg_profile:
+                        pkg = self.packageapi.package(pkgid)
+                        pkg_info = {
+                           'name': pkg["name"],
+                            'version': pkg["version"],
+                            'arch': pkg["arch"],
+                            'epoch': pkg["epoch"],
+                            'release': pkg["release"],
+                        }
+
+                        status = compare_packages(ppkg, pkg_info)
+                        if status == 1:
+                            # erratum pkg is newer, add to update list
+                            applicable_errata[erratumid].append(pkg)
+                        
+                if not len(applicable_errata[erratumid]):
+                    # status is either 0 or -1.
+                    del applicable_errata[erratumid]
+        return applicable_errata

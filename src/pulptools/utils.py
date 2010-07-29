@@ -213,6 +213,7 @@ def generatePakageProfile(rpmHeaderList):
             'release'       : h['release'],
             'epoch'         : h['epoch'] or 0,
             'arch'          : h['arch'],
+            'vendor'        : h['vendor'] or None,
         }
         pkgList.append(info)
     return pkgList

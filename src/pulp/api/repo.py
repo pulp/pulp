@@ -213,7 +213,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         errata = repo['errata']
         if not errata:
-            return None
+            return []
         if type: 
             try:
                 return errata[type]

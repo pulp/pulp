@@ -199,3 +199,22 @@ def listdir(directory):
     for f in os.listdir(directory):
         packagesList.append("%s/%s" % (directory, f))
     return packagesList
+
+
+def compare_packages(pkgA, pkgB):
+    """
+     return 1: pkgA is newer than pkgB
+     return 0: pkgA equals pkgB
+     return -1: pkgB is newer than pkgA
+    """
+    def build_evr(pkg):
+        evr = [pkg["epoch"], pkg["version"], pkg["release"]]
+        evr = map(str, evr)
+        if evr[0] == "":
+            evr[0] = None
+        return evr
+    if pkgA["name"] != pkgB["name"]:
+        # atleast name should match before checking further
+        return
+    evrA, evrB = (build_evr(pkgA), build_evr(pkgB))
+    return rpm.labelCompare(evrA, evrB)

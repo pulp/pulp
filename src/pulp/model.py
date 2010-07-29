@@ -84,7 +84,7 @@ class RepoSource(Base):
 
 class Package(Base):
     def __init__(self, name, epoch, version, release, arch, description, 
-            checksum_type, checksum, filename):
+            checksum_type, checksum, filename, vendor=None):
         Base.__init__(self)
         # ID is initialized in Base.__init__()
         self.name = name
@@ -93,6 +93,7 @@ class Package(Base):
         self.release = release
         self.arch = arch
         self.description = description
+        self.vendor  = vendor
         self.filename = filename
         self.checksum = {checksum_type: checksum}
         self.download_url = None
@@ -189,7 +190,7 @@ class Errata(Base):
     """
     def __init__(self, id, title, description, version, release, type, status="",
             updated="", issued="", pushcount="", update_id="", from_str="",
-            reboot_suggested="", references=[], pkglist=[]):
+            reboot_suggested="", references=[], pkglist=[], immutable=False):
         self._id = id
         self.id = id
         self.title = title
@@ -206,3 +207,4 @@ class Errata(Base):
         self.reboot_suggested = reboot_suggested
         self.references = references
         self.pkglist = pkglist
+        self.immutable = immutable
