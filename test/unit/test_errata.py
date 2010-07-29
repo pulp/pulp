@@ -32,20 +32,31 @@ sys.path.insert(0, commondir)
 
 from pulp import updateinfo
 from pulp.api.errata import ErrataApi
+from pulp.api.repo import RepoApi
+from pulp.api.consumer import ConsumerApi
+from pulp.api.package import PackageApi
 from pulp.model import Errata
 from pulp.util import random_string
+from pulp.util import get_rpm_information
+from pulptools.utils import generatePakageProfile
 import testutil
 
 class TestErrata(unittest.TestCase):
 
     def clean(self):
         self.eapi.clean()
+        self.rapi.clean()
+        self.papi.clean()
+        self.capi.clean()
 
     def setUp(self):
         self.config = testutil.load_test_config()
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         self.eapi = ErrataApi()
+        self.rapi = RepoApi()
+        self.capi = ConsumerApi()
+        self.papi = PackageApi()
         self.clean()
 
     def tearDown(self):
@@ -243,3 +254,115 @@ class TestErrata(unittest.TestCase):
         found = self.eapi.errata(title=title, description=description, version=version,
                 release=release, type="bad value")
         self.assertTrue(len(found) == 0)
+        
+    def test_repo_erratum(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        id = 'test_errata_id_1'
+        title = 'test_errata_title_1'
+        description = 'test_errata_description_1'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_1 = self.eapi.create(id, title, description, version, release, type)
+
+        self.assertTrue(test_errata_1 != None)
+        self.rapi.add_erratum(repo['id'], test_errata_1['id'])
+
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 1)
+        
+        self.rapi.delete_erratum(repo['id'], test_errata_1['id'])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 0)
+        
+    def test_repo_errata(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com')
+        id = 'test_errata_id_1'
+        title = 'test_errata_title_1'
+        description = 'test_errata_description_1'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_1 = self.eapi.create(id, title, description, version, release, type)
+        self.assertTrue(test_errata_1 != None)
+        
+        id = 'test_errata_id_2'
+        title = 'test_errata_title_2'
+        description = 'test_errata_description_2'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_2 = self.eapi.create(id, title, description, version, release, type)
+        self.assertTrue(test_errata_2 != None)
+        self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 2)
+
+        self.rapi.delete_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
+        
+        errata = self.rapi.errata('some-id', type='test_errata_type')
+        self.assertTrue(len(errata) == 0)
+        
+    def test_consumer_errata(self):
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        repo = self.rapi.create('some-id','some name', \
+            'x86_64', 'yum:http://example.com')
+        id = 'test_errata_id_1'
+        title = 'test_errata_title_1'
+        description = 'test_errata_description_1'
+        version = '1.0'
+        release = '0'
+        type = 'test_errata_type'
+        test_errata_1 = self.eapi.create(id, title, description, version, release, type)
+        assert(test_errata_1 != None)
+        
+        epkg = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
+        test_pkg_name = epkg["name"]
+        test_epoch = epkg["epoch"]
+        test_version = epkg["version"]
+        test_release = epkg["release"]
+        test_arch = epkg["arch"]
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
+                release=test_release, arch=test_arch, description=test_description, 
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        print "Package! %s" % p
+        # Add this package version to the repo
+        self.rapi.add_package(repo["id"], p['id'])
+        self.rapi.update(repo)
+        test_errata_1["pkglist"] = [p['id']]
+        assert(p['id'] in test_errata_1["pkglist"])
+        self.eapi.update(test_errata_1)
+        repo["errata"] = {"security" : [test_errata_1['id']]}
+
+        cid = 'test-consumer'
+        c = self.capi.create(cid, 'some consumer desc')
+        self.assertTrue(c != None)
+
+        info1 = get_rpm_information(my_dir + \
+                        "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
+        info2 = get_rpm_information(my_dir + \
+                        "/data/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
+        
+        packages = generatePakageProfile([info1, info2])
+        c['package_profile'] = packages
+        self.assertTrue(c['package_profile'] != None)
+        self.capi.update(c)
+
+        self.rapi.update(repo)
+        c["repoids"] = [repo['id']]
+        self.capi.update(c)
+
+        errlist = self.capi.listerrata(c['id'])
+        assert(len(errlist) == 1)
+        
+        pkguplist = self.capi.list_package_updates(c['id'])
+        assert(len(pkguplist) == 1)
+
