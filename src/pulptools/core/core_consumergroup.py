@@ -36,8 +36,7 @@ class consumergroup(BaseCore):
         usage = "consumergroup [OPTIONS]"
         shortdesc = "consumer group specific actions to pulp server."
         desc = ""
-
-        BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
+        self.name = "consumergroup"
         self.actions = {"create" : "Create a consumer group",
                         "add_consumer" : "Add a consumer to the group",
                         "delete_consumer" : "Delete a consumer from the group",
@@ -45,20 +44,19 @@ class consumergroup(BaseCore):
                         "delete" : "Delete a consumer group",
                         "bind"   : "Bind the consumer group to listed repos",
                         "unbind" : "UnBind the consumer group from repos",}
-
-        self.username = None
-        self.password = None
-        self.name = "consumergroup"
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
-                                              port=CFG.server.port or 8811)
+        BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.repolib = RepoLib()
-        self.generate_options()
+
+    def load_server(self):
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
+                                              port=CFG.server.port or 8811,
+                                              auth=self.auth)
 
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
             usage = "consumergroup create [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup create", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="consumer group id"),
             self.parser.add_option("--description", dest="description",
@@ -67,36 +65,36 @@ class consumergroup(BaseCore):
                            help="consumer id list to be included in this group")
         if self.action == "delete":
             usage = "consumergroup delete [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup delete", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Consumer group id")
         if self.action == "list":
             usage = "consumergroup list [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup list", usage, "", "")
+            self.setup_option_parser(usage, "", True)
         if self.action == "add_consumer":
             usage = "consumergroup add_consumer [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup add_consumer", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "delete_consumer":
             usage = "consumergroup delete_consumer [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup delete_consumer", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "bind":
             usage = "consumergroup bind [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup bind", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
         if self.action == "unbind":
             usage = "consumergroup unbind [OPTIONS]"
-            BaseCore.__init__(self, "consumergroup unbind", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="groupid",

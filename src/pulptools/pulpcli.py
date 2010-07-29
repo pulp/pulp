@@ -18,7 +18,6 @@ import os
 import logging
 import sys
 import pkgutil
-from optparse import OptionParser
 from pulptools.logutil import getLogger
 import pulptools.core as core
 import gettext
@@ -32,15 +31,14 @@ class PulpCore:
     def __init__(self):
         self.cli_cores = {}
 
-        self.parser = OptionParser()
         self.args = self._find_args(sys.argv)
-        if len(self.args) > 2:
+        if len(self.args) > 1:
             self.cli_cores[self.args[1]] = self._load_core(self.args[1])()
         else:
             for cls in self._load_all_cores():
                 cmd = cls()
                 if cmd.name != "cli":
-                    self.cli_cores[cmd.name] = cmd 
+                    self.cli_cores[cmd.name] = cmd
     
     def _find_args(self, args):
         foundargs = []

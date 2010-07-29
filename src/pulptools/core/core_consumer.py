@@ -38,25 +38,18 @@ class consumer(BaseCore):
         usage = "usage: %prog consumer [OPTIONS]"
         shortdesc = "consumer specific actions to pulp server."
         desc = ""
-
-        BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
+        self.name = "consumer"
         self.actions = {"create"        : "Register this system as a consumer",
                         "delete"        : "Delete a consumer",
                         "update"        : "Update consumer profile",
                         "list"          : "List of accessible consumer info",
                         "bind"          : "Bind the consumer to listed repos",
                         "unbind"        : "UnBind the consumer from repos",}
-        self.name = "consumer"
-        self.username = None
-        self.password = None
+        BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
-        self.load_server()
         self.repolib = RepoLib()
-        self.generate_options()
         
     def load_server(self):
-        # /etc/pki/consumer/cert.pem
-        # /etc/pki/consumer/key.pem
         cert_path = None 
         key_path = None
         if (os.path.exists("/etc/pki/consumer/cert.pem") and
@@ -65,13 +58,13 @@ class consumer(BaseCore):
             key_path = "/etc/pki/consumer/key.pem"
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
                                         port=8811, cert_file=cert_path,
-                                        key_file=key_path, auth=self.options.auth)
+                                        key_file=key_path, auth=self.auth)
 
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
             usage = "consumer create [OPTIONS]"
-            BaseCore.__init__(self, "consumer create", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Consumer Identifier eg: foo.example.com")
             self.parser.add_option("--description", dest="description",
@@ -80,29 +73,29 @@ class consumer(BaseCore):
                            help="Server hostname to register the consumer. Defaults to localhost")
         if self.action == "update":
             usage = "usage: %prog consumer update [OPTIONS]"
-            BaseCore.__init__(self, "consumer update", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Consumer Identifier eg: foo.example.com") 
         if self.action == "bind":
             usage = "usage: %prog consumer bind [OPTIONS]"
-            BaseCore.__init__(self, "consumer bind", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="consumerid",
                            help="Consumer Identifier")
         if self.action == "unbind":
             usage = "usage: %prog consumer unbind [OPTIONS]"
-            BaseCore.__init__(self, "consumer unbind", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="consumerid",
                            help="Consumer Identifier")
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
-            BaseCore.__init__(self, "consumer list", usage, "", "")
+            self.setup_option_parser(usage, "", True)
         if self.action == "delete":
             usage = "usage: %prog consumer delete [OPTIONS]"
-            BaseCore.__init__(self, "consumer delete", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="consumerid",
                            help="Consumer Identifier")
 

@@ -36,8 +36,7 @@ class packagegroup(BaseCore):
         usage = "packagegroup [OPTIONS]"
         shortdesc = "packagegroup specific actions to pulp server."
         desc = ""
-
-        BaseCore.__init__(self, "packagegroup", usage, shortdesc, desc)
+        self.name = "packagegroup"
         self.actions = {
                         "list"          : "list available packagegroups",
                         "info"          : "lookup information for a packagegroup",
@@ -47,27 +46,27 @@ class packagegroup(BaseCore):
                         "delete_package": "delete package from an existing packagegroup",
                         "install"       : "Schedule a packagegroup install",
                         }
-        self.name = "packagegroup"
+        BaseCore.__init__(self, "packagegroup", usage, shortdesc, desc)
         self.pconn = None
-        self.load_server()
-        self.generate_options()
 
     def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost", port=8811)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
+        self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
+                                    port=8811, auth=self.auth)
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
+                                        port=8811, auth=self.auth)
 
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "info":
             usage = "packagegroup info [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup info", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="groupid",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":
             usage = "packagegroup install [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup install", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("-p", "--pkggroupid", action="append", dest="pkggroupid",
                            help="PackageGroup to install on a given consumer. \
                            To specify multiple package groups use multiple -p")
@@ -75,12 +74,12 @@ class packagegroup(BaseCore):
                            help="Consumer Id")
         if self.action == "list":
             usage = "packagegroup list [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup list", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "create":
             usage = "packagegroup create [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup create", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
             self.parser.add_option("--id", dest="groupid",
@@ -91,14 +90,14 @@ class packagegroup(BaseCore):
                             help="Group description, default is ''", default="")
         if self.action == "delete":
             usage = "packagegroup delete [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup delete", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
             self.parser.add_option("--id", dest="groupid",
                             help="Group id")
         if self.action == "add_package":
             usage = "packagegroup add_package [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup add_package", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
             self.parser.add_option("--id", dest="groupid",
@@ -110,7 +109,7 @@ class packagegroup(BaseCore):
                             default="default")
         if self.action == "delete_package":
             usage = "packagegroup delete_package [OPTIONS]"
-            BaseCore.__init__(self, "packagegroup delete_package", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Label")
             self.parser.add_option("--id", dest="groupid",

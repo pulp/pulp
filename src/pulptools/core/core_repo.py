@@ -38,8 +38,7 @@ class repo(BaseCore):
         usage = "repo [OPTIONS]"
         shortdesc = "repository specifc actions to pulp server."
         desc = ""
-
-        BaseCore.__init__(self, "repo", usage, shortdesc, desc)
+        self.name = "repo"
         self.actions = {"create" : "Create a repo", 
                         "update" : "Update a repo", 
                         "list"   : "List available repos", 
@@ -47,19 +46,17 @@ class repo(BaseCore):
                         "sync"   : "Sync data to this repo from the feed",
                         "upload" : "Upload package(s) to this repo",
                         "schedules" : "List all repo schedules",}
+        BaseCore.__init__(self, "repo", usage, shortdesc, desc)
 
-        self.username = None
-        self.password = None
-        self.name = "repo"
+    def load_server(self):
         self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
-                                    port=CFG.server.port or 8811)
-        self.generate_options()
-
+                                    port=CFG.server.port or 8811,
+                                    auth=self.auth)
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
             usage = "repo create [OPTIONS]"
-            BaseCore.__init__(self, "repo create", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
             self.parser.add_option("--name", dest="name",
@@ -81,27 +78,27 @@ class repo(BaseCore):
                             Applicable for local syncs")
         if self.action == "sync":
             usage = "repo sync [OPTIONS]"
-            BaseCore.__init__(self, "repo sync", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
         if self.action == "delete":
             usage = "repo delete [OPTIONS]"
-            BaseCore.__init__(self, "repo delete", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
         if self.action == "list":
             usage = "repo list [OPTIONS]"
-            BaseCore.__init__(self, "repo list", usage, "", "")
+            self.setup_option_parser(usage, "", True)
         if self.action == "upload":
             usage = "repo upload [OPTIONS] <package>"
-            BaseCore.__init__(self, "repo upload", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
             self.parser.add_option("--dir", dest="dir",
                            help="Process packages from this directory")
         if self.action == "schedules":
             usage = "repo schedules"
-            BaseCore.__init__(self, "repo schedules", usage, "", "")
+            self.setup_option_parser(usage, "", True)
 
     def _do_core(self):
         if self.action == "create":

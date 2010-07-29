@@ -34,35 +34,33 @@ class package(BaseCore):
         usage = "package [OPTIONS]"
         shortdesc = "package specific actions to pulp server."
         desc = ""
-
-        BaseCore.__init__(self, "package", usage, shortdesc, desc)
+        self.name = "package"
         self.actions = {"info"          : "lookup information for a package", 
                         "install"       : "Schedule a package Install", }
-        self.name = "package"
-        self.username = None
-        self.password = None
+        BaseCore.__init__(self, "package", usage, shortdesc, desc)
         self.pconn = None
         self.cconn = None
-        self.load_server()
-        self.generate_options()
         
     def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost", port=8811)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", port=8811)
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", port=8811)
+        self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
+                                    port=8811, auth=self.auth)
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
+                                        port=8811, auth=self.auth)
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
+                                              port=8811, auth=self.auth)
 
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "info":
             usage = "package info [OPTIONS]"
-            BaseCore.__init__(self, "package info", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("-p", "--name", dest="name",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label")
+                           help="Repository Label") 
         if self.action == "install":
             usage = "package install [OPTIONS]"
-            BaseCore.__init__(self, "package install", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("-p", "--name", action="append", dest="pnames",
                            help="Packages to be installed. \
                            To specify multiple packages use multiple -p")

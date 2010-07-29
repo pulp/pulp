@@ -36,26 +36,24 @@ class user(BaseCore):
         usage = "user [OPTIONS]"
         shortdesc = "user specific actions to pulp server."
         desc = ""
-
-        BaseCore.__init__(self, "user", usage, shortdesc, desc)
+        self.name = "user"
         self.actions = {"create" : "Create a user",
                         "list"   : "List available users",
                         "delete" : "Delete a user",}
 
-        self.username = None
-        self.password = None
-        self.name = "user"
+        BaseCore.__init__(self, "user", usage, shortdesc, desc)
+        self.repolib = RepoLib()
+
+    def load_server(self):
         self.userconn = UserConnection(host=CFG.server.host or "localhost", 
                                               port=CFG.server.port or 8811,
-                                              auth=self.options.auth)
-        self.repolib = RepoLib()
-        self.generate_options()
-
+                                              auth=self.auth)
+        
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
             usage = "user create [OPTIONS]"
-            BaseCore.__init__(self, "user create", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--userlogin", dest="userlogin",
                            help="new login to create"),
             self.parser.add_option("--userpassword", dest="userpassword",
@@ -64,12 +62,12 @@ class user(BaseCore):
                            help="name of user for display purposes")
         if self.action == "delete":
             usage = "user delete [OPTIONS]"
-            BaseCore.__init__(self, "user delete", usage, "", "")
+            self.setup_option_parser(usage, "", True)
             self.parser.add_option("--userlogin", dest="userlogin",
                            help="Login of user you wish to delete")
         if self.action == "list":
             usage = "user list [OPTIONS]"
-            BaseCore.__init__(self, "user list", usage, "", "")
+            self.setup_option_parser(usage, "", True)
 
 
     def _do_core(self):
@@ -89,7 +87,7 @@ class user(BaseCore):
         if not self.options.userpassword:
             self.options.userpassword = ""
         try:
-            user = self.userconn.create(self.options.login, self.options.userpassword,
+            user = self.userconn.create(self.options.userlogin, self.options.userpassword,
                                     self.options.name)
             print _(" Successfully created User [ %s ] with name [ %s ]" % \
                                      (user['login'], user["name"]))

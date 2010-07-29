@@ -18,6 +18,7 @@
 import base64
 import httplib
 import locale
+import sys
 
 from gettext import gettext as _
 
@@ -54,13 +55,15 @@ class Restlib(object):
         self.port = port
         self.apihandler = apihandler
         self.auth = auth
-        base64string = base64.encodestring(auth)[:-1]
-        auth = "Basic %s" % base64string
+        if (self.auth != None):
+            base64string = base64.encodestring(auth)[:-1]
+            auth = "Basic %s" % base64string
+        else:
+            auth = None
         self.headers = {"Content-type":"application/json",
                         "Authorization": auth,
                         "Accept": "application/json",
                         "Accept-Language": locale.getdefaultlocale()[0].lower().replace('_', '-')}
-
         self.cert_file = cert_file
         self.key_file  = key_file
 
@@ -73,7 +76,6 @@ class Restlib(object):
             conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
         else:
             conn = httplib.HTTPSConnection(self.host, self.port)
-        print "Handler: %s" % handler
         conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
         response = conn.getresponse()

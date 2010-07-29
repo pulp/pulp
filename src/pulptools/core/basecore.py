@@ -18,6 +18,7 @@
 import os
 import sys
 from optparse import OptionParser
+from optparse import SUPPRESS_USAGE
 
 class BaseCore(object):
     """ Base class for all sub-calls. """
@@ -27,20 +28,22 @@ class BaseCore(object):
         if shortdesc is not None and description is None:
             description = shortdesc
         self.debug = 0
-        self.usage = "usage: %prog --auth=<login:password> " + usage
-        self.parser = OptionParser(usage=self.usage, description=description)
+        self.setup_option_parser(usage, description, False)
+        self.generate_options()
         self._add_common_options()
         self.name = name
-        (self.options, self.args) = self.parser.parse_args()
-        if not self.options.auth:
-            print("auth required. Try --help")
-            sys.exit(1)
-        self.args = self.args[1:]
+        self.auth = None
+
+    def setup_option_parser(self, usage, description, skip_actions):
+        self.usage = "usage: %prog --auth=<login:password> " + usage
+        self.parser = OptionParser(usage=self._usage_str(skip_actions), 
+                                   description=description)
+        
 
     def _add_common_options(self):
         """ Common options to all modules. """
         help = "<REQUIRED> username:password combination for access to Pulp."  
-        help = help + "Default user admin is included with base install."
+        help = help + "  Default user admin is included with base install."
         self.parser.add_option("--auth", dest="auth",
                        help=help)
 
@@ -64,8 +67,21 @@ class BaseCore(object):
         
         return action 
     
-    def _usage(self):
-        print self.usage.replace("%prog", os.path.basename(sys.argv[0]))
+    def generate_options(self):
+        pass
+    
+    def _usage_str(self, skip_actions):
+        retval = self.usage.replace("%prog", os.path.basename(sys.argv[0])) + "\n"
+        if (not skip_actions):
+            retval = retval + "Supported Actions:\n"
+            items = self.actions.items()
+            items.sort()
+            for (name, cmd) in items:
+                retval = retval + "\t%-14s %-25s\n" % (name, cmd)
+        return retval
+    
+    def _usage_old(self):
+        print "\nUsage: %s MODULENAME ACTION [options] --help\n" % os.path.basename(sys.argv[0])
         print "Supported Actions:\n"
         items = self.actions.items()
         items.sort()
@@ -73,10 +89,25 @@ class BaseCore(object):
             print("\t%-14s %-25s" % (name, cmd))
         print("")
 
-    def _do_core(self):
-        pass
+    def _usage(self):
+        print self._usage_str(False)
 
+    def _do_core(self):
+        # Subclass required to implement to actually execute the indicated command
+        pass
+    
+    def load_server(self):
+        # Subclass required to implement to setup Connection to Pulp server
+        pass
+    
     def main(self):
+        (self.options, self.args) = self.parser.parse_args()
+        if (not self.options.auth and (len(self.args) > 0)):
+            print("auth parameter is required. Try --help")
+            sys.exit(1)
+        else:
+            self.auth = self.options.auth
+        self.load_server()
         self._do_core()
 
 def systemExit(code, msgs=None):
