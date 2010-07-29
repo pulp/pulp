@@ -44,7 +44,10 @@ class RemoteTestApi(TestApi):
     """
 
     def setUp(self):
-        d = dict(host='localhost', port=8811)
+        d = dict(host='localhost',
+                 port=8811,
+                 cert_file='/etc/pki/pulp/server.crt', 
+                 key_file='/etc/pki/pulp/server.key')
         self.config = testutil.load_test_config()
         self.rapi = RepoConnection(**d)
         self.capi = ConsumerConnection(**d)
