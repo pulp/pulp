@@ -165,13 +165,16 @@ def audit(api, params=[], record_result=False, pass_principal=False):
 
 # auditing api ----------------------------------------------------------------
 
-def events(spec=None, fields=None, errors_only=False):
+def events(spec=None, fields=None, limit=None, errors_only=False):
     """
     Query function that returns events according to the pymongo spec.
+    The results are sorted by timestamp into descending order.
     @type spec: dict or pymongo.son.SON instance
-    @param sepc: pymongo spec for filtering events
+    @param spec: pymongo spec for filtering events
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
+    @type limit: int or None
+    @param limit: limit the number of results, None means no limit
     @type errors_only: bool
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
@@ -182,44 +185,52 @@ def events(spec=None, fields=None, errors_only=False):
     assert isinstance(fields, list) or isinstance(fields, tuple) or fields is None
     if errors_only:
         spec = spec or {}
-        spec['exception'].setdefault({'$ne': None}) # don't overwrite existing
+        spec['exception'] = {'$ne': None}
     events_ = _objdb.find(spec=spec, fields=fields)
+    if limit is not None:
+        events_.limit(limit)
+    events_.sort('timestamp', pymongo.DESCENDING)
     return list(events_)
 
 
-def events_on_api(api, fields=None, errors_only=False):
+def events_on_api(api, fields=None, limit=None, errors_only=False):
     """
     Return all recorded events for a given api.
     @type api: str
     @param api: name of the api
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
+    @type limit: int or None
+    @param limit: limit the number of results, None means no limit
     @type errors_only: bool
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
     @return: list of events for the given api containing fields
     """
-    return events({'api': api}, fields, errors_only)
+    return events({'api': api}, fields, limit, errors_only)
 
 
-def events_by_principal(principal, fields=None, errors_only=False):
+def events_by_principal(principal, fields=None, limit=None, errors_only=False):
     """
     Return all recorded events for a given principal (caller).
     @type api: model object or dict
     @param api: principal that triggered the event (i.e. User instance)
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
+    @type limit: int or None
+    @param limit: limit the number of results, None means no limit
     @type errors_only: bool
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
     @return: list of events for the given principal containing fields
     """
-    return events({'principal': unicode(principal)}, fields, errors_only)
+    return events({'principal': unicode(principal)}, fields, limit, errors_only)
 
 
-def events_in_datetime_range(lower_bound=None, upper_bound=None, fields=None, errors_only=False):
+def events_in_datetime_range(lower_bound=None, upper_bound=None,
+                             fields=None, limit=None, errors_only=False):
     """
     Return all events in a given time range.
     @type lower_bound: datetime.datetime instance or None
@@ -228,6 +239,8 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None, fields=None, er
     @param lower_bound: upper time bound, None = newest in db
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
+    @type limit: int or None
+    @param limit: limit the number of results, None means no limit
     @type errors_only: bool
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
@@ -242,15 +255,17 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None, fields=None, er
     if upper_bound is not None:
         timestamp_range['$lt'] = upper_bound
     spec = {'timestamp': timestamp_range} if timestamp_range else None
-    return events(spec, fields, errors_only)
+    return events(spec, fields, limit, errors_only)
 
-def events_since_delta(delta, fields=None, errors_only=False):
+def events_since_delta(delta, fields=None, limit=None, errors_only=False):
     """
     Return all the events that occurred in the last time delta from now.
     @type delta: datetime.timedelta instance
     @param delta: length of time frame to return events from
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
+    @type limit: int or None
+    @param limit: limit the number of results, None means no limit
     @type errors_only: bool
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
@@ -260,7 +275,7 @@ def events_since_delta(delta, fields=None, errors_only=False):
     assert isinstance(delta, datetime.timedelta)
     now = datetime.datetime.now()
     lower_bound = now - delta
-    return events({'timestamp': {'$gt': lower_bound}}, fields, errors_only)
+    return events({'timestamp': {'$gt': lower_bound}}, fields, limit, errors_only)
 
 
 def cull_events(delta):

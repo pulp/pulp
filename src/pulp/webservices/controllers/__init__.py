@@ -14,6 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import audit
 import consumergroups
 import consumers
 import packages
@@ -22,6 +23,7 @@ import users
 import test
 
 __all__ = [
+    'audit',
     'consumergroups',
     'consumers', 
     'packages', 
