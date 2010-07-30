@@ -47,6 +47,9 @@ class TestRoleCheck(unittest.TestCase):
     def setUp(self):
         self.config = testutil.load_test_config()
         self.uapi = UserApi()
+
+    def tearDown(self):
+        self.uapi.clean()
         
     @RoleCheck(consumer=True)
     def some_method(self, someparam):
@@ -72,8 +75,9 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         
+        # Check we can run the method with no setup in web
         retval = self.some_method('somevalue')
-        self.assertTrue(retval)
+        self.assertNotEquals(retval, True)
         
         # Check for bad pass
         loginpass = "%s:%s" % (login, "invalid password")
@@ -89,7 +93,12 @@ class TestRoleCheck(unittest.TestCase):
         retval = self.some_method('somevalue')
         self.assertTrue(retval != True)
         
-        
+        # Check for a proper result
+        loginpass = "%s:%s" % (login, password)
+        encoded = base64.encodestring(loginpass)
+        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
+        retval = self.some_method('somevalue')
+        self.assertEquals(retval, True)
          
 
 if __name__ == '__main__':

@@ -20,7 +20,7 @@ from pulp import model
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
 from pulp.config import config
-
+import pulp.password_util as password_util
 
 log = logging.getLogger(__name__)
 user_fields = model.User(None, None, None, None).keys()
@@ -49,7 +49,10 @@ class UserApi(BaseApi):
         """
         if id is None:
             id = str(uuid.uuid4())
-        user = model.User(login, id, password, name)
+        hashed_password = None
+        if (password != None):
+            hashed_password = password_util.hash_password(password)
+        user = model.User(login, id, hashed_password, name)
         self.insert(user)
         return user
 

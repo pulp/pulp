@@ -28,7 +28,7 @@ from pulp.api.user import UserApi
 from pulp.certificate import Certificate
 from pulp.pexceptions import PulpException
 from pulp.webservices import http
-
+import pulp.password_util as password_util
 
 log = logging.getLogger('pulp')
 userApi = UserApi()
@@ -121,8 +121,8 @@ class RoleCheck(object):
             if (user == None):
                 raise PulpException("User with login [%s] does not exist" 
                                     % username)
-            log.debug("Username: %s" % username)
-            badPassword = (user['password'] != password) 
+            log.debug("Username: %s hashed password: %s" % (username, password))
+            badPassword = not password_util.check_password(user['password'], password) 
             log.debug("Bad Password? [%s]" % badPassword)
             return badPassword
         return True
