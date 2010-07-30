@@ -20,6 +20,7 @@ from pulp.auditing import events
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
 
+# audit events controller -----------------------------------------------------
 
 class Events(JSONController):
     
@@ -27,6 +28,14 @@ class Events(JSONController):
     def GET(self):
         """
         List all available events.
+        This controller supports a number of filters:
+        * principal, api, method=<name>: all filter on event fields
+        * field=<field name>: these filters tell the controller which fields
+          should be returned for each event
+        * limit=<int>: this filter tells the controller the maximum number of
+          events to return
+        * show=errors_only: show only events that have an exception associated
+          with them
         @return: a list of events.
         """
         valid_filters = ('principal', 'api', 'method', 'field', 'limit', 'show')
@@ -46,6 +55,7 @@ class Events(JSONController):
         spec = mongo.filters_to_re_spec(filters)
         return self.ok(events(spec, fields, limit, errors_only))
     
+# web.py application ----------------------------------------------------------
     
 URLS = (
     '/$', Events,
