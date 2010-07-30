@@ -80,13 +80,13 @@ class user(BaseCore):
             self._delete()
 
     def _create(self):
-        if not self.options.userlogin:
-            print("userlogin required. Try --help")
+        if not self.options.newusername:
+            print("newusername required. Try --help")
             sys.exit(0)
         if not self.options.name:
             self.options.name = ""
-        if not self.options.userpassword:
-            self.options.userpassword = ""
+        if not self.options.newpassword:
+            self.options.newpassword = ""
         try:
             user = self.userconn.create(self.options.newusername, 
                                         self.options.newpassword, 
@@ -103,7 +103,6 @@ class user(BaseCore):
     def _list(self):
         try:
             users = self.userconn.users()
-            columns = ["login", "name"]
             if not len(users):
                 print _("No users available to list")
                 sys.exit(0)
