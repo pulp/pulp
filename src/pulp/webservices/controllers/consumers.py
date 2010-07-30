@@ -61,6 +61,7 @@ class Consumers(JSONController):
         return self.ok(consumers)
      
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self):
         """
         Create a new consumer.
@@ -76,6 +77,7 @@ class Consumers(JSONController):
         return self.created(path, consumer)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self):
         """
         Delete all consumers.
@@ -88,6 +90,7 @@ class Consumers(JSONController):
 class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
     @JSONController.error_handler
+    @RoleCheck()
     def POST(self):
         api.bulkcreate(self.params())
         return self.ok(True)
@@ -96,6 +99,7 @@ class Bulk(JSONController):
 class Consumer(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -111,6 +115,7 @@ class Consumer(JSONController):
         return self.ok(consumer)
     
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self, id):
         """
         Update consumer
@@ -129,6 +134,7 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self, id):
         """
         Delete a consumer.
@@ -174,6 +180,7 @@ class ConsumerDeferredFields(JSONController):
         return self.ok(repo_data)
     
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id, field_name):
         """
         Deferred field dispatcher.
@@ -243,6 +250,7 @@ class ConsumerActions(JSONController):
         
         
     @JSONController.error_handler
+    @RoleCheck()
     def POST(self, id, action_name):
         """
         Consumer action dispatcher

@@ -18,8 +18,11 @@ import os
 import logging
 import sys
 import pkgutil
+import pulptools.utils as utils
 from pulptools.logutil import getLogger
+
 import pulptools.core as core
+
 import gettext
 _ = gettext.gettext
 log = getLogger(__name__)
@@ -30,8 +33,7 @@ class PulpCore:
     """
     def __init__(self):
         self.cli_cores = {}
-
-        self.args = self._find_args(sys.argv)
+        self.args = utils.findSysvArgs(sys.argv)
         if len(self.args) > 1:
             self.cli_cores[self.args[1]] = self._load_core(self.args[1])()
         else:
@@ -40,15 +42,7 @@ class PulpCore:
                 if cmd.name != "cli":
                     self.cli_cores[cmd.name] = cmd
     
-    def _find_args(self, args):
-        foundargs = []
-        options = {}
-        for arg in args:
-            if (not arg.startswith("-")):
-                foundargs.append(arg)
-        return foundargs
-                
-        
+    
     def _add_core(self, cmd):
         self.cli_cores[cmd.name] = cmd
         
@@ -70,7 +64,7 @@ class PulpCore:
         return cls
 
     def _usage(self):
-        print "\nUsage: %s --auth=<login:password> MODULENAME --help\n" % os.path.basename(sys.argv[0])
+        print "\nUsage: %s -u <username> -p <password> MODULENAME --help\n" % os.path.basename(sys.argv[0])
         print "Supported modules:\n"
         items = self.cli_cores.items()
         for (name, cmd) in items:
@@ -78,11 +72,7 @@ class PulpCore:
         print("")
 
     def _find_best_match(self, args):
-        possiblecmd = []
-        for arg in args[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-
+        possiblecmd = utils.findSysvArgs(args)
         if not possiblecmd:
             return None
 
@@ -102,15 +92,12 @@ class PulpCore:
         return cmd
 
     def main(self):
-        if len(sys.argv) < 2 or not self._find_best_match(sys.argv):
-            self._usage()
-            sys.exit(0)
-
-        cmd = self._find_best_match(sys.argv)
+        
+        cmd = self._find_best_match(sys.argv[1:])
         if not cmd:
             self._usage()
             sys.exit(0)
-
+        
         cmd.main()
 
 if __name__ == "__main__":

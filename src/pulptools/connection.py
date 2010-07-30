@@ -50,13 +50,16 @@ class Restlib(object):
     """
      A wrapper around httplib to make rest calls easier
     """
-    def __init__(self, host, port, apihandler, cert_file=None, key_file=None, auth=None):
+    def __init__(self, host, port, apihandler, cert_file=None, key_file=None, 
+                 username=None, password=None):
         self.host = host
         self.port = port
         self.apihandler = apihandler
-        self.auth = auth
-        if (self.auth != None):
-            base64string = base64.encodestring(auth)[:-1]
+        self.username = username
+        self.password = password
+        if (self.username != None):
+            raw = "%s:%s" % (self.username, self.password)
+            base64string = base64.encodestring(raw)[:-1]
             auth = "Basic %s" % base64string
         else:
             auth = None
@@ -112,21 +115,26 @@ class PulpConnection:
     Proxy connection to Pulp Server
     """
 
-    def __init__(self, host='localhost', port=8811, handler="", cert_file=None, key_file=None, auth=None):
+    def __init__(self, host='localhost', port=8811, handler="", cert_file=None, key_file=None, 
+                 username=None, password=None):
         self.host = host
         self.port = port
         self.handler = handler
         self.conn = None
         self.cert_file = cert_file
         self.key_file = key_file
-        self.auth = auth
+        self.username = username
+        self.password = password
         # initialize connection
         self.setUp()
 
     def setUp(self):
-        self.conn = Restlib(self.host, self.port, self.handler, self.cert_file, self.key_file, self.auth)
-        log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" % (self.host, self.port, self.handler))
-        log.info("Using cert_file: %s and key_file: %s" % (self.cert_file, self.key_file))
+        self.conn = Restlib(self.host, self.port, self.handler, self.cert_file, 
+                            self.key_file, self.username, self.password)
+        log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" % 
+                 (self.host, self.port, self.handler))
+        log.info("Using cert_file: %s and key_file: %s" % 
+                 (self.cert_file, self.key_file))
 
     def shutDown(self):
         self.conn.close()

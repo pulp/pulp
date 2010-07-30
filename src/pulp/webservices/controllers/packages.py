@@ -21,6 +21,7 @@ import web
 from pulp.api.package import PackageApi
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -32,6 +33,7 @@ log = logging.getLogger('pulp')
 class Packages(JSONController):
     
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self):
         """
         List available packages.
@@ -43,6 +45,7 @@ class Packages(JSONController):
         return self.ok(api.package_descriptions(spec))
     
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self):
         """
         Delete all packages.
@@ -52,6 +55,7 @@ class Packages(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self):
         """
         Create a new package.
@@ -67,6 +71,7 @@ class Packages(JSONController):
 class Package(JSONController):
     
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id):
         """
         Get information on a sinble package.
@@ -91,6 +96,7 @@ class PackageDeferredFields(JSONController):
     )
     
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:
@@ -107,6 +113,7 @@ class PackageActions(JSONController):
     )
     
     @JSONController.error_handler
+    @RoleCheck()
     def POST(self, id, action_name):
         action = getattr(self, action_name, None)
         if action is None:
@@ -117,6 +124,7 @@ class PackageActions(JSONController):
 class Versions(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, name, version, release, epoch, arch):
         pv = api.package_by_ivera(name, version, epoch, release, arch)
         return self.ok(pv)

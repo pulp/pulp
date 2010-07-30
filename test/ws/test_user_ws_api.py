@@ -39,7 +39,7 @@ class RemoteTestUsers(TestUsers):
     """
 
     def setUp(self):
-        d = dict(host='localhost', port=8811)
+        d = dict(host='localhost', port=8811, username="admin", password="admin")
         self.config = testutil.load_test_config()
         self.uapi = UserConnection(**d)
         

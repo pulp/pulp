@@ -50,7 +50,8 @@ class consumergroup(BaseCore):
     def load_server(self):
         self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
                                               port=CFG.server.port or 8811,
-                                              auth=self.auth)
+                                              username=self.username, 
+                                              password=self.password)
 
     def generate_options(self):
         self.action = self._get_action()

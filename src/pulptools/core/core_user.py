@@ -47,24 +47,25 @@ class user(BaseCore):
     def load_server(self):
         self.userconn = UserConnection(host=CFG.server.host or "localhost", 
                                               port=CFG.server.port or 8811,
-                                              auth=self.auth)
+                                              username=self.username, 
+                                              password=self.password)
         
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
             usage = "user create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--userlogin", dest="userlogin",
-                           help="new login to create"),
-            self.parser.add_option("--userpassword", dest="userpassword",
+            self.parser.add_option("--newusername", dest="newusername",
+                           help="new username to create"),
+            self.parser.add_option("--newpassword", dest="newpassword",
                            help="password for authentication")
             self.parser.add_option("--name", dest="name",
                            help="name of user for display purposes")
         if self.action == "delete":
             usage = "user delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--userlogin", dest="userlogin",
-                           help="Login of user you wish to delete")
+            self.parser.add_option("--deleteusername", dest="deleteusername",
+                           help="Username of user you wish to delete")
         if self.action == "list":
             usage = "user list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -87,8 +88,9 @@ class user(BaseCore):
         if not self.options.userpassword:
             self.options.userpassword = ""
         try:
-            user = self.userconn.create(self.options.userlogin, self.options.userpassword,
-                                    self.options.name)
+            user = self.userconn.create(self.options.newusername, 
+                                        self.options.newpassword, 
+                                        self.options.name)
             print _(" Successfully created User [ %s ] with name [ %s ]" % \
                                      (user['login'], user["name"]))
         except RestlibException, re:
@@ -119,17 +121,17 @@ class user(BaseCore):
 
 
     def _delete(self):
-        if not self.options.userlogin:
+        if not self.options.deleteusername:
             print("User's login required. Try --help")
             sys.exit(0)
-        user = self.userconn.user(login=self.options.login)
+        user = self.userconn.user(login=self.options.deleteusername)
         if not user:
             print _(" User [ %s ] does not exist" % \
-                  self.options.login)
+                  self.options.deleteusername)
             sys.exit(-1)
         try:
-            self.userconn.delete(login=self.options.login)
-            print _(" Successfully deleted User [ %s ] " % self.options.login)
+            self.userconn.delete(login=self.options.deleteusername)
+            print _(" Successfully deleted User [ %s ] " % self.options.deleteusername)
         except Exception, e:
             print _(" Delete operation failed on User [ %s ]. " % \
                   self.options.login)

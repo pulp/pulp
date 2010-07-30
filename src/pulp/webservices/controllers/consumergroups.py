@@ -18,6 +18,7 @@ import web
 
 from pulp.api.consumer_group import ConsumerGroupApi
 from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.role_check import RoleCheck
 
 # consumers api ---------------------------------------------------------------
 
@@ -28,6 +29,7 @@ api = ConsumerGroupApi()
 class ConsumerGroups(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self):
         """
         List all available consumergroups.
@@ -37,6 +39,7 @@ class ConsumerGroups(JSONController):
         return self.ok(api.consumergroups())
 
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self):
         """
         Create a new consumer group.
@@ -48,6 +51,7 @@ class ConsumerGroups(JSONController):
         return self.created(consumergroup['id'], consumergroup)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self):
         """
         @return: True on successful deletion of all consumer groups
@@ -59,6 +63,7 @@ class ConsumerGroups(JSONController):
 class ConsumerGroup(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id):
         """
         Get a consumergroup's meta data.
@@ -68,6 +73,7 @@ class ConsumerGroup(JSONController):
         return self.ok(api.consumergroup(id))
 
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self, id):
         """
         Update consumer group
@@ -78,6 +84,7 @@ class ConsumerGroup(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self, id):
         """
         Delete a consumer group.
@@ -147,6 +154,7 @@ class ConsumerGroupActions(JSONController):
         return self.ok(api.installpackages(id, names))
 
     @JSONController.error_handler
+    @RoleCheck()
     def POST(self, id, action_name):
         """
         Consumer action dispatcher

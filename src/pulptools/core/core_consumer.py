@@ -58,11 +58,14 @@ class consumer(BaseCore):
             key_path = "/etc/pki/consumer/key.pem"
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
                                         port=8811, cert_file=cert_path,
-                                        key_file=key_path, auth=self.auth)
+                                        key_file=key_path, username=self.username, 
+                                        password=self.password)
 
     def generate_options(self):
         self.action = self._get_action()
+        print "Self.action: [%s]" % self.action
         if self.action == "create":
+            print "ZZZZZZZZZZZ"
             usage = "consumer create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
@@ -100,6 +103,7 @@ class consumer(BaseCore):
                            help="Consumer Identifier")
 
     def _do_core(self):
+        print "DoCore ... %s" % self.action
         if self.action == "create":
             self._create()
         if self.action == "list":

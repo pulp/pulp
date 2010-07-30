@@ -23,6 +23,7 @@ from pulp.api.repo import RepoApi
 from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController, AsyncController
+from pulp.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -37,6 +38,7 @@ default_fields = ['id', 'source', 'name', 'arch', 'sync_schedule', 'use_symlinks
 class Repositories(JSONController):
  
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self):
         """
         List all available repositories.
@@ -57,6 +59,7 @@ class Repositories(JSONController):
         return self.ok(repositories)
     
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self):
         """
         Create a new repository.
@@ -81,6 +84,7 @@ class Repositories(JSONController):
         return self.created(path, repo)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self):
         """
         @return: True on successful deletion of all repositories
@@ -92,6 +96,7 @@ class Repositories(JSONController):
 class Repository(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id):
         """
         Get information on a single repository.
@@ -107,6 +112,7 @@ class Repository(JSONController):
         return self.ok(repo)
     
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self, id):
         """
         Change a repository.
@@ -126,6 +132,7 @@ class Repository(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self, id):
         """
         Delete a repository.
@@ -146,6 +153,7 @@ class RepositoryDeferredFields(JSONController):
     )
     
     @JSONController.error_handler
+    @RoleCheck()
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
@@ -156,6 +164,7 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(filtered_packages)
     
     @JSONController.error_handler
+    @RoleCheck()
     def packagegroups(self, id):
         repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
@@ -163,6 +172,7 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(repo.get('packagegroups'))
     
     @JSONController.error_handler
+    @RoleCheck()
     def packagegroupcategories(self, id):
         repo = api.repository(id, ['id', 'packagegroupcategories'])
         if repo is None:
@@ -170,6 +180,7 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(repo.get('packagegroupcategories', []))
     
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:
@@ -205,6 +216,7 @@ class RepositoryActions(AsyncController):
     )
 
     @JSONController.error_handler
+    @RoleCheck()
     def sync(self, id):
         """
         Sync a repository from it's feed.
@@ -215,6 +227,7 @@ class RepositoryActions(AsyncController):
         return self.accepted(task_info)
        
     @JSONController.error_handler
+    @RoleCheck()
     def upload(self, id):
         """
         Upload a package to a repository.
@@ -228,6 +241,7 @@ class RepositoryActions(AsyncController):
         return self.ok(True)
     
     @JSONController.error_handler
+    @RoleCheck()
     def add_package(self, id):
         """
         @param id: repository id
@@ -238,6 +252,7 @@ class RepositoryActions(AsyncController):
         return self.ok(True)
     
     @JSONController.error_handler
+    @RoleCheck()
     def get_package(self, id):
         """
         Get package info from a repository.
@@ -250,6 +265,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.get_package(id, name))
 
     @JSONController.error_handler
+    @RoleCheck()
     def add_package_to_group(self, id):
         """
         Add a package to an existing package group
@@ -272,6 +288,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.add_package_to_group(id, groupid, pkg_name, gtype))
 
     @JSONController.error_handler
+    @RoleCheck()
     def delete_package_from_group(self, id):
         """
         Removes a package from an existing package group
@@ -294,6 +311,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype)) 
      
     @JSONController.error_handler
+    @RoleCheck()
     def create_packagegroup(self, id):
         """
         Creates a packagegroup in the referenced repository
@@ -317,6 +335,7 @@ class RepositoryActions(AsyncController):
                                                descrp))
         
     @JSONController.error_handler
+    @RoleCheck()
     def delete_packagegroup(self, id):
         """
         Removes a packagegroup from a repository
@@ -331,6 +350,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.delete_packagegroup(id, groupid))
 
     @JSONController.error_handler
+    @RoleCheck()
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,
@@ -351,6 +371,7 @@ class RepositoryActions(AsyncController):
 class RepositoryActionStatus(AsyncController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id, action_name, action_id):
         """
         Check the status of a sync operation.
@@ -365,6 +386,7 @@ class RepositoryActionStatus(AsyncController):
         return self.ok(task_info)
     
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self, id, action_name, action_id):
         """
         Place holder to cancel an action
@@ -375,6 +397,7 @@ class RepositoryActionStatus(AsyncController):
 class Schedules(JSONController):
     
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id, action_name):
         '''
         Retrieve a map of all repository IDs to their associated synchronization

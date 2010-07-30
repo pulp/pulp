@@ -35,6 +35,31 @@ PGPHASHALGO = {
 rpm.RPMTAG_FILEDIGESTALGO = 5011
 
 
+def findSysvArgs(args):
+    """
+    Find the arguments passed in from the CLI, skipping any --option=value and
+    any -o value options.  We don't want to treat the 'value' in '-o value' as 
+    an argument and must skip these
+    """
+    # Find the actual arguments to the command, skipping options
+    foundargs = []
+    skipArg = False
+    for arg in args:
+        # Only add it if the arg doesnt start with a - or the previous
+        # argument didnt start with -.  need to track previous arg for
+        # cases where users use -u username -p password somecommand
+        # if (not arg.startswith("-") and not prevarg.startswith("-")):
+        if (skipArg):
+            skipArg = False
+            continue
+        if (arg.startswith("-") and not arg.startswith("--")):
+            skipArg = True 
+        elif (not arg.startswith("--")):
+            foundargs.append(arg)
+            
+    return foundargs
+
+
 def getVersionRelease():
     ts = rpm.TransactionSet()
     for h in ts.dbMatch('Providename', "redhat-release"):

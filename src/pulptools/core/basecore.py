@@ -18,7 +18,8 @@
 import os
 import sys
 from optparse import OptionParser
-from optparse import SUPPRESS_USAGE
+import pulptools.utils as utils
+
 
 class BaseCore(object):
     """ Base class for all sub-calls. """
@@ -32,31 +33,33 @@ class BaseCore(object):
         self.generate_options()
         self._add_common_options()
         self.name = name
-        self.auth = None
+        self.username = None
+        self.password = None
 
     def setup_option_parser(self, usage, description, skip_actions):
-        self.usage = "usage: %prog --auth=<login:password> " + usage
+        self.usage = "usage: %prog -u <username> -p <password> " + usage
         self.parser = OptionParser(usage=self._usage_str(skip_actions), 
                                    description=description)
         
 
     def _add_common_options(self):
         """ Common options to all modules. """
-        help = "<REQUIRED> username:password combination for access to Pulp."  
+        help = "<REQUIRED> username for access to Pulp."  
         help = help + "  Default user admin is included with base install."
-        self.parser.add_option("--auth", dest="auth",
+        self.parser.add_option("-u", "--username", dest="username",
                        help=help)
+        help = "<REQUIRED> password for access to Pulp."  
+        self.parser.add_option("-p", "--password", dest="password",
+                       help=help)
+        
 
     def _get_action(self):
         """ Validate the arguments passed in and determine what action to take """
         action = None
-        possiblecmd = []
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                possiblecmd.append(arg)
-        if len(possiblecmd) > 1:
-            action = possiblecmd[1]
-        elif len(possiblecmd) == 1 and possiblecmd[0] == self.name:
+        possiblecmd = utils.findSysvArgs(sys.argv)
+        if len(possiblecmd) > 2:
+            action = possiblecmd[2]
+        elif len(possiblecmd) == 2 and possiblecmd[1] == self.name:
             self._usage()
             sys.exit(0)
         else:
@@ -64,7 +67,6 @@ class BaseCore(object):
         if action not in self.actions.keys():
             self._usage()
             sys.exit(0)
-        
         return action 
     
     def generate_options(self):
@@ -102,11 +104,13 @@ class BaseCore(object):
     
     def main(self):
         (self.options, self.args) = self.parser.parse_args()
-        if (not self.options.auth and (len(self.args) > 0)):
-            print("auth parameter is required. Try --help")
+        if (not self.options.username and not self.options.password 
+                and (len(self.args) > 0)):
+            print("username and password are required. Try --help")
             sys.exit(1)
         else:
-            self.auth = self.options.auth
+            self.username = self.options.username
+            self.password = self.options.password
         self.load_server()
         self._do_core()
 

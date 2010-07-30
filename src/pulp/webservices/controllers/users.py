@@ -39,6 +39,7 @@ class Users(JSONController):
         return self.ok(api.users())
 
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self):
         """
         Create a new user
@@ -50,6 +51,7 @@ class Users(JSONController):
         return self.created(user['id'], user)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self):
         """
         @return: True on successful deletion of all users
@@ -61,6 +63,7 @@ class Users(JSONController):
 class User(JSONController):
 
     @JSONController.error_handler
+    @RoleCheck()
     def GET(self, login):
         """
         Get a users information
@@ -70,6 +73,7 @@ class User(JSONController):
         return self.ok(api.user(login))
 
     @JSONController.error_handler
+    @RoleCheck()
     def PUT(self, login):
         """
         Update user
@@ -80,6 +84,7 @@ class User(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
+    @RoleCheck()
     def DELETE(self, login):
         """
         Delete a user
