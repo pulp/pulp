@@ -184,13 +184,13 @@ class repo(BaseCore):
             else:
                 print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.id, pkg_count))
         except RestlibException, re:
-            log.error("Error: %s" % re)
+            log.info("REST Error.", exc_info=True)
             systemExit(re.code, re.msg)
         except SyncError, se:
-            log.error("Error: %s" % se)
+            log.info("Sync Error: ", exc_info=True)
             systemExit("Error : %s" % se)
         except Exception, e:
-            log.error("Error: %s" % e)
+            log.error("General Error: %s" % e)
             raise
 
     def _delete(self):
