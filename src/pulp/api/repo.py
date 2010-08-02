@@ -114,13 +114,13 @@ class RepoApi(BaseApi):
 
         return r
 
-    @audit('RepoApi', params=['id'])
+    @audit('RepoApi')
     def delete(self, id):
         repo = self._get_existing_repo(id)
         repo_sync.delete_schedule(repo)
         self.objectdb.remove(repo, safe=True)
 
-    @audit('RepoApi', params=['repo_data'])
+    @audit('RepoApi', params=[])
     def update(self, repo_data):
         repo = self._get_existing_repo(repo_data['id'])
         # make sure we're only updating the fields in the model
@@ -175,7 +175,7 @@ class RepoApi(BaseApi):
             return None
         return packages[0]
     
-    @audit('RepoApi', params=['repoid', 'packageid'])
+    @audit('RepoApi')
     def add_package(self, repoid, packageid):
         """
         Adds the passed in package to this repo
@@ -199,7 +199,7 @@ class RepoApi(BaseApi):
             return
         packages[p['id']] = p           
 
-    @audit('RepoApi', params=['repoid', 'p'])
+    @audit('RepoApi')
     def remove_package(self, repoid, p):
         repo = self._get_existing_repo(repoid)
         # this won't fail even if the package is not in the repo's packages
@@ -222,7 +222,7 @@ class RepoApi(BaseApi):
                 raise PulpException("Invalid errata type requested :[%s]" % (ke))
         return [ item for etype in errata.values() for item in etype ]      
       
-    @audit('RepoApi', params=['repoid', 'erratumid'])
+    @audit('RepoApi')
     def add_erratum(self, repoid, erratumid):
         """
         Adds in erratum to this repo
@@ -258,7 +258,7 @@ class RepoApi(BaseApi):
 
         errata[erratum['type']].append(erratum['id'])
         
-    @audit('RepoApi', params=['repoid', 'erratumid'])    
+    @audit('RepoApi')
     def delete_erratum(self, repoid, erratumid):
         """
         delete erratum from this repo
@@ -312,7 +312,7 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
         return group
 
-    @audit('RepoApi', params=['repoid', 'groupid'])
+    @audit('RepoApi')
     def delete_packagegroup(self, repoid, groupid):
         """
         Remove a packagegroup from a repo
@@ -328,7 +328,7 @@ class RepoApi(BaseApi):
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
-    @audit('RepoApi', params=['repoid', 'pg'])
+    @audit('RepoApi')
     def update_packagegroup(self, repoid, pg):
         """
         Save the passed in PackageGroup to this repo
@@ -344,7 +344,7 @@ class RepoApi(BaseApi):
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
-    @audit('RepoApi', params=['repoid', 'pglist'])
+    @audit('RepoApi')
     def update_packagegroups(self, repoid, pglist):
         """
         Save the list of passed in PackageGroup objects to this repo
@@ -380,7 +380,7 @@ class RepoApi(BaseApi):
         return repo['packagegroups'].get(groupid, None)
 
     
-    @audit('RepoApi', params=['repoid', 'groupid', 'pkg_name', 'gtype'])
+    @audit('RepoApi')
     def add_package_to_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
         @param repoid: repository id
@@ -411,7 +411,7 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
         
         
-    @audit('RepoApi', params=['repoid', 'groupid', 'pkg_name', 'gtype'])
+    @audit('RepoApi')
     def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
         @param repoid: repository id
@@ -461,7 +461,7 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
         return cat
     
-    @audit('RepoApi', params=['repoid', 'categoryid'])
+    @audit('RepoApi')
     def delete_packagegroupcategory(self, repoid, categoryid):
         """
         Remove a packagegroupcategory from a repo
@@ -475,7 +475,7 @@ class RepoApi(BaseApi):
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
-    @audit('RepoApi', params=['repoid', 'pgc'])
+    @audit('RepoApi')
     def update_packagegroupcategory(self, repoid, pgc):
         """
         Save the passed in PackageGroupCategory to this repo
@@ -488,7 +488,7 @@ class RepoApi(BaseApi):
         self.update(repo)
         self._update_groups_metadata(repo["id"])
     
-    @audit('RepoApi', params=['repoid', 'pgclist'])
+    @audit('RepoApi')
     def update_packagegroupcategories(self, repoid, pgclist):
         """
         Save the list of passed in PackageGroupCategory objects to this repo
@@ -551,7 +551,7 @@ class RepoApi(BaseApi):
             log.debug("Traceback: %s" % (traceback.format_exc()))
             return False
        
-    @audit('RepoApi', params=['id'])
+    @audit('RepoApi')
     def sync(self, id):
         """
         Sync a repo from the URL contained in the feed

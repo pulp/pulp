@@ -61,7 +61,7 @@ class ConsumerApi(BaseApi):
         self.insert(c)
         return c
         
-    @audit('ConsumerApi', params=['consumers'])
+    @audit('ConsumerApi')
     def bulkcreate(self, consumers):
         """
         Create a set of Consumer objects in a bulk manner
@@ -109,7 +109,7 @@ class ConsumerApi(BaseApi):
             consumers.extend(self.consumers({'package_profile.name': name}, fields))
         return consumers
 
-    @audit('ConsumerApi', params=['id', 'repoid'])
+    @audit('ConsumerApi')
     def bind(self, id, repoid):
         """
         Bind (subscribe) a consumer to a repo.
@@ -128,7 +128,7 @@ class ConsumerApi(BaseApi):
         repoids.append(repoid)
         self.update(consumer)
 
-    @audit('ConsumerApi', params=['id', 'repoid'])
+    @audit('ConsumerApi')
     def unbind(self, id, repoid):
         """
         Unbind (unsubscribe) a consumer to a repo.
@@ -158,7 +158,7 @@ class ConsumerApi(BaseApi):
         consumer["package_profile"] =  package_profile
         self.update(consumer)
 
-    @audit('ConsumerApi', params=['id', 'packagenames'])
+    @audit('ConsumerApi')
     def installpackages(self, id, packagenames=[]):
         """
         Install packages on the consumer.
@@ -171,7 +171,7 @@ class ConsumerApi(BaseApi):
         agent.packages.install(packagenames)
         return packagenames
     
-    @audit('ConsumerApi', params=['id', 'packageids'])
+    @audit('ConsumerApi')
     def installpackagegroups(self, id, packageids=[]):
         """
         Install package groups on the consumer.

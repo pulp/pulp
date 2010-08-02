@@ -49,8 +49,9 @@ class MethodInspector(object):
         """
         @type method: unbound class instance method
         @param method: method to build spec of
-        @type params: list of str's
-        @param params: ordered list of method parameters of interest
+        @type params: list of str's or None
+        @param params: ordered list of method parameters of interest,
+                       None means all parameters are of interest
         """
         self.api = api
         self.method = method.__name__
@@ -61,13 +62,14 @@ class MethodInspector(object):
         
         args = spec[0]
         self.__param_to_index = dict((a,i) for i,a in
-                                     enumerate(args) if a in params)
+                                     enumerate(args)
+                                     if params is None or a in params)
             
         defaults = spec[3]
         if defaults:
             self.__param_defaults = dict((a,d) for a,d in
                                          zip(args[0-len(defaults):], defaults)
-                                         if a in params)
+                                         if params is None or a in params)
         else:
             self.__param_defaults = {}
             
@@ -87,12 +89,12 @@ class MethodInspector(object):
             if i < len(args):
                 values.append(args[i])
             else:
-                value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Param: %s' % p))
+                value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Parameter: %s' % p))
                 values.append(value)
         return values
         
 
-def audit(api, params=[], record_result=False, pass_principal=False):
+def audit(api, params=None, record_result=False, pass_principal=False):
     """
     API class instance method decorator meant to log calls that constitute
     events on pulp's model instances.
@@ -106,8 +108,9 @@ def audit(api, params=[], record_result=False, pass_principal=False):
     
     @type api: str
     @param api: the name of the api class
-    @type params: list or tuple of str's
-    @param params: list of names of parameters to record the values of
+    @type params: list or tuple of str's or None
+    @param params: list of names of parameters to record the values of,
+                   None records all parameters
     @type record_result: bool
     @param record_result: whether or not to record the result
     @type pass_principal: bool
@@ -282,14 +285,17 @@ def cull_events(delta):
     """
     Reaper function that removes all events older than a given length of time
     from the database.
-    @type delta: datetime.timedelta instance
-    @param delta: length of time frame to remove events before
+    @type delta: datetime.timedelta instance or None
+    @param delta: length of time frame to remove events before,
+                  None means remove all events
     @return: the number of events removed from the database
     """
-    assert isinstance(delta, datetime.timedelta)
-    now = datetime.datetime.now()
-    upper_bound = now - delta
-    events_ = events({'timestamp': {'$lt': upper_bound}})
-    for e in events_:
-        _objdb.remove(e, safe=True)
-    return len(events_)
+    assert isinstance(delta, datetime.timedelta) or delta is None
+    spec = None
+    if delta is not None:
+        now = datetime.datetime.now()
+        upper_bound = now - delta
+        spec = {'timestamp': {'$lt': upper_bound}}
+    count = _objdb.find(spec).count()
+    _objdb.remove(spec, safe=False)
+    return count
