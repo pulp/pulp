@@ -34,7 +34,7 @@ class ErrataApi(BaseApi):
     def _getcollection(self):
         return self.db.errata
 
-    @audit('ErrataApi')
+    @audit()
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
             reboot_suggested="", references=[], pkglist=[],
@@ -49,14 +49,14 @@ class ErrataApi(BaseApi):
         self.insert(e)
         return e
 
-    @audit('ErrataApi')
+    @audit()
     def delete(self, id):
         """
         Delete package version object based on "_id" key
         """
         super(ErrataApi, self).delete(id=id)
 
-    @audit('ErrataApi', params=[])
+    @audit(params=[])
     def update(self, object):
         """
         Updates an errata object in the database

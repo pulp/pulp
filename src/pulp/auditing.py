@@ -24,6 +24,7 @@ from pprint import pformat
 
 import pymongo
 
+from pulp.api.base import BaseApi
 from pulp.model import Event
 
 # globals ---------------------------------------------------------------------
@@ -45,7 +46,7 @@ class MethodInspector(object):
     """
     Class for method inspection.
     """
-    def __init__(self, api, method, params):
+    def __init__(self, method, params):
         """
         @type method: unbound class instance method
         @param method: method to build spec of
@@ -53,17 +54,17 @@ class MethodInspector(object):
         @param params: ordered list of method parameters of interest,
                        None means all parameters are of interest
         """
-        self.api = api
         self.method = method.__name__
-        self.params = params
         
         # returns a tuple: (args, varargs, keywords, defaults)
         spec = inspect.getargspec(method)
         
         args = spec[0]
-        self.__param_to_index = dict((a,i) for i,a in
+        self.__param_to_index = dict((a,i+1) for i,a in
                                      enumerate(args)
                                      if params is None or a in params)
+        
+        self.params = params if params is not None else list(args)
             
         defaults = spec[3]
         if defaults:
@@ -73,6 +74,20 @@ class MethodInspector(object):
         else:
             self.__param_defaults = {}
             
+    def api_name(self, args):
+        """
+        Return the api class name for the given instance method positional
+        arguments.
+        @type args: list
+        @param args: positional arguments of an api instance method
+        @return: name of api class
+        """
+        assert args
+        api_obj = args[0]
+        if not isinstance(api_obj, BaseApi):
+            return 'Unknown'
+        return api_obj.__class__.__name__
+    
     def param_values(self, args, kwargs):
         """
         Grep through passed in arguments and keyword arguments and return a list
@@ -94,7 +109,7 @@ class MethodInspector(object):
         return values
         
 
-def audit(api, params=None, record_result=False, pass_principal=False):
+def audit(params=None, record_result=False, pass_principal=False):
     """
     API class instance method decorator meant to log calls that constitute
     events on pulp's model instances.
@@ -106,8 +121,6 @@ def audit(api, params=None, record_result=False, pass_principal=False):
     This optional keyword argument is not passed to the underlying method,
     unless the pass_principal flag is True.
     
-    @type api: str
-    @param api: the name of the api class
     @type params: list or tuple of str's or None
     @param params: list of names of parameters to record the values of,
                    None records all parameters
@@ -119,7 +132,7 @@ def audit(api, params=None, record_result=False, pass_principal=False):
     """
     def _audit_decorator(method):
         
-        spec = MethodInspector(api, method, params)
+        spec = MethodInspector(method, params)
         
         @functools.wraps(method)
         def _audit(*args, **kwargs):
@@ -127,14 +140,15 @@ def audit(api, params=None, record_result=False, pass_principal=False):
             principal = kwargs.get('principal', None)
             if not pass_principal:
                 kwargs.pop('principal', None)
+            api = spec.api_name(args)
             param_values = spec.param_values(args, kwargs)
             param_values_repr = ', '.join(pformat(v) for v in param_values)
-            action = '%s.%s: %s' % (spec.api,
+            action = '%s.%s: %s' % (api,
                                     spec.method,
                                     param_values_repr)
             event = Event(principal,
                           action,
-                          spec.api,
+                          api,
                           spec.method,
                           param_values)
                 
@@ -144,7 +158,7 @@ def audit(api, params=None, record_result=False, pass_principal=False):
                 _log.info('[%s] %s called %s.%s on %s' %
                           (event.timestamp,
                            principal,
-                           spec.api,
+                           api,
                            spec.method,
                            param_values_repr))
                 

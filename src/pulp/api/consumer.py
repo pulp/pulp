@@ -49,7 +49,7 @@ class ConsumerApi(BaseApi):
     def _get_indexes(self):
         return ["package_profile.name", "repoids"]
 
-    @audit('ConsumerApi', params=['id'])
+    @audit(params=['id'])
     def create(self, id, description):
         """
         Create a new Consumer object and return it
@@ -61,7 +61,7 @@ class ConsumerApi(BaseApi):
         self.insert(c)
         return c
         
-    @audit('ConsumerApi')
+    @audit()
     def bulkcreate(self, consumers):
         """
         Create a set of Consumer objects in a bulk manner
@@ -109,7 +109,7 @@ class ConsumerApi(BaseApi):
             consumers.extend(self.consumers({'package_profile.name': name}, fields))
         return consumers
 
-    @audit('ConsumerApi')
+    @audit()
     def bind(self, id, repoid):
         """
         Bind (subscribe) a consumer to a repo.
@@ -128,7 +128,7 @@ class ConsumerApi(BaseApi):
         repoids.append(repoid)
         self.update(consumer)
 
-    @audit('ConsumerApi')
+    @audit()
     def unbind(self, id, repoid):
         """
         Unbind (unsubscribe) a consumer to a repo.
@@ -147,7 +147,7 @@ class ConsumerApi(BaseApi):
         repoids.remove(repoid)
         self.update(consumer)
         
-    @audit('ConsumerApi', params=['id'])
+    @audit(params=['id'])
     def profile_update(self, id, package_profile):
         """
         Update the consumer information such as package profile
@@ -158,7 +158,7 @@ class ConsumerApi(BaseApi):
         consumer["package_profile"] =  package_profile
         self.update(consumer)
 
-    @audit('ConsumerApi')
+    @audit()
     def installpackages(self, id, packagenames=[]):
         """
         Install packages on the consumer.
@@ -171,7 +171,7 @@ class ConsumerApi(BaseApi):
         agent.packages.install(packagenames)
         return packagenames
     
-    @audit('ConsumerApi')
+    @audit()
     def installpackagegroups(self, id, packageids=[]):
         """
         Install package groups on the consumer.

@@ -38,7 +38,7 @@ class ConsumerGroupApi(BaseApi):
         return self.db.consumergroups
 
 
-    @audit('ConsumerGroupApi', params=['id', 'consumerids'])
+    @audit(params=['id', 'consumerids'])
     def create(self, id, description, consumerids=[]):
         """
         Create a new ConsumerGroup object and return it
@@ -79,7 +79,7 @@ class ConsumerGroupApi(BaseApi):
         return consumer['consumerids']
 
 
-    @audit('ConsumerGroupApi')
+    @audit()
     def add_consumer(self, groupid, consumerid):
         """
         Adds the passed in consumer to this group
@@ -104,7 +104,7 @@ class ConsumerGroupApi(BaseApi):
         consumerids.append(consumer["id"])
         consumergroup["consumerids"] = consumerids
 
-    @audit('ConsumerGroupApi')
+    @audit()
     def delete_consumer(self, groupid, consumerid):
         consumergroup = self.consumergroup(groupid)
         if (consumergroup == None):
@@ -116,7 +116,7 @@ class ConsumerGroupApi(BaseApi):
         consumergroup["consumerids"] = consumerids
         self.update(consumergroup)
 
-    @audit('ConsumerGroupApi')
+    @audit()
     def bind(self, id, repoid):
         """
         Bind (subscribe) a consumer group to a repo.
@@ -137,7 +137,7 @@ class ConsumerGroupApi(BaseApi):
         for consumerid in consumerids:
             self.consumerApi.bind(consumerid, repoid)
 
-    @audit('ConsumerGroupApi')
+    @audit()
     def unbind(self, id, repoid):
         """
         Unbind (unsubscribe) a consumer group from a repo.
@@ -159,7 +159,7 @@ class ConsumerGroupApi(BaseApi):
             self.consumerApi.unbind(consumerid, repoid)
             
             
-    @audit('ConsumerGroupApi')
+    @audit()
     def installpackages(self, id, packagenames=[]):
         """
         Install packages on the consumers in a consumer group.
