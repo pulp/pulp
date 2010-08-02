@@ -78,7 +78,7 @@ class Container:
         @type options: dict
         """
         self.__id = id
-        self.__options = Options(window=Window())
+        self.__options = Options(window=Window(), timeout=90)
         self.__stubs = []
         self.__options.update(options)
         self.__setmethod(producer)
@@ -95,7 +95,8 @@ class Container:
             ctag = self.__options.ctag
             self.__options.method = Asynchronous(producer, ctag)
         else:
-            self.__options.method = Synchronous(producer)
+            timeout = int(self.__options.timeout)
+            self.__options.method = Synchronous(producer, timeout)
 
     def __addstubs(self):
         """

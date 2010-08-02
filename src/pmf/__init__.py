@@ -26,6 +26,15 @@ def getuuid():
 class Options(dict):
     """
     Container options.
+    Options:
+      - async : Indicates that requests asynchronous.
+          Default = False
+      - ctag : The asynchronous correlation tag.
+          When specified, it implies all requests are asynchronous.
+      - window : The request window.  See I{Window}.
+          Default = any time.
+      - timeout : The synchronous timeout (seconds).
+          Default = 90 seconds.
     """
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__

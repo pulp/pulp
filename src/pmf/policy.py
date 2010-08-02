@@ -86,12 +86,15 @@ class Synchronous(RequestMethod):
     @type reader: L{pmf.consumer.QueueReader}
     """
 
-    def __init__(self, producer):
+    def __init__(self, producer, timeout):
         """
         @param producer: A queue producer.
         @type producer: L{pmf.producer.QueueProducer}
+        @param timeout: The request timeout (seconds).
+        @type timeout: int
         """
         self.id = getuuid()
+        self.timeout = timeout
         RequestMethod.__init__(self, producer)
         reader = QueueReader(self.id, self.producer.url)
         reader.start()
@@ -118,7 +121,7 @@ class Synchronous(RequestMethod):
         return self.__getreply(sn)
 
     def __getstarted(self, sn):
-        envelope = self.reader.search(sn)
+        envelope = self.reader.search(sn, self.timeout)
         if envelope:
             log.info('request (%s), started', sn)
         else:
@@ -132,7 +135,7 @@ class Synchronous(RequestMethod):
         @return: The matched reply envelope.
         @rtype: L{Envelope}
         """
-        envelope = self.reader.search(sn)
+        envelope = self.reader.search(sn, self.timeout)
         if not envelope:
             raise RequestTimeout(sn)
         reply = Return(envelope.result)
