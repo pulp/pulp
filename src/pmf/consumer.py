@@ -310,7 +310,8 @@ class TopicConsumer(Consumer):
         Open and configure the consumer.
         """
         session = self.session()
-        address = self.topicAddress(self.id)
+        topic = self.id
+        address = self.topicAddress(topic)
         receiver = session.receiver(address)
         self.receiver = receiver
 
@@ -321,6 +322,16 @@ class EventConsumer(TopicConsumer):
     @ivar session: An AMQP session.
     @type session: L{qpid.Session}
     """
+
+    def open(self):
+        """
+        Open and configure the consumer.
+        """
+        session = self.session()
+        topic = 'event/%s' % self.id
+        address = self.topicAddress(topic)
+        receiver = session.receiver(address)
+        self.receiver = receiver
 
     def dispatch(self, envelope):
         """

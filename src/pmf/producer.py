@@ -115,7 +115,10 @@ class TopicProducer(Producer):
     def send(self, topic, **body):
         """
         Send a message.
-        @param topic: An AMQP topic.
+        @param topic: An AMQP topic and (optional) subject.
+            format: topic
+            (or)
+            format: topic/subject
         @type topic: str
         @keyword body: envelope body.
         """
@@ -128,12 +131,13 @@ class EventProducer(TopicProducer):
     An AMQP event producer.
     """
 
-    def send(self, topic, event):
+    def send(self, subject, event):
         """
         Send a message to the consumer.
-        @param topic: An AMQP topic.
-        @type topic: str
+        @param subject: An AMQP subject.
+        @type subject: str
         @param event: An event body.
         @type event: str
         """
+        topic = 'event/%s' % subject
         TopicProducer.send(self, topic, event=event)

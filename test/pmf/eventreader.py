@@ -29,7 +29,7 @@ class MyConsumer(EventConsumer):
         print event
 
 def main():
-    c = MyConsumer('event/user.*')
+    c = MyConsumer('user.#')
     c.start()
     c.join()
 

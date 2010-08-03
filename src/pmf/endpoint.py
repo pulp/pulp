@@ -130,18 +130,15 @@ class Endpoint:
     def topicAddress(self, topic, subject=None):
         """
         Get a QPID topic address.
-        @param topic: The topic name.
+        @param topic: The topic name and (optional) subject.
+            format: topic
+            (or)
+            format: topic/subject
         @type topic: str
-        @param subject: The subject.
-        @type subject: str
         @return: A QPID address.
         @rtype: str
         """
-        flags = '{create:always,node:{type:topic}}'
-        if subject:
-            return '%s/%s;%s' % (topic, subject, flags)
-        else:
-            return '%s;%s' % (topic, flags)
+        return '%s;{create:always,node:{type:topic}}' % topic
 
     def __del__(self):
         self.close()
