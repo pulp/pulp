@@ -55,6 +55,7 @@ class ReceiverThread(Thread):
         Messages are read from consumer.receiver and
         dispatched to the consumer.received().
         """
+        m = None
         receiver = self.consumer.receiver
         while self.__run:
             try:
@@ -93,6 +94,12 @@ class Consumer(Endpoint):
             self.thread.stop()
         except:
             pass
+
+    def join(self):
+        """
+        Join the worker thread.
+        """
+        self.thread.join()
 
     def received(self, message):
         """

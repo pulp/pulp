@@ -127,7 +127,7 @@ class Endpoint:
         flags = ','.join((basic, node, link))
         return '%s;{%s}' % (name, flags)
 
-    def topicAddress(self, topic):
+    def topicAddress(self, topic, subject=None):
         """
         Get a QPID topic address.
         @param topic: The topic name.
@@ -137,7 +137,11 @@ class Endpoint:
         @return: A QPID address.
         @rtype: str
         """
-        return '%s;{create:always,node:{type:topic}}' % topic
+        flags = '{create:always,node:{type:topic}}'
+        if subject:
+            return '%s/%s;%s' % (topic, subject, flags)
+        else:
+            return '%s;%s' % (topic, flags)
 
     def __del__(self):
         self.close()

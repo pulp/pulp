@@ -19,20 +19,19 @@
 import sys
 sys.path.append('../../')
 
-from pmf.producer import EventProducer
-from time import sleep
+from pmf.consumer import EventConsumer
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
 
+class MyConsumer(EventConsumer):
+    def notify(self, event):
+        print event
+
 def main():
-    p = EventProducer()
-    for n in range(0, 1000):
-        p.send('event', 'event/%d' % n)
-        p.send('event/user.created', '{%d} user.created' % n)
-        p.send('event/user.updated', '{%d} user.updated' % n)
-        p.send('event/user.deleted', '{%d} user-deleted' % n)
-        sleep(3)
+    c = MyConsumer('event/user.*')
+    c.start()
+    c.join()
 
 if __name__ == '__main__':
     main()
