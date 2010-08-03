@@ -108,7 +108,10 @@ class Consumer(Endpoint):
         @type message: L{Message}
         """
         envelope = Envelope()
+        subject = self.__subject(message)
         envelope.load(message.content)
+        if subject:
+            envelope.subject = subject
         log.info('{%s} received:\n%s', self.id, envelope)
         if self.valid(envelope):
             self.dispatch(envelope)
@@ -134,6 +137,16 @@ class Consumer(Endpoint):
         @type envelope: L{Message}
         """
         pass
+
+    def __subject(self, message):
+        """
+        Extract the message subject.
+        @param message: The received message.
+        @type message: L{Message}
+        @return: The message subject
+        @rtype: str
+        """
+        return message.properties.get('qpid.subject')
 
 
 class QueueConsumer(Consumer):
@@ -339,17 +352,20 @@ class EventConsumer(TopicConsumer):
         @param envelope: The received envelope.
         @type envelope: L{Envelope}
         """
-        event = envelope.event
         try:
-            self.notify(event)
+            subject = envelope.subject
+            body = envelope.event
+            self.notify(subject, body)
         except Exception, e:
             log.exception(e)
         self.ack()
 
-    def notify(self, event):
+    def notify(self, subject, body):
         """
         Notify the listener that an event has been consumed.
-        @param event: The received event.
-        @type event: L{Event}
+        @param subject: The event subject.
+        @type subject: str
+        @param body: The event body.
+        @type body: any
         """
         pass

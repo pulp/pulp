@@ -25,8 +25,8 @@ from logging import INFO, basicConfig
 basicConfig(filename='/tmp/pmf.log', level=INFO)
 
 class MyConsumer(EventConsumer):
-    def notify(self, event):
-        print event
+    def notify(self, subject, body):
+        print '(%s) %s' % (subject, body)
 
 def main():
     c = MyConsumer('user.#')
