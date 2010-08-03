@@ -18,6 +18,38 @@ import unittest
 import pulp.webservices.httpd.repo_cert_validation as validation
 import pulp.certificate
 
+ENTITLED_CERT_NO_VARS = '''
+-----BEGIN CERTIFICATE-----
+MIIE4zCCAsugAwIBAgIBYzANBgkqhkiG9w0BAQUFADBxMQswCQYDVQQGEwJVUzEV
+MBMGA1UEBwwMRGVmYXVsdCBDaXR5MRwwGgYDVQQKDBNEZWZhdWx0IENvbXBhbnkg
+THRkMQ0wCwYDVQQLDARQdWxwMR4wHAYDVQQDDBVmZWRvcmFob3N0ZWQub3JnL3B1
+bHAwHhcNMTAwNzA5MTkyNjU3WhcNMTAwODA4MTkyNjU3WjAUMRIwEAYDVQQDDAkx
+MjM0NTY3ODkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCk0l2OKGMr
+pyQxW1I3b656hb5T6f7EHOvEnrD5ESA3oWLs1oCHbJLRGTNRZur06wGUGeo0qIIm
+54vNLm9no8kiSAGxHcA/5+Ne66wASZEiqFV8M2yorCGQN+RL1wbtA9xaa/9tNqRf
+JRxtH9KyHNwkfDAVDUTAITeqgcBn7NzRwCZM1YovGP8EW9W9IsGdeF8vwquK6ZGZ
+jNDzEwZ3f3gOJiwz1oeMu80N27uzU5UzQd/xnpT/YmaxRSGalRUBpzDPrCI19AVB
+and6Fs4gxMWTFa+HVkn/fj3rJWMaQRxR1oPzOMvNMS87BvmVM5YnXkRGnNd5wVWi
++uC56iXquFj9AgMBAAGjgeIwgd8wCQYDVR0TBAIwADAVBgorBgEEAZIIAwMBBAcM
+BXJlcG8xMB8GCisGAQQBkggDAwIEEQwPRW50aXRsZWQgUmVwbyAxMBwGDSsGAQQB
+kggJApoFAQYECwwJcHViL3JlcG8xMB8GCisGAQQBkggDAgEEEQwPRW50aXRsZWQg
+UmVwbyAyMBwGDSsGAQQBkggJApEuAQYECwwJcHViL3JlcG8yMB8GCisGAQQBkggD
+AQEEEQwPRW50aXRsZWQgUmVwbyAzMBwGDSsGAQQBkggJAohXAQYECwwJcHViL3Jl
+cG8zMA0GCSqGSIb3DQEBBQUAA4ICAQCS29KnAuoeaQQUq+BoZT6vvbLzAhDTiKjn
+n/nC1VHBVc+ywc1mmEWXrO4ZUIaKBXNJWKTnd7mzOzzKuAGhnUwMZF2qsf6x0M6F
+k6derMEI2KDfbhuwyfzGc/nxdU36qOJ+8eMLS6s8F+oFM4suCyjBbfx7n/6QGSdS
+oTDqg1xpffnDWQU0U62n04c8CbRAUXqIaFR1My+BDV73P0u1c5oBDZ8yUrzf3sn7
+1XncjLAr2Wn+Nl18AIkRTpheb99ztwt7x3hCLO0LmHu+FhKVtH2GmisrHA62seYY
+2sRSisWWEzi1c5lE8+NyJg9rIGnxWQArBSrCB4i0n4p9tDVPI/rpv6cTRCvrhwoy
+zJuvxx+o3u4Fpvw14yoxLRR4UWSTONzmofVoLqUhIZ7TC28aZQkipNGUHW7zENkm
+kk8XIvitTveyVzJo4et2LOvJaoVRHmbKJFc/j47qtd948JDgvXvQtQKK5SozeSRO
+qgqmh52mKufqEyfT3Q80HLtpoe7vD0xDcXrnkPj9NNQgXsqSG68HqdQMJQ1tbKY4
+yK8sQdmZUWbRlgGnYJqc/QnPdPaMptJwRHcJhzhGslIWbcQI/rpiPbNWepoBf1U2
+ovtbiEm65tQF/SncP7cOOTGidRHq+yJK7dMd9vTJtVla1Xoad+9E58MChmidnTX5
+9pjqal9Dzw==
+-----END CERTIFICATE-----
+'''
+
 # Download URL in the following:
 #  content/dist/rhel/server/5Server/$basearch/os
 ENTITLED_CERT = '''
@@ -91,9 +123,9 @@ class TestEntitlementCerts(unittest.TestCase):
 
     def test_is_valid(self):
         # Test
-        self.assertTrue(validation.is_valid('pub/repo1', ENTITLED_CERT))
-        self.assertTrue(validation.is_valid('pub/repo2', ENTITLED_CERT))
-        self.assertTrue(not validation.is_valid('pub/repoX', ENTITLED_CERT))
+        self.assertTrue(validation.is_valid('pub/repo1', ENTITLED_CERT_NO_VARS))
+        self.assertTrue(validation.is_valid('pub/repo2', ENTITLED_CERT_NO_VARS))
+        self.assertTrue(not validation.is_valid('pub/repoX', ENTITLED_CERT_NO_VARS))
 
         self.assertTrue(not validation.is_valid('pub/repo1', UNENTITLED_CERT))
         self.assertTrue(not validation.is_valid('pub/repo2', UNENTITLED_CERT))
