@@ -45,7 +45,7 @@ class PendingQueue:
     @type uncommitted: [path,..]
     """
 
-    ROOT = '/tmp/pmf' # TODO: Change to /var/lib/pmf
+    ROOT = '/var/lib/pulp/pmf'
 
     def __init__(self, id):
         """
