@@ -62,6 +62,8 @@ class ReceiverThread(Thread):
                 self.consumer.received(m)
             except Empty:
                 pass
+            except Exception:
+                log.error('failed:\n%s', m, exc_info=True)
             
     def stop(self):
         """
