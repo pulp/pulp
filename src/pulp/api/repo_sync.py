@@ -122,6 +122,7 @@ class BaseSynchronizer(object):
         log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
         package_list = pulp.util.get_repo_packages(dir)
         added_packages = []
+        added_errataids = []
         log.debug("Processing %s potential packages" % (len(package_list)))
         for package in package_list:
             package = self.import_package(package, repo)
@@ -159,10 +160,10 @@ class BaseSynchronizer(object):
                         updateinfo_xml_path)
                 log.info("updateinfo is found in repomd.xml, it's path is %s" % \
                         (updateinfo_xml_path))
-                self.sync_updateinfo_data(updateinfo_xml_path, repo)
+                added_errataids = self.sync_updateinfo_data(updateinfo_xml_path, repo)
                 log.debug("Loaded updateinfo from %s for %s" % \
                         (updateinfo_xml_path, repo["id"]))
-        return added_packages
+        return added_packages, added_errataids
 
     def import_package(self, package, repo):
         try:
@@ -230,16 +231,14 @@ class BaseSynchronizer(object):
         @param updateinfo_xml_path: path to updateinfo metadata xml file
         @param repo:    model.Repo object we want to sync 
         """
+        eids = []
         try:
             start = time.time()
             errata = updateinfo.get_errata(updateinfo_xml_path)
             log.debug("Parsed %s, %s UpdateNotices were returned." %
                       (updateinfo_xml_path, len(errata)))
-            eids = []
             for e in errata:
                 # Replace existing errata if the update date is newer
-                # Should we restrict the update of an errata to 'from_str' or
-                # concept of product?
                 found = self.errata_api.erratum(e['id'])
                 if found:
                     if found['updated'] <= e['updated']:
@@ -263,8 +262,8 @@ class BaseSynchronizer(object):
             log.debug("%s new/updated errata imported in %s seconds" % (len(eids), (end - start)))
         except yum.Errors.YumBaseError, e:
             log.error("Unable to parse updateinfo file %s for %s" % (updateinfo_xml_path, repo["id"]))
-            return False
-        return True
+            return []
+        return eids
 
 
 class YumSynchronizer(BaseSynchronizer):
