@@ -179,6 +179,17 @@ class ConsumerDeferredFields(JSONController):
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
     
+        
+    def errata(self, id):
+        """
+         list applicable errata for a given consumer
+         compares the errata packages to the consumer
+         package profile and returns matching errata.
+        """
+        valid_filters = ('type')
+        types = self.filters(valid_filters)['type']
+        return self.ok(api.listerrata(id, types))
+
     @JSONController.error_handler
     @RoleCheck()
     def GET(self, id, field_name):
@@ -202,6 +213,8 @@ class ConsumerActions(JSONController):
         'profile',
         'installpackages',
         'installpackagegroups',
+        'listerrata',
+        'installerrata',
     )
     
     def bind(self, id):
@@ -247,6 +260,17 @@ class ConsumerActions(JSONController):
         data = self.params()
         ids = data.get('packageids', [])
         return self.ok(api.installpackagegroups(id, ids))
+
+    
+    def installerrata(self, id):
+        """
+        Install errata
+        Body contains list of errata ids and/or type
+        """
+        data = self.params()
+        eids = data.get('errataids', [])
+        types = data.get('types', [])
+        return self.ok(api.installerrata(id, eids, types))
         
         
     @JSONController.error_handler

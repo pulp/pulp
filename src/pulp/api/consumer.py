@@ -184,31 +184,58 @@ class ConsumerApi(BaseApi):
         agent.packagegroups.install(packageids)
         return packageids
     
-    def listerrata(self, id, type=None):
+    def installerrata(self, id, errataids=[], types=[]):
+        """
+        Install errata on the consumer.
+        @param id: A consumer id.
+        @type id: str
+        @param errataids: The errata ids to install.
+        @type errataids: [str,..]
+        @param type: Errata type filter
+        @type type: str
+        """
+        agent = Agent(id)
+        consumer = self.consumer(id)
+        pkgs = []
+        if errataids:
+            applicable_errata = self._applicable_errata(consumer, types)
+            for eid in errataids:
+                for pobj in applicable_errata[eid]:
+                    pkgs.append(pobj.name + "." + pobj.arch)
+        else:
+            #apply all updates
+            pkgobjs = self.list_package_updates(id, types)
+            for pobj in pkgobjs:
+                pkgs.append(pobj.name + "." + pobj.arch)
+        agent.packages.install(pkgs)
+        return pkgs
+        
+    def listerrata(self, id, types=[]):
         """
         List applicable errata for a given consumer id
         """
         consumer = self.consumer(id)
-        return self._applicable_errata(consumer, type).keys()
+        return self._applicable_errata(consumer, types).keys()
     
-    def list_package_updates(self, id, type=None):
+    def list_package_updates(self, id, types=[]):
         """
         List applicable package updates for a given consumer id
         """
         consumer = self.consumer(id)
-        return [ item for etype in self._applicable_errata(consumer, type).values() \
+        return [ item for etype in self._applicable_errata(consumer, types).values() \
                 for item in etype ]
     
-    def _applicable_errata(self, consumer, type=None):
+    def _applicable_errata(self, consumer, types=[]):
         """ 
         Logic to filter applicable errata for a consumer
         """
         #TODO: Note to self, test query for large pkg profile and check performance
+        #consider caching applicable errata into a mongo collection
         applicable_errata = {}
         pkg_profile = consumer["package_profile"]
 
         for repoid in consumer["repoids"]:
-            errataids = self.repoapi.errata(repoid, type)
+            errataids = self.repoapi.errata(repoid, types)
             for erratumid in errataids:
                 erratum = self.errataapi.erratum(erratumid)
 

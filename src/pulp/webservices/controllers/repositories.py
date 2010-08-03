@@ -181,12 +181,23 @@ class RepositoryDeferredFields(JSONController):
     
     @JSONController.error_handler
     @RoleCheck()
+    def errata(self, id):
+        """
+         list applicable errata for a given repo.
+         filter by errata type if any
+        """
+        valid_filters = ('type')
+        types = self.filters(valid_filters)['type']
+        return self.ok(api.errata(id, types))
+        
+    @JSONController.error_handler
+    @RoleCheck()
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
         return field(id)
-    
+
 
 class RepositoryActions(AsyncController):
     
@@ -213,6 +224,8 @@ class RepositoryActions(AsyncController):
         'delete_package_from_group',
         'delete_packagegroup',
         'create_packagegroup',
+        'add_errata',
+        'delete_errata',
     )
 
     @JSONController.error_handler
@@ -348,6 +361,28 @@ class RepositoryActions(AsyncController):
             return self.not_found('No groupid specified')
         groupid = p["groupid"]
         return self.ok(api.delete_packagegroup(id, groupid))
+    
+    @JSONController.error_handler
+    @RoleCheck()
+    def add_errata(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of errata to repository
+        """
+        data = self.params()
+        api.add_errata(id, data['errataid'])
+        return self.ok(True)
+    
+    @JSONController.error_handler
+    @RoleCheck()
+    def delete_errata(self, id):
+        """
+        @param id: repository id
+        @return: True on successful deletion of errata from repository
+        """
+        data = self.params()
+        api.delete_errata(id, data['errataid'])
+        return self.ok(True)
 
     @JSONController.error_handler
     @RoleCheck()

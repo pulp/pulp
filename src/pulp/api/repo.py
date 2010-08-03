@@ -206,7 +206,7 @@ class RepoApi(BaseApi):
         repo['packages'].pop(p['id'], None)
         self.update(repo)
         
-    def errata(self, id, type=None):
+    def errata(self, id, types=[]):
         """
          Look up all applicable errata for a given repo id
         """
@@ -214,9 +214,9 @@ class RepoApi(BaseApi):
         errata = repo['errata']
         if not errata:
             return []
-        if type: 
+        if types: 
             try:
-                return errata[type]
+                return [item for type in types for item in errata[type]]    
             except KeyError, ke:
                 log.debug("Invalid errata type requested :[%s]" % (ke))
                 raise PulpException("Invalid errata type requested :[%s]" % (ke))
@@ -231,7 +231,7 @@ class RepoApi(BaseApi):
         self._add_erratum(repo, erratumid)
         self.update(repo)
         
-    def add_errata(self, repoid, errataids):
+    def add_errata(self, repoid, errataids=[]):
         """
          Adds a list of errata to this repo
         """

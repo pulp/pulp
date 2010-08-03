@@ -266,12 +266,12 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(test_errata_1 != None)
         self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 1)
         
         self.rapi.delete_erratum(repo['id'], test_errata_1['id'])
         
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
         
     def test_repo_errata(self):
@@ -296,12 +296,12 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(test_errata_2 != None)
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 2)
 
         self.rapi.delete_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
         
     def test_consumer_errata(self):
@@ -357,7 +357,7 @@ class TestErrata(unittest.TestCase):
         c["repoids"] = [repo['id']]
         self.capi.update(c)
 
-        errlist = self.capi.listerrata(c['id'])
+        errlist = self.capi.listerrata(c['id'], types=['security'])
         assert(len(errlist) == 1)
         
         pkguplist = self.capi.list_package_updates(c['id'])

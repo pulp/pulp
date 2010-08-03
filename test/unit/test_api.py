@@ -206,12 +206,12 @@ class TestApi(unittest.TestCase):
         self.assertTrue(test_errata_1 != None)
         self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 1)
         
         self.rapi.delete_erratum(repo['id'], test_errata_1['id'])
         
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
         
     def test_repo_errata(self):
@@ -236,12 +236,12 @@ class TestApi(unittest.TestCase):
         self.assertTrue(test_errata_2 != None)
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 2)
 
         self.rapi.delete_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
-        errata = self.rapi.errata('some-id', type='test_errata_type')
+        errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
         
     def test_consumer_errata(self):

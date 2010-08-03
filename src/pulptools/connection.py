@@ -236,7 +236,23 @@ class RepoConnection(PulpConnection):
     
     def sync_status(self, status_path):
         return self.conn.request_get(status_path)
-
+        
+    def add_errata(self, id, errataids):
+        erratainfo = {'repoid' : id,
+                      'errataid' : errataids}
+        method = "/repositories/%s/add_errata/" % id
+        return self.conn.request_post(method, params=erratainfo)
+    
+    def delete_errata(self, id, errataids):
+        erratainfo = {'repoid' : id,
+                      'errataid' : errataids}
+        method = "/repositories/%s/delete_errata/" % id
+        return self.conn.request_post(method, params=erratainfo)
+    
+    def errata(self, id, types=[]):
+        method = "/repositories/%s/errata/?type=%s" % (id, type)
+        return self.conn.request_get(method)
+        
 
 class ConsumerConnection(PulpConnection):
     """
@@ -303,7 +319,19 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installpackagegroups/" % id
         body = dict(packageids=packageids)
         return self.conn.request_post(method, params=body)
+    
+    def errata(self, id, type=None):
+        method = "/consumers/%s/errata/?type=%s" % (id, type)
+        return self.conn.request_get(method)
+    
+    def installerrata(self, id, errataids, type):
+        erratainfo = {'repoid' : id,
+                      'errataid' : errataids,
+                      'types'    :   type}
+        method = "/consumers/%s/installerrata/" % id
+        return self.conn.request_post(method, params=erratainfo)
 
+         
 class ConsumerGroupConnection(PulpConnection):
     """
     Connection class to access consumer group related calls
