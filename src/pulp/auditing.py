@@ -27,6 +27,8 @@ from pymongo.bson import BSON
 from pymongo.son import SON
 
 from pulp.api.base import BaseApi
+from pulp.config import config
+from pulp.crontab import CronTab
 from pulp.model import Event
 
 # globals ---------------------------------------------------------------------
@@ -93,7 +95,7 @@ class MethodInspector(object):
         assert args
         api_obj = args[0]
         if not isinstance(api_obj, BaseApi):
-            return 'Unknown'
+            return 'Unknown API'
         return api_obj.__class__.__name__
     
     def audit_repr(self, value):
@@ -157,7 +159,7 @@ def audit(params=None, record_result=False, pass_principal=False):
     """
     def _audit_decorator(method):
         
-        spec = MethodInspector(method, params)
+        inspector = MethodInspector(method, params)
         
         @functools.wraps(method)
         def _audit(*args, **kwargs):
@@ -169,23 +171,23 @@ def audit(params=None, record_result=False, pass_principal=False):
                           (event.timestamp,
                            principal,
                            api,
-                           spec.method,
+                           inspector.method,
                            param_values_str))
             
             # build up the data to record
             principal = kwargs.get('principal', None)
             if not pass_principal:
                 kwargs.pop('principal', None)
-            api = spec.api_name(args)
-            param_values = spec.param_values(args, kwargs)
+            api = inspector.api_name(args)
+            param_values = inspector.param_values(args, kwargs)
             param_values_str = ', '.join('%s: %s' % (p,v) for p,v in param_values)
             action = '%s.%s: %s' % (api,
-                                    spec.method,
+                                    inspector.method,
                                     param_values_str)
             event = Event(principal,
                           action,
                           api,
-                          spec.method,
+                          inspector.method,
                           param_values)
                                 
             # execute the wrapped method and record the results
@@ -198,7 +200,7 @@ def audit(params=None, record_result=False, pass_principal=False):
                 _record_event()
                 raise
             else:
-                event.result = spec.audit_repr(result) if record_result else None
+                event.result = inspector.audit_repr(result) if record_result else None
                 _record_event()
                 return result
     
@@ -224,8 +226,8 @@ def events(spec=None, fields=None, limit=None, errors_only=False):
                         events that match spec
     @return: list of events containing fields and matching spec
     """
-    assert isinstance(spec, dict) or isinstance(spec, pymongo.son.SON) or spec is None
-    assert isinstance(fields, list) or isinstance(fields, tuple) or fields is None
+    assert isinstance(spec, (dict, BSON, SON)) or spec is None
+    assert isinstance(fields, (list, tuple)) or fields is None
     if errors_only:
         spec = spec or {}
         spec['exception'] = {'$ne': None}
@@ -323,19 +325,54 @@ def events_since_delta(delta, fields=None, limit=None, errors_only=False):
 
 def cull_events(delta):
     """
-    Reaper function that removes all events older than a given length of time
+    Reaper function that removes all events older than the passed in time delta
     from the database.
-    @type delta: datetime.timedelta instance or None
-    @param delta: length of time frame to remove events before,
-                  None means remove all events
+    @type delta: dateteime.timedelta instance or None
+    @param delta: length of time from current time to keep events,
+                  None means don't keep any events
     @return: the number of events removed from the database
     """
-    assert isinstance(delta, datetime.timedelta) or delta is None
     spec = None
     if delta is not None:
         now = datetime.datetime.now()
-        upper_bound = now - delta
-        spec = {'timestamp': {'$lt': upper_bound}}
+        spec = {'timestamp': {'$lt': now - delta}}
     count = _objdb.find(spec).count()
     _objdb.remove(spec, safe=False)
     return count
+
+# main ------------------------------------------------------------------------
+
+# this module is also the crontab entry script for culling entries from the
+# database
+
+def _check_crontab():
+    """
+    Check to see that the cull auditing events crontab entry exists, and add it
+    if it doesn't.
+    """
+    tab = CronTab()
+    cmd = 'python %s' % __file__
+    if tab.find_command(cmd):
+        return
+    schedule = '0,30 * * * *'
+    entry = tab.new(cmd, 'cull auditing events')
+    entry.parse('%s %s' % (schedule, cmd))
+    tab.write()
+    _log.info('Added crontab entry for culling events')
+    
+
+def _get_lifetime():
+    """
+    Get the configured auditing lifeteime as a datetime.timedelta instance.
+    @return: dateteime.timedelta instance
+    """
+    days = config.getint('auditing', 'lifetime')
+    return datetime.timedelta(days=days)
+
+
+# check to see that a crontab entry exists on import or execution
+_check_crontab()
+# cull old auditing events from the database
+if __name__ == '__main__':
+    lifetime = _get_lifetime()
+    cull_events(lifetime)
