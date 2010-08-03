@@ -23,6 +23,8 @@ import traceback
 from pprint import pformat
 
 import pymongo
+from pymongo.bson import BSON
+from pymongo.son import SON
 
 from pulp.api.base import BaseApi
 from pulp.model import Event
@@ -54,12 +56,18 @@ class MethodInspector(object):
         @param params: ordered list of method parameters of interest,
                        None means all parameters are of interest
         """
+        assert params is None or 'self' not in params
+        
         self.method = method.__name__
         
         # returns a tuple: (args, varargs, keywords, defaults)
         spec = inspect.getargspec(method)
         
-        args = spec[0]
+        args = list(spec[0])
+        # for some reason, self is sometimes in the args, and sometimes not
+        if 'self' in args:
+            args.remove('self')
+            
         self.__param_to_index = dict((a,i+1) for i,a in
                                      enumerate(args)
                                      if params is None or a in params)
@@ -88,6 +96,23 @@ class MethodInspector(object):
             return 'Unknown'
         return api_obj.__class__.__name__
     
+    def audit_repr(self, value):
+        """
+        Return an audit-friendly representation of a value.
+        @type value: any
+        @param value: parameter value
+        @return: string representing the value
+        """
+        if isinstance(value, basestring):
+            return value
+        if not isinstance(value, (dict, BSON, SON)):
+            return repr(value)
+        if 'id' in value:
+            return '<id: %s>' % value['id']
+        elif '_id' in value:
+            return '<_id: %s>' % str(value['_id'])
+        return '%s instance' % str(type(value))
+    
     def param_values(self, args, kwargs):
         """
         Grep through passed in arguments and keyword arguments and return a list
@@ -96,17 +121,17 @@ class MethodInspector(object):
         @param args: positional arguments
         @type kwargs: dict
         @param kwargs: keyword arguments
-        @return: list of values corresponding to parameters of interest
+        @return: list of (paramter, value) for parameters of interest
         """
         values = []
         for p in self.params:
             i = self.__param_to_index[p]
             if i < len(args):
-                values.append(args[i])
+                values.append(self.audit_repr(args[i]))
             else:
-                value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Parameter: %s' % p))
-                values.append(value)
-        return values
+                value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Parameter'))
+                values.append(self.audit_repr(value))
+        return zip(self.params, values)
         
 
 def audit(params=None, record_result=False, pass_principal=False):
@@ -136,23 +161,8 @@ def audit(params=None, record_result=False, pass_principal=False):
         
         @functools.wraps(method)
         def _audit(*args, **kwargs):
-            # build up the data to record
-            principal = kwargs.get('principal', None)
-            if not pass_principal:
-                kwargs.pop('principal', None)
-            api = spec.api_name(args)
-            param_values = spec.param_values(args, kwargs)
-            param_values_repr = ', '.join(pformat(v) for v in param_values)
-            action = '%s.%s: %s' % (api,
-                                    spec.method,
-                                    param_values_repr)
-            event = Event(principal,
-                          action,
-                          api,
-                          spec.method,
-                          param_values)
-                
-            # convenience function for recording
+            
+            # convenience function for recording events
             def _record_event():
                 _objdb.insert(event, safe=False, check_keys=False)
                 _log.info('[%s] %s called %s.%s on %s' %
@@ -160,8 +170,24 @@ def audit(params=None, record_result=False, pass_principal=False):
                            principal,
                            api,
                            spec.method,
-                           param_values_repr))
-                
+                           param_values_str))
+            
+            # build up the data to record
+            principal = kwargs.get('principal', None)
+            if not pass_principal:
+                kwargs.pop('principal', None)
+            api = spec.api_name(args)
+            param_values = spec.param_values(args, kwargs)
+            param_values_str = ', '.join('%s: %s' % (p,v) for p,v in param_values)
+            action = '%s.%s: %s' % (api,
+                                    spec.method,
+                                    param_values_str)
+            event = Event(principal,
+                          action,
+                          api,
+                          spec.method,
+                          param_values)
+                                
             # execute the wrapped method and record the results
             try:
                 result = method(*args, **kwargs)
@@ -172,7 +198,7 @@ def audit(params=None, record_result=False, pass_principal=False):
                 _record_event()
                 raise
             else:
-                event.result = pformat(result) if record_result else None
+                event.result = spec.audit_repr(result) if record_result else None
                 _record_event()
                 return result
     

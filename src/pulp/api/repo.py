@@ -120,7 +120,7 @@ class RepoApi(BaseApi):
         repo_sync.delete_schedule(repo)
         self.objectdb.remove(repo, safe=True)
 
-    @audit(params=[])
+    @audit()
     def update(self, repo_data):
         repo = self._get_existing_repo(repo_data['id'])
         # make sure we're only updating the fields in the model

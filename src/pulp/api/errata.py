@@ -56,12 +56,12 @@ class ErrataApi(BaseApi):
         """
         super(ErrataApi, self).delete(id=id)
 
-    @audit(params=[])
-    def update(self, object):
+    @audit()
+    def update(self, errata):
         """
         Updates an errata object in the database
         """
-        return super(ErrataApi, self).update(object)
+        return super(ErrataApi, self).update(errata)
 
     def erratum(self, id):
         """
