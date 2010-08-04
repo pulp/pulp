@@ -149,7 +149,8 @@ class RepositoryDeferredFields(JSONController):
     exposed_fields = (
         'packages',
         'packagegroups',
-        'packagegroupcategories'
+        'packagegroupcategories',
+        'errata'
     )
     
     @JSONController.error_handler
@@ -225,6 +226,7 @@ class RepositoryActions(AsyncController):
         'delete_packagegroup',
         'create_packagegroup',
         'add_errata',
+        'list_errata',
         'delete_errata',
     )
 
@@ -383,6 +385,16 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.delete_errata(id, data['errataid'])
         return self.ok(True)
+    
+    @JSONController.error_handler
+    @RoleCheck()
+    def list_errata(self, id):
+        """
+         list applicable errata for a given repo.
+         filter by errata type if any
+        """
+        data = self.params()
+        return self.ok(api.errata(id, data['types']))
 
     @JSONController.error_handler
     @RoleCheck()

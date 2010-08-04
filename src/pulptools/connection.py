@@ -250,8 +250,10 @@ class RepoConnection(PulpConnection):
         return self.conn.request_post(method, params=erratainfo)
     
     def errata(self, id, types=[]):
-        method = "/repositories/%s/errata/?type=%s" % (id, type)
-        return self.conn.request_get(method)
+        erratainfo = {'repoid' : id,
+                      'types' : types}
+        method = "/repositories/%s/list_errata/" % id
+        return self.conn.request_post(method, params=erratainfo)
         
 
 class ConsumerConnection(PulpConnection):
@@ -324,10 +326,10 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/errata/?type=%s" % (id, type)
         return self.conn.request_get(method)
     
-    def installerrata(self, id, errataids, type):
-        erratainfo = {'repoid' : id,
+    def installerrata(self, id, errataids, types=[]):
+        erratainfo = {'consumerid' : id,
                       'errataid' : errataids,
-                      'types'    :   type}
+                      'types'    :   types}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -478,7 +480,8 @@ class ErrataConnection(PulpConnection):
         pass
 
     def erratum(self, id):
-        pass
+        method = "/errata/%s/" % id
+        return self.conn.request_get(method)
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,

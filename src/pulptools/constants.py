@@ -58,3 +58,17 @@ AVAILABLE_USERS_LIST = """
 Login :               \t%-25s    
 Name  :                \t%-25s
 """
+
+ERRATA_INFO="""
+Id                    \t%-25s
+Title                 \t%-25s
+Description           \t%-25s 
+Type                  \t%-25s
+Issued                \t%-25s
+Updated               \t%-25s
+Version               \t%-25s
+Release               \t%-25s
+Status                \t%-25s
+Packages Effected     \t%-25s
+References            \t%-25s
+"""

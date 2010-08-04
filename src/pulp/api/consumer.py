@@ -240,9 +240,8 @@ class ConsumerApi(BaseApi):
                 erratum = self.errataapi.erratum(erratumid)
 
                 applicable_errata[erratumid] = []
-                for pkgid in erratum["pkglist"]:
+                for pkg in erratum["pkglist"]["packages"]:
                     for ppkg in pkg_profile:
-                        pkg = self.packageapi.package(pkgid)
                         pkg_info = {
                            'name': pkg["name"],
                             'version': pkg["version"],

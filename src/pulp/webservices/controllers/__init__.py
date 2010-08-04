@@ -20,6 +20,7 @@ import consumers
 import packages
 import repositories
 import users
+import errata
 import test
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     'consumers', 
     'packages', 
     'repositories',
-    'users' 
+    'users',
+    'errata',
     'test',
 ]

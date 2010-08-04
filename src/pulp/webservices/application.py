@@ -31,6 +31,7 @@ URLS = (
     '/packages', controllers.packages.application,
     '/repositories', controllers.repositories.application,
     '/users', controllers.users.application,    
+    '/errata', controllers.errata.application,
 )
 
 
