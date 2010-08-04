@@ -91,13 +91,12 @@ def writeToFile(filename, message, overwrite=True):
         except:
             return False
 
-    fd = os.open(filename, os.O_WRONLY | os.O_CREAT, 0644)
+    os.open(filename, os.O_WRONLY | os.O_CREAT, 0644)
     msgFile = open(filename, 'w')
     try:
         msgFile.write(message)
     finally:
         msgFile.close()
-        fd.close()
 
     return True
 

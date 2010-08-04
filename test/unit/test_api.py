@@ -20,6 +20,7 @@ import sys
 import os
 import time
 import unittest
+import random
 
 try:
     import json
@@ -40,6 +41,7 @@ from pulp.api.consumer_group import ConsumerGroupApi
 from pulp.api.package import PackageApi
 from pulp.api.repo import RepoApi
 from pulp.api.errata import ErrataApi
+from pulp.certificate import Certificate
 
 from pulp.model import Package
 from pulp.model import PackageGroup
@@ -373,6 +375,17 @@ class TestApi(unittest.TestCase):
         self.assertTrue(len(consumers) == 1)
         self.assertTrue(c['id'] == consumers[0]['id'])
         
+    def test_consumer_certificate(self):
+        c = self.capi.create('test-consumer', 'some consumer desc')
+        pem = self.capi.certificate(c['id'])
+        self.assertTrue(pem != None)
+        cert = Certificate()
+        cert.update(str(pem))
+        subject = cert.subject()
+        consumer_cert_uid = subject.get('CN', None)
+        self.assertEqual(c['id'], consumer_cert_uid)
+        
+        
     def test_consumer_bind(self):
         cid = 'bindconsumerid'
         rid = 'bindrepoid'
@@ -602,6 +615,19 @@ class TestApi(unittest.TestCase):
         assert(p != None)
         # versions = p['versions']
         
+    # Meant to make sure we can create a repo with 5000+ packages without BSON
+    # size errors
+    def test_sync_large_repo(self):
+        repo = self.rapi.create('large-sync','some name', 'i386')
+        numpacks = 5000
+        for x in range(numpacks):
+            self.rapi._add_package(repo, self.create_random_package())
+            if (x % 100 == 0):
+                print "Created [%s] packages" % x
+        print "Updating repo"
+        self.rapi.update(repo)
+        self.assertTrue(numpacks, self.rapi.packages(repo['id']))
+
     def create_package(self, name): 
         test_pkg_name = name
         test_epoch = "1"
@@ -617,6 +643,34 @@ class TestApi(unittest.TestCase):
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         lookedUp = self.papi.package(p['id'])
         return lookedUp
+      
+    
+          
+    def create_random_package(self):
+        test_pkg_name = random_string()
+        test_epoch = random.randint(0,2)
+        test_version = "%s.%s.%s" % (random.randint(0,100), 
+                                random.randint(0,100), random.randint(0,100))
+        test_release = "%s.el5" % random.randint(0, 10)
+        test_arch = "x86_64"
+        test_description = ""
+        test_requires = []
+        test_provides = []
+        for x in range(10):
+            test_description = test_description + " " + random_string()
+            test_requires.append(random_string())
+            test_provides.append(random_string())
+            
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-zzz-%s-%s.x86_64.rpm" % (test_version, test_release)
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
+                release=test_release, arch=test_arch, description=test_description, 
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        p['requires'] = test_requires
+        p['provides'] = test_requires
+        self.papi.update(p)
+        return p
         
     def test_packages(self):
         repo = self.rapi.create('some-id','some name',
@@ -686,6 +740,7 @@ class TestApi(unittest.TestCase):
         # Check nothing returned in search with no params
         all = self.papi.packages()
         self.assertTrue(len(all) == 0)
+        
         
         
 if __name__ == '__main__':
