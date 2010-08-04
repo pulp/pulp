@@ -30,6 +30,10 @@ log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
 CONSUMERID = "/etc/pulp/consumer"
+CERT_PATH = "/etc/pki/consumer/cert.pem"
+KEY_PATH = "/etc/pki/consumer/key.pem"
+
+
 import gettext
 _ = gettext.gettext
 
@@ -52,10 +56,10 @@ class consumer(BaseCore):
     def load_server(self):
         cert_path = None 
         key_path = None
-        if (os.path.exists("/etc/pki/consumer/cert.pem") and
-                os.path.exists("/etc/pki/consumer/key.pem")):
-            cert_path = "/etc/pki/consumer/cert.pem"
-            key_path = "/etc/pki/consumer/key.pem"
+        if (os.path.exists(CERT_PATH) and
+                os.path.exists(KEY_PATH)):
+            cert_path = CERT_PATH
+            key_path = KEY_PATH
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
                                         port=8811, cert_file=cert_path,
                                         key_file=key_path, username=self.username, 
@@ -63,9 +67,7 @@ class consumer(BaseCore):
 
     def generate_options(self):
         self.action = self._get_action()
-        print "Self.action: [%s]" % self.action
         if self.action == "create":
-            print "ZZZZZZZZZZZ"
             usage = "consumer create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
@@ -103,7 +105,6 @@ class consumer(BaseCore):
                            help="Consumer Identifier")
 
     def _do_core(self):
-        print "DoCore ... %s" % self.action
         if self.action == "create":
             self._create()
         if self.action == "list":
@@ -129,7 +130,9 @@ class consumer(BaseCore):
             self.load_server()
         try:
             consumer = self.cconn.create(self.options.id, self.options.description)
+            certificate = self.cconn.certificate(self.options.id)
             utils.writeToFile(CONSUMERID, consumer['id'])
+            utils.writeToFile(CERT_PATH, certificate)
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
@@ -137,7 +140,7 @@ class consumer(BaseCore):
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
-            log.error("Error: %s" % e)
+            log.error("Error: %s", exc_info=True)
             
     def _update(self):
         if self.options.id:

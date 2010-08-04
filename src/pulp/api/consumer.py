@@ -24,6 +24,7 @@ from pulp.util import chunks, compare_packages
 from pulp.api.errata import ErrataApi
 from pulp.api.repo import RepoApi
 from pulp.api.package import PackageApi
+import pulp.cert_generator as cert_generator
 
 # Pulp
 
@@ -60,6 +61,18 @@ class ConsumerApi(BaseApi):
         c = model.Consumer(id, description)
         self.insert(c)
         return c
+    
+    @audit()
+    def certificate(self, id):
+        """
+        Create a X509 Consumer Identity Certificate to associate with the 
+        given Consumer 
+        """
+        consumer = self.consumer(id)
+        if not consumer:
+            raise PulpException('consumer "%s", not-found', id)
+        cert = cert_generator.make_cert(id)
+        return cert.as_pem()
         
     @audit()
     def bulkcreate(self, consumers):

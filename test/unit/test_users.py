@@ -53,12 +53,14 @@ class TestUsers(unittest.TestCase):
         self.clean()
         
     def test_create(self):
+        clear_txt_pass = 'some password'
         user = self.uapi.create('login-test', id=str(uuid.uuid4()), 
-                                password='some password',
+                                password=clear_txt_pass,
                                 name='Fred Franklin') 
-        assert(user != None)
+        self.assertTrue(user != None)
         user = self.uapi.user('login-test')
-        assert(user != None)
+        self.assertTrue(user != None)
+        self.assertNotEqual(clear_txt_pass, user['password'])
 
     def test_default_admin(self):
         """

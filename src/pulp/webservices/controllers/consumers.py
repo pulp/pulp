@@ -151,6 +151,7 @@ class ConsumerDeferredFields(JSONController):
     exposed_fields = (
         'package_profile',
         'repoids',
+        'certificate'
     )
     
     def package_profile(self, id):
@@ -178,6 +179,21 @@ class ConsumerDeferredFields(JSONController):
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
+
+    def certificate(self, id):
+        """
+        Get a X509 Certificate for this Consumer.  Useful for uniquely and securely 
+        identifying this Consumer later.
+        @type id: str ID of the Consumer
+        @param id: consumer id
+        @return: X509 PEM Certificate
+        """
+        valid_filters = ('id')
+        filters = self.filters(valid_filters)
+        certificate = api.certificate(id)
+        certificate = {'certificate': certificate}
+        log.debug("Returning certificate: [%s]" % certificate)
+        return self.ok(certificate)
     
         
     def errata(self, id):

@@ -44,12 +44,14 @@ def is_valid(dest, cert_pem):
     extensions = cert.extensions()
 
     log.debug('Destination [%s]' % dest)
+    log.debug('Cert: %s' % cert)
 
     valid = False
     for e in extensions:
+        log.debug("extension: %s" % e)
         if is_download_url_ext(e):
             oid_url = extensions[e]
-
+            log.debug("oid_url: %s" % e)
             if _validate(oid_url, dest):
                 valid = True
                 break
@@ -82,5 +84,7 @@ def _validate(oid_url, dest):
 
     oid_re = re.sub(r'\$.+?/', '.+?/', oid_url)
     log.debug('OID Reg Ex  [%s]' % oid_re)
-
-    return re.search(oid_re, dest) is not None
+    log.debug('dest:       [%s]' % dest)
+    retval = (re.search(oid_re, dest) is not None)
+    log.debug("_validate returning: %s" % retval) 
+    return retval

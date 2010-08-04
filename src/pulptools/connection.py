@@ -292,6 +292,11 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/packages/" % str(id)
         return self.conn.request_get(method)
 
+    def certificate(self, id):
+        method = "/consumers/%s/certificate/" % str(id)
+        cert_dict = self.conn.request_get(method)
+        return cert_dict['certificate']
+
     def consumers(self):
         method = "/consumers/"
         return self.conn.request_get(method)

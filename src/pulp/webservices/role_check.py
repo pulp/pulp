@@ -28,7 +28,7 @@ from pulp.api.user import UserApi
 from pulp.certificate import Certificate
 from pulp.pexceptions import PulpException
 from pulp.webservices import http
-
+import pulp.password_util as password_util
 
 log = logging.getLogger('pulp')
 userApi = UserApi()
@@ -58,36 +58,41 @@ class RoleCheck(object):
             '''
             # Check the roles
             log.debug("Role checking start")
+            roles = {'consumer':None, 'admin': None}
             for key in self.dec_kw.keys():
                 log.debug("Role Name [%s], check? [%s]" % (key, self.dec_kw[key]))
+                roles[key] = self.dec_kw[key]
 
             ## First check cert
-            validation_failed = self.check_consumer_id(*fargs)
-            log.debug("validation_failed? %s " % validation_failed)
-            if (validation_failed):
-                # TODO: Figure out how to re-use the same return function in base.py
-                http.status_unauthorized()
-                http.header('Content-Type', 'application/json')
-                return json.dumps("Certificate Validation Failed", 
-                                  default=pymongo.json_util.default)
-
-            ## If not using cert check uname and password
-            # TODO: Implement uname/pass checking
-            log.debug("Checking username/pass")
-            validation_failed = False
-            try:
-                validation_failed = self.check_username_pass(*fargs)
-                log.debug("Unamepass vfail: %s" % validation_failed)
-            except PulpException, pe:
-                # TODO: Figure out how to re-use the same return function in base.py
-                http.status_unauthorized()
-                http.header('Content-Type', 'application/json')
-                return json.dumps(pe.value, default=pymongo.json_util.default)
-            if (validation_failed):
-                http.status_unauthorized()
-                http.header('Content-Type', 'application/json')
-                return json.dumps("Username/password combination is not correct", 
-                                  default=pymongo.json_util.default)
+            if (roles['consumer'] and not roles['admin']):
+                validation_failed = self.check_consumer_id(*fargs)
+                log.debug("validation_failed? %s " % validation_failed)
+                if (validation_failed):
+                    # TODO: Figure out how to re-use the same return function in base.py
+                    http.status_unauthorized()
+                    http.header('Content-Type', 'application/json')
+                    return json.dumps("Certificate Validation Failed", 
+                                      default=pymongo.json_util.default)
+                
+                 
+            if (roles['admin']):
+                ## If not using cert check uname and password
+                # TODO: Implement uname/pass checking
+                log.debug("Checking username/pass")
+                validation_failed = False
+                try:
+                    validation_failed = self.check_username_pass(*fargs)
+                    log.debug("Unamepass vfail: %s" % validation_failed)
+                except PulpException, pe:
+                    # TODO: Figure out how to re-use the same return function in base.py
+                    http.status_unauthorized()
+                    http.header('Content-Type', 'application/json')
+                    return json.dumps(pe.value, default=pymongo.json_util.default)
+                if (validation_failed):
+                    http.status_unauthorized()
+                    http.header('Content-Type', 'application/json')
+                    return json.dumps("Username/password combination is not correct", 
+                                      default=pymongo.json_util.default)
                  
             
             # Does this wrap a class instance?
@@ -121,8 +126,8 @@ class RoleCheck(object):
             if (user == None):
                 raise PulpException("User with login [%s] does not exist" 
                                     % username)
-            log.debug("Username: %s" % username)
-            badPassword = (user['password'] != password) 
+            log.debug("Username: %s hashed password: %s" % (username, password))
+            badPassword = not password_util.check_password(user['password'], password) 
             log.debug("Bad Password? [%s]" % badPassword)
             return badPassword
         return True
@@ -144,7 +149,7 @@ class RoleCheck(object):
             idcert = Certificate(content=cs)
             log.debug("parsed ID CERT: %s" % idcert)
             subject = idcert.subject()
-            consumer_cert_uid = subject.get('UID', None)
+            consumer_cert_uid = subject.get('CN', None)
             if (consumer_cert_uid == None):
                 log.error("Consumer UID not found in certificate.  " + \
                           "Not a valid Consumer certificate")

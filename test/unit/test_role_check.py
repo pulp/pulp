@@ -32,6 +32,7 @@ sys.path.insert(0, commondir)
 import testutil
 testutil.load_test_config()
 
+import pulp.cert_generator as cert_generator
 from pulp.api.user import UserApi
 from pulp.certificate import Certificate
 from pulp.webservices.role_check import RoleCheck
@@ -47,12 +48,35 @@ class TestRoleCheck(unittest.TestCase):
     def setUp(self):
         self.config = testutil.load_test_config()
         self.uapi = UserApi()
+
+    def tearDown(self):
+        self.uapi.clean()
         
     @RoleCheck(consumer=True)
-    def some_method(self, someparam):
-        print "We shouldn't be in here"
-        return True
+    def some_method(self, someparam, otherparam):
+        print "some method executed"
+        return otherparam
+
+    @RoleCheck(admin=True)
+    def some_other_method(self, someparam, otherparam):
+        print "some_other_method executed"
+        return otherparam
+
         
+    def test_id_cert(self):
+        consumerUid = "someconsumer.example.com"
+        temp_cert = cert_generator.make_cert(consumerUid)
+        self.assertTrue(temp_cert != None)
+        cert = Certificate()
+        cert.update(temp_cert.as_pem())
+        web.ctx['headers'] = []
+        web.ctx['environ'] = dict()
+        web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
+        retval = self.some_method(consumerUid,"baz")
+        print "retval %s" % retval
+        self.assertEquals(retval, "baz")
+        
+         
     def test_role_check(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         test_cert = my_dir + "/data/test_cert.pem"
@@ -72,24 +96,31 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         
-        retval = self.some_method('somevalue')
-        self.assertTrue(retval)
+        # Check we can run the method with no setup in web
+        retval = self.some_other_method('somevalue')
+        retval = self.some_other_method('somevalue', 'baz')
+        self.assertNotEqual(retval, 'baz')
         
         # Check for bad pass
         loginpass = "%s:%s" % (login, "invalid password")
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_method('somevalue')
-        self.assertTrue(retval != True)
+        retval = self.some_other_method('somevalue', 'baz')
+        self.assertNotEqual(retval, 'baz')
         
         # Check for bad username
         loginpass = "%s:%s" % ("non existing user", password)
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_method('somevalue')
-        self.assertTrue(retval != True)
+        retval = self.some_other_method('somevalue', 'baz')
+        self.assertNotEqual(retval, 'baz')
         
-        
+        # Check for a proper result
+        loginpass = "%s:%s" % (login, password)
+        encoded = base64.encodestring(loginpass)
+        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
+        retval = self.some_other_method('somevalue', 'baz')
+        self.assertEquals(retval, 'baz')
          
 
 if __name__ == '__main__':
