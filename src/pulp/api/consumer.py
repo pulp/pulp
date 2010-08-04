@@ -62,7 +62,7 @@ class ConsumerApi(BaseApi):
         self.insert(c)
         return c
     
-    @audit('ConsumerApi', params=['id'])
+    @audit()
     def certificate(self, id):
         """
         Create a X509 Consumer Identity Certificate to associate with the 
