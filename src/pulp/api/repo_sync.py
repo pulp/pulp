@@ -238,14 +238,13 @@ class BaseSynchronizer(object):
             log.debug("Parsed %s, %s UpdateNotices were returned." %
                       (updateinfo_xml_path, len(errata)))
             for e in errata:
+                eids.append(e['id'])
                 # Replace existing errata if the update date is newer
                 found = self.errata_api.erratum(e['id'])
                 if found:
                     if found['updated'] <= e['updated']:
                         continue
                     self.errata_api.delete(e['id'])
-                # Need to look up packages and add a pymongo DBRef() per
-                # matched NEVRA,Vendor for package
                 pkglist = e['pkglist']
                 self.errata_api.create(id=e['id'], title=e['title'],
                         description=e['description'], version=e['version'],
@@ -255,9 +254,6 @@ class BaseSynchronizer(object):
                         from_str=e['from_str'], reboot_suggested=e['reboot_suggested'],
                         references=e['references'], pkglist=pkglist,
                         repo_defined=True, immutable=True)
-                eids.append(e['id'])
-                # Add Errata ids to repo
-                # Need to address problem importing RepoApi, so we can call add errata
             end = time.time()
             log.debug("%s new/updated errata imported in %s seconds" % (len(eids), (end - start)))
         except yum.Errors.YumBaseError, e:
