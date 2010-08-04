@@ -87,6 +87,7 @@ cp etc/httpd/conf.d/pulp.conf %{buildroot}/etc/httpd/conf.d/
 cp -R srv %{buildroot}
 
 mkdir -p %{buildroot}/etc/pki/pulp
+mkdir -p %{buildroot}/etc/pki/consumer
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
 mkdir -p %{buildroot}/etc/pki/content
@@ -145,6 +146,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{_bindir}/pulp
 %{_bindir}/pulpd
 %attr(755,root,root) %{_sysconfdir}/init.d/pulpd
+%attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) /etc/pulp/client.conf
 
 %post tools
