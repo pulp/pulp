@@ -106,7 +106,7 @@ def install(opts):
     os.system('setfacl -m user:apache:rwx /var/log/pulp')
     # guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
-    os.system('chmod 3775 /var/www/pulp')
+    os.system('chmod 3775 /var/www/pub')
     os.system('chmod 3775 /var/lib/pulp')
 
     # Disable existing SSL configuration
