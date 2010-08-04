@@ -218,3 +218,40 @@ def compare_packages(pkgA, pkgB):
         return
     evrA, evrB = (build_evr(pkgA), build_evr(pkgB))
     return rpm.labelCompare(evrA, evrB)
+
+
+class Singleton(type):
+    """
+    Singleton metaclass. To make a class instance a singleton, use this class
+    as your class's metaclass as follows:
+    
+    class MyClass(object):
+        __metaclass__ = Singleton
+    
+    Singletons are created by passing the exact same arguments to the
+    constructor. For example:
+    
+    class T():
+        __metaclass__ = Singleton
+        
+        def __init__(self, value=None):
+            self.value = value
+        
+    t1 = T()
+    t2 = T()
+    t1 is t2
+    True
+    t3 = T(5)
+    t4 = T(5)
+    t3 is t4
+    True
+    t1 is t3
+    False
+    """
+    def __init__(self, name, bases, ns):
+        super(Singleton, self).__init__(name, bases, ns)
+        self.instances = {}
+        
+    def __call__(self, *args, **kwargs):
+        key = (tuple(args), tuple(sorted(kwargs.items())))
+        return self.instances.setdefault(key, super(Singleton, self).__call__(*args, **kwargs))

@@ -26,6 +26,7 @@ import pymongo
 from pymongo.bson import BSON
 from pymongo.son import SON
 
+from pulp import auth
 from pulp.api.base import BaseApi
 from pulp.config import config
 from pulp.crontab import CronTab
@@ -136,7 +137,7 @@ class MethodInspector(object):
         return zip(self.params, values)
         
 
-def audit(params=None, record_result=False, pass_principal=False):
+def audit(params=None, record_result=False):
     """
     API class instance method decorator meant to log calls that constitute
     events on pulp's model instances.
@@ -153,9 +154,6 @@ def audit(params=None, record_result=False, pass_principal=False):
                    None records all parameters
     @type record_result: bool
     @param record_result: whether or not to record the result
-    @type pass_principal: bool
-    @param pass_principal: whether or not to pass the principal as a key word
-                           argument to the method
     """
     def _audit_decorator(method):
         
@@ -175,9 +173,7 @@ def audit(params=None, record_result=False, pass_principal=False):
                            param_values_str))
             
             # build up the data to record
-            principal = kwargs.get('principal', None)
-            if not pass_principal:
-                kwargs.pop('principal', None)
+            principal = auth.get_principal()
             api = inspector.api_name(args)
             param_values = inspector.param_values(args, kwargs)
             param_values_str = ', '.join('%s: %s' % (p,v) for p,v in param_values)
