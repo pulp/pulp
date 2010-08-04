@@ -360,6 +360,19 @@ def _check_crontab():
     tab.write()
     _log.info('Added crontab entry for culling events')
     
+    
+def _clear_crontab():
+    """
+    Check to see that the cull auditing events crontab entry exists, and remove
+    it if it does.
+    """
+    tab = CronTab()
+    cmd = 'python %s' % __file__
+    if not tab.find_command(cmd):
+        return
+    tab.remove_all(cmd)
+    tab.write()
+    
 
 def _get_lifetime():
     """
