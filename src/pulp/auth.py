@@ -32,7 +32,6 @@ class SystemPrincipal(object):
 # thread-local storage for holding the current principal ----------------------
 
 _storage = threading.local()
-_storage.principal = SystemPrincipal()
 
 # principal api ---------------------------------------------------------------
 
@@ -49,6 +48,8 @@ def get_principal():
     Get the current principal (user) of the system.
     @return: current principal
     """
+    if not hasattr(_storage, 'principal'):
+        _storage.principal = SystemPrincipal()
     return _storage.principal
 
 
