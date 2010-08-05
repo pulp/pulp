@@ -123,8 +123,8 @@ class ErrataApi(BaseApi):
     def query_by_reference(self, type, refid):
         """
         Search Errata for all matches of this reference with id 'refid'
-        @param type, reference type to search, example 'bugzilla', 'cve'
-        @param refid, id to match on
+        @param type: reference type to search, example 'bugzilla', 'cve'
+        @param refid: id to match on
         """
         # Will prob want to chunk the query to mongo and limit the data returned
         # to be only 'references' and 'id'.

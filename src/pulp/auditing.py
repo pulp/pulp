@@ -255,8 +255,8 @@ def events_on_api(api, fields=None, limit=None, errors_only=False):
 def events_by_principal(principal, fields=None, limit=None, errors_only=False):
     """
     Return all recorded events for a given principal (caller).
-    @type api: model object or dict
-    @param api: principal that triggered the event (i.e. User instance)
+    @type principal: model object or dict
+    @param principal: principal that triggered the event (i.e. User instance)
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
     @type limit: int or None
@@ -276,8 +276,6 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
     Return all events in a given time range.
     @type lower_bound: datetime.datetime instance or None
     @param lower_bound: lower time bound, None = oldest in db
-    @type lower_bound: datetime.datetime instance or None
-    @param lower_bound: upper time bound, None = newest in db
     @type fields: list or tuple of str
     @param fields: iterable of fields to include from each document
     @type limit: int or None

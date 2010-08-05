@@ -132,10 +132,10 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
     Accept input xml string of repomd data and update it with new comps info
     @param repomd_xml: string repomd_xml
     @param compsxml_checksum: checksum of compsxml file
-    @param compsxml_timstamp: timestamp of compsxml file
+    @param compsxml_timestamp: timestamp of compsxml file
     @param compsxml_gz_checksum: checksum of compsxml gzipped file
     @param open_compsxml_gz_checksum: checksum of compsxml gzipped file uncompressed
-    @param compsxml_gz_timstamp: timestamp of compsxml gzipped file
+    @param compsxml_gz_timestamp: timestamp of compsxml gzipped file
     """
     dom = xml.dom.minidom.parseString(repomd_xml)
     group_elems = filter(lambda x: x.getAttribute("type") == "group", dom.getElementsByTagName("data"))

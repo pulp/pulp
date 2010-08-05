@@ -57,8 +57,6 @@ class Agent(Container):
         """
         @param uuid: The consumer uuid.
         @type uuid: str|list
-        @param tag: An (optional) asynchronous correlation tag.
-        @type tag: str
         """
         url = '%s:%s' % (config.get('pmf', 'host'), config.get('pmf', 'port'))
         producer = QueueProducer(url)

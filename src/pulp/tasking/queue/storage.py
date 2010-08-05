@@ -53,7 +53,7 @@ class Storage(object):
     def find_task(self, task_id):
         """
         @type task_id: str
-        @param task: Task id
+        @param task_id: Task id
         @return: pulp.tasking.task.Task instance
         """
         raise NotImplementedError()
@@ -61,7 +61,7 @@ class Storage(object):
     def task_status(self, task_id):
         """
         @type task_id: str
-        @param task: Task id
+        @param task_id: Task id
         @return: pulp.tasking.task.TaskModel instance
         """
         raise NotImplementedError()

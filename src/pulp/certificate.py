@@ -42,8 +42,8 @@ class Certificate(object):
 
     def __init__(self, content=None):
         """
-        @param pem: The (optional) PEM encoded content.
-        @type pem: str
+        @param content: The (optional) PEM encoded content.
+        @type content: str
         """
         self.update(content)
         

@@ -111,8 +111,8 @@ def get_string_checksum(hashtype, data):
 def get_file_timestamp(filename):
     """
     Returns a timestamp
-    @param: filename path to file
-    @return filename's timestamp
+    @param filename: filename path to file
+    @return: filename's timestamp
     """
     return int(os.stat(filename).st_mtime)
 
