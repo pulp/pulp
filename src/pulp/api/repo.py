@@ -316,8 +316,8 @@ class RepoApi(BaseApi):
     def delete_packagegroup(self, repoid, groupid):
         """
         Remove a packagegroup from a repo
-        @param repoid:
-        @param group_id:
+        @param repoid: repo id
+        @param groupid: package group id
         """
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
@@ -349,7 +349,7 @@ class RepoApi(BaseApi):
         """
         Save the list of passed in PackageGroup objects to this repo
         @param repoid: repo id
-        @param pg: list of packagegroups
+        @param pglist: list of packagegroups
         """
         repo = self._get_existing_repo(repoid)
         for item in pglist:

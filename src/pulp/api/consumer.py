@@ -204,8 +204,8 @@ class ConsumerApi(BaseApi):
         @type id: str
         @param errataids: The errata ids to install.
         @type errataids: [str,..]
-        @param type: Errata type filter
-        @type type: str
+        @param types: Errata type filter
+        @type types: str
         """
         agent = Agent(id)
         consumer = self.consumer(id)
