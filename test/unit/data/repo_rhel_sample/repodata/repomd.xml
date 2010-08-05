@@ -1,0 +1,44 @@
+<?xml version="1.0" ?><repomd xmlns="http://linux.duke.edu/metadata/repo" xmlns:rpm="http://linux.duke.edu/metadata/rpm">
+  <revision>1281022275</revision>
+  <data type="other">
+    <checksum type="sha256">d0da3bd05f12102d2cdbf1c2a4e5586c0e91d6c8a3bfb2bc40a4f83bb47e1694</checksum>
+    <timestamp>1281022275</timestamp>
+    <size>195</size>
+    <open-size>121</open-size>
+    <open-checksum type="sha256">e0ed5e0054194df036cf09c1a911e15bf2a4e7f26f2a788b6f47d53e80717ccc</open-checksum>
+    <location href="repodata/other.xml.gz"/>
+  </data>
+  <data type="filelists">
+    <checksum type="sha256">5b95e404fea6508337e19e525b733431dff296fbcdc15c3825fbb62cb9553109</checksum>
+    <timestamp>1281022275</timestamp>
+    <size>199</size>
+    <open-size>125</open-size>
+    <open-checksum type="sha256">bf9808b81cb2dbc54b4b8e35adc584ddcaa73bd81f7088d73bf7dbbada961310</open-checksum>
+    <location href="repodata/filelists.xml.gz"/>
+  </data>
+  <data type="primary">
+    <checksum type="sha256">ed9d41cc576d5286c705dca0f2f5bcb38bc80dbeb6637aa46128269fb29ded5d</checksum>
+    <timestamp>1281022275</timestamp>
+    <size>208</size>
+    <open-size>167</open-size>
+    <open-checksum type="sha256">e1e2ffd2fb1ee76f87b70750d00ca5677a252b397ab6c2389137a0c33e7b359f</open-checksum>
+    <location href="repodata/primary.xml.gz"/>
+  </data>
+  <data type="group_gz">
+    <location href="repodata/comps.xml.gz"/>
+    <checksum type="sha256">1898b8e199ac877434ec0d270033340ddf521058a7a01a8da3157d90a3ff5af4</checksum>
+    <open-checksum type="sha256">8b249b7d4f9793d071118f18bccdfd19759ea1ff695ae667e8ed8ee088945c0b</open-checksum>
+    <timestamp>1281022275</timestamp>
+  </data>
+  <data type="group">
+    <location href="repodata/comps.xml"/>
+    <checksum type="sha256">8b249b7d4f9793d071118f18bccdfd19759ea1ff695ae667e8ed8ee088945c0b</checksum>
+    <timestamp>1281022275</timestamp>
+  </data>
+  <data type="updateinfo">
+    <location href="repodata/ed392f3563767fb2ea502ef8b2ea250838abebf18e7d58e7fe76035662f367dc-updateinfo.xml.gz"/>
+    <checksum type="sha256">ed392f3563767fb2ea502ef8b2ea250838abebf18e7d58e7fe76035662f367dc</checksum>
+    <timestamp>1281022283.0</timestamp>
+    <open-checksum type="sha256">13dd425cbf0c7c1e50c861c766397d1427c9cb21e95ff45f5d18fb2dc0530ca1</open-checksum>
+  </data>
+</repomd>

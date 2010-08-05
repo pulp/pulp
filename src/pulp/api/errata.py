@@ -34,7 +34,7 @@ class ErrataApi(BaseApi):
     def _getcollection(self):
         return self.db.errata
 
-    @audit()
+    @audit(params=["id", "title", "type"])
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
             reboot_suggested="", references=[], pkglist=[],

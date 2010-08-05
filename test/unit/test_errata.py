@@ -363,3 +363,37 @@ class TestErrata(unittest.TestCase):
         pkguplist = self.capi.list_package_updates(c['id'])
         assert(len(pkguplist) == 1)
 
+    def test_errata_repo_sync_rhel(self):
+        datadir = os.path.join(self.data_path, "repo_rhel_sample")
+        r = self.rapi.create("test_errata_repo_sync", "test_name", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi.sync(r['id'])
+        # Refresh object now it's been sync'd
+        r = self.rapi.repository(r['id'])
+        enhancement = [u'RHEA-2009:1270', u'RHEA-2007:0637', u'RHEA-2007:0636',
+                        u'RHEA-2007:0635', u'RHEA-2009:1302', u'RHEA-2009:1269',
+                        u'RHEA-2008:0467', u'RHEA-2007:0643', u'RHEA-2008:0371']
+        security = [u'RHSA-2008:0194', u'RHSA-2009:0003', u'RHSA-2007:0114',
+                    u'RHSA-2009:1472', u'RHSA-2009:0382', u'RHSA-2008:0892',
+                    u'RHSA-2007:0323']
+        bugfix = ['RHBA-2008:0279', u'RHBA-2008:0291', u'RHBA-2010:0281',
+                    u'RHBA-2010:0222', u'RHBA-2009:0118', u'RHBA-2010:0010',
+                    u'RHBA-2008:0026', u'RHBA-2009:1514', u'RHBA-2010:0282',
+                    u'RHBA-2008:0198', u'RHBA-2009:1412', u'RHBA-2010:0205',
+                    u'RHBA-2008:0480', u'RHBA-2009:1299', u'RHBA-2007:0611',
+                    u'RHBA-2010:0251', u'RHBA-2009:0140', u'RHBA-2009:0141',
+                    u'RHBA-2009:1092', u'RHBA-2009:1328', u'RHBA-2009:0216',
+                    u'RHBA-2008:0280', u'RHBA-2009:0142', u'RHBA-2010:0294',
+                    u'RHBA-2008:0554', u'RHBA-2008:0433', u'RHBA-2008:0305',
+                    u'RHBA-2008:0189', u'RHBA-2009:0401', u'RHBA-2010:0418',
+                    u'RHBA-2009:1421', u'RHBA-2009:1424', u'RHBA-2009:1285',
+                    u'RHBA-2009:0137', u'RHBA-2010:0206', u'RHBA-2007:0112']
+        self.assertTrue(len(r['errata']['enhancement']) == len(enhancement))
+        self.assertTrue(len(r['errata']['security']) == len(security))
+        self.assertTrue(len(r['errata']['bugfix']) == len(bugfix))
+        for erratum in enhancement:
+            self.assertTrue(erratum in r['errata']['enhancement'])
+        for erratum in security:
+            self.assertTrue(erratum in r['errata']['security'])
+        for erratum in bugfix:
+            self.assertTrue(erratum in r['errata']['bugfix'])

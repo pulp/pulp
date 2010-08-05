@@ -1,0 +1,1789 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE comps PUBLIC "-//Red Hat, Inc.//DTD Comps info//EN" "comps.dtd">
+<comps>
+  <group>
+    <id>assamese-support</id>
+    <name>Assamese Support</name>
+    <name xml:lang='af'>Assamese taalsteun</name>
+    <name xml:lang='am'>የአሳሜሳዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الأساميزيّة</name>
+    <name xml:lang='as'>অসমীয়া ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>اسامس حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Асамесе</name>
+    <name xml:lang='bn'>অসমিয়া ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>অসমিয়া ভাষার ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za asamski</name>
+    <name xml:lang='ca'>Suport per a l'assamès</name>
+    <name xml:lang='cs'>Ásámština (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Asameg</name>
+    <name xml:lang='da'>Understøttelse for assamesisk</name>
+    <name xml:lang='de'>Unterstützung für Assamesisch</name>
+    <name xml:lang='el'>Υποστήριξη Assamese</name>
+    <name xml:lang='en_GB'>Assamese Support</name>
+    <name xml:lang='es'>Soporte para assamés</name>
+    <name xml:lang='et'>assamese keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی آسامی</name>
+    <name xml:lang='fi'>Assamin kielituki</name>
+    <name xml:lang='fr'>Prise en charge de l'assamais</name>
+    <name xml:lang='gu'>આસામી આધાર</name>
+    <name xml:lang='he'>תמיכה ב־Assamese (הודו)</name>
+    <name xml:lang='hi'>आसामी समर्थन</name>
+    <name xml:lang='hr'>Podrška za asamski</name>
+    <name xml:lang='hu'>Asszaméz nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Assamese</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Asames</name>
+    <name xml:lang='is'>Assamíska</name>
+    <name xml:lang='it'>Supporto per l'assamese</name>
+    <name xml:lang='ja'>アッサム語のサポート</name>
+    <name xml:lang='kn'>ಅಸ್ಸಾಮೀ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>아삼어 지원</name>
+    <name xml:lang='lv'>Asamiešu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за асимејски јазик</name>
+    <name xml:lang='ml'>ആസ്സാമീസ് പിന്തുണ</name>
+    <name xml:lang='mr'>आसामी समर्थन</name>
+    <name xml:lang='ms'>Sokongan Assamese</name>
+    <name xml:lang='nb'>Støtte for assamesisk</name>
+    <name xml:lang='ne'>आसामी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Assamees</name>
+    <name xml:lang='no'>Støtte for assamesisk</name>
+    <name xml:lang='nso'>Thekgo ya Assam</name>
+    <name xml:lang='or'>ଆସାମୀୟ ସହାୟତା</name>
+    <name xml:lang='pa'>ਆਸਾਮੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa asamskiego</name>
+    <name xml:lang='pt'>Suporte a Assamese</name>
+    <name xml:lang='pt_BR'>Suporte à Assamês</name>
+    <name xml:lang='ro'>Suport pentru asameză</name>
+    <name xml:lang='ru'>Поддержка ассамского языка</name>
+    <name xml:lang='si'>ඇසමීස් භාශා පහසුකම</name>
+    <name xml:lang='sk'>Assamská podpora</name>
+    <name xml:lang='sl'>Podpora Assameščini</name>
+    <name xml:lang='sr'>Подршка за асамешки</name>
+    <name xml:lang='sr@Latn'>Podrška za asameški</name>
+    <name xml:lang='sr@latin'>Podrška za asameški</name>
+    <name xml:lang='sv'>Stöd för assamesiska</name>
+    <name xml:lang='ta'>அஸ்ஸாமிய துணை</name>
+    <name xml:lang='te'>అస్సామీ మద్దతు</name>
+    <name xml:lang='th'>Assamese Support</name>
+    <name xml:lang='tr'>Japonca Desteği</name>
+    <name xml:lang='uk'>Підтримка ассамської мови</name>
+    <name xml:lang='ur'>کا ساتھ Assamese</name>
+    <name xml:lang='zh_CN'>阿萨姆语支持</name>
+    <name xml:lang='zh_TW'>阿薩姆語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>as</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-as-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>bengali-support</id>
+    <name>Bengali Support</name>
+    <name xml:lang='af'>Bengaalse taalsteun</name>
+    <name xml:lang='am'>የቤንጋሊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم البنغاليّة</name>
+    <name xml:lang='as'>বঙালী ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>بنگالی حمایت</name>
+    <name xml:lang='be'>Падтрымка Бэнгальскае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Бенгалски</name>
+    <name xml:lang='bn'>বাংলা ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>বাংলা ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za bengalski</name>
+    <name xml:lang='ca'>Suport per al bengalí</name>
+    <name xml:lang='cs'>Bengálština (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Bengaleg</name>
+    <name xml:lang='da'>Understøttelse for bengali</name>
+    <name xml:lang='de'>Unterstützung für Bengali</name>
+    <name xml:lang='el'>Υποστήριξη Μπενγκάλι</name>
+    <name xml:lang='en_GB'>Bengali Support</name>
+    <name xml:lang='es'>Soporte para bengalí</name>
+    <name xml:lang='et'>bengali keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی بنگالی</name>
+    <name xml:lang='fi'>Bengalin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du bengalî</name>
+    <name xml:lang='gu'>બંગાળી આધાર</name>
+    <name xml:lang='he'>תמיכה בבנגלית</name>
+    <name xml:lang='hi'>बंगाली समर्थन</name>
+    <name xml:lang='hr'>Podrška za bengalski</name>
+    <name xml:lang='hu'>Bengáli nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Bengali</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Benggali</name>
+    <name xml:lang='is'>Bengalíska</name>
+    <name xml:lang='it'>Supporto per il bengalese</name>
+    <name xml:lang='ja'>ベンガル語のサポート</name>
+    <name xml:lang='ka'>ბენგალურის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಬಂಗಾಳಿ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>벵골어 지원</name>
+    <name xml:lang='lv'>Bengāļu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за бенгалски јазик</name>
+    <name xml:lang='ml'>ബംഗാളി പിന്തുണ</name>
+    <name xml:lang='mr'>बंगाली समर्थन</name>
+    <name xml:lang='ms'>Sokongan Bengali</name>
+    <name xml:lang='nb'>Støtte for bengali</name>
+    <name xml:lang='ne'>बङ्गाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Bengaals</name>
+    <name xml:lang='no'>Støtte for bengali</name>
+    <name xml:lang='nso'>Thekgo ya Bengal</name>
+    <name xml:lang='or'>ବଙ୍ଗାଳୀ ସହାୟତା</name>
+    <name xml:lang='pa'>ਬੰਗਾਲੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa bengalskiego</name>
+    <name xml:lang='pt'>Suporte a Bengali</name>
+    <name xml:lang='pt_BR'>Suporte à Bengali</name>
+    <name xml:lang='ro'>Suport pentru bengaleză</name>
+    <name xml:lang='ru'>Поддержка языка бенгали</name>
+    <name xml:lang='si'>බෙන්ගාලි භාශා පහසුකම</name>
+    <name xml:lang='sk'>Bengálska podpora</name>
+    <name xml:lang='sl'>Podpora Bengalščini</name>
+    <name xml:lang='sr'>Подршка за бенгалски</name>
+    <name xml:lang='sr@Latn'>Podrška za bengalski</name>
+    <name xml:lang='sr@latin'>Podrška za bengalski</name>
+    <name xml:lang='sv'>Stöd för bengali</name>
+    <name xml:lang='ta'>பெங்காலி துணை</name>
+    <name xml:lang='te'>బెంగాలీ మద్దతు</name>
+    <name xml:lang='th'>Bengali Support</name>
+    <name xml:lang='tr'>Bengal Dili Dseteği</name>
+    <name xml:lang='uk'>Підтримка бенгальської мови</name>
+    <name xml:lang='ur'>بنگالی کا ساتھ</name>
+    <name xml:lang='zh_CN'>孟加拉语支持</name>
+    <name xml:lang='zh_TW'>孟加拉語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>bn</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-bn-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>brazilian-support</id>
+    <name>Brazilian Portuguese Support</name>
+    <name xml:lang='am'>የብራዚላዊ ፖርቱጋሊኛ ድጋፍ</name>
+    <name xml:lang='as'>ব্ৰাজীলিয়ান পৰ্টুগালৰ ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>پرتگیزی برزیلی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Португалски Бразилски</name>
+    <name xml:lang='bn'>ব্রাজিলিয় পর্তুগিজ ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>ব্রাজিলিয়ান পর্তুগিজ ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za brazilski portugalski</name>
+    <name xml:lang='ca'>Suport per al portuguès de Brasil</name>
+    <name xml:lang='cs'>Brazilská portugalština</name>
+    <name xml:lang='cy'>Cynhaliaeth Portiwgaleg Brasil</name>
+    <name xml:lang='da'>Understøttelse for brasiliansk portugisisk</name>
+    <name xml:lang='de'>Unterstützung für Portugiesisch (Brasilien)</name>
+    <name xml:lang='el'>Υποστήριξη Πορτογαλικών Βραζιλίας</name>
+    <name xml:lang='en_GB'>Brazilian Portuguese Support</name>
+    <name xml:lang='es'>Soporte para portugués brasileño</name>
+    <name xml:lang='et'>Brasiilia portugali keel</name>
+    <name xml:lang='fi'>Brasilianportugalin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du portugais brésilien</name>
+    <name xml:lang='gl'>Soporte para o portugués brasileiro</name>
+    <name xml:lang='gu'>બ્રાઝિલિયાઈ પોર્ટુગીઝ આધાર</name>
+    <name xml:lang='he'>תמיכה בפורטוגזית (ברזיל)</name>
+    <name xml:lang='hi'>ब्राजीलियन पुर्तगीज समर्थन</name>
+    <name xml:lang='hr'>Podrška za brazilski portugalski</name>
+    <name xml:lang='hu'>Brazíliai portugál nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Brazil Portugis</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Portuges a Brasilenio</name>
+    <name xml:lang='is'>Brasílísk portúgalska</name>
+    <name xml:lang='it'>Supporto per il portoghese brasiliano</name>
+    <name xml:lang='ja'>ブラジル系ポルトガル語のサポート</name>
+    <name xml:lang='ka'>ბრაზილიური პორტუგალიურის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಬ್ರೆಜಿಲಿಯನ್ ಪೋರ್ಚುಗೀಸ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>브라질 포르투갈어 지원</name>
+    <name xml:lang='lv'>Brazīļu portugāļu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за бразилско-португалски</name>
+    <name xml:lang='ml'>ബ്രസീലിയന്‍ പോര്‍ച്ചുഗീസ് പിന്തുണ</name>
+    <name xml:lang='mr'>ब्राझीलीयन पुर्तुगीज समर्थन</name>
+    <name xml:lang='ms'>Sokongan Portugis Brazil</name>
+    <name xml:lang='nb'>Støtte for brasiliensk portugisisk</name>
+    <name xml:lang='ne'>ब्राजिलीयन पोर्चुगाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Braziliaans Portugees</name>
+    <name xml:lang='no'>Støtte for Portugisisk/Brasiliansk</name>
+    <name xml:lang='or'>ବ୍ରାଜିଲିୟ ପର୍ତୁଗୀଜ ସହାୟତା</name>
+    <name xml:lang='pa'>ਬਰਾਜ਼ੀਲੀ ਪੁਰਤਗਾਲੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa portugalskiego brazylijskiego</name>
+    <name xml:lang='pt'>Suporte a Português do Brasil</name>
+    <name xml:lang='pt_BR'>Suporte à Português Brasileiro</name>
+    <name xml:lang='ro'>Suport pentru portugheză braziliană</name>
+    <name xml:lang='ru'>Поддержка бразильского португальского</name>
+    <name xml:lang='si'>බ්‍රසීලියානු පෘතුගීසි භාශා පහසුකම</name>
+    <name xml:lang='sk'>Brazílska podpora (portugalčina)</name>
+    <name xml:lang='sl'>Podpora za Brazilsko portugalščino</name>
+    <name xml:lang='sr'>Подршка за бразилски португалски</name>
+    <name xml:lang='sr@Latn'>Podrška za brazilski portugalski</name>
+    <name xml:lang='sr@latin'>Podrška za brazilski portugalski</name>
+    <name xml:lang='sv'>Stöd för brasiliansk portugisiska</name>
+    <name xml:lang='ta'>பிரேசிலியன் போர்ச்சுகீஸ் துணை</name>
+    <name xml:lang='te'>బ్రెజీలియన్ పోర్చుగీసు మద్దతు</name>
+    <name xml:lang='th'>Brazilian Portuguese Support</name>
+    <name xml:lang='tr'>Brezilya Portekizcesi Desteği</name>
+    <name xml:lang='uk'>Підтримка бразильської португальської мови</name>
+    <name xml:lang='ur'>براذلين پورٹيگييسي کا ساتھ  </name>
+    <name xml:lang='zh_CN'>巴西葡萄牙语支持</name>
+    <name xml:lang='zh_TW'>巴西式葡萄牙文支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>pt_BR</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-pt-BR</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>chinese-support</id>
+    <name>Chinese Support</name>
+    <name xml:lang='af'>Sjinese taalsteun</name>
+    <name xml:lang='am'>የቻይናዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الصينيّة</name>
+    <name xml:lang='as'>চীনা ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>چینی حمایت</name>
+    <name xml:lang='be'>Падтрымка кітайскай мовы</name>
+    <name xml:lang='bg'>Поддръжка на Китайски</name>
+    <name xml:lang='bn'>চীনা ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>চীনা ভাষা ব্যবহারের সমর্থন</name>
+    <name xml:lang='bs'>Podrška za kineski</name>
+    <name xml:lang='ca'>Suport per al xinès</name>
+    <name xml:lang='cs'>Čínština</name>
+    <name xml:lang='cy'>Cynhaliaeth Tseineg</name>
+    <name xml:lang='da'>Understøttelse for kinesisk</name>
+    <name xml:lang='de'>Unterstützung für Chinesisch</name>
+    <name xml:lang='el'>Υποστήριξη Κινεζικών</name>
+    <name xml:lang='en_GB'>Chinese Support</name>
+    <name xml:lang='es'>Soporte para chino </name>
+    <name xml:lang='et'>hiina keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی چینی</name>
+    <name xml:lang='fi'>Kiinan kielituki</name>
+    <name xml:lang='fr'>Prise en charge du chinois</name>
+    <name xml:lang='gu'>ચીનનો આધાર</name>
+    <name xml:lang='he'>תמיכה בסינית</name>
+    <name xml:lang='hi'>चीनी समर्थन</name>
+    <name xml:lang='hr'>Podrška za kineski</name>
+    <name xml:lang='hu'>Kínai nyelvi támogatás</name>
+    <name xml:lang='hy'>չինարենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Cina</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Insik</name>
+    <name xml:lang='is'>Kínverska</name>
+    <name xml:lang='it'>Supporto per il cinese</name>
+    <name xml:lang='ja'>中国語のサポート</name>
+    <name xml:lang='ka'>ჩინურის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಚೀನೀ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>중국어 지원</name>
+    <name xml:lang='lv'>Ķīniešu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за кинески</name>
+    <name xml:lang='ml'>ചൈനീസ് പിന്തുണ</name>
+    <name xml:lang='mr'>चीनी समर्थन</name>
+    <name xml:lang='ms'>Sokongan Cina</name>
+    <name xml:lang='nb'>Støtte for kinesisk</name>
+    <name xml:lang='ne'>चिनियाँ समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Chinees</name>
+    <name xml:lang='no'>Støtte for kinesisk</name>
+    <name xml:lang='nso'>Thekgo ya se-China</name>
+    <name xml:lang='or'>ଚାଇନିଜ ସହାୟତା</name>
+    <name xml:lang='pa'>ਚੀਨੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa chińskiego</name>
+    <name xml:lang='pt'>Suporte a Chinês</name>
+    <name xml:lang='pt_BR'>Suporte à Chinês</name>
+    <name xml:lang='ro'>Suport pentru chineză</name>
+    <name xml:lang='ru'>Поддержка китайского языка</name>
+    <name xml:lang='si'>චීන භාශා පහසුකම</name>
+    <name xml:lang='sk'>Čínska podpora</name>
+    <name xml:lang='sl'>Kitajska podpora</name>
+    <name xml:lang='sr'>Подршка за кинески</name>
+    <name xml:lang='sr@Latn'>Podrška za kineski</name>
+    <name xml:lang='sr@latin'>Podrška za kineski</name>
+    <name xml:lang='sv'>Stöd för kinesiska</name>
+    <name xml:lang='ta'>சீன துணை</name>
+    <name xml:lang='te'>చైనీస్ మద్దతు</name>
+    <name xml:lang='th'>Chinese Support</name>
+    <name xml:lang='tr'>Çince Desteği</name>
+    <name xml:lang='uk'>Підтримка китайської мови</name>
+    <name xml:lang='ur'>   چینی ساتھ</name>
+    <name xml:lang='vi'>Hỗ trợ Trung Hoa</name>
+    <name xml:lang='zh_CN'>中文支持</name>
+    <name xml:lang='zh_TW'>中文支援</name>
+    <name xml:lang='zu'>Ukuxhasa kwesi-Shayina</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>zh</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-zh-CN</packagereq>
+      <packagereq type='default'>Virtualization-zh-TW</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>french-support</id>
+    <name>French Support</name>
+    <name xml:lang='af'>Franse taalsteun</name>
+    <name xml:lang='am'>የፈረንሳይ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الفرنسيّة</name>
+    <name xml:lang='as'>ফৰাচী ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'> فرانسه ای حمایت</name>
+    <name xml:lang='be'>Падтрымка францускае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Френски</name>
+    <name xml:lang='bn'>ফরাসি ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>ফ্রেঞ্চ ভাষা ব্যবহারের সমর্থন</name>
+    <name xml:lang='bs'>Podrška za francuski</name>
+    <name xml:lang='ca'>Suport per al francès</name>
+    <name xml:lang='cs'>Francouzština</name>
+    <name xml:lang='cy'>Cynhaliaeth Ffrangeg</name>
+    <name xml:lang='da'>Understøttelse for fransk</name>
+    <name xml:lang='de'>Unterstützung für Französisch</name>
+    <name xml:lang='el'>Υποστήριξη Γαλλικών</name>
+    <name xml:lang='en_GB'>French Support</name>
+    <name xml:lang='es'>Soporte para francés</name>
+    <name xml:lang='et'>prantsuse keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی فرانسوی</name>
+    <name xml:lang='fi'>Ranskan kielituki</name>
+    <name xml:lang='fr'>Prise en charge du français</name>
+    <name xml:lang='gu'>ફ્રેંચ આધાર</name>
+    <name xml:lang='he'>תמיכה בצרפתית</name>
+    <name xml:lang='hi'>फ्रेंच समर्थन</name>
+    <name xml:lang='hr'>Podrška za francuski</name>
+    <name xml:lang='hu'>Francia nyelvi támogatás</name>
+    <name xml:lang='hy'>ֆրանսերենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Perancis</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Pranses</name>
+    <name xml:lang='is'>Franska</name>
+    <name xml:lang='it'>Supporto per il francese</name>
+    <name xml:lang='ja'>フランス語のサポート</name>
+    <name xml:lang='ka'>ფრანგულის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಫ್ರೆಂಚ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>프랑스어 지원</name>
+    <name xml:lang='lv'>Franču valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за француски</name>
+    <name xml:lang='ml'>ഫ്രന്‍ച്ച് പിന്തുണ</name>
+    <name xml:lang='mr'>फ्रेंच समर्थन</name>
+    <name xml:lang='ms'>Sokongan Perancis</name>
+    <name xml:lang='nb'>Støtte for fransk</name>
+    <name xml:lang='ne'>फ्रान्सेली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Frans</name>
+    <name xml:lang='no'>Støtte for fransk</name>
+    <name xml:lang='nso'>Thekgo ya Sefora</name>
+    <name xml:lang='or'>ଫରାସୀ ସହାୟତା</name>
+    <name xml:lang='pa'>ਫਰੈਂਚ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa francuskiego</name>
+    <name xml:lang='pt'>Suporte a Francês</name>
+    <name xml:lang='pt_BR'>Suporte à Francês</name>
+    <name xml:lang='ro'>Suport pentru franceză</name>
+    <name xml:lang='ru'>Поддержка французского языка</name>
+    <name xml:lang='si'>ප්‍රංශ භාශා පහසුකම</name>
+    <name xml:lang='sk'>Francúzska podpora</name>
+    <name xml:lang='sl'>Francoska podpora</name>
+    <name xml:lang='sr'>Подршка за француски</name>
+    <name xml:lang='sr@Latn'>Podrška za francuski</name>
+    <name xml:lang='sr@latin'>Podrška za francuski</name>
+    <name xml:lang='sv'>Stöd för franska</name>
+    <name xml:lang='ta'>ஃப்ரெஞ்ச் துணை</name>
+    <name xml:lang='te'>ఫ్రెంచ్ మద్దతు</name>
+    <name xml:lang='th'>French Support</name>
+    <name xml:lang='tr'>Fransızca Desteği</name>
+    <name xml:lang='uk'>Підтримка французької мови</name>
+    <name xml:lang='ur'> فرينچ  ساتھ </name>
+    <name xml:lang='vi'>Hỗ trợ Pháp</name>
+    <name xml:lang='zh_CN'>法语支持</name>
+    <name xml:lang='zh_TW'>法語支援</name>
+    <name xml:lang='zu'>Ukuxhasa KwesiFrentshi</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>fr</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-fr-FR</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>german-support</id>
+    <name>German Support</name>
+    <name xml:lang='af'>Duitse taalsteun</name>
+    <name xml:lang='am'>የጀርመን ድጋፍ</name>
+    <name xml:lang='ar'>دعم الألمانيّة</name>
+    <name xml:lang='as'>জাৰ্মান ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>جرمنی حمایت</name>
+    <name xml:lang='be'>Падтрымка нямецкае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Немски</name>
+    <name xml:lang='bn'>জার্মান ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>জার্মান ভাষা ব্যবহারের সমর্থন</name>
+    <name xml:lang='bs'>Podrška za njemački</name>
+    <name xml:lang='ca'>Suport per a l'alemany</name>
+    <name xml:lang='cs'>Němčina</name>
+    <name xml:lang='cy'>Cynhaliaeth Almaeneg</name>
+    <name xml:lang='da'>Understøttelse for tysk</name>
+    <name xml:lang='de'>Unterstützung für Deutsch</name>
+    <name xml:lang='el'>Υποστήριξη Γερμανικών</name>
+    <name xml:lang='en_GB'>German Support</name>
+    <name xml:lang='es'>Soporte para alemán</name>
+    <name xml:lang='et'>saksa keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی آلمانی</name>
+    <name xml:lang='fi'>Saksan kielituki</name>
+    <name xml:lang='fr'>Prise en charge de l'allemand</name>
+    <name xml:lang='gu'>જર્મન આધાર</name>
+    <name xml:lang='he'>תמיכה בגרמנית</name>
+    <name xml:lang='hi'>जर्मन समर्थन</name>
+    <name xml:lang='hr'>Podrška za njemački</name>
+    <name xml:lang='hu'>Német nyelvi támogatás</name>
+    <name xml:lang='hy'>գերմաներենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Jerman</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Aleman</name>
+    <name xml:lang='is'>Þýska</name>
+    <name xml:lang='it'>Supporto per il tedesco</name>
+    <name xml:lang='ja'>ドイツ語のサポート</name>
+    <name xml:lang='ka'>გერმანულის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಜರ್ಮನ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>독일어 지원</name>
+    <name xml:lang='lv'>Vācu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за германски</name>
+    <name xml:lang='ml'>ജറ്‍മന്‍ പിന്തുണ</name>
+    <name xml:lang='mr'>जर्मन समर्थन</name>
+    <name xml:lang='ms'>Sokongan Jerman</name>
+    <name xml:lang='nb'>Støtte for tysk</name>
+    <name xml:lang='ne'>जर्मनी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Duits</name>
+    <name xml:lang='no'>Støtte for tysk</name>
+    <name xml:lang='nso'>Thekgo ya Jeremane</name>
+    <name xml:lang='or'>ଜର୍ମାନୀ ସହାୟତା</name>
+    <name xml:lang='pa'>ਜਰਮਨ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa niemieckiego</name>
+    <name xml:lang='pt'>Suporte a Alemão</name>
+    <name xml:lang='pt_BR'>Suporte à Alemão</name>
+    <name xml:lang='ro'>Suport pentru germană</name>
+    <name xml:lang='ru'>Поддержка немецкого языка</name>
+    <name xml:lang='si'>ජර්මන් භාශා පහසුකම</name>
+    <name xml:lang='sk'>Nemecká podpora</name>
+    <name xml:lang='sl'>Nemška podpora</name>
+    <name xml:lang='sr'>Подршка за немачки</name>
+    <name xml:lang='sr@Latn'>Podrška za nemački</name>
+    <name xml:lang='sr@latin'>Podrška za nemački</name>
+    <name xml:lang='sv'>Stöd för tyska</name>
+    <name xml:lang='ta'>ஜெர்மன் துணை</name>
+    <name xml:lang='te'>జర్మన్ మద్దతు</name>
+    <name xml:lang='th'>German Support</name>
+    <name xml:lang='tr'>Almanca Desteği</name>
+    <name xml:lang='uk'>Підтримка німецької мови</name>
+    <name xml:lang='ur'> جرمين ساتھ  </name>
+    <name xml:lang='vi'>Hỗ trợ Đức</name>
+    <name xml:lang='zh_CN'>德语支持</name>
+    <name xml:lang='zh_TW'>德語支援</name>
+    <name xml:lang='zu'>Ukuxhasa KwesiJalimani</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>de</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-de-DE</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>gujarati-support</id>
+    <name>Gujarati Support</name>
+    <name xml:lang='am'>ጉጃርቲኛ ድጋፍ</name>
+    <name xml:lang='as'>গুজৰাটি ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>گجراتی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Гуарати</name>
+    <name xml:lang='bn'>গুজরাটি ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>গুজরাতি ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za gujarati</name>
+    <name xml:lang='ca'>Suport per al gujarati</name>
+    <name xml:lang='cs'>Gudžarátština (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Gujarati</name>
+    <name xml:lang='da'>Understøttelse for gujarati</name>
+    <name xml:lang='de'>Unterstützung für Gujarati</name>
+    <name xml:lang='el'>Υποστήριξη Γκουγιαράτι</name>
+    <name xml:lang='en_GB'>Gujarati Support</name>
+    <name xml:lang='es'>Soporte para gujarati</name>
+    <name xml:lang='et'>gujaratii keele toetus</name>
+    <name xml:lang='fi'>Gudžaratin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du gujarâtî</name>
+    <name xml:lang='gu'>ગુજરાતી આધાર</name>
+    <name xml:lang='he'>תמיכה ב־Gujarati (הודו)</name>
+    <name xml:lang='hi'>गुजराती समर्थन</name>
+    <name xml:lang='hr'>Podrška za gujarati</name>
+    <name xml:lang='hu'>Gudzsaráti nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Gujarati</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Gujarati</name>
+    <name xml:lang='is'>Gujarati</name>
+    <name xml:lang='it'>Supporto per il Gujarati</name>
+    <name xml:lang='ja'>グジャラート語のサポート</name>
+    <name xml:lang='kn'>ಗುಜರಾತಿ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>구자라티어 지원</name>
+    <name xml:lang='lv'>Gujarati valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка гујарати</name>
+    <name xml:lang='ml'>ഗുജറാത്തി സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>गुजराती समर्थन</name>
+    <name xml:lang='ms'>Sokongan Gujarati</name>
+    <name xml:lang='nb'>Støtte for gujarati</name>
+    <name xml:lang='ne'>गुजराती समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Gujarati</name>
+    <name xml:lang='no'>Støtte for gujaratisk</name>
+    <name xml:lang='or'>ଗୁଜୁରାଟୀ ସହୟତା</name>
+    <name xml:lang='pa'>ਗੁਜਰਾਤੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa gudżarati</name>
+    <name xml:lang='pt'>Suporte a Gujarati</name>
+    <name xml:lang='pt_BR'>Suporte à Gujarati</name>
+    <name xml:lang='ro'>Suport pentru gujurati</name>
+    <name xml:lang='ru'>Поддержка языка гуджарати</name>
+    <name xml:lang='si'>ගුජරාති භාශා පහසුකම</name>
+    <name xml:lang='sk'>Gudžarátska podpora</name>
+    <name xml:lang='sl'>Podpora Gujaratščini</name>
+    <name xml:lang='sr'>Подршка за гуџаратски</name>
+    <name xml:lang='sr@Latn'>Podrška za gudžaratski</name>
+    <name xml:lang='sr@latin'>Podrška za gudžaratski</name>
+    <name xml:lang='sv'>Stöd för gujarati</name>
+    <name xml:lang='ta'>குஜராத்தி துணை</name>
+    <name xml:lang='te'>గుజరాతీ మద్దతు</name>
+    <name xml:lang='th'>Gujarati Support</name>
+    <name xml:lang='tr'>Gujarati Desteği</name>
+    <name xml:lang='uk'>Підтримка мови гуджарараті</name>
+    <name xml:lang='ur'>گجراتی کا ساتھ</name>
+    <name xml:lang='zh_CN'>古吉拉特语支持</name>
+    <name xml:lang='zh_TW'>古吉拉地語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>gu</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-gu-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>hindi-support</id>
+    <name>Hindi Support</name>
+    <name xml:lang='am'>ሒንዲ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الهندية</name>
+    <name xml:lang='as'>হিন্দী ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>هندی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Хинди</name>
+    <name xml:lang='bn'>হিন্দি ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>হিন্দি ভাষা ব্যবহারের সমর্থন</name>
+    <name xml:lang='bs'>Podrška za hinduski</name>
+    <name xml:lang='ca'>Suport per a l'hindi</name>
+    <name xml:lang='cs'>Hindština (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Hindi</name>
+    <name xml:lang='da'>Understøttelse for hindi</name>
+    <name xml:lang='de'>Unterstützung für Hindi</name>
+    <name xml:lang='el'>Υποστήριξη Χίντι</name>
+    <name xml:lang='en_GB'>Hindi Support</name>
+    <name xml:lang='es'>Soporte para indú</name>
+    <name xml:lang='et'>hindi keele toetus</name>
+    <name xml:lang='fi'>Hindin kielituki</name>
+    <name xml:lang='fr'>Prise en charge de l'hindi</name>
+    <name xml:lang='gl'>Soporte para o hindi</name>
+    <name xml:lang='gu'>હિંદી આધાર</name>
+    <name xml:lang='he'>תמיכה בהינדית</name>
+    <name xml:lang='hi'>हिन्दी समर्थन</name>
+    <name xml:lang='hr'>Podrška za hinduski</name>
+    <name xml:lang='hu'>Hindi nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Hindi</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Hindi</name>
+    <name xml:lang='is'>Hindí</name>
+    <name xml:lang='it'>Supporto per l'Hindi</name>
+    <name xml:lang='ja'>ヒンディー語のサポート</name>
+    <name xml:lang='kn'>ಹಿಂದೀ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>힌두어 지원</name>
+    <name xml:lang='lv'>Hindu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка индиски</name>
+    <name xml:lang='ml'>ഹിന്ദി പിന്തുണ</name>
+    <name xml:lang='mr'>हिंदी समर्थन</name>
+    <name xml:lang='ms'>Sokongan Hindi</name>
+    <name xml:lang='nb'>Støtte for hindu</name>
+    <name xml:lang='ne'>हिन्दी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Hindi</name>
+    <name xml:lang='no'>Støtte for hindi</name>
+    <name xml:lang='or'>ହିନ୍ଦୀ ସହାୟତା</name>
+    <name xml:lang='pa'>ਹਿੰਦੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa hindi</name>
+    <name xml:lang='pt'>Suporte a Hindu</name>
+    <name xml:lang='pt_BR'>Suporte à Hindi</name>
+    <name xml:lang='ro'>Suport pentru hindusă</name>
+    <name xml:lang='ru'>Поддержка языка хинди</name>
+    <name xml:lang='si'>හින්දි භාශා පහසුකම</name>
+    <name xml:lang='sk'>Hindská podpora</name>
+    <name xml:lang='sl'>Podpora Hindujščini</name>
+    <name xml:lang='sr'>Подршка за хинду</name>
+    <name xml:lang='sr@Latn'>Podrška za hindu</name>
+    <name xml:lang='sr@latin'>Podrška za hindu</name>
+    <name xml:lang='sv'>Stöd för hindi</name>
+    <name xml:lang='ta'>இந்தி துணை</name>
+    <name xml:lang='te'>హిందీ మద్దతు</name>
+    <name xml:lang='th'>Hindi Support</name>
+    <name xml:lang='tr'>Hintçe Desteği</name>
+    <name xml:lang='uk'>Підтримка мови хінді</name>
+    <name xml:lang='ur'>ھندی کا ساتھ</name>
+    <name xml:lang='zh_CN'>印地语支持</name>
+    <name xml:lang='zh_TW'>印度語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>hi</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-hi-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>italian-support</id>
+    <name>Italian Support</name>
+    <name xml:lang='af'>Italiaanse taalsteun</name>
+    <name xml:lang='am'>የጣሊያናዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الإيطاليّة</name>
+    <name xml:lang='as'>ইটেলিএন ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>ایتالیایی حمایت</name>
+    <name xml:lang='be'>Падтрымка італійскае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Италиански</name>
+    <name xml:lang='bn'>ইতালিয় ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>ইতালিয়ান ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za talijanski</name>
+    <name xml:lang='ca'>Suport per a l'italià</name>
+    <name xml:lang='cs'>Italština</name>
+    <name xml:lang='cy'>Cynhaliaeth Eidaleg</name>
+    <name xml:lang='da'>Understøttelse for italiensk</name>
+    <name xml:lang='de'>Unterstützung für Italienisch</name>
+    <name xml:lang='el'>Υποστήριξη Ιταλικών</name>
+    <name xml:lang='en_GB'>Italian Support</name>
+    <name xml:lang='es'>Soporte para italiano</name>
+    <name xml:lang='et'>itaalia keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی ایتالیایی</name>
+    <name xml:lang='fi'>Italian kielituki</name>
+    <name xml:lang='fr'>Prise en charge de l'italien</name>
+    <name xml:lang='gu'>ઈટાલિક આધાર</name>
+    <name xml:lang='he'>תמיכה באיטלקית</name>
+    <name xml:lang='hi'>इटालियन समर्थन</name>
+    <name xml:lang='hr'>Podrška za talijanski</name>
+    <name xml:lang='hu'>Olasz nyelvi támogatás</name>
+    <name xml:lang='hy'>իտալերենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Italia</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Italiano</name>
+    <name xml:lang='is'>Ítalska</name>
+    <name xml:lang='it'>Supporto per l'italiano</name>
+    <name xml:lang='ja'>イタリア語のサポート</name>
+    <name xml:lang='ka'>იტალიურის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಇಟಾಲಿಯನ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>이탈리아어 지원</name>
+    <name xml:lang='lv'>Itāļu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за италијански</name>
+    <name xml:lang='ml'>ഇറ്റാലിയന്‍ പിന്തുണ</name>
+    <name xml:lang='mr'>इटालियन समर्थन</name>
+    <name xml:lang='ms'>Sokongan Itali</name>
+    <name xml:lang='nb'>Støtte for italiensk</name>
+    <name xml:lang='ne'>इटालियन समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Italiaans</name>
+    <name xml:lang='no'>Støtte for italiensk</name>
+    <name xml:lang='nso'>Thekgo ya Setaliana</name>
+    <name xml:lang='or'>ଇଟାଲୀୟ ସହାୟତା</name>
+    <name xml:lang='pa'>ਇਤਾਲਵੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa włoskiego</name>
+    <name xml:lang='pt'>Suporte a Italiano</name>
+    <name xml:lang='pt_BR'>Suporte à Italiano</name>
+    <name xml:lang='ro'>Suport pentru italiană</name>
+    <name xml:lang='ru'>Поддержка итальянского языка</name>
+    <name xml:lang='si'>ඉතාලි භාශා පහසුකම</name>
+    <name xml:lang='sk'>Talianska podpora</name>
+    <name xml:lang='sl'>Italijanska podpora</name>
+    <name xml:lang='sr'>Подршка за италијански</name>
+    <name xml:lang='sr@Latn'>Podrška za italijanski</name>
+    <name xml:lang='sr@latin'>Podrška za italijanski</name>
+    <name xml:lang='sv'>Stöd för italienska</name>
+    <name xml:lang='ta'>இத்தாலிய துணை</name>
+    <name xml:lang='te'>ఇటాలియను మద్దతు</name>
+    <name xml:lang='th'>Italian Support</name>
+    <name xml:lang='tr'>İtalyanca Desteği</name>
+    <name xml:lang='uk'>Підтримка італійської мови</name>
+    <name xml:lang='ur'>اٹالين  ساتھ</name>
+    <name xml:lang='vi'>Hỗ trợ Ý</name>
+    <name xml:lang='zh_CN'>意大利语支持</name>
+    <name xml:lang='zh_TW'>義大利文支援</name>
+    <name xml:lang='zu'>Ukuxhasa kwesiNtaliyani</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>it</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-it-IT</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>japanese-support</id>
+    <name>Japanese Support</name>
+    <name xml:lang='af'>Japanese taalsteun</name>
+    <name xml:lang='am'>የጃፓናዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم اليابانيّة</name>
+    <name xml:lang='as'>জাপানী ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>ژاپنی حمایت</name>
+    <name xml:lang='be'>Падтрымка японскае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Японски</name>
+    <name xml:lang='bn'>জাপানি ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>জাপানি ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za japanski</name>
+    <name xml:lang='ca'>Suport per al japonès</name>
+    <name xml:lang='cs'>Japonština</name>
+    <name xml:lang='cy'>Cynhaliaeth Japaneaidd</name>
+    <name xml:lang='da'>Understøttelse for japansk</name>
+    <name xml:lang='de'>Unterstützung für Japanisch</name>
+    <name xml:lang='el'>Υποστήριξη Γιαπωνέζικων</name>
+    <name xml:lang='en_GB'>Japanese Support</name>
+    <name xml:lang='es'>Soporte para japonés</name>
+    <name xml:lang='et'>jaapani keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی ژاپنی</name>
+    <name xml:lang='fi'>Japanin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du japonais</name>
+    <name xml:lang='gu'>જાપાની આધાર</name>
+    <name xml:lang='he'>תמיכה ביפנית</name>
+    <name xml:lang='hi'>जापानी समर्थन</name>
+    <name xml:lang='hr'>Podrška za japanski</name>
+    <name xml:lang='hu'>Japán nyelvi támogatás</name>
+    <name xml:lang='hy'>ճապոներենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Jepang</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Hapon</name>
+    <name xml:lang='is'>Japanska</name>
+    <name xml:lang='it'>Supporto per il giapponese</name>
+    <name xml:lang='ja'>日本語のサポート</name>
+    <name xml:lang='ka'>იაპონურის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಜಪಾನೀಸ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>일본어 지원</name>
+    <name xml:lang='lv'>Japāņu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за јапонски</name>
+    <name xml:lang='ml'>ജാപ്പനീസ് പിന്തുണ</name>
+    <name xml:lang='mr'>जापानी समर्थन</name>
+    <name xml:lang='ms'>Sokongan Jepun</name>
+    <name xml:lang='nb'>Støtte for japansk</name>
+    <name xml:lang='ne'>जापानी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Japans</name>
+    <name xml:lang='no'>Støtte for japansk</name>
+    <name xml:lang='nso'>Thekgo ya Sejapane</name>
+    <name xml:lang='or'>ଜାପାନୀ ସହାୟତା</name>
+    <name xml:lang='pa'>ਜਾਪਾਨੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa japońskiego</name>
+    <name xml:lang='pt'>Suporte a Japonês</name>
+    <name xml:lang='pt_BR'>Suporte à Japonês</name>
+    <name xml:lang='ro'>Suport pentru japoneză</name>
+    <name xml:lang='ru'>Поддержка японского языка</name>
+    <name xml:lang='si'>ජපාන භාශා පහසුකම</name>
+    <name xml:lang='sk'>Japonská podpora</name>
+    <name xml:lang='sl'>Japonska podpora</name>
+    <name xml:lang='sr'>Подршка за јапански</name>
+    <name xml:lang='sr@Latn'>Podrška za japanski</name>
+    <name xml:lang='sr@latin'>Podrška za japanski</name>
+    <name xml:lang='sv'>Stöd för japanska</name>
+    <name xml:lang='ta'>ஜப்பானிய துணை</name>
+    <name xml:lang='te'>జపనీస్ మద్దతు</name>
+    <name xml:lang='th'>Japanese Support</name>
+    <name xml:lang='tl'>Pagsasang-ayong Wikang Hapon</name>
+    <name xml:lang='tr'>Japonca Desteği</name>
+    <name xml:lang='uk'>Підтримка японської мови</name>
+    <name xml:lang='ur'> جاپانيسي ساتھ</name>
+    <name xml:lang='vi'>Hỗ trợ Nhật</name>
+    <name xml:lang='zh_CN'>日语支持</name>
+    <name xml:lang='zh_TW'>日文支援</name>
+    <name xml:lang='zu'>Ukuxhasa kwesiJaphani</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>ja</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-ja-JP</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>kannada-support</id>
+    <name>Kannada Support</name>
+    <name xml:lang='am'>ካናዳኛ ድጋፍ</name>
+    <name xml:lang='as'>কন্নড় ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'> کانادا حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Каннада</name>
+    <name xml:lang='bn'>কানাড়া ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>কন্নড় ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za kanadski</name>
+    <name xml:lang='ca'>Suport per al kannada</name>
+    <name xml:lang='cs'>Kannada (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Kannada</name>
+    <name xml:lang='da'>Understøttelse for kannada</name>
+    <name xml:lang='de'>Unterstützung für Kannada (Indien)</name>
+    <name xml:lang='el'>Υποστήριξη Kannada</name>
+    <name xml:lang='en_GB'>Kannada Support</name>
+    <name xml:lang='es'>Soporte para japonés (kannada)</name>
+    <name xml:lang='et'>kannada keele toetus</name>
+    <name xml:lang='fi'>Kannadan kielituki</name>
+    <name xml:lang='fr'>Prise en charge du kannada</name>
+    <name xml:lang='gu'>કન્નડ આધાર</name>
+    <name xml:lang='he'>תמיכה ב־Kannada (הודו)</name>
+    <name xml:lang='hi'>कन्नड़ समर्थन</name>
+    <name xml:lang='hr'>Podrška za kanadski</name>
+    <name xml:lang='hu'>Kannada nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Kanada</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Kannada</name>
+    <name xml:lang='is'>Kannada</name>
+    <name xml:lang='it'>Supporto per il canadese</name>
+    <name xml:lang='ja'>カンナダ語のサポート</name>
+    <name xml:lang='kn'>ಕನ್ನಡ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>칸나다어 지원</name>
+    <name xml:lang='lv'>Kanādiešu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за канада</name>
+    <name xml:lang='ml'>കന്നഡ സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>कन्नड समर्थन</name>
+    <name xml:lang='ms'>Sokongan Kannada</name>
+    <name xml:lang='nb'>Støtte for kannada</name>
+    <name xml:lang='ne'>कान्नडा समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Kannada</name>
+    <name xml:lang='no'>Støtte for kanaresisk</name>
+    <name xml:lang='or'>କନ୍ନଡ ସହାୟତା</name>
+    <name xml:lang='pa'>ਕੰਨੜ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa kannada</name>
+    <name xml:lang='pt'>Suporte a Kannada</name>
+    <name xml:lang='pt_BR'>Suporte à Kannada</name>
+    <name xml:lang='ro'>Suport pentru kannada</name>
+    <name xml:lang='ru'>Поддержка каннадского языка</name>
+    <name xml:lang='si'>කන්නද භාශා පහසුකම</name>
+    <name xml:lang='sk'>Kanadská podpora</name>
+    <name xml:lang='sl'>Podpora Kannadščini (Indijščina)</name>
+    <name xml:lang='sr'>Подршка за канаду</name>
+    <name xml:lang='sr@Latn'>Podrška za kanadu</name>
+    <name xml:lang='sr@latin'>Podrška za kanadu</name>
+    <name xml:lang='sv'>Stöd för kannada</name>
+    <name xml:lang='ta'>கன்னட துணை</name>
+    <name xml:lang='te'>కన్నడ మద్దతు</name>
+    <name xml:lang='th'>Kannada Support</name>
+    <name xml:lang='tr'>Kanada Dili Desteği</name>
+    <name xml:lang='uk'>Підтримка канадської мови</name>
+    <name xml:lang='ur'>کانناڈا کا ساتھ</name>
+    <name xml:lang='zh_CN'>坎纳达语支持</name>
+    <name xml:lang='zh_TW'>卡納達語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>kn</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-kn-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>korean-support</id>
+    <name>Korean Support</name>
+    <name xml:lang='af'>Koreaanse taalsteun</name>
+    <name xml:lang='am'>የኮሪያዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الكوريّة</name>
+    <name xml:lang='as'>ক'ৰীয়ান ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>کوریایی حمایت</name>
+    <name xml:lang='be'>Падтрымка карэйскае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Корейски</name>
+    <name xml:lang='bn'>কোরিয় ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>কোরিয়ান ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za korejski</name>
+    <name xml:lang='ca'>Suport per al coreà</name>
+    <name xml:lang='cs'>Korejština</name>
+    <name xml:lang='cy'>Cynhaliaeth Corëeg</name>
+    <name xml:lang='da'>Understøttelse for koreansk</name>
+    <name xml:lang='de'>Unterstützung für Koreanisch</name>
+    <name xml:lang='el'>Υποστήριξη Κορεάτικων</name>
+    <name xml:lang='en_GB'>Korean Support</name>
+    <name xml:lang='es'>Soporte para coreano</name>
+    <name xml:lang='et'>korea keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی کُره‌ای</name>
+    <name xml:lang='fi'>Korean kielituki</name>
+    <name xml:lang='fr'>Prise en charge du coréen</name>
+    <name xml:lang='gu'>મૂળિયાઈ આધાર</name>
+    <name xml:lang='he'>תמיכה בקוריאנית</name>
+    <name xml:lang='hi'>कोरिया समर्थन</name>
+    <name xml:lang='hr'>Podrška za korejski</name>
+    <name xml:lang='hu'>Koreai nyelvi támogatás</name>
+    <name xml:lang='hy'>կորեերենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Korea</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Koreano</name>
+    <name xml:lang='is'>Kóreska</name>
+    <name xml:lang='it'>Supporto per il coreano</name>
+    <name xml:lang='ja'>韓国語のサポート</name>
+    <name xml:lang='ka'>კორეულის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಕೊರಿಯನ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>한국어 지원</name>
+    <name xml:lang='lv'>Korejiešu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за корејски</name>
+    <name xml:lang='ml'>കൊറിയന്‍ പിന്തുണ</name>
+    <name xml:lang='mr'>कोरिया समर्थन</name>
+    <name xml:lang='ms'>Sokongan Korea</name>
+    <name xml:lang='nb'>Støtte for koreansk</name>
+    <name xml:lang='ne'>कोरियाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Koreaans</name>
+    <name xml:lang='no'>Støtte for koreansk</name>
+    <name xml:lang='nso'>Thekgo ya se-Korea</name>
+    <name xml:lang='or'>କୋରୀୟାନ ସହାୟତା</name>
+    <name xml:lang='pa'>ਕੋਰੀਆਈ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa koreańskiego</name>
+    <name xml:lang='pt'>Suporte a Coreano</name>
+    <name xml:lang='pt_BR'>Suporte à Coreano</name>
+    <name xml:lang='ro'>Suport pentru coreeană</name>
+    <name xml:lang='ru'>Поддержка корейского языка</name>
+    <name xml:lang='si'>කොරියානු භාශා පහසුකම</name>
+    <name xml:lang='sk'>Kórejská podpora</name>
+    <name xml:lang='sl'>Korejska podpora</name>
+    <name xml:lang='sr'>Подршка за корејски</name>
+    <name xml:lang='sr@Latn'>Podrška za korejski</name>
+    <name xml:lang='sr@latin'>Podrška za korejski</name>
+    <name xml:lang='sv'>Stöd för koreanska</name>
+    <name xml:lang='ta'>கொரிய துணை</name>
+    <name xml:lang='te'>కొరియన్ మద్దతు</name>
+    <name xml:lang='th'>Korean Support</name>
+    <name xml:lang='tr'>Korece Desteği</name>
+    <name xml:lang='uk'>Підтримка корейської мови</name>
+    <name xml:lang='ur'>کوريين ساتھ</name>
+    <name xml:lang='vi'>Hỗ trợ Hàn Quốc</name>
+    <name xml:lang='zh_CN'>韩文支持</name>
+    <name xml:lang='zh_TW'>韓文支援</name>
+    <name xml:lang='zu'>Ukuxhasa KwesiKoriya</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>ko</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-ko-KR</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>malayalam-support</id>
+    <name>Malayalam Support</name>
+    <name xml:lang='ar'>دعم المالايالام</name>
+    <name xml:lang='as'>মলয়ালম ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>مالایامی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Малайалам</name>
+    <name xml:lang='bn'>মালায়লাম সাপোর্ট</name>
+    <name xml:lang='bn_IN'>মালায়ালম ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za malayalam</name>
+    <name xml:lang='ca'>Suport per al malayalam</name>
+    <name xml:lang='cs'>Malajálamština (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Malayam</name>
+    <name xml:lang='da'>Understøttelse for malajalam</name>
+    <name xml:lang='de'>Unterstützung für Malayalam</name>
+    <name xml:lang='el'>Υποστήριξη Malayalam</name>
+    <name xml:lang='en_GB'>Malayam Support</name>
+    <name xml:lang='es'>Soporte para malayo</name>
+    <name xml:lang='et'>Malajalami keele tugi</name>
+    <name xml:lang='fi'>Malajalamin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du malayâlam</name>
+    <name xml:lang='gu'>મલયાલમ આધાર</name>
+    <name xml:lang='he'>תמיכה ב־Malayalam (הודו)</name>
+    <name xml:lang='hi'>मलयालम समर्थन</name>
+    <name xml:lang='hr'>Podrška za malayalam</name>
+    <name xml:lang='hu'>Malayalam nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Malayalam</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Malayalam</name>
+    <name xml:lang='is'>Malayalam</name>
+    <name xml:lang='it'>Supporto per il malayalam</name>
+    <name xml:lang='ja'>マラヤーラム語のサポート</name>
+    <name xml:lang='kn'>ಮಲಯಾಳಂ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>말라얄람어 지원</name>
+    <name xml:lang='lv'>Malajalamiešu valodas atbalsts</name>
+    <name xml:lang='ml'>മലയാളം സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>मलयालम समर्थन</name>
+    <name xml:lang='ms'>Sokongan Malayalam</name>
+    <name xml:lang='nb'>Støtte for malayalam</name>
+    <name xml:lang='ne'>मलयाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Malayalam</name>
+    <name xml:lang='or'>ମଲୟାଲମ ସହୟତା</name>
+    <name xml:lang='pa'>ਮਲਿਆਲਮ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa malajalam</name>
+    <name xml:lang='pt'>Suporte a Malayalam</name>
+    <name xml:lang='pt_BR'>Suporte à Malayalam</name>
+    <name xml:lang='ro'>Suport pentru malayalam</name>
+    <name xml:lang='ru'>Поддержка языка малайалам</name>
+    <name xml:lang='si'>මලයාල භාශා පහසුකම</name>
+    <name xml:lang='sk'>Malajalámska podpora</name>
+    <name xml:lang='sl'>Podpora Malajalščini (Indijščina)</name>
+    <name xml:lang='sr'>Подршка за малајалам</name>
+    <name xml:lang='sr@Latn'>Podrška za malajalam</name>
+    <name xml:lang='sr@latin'>Podrška za malajalam</name>
+    <name xml:lang='sv'>Stöd för malajiska</name>
+    <name xml:lang='ta'>மலையாள துணை</name>
+    <name xml:lang='te'>మలయాళం మద్దతు</name>
+    <name xml:lang='th'>Malayalam Support</name>
+    <name xml:lang='tr'>Malayalamca Desteği</name>
+    <name xml:lang='uk'>Підтримка мови малаялам</name>
+    <name xml:lang='zh_CN'>马来语支持</name>
+    <name xml:lang='zh_TW'>馬拉雅拉姆語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>ml</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-ml-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>marathi-support</id>
+    <name>Marathi Support</name>
+    <name xml:lang='as'>মাৰাঠি ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>ماراتی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Маратхи</name>
+    <name xml:lang='bn'>মারাঠি সাপোর্ট</name>
+    <name xml:lang='bn_IN'>মারাঠি ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za marathi</name>
+    <name xml:lang='ca'>Suport per al marathi</name>
+    <name xml:lang='cs'>Marathi (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Marathi</name>
+    <name xml:lang='da'>Understøttelse for marathi</name>
+    <name xml:lang='de'>Unterstützung für Marathi</name>
+    <name xml:lang='el'>Υποστήριξη Marathi</name>
+    <name xml:lang='en_GB'>Marathi Support</name>
+    <name xml:lang='es'>Soporte para marathi</name>
+    <name xml:lang='et'>Marathi keele tugi</name>
+    <name xml:lang='fi'>Marathin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du marathi</name>
+    <name xml:lang='gu'>મરાઠી આધાર</name>
+    <name xml:lang='he'>תמיכה ב־Marathi (הודו)</name>
+    <name xml:lang='hi'>मराठी समर्थन</name>
+    <name xml:lang='hr'>Podrška za marathi</name>
+    <name xml:lang='hu'>Marati nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Marathi</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Marathi</name>
+    <name xml:lang='is'>Marathi</name>
+    <name xml:lang='it'>Supporto per il marathi</name>
+    <name xml:lang='ja'>マラーティー語のサポート</name>
+    <name xml:lang='kn'>ಮರಾಠಿ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>마라티어 지원</name>
+    <name xml:lang='lv'>Marati valodas atbalsts</name>
+    <name xml:lang='ml'>മറാഠി സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>मराठी समर्थन</name>
+    <name xml:lang='ms'>Sokongan Marathi</name>
+    <name xml:lang='nb'>Støtte for marathi</name>
+    <name xml:lang='ne'>मराठी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Marathi</name>
+    <name xml:lang='or'>ମରାଠୀ ସହୟତା</name>
+    <name xml:lang='pa'>ਮਰਾਠੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa marathi</name>
+    <name xml:lang='pt'>Suporte a Marathi</name>
+    <name xml:lang='pt_BR'>Suporte à Marati</name>
+    <name xml:lang='ro'>Suport pentru marathi</name>
+    <name xml:lang='ru'>Поддержка языка марати</name>
+    <name xml:lang='si'>මරාති භාශා පහසුකම</name>
+    <name xml:lang='sk'>Podpora Maráthí</name>
+    <name xml:lang='sl'>Podpora Maharathčini</name>
+    <name xml:lang='sr'>Подршка за марати</name>
+    <name xml:lang='sr@Latn'>Podrška za marati</name>
+    <name xml:lang='sr@latin'>Podrška za marati</name>
+    <name xml:lang='sv'>Stöd för marati</name>
+    <name xml:lang='ta'>மராத்தி துணை</name>
+    <name xml:lang='te'>మరాఠి మద్దతు</name>
+    <name xml:lang='th'>Marathi Support</name>
+    <name xml:lang='tr'>Marati Desteği</name>
+    <name xml:lang='uk'>Підтримка мови мараті</name>
+    <name xml:lang='zh_CN'>古吉拉特语支持</name>
+    <name xml:lang='zh_TW'>馬拉地語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>mr</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-mr-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>oriya-support</id>
+    <name>Oriya Support</name>
+    <name xml:lang='as'>ৱৰীয়্যা ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>اوریا حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Ория</name>
+    <name xml:lang='bn'>ওরীয়া সাপোর্ট</name>
+    <name xml:lang='bn_IN'>ওড়িয়া ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za oriya</name>
+    <name xml:lang='ca'>Suport per a l'oriya</name>
+    <name xml:lang='cs'>Oriya (jižní Afrika)</name>
+    <name xml:lang='cy'>Cynhaliaeth Oriya</name>
+    <name xml:lang='da'>Understøttelse for oriya</name>
+    <name xml:lang='de'>Unterstützung für Oriya</name>
+    <name xml:lang='el'>Υποστήριξη Oriya</name>
+    <name xml:lang='en_GB'>Oriya Support</name>
+    <name xml:lang='es'>Soporte para Oriya</name>
+    <name xml:lang='et'>Oria keele tugi</name>
+    <name xml:lang='fi'>Orijan kielituki</name>
+    <name xml:lang='fr'>Prise en charge de l'oriya</name>
+    <name xml:lang='gu'>ઓરિયા આધાર</name>
+    <name xml:lang='he'>תמיכה באוריה (הודו)</name>
+    <name xml:lang='hi'>उड़िया समर्थन</name>
+    <name xml:lang='hr'>Podrška za oriya</name>
+    <name xml:lang='hu'>Oriya nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Oriya</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Oriya</name>
+    <name xml:lang='is'>Oriya</name>
+    <name xml:lang='it'>Supporto per l'oriya</name>
+    <name xml:lang='ja'>オリヤー語のサポート</name>
+    <name xml:lang='kn'>ಒರಿಯಾ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>오리야어 지원</name>
+    <name xml:lang='lv'>Oriya Support</name>
+    <name xml:lang='ml'>ഒറിയാ സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>ओरिया समर्थन</name>
+    <name xml:lang='ms'>Sokongan Oriya</name>
+    <name xml:lang='nb'>Støtte for Oriya</name>
+    <name xml:lang='ne'>ओरियाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Oriya</name>
+    <name xml:lang='or'>ଓଡିଆ ସହାୟତା</name>
+    <name xml:lang='pa'>ਓੜੀਆ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa oriya</name>
+    <name xml:lang='pt'>Suporte a Oriya</name>
+    <name xml:lang='pt_BR'>Suporte à Oriya</name>
+    <name xml:lang='ro'>Suport pentru oriază</name>
+    <name xml:lang='ru'>Поддержка языка орийя</name>
+    <name xml:lang='si'>ඔරියා භාශා පහසුකම</name>
+    <name xml:lang='sk'>Podpora oriya</name>
+    <name xml:lang='sl'>Podpora Oriji (Indijščina)</name>
+    <name xml:lang='sr'>Подршка за орију</name>
+    <name xml:lang='sr@Latn'>Podrška za oriju</name>
+    <name xml:lang='sr@latin'>Podrška za oriju</name>
+    <name xml:lang='sv'>Stöd för oriya</name>
+    <name xml:lang='ta'>ஒரியா துணை</name>
+    <name xml:lang='te'>ఒరియా మద్దతు</name>
+    <name xml:lang='th'>Oriya Support</name>
+    <name xml:lang='tr'>Oriyaca Desteği</name>
+    <name xml:lang='uk'>Підтримка мови орія</name>
+    <name xml:lang='zh_CN'>叙利亚语支持</name>
+    <name xml:lang='zh_TW'>奧利亞語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>or</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-or-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>punjabi-support</id>
+    <name>Punjabi Support</name>
+    <name xml:lang='af'>Pandjab taalsteun</name>
+    <name xml:lang='am'>የፑንጃቢ ድጋፍ</name>
+    <name xml:lang='ar'>الدعم البنجابي</name>
+    <name xml:lang='as'>পাঞ্জাবি ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>پنجاپی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Панджаби</name>
+    <name xml:lang='bn'>পাঞ্জাবি ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>পাঞ্জাবি ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za pandžabski</name>
+    <name xml:lang='ca'>Suport per al punjabi</name>
+    <name xml:lang='cs'>Punjabi (Indie, Pákistán)</name>
+    <name xml:lang='cy'>Cynhaliaeth Pwnjabi</name>
+    <name xml:lang='da'>Understøttelse for punjabi</name>
+    <name xml:lang='de'>Unterstützung für Punjabi</name>
+    <name xml:lang='el'>Υποστήριξη Παντζαμπινά</name>
+    <name xml:lang='en_GB'>Punjabi Support</name>
+    <name xml:lang='es'>Soporte para punjabi</name>
+    <name xml:lang='et'>punjabi keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی پنجابی</name>
+    <name xml:lang='fi'>Pandžabin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du panjâbî</name>
+    <name xml:lang='gu'>પંજાબી આધાર</name>
+    <name xml:lang='he'>תמיכה בפונג'אבית (הודו)</name>
+    <name xml:lang='hi'>पंजाबी समर्थन</name>
+    <name xml:lang='hr'>Podrška za pandžabski</name>
+    <name xml:lang='hu'>Pandzsábi nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Punjabi</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Punjabi</name>
+    <name xml:lang='is'>Punjabi</name>
+    <name xml:lang='it'>Supporto per il punjabi</name>
+    <name xml:lang='ja'>パンジャブ語のサポート</name>
+    <name xml:lang='ka'>პანჯაბის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಪಂಜಾಬಿ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>펀잡어 지원</name>
+    <name xml:lang='lv'>Pendžabiešu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за панџаби</name>
+    <name xml:lang='ml'>പഞ്ചാബി സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>पंजाबी समर्थन</name>
+    <name xml:lang='ms'>Sokongan Punjabi</name>
+    <name xml:lang='nb'>Støtte for punjabi</name>
+    <name xml:lang='ne'>पञ्जावी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Punjabi</name>
+    <name xml:lang='no'>Støtte for punjabi</name>
+    <name xml:lang='nso'>Thekgo ya se-Punjabi</name>
+    <name xml:lang='or'>ପଞ୍ଜାବୀ ସହାୟତା</name>
+    <name xml:lang='pa'>ਪੰਜਾਬੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa pendżabi</name>
+    <name xml:lang='pt'>Suporte a Punjabi</name>
+    <name xml:lang='pt_BR'>Suporte à Punjabi</name>
+    <name xml:lang='ro'>Suport pentru punjabi</name>
+    <name xml:lang='ru'>Поддержка языка панджаби</name>
+    <name xml:lang='si'>පන්ජාබ් භාශා පහසුකම</name>
+    <name xml:lang='sk'>Pandžábska podpora</name>
+    <name xml:lang='sl'>Podpora Pandžabščini (Indijščina)</name>
+    <name xml:lang='sr'>Подршка за панџаби</name>
+    <name xml:lang='sr@Latn'>Podrška za pandžabi</name>
+    <name xml:lang='sr@latin'>Podrška za pandžabi</name>
+    <name xml:lang='sv'>Stöd för punjabi</name>
+    <name xml:lang='ta'>பஞ்சாபி துணை</name>
+    <name xml:lang='te'>పంజాబీ మద్దతు</name>
+    <name xml:lang='th'>การสนับสนุนภาษาปัญจาบ</name>
+    <name xml:lang='tr'>Penjapca Desteği</name>
+    <name xml:lang='uk'>Підтримка пенджабської мови</name>
+    <name xml:lang='ur'>پينجابي کا ساتھ</name>
+    <name xml:lang='zh_CN'>旁遮普语支持</name>
+    <name xml:lang='zh_TW'>旁遮普語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>pa</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-pa-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>russian-support</id>
+    <name>Russian Support</name>
+    <name xml:lang='af'>Russiese taalsteun</name>
+    <name xml:lang='am'>የራሺያዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الروسيّة</name>
+    <name xml:lang='as'>ৰুছ ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>روسی حمایت</name>
+    <name xml:lang='be'>Падтрымка расейскае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Руски</name>
+    <name xml:lang='bn'>রুশ ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>রুশ ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za ruski</name>
+    <name xml:lang='ca'>Suport per al rus</name>
+    <name xml:lang='cs'>Ruština</name>
+    <name xml:lang='cy'>Cynhaliaeth Rwsieg</name>
+    <name xml:lang='da'>Understøttelse for russisk</name>
+    <name xml:lang='de'>Unterstützung für Russisch</name>
+    <name xml:lang='el'>Υποστήριξη Ρωσικών</name>
+    <name xml:lang='en_GB'>Russian Support</name>
+    <name xml:lang='es'>Soporte para ruso</name>
+    <name xml:lang='et'>vene keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی روسی</name>
+    <name xml:lang='fi'>Venäjän kielituki</name>
+    <name xml:lang='fr'>Prise en charge du russe</name>
+    <name xml:lang='gu'>રશિયાઈ આધાર</name>
+    <name xml:lang='he'>תמיכה ברוסית</name>
+    <name xml:lang='hi'>रूसी समर्थन</name>
+    <name xml:lang='hr'>Podrška za ruski</name>
+    <name xml:lang='hu'>Orosz nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Rusia</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Ruso</name>
+    <name xml:lang='is'>Rússnenska</name>
+    <name xml:lang='it'>Supporto per il russo</name>
+    <name xml:lang='ja'>ロシア語のサポート</name>
+    <name xml:lang='ka'>რუსულის მხარდაჭერა</name>
+    <name xml:lang='kn'>ರಷಿಯನ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>러시아어 지원</name>
+    <name xml:lang='lv'>Krievu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за руски</name>
+    <name xml:lang='ml'>റഷ്യന്‍ പിന്തുണ</name>
+    <name xml:lang='mr'>रशियन समर्थन</name>
+    <name xml:lang='ms'>Sokongan Rusia</name>
+    <name xml:lang='nb'>Støtte for russisk</name>
+    <name xml:lang='ne'>रसियाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Russisch</name>
+    <name xml:lang='no'>Støtte for russisk</name>
+    <name xml:lang='nso'>Thekgo ya se-Russia</name>
+    <name xml:lang='or'>ରୁଷି ସହାୟତା</name>
+    <name xml:lang='pa'>ਰੂਸੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa rosyjskiego</name>
+    <name xml:lang='pt'>Suporte a Russo</name>
+    <name xml:lang='pt_BR'>Suporte à Russo</name>
+    <name xml:lang='ro'>Suport pentru rusă</name>
+    <name xml:lang='ru'>Поддержка русского языка</name>
+    <name xml:lang='si'>රුසියානු භාශා පහසුකම</name>
+    <name xml:lang='sk'>Ruská podpora</name>
+    <name xml:lang='sl'>Ruska podpora</name>
+    <name xml:lang='sr'>Подршка за руски</name>
+    <name xml:lang='sr@Latn'>Podrška za ruski</name>
+    <name xml:lang='sr@latin'>Podrška za ruski</name>
+    <name xml:lang='sv'>Stöd för ryska</name>
+    <name xml:lang='ta'>ரஷ்ய துணை</name>
+    <name xml:lang='te'>రష్యన్ మద్దతు</name>
+    <name xml:lang='th'>Russian Support</name>
+    <name xml:lang='tr'>Rusça Desteği</name>
+    <name xml:lang='uk'>Підтримка російської мови</name>
+    <name xml:lang='ur'>ريسين ساتھ</name>
+    <name xml:lang='vi'>Hỗ trợ Nga</name>
+    <name xml:lang='zh_CN'>俄语支持</name>
+    <name xml:lang='zh_TW'>俄語支援</name>
+    <name xml:lang='zu'>Ukuxhasa KwesiRashiya</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>ru</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-ru-RU</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>sinhala-support</id>
+    <name>Sinhala Support</name>
+    <name xml:lang='as'>সিংহলা ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>سینهالا حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Синхала</name>
+    <name xml:lang='bn'>সিনহালা সাপোর্ট</name>
+    <name xml:lang='bn_IN'>সিংহলি ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za sinhala</name>
+    <name xml:lang='ca'>Suport per al sinhala</name>
+    <name xml:lang='cs'>Sinhala (Srí Lanka)</name>
+    <name xml:lang='cy'>Cynhaliaeth Sinhala</name>
+    <name xml:lang='da'>Understøttelse for sinhala</name>
+    <name xml:lang='de'>Unterstützung für Sinhala</name>
+    <name xml:lang='el'>Υποστήριξη Sinhala</name>
+    <name xml:lang='en_GB'>Sinhala Support</name>
+    <name xml:lang='es'>Soporte para sinhala</name>
+    <name xml:lang='et'>Singali keele tugi</name>
+    <name xml:lang='fi'>Singalin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du sinhala</name>
+    <name xml:lang='gu'>સિંહાલા આધાર</name>
+    <name xml:lang='he'>תמיכה בסינהלית</name>
+    <name xml:lang='hi'>सिंहाला समर्थन</name>
+    <name xml:lang='hr'>Podrška za sinhala</name>
+    <name xml:lang='hu'>Sinhala nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Sinhala</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Sinhala</name>
+    <name xml:lang='is'>Sinhala</name>
+    <name xml:lang='it'>Supporto per lo sinhala</name>
+    <name xml:lang='ja'>シンハラ語のサポート</name>
+    <name xml:lang='kn'>ಸಿಂಹಳ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>신할라어 지원</name>
+    <name xml:lang='lv'>Sinhala Support</name>
+    <name xml:lang='ml'>സിന്‍ഹാലാ സപ്പോര്‍ട്ട്</name>
+    <name xml:lang='mr'>सिंहला समर्थन</name>
+    <name xml:lang='ms'>Sokongan Sinhala</name>
+    <name xml:lang='nb'>Støtte for Sinhala</name>
+    <name xml:lang='ne'>सिन्हाली समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Sinhala</name>
+    <name xml:lang='or'>ସିଂଙ୍ଘଳା ସହାୟତା</name>
+    <name xml:lang='pa'>ਸਿੰਹਾਲਾ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa sinhala</name>
+    <name xml:lang='pt'>Suporte a Sinhala</name>
+    <name xml:lang='pt_BR'>Suporte à Sinhala</name>
+    <name xml:lang='ro'>Suport pentru sinhaleză</name>
+    <name xml:lang='ru'>Поддержка языка синхала</name>
+    <name xml:lang='si'>සිංහල භාශා පහසුකම</name>
+    <name xml:lang='sk'>Podpora sinhala</name>
+    <name xml:lang='sl'>Podpora Sinhalščini</name>
+    <name xml:lang='sr'>Подршка за синхалу</name>
+    <name xml:lang='sr@Latn'>Podrška za sinhalu</name>
+    <name xml:lang='sr@latin'>Podrška za sinhalu</name>
+    <name xml:lang='sv'>Stöd för singalesiska</name>
+    <name xml:lang='ta'>சிங்கள துணை</name>
+    <name xml:lang='te'>సింహళా మద్దతు</name>
+    <name xml:lang='th'>Sinhala Support</name>
+    <name xml:lang='tr'>Sinhala Desteği</name>
+    <name xml:lang='uk'>Підтримка мови сінхала</name>
+    <name xml:lang='zh_CN'>新哈拉语支持</name>
+    <name xml:lang='zh_TW'>僧伽羅語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>si</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-si-LK</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>spanish-support</id>
+    <name>Spanish Support</name>
+    <name xml:lang='af'>Spaanse taalsteun</name>
+    <name xml:lang='am'>የስፔናዊ ድጋፍ</name>
+    <name xml:lang='ar'>دعم الأسبانيّة</name>
+    <name xml:lang='as'>স্পেনিশ্ব ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>اسپانیایی حمایت</name>
+    <name xml:lang='be'>Падтрымка гішпанскае мовы</name>
+    <name xml:lang='bg'>Поддръжка на Испански</name>
+    <name xml:lang='bn'>স্প্যানিশ ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>স্প্যানিশ ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za španjolski</name>
+    <name xml:lang='ca'>Suport per a l'espanyol</name>
+    <name xml:lang='cs'>Španělština</name>
+    <name xml:lang='cy'>Cynhaliaeth Sbaeneg</name>
+    <name xml:lang='da'>Understøttelse for spansk</name>
+    <name xml:lang='de'>Unterstützung für Spanisch</name>
+    <name xml:lang='el'>Υποστήριξη Ισπανικών</name>
+    <name xml:lang='en_GB'>Spanish Support</name>
+    <name xml:lang='es'>Soporte para español</name>
+    <name xml:lang='et'>hispaania keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی اسپانیایی</name>
+    <name xml:lang='fi'>Espanjan kielituki</name>
+    <name xml:lang='fr'>Prise en charge de l'espagnol</name>
+    <name xml:lang='gu'>સ્પેનિશ આધાર</name>
+    <name xml:lang='he'>תמיכה בספרדית</name>
+    <name xml:lang='hi'>स्पेनिश समर्थन</name>
+    <name xml:lang='hr'>Podrška za španjolski</name>
+    <name xml:lang='hu'>Spanyol nyelvi támogatás</name>
+    <name xml:lang='hy'>Իսպաներենի սպասարկում</name>
+    <name xml:lang='id'>Dukungan Spanyol</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Espaniol</name>
+    <name xml:lang='is'>Spánska</name>
+    <name xml:lang='it'>Supporto per lo spagnolo</name>
+    <name xml:lang='ja'>スペイン語のサポート</name>
+    <name xml:lang='ka'>ესპანურის მხარდაჭერა</name>
+    <name xml:lang='kn'>ಸ್ಪ್ಯಾನಿಷ್ ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>스페인어 지원</name>
+    <name xml:lang='lv'>Spāņu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за шпански</name>
+    <name xml:lang='ml'>സ്പാനിഷ് പിന്തുണ</name>
+    <name xml:lang='mr'>स्पॅनिश समर्थन</name>
+    <name xml:lang='ms'>Sokongan Sepanyol</name>
+    <name xml:lang='nb'>Støtte for spansk</name>
+    <name xml:lang='ne'>स्पेनी समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Spaans</name>
+    <name xml:lang='no'>Støtte for spansk</name>
+    <name xml:lang='nso'>Thekgo ya Sepania</name>
+    <name xml:lang='or'>ସ୍ପାନିଶ ସହାୟତା</name>
+    <name xml:lang='pa'>ਸਪੇਨੀ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa hiszpańskiego</name>
+    <name xml:lang='pt'>Suporte a Espanhol</name>
+    <name xml:lang='pt_BR'>Suporte à Espanhol</name>
+    <name xml:lang='ro'>Suport pentru spaniolă</name>
+    <name xml:lang='ru'>Поддержка испанского языка</name>
+    <name xml:lang='si'>සපාඤ්ඤ භාශා පහසුකම</name>
+    <name xml:lang='sk'>Španielska podpora</name>
+    <name xml:lang='sl'>Španska podpora</name>
+    <name xml:lang='sr'>Подршка за шпански</name>
+    <name xml:lang='sr@Latn'>Podrška za španski</name>
+    <name xml:lang='sr@latin'>Podrška za španski</name>
+    <name xml:lang='sv'>Stöd för spanska</name>
+    <name xml:lang='ta'>ஸ்பானிஷ் துணை</name>
+    <name xml:lang='te'>స్పానిష్ మద్దతు</name>
+    <name xml:lang='th'>Spanish Support</name>
+    <name xml:lang='tr'>İspanyolca Desteği</name>
+    <name xml:lang='uk'>Підтримка іспанської мови</name>
+    <name xml:lang='ur'>اسپانش ساتھ</name>
+    <name xml:lang='vi'>Hỗ trợ Tây Ban Nha</name>
+    <name xml:lang='zh_CN'>西班牙语支持</name>
+    <name xml:lang='zh_TW'>西班牙語支援</name>
+    <name xml:lang='zu'>Ukuxhasa kwesiPenishi</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>es</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-es-ES</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>tamil-support</id>
+    <name>Tamil Support</name>
+    <name xml:lang='af'>Tamil taalsteun</name>
+    <name xml:lang='am'>የታሚል ድጋፍ</name>
+    <name xml:lang='ar'>الدعم التاميلي</name>
+    <name xml:lang='as'>টামিল ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>تامیلی حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Тамил</name>
+    <name xml:lang='bn'>তামিল ব্যবহারের সহায়ক</name>
+    <name xml:lang='bn_IN'>তামিল ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za tamilski</name>
+    <name xml:lang='ca'>Suport per al tàmil</name>
+    <name xml:lang='cs'>Tamil (jižní Asie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Tamil</name>
+    <name xml:lang='da'>Understøttelse for tamil</name>
+    <name xml:lang='de'>Unterstützung für Tamil</name>
+    <name xml:lang='el'>Υποστήριξη Ταμιλικής</name>
+    <name xml:lang='en_GB'>Tamil Support</name>
+    <name xml:lang='es'>Soporte para tamil</name>
+    <name xml:lang='et'>tamili keele toetus</name>
+    <name xml:lang='fa'>پشتیبانی تامیلی</name>
+    <name xml:lang='fi'>Tamilin kielituki</name>
+    <name xml:lang='fr'>Prise en charge du tamil</name>
+    <name xml:lang='gl'>Soporte para o tamil</name>
+    <name xml:lang='gu'>તમિલ આધાર</name>
+    <name xml:lang='he'>תמיכה בטאמילית (הודו)</name>
+    <name xml:lang='hi'>तमिल समर्थन</name>
+    <name xml:lang='hr'>Podrška za tamilski</name>
+    <name xml:lang='hu'>Tamil nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Tamil</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Tamil</name>
+    <name xml:lang='is'>Tamílska</name>
+    <name xml:lang='it'>Supporto per il tamil</name>
+    <name xml:lang='ja'>タミール語のサポート</name>
+    <name xml:lang='kn'>ತಮಿಳು ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>타밀어 지원</name>
+    <name xml:lang='lv'>Tamilu valodas atbalsts</name>
+    <name xml:lang='mk'>Поддршка за тамилски</name>
+    <name xml:lang='ml'>തമിഴ് പിന്തുണ</name>
+    <name xml:lang='mr'>तमिल समर्थन</name>
+    <name xml:lang='ms'>Sokongan Tamil</name>
+    <name xml:lang='nb'>Støtte for tamilsk</name>
+    <name xml:lang='ne'>तामिल समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Tamil</name>
+    <name xml:lang='no'>Støtte for tamilsk</name>
+    <name xml:lang='nso'>Thekgo ya se-Tamil</name>
+    <name xml:lang='or'>ତାମିଲ ସହାୟତା</name>
+    <name xml:lang='pa'>ਤਾਮਿਲ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa tamilskiego</name>
+    <name xml:lang='pt'>Suporte a Tamil</name>
+    <name xml:lang='pt_BR'>Suporte à Tamil</name>
+    <name xml:lang='ro'>Suport pentru tamil</name>
+    <name xml:lang='ru'>Поддержка тамильского языка</name>
+    <name xml:lang='si'>ද්‍රවිඩ භාශා පහසුකම</name>
+    <name xml:lang='sk'>Tamilská podpora</name>
+    <name xml:lang='sl'>Podpora Tamilščini</name>
+    <name xml:lang='sr'>Подршка за тамилски</name>
+    <name xml:lang='sr@Latn'>Podrška za tamilski</name>
+    <name xml:lang='sr@latin'>Podrška za tamilski</name>
+    <name xml:lang='sv'>Stöd för tamil</name>
+    <name xml:lang='ta'>தமிழ் துணை</name>
+    <name xml:lang='te'>తమిళం మద్దతు</name>
+    <name xml:lang='th'>สนับสนุนภาษาทมิฬ</name>
+    <name xml:lang='tr'>Tamil Desteği</name>
+    <name xml:lang='uk'>Підтримка тамільської мови</name>
+    <name xml:lang='ur'>تامیل کا ساتھ</name>
+    <name xml:lang='zh_CN'>泰米尔语支持</name>
+    <name xml:lang='zh_TW'>泰米爾語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>ta</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-ta-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>telugu-support</id>
+    <name>Telugu Support</name>
+    <name xml:lang='as'>টেলুগু ভাষাৰ সমৰ্থন</name>
+    <name xml:lang='bal'>تلوگو حمایت</name>
+    <name xml:lang='bg'>Поддръжка на Телугу</name>
+    <name xml:lang='bn'>তেলেগু সাপোর্ট</name>
+    <name xml:lang='bn_IN'>তেলুগু ভাষা ব্যবহারের সহায়তা</name>
+    <name xml:lang='bs'>Podrška za telugu</name>
+    <name xml:lang='ca'>Suport per al telugu</name>
+    <name xml:lang='cs'>Telugu (Indie)</name>
+    <name xml:lang='cy'>Cynhaliaeth Telwgw</name>
+    <name xml:lang='da'>Understøttelse for telugu</name>
+    <name xml:lang='de'>Unterstützung für Telugu</name>
+    <name xml:lang='el'>Υποστήριξη Telugu</name>
+    <name xml:lang='en_GB'>Telugu Support</name>
+    <name xml:lang='es'>Soporte para telugu</name>
+    <name xml:lang='et'>Telugu keele tugi</name>
+    <name xml:lang='fi'>Telugun kielituki</name>
+    <name xml:lang='fr'>Prise en charge du télougou</name>
+    <name xml:lang='gu'>તેલુગુ આધાર</name>
+    <name xml:lang='he'>תמיכה ב־Telugu</name>
+    <name xml:lang='hi'>तेलुगु समर्थन</name>
+    <name xml:lang='hr'>Podrška za telugu</name>
+    <name xml:lang='hu'>Telugu nyelvi támogatás</name>
+    <name xml:lang='id'>Dukungan Telugu</name>
+    <name xml:lang='ilo'>Panagsayangkat ti Telugu</name>
+    <name xml:lang='is'>Telugu</name>
+    <name xml:lang='it'>Supporto per il telegu</name>
+    <name xml:lang='ja'>テルグ語のサポート</name>
+    <name xml:lang='kn'>ತೆಲುಗು ಬೆಂಬಲ</name>
+    <name xml:lang='ko'>텔루구어 지원</name>
+    <name xml:lang='lv'>Telugu valodas atbalsts</name>
+    <name xml:lang='ml'>തെലുങ്കു പിന്തുണ</name>
+    <name xml:lang='mr'>तेलुगू समर्थन</name>
+    <name xml:lang='ms'>Sokongan Telugu</name>
+    <name xml:lang='nb'>Støtte for Telugu</name>
+    <name xml:lang='ne'>तेलगु समर्थन</name>
+    <name xml:lang='nl'>Ondersteuning voor Telugu</name>
+    <name xml:lang='or'>ତେଲୁଗୁ ସହାୟତା</name>
+    <name xml:lang='pa'>ਤੇਲਗੂ ਸਹਿਯੋਗ</name>
+    <name xml:lang='pl'>Obsługa telugu</name>
+    <name xml:lang='pt'>Suporte a Telugu</name>
+    <name xml:lang='pt_BR'>Suporte à Telugu</name>
+    <name xml:lang='ro'>Suport pentru telugu</name>
+    <name xml:lang='ru'>Поддержка языка телугу</name>
+    <name xml:lang='si'>තෙලිඟු භාශා පහසුකම</name>
+    <name xml:lang='sk'>Podpora telugu</name>
+    <name xml:lang='sl'>Podpora Telugščini</name>
+    <name xml:lang='sr'>Подршка за телугу</name>
+    <name xml:lang='sr@Latn'>Podrška za telugu</name>
+    <name xml:lang='sr@latin'>Podrška za telugu</name>
+    <name xml:lang='sv'>Stöd för telugu</name>
+    <name xml:lang='ta'>தெலுங்கு துணை</name>
+    <name xml:lang='te'>తెలుగు మద్దతు</name>
+    <name xml:lang='th'>Telugu Support</name>
+    <name xml:lang='tr'>Telugu Dil Desteği</name>
+    <name xml:lang='uk'>Підтримка мови телугу</name>
+    <name xml:lang='zh_CN'>泰卢固语支持</name>
+    <name xml:lang='zh_TW'>泰盧固語支援</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <langonly>te</langonly>
+    <packagelist>
+      <packagereq type='default'>Virtualization-te-IN</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>xen</id>
+    <name>Xen</name>
+    <name xml:lang='bn'>জেন</name>
+    <name xml:lang='ca'>Xen</name>
+    <name xml:lang='cy'>Xen</name>
+    <name xml:lang='en_GB'>Xen</name>
+    <name xml:lang='hy'>Xen</name>
+    <name xml:lang='ilo'>Xen</name>
+    <name xml:lang='lv'>Xen</name>
+    <name xml:lang='nl'>Xen</name>
+    <name xml:lang='pt'>Xen</name>
+    <name xml:lang='ro'>Xen</name>
+    <name xml:lang='si'>Xen</name>
+    <name xml:lang='th'>Xen</name>
+    <description>Virtualization Support.</description>
+    <description xml:lang='as'>ভাৰচুৱেলাইজেচন্‌ৰ সমৰ্থন</description>
+    <description xml:lang='bn'>ভার্চুয়ালাইজেশন সাপোর্ট।</description>
+    <description xml:lang='bn_IN'>ভার্চুয়ালাইজেশন সমর্থনব্যবস্থা।</description>
+    <description xml:lang='bs'>Podrška za virtualizaciju</description>
+    <description xml:lang='ca'>Suport per a la virtualització.</description>
+    <description xml:lang='cs'>Podpora virtualizácie.</description>
+    <description xml:lang='da'>Understøttelse for virtualisering</description>
+    <description xml:lang='de'>Unterstützung für Virtualisierung.</description>
+    <description xml:lang='en_GB'>Virtualisation Support</description>
+    <description xml:lang='es'>Soporte para la Virtualización.</description>
+    <description xml:lang='fi'>Virtualisointituki.</description>
+    <description xml:lang='gu'>વર્ચ્યુઅલાઈઝેશન આધાર.</description>
+    <description xml:lang='hi'>वर्चुअलाइजेशन समर्थन.</description>
+    <description xml:lang='hr'>Podrška za virtualizaciju</description>
+    <description xml:lang='hu'>Virtualizációs támogatás</description>
+    <description xml:lang='hy'>Վիրտուալիզացիա ապահովում</description>
+    <description xml:lang='id'>Dukungan Virtualisasi</description>
+    <description xml:lang='ilo'>Suporta iti Virtualisasion</description>
+    <description xml:lang='is'>Sýndarvélastuðningur.</description>
+    <description xml:lang='it'>Supporto per la virtualizzazione.</description>
+    <description xml:lang='ja'>仮想化のサポート</description>
+    <description xml:lang='ka'>ვირტუალიზების მხარდაჭერა</description>
+    <description xml:lang='kn'>ವಾಸ್ತವಪ್ರಾಯೀಕರಣ (Virtualization) ಬೆಂಬಲ.</description>
+    <description xml:lang='ko'>가상화 지원 </description>
+    <description xml:lang='lv'>Virtualizācijas atbalsts</description>
+    <description xml:lang='ml'>വിര്‍ച്ച്വലൈസേഷന്‍ പിന്തുണ.</description>
+    <description xml:lang='mr'>आभासीकरण समर्थन.</description>
+    <description xml:lang='nl'>Ondersteuning voor virtualisatie.</description>
+    <description xml:lang='or'>ଆଭାସୀକରଣ ସହାୟତା</description>
+    <description xml:lang='pa'>ਵਰਚੁਲਾਈਜ਼ੇਸ਼ਨ ਸਹਿਯੋਗ।</description>
+    <description xml:lang='pl'>Obsługa wirtualizacji.</description>
+    <description xml:lang='pt'>Suporte de Virtualização.</description>
+    <description xml:lang='pt_BR'>Suporte à Virtualização.</description>
+    <description xml:lang='ro'>Suport pentru virtualizare</description>
+    <description xml:lang='ru'>Поддержка виртуализации.</description>
+    <description xml:lang='si'>අථත්‍යකරණ පහසුකම</description>
+    <description xml:lang='sk'>Podpora virtualizácie.</description>
+    <description xml:lang='sl'>Podpora virtualizaciji</description>
+    <description xml:lang='sq'>Mbulim Virtualizimi</description>
+    <description xml:lang='sr'>Подршка за виртуализацију.</description>
+    <description xml:lang='sr@Latn'>Podrška za virtualizaciju.</description>
+    <description xml:lang='sr@latin'>Podrška za virtualizaciju.</description>
+    <description xml:lang='ta'>மெய்நிகராக்க சேவை.</description>
+    <description xml:lang='te'>వర్చ్యులైజెషన్ మద్దతు.</description>
+    <description xml:lang='th'>สนับสนุน Virtualization</description>
+    <description xml:lang='tr'>Sanallaştırma Desteği</description>
+    <description xml:lang='zh_CN'>虚拟化支持。</description>
+    <description xml:lang='zh_TW'>虛擬化支援</description>
+    <default>true</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type='mandatory'>kernel-xen</packagereq>
+      <packagereq type='mandatory'>xen</packagereq>
+      <packagereq type='default'>Virtualization-en-US</packagereq>
+      <packagereq type='default'>gnome-applet-vm</packagereq>
+      <packagereq type='default'>libvirt</packagereq>
+      <packagereq type='default'>virt-manager</packagereq>
+      <packagereq type='default'>virt-viewer</packagereq>
+      <packagereq type='optional'>libcmpiutil</packagereq>
+      <packagereq type='optional'>libvirt-cim</packagereq>
+      <packagereq type='optional'>perl-Sys-Virt</packagereq>
+    </packagelist>
+  </group>
+  <category>
+    <id>virtualization</id>
+    <name>Virtualization</name>
+    <name xml:lang='ar'>تقديريات</name>
+    <name xml:lang='as'>ভাৰচুৱেলাইজেচন্</name>
+    <name xml:lang='bal'>مجازی کتن</name>
+    <name xml:lang='bg'>Виртуализация</name>
+    <name xml:lang='bn'>ভার্চুয়ালাইজেশন</name>
+    <name xml:lang='bn_IN'>ভার্চুয়ালাইজেশন</name>
+    <name xml:lang='bs'>Virtualizacija</name>
+    <name xml:lang='ca'>Virtualització</name>
+    <name xml:lang='cs'>Virtualizace</name>
+    <name xml:lang='da'>Virtualisering</name>
+    <name xml:lang='de'>Virtualisierung</name>
+    <name xml:lang='el'>Εικονικοποίηση</name>
+    <name xml:lang='en_GB'>Virtualisation</name>
+    <name xml:lang='es'>Virtualización</name>
+    <name xml:lang='et'>Virtualiseerimine</name>
+    <name xml:lang='fi'>Virtualisointi</name>
+    <name xml:lang='fr'>Virtualisation</name>
+    <name xml:lang='gu'>વર્ચ્યુઅલાઈઝેશન</name>
+    <name xml:lang='he'>הדמייה (וירטואליזציה)</name>
+    <name xml:lang='hi'>दृश्यकरण</name>
+    <name xml:lang='hr'>Virtualizacija</name>
+    <name xml:lang='hu'>Virtualizáció</name>
+    <name xml:lang='hy'>Վիրտուալիզացիա</name>
+    <name xml:lang='id'>Virtualisasi</name>
+    <name xml:lang='is'>Sýndarvélar</name>
+    <name xml:lang='it'>Virtualizzazione</name>
+    <name xml:lang='ja'>仮想化</name>
+    <name xml:lang='ka'>ვირტუალიზება</name>
+    <name xml:lang='kn'>ವಾಸ್ತವಪ್ರಾಯೀಕರಣ (Virtualization)</name>
+    <name xml:lang='ko'>가상화</name>
+    <name xml:lang='lv'>Virtualizācija</name>
+    <name xml:lang='ml'>വിര്‍ച്ച്വലൈസേഷന്‍</name>
+    <name xml:lang='mr'>आभासीकरण</name>
+    <name xml:lang='ms'>Virtualization</name>
+    <name xml:lang='nb'>Virtualisering</name>
+    <name xml:lang='ne'>भर्चुअलाइजेसन</name>
+    <name xml:lang='nl'>Virtualisatie</name>
+    <name xml:lang='or'>ଆଭାସୀକରଣ</name>
+    <name xml:lang='pa'>ਵੁਰਚੁਲਾਈਜ਼ੇਸ਼ਨ</name>
+    <name xml:lang='pl'>Wirtualizacja</name>
+    <name xml:lang='pt'>Virtualização</name>
+    <name xml:lang='pt_BR'>Virtualização</name>
+    <name xml:lang='ro'>Virtualizare</name>
+    <name xml:lang='ru'>Виртуализация</name>
+    <name xml:lang='si'>අථත්‍යකරණය</name>
+    <name xml:lang='sk'>Virtualizácia</name>
+    <name xml:lang='sl'>Virtualizacija</name>
+    <name xml:lang='sr'>Виртуализација</name>
+    <name xml:lang='sr@Latn'>Virtualizacija</name>
+    <name xml:lang='sr@latin'>Virtualizacija</name>
+    <name xml:lang='sv'>Virtualisering</name>
+    <name xml:lang='ta'>மெய்நிகராக்கம்</name>
+    <name xml:lang='te'>వర్చ్యులైజేషన్</name>
+    <name xml:lang='th'>Virtualization</name>
+    <name xml:lang='tr'>Sanallaştırma</name>
+    <name xml:lang='uk'>Віртуалізація</name>
+    <name xml:lang='zh_CN'>虚拟化</name>
+    <name xml:lang='zh_TW'>虛擬化</name>
+    <description>Virtualization Support.</description>
+    <description xml:lang='as'>ভাৰচুৱেলাইজেচন্‌ৰ সমৰ্থন</description>
+    <description xml:lang='bn'>ভার্চুয়ালাইজেশন সাপোর্ট।</description>
+    <description xml:lang='bn_IN'>ভার্চুয়ালাইজেশন সমর্থনব্যবস্থা।</description>
+    <description xml:lang='bs'>Podrška za virtualizaciju</description>
+    <description xml:lang='ca'>Suport per a la virtualització.</description>
+    <description xml:lang='cs'>Podpora virtualizácie.</description>
+    <description xml:lang='da'>Understøttelse for virtualisering</description>
+    <description xml:lang='de'>Unterstützung für Virtualisierung.</description>
+    <description xml:lang='en_GB'>Virtualisation Support</description>
+    <description xml:lang='es'>Soporte para la Virtualización.</description>
+    <description xml:lang='fi'>Virtualisointituki.</description>
+    <description xml:lang='gu'>વર્ચ્યુઅલાઈઝેશન આધાર.</description>
+    <description xml:lang='hi'>वर्चुअलाइजेशन समर्थन.</description>
+    <description xml:lang='hr'>Podrška za virtualizaciju</description>
+    <description xml:lang='hu'>Virtualizációs támogatás</description>
+    <description xml:lang='hy'>Վիրտուալիզացիա ապահովում</description>
+    <description xml:lang='id'>Dukungan Virtualisasi</description>
+    <description xml:lang='ilo'>Suporta iti Virtualisasion</description>
+    <description xml:lang='is'>Sýndarvélastuðningur.</description>
+    <description xml:lang='it'>Supporto per la virtualizzazione.</description>
+    <description xml:lang='ja'>仮想化のサポート</description>
+    <description xml:lang='ka'>ვირტუალიზების მხარდაჭერა</description>
+    <description xml:lang='kn'>ವಾಸ್ತವಪ್ರಾಯೀಕರಣ (Virtualization) ಬೆಂಬಲ.</description>
+    <description xml:lang='ko'>가상화 지원 </description>
+    <description xml:lang='lv'>Virtualizācijas atbalsts</description>
+    <description xml:lang='ml'>വിര്‍ച്ച്വലൈസേഷന്‍ പിന്തുണ.</description>
+    <description xml:lang='mr'>आभासीकरण समर्थन.</description>
+    <description xml:lang='nl'>Ondersteuning voor virtualisatie.</description>
+    <description xml:lang='or'>ଆଭାସୀକରଣ ସହାୟତା</description>
+    <description xml:lang='pa'>ਵਰਚੁਲਾਈਜ਼ੇਸ਼ਨ ਸਹਿਯੋਗ।</description>
+    <description xml:lang='pl'>Obsługa wirtualizacji.</description>
+    <description xml:lang='pt'>Suporte de Virtualização.</description>
+    <description xml:lang='pt_BR'>Suporte à Virtualização.</description>
+    <description xml:lang='ro'>Suport pentru virtualizare</description>
+    <description xml:lang='ru'>Поддержка виртуализации.</description>
+    <description xml:lang='si'>අථත්‍යකරණ පහසුකම</description>
+    <description xml:lang='sk'>Podpora virtualizácie.</description>
+    <description xml:lang='sl'>Podpora virtualizaciji</description>
+    <description xml:lang='sq'>Mbulim Virtualizimi</description>
+    <description xml:lang='sr'>Подршка за виртуализацију.</description>
+    <description xml:lang='sr@Latn'>Podrška za virtualizaciju.</description>
+    <description xml:lang='sr@latin'>Podrška za virtualizaciju.</description>
+    <description xml:lang='ta'>மெய்நிகராக்க சேவை.</description>
+    <description xml:lang='te'>వర్చ్యులైజెషన్ మద్దతు.</description>
+    <description xml:lang='th'>สนับสนุน Virtualization</description>
+    <description xml:lang='tr'>Sanallaştırma Desteği</description>
+    <description xml:lang='zh_CN'>虚拟化支持。</description>
+    <description xml:lang='zh_TW'>虛擬化支援</description>
+    <display_order>99</display_order>
+    <grouplist>
+      <groupid>kvm</groupid>
+      <groupid>xen</groupid>
+    </grouplist>
+  </category>
+</comps>
