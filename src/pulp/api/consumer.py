@@ -253,20 +253,22 @@ class ConsumerApi(BaseApi):
                 erratum = self.errataapi.erratum(erratumid)
 
                 applicable_errata[erratumid] = []
-                for pkg in erratum["pkglist"]["packages"]:
-                    for ppkg in pkg_profile:
-                        pkg_info = {
-                           'name': pkg["name"],
-                            'version': pkg["version"],
-                            'arch': pkg["arch"],
-                            'epoch': pkg["epoch"],
-                            'release': pkg["release"],
-                        }
+                for epkg in erratum["pkglist"]:
+                    for pkg in epkg["packages"]:
+                        for ppkg in pkg_profile:
+                            pkg_info = {
+                                        'name': pkg["name"],
+                                        'version': pkg["version"],
+                                        'arch': pkg["arch"],
+                                        'epoch': pkg["epoch"],
+                                        'release': pkg["release"],
+                                        }
 
-                        status = compare_packages(ppkg, pkg_info)
-                        if status == 1:
-                            # erratum pkg is newer, add to update list
-                            applicable_errata[erratumid].append(pkg)
+                            status = compare_packages(pkg_info, ppkg)
+                            log.error("Compare",pkg_info, ppkg,status )
+                            if status == 1:
+                                # erratum pkg is newer, add to update list
+                                applicable_errata[erratumid].append(pkg)
                         
                 if not len(applicable_errata[erratumid]):
                     # status is either 0 or -1.

@@ -327,9 +327,10 @@ class ConsumerConnection(PulpConnection):
         body = dict(packageids=packageids)
         return self.conn.request_post(method, params=body)
     
-    def errata(self, id, type=None):
-        method = "/consumers/%s/errata/?type=%s" % (id, type)
-        return self.conn.request_get(method)
+    def errata(self, id, types=None):
+        method = "/consumers/%s/listerrata/" % id
+        body = dict(types=types)
+        return self.conn.request_post(method, params=body)
     
     def installerrata(self, id, errataids, types=[]):
         erratainfo = {'consumerid' : id,

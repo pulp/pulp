@@ -194,17 +194,6 @@ class ConsumerDeferredFields(JSONController):
         certificate = {'certificate': certificate}
         log.debug("Returning certificate: [%s]" % certificate)
         return self.ok(certificate)
-    
-        
-    def errata(self, id):
-        """
-         list applicable errata for a given consumer
-         compares the errata packages to the consumer
-         package profile and returns matching errata.
-        """
-        valid_filters = ('type')
-        types = self.filters(valid_filters)['type']
-        return self.ok(api.listerrata(id, types))
 
     @JSONController.error_handler
     @RoleCheck()
@@ -287,6 +276,16 @@ class ConsumerActions(JSONController):
         eids = data.get('errataids', [])
         types = data.get('types', [])
         return self.ok(api.installerrata(id, eids, types))
+    
+    @JSONController.error_handler
+    @RoleCheck()
+    def listerrata(self, id):
+        """
+         list applicable errata for a given repo.
+         filter by errata type if any
+        """
+        data = self.params()
+        return self.ok(api.listerrata(id, data['types']))
         
         
     @JSONController.error_handler

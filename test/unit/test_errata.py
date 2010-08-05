@@ -44,10 +44,11 @@ import testutil
 class TestErrata(unittest.TestCase):
 
     def clean(self):
-        self.eapi.clean()
-        self.rapi.clean()
-        self.papi.clean()
-        self.capi.clean()
+        #self.eapi.clean()
+        #self.rapi.clean()
+        #self.papi.clean()
+        #self.capi.clean()
+        pass
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -57,7 +58,7 @@ class TestErrata(unittest.TestCase):
         self.rapi = RepoApi()
         self.capi = ConsumerApi()
         self.papi = PackageApi()
-        self.clean()
+        #self.clean()
 
     def tearDown(self):
         self.clean()
@@ -326,7 +327,7 @@ class TestErrata(unittest.TestCase):
         test_description = "test description text"
         test_checksum_type = "sha256"
         test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
-        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        test_filename = 'test-filename-0.3.1-1.fc11.x86_64.rpm'
         p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
                 release=test_release, arch=test_arch, description=test_description, 
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
@@ -334,8 +335,7 @@ class TestErrata(unittest.TestCase):
         # Add this package version to the repo
         self.rapi.add_package(repo["id"], p['id'])
         self.rapi.update(repo)
-        test_errata_1["pkglist"] = [p['id']]
-        assert(p['id'] in test_errata_1["pkglist"])
+        test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/test-filename-0.3.1-1.fc11.x86_64.rpm', 'name': 'test-filename', 'filename': 'test-filename-0.3.1-1.fc11.x86_64.rpm', 'epoch': None, 'version': '0.3.1', u'release': '1.fc11', 'arch': 'x86_64'}]}]
         self.eapi.update(test_errata_1)
         repo["errata"] = {"security" : [test_errata_1['id']]}
 
