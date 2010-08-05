@@ -44,11 +44,10 @@ import testutil
 class TestErrata(unittest.TestCase):
 
     def clean(self):
-        #self.eapi.clean()
-        #self.rapi.clean()
-        #self.papi.clean()
-        #self.capi.clean()
-        pass
+        self.eapi.clean()
+        self.rapi.clean()
+        self.papi.clean()
+        self.capi.clean()
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -58,7 +57,7 @@ class TestErrata(unittest.TestCase):
         self.rapi = RepoApi()
         self.capi = ConsumerApi()
         self.papi = PackageApi()
-        #self.clean()
+        self.clean()
 
     def tearDown(self):
         self.clean()
