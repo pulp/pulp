@@ -242,31 +242,40 @@ class ConsumerApi(BaseApi):
         """ 
         Logic to filter applicable errata for a consumer
         """
-        #TODO: Note to self, test query for large pkg profile and check performance
-        #consider caching applicable errata into a mongo collection
         applicable_errata = {}
         pkg_profile = consumer["package_profile"]
 
-        for repoid in consumer["repoids"]:
-            errataids = self.repoapi.errata(repoid, types)
-            for erratumid in errataids:
-                erratum = self.errataapi.erratum(erratumid)
-                for epkg in erratum["pkglist"]:
-                    for pkg in epkg["packages"]:
-                        for ppkg in pkg_profile:
-                            pkg_info = {
-                                        'name': pkg["name"],
-                                        'version': pkg["version"],
-                                        'arch': pkg["arch"],
-                                        'epoch': pkg["epoch"],
-                                        'release': pkg["release"],
-                                        }
+        pkg_profile_dict = [dict(pkg) for pkg in pkg_profile]
+        pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
 
-                            status = compare_packages(pkg_info, ppkg)
-                            if status == 1:
-                                # erratum pkg is newer, add to update list
-                                if not applicable_errata.has_key(erratumid):
-                                    applicable_errata[erratumid] = []
-                                applicable_errata[erratumid].append(pkg)
-
+        #Compute applicable errata by subscribed repos
+        errataids = [eid for repoid in consumer["repoids"] \
+                     for eid in self.repoapi.errata(repoid, types) ]
+        for erratumid in errataids:
+            # compare errata packages to consumer package profile and 
+            # extract applicable errata
+            erratum = self.errataapi.erratum(erratumid)
+            for epkg in erratum["pkglist"]:
+                for pkg in epkg["packages"]:
+                    epkg_info = {
+                                'name': pkg["name"],
+                                'version': pkg["version"],
+                                'arch': pkg["arch"],
+                                'epoch': pkg["epoch"] or 0,
+                                'release': pkg["release"],
+                                }
+                    if epkg_info['name'] not in pkg_profile_names:
+                        #if errata pkg not in installed profile, update is not
+                        # applicable move on
+                        continue
+                    for ppkg in pkg_profile_dict:
+                        if epkg_info['name'] != ppkg['name']: 
+                            continue
+                        
+                        status = compare_packages(epkg_info, ppkg)
+                        if status == 1:
+                            # erratum pkg is newer, add to update list
+                            if not applicable_errata.has_key(erratumid):
+                                applicable_errata[erratumid] = []
+                            applicable_errata[erratumid].append(pkg)
         return applicable_errata

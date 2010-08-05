@@ -213,9 +213,7 @@ def compare_packages(pkgA, pkgB):
         if evr[0] == "":
             evr[0] = None
         return evr
-    if pkgA["name"] != pkgB["name"]:
-        # atleast name should match before checking further
-        return
+
     evrA, evrB = (build_evr(pkgA), build_evr(pkgB))
     return rpm.labelCompare(evrA, evrB)
 
