@@ -393,7 +393,11 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(len(r['errata']['bugfix']) == len(bugfix))
         for erratum in enhancement:
             self.assertTrue(erratum in r['errata']['enhancement'])
+            self.assertTrue(self.eapi.erratum(erratum) != None)
         for erratum in security:
             self.assertTrue(erratum in r['errata']['security'])
+            self.assertTrue(self.eapi.erratum(erratum) != None)
         for erratum in bugfix:
             self.assertTrue(erratum in r['errata']['bugfix'])
+            self.assertTrue(self.eapi.erratum(erratum) != None)
+
