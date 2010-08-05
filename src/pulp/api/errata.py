@@ -114,12 +114,29 @@ class ErrataApi(BaseApi):
     def search_by_issued_date_range(self):
         pass
 
-    def search_by_references(self):
+    def query_by_bz(self, bzid):
+        return self.query_by_reference('bugzilla', bzid)
+
+    def query_by_cve(self, cveid):
+        return self.query_by_reference('cve', cveid)
+
+    def query_by_reference(self, type, refid):
         """
-        Search Errata for specific info matching a reference
-        Example: CVE id search
+        Search Errata for all matches of this reference with id 'refid'
+        @param type, reference type to search, example 'bugzilla', 'cve'
+        @param refid, id to match on
         """
-        pass
+        # Will prob want to chunk the query to mongo and limit the data returned
+        # to be only 'references' and 'id'.
+        # OR...look into a better way to search inside errata through mongo
+        all_errata = self.errata()
+        matches = []
+        for e in all_errata:
+            for ref in e["references"]:
+                if ref["type"] == type and ref["id"] == refid:
+                    matches.append(e["id"])
+                    continue
+        return matches
 
     def search_by_repo(self, errata_id):
         """

@@ -400,3 +400,24 @@ class TestErrata(unittest.TestCase):
             self.assertTrue(erratum in r['errata']['bugfix'])
             self.assertTrue(self.eapi.erratum(erratum) != None)
 
+    def test_errata_query_by_cve(self):
+        datadir = os.path.join(self.data_path, "repo_rhel_sample")
+        r = self.rapi.create("test_errata_query_by_cve", "test_name", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi.sync(r['id'])
+        # Refresh object now it's been sync'd
+        r = self.rapi.repository(r['id'])
+        found = self.eapi.query_by_cve("CVE-2007-3919")
+        self.assertTrue(len(found) == 1)
+        self.assertTrue(found[0] == 'RHSA-2008:0194')
+
+    def test_errata_query_by_bz(self):
+        datadir = os.path.join(self.data_path, "repo_rhel_sample")
+        r = self.rapi.create("test_errata_query_bz", "test_name", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi.sync(r['id'])
+        # Refresh object now it's been sync'd
+        r = self.rapi.repository(r['id'])
+        found = self.eapi.query_by_bz("433560")
+        self.assertTrue(len(found) == 1)
+        self.assertTrue(found[0] == 'RHSA-2008:0194')
