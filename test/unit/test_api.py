@@ -276,8 +276,12 @@ class TestApi(unittest.TestCase):
         # Add this package version to the repo
         self.rapi.add_package(repo["id"], p['id'])
         self.rapi.update(repo)
-        test_errata_1["pkglist"] = [p['id']]
-        assert(p['id'] in test_errata_1["pkglist"])
+        test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
+                                                    'name': 'pulp-test-package', 
+                                                    'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
+                                                    'epoch': '0', 'version': '0.3.1', 'release': '1.fc11', 
+                                                    'arch': 'x86_64'}]}]
+
         self.eapi.update(test_errata_1)
         repo["errata"] = {"security" : [test_errata_1['id']]}
 
