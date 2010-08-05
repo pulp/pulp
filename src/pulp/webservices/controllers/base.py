@@ -251,7 +251,6 @@ class AsyncController(JSONController):
     def accepted(self, status):
         """
         Return an accepted response with status information in the body.
-        @param id: task id
         @return: JSON encoded response
         """
         http.status_accepted()

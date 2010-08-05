@@ -90,7 +90,7 @@ class Erratum(JSONController):
 
     @JSONController.error_handler
     @RoleCheck()
-    def PUT(self, login):
+    def PUT(self, id):
         """
         Update errata
         @param id: The erratum id

@@ -273,7 +273,6 @@ class RepositoryActions(AsyncController):
         Get package info from a repository.
         @deprecated: user deferred fields: packages with filters instead
         @param id: repository id
-        @param name: repository name
         @return: matched package object available in corresponding repository
         """
         name = self.params()
@@ -285,9 +284,6 @@ class RepositoryActions(AsyncController):
         """
         Add a package to an existing package group
         @param id: repository id
-        @param groupid: package group id
-        @param name: package name
-        @param type: group type example "mandatory", "optional", "default"
         @return: True/False
         """
         p = self.params()
@@ -308,9 +304,6 @@ class RepositoryActions(AsyncController):
         """
         Removes a package from an existing package group
         @param id: repository id
-        @param groupid: package group id
-        @param name: package name
-        @param type: group type example "mandatory", "optional", "default"
         @return: True/False
         """
         p = self.params()
@@ -331,9 +324,6 @@ class RepositoryActions(AsyncController):
         """
         Creates a packagegroup in the referenced repository
         @param id: repository id
-        @param groupid: id of package group
-        @param groupname: name of package group
-        @param description: description of package group
         @return: 
         """
         p = self.params()
@@ -355,7 +345,6 @@ class RepositoryActions(AsyncController):
         """
         Removes a packagegroup from a repository
         @param id: repository id
-        @param groupid: package group id
         @return: 
         """
         p = self.params()
