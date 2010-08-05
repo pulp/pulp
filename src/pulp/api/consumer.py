@@ -251,7 +251,6 @@ class ConsumerApi(BaseApi):
             errataids = self.repoapi.errata(repoid, types)
             for erratumid in errataids:
                 erratum = self.errataapi.erratum(erratumid)
-                applicable_errata[erratumid] = []
                 for epkg in erratum["pkglist"]:
                     for pkg in epkg["packages"]:
                         for ppkg in pkg_profile:
@@ -266,9 +265,8 @@ class ConsumerApi(BaseApi):
                             status = compare_packages(pkg_info, ppkg)
                             if status == 1:
                                 # erratum pkg is newer, add to update list
+                                if not applicable_errata.has_key(erratumid):
+                                    applicable_errata[erratumid] = []
                                 applicable_errata[erratumid].append(pkg)
-                        
-                if not len(applicable_errata[erratumid]):
-                    # status is either 0 or -1.
-                    del applicable_errata[erratumid]
+
         return applicable_errata

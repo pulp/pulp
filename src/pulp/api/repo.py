@@ -19,7 +19,7 @@ import logging
 import gzip
 import os
 import traceback
-
+from itertools import chain
 # Pulp
 from pulp import comps_util
 from pulp import crontab
@@ -220,7 +220,7 @@ class RepoApi(BaseApi):
             except KeyError, ke:
                 log.debug("Invalid errata type requested :[%s]" % (ke))
                 raise PulpException("Invalid errata type requested :[%s]" % (ke))
-        return [ item for etype in errata.values() for item in etype ]      
+        return list(chain.from_iterable(errata.values())) 
       
     @audit()
     def add_erratum(self, repoid, erratumid):
