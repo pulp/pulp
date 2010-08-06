@@ -62,7 +62,7 @@ class SimpleTaskQueue(TaskQueue):
     Derived task queue that provides no special functionality
     """
     def enqueue(self, task):
-        task.waiting()
+        task.wait()
     
     def run(self, task):
         task.run()
@@ -87,33 +87,73 @@ class VolatileStorage(object):
     # iterable methods
             
     def all_tasks(self):
-        return itertools.chain(self.__waiting_tasks[:],
+        """
+        Return an iterator over all tasks currently in the queue in descending
+        order by length of time in the queue.
+        @return: iterator
+        """
+        return itertools.chain(self.__complete_tasks[:],
                                self.__running_tasks[:],
-                               self.__complete_tasks[:])
+                               self.__waiting_tasks[:])
         
     def waiting_tasks(self):
+        """
+        Return an iterator over all waiting tasks in the queue, in descending
+        order by the length of time in the queue.
+        @return: iterator
+        """
         return self.__waiting_tasks[:]
     
     def running_tasks(self):
+        """
+        Return an iterator over all running tasks in the queue, in descending
+        order by the length of time in the queue.
+        @return: iterator
+        """
         return self.__running_tasks[:]
         
     def complete_tasks(self):
+        """
+        Return an iterator over all complete tasks in the queue, in descending
+        order by the length of time in the queue.
+        @return: iterator
+        """
         return self.__complete_tasks[:]
     
     # add/remove tasks methods
                 
     def add_waiting_task(self, task):
+        """
+        Add a task to the wait queue.
+        @type task: Task instance
+        @param task: task to add
+        """
         self.__waiting_tasks.append(task)
         
     def add_running_task(self, task):
+        """
+        Remove a task from the wait queue and add it to the running queue.
+        @type task: Task instance
+        @param task: task to add
+        """
         self.__waiting_tasks.remove(task)
         self.__running_tasks.append(task)
         
     def add_complete_task(self, task):
+        """
+        Remove a task from the running queue and add it to the complete queue.
+        @type task: Task instance
+        @param task: task to add
+        """
         self.__running_tasks.remove(task)
         self.__complete_tasks.append(task)
     
     def remove_task(self, task):
+        """
+        Remove a task from storage.
+        @type task: Task instance
+        @param task: task to remove
+        """
         if task in self.__waiting_tasks:
             self.__waiting_tasks.remove(task)
         if task in self.__running_tasks:
@@ -124,7 +164,14 @@ class VolatileStorage(object):
     # query methods
     
     def find_task(self, criteria):
-        for task in reversed(self.all_tasks()):
+        """
+        Find a task in the storage based on the given criteria.
+        @type criteria: dict
+        @param criteria: dict of task attr -> value to match against
+        @return: the first (oldest) task in the queue that matches on success,
+                 None otherwise
+        """
+        for task in self.all_tasks():
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
