@@ -1,10 +1,9 @@
 from M2Crypto import X509, EVP, RSA, ASN1
 import time
 import socket
+import logging
 
-from pulptools.logutil import getLogger
-
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def make_cert(uid):
     """
