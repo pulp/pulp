@@ -17,4 +17,4 @@
 from pulp.tasking.queue.fifo import volatile_fifo_queue, mongo_fifo_queue
 
 
-fifo = mongo_fifo_queue()
+fifo = volatile_fifo_queue()
