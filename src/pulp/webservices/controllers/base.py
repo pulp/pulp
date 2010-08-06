@@ -27,7 +27,7 @@ except ImportError:
 import pymongo.json_util 
 import web
 
-from pulp.tasking.task import Task, TaskModel, task2model
+from pulp.tasking.task import Task
 from pulp.webservices import auth
 from pulp.webservices import http
 from pulp.webservices.queues import fifo
@@ -213,18 +213,19 @@ class AsyncController(JSONController):
     Base controller class with convenience methods for executing asynchronous
     tasks.
     """
-    def start_task(self, func, *args, **kwargs):
+    def _task_to_dict(self, task):
         """
-        Execute the function and its arguments as an asynchronous task.
-        @param func: python callable
-        @param args: positional arguments for func
-        @param kwargs: key word arguments for func
-        @return: TaskModel instance
+        Convert a task to a dictionary (non-destructive) while retaining the
+        pertinent information for a status check but in a more convenient form
+        for JSON serialization.
+        @type task: Task instance
+        @param task: task to convert
+        @return dict representing task
         """
-        task = Task(func, *args, **kwargs)
-        fifo.enqueue(task)
-        return task2model(task)
-    
+        fields = ('id', 'method_name', 'state', 'start_time', 'finish_time',
+                  'next_time', 'result', 'exception', 'traceback')
+        return dict((f, getattr(task, f)) for f in fields)
+ 
     def _status_path(self, id):
         """
         Construct a URL path that can be used to poll a task's status
@@ -237,14 +238,28 @@ class AsyncController(JSONController):
             return http.uri_path()
         return http.extend_uri_path(id)
     
+    def start_task(self, func, *args, **kwargs):
+        """
+        Execute the function and its arguments as an asynchronous task.
+        @param func: python callable
+        @param args: positional arguments for func
+        @param kwargs: key word arguments for func
+        @return: dict representing the task
+        """
+        task = Task(func, *args, **kwargs)
+        fifo.enqueue(task)
+        return self._task_to_dict(task)
+       
     def task_status(self, id):
         """
         Get the current status of an asynchronous task.
         @param id: task id
         @return: TaskModel instance
         """
-        status = fifo.status(id)
-        if isinstance(status, TaskModel):
+        task = fifo.find(id=id)
+        status = None
+        if task is not None:
+            status = self._task_to_dict(task)
             status.update({'status_path': self._status_path(id)})
         return status
     
