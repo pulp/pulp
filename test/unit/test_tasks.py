@@ -5,7 +5,7 @@ import unittest
 from pulp.tasking.task import (
     Task, task_created, task_waiting, task_finished, task_error,
     task_complete_states)
-from pulp.tasking.queue.fifo import volatile_fifo_queue, mongo_fifo_queue
+from pulp.tasking.queue.fifo import FIFOTaskQueue
 
 
 def noop():
@@ -73,10 +73,10 @@ class QueueTester(unittest.TestCase):
             pprint.pprint(task.traceback)
             
 
-class VolatileFIFOQueueTester(QueueTester):
+class FIFOQueueTester(QueueTester):
 
     def setUp(self):
-        self.queue = volatile_fifo_queue()
+        self.queue = FIFOTaskQueue()
 
     def tearDown(self):
         pass
@@ -95,58 +95,16 @@ class VolatileFIFOQueueTester(QueueTester):
     def test_task_find(self):
         task1 = Task(noop)
         self.queue.enqueue(task1)
-        task2 = self.queue.find(task1.id)
+        task2 = self.queue.find(id=task1.id)
         self.assertTrue(task1 is task2)
         
     def test_task_status(self):
         task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
-        status = self.queue.status(task.id)
+        status = self.queue.find(id=task.id)
         self.assertTrue(status.state == task.state)
         
-        
-class MongoFIFOQueueTester(QueueTester):
-    
-    def setUp(self):
-        self.queue = mongo_fifo_queue()
-        
-    def tearDown(self):
-        pass
-            
-    def test_task_enqueue(self):
-        task = Task(noop)
-        self.queue.enqueue(task)
-        self.assertTrue(task.state == task_waiting)
-
-    def test_task_dispatch(self):
-        task = Task(noop)
-        self.queue.enqueue(task)
-        self._wait_for_task(task)
-        self.assertTrue(task.state == task_finished)
-        
-    def test_task_find(self):
-        task1 = Task(noop)
-        self.queue.enqueue(task1)
-        task2 = self.queue.find(task1.id)
-        self.assertTrue(task1 is task2)
-        
-    def test_task_status(self):
-        task = Task(noop)
-        self.queue.enqueue(task)
-        self._wait_for_task(task)
-        status = self.queue.status(task.id)
-        self.assertTrue(status.state == task.state)
-        
-    def test_separate_queues(self):
-        new_queue = mongo_fifo_queue()
-        task = Task(noop)
-        self.queue.enqueue(task)
-        self._wait_for_task(task)
-        status = new_queue.status(task.id)
-        self.assertTrue(status.state == task.state)
-        
-            
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
