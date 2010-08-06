@@ -60,7 +60,6 @@ class FIFOTaskQueue(TaskQueue):
         while True:
             self.__condition.wait(self.__dispatcher_timeout)
             for task in self._get_tasks():
-                self.__running_count += 1
                 self.run(task)
             self._cull_tasks()
                 
@@ -86,7 +85,7 @@ class FIFOTaskQueue(TaskQueue):
         try:
             task.queue = self
             task.next_time = datetime.now()
-            task.waiting()
+            task.wait()
             self.__storage.add_waiting_task(task)
         finally:
             self.__lock.release()
@@ -94,7 +93,7 @@ class FIFOTaskQueue(TaskQueue):
     def run(self, task):
         self.__lock.acquire()
         try:
-            task.running()
+            self.__running_count += 1
             self.__storage.add_running_task(task)
             thread = threading.Thread(target=task.run)
             thread.start()

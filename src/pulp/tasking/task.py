@@ -89,24 +89,19 @@ class Task(object):
         self.exception = None
         self.traceback = None
 
-    def waiting(self):
+    def wait(self):
         """
-        Mark this task as waiting
+        Mark this task as waiting.
         """
         assert self.state in task_ready_states
         self.state = task_waiting
         
-    def running(self):
+    def run(self):
         """
-        Mark this task as running
+        Run this task and record the result or exception.
         """
         assert self.state in task_ready_states
         self.state = task_running
-        
-    def run(self):
-        """
-        Run this task and record the result or exception
-        """
         self.start_time = datetime.datetime.now()
         try:
             result = self.callable(*self.args, **self.kwargs)
@@ -125,9 +120,23 @@ class Task(object):
         self.finish_time = datetime.datetime.now()
         self.queue.complete(self)
         
+    def timeout(self):
+        """
+        Mark this task as timed out.
+        """
+        assert self.state is task_running
+        self.state = task_timeout
+        
+    def cancel(self):
+        """
+        Mark this task as canceled.
+        """
+        assert self.state is task_running
+        self.state = task_canceled
+        
     def reset(self):
         """
-        Reset this task's recorded data
+        Reset this task's recorded data.
         """
         if self.state not in task_complete_states:
             return
