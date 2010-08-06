@@ -212,6 +212,7 @@ class repo(BaseCore):
             sys.exit(-1)
 
     def _upload(self):
+        (self.options, files) = self.parser.parse_args()
         # ignore the command and pick the files
         files = files[2:]
         if not self.options.id:
