@@ -21,7 +21,6 @@ import time
 import traceback
 import uuid
 
-from pulp.model import Base
 from pulp.tasking.queue.base import SimpleTaskQueue
 
 log = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ task_waiting = 'waiting'
 task_running = 'running'
 task_finished = 'finished'
 task_error = 'error'
-task_timeout = 'timeout'
+task_timed_out = 'timed out'
 task_canceled = 'canceled'
 
 task_states = (
@@ -42,7 +41,7 @@ task_states = (
     task_running,
     task_finished,
     task_error,
-    task_timeout,
+    task_timed_out,
     task_canceled,
     task_reset,
 )
@@ -56,7 +55,7 @@ task_ready_states = (
 task_complete_states = (
     task_finished,
     task_error,
-    task_timeout,
+    task_timed_out,
     task_canceled,
 )
 
@@ -108,7 +107,7 @@ class Task(object):
             result = self.callable(*self.args, **self.kwargs)
         except Exception, e:
             self.state = task_error
-            self.exception = repr(e)
+            self.exception = e
             # exc_info returns tuple (class, exception, traceback)
             # format_exception takes 3 arguments (class, exception, traceback)
             exc_info = sys.exc_info()
@@ -126,7 +125,7 @@ class Task(object):
         Mark this task as timed out.
         """
         assert self.state is task_running
-        self.state = task_timeout
+        self.state = task_timed_out
         
     def cancel(self):
         """
