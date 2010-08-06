@@ -19,9 +19,9 @@ import time
 from datetime import datetime, timedelta
 
 from pulp.tasking.queue.base import TaskQueue
-from pulp.tasking.queue.thread import (
-    TaskThread, CancelException, TimeoutException)
+from pulp.tasking.queue.thread import  TaskThread
 from pulp.tasking.queue.storage import VolatileStorage
+from pulp.tasking.task import task_complete_states
 
 # fifo task queue -------------------------------------------------------------
 
@@ -100,7 +100,7 @@ class FIFOTaskQueue(TaskQueue):
             # thread.timeout waits for the task! (actually we don't wait for the
             # task, so there may not be a problem)
             thread.timeout()
-            while not isinstance(task.exception, TimeoutException):
+            while task.state not in task_complete_states:
                 time.sleep(0.0005)
             task.timeout()
                 
@@ -153,7 +153,7 @@ class FIFOTaskQueue(TaskQueue):
         try:
             thread = self.__threads[task]
             thread.cancel()
-            while not isinstance(task.exception, CancelException):
+            while task.state not in task_complete_states:
                 time.sleep(0.0005)
             task.cancel()
         finally:
