@@ -31,6 +31,8 @@ class FIFOTaskQueue(TaskQueue):
     which they were enqueued and stores the finished tasks for a specified
     amount of time.
     """
+    _default_sleep = 0.0005
+    
     def __init__(self,
                  max_running=4,
                  timeout=None,
@@ -84,6 +86,7 @@ class FIFOTaskQueue(TaskQueue):
     
     def _timeout_tasks(self):
         """
+        Stop tasks that have met or exceed the queue's timeout length.
         """
         if self.timeout is None:
             return
@@ -95,13 +98,9 @@ class FIFOTaskQueue(TaskQueue):
             if now - task.start_time < self.timeout:
                 continue
             thread = self.__threads[task]
-            # this will cause a deadlock because we are holding the lock and the
-            # task needs to call self.complete which tries to grab the lock and
-            # thread.timeout waits for the task! (actually we don't wait for the
-            # task, so there may not be a problem)
             thread.timeout()
             while task.state not in task_complete_states:
-                time.sleep(0.0005)
+                time.sleep(self._default_sleep)
             task.timeout()
                 
     def _cull_tasks(self):
@@ -154,7 +153,7 @@ class FIFOTaskQueue(TaskQueue):
             thread = self.__threads[task]
             thread.cancel()
             while task.state not in task_complete_states:
-                time.sleep(0.0005)
+                time.sleep(self._default_sleep)
             task.cancel()
         finally:
             self.__lock.release()

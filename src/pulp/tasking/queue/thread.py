@@ -21,7 +21,7 @@ import time
 
 # interruptable thread base class ---------------------------------------------
 
-# based on recipe from stack overflow:
+# based on an answer from stack overflow:
 # http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
 
 def _raise_exception_in_thread(tid, exctype):
@@ -45,6 +45,7 @@ class InterruptableThread(threading.Thread):
     A thread class that supports raising exception in the thread from another
     thread.
     """
+    
     @property
     def _tid(self):
         """
@@ -97,34 +98,57 @@ class InterruptableThread(threading.Thread):
 # task thread -----------------------------------------------------------------
 
 class TaskThreadException(Exception):
+    """
+    Base class for task-specific exceptions to be raised in a task thread.
+    """
     pass
 
 
 class TimeoutException(TaskThreadException):
+    """
+    Exception to interrupt a task with a time out.
+    """
     pass
 
 
 class CancelException(TaskThreadException):
+    """
+    Exception to interrupt a task with a cancellation.
+    """
     pass
 
 
 class TaskThread(InterruptableThread):
     """
+    Derived task thread class that allows for task-specific interruptions.
     """
-    _default_sleep = 0.005
+    _default_sleep = 0.0005
     
     def _ensure_exception(self, exctype):
+        """
+        Ensure that the exception gets raised in the thread or that the thread
+        is already dead.
+        @type exctype: type or class
+        @param exctype: type or class of exception to raise in the tread
+        """
         try:
             self.raise_exception(exctype)
             while self.is_alive():
                 time.sleep(self._default_sleep)
                 self.raise_exception(exctype)
         except threading.ThreadError:
+            # a threading.ThreadError gets raised if the thread is already dead
             pass
     
     def timeout(self):
+        """
+        Raise a TimeoutException in the thread.
+        """
         self._ensure_exception(TimeoutException)
             
     def cancel(self):
+        """
+        Raise a CancelException in the thread.
+        """
         self._ensure_exception(CancelException)
         
