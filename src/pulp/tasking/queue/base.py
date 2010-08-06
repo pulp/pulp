@@ -156,8 +156,10 @@ class VolatileStorage(object):
         """
         if task in self.__waiting_tasks:
             self.__waiting_tasks.remove(task)
+            return
         if task in self.__running_tasks:
             self.__running_tasks.remove(task)
+            return
         if task in self.__complete_tasks:
             self.__complete_tasks.remove(task)
             
