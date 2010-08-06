@@ -14,7 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import threading
+import itertools
 
 # base task queue -------------------------------------------------------------
 
@@ -46,21 +46,12 @@ class TaskQueue(object):
         """
         raise NotImplementedError()
     
-    def find(self, task_id):
+    def find(self, **kwargs):
         """
         Find a task in this task queue
-        @type task_id: str
-        @param task_id: task id
+        @type kwargs: dict
+        @param kwargs: task attributes and values as search criteria
         @return: Task instance on success, None otherwise
-        """
-        raise NotImplementedError()
-    
-    def status(self, task_id):
-        """
-        Get the status of a task in this task queue
-        @type task_id: str
-        @param task_id: task id
-        @return: TaskModel instance on success, None otherwise
         """
         raise NotImplementedError()
     
@@ -79,120 +70,68 @@ class SimpleTaskQueue(TaskQueue):
     def complete(self, task):
         pass
     
-    def find(self, task_id):
+    def find(self, **kwargs):
         return None
     
-    def status(self, task_id):
-        return None
-    
-# base scheduling task queue --------------------------------------------------
-    
-class SchedulingTaskQueue(TaskQueue):
+# storage class for in-memory task queues -------------------------------------
+   
+class VolatileStorage(object):
     """
-    Base task queue that dispatches threads to run tasks based on a scheduler.
+    In memory queue storage class.
     """
-    def __init__(self, storage, dispatcher_timeout=0.5):
-        """
-        @type dispatcher_timeout: float
-        @param dispatcher_timeout: the max number of seconds before the
-                                   dispatcher wakes up to run tasks
-        """
-        self._storage = storage
+    def __init__(self):
+        self.__waiting_tasks = []
+        self.__running_tasks = []
+        self.__complete_tasks = []
+    
+    # iterable methods
+            
+    def all_tasks(self):
+        return itertools.chain(self.__waiting_tasks[:],
+                               self.__running_tasks[:],
+                               self.__complete_tasks[:])
         
-        self._lock = threading.RLock()
-        self._condition = threading.Condition(self._lock)
+    def waiting_tasks(self):
+        return self.__waiting_tasks[:]
+    
+    def running_tasks(self):
+        return self.__running_tasks[:]
         
-        self._dispatcher_timeout = dispatcher_timeout
-        self._dispatcher = threading.Thread(target=self._dispatch)
-        self._dispatcher.daemon = True
-        self._dispatcher.start()
-        
-    # protected methods: scheduling
-        
-    def _dispatch(self):
-        """
-        Scheduling method that that executes the scheduling hooks
-        This should not be overridden by a derived class
-        """
-        self._lock.acquire()
-        while True:
-            self._condition.wait(self._dispatcher_timeout)
-            self._initialize_runs()
-            for task in self._get_tasks():
-                self._pre_run(task)
-                self.run(task)
-                self._post_run(task)
-            self._finalize_runs()
+    def complete_tasks(self):
+        return self.__complete_tasks[:]
+    
+    # add/remove tasks methods
                 
-    def _initialize_runs(self):
-        """
-        Pre-task runs hook that may be overridden in a derived class
-        """
-        pass
+    def add_waiting_task(self, task):
+        self.__waiting_tasks.append(task)
+        
+    def add_running_task(self, task):
+        self.__waiting_tasks.remove(task)
+        self.__running_tasks.append(task)
+        
+    def add_complete_task(self, task):
+        self.__running_tasks.remove(task)
+        self.__complete_tasks.append(task)
     
-    def _finalize_runs(self):
-        """
-        Post-task runs hook that may be overridden in a derived class
-        """
-        pass
+    def remove_task(self, task):
+        if task in self.__waiting_tasks:
+            self.__waiting_tasks.remove(task)
+        if task in self.__running_tasks:
+            self.__running_tasks.remove(task)
+        if task in self.__complete_tasks:
+            self.__complete_tasks.remove(task)
+            
+    # query methods
     
-    def _get_tasks(self):
-        """
-        Scheduling method that retrieve the tasks to be run on on a 
-        @return: iterator of Task instances
-        """
-        raise NotImplementedError()
-    
-    def _pre_run(self, task):
-        """
-        Pre-individual task run hook that may be overridden in a derived class
-        """
-        pass
-    
-    def _post_run(self, task):
-        """
-        Post-individual task run hook that may be overridden in a derived class
-        """
-        pass
-    
-    # public methods: queue operations
-    
-    def enqueue(self, task):
-        self._lock.acquire()
-        try:
-            task.queue = self
-            task.waiting()
-            self._storage.waiting_task(task)
-        finally:
-            self._lock.release()
-    
-    def run(self, task):
-        self._lock.acquire()
-        try:
-            task.running()
-            self._storage.running_task(task)
-            thread = threading.Thread(target=task.run)
-            thread.start()
-        finally:
-            self._lock.release()
-    
-    def complete(self, task):
-        self._lock.acquire()
-        try:
-            self._storage.complete_task(task)
-        finally:
-            self._lock.release()
-    
-    def find(self, task_id):
-        self._lock.acquire()
-        try:
-            return self._storage.find_task(task_id)
-        finally:
-            self._lock.release()
-    
-    def status(self, task_id):
-        self._lock.acquire()
-        try:
-            return self._storage.task_status(task_id)
-        finally:
-            self._lock.release()
+    def find_task(self, criteria):
+        for task in reversed(self.all_tasks()):
+            matches = 0
+            for attr, value in criteria.items():
+                if not hasattr(task, attr):
+                    break;
+                if getattr(task, attr) != value:
+                    break;
+                matches += 1
+            if matches == len(criteria):
+                return task
+        return None

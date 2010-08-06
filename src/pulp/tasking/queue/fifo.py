@@ -14,22 +14,20 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import threading
 from datetime import datetime, timedelta
 
-from pulp.tasking.queue.base import SchedulingTaskQueue
-from pulp.tasking.queue.storage import (
-    VolatileStorage, MongoFinishedStorage, MongoStorage)
+from pulp.tasking.queue.base import TaskQueue, VolatileStorage
 
 # fifo task queue -------------------------------------------------------------
 
-class FIFOTaskQueue(SchedulingTaskQueue):
+class FIFOTaskQueue(TaskQueue):
     """
     Task queue with threaded dispatcher that fires off tasks in the order in
     which they were enqueued and stores the finished tasks for a specified
     amount of time.
     """
     def __init__(self,
-                 storage,
                  max_running=4,
                  finished_lifetime=timedelta(seconds=3600)):
         """
@@ -39,58 +37,82 @@ class FIFOTaskQueue(SchedulingTaskQueue):
                                   time to keep information on finished tasks
         @return: FIFOTaskQueue instance
         """
-        super(FIFOTaskQueue, self).__init__(storage)
+        self.__lock = threading.RLock()
+        self.__condition = threading.Condition(self.__lock)
+        
+        self.__storage = VolatileStorage()
+        
+        self.__dispatcher_timeout = 0.5
+        self.__dispatcher = threading.Thread(target=self._dispatch)
+        self.__dispatcher.daemon = True
         
         self.__running_count = 0
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
-        
+
     # protected methods: scheduling
         
-    def _finalilize_runs(self):
+    def _dispatch(self):
+        """
+        Scheduling method that that executes the scheduling hooks.
+        """
+        self.__lock.acquire()
+        while True:
+            self.__condition.wait(self.__dispatcher_timeout)
+            for task in self._get_tasks():
+                self.__running_count += 1
+                self.run(task)
+            self._cull_tasks()
+                
+    def _get_tasks(self):
+        # Get the next 'n' tasks to run, where is max - currently running tasks
+        num_tasks = self.max_running - self.__running_count
+        return self.__storage.waiting_tasks()[:num_tasks]
+                
+    def _cull_tasks(self):
         # Clean up finished task data
-        complete_tasks = self._storage.complete_tasks()
+        complete_tasks = self.__storage.complete_tasks()
         if not complete_tasks:
             return
         now = datetime.now()
         for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
-                self._storage.remove_task(task)
-                
-    def _get_tasks(self):
-        # Get the next 'n' tasks to run, where is max - currently running tasks
-        num_tasks = self.max_running - self.__running_count
-        return self._storage.waiting_tasks()[:num_tasks]
+                self.__storage.remove_task(task)
     
-    def _pre_run(self, task):
-        # Adjust the running count
-        self.__running_count += 1
-        
     # public methods: queue operations
     
     def enqueue(self, task):
-        # Set the 'next_time' scheduled run time on the task
-        task.next_time = datetime.now()
-        super(FIFOTaskQueue, self).enqueue(task)
+        self.__lock.acquire()
+        try:
+            task.queue = self
+            task.next_time = datetime.now()
+            task.waiting()
+            self.__storage.add_waiting_task(task)
+        finally:
+            self.__lock.release()
+    
+    def run(self, task):
+        self.__lock.acquire()
+        try:
+            task.running()
+            self.__storage.add_running_task(task)
+            thread = threading.Thread(target=task.run)
+            thread.start()
+        finally:
+            self.__lock.release()
         
     def complete(self, task):
-        # Adjust the running count
-        self.__running_count -= 1
-        super(FIFOTaskQueue, self).complete(task)
         
-# factory functions for volatile and mongo backed fifo queues -----------------
-
-def volatile_fifo_queue():
-    """
-    Create a memory-backed fifo queue
-    @return: FIFOTaskQueue instance with VolatileStorage storage
-    """
-    return FIFOTaskQueue(VolatileStorage())
-
-
-def mongo_fifo_queue():
-    """
-    Create a memory-backed fifo queue
-    @return: FIFOTaskQueue instance with MongoStorage storage
-    """
-    return FIFOTaskQueue(MongoFinishedStorage())
+        self.__lock.acquire()
+        try:
+            self.__running_count -= 1
+            self.__storage.add_complete_task(task)
+        finally:
+            self.__lock.release()
+    
+    def find(self, **kwargs):
+        self.__lock.acquire()
+        try:
+            return self.__storage.find_task(kwargs)
+        finally:
+            self.__lock.release()

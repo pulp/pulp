@@ -33,6 +33,8 @@ task_waiting = 'waiting'
 task_running = 'running'
 task_finished = 'finished'
 task_error = 'error'
+task_timeout = 'timeout'
+task_canceled = 'canceled'
 
 task_states = (
     task_created,
@@ -40,6 +42,8 @@ task_states = (
     task_running,
     task_finished,
     task_error,
+    task_timeout,
+    task_canceled,
     task_reset,
 )
 
@@ -52,6 +56,8 @@ task_ready_states = (
 task_complete_states = (
     task_finished,
     task_error,
+    task_timeout,
+    task_canceled,
 )
 
 # task ------------------------------------------------------------------------
@@ -132,46 +138,3 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
-
-# task model ------------------------------------------------------------------
-
-class TaskModel(Base):
-    """
-    Task model class to enable storage of task state in the database
-    """
-    def __init__(self):
-        self._id = None
-        self.id = None
-        
-        self.method_name = None
-        self.state = None
-        self.start_time = None
-        self.finish_time = None
-        self.next_time = None
-        self.result = None
-        self.exception = None
-        self.traceback = None
-        
-
-_common_attrs = (
-    'id',
-    'method_name',
-    'state',
-    'start_time',
-    'finish_time',
-    'next_time',
-    'result',
-    'exception',
-    'traceback',
-)
-        
-
-def task2model(task):
-    model = TaskModel()
-    model._id = task.id
-    
-    for attr in _common_attrs:
-        value = getattr(task, attr)
-        setattr(model, attr, value)
-        
-    return model
