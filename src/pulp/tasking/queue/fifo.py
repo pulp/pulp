@@ -45,6 +45,7 @@ class FIFOTaskQueue(TaskQueue):
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
         self.__dispatcher.daemon = True
+        self.__dispatcher.start()
         
         self.__running_count = 0
         self.max_running = max_running
@@ -64,12 +65,16 @@ class FIFOTaskQueue(TaskQueue):
             self._cull_tasks()
                 
     def _get_tasks(self):
-        # Get the next 'n' tasks to run, where is max - currently running tasks
+        """
+        Get the next 'n' tasks to run, where is max - currently running tasks
+        """
         num_tasks = self.max_running - self.__running_count
         return self.__storage.waiting_tasks()[:num_tasks]
                 
     def _cull_tasks(self):
-        # Clean up finished task data
+        """
+        Clean up finished task data
+        """
         complete_tasks = self.__storage.complete_tasks()
         if not complete_tasks:
             return
