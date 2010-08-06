@@ -98,7 +98,7 @@ class errata(BaseCore):
         if self.action == "install":
             usage = "errata install [OPTIONS] <errata>"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--consumerid", dest="id",
+            self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
 
     def _do_core(self):
@@ -110,6 +110,8 @@ class errata(BaseCore):
             self._list()
         if self.action == "info":
             self._info()
+        if self.action == "install":
+            self._install()
 
     def _create(self):
         pass
@@ -156,6 +158,27 @@ class errata(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
+        
+    def _install(self):
+        (self.options, data) = self.parser.parse_args()
+        if not self.options.consumerid:
+            print _("A consumer id is required to perform an install")
+            sys.exit(0)
+        errataids = data[2:]
+        if not len(errataids):
+            print _("Specify an errata Id to install")
+            sys.exit(0)
+
+        try:
+            print self.cconn.installerrata(self.options.consumerid, errataids)
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+        
+            
 
 class FileError(Exception):
     pass

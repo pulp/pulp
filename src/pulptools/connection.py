@@ -334,7 +334,7 @@ class ConsumerConnection(PulpConnection):
     
     def installerrata(self, id, errataids, types=[]):
         erratainfo = {'consumerid' : id,
-                      'errataid' : errataids,
+                      'errataids' : errataids,
                       'types'    :   types}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
