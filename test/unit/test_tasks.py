@@ -104,7 +104,62 @@ class FIFOQueueTester(QueueTester):
         self._wait_for_task(task)
         status = self.queue.find(id=task.id)
         self.assertTrue(status.state == task.state)
-        
+
+    def test_exists_matching_criteria(self):
+        # Setup
+        task1 = Task(noop)
+        self.queue.enqueue(task1)
+
+        # Test
+        task2 = Task(noop)
+        task2.id = task1.id
+
+        result = self.queue.exists(task2, ['id'])
+
+        # Verify
+        self.assertTrue(result)
+
+    def test_exists_unmatching_criteria(self):
+        # Setup
+        task1 = Task(noop)
+        self.queue.enqueue(task1)
+
+        # Test
+        task2 = Task(noop)
+
+        result = self.queue.exists(task2, ['id'])
+
+        # Verify
+        self.assertTrue(not result)
+
+    def test_exists_multiple_criteria(self):
+        # Setup
+        task1 = Task(noop)
+        task1.timeout = 300
+
+        task2 = Task(noop)
+        task2.timeout = 600
+
+        self.queue.enqueue(task1)
+        self.queue.enqueue(task2)
+
+        # Test
+        find_me = Task(noop)
+        find_me.timeout = 300
+
+        result = self.queue.exists(find_me, ['method_name', 'timeout'])
+
+        # Verify
+        self.assertTrue(result)
+
+    def test_exists_invalid_criteria(self):
+        # Setup
+        look_for = Task(noop)
+
+        # Test & Verify
+        self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
+
+
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':

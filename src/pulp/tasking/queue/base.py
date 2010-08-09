@@ -46,12 +46,42 @@ class TaskQueue(object):
     
     def find(self, **kwargs):
         """
-        Find a task in this task queue
+        Find a task in this task queue. Only the oldest task in the queue will be
+        returned.
         @type kwargs: dict
         @param kwargs: task attributes and values as search criteria
         @return: Task instance on success, None otherwise
         """
         raise NotImplementedError()
+
+    def exists(self, task, criteria):
+        """
+        Returns whether or not the given task exists in this queue. The list
+        of which attributes that will be checked on the task for equality is
+        determined by the entries in the criteria list.
+
+        @type  task: Task instance
+        @param task: Values in this task will be used to test for this task's
+                     existence in the queue
+
+        @type  criteria: List; cannot be None
+        @param criteria: List of attribute names in the Task class; a task is
+                         considered equal to the given task if the values for
+                         all attributes listed in here are equal in an existing
+                         task in the queue
+        """
+        
+        # Convert the list of attributes to check into a criteria dict used
+        # by the storage API, using the task to test as the values
+        find_criteria = {}
+        for attr_name in criteria:
+            if not hasattr(task, attr_name):
+                raise ValueError('Task has no attribute named [%s]' % attr_name)
+            find_criteria[attr_name] = getattr(task, attr_name)
+
+        # Use the find functionality to determine if a task matches
+        return self.find(**find_criteria) is not None
+        
     
 # no-frills task queue --------------------------------------------------------
     
