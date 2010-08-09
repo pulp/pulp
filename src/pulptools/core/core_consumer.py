@@ -51,6 +51,7 @@ class consumer(BaseCore):
                         "unbind"        : "UnBind the consumer from repos",}
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
+        self.is_admin = True
         self.repolib = RepoLib()
         
     def load_server(self):
@@ -86,23 +87,26 @@ class consumer(BaseCore):
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
-            self.parser.add_option("--id", dest="consumerid",
-                           help="Consumer Identifier")
+            if self.is_admin:
+                self.parser.add_option("--id", dest="consumerid",
+                                       help="Consumer Identifier")
         if self.action == "unbind":
             usage = "usage: %prog consumer unbind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
-            self.parser.add_option("--id", dest="consumerid",
-                           help="Consumer Identifier")
+            if self.is_admin:
+                self.parser.add_option("--id", dest="consumerid",
+                                       help="Consumer Identifier")
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
         if self.action == "delete":
             usage = "usage: %prog consumer delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="consumerid",
-                           help="Consumer Identifier")
+            if self.is_admin:
+                self.parser.add_option("--id", dest="consumerid",
+                                       help="Consumer Identifier")
 
     def _do_core(self):
         if self.action == "create":
@@ -143,10 +147,8 @@ class consumer(BaseCore):
             log.error("Error: %s", exc_info=True)
             
     def _update(self):
-        if self.options.id:
-            consumer_id = self.options.id
-        else:
-            consumer_id = getConsumer()
+        
+        consumer_id = self.getConsumer()
         try:
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer_id, pkginfo)
@@ -159,7 +161,7 @@ class consumer(BaseCore):
 
     def _info(self):
         try:
-            cons = self.cconn.consumer(getConsumer())
+            cons = self.cconn.consumer(self.getConsumer())
             pkgs = " "
             for pkg in cons['package_profile'].values():
                 for pkgversion in pkg:
@@ -194,16 +196,14 @@ class consumer(BaseCore):
             raise
 
     def _bind(self):
-        if not self.options.consumerid:
-            print("consumer id required. Try --help")
-            sys.exit(0)
+        consumerid = self.getConsumer()
         if not self.options.repoid:
             print("repo id required. Try --help")
             sys.exit(0)
         try:
-            self.cconn.bind(self.options.consumerid, self.options.repoid)
+            self.cconn.bind(consumerid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully subscribed Consumer [%s] to Repo [%s]" % (self.options.consumerid, self.options.repoid))
+            print _(" Successfully subscribed Consumer [%s] to Repo [%s]" % (consumerid, self.options.repoid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -212,16 +212,14 @@ class consumer(BaseCore):
             raise
 
     def _unbind(self):
-        if not self.options.consumerid:
-            print("consumer id required. Try --help")
-            sys.exit(0)
+        consumerid = self.getConsumer()
         if not self.options.repoid:
             print("repo id required. Try --help")
             sys.exit(0)
         try:
-            self.cconn.unbind(self.options.consumerid, self.options.repoid)
+            self.cconn.unbind(consumerid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully unsubscribed Consumer [%s] from Repo [%s]" % (self.options.consumerid, self.options.repoid))
+            print _(" Successfully unsubscribed Consumer [%s] from Repo [%s]" % (consumerid, self.options.repoid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -231,28 +229,43 @@ class consumer(BaseCore):
 
 
     def _delete(self):
-        if self.options.consumerid:
-            consumer_id = self.options.consumerid
-        else:
-            consumer_id = getConsumer()
+        consumerid = self.getConsumer()
         try:
-            self.cconn.delete(consumer_id)
-            print _(" Successfully deleted consumer [%s]" % consumer_id)
+            self.cconn.delete(consumerid)
+            print _(" Successfully deleted consumer [%s]" % consumerid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
+    
+    def getConsumer(self):
+        if not self.options.consumerid:
+            print("consumer id required. Try --help")
+            sys.exit(0)
+            
+        return self.options.consumerid
+
         
-def getConsumer():
-    ##TODO: this will eventually be a x509 cert
-    if not os.path.exists(CONSUMERID):
-        print("Error: This client is currently not registered. Please register to continue")
-        sys.exit(0)
-    try:
-        consumerid = open(CONSUMERID).read()
-    except Exception, e:
-        print("Error reading consumer." + e)
-        sys.exit(-1)
-    return consumerid
+class Local(consumer):
+    """
+     This class is directly called from pulp-register and only handles
+     consumer operations for local consumer.
+     """
+    def __init__(self):
+        consumer.__init__(self)
+        self.is_admin = False
+    
+    def getConsumer(self):
+        ##TODO: this will eventually be a x509 cert, 
+        ##extract consumer id from cert oid schema
+        if not os.path.exists(CONSUMERID):
+            print("Error: This client is currently not registered. Please register to continue")
+            sys.exit(0)
+        try:
+            consumerid = open(CONSUMERID).read()
+        except Exception, e:
+            print("Error reading consumer." + e)
+            sys.exit(-1)
+        return consumerid
