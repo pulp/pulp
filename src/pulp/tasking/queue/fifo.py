@@ -62,6 +62,17 @@ class FIFOTaskQueue(TaskQueue):
         self.__dispatcher = threading.Thread(target=self._dispatch)
         self.__dispatcher.daemon = True
         self.__dispatcher.start()
+        
+    # protected methods: utils
+    
+    def _wait_for_task(self, task):
+        """
+        Wait for a task to complete.
+        @type task: pulp.tasking.task.Task instance
+        @param task: task to wait for
+        """
+        while task.state not in task_complete_states:
+            time.sleep(self._default_sleep)
 
     # protected methods: scheduling
         
@@ -95,12 +106,13 @@ class FIFOTaskQueue(TaskQueue):
             return
         now = datetime.now()
         for task in running_tasks:
-            if now - task.start_time < self.timeout:
+            # the task.start_time can be None if the task has been 'run' by the
+            # queue, but the task thread has not had a chance to execute yet
+            if task.start_time is None or now - task.start_time < self.timeout:
                 continue
             thread = self.__threads[task]
             thread.timeout()
-            while task.state not in task_complete_states:
-                time.sleep(self._default_sleep)
+            self._wait_for_task(task)
             task.timeout()
                 
     def _cull_tasks(self):
@@ -152,8 +164,7 @@ class FIFOTaskQueue(TaskQueue):
         try:
             thread = self.__threads[task]
             thread.cancel()
-            while task.state not in task_complete_states:
-                time.sleep(self._default_sleep)
+            self._wait_for_task(task)
             task.cancel()
         finally:
             self.__lock.release()
