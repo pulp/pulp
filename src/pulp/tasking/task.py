@@ -124,14 +124,12 @@ class Task(object):
         """
         Mark this task as timed out.
         """
-        assert self.state is task_running
         self.state = task_timed_out
         
     def cancel(self):
         """
         Mark this task as canceled.
         """
-        assert self.state is task_running
         self.state = task_canceled
         
     def reset(self):
