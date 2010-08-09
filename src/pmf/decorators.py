@@ -52,7 +52,7 @@ def mayinvoke(im):
     Get whether the specified instance method (im)
     may be invoked remotely.
     @param im: An instance method.
-    @type im: L{instancemethod}
+    @type im: instancemethod
     @return: True if exposed via @remotemethod decorator.
     @rtype: bool
     """

@@ -171,9 +171,9 @@ class Failed(FinalReply):
     """
     Failed reply to asynchronous operation.  This reply
     indicates an exception was raised.
-    @ivar retval: The returned value.
-    @type retval: object
-    @see: L{throw}
+    @ivar exval: The returned exception.
+    @type exval: object
+    @see: L{Failed.throw}
     """
     
     def __init__(self, envelope):
@@ -199,9 +199,9 @@ class Failed(FinalReply):
 class Status(AsyncReply):
     """
     Status changed for an asynchronous operation.
-    @ivar retval: The returned value.
-    @type retval: object
-    @see: L{throw}
+    @ivar status: The status.
+    @type status: str
+    @see: L{Failed.throw}
     """
 
     def __init__(self, envelope):

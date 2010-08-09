@@ -139,7 +139,7 @@ class Consumer(Endpoint):
         """
         Process received request.
         @param message: The received message.
-        @type message: L{qpid.messaging.Message}
+        @type message: qpid.messaging.Message
         """
         envelope = Envelope()
         subject = self.__subject(message)
@@ -155,7 +155,7 @@ class Consumer(Endpoint):
         """
         Check to see if the envelope is valid.
         @param envelope: The received envelope.
-        @type envelope: L{qpid.messaging.Message}
+        @type envelope: qpid.messaging.Message
         """
         valid = True
         if envelope.version != version:
@@ -168,7 +168,7 @@ class Consumer(Endpoint):
         """
         Dispatch received request.
         @param envelope: The received envelope.
-        @type envelope: L{qpid.messaging.Message}
+        @type envelope: qpid.messaging.Message
         """
         pass
 
@@ -176,7 +176,7 @@ class Consumer(Endpoint):
         """
         Extract the message subject.
         @param message: The received message.
-        @type message: L{qpid.messaging.Message}
+        @type message: qpid.messaging.Message
         @return: The message subject
         @rtype: str
         """

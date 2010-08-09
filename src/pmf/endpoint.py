@@ -33,7 +33,7 @@ class Endpoint:
     @ivar uuid: The unique endpoint id.
     @type uuid: str
     @ivar __session: An AMQP session.
-    @type __session: L{qpid.messaging.Session}
+    @type __session: qpid.messaging.Session
     """
 
     connections = {}
@@ -89,7 +89,7 @@ class Endpoint:
         """
         Get a session for the open connection.
         @return: An open session.
-        @rtype: L{qpid.messaging.Session}
+        @rtype: qpid.messaging.Session
         """
         if self.__session is None:
             con = self.connection()
