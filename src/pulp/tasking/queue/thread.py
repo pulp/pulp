@@ -135,10 +135,9 @@ class TaskThread(InterruptableThread):
         @param exctype: type or class of exception to raise in the tread
         """
         try:
-            self.raise_exception(exctype)
             while self.is_alive():
-                time.sleep(self._default_sleep)
                 self.raise_exception(exctype)
+                time.sleep(self._default_sleep)
         except threading.ThreadError:
             # a threading.ThreadError gets raised if the thread is already dead
             pass
