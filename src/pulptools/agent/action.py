@@ -43,7 +43,7 @@ class Action:
         - hours
         - weeks
     @ivar last: The last run timestamp.
-    @ivar last: datetime
+    @type last: datetime
     """
     
     actions = []

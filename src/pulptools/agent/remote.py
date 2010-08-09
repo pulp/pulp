@@ -77,14 +77,14 @@ class PackageGroups:
     def install(self, packagegroupids):
         """
         Install packagegroups by id.
-        @param packageids: A list of package ids.
-        @param packageids: str
+        @param packagegroupids: A list of package ids.
+        @param packagegroupids: str
         """
         log.info('installing packagegroups: %s', packagegroupids)
         yb = YumBase()
         for grp_id in packagegroupids:
             txmbrs = yb.selectGroup(grp_id)
-            log.info("Added '%s' group to transaction, packages: %s" % (grp_id, txmbrs))
+            log.info("Added '%s' group to transaction, packages: %s", grp_id, txmbrs)
         yb.resolveDeps()
         yb.processTransaction()
         
