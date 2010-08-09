@@ -20,9 +20,11 @@ import logging
 import web
 
 from pulp.api.repo import RepoApi
+from pulp.tasking.task import Task
 from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController, AsyncController
+from pulp.webservices.queues import fifo
 from pulp.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
@@ -238,8 +240,15 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        task_info = self.start_task(api.sync, id)
-        return self.accepted(task_info)
+        task = Task(api.sync, id)
+
+        if fifo.exists(task, ['method_name', 'args']):
+            log.debug('Attempt to schedule multiple syncs for repo [%s]' % id)
+            return self.conflict(msg='Sync already scheduled for repo [%s]' % id)
+        else:
+            fifo.enqueue(task)
+            task_info = self._task_to_dict(task)
+            return self.accepted(task_info)
        
     @JSONController.error_handler
     @RoleCheck()
