@@ -23,7 +23,9 @@ import uuid
 
 from pulp.tasking.queue.base import SimpleTaskQueue
 
+
 log = logging.getLogger(__name__)
+
 # task states -----------------------------------------------------------------
 
 task_created = 'created'
@@ -84,7 +86,6 @@ class Task(object):
         self.start_time = None
         self.finish_time = None
         self.next_time = None
-        self.timeout = None
         self.result = None
         self.exception = None
         self.traceback = None
@@ -124,13 +125,19 @@ class Task(object):
         """
         Mark this task as timed out.
         """
-        self.state = task_timed_out
+        assert self.state in task_complete_states
+        # works by raising an exception in the thread
+        if self.state is task_error:
+            self.state = task_timed_out
         
     def cancel(self):
         """
         Mark this task as canceled.
         """
-        self.state = task_canceled
+        assert self.state in task_complete_states
+        # works by raising an exception in the thread
+        if self.state is task_error:
+            self.state = task_canceled
         
     def reset(self):
         """
