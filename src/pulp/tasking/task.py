@@ -85,6 +85,7 @@ class Task(object):
         self.start_time = None
         self.finish_time = None
         self.next_time = None
+        self.timeout = None
         self.result = None
         self.exception = None
         self.traceback = None

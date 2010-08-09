@@ -234,7 +234,7 @@ class RepositoryActions(AsyncController):
     @RoleCheck()
     def sync(self, id):
         """
-        Sync a repository from it's feed.
+        Sync a repository from its feed.
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
