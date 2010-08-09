@@ -27,9 +27,9 @@ class PulpRegister(pulpcli.PulpCore):
         self.cli_cores = {}
         self.args = utils.findSysvArgs(sys.argv)
         if len(self.args) > 1:
-            self.cli_cores["consumer"] = core_consumer.Local() #self._load_core("local")()
+            self.cli_cores["consumer"] = core_consumer.Local()
         else:
-            cmd = core_consumer.local() #consumer()
+            cmd = core_consumer.Local()
             if cmd.name != "cli":
                     self.cli_cores[cmd.name] = cmd
 
