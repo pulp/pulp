@@ -38,7 +38,7 @@ import gettext
 _ = gettext.gettext
 
 class consumer(BaseCore):
-    def __init__(self):
+    def __init__(self, is_admin=True):
         usage = "usage: %prog consumer [OPTIONS]"
         shortdesc = "consumer specific actions to pulp server."
         desc = ""
@@ -49,9 +49,9 @@ class consumer(BaseCore):
                         "list"          : "List of accessible consumer info",
                         "bind"          : "Bind the consumer to listed repos",
                         "unbind"        : "UnBind the consumer from repos",}
+        self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
-        self.is_admin = True
         self.repolib = RepoLib()
         
     def load_server(self):
@@ -68,6 +68,7 @@ class consumer(BaseCore):
 
     def generate_options(self):
         self.action = self._get_action()
+        print self.is_admin
         if self.action == "create":
             usage = "consumer create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -254,8 +255,7 @@ class Local(consumer):
      consumer operations for local consumer.
      """
     def __init__(self):
-        consumer.__init__(self)
-        self.is_admin = False
+        consumer.__init__(self, is_admin=False)
     
     def getConsumer(self):
         ##TODO: this will eventually be a x509 cert, 
