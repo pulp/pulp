@@ -86,7 +86,7 @@ class FIFOTaskQueue(TaskQueue):
     
     def _timeout_tasks(self):
         """
-        Stop tasks that have met or exceed the queue's timeout length.
+        Stop tasks that have met or exceeded the queue's timeout length.
         """
         if self.timeout is None:
             return
