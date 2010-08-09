@@ -205,6 +205,7 @@ class Repo(dict):
         ('name', 0, None),
         ('baseurl', 0, None),
         ('enabled', 1, '1'),
+        ('sslverify', 1, '0'),
     )
 
     def __init__(self, id):
