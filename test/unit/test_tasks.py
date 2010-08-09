@@ -11,6 +11,8 @@ from pulp.tasking.queue.fifo import FIFOTaskQueue
 def noop():
     pass
 
+
+
 def args(*args):
     assert len(args) > 0
     
@@ -177,23 +179,19 @@ class FIFOQueueTester(QueueTester):
 
     def test_exists_multiple_criteria(self):
         # Setup
-        task1 = Task(noop)
-        task1.timeout = 300
-
-        task2 = Task(noop)
-        task2.timeout = 600
+        task1 = Task(args, 1, 2)
+        task2 = Task(args, 2, 3)
 
         self.queue.enqueue(task1)
         self.queue.enqueue(task2)
 
         # Test
-        find_me = Task(noop)
-        find_me.timeout = 300
+        find_me = Task(args, 2, 3)
 
-        result = self.queue.exists(find_me, ['method_name', 'timeout'])
+        found = self.queue.exists(find_me, ['method_name', 'args'])
 
         # Verify
-        self.assertTrue(result)
+        self.assertTrue(found)
 
     def test_exists_invalid_criteria(self):
         # Setup
