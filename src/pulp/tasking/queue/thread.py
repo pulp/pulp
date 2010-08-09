@@ -30,14 +30,17 @@ def _raise_exception_in_thread(tid, exctype):
     """
     if not inspect.isclass(exctype):
         raise TypeError('Only types can be raised (not instances)')
+    # NOTE this returns the number of threads that it modified, which should
+    # only be 1 or 0 (if the thread id wasn't found)
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+    if res == 1:
+        return
     if res == 0:
         raise ValueError('Invalid thread id')
-    elif res != 1:
-        # NOTE if it returns a number greater than one, you're in trouble, 
-        # and you should call it again with exc=NULL to revert the effect
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
-        raise SystemError('PyThreadState_SetAsyncExc failed')
+    # NOTE if it returns a number greater than one, you're in trouble, 
+    # and you should call it again with exc=NULL to revert the effect
+    ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+    raise SystemError('PyThreadState_SetAsyncExc failed')
     
     
 class InterruptableThread(threading.Thread):
