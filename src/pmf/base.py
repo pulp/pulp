@@ -63,18 +63,18 @@ class Container:
     @ivar __producer: An AMQP producer.
     @type __producer: L{pmf.producer.Producer}
     @ivar __stubs: A list of L{Stub} objects.
-    @type __stubs: [{Stub,..]
+    @type __stubs: [L{Stub},..]
     @ivar __options: Container options.
     @type __options: L{Options}
     """
 
     def __init__(self, id, producer, **options):
         """
-        @ivar id: The peer ID.
+        @param id: The peer ID.
         @type id: str
-        @ivar producer: An AMQP producer.
+        @param producer: An AMQP producer.
         @type producer: L{pmf.producer.Producer}
-        @ivar options: keyword options.
+        @param options: keyword options.
         @type options: dict
         """
         self.__id = id

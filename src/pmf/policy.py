@@ -39,13 +39,13 @@ class RequestMethod:
     """
     Base class for request methods.
     @ivar producer: A queue producer.
-    @type producer: L{pmf.producer.QueueProducer}
+    @type producer: L{pmf.producer.Producer}
     """
 
     def __init__(self, producer):
         """
         @param producer: A queue producer.
-        @type producer: L{pmf.producer.QueueProducer}
+        @type producer: L{pmf.producer.Producer}
         """
         self.producer = producer
 
@@ -83,13 +83,13 @@ class Synchronous(RequestMethod):
     The synchronous request method.
     This method blocks until a reply is received.
     @ivar reader: A queue reader used to read the reply.
-    @type reader: L{pmf.consumer.QueueReader}
+    @type reader: L{pmf.consumer.Reader}
     """
 
     def __init__(self, producer, timeout):
         """
         @param producer: A queue producer.
-        @type producer: L{pmf.producer.QueueProducer}
+        @type producer: L{pmf.producer.Producer}
         @param timeout: The request timeout (seconds).
         @type timeout: int
         """
@@ -154,7 +154,7 @@ class Asynchronous(RequestMethod):
     def __init__(self, producer, tag=None):
         """
         @param producer: A queue producer.
-        @type producer: L{pmf.producer.QueueProducer}
+        @type producer: L{pmf.producer.Producer}
         @param tag: A reply I{correlation} tag.
         @type tag: str
         """

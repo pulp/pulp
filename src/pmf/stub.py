@@ -73,15 +73,15 @@ class Stub:
     """
     The stub class for remote objects.
     @ivar __pid: The peer ID.
-    @ivar __pid: str
+    @type __pid: str
     @ivar __options: Stub options.
     @type __options: dict.
     """
 
     def __init__(self, pid, options):
         """
-        @ivar pid: The peer ID.
-        @ivar pid: str
+        @param pid: The peer ID.
+        @type pid: str
         @param options: Stub options.
         @type options: dict
         """

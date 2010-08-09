@@ -29,7 +29,7 @@ class Endpoint:
     """
     Base class for QPID endpoint.
     @cvar connectons: An AMQP connection.
-    @type connectons: L{qpid.messaging.Connection}
+    @type connectons: L{Connection}
     @ivar uuid: The unique endpoint id.
     @type uuid: str
     @ivar __session: An AMQP session.
@@ -74,7 +74,7 @@ class Endpoint:
         """
         Get cached connection based on I{url}.
         @return: The global connection.
-        @rtype: L{qpid.messaging.Connection}
+        @rtype: L{Connection}
         """
         key = self.url
         con = self.connections.get(key)

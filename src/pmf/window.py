@@ -31,12 +31,8 @@ class Window(Envelope):
     An I{end} of 'None' = begin plus 1 hour.
     @cvar FORMAT: The datetime format. ISO 8601
     @type FORMAT: str
-    @cvar BEGIN: The beginning keyword
-    @type BEGIN: str
-    @cvar END: The ending keyword
-    @type END: str
-    @cvar END: The duration keywords
-    @type END: [str,..]
+    @cvar DURATION: The duration keywords.
+    @type DURATION: [str,..]
     """
 
     FORMAT = '%Y-%m-%dT%H:%M:%S'

@@ -70,8 +70,8 @@ class AsyncReply:
     Asynchronous request reply.
     @ivar sn: The request serial number.
     @type sn: str
-    @ivar sender: Which endpoint sent the reply.
-    @ivar sender: str
+    @ivar origin: Which endpoint sent the reply.
+    @type origin: str
     @ivar any: User defined (round-tripped) data.
     @type any: object
     """
@@ -119,16 +119,16 @@ class FinalReply(AsyncReply):
     def succeeded(self):
         """
         Get whether the reply indicates success.
-        @rtype: True when succeeded.
-        @rtype bool:
+        @return: True when succeeded.
+        @rtype: bool
         """
         return False
 
     def failed(self):
         """
         Get whether the reply indicates failure.
-        @rtype: True when failed.
-        @rtype bool:
+        @return: True when failed.
+        @rtype: bool
         """
         return ( not self.succeeded() )
 

@@ -139,7 +139,7 @@ class Consumer(Endpoint):
         """
         Process received request.
         @param message: The received message.
-        @type message: L{Message}
+        @type message: L{qpid.messaging.Message}
         """
         envelope = Envelope()
         subject = self.__subject(message)
@@ -155,7 +155,7 @@ class Consumer(Endpoint):
         """
         Check to see if the envelope is valid.
         @param envelope: The received envelope.
-        @type envelope: L{Message}
+        @type envelope: L{qpid.messaging.Message}
         """
         valid = True
         if envelope.version != version:
@@ -168,7 +168,7 @@ class Consumer(Endpoint):
         """
         Dispatch received request.
         @param envelope: The received envelope.
-        @type envelope: L{Message}
+        @type envelope: L{qpid.messaging.Message}
         """
         pass
 
@@ -176,7 +176,7 @@ class Consumer(Endpoint):
         """
         Extract the message subject.
         @param message: The received message.
-        @type message: L{Message}
+        @type message: L{qpid.messaging.Message}
         @return: The message subject
         @rtype: str
         """
@@ -236,7 +236,7 @@ class RequestConsumer(Consumer):
     """
     An AMQP request consumer.
     @ivar producer: A reply producer.
-    @type producer: L{pmf.producer.QueueProducer}
+    @type producer: L{pmf.producer.Producer}
     @ivar dispatcher: An RMI dispatcher.
     @type dispatcher: L{pmf.dispatcher.Dispatcher}
     """

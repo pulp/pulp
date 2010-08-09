@@ -82,7 +82,7 @@ class PendingQueue:
         Get the next pending envelope.
         @param wait: The number of seconds to wait for a pending item.
         @type wait: int
-        @return envelope: An L{Envelope}
+        @return: An L{Envelope}
         @rtype: L{Envelope}
         """
         self.lock()
@@ -107,8 +107,8 @@ class PendingQueue:
     def remove(self, envelope):
         """
         Remove the specified envelope and place on the uncommitted list.
-        @return envelope: An L{Envelope}
-        @rtype: L{Envelope}
+        @param envelope: An L{Envelope}
+        @type envelope: L{Envelope}
         """
         self.lock()
         try:
@@ -194,8 +194,8 @@ class PendingQueue:
     def fn(self, envelope):
         """
         Get the qualified file name for the envelope.
-        @return envelope: An L{Envelope}
-        @rtype: L{Envelope}
+        @param envelope: An L{Envelope}
+        @type envelope: L{Envelope}
         @return: The absolute file path.
         @rtype: str
         """
@@ -214,7 +214,7 @@ class PendingReceiver(Thread):
     @ivar __run: The main run loop flag.
     @type __run: bool
     @ivar queue: The L{PendingQueue} being read.
-    @type queue: L{PendingQueue)
+    @type queue: L{PendingQueue}
     @ivar consumer: The queue listener.
     @type consumer: L{pmf.consumer.Consumer}
     """
@@ -240,8 +240,8 @@ class PendingReceiver(Thread):
     def dispatch(self, envelope):
         """
         Dispatch the envelope to the listener.
-        @return envelope: An L{Envelope} to be dispatched.
-        @rtype: L{Envelope}
+        @param envelope: An L{Envelope} to be dispatched.
+        @type envelope: L{Envelope}
         """
         try:
             self.listener.dispatch(envelope)
