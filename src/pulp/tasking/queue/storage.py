@@ -116,6 +116,7 @@ class VolatileStorage(object):
         @return: the first (oldest) task in the queue that matches on success,
                  None otherwise
         """
+        num_criteria = len(criteria)
         for task in self.all_tasks():
             matches = 0
             for attr, value in criteria.items():
@@ -124,6 +125,6 @@ class VolatileStorage(object):
                 if getattr(task, attr) != value:
                     break;
                 matches += 1
-            if matches == len(criteria):
+            if matches == num_criteria:
                 return task
         return None
