@@ -22,7 +22,7 @@ sys.path.append('../../')
 from pmf.stub import Stub
 from pmf.decorators import stub
 from pmf.base import Container
-from pmf.producer import QueueProducer
+from pmf.producer import Producer
 from pmf.window import *
 from time import sleep
 from datetime import datetime as dt
@@ -43,7 +43,7 @@ class Dog(Stub):
 class Agent(Container):
 
     def __init__(self, id, **options):
-        producer = QueueProducer()
+        producer = Producer()
         Container.__init__(self, id, producer, **options)
 
 

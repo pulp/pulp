@@ -38,6 +38,7 @@ class Options(dict):
     """
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
+    __delattr__= dict.__delitem__
 
 
 class Envelope(dict):
@@ -46,6 +47,7 @@ class Envelope(dict):
     that provides dot (.) style access.
     """
 
+    __getattr__ = dict.get
     __setattr__= dict.__setitem__
     __delattr__= dict.__delitem__
 
@@ -68,8 +70,144 @@ class Envelope(dict):
         d = self
         return json.dumps(d, indent=2)
 
-    def __getattr__(self, attr):
-        return self.get(attr, None)
-
     def __str__(self):
         return self.dump()
+
+
+class Destination:
+    """
+    AMQP destinations (topics & queues)
+    """
+
+    def __repr__(self):
+        return str(self).split(';', 1)[0]
+
+
+class Topic(Destination):
+    """
+    Represents and AMQP topic.
+    @ivar topic: The name of the topic.
+    @type topic: str
+    @ivar subject: The subject.
+    @type subject: str
+    @ivar name: The (optional) subscription name.
+        Used for durable subscriptions.
+    @type name: str
+    """
+
+    def __init__(self, topic, subject=None, name=None):
+        """
+        @param topic: The name of the topic.
+        @type topic: str
+        @param subject: The subject.
+        @type subject: str
+        @param name: The (optional) subscription name.
+            Used for durable subscriptions.
+        @type name: str
+        """
+        self.topic = topic
+        self.subject = subject
+        self.name = name
+
+    def address(self):
+        """
+        Get the topic I{formal} AMQP address which contains
+        properties used to create the topic.
+        @return: The topic address.
+        @rtype: str
+        """
+        s = []
+        s.append(self.topic)
+        if self.subject:
+            s.append('/%s' % self.subject)
+        s.append(';{')
+        s.append('create:always')
+        s.append(',node:{type:topic,durable:True}')
+        s.append(',link:{durable:True}')
+        s.append('}')
+        return ''.join(s)
+
+    def queuedAddress(self):
+        """
+        Get the topic I{durable} AMQP address which contains
+        properties used to create the topic.
+        @return: The topic address.
+        @rtype: str
+        """
+        s = []
+        s.append(self.name)
+        s.append(';{')
+        s.append('create:always')
+        s.append(',node:{type:topic,durable:True}')
+        s.append(',link:{durable:True')
+        s.append(',x-bindings:[')
+        s.append('{exchange:%s' % self.topic)
+        if self.subject:
+            s.append(',key:%s' % self.subject)
+        s.append('}]')
+        s.append('}}')
+        return ''.join(s)
+
+    def __str__(self):
+        if self.name:
+            return self.queuedAddress()
+        else:
+            return self.address()
+
+
+class Queue(Destination):
+    """
+    Represents and AMQP queue.
+    @ivar name: The name of the queue.
+    @type name: str
+    @ivar durable: The durable flag.
+    @type durable: str
+    """
+
+    def __init__(self, name, durable=True):
+        """
+        @param name: The name of the queue.
+        @type name: str
+        @param durable: The durable flag.
+        @type durable: str
+        """
+        self.name = name
+        self.durable = durable
+
+    def address(self):
+        """
+        Get the queue I{formal} AMQP address which contains
+        properties used to create the queue.
+        @return: The queue address.
+        @rtype: str
+        """
+        s = []
+        s.append(self.name)
+        s.append(';{')
+        s.append('create:always')
+        s.append(',node:{type:queue,durable:True}')
+        s.append(',link:{durable:True}')
+        s.append('}')
+        return ''.join(s)
+
+    def tmpAddress(self):
+        """
+        Get the queue AMQP address which contains
+        properties used to create a temporary queue.
+        @return: The queue address.
+        @rtype: str
+        """
+        s = []
+        s.append(self.name)
+        s.append(';{')
+        s.append('create:always')
+        s.append(',node:{type:queue}')
+        s.append(',link:{durable:True}')
+        s.append('}')
+        return ''.join(s)
+
+    def __str__(self):
+        if self.durable:
+            return self.address()
+        else:
+            return self.tmpAddress()

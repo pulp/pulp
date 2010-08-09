@@ -19,7 +19,7 @@ Contains request delivery policies.
 
 from pmf import *
 from pmf.dispatcher import Return
-from pmf.consumer import QueueReader
+from pmf.consumer import Reader
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -49,22 +49,22 @@ class RequestMethod:
         """
         self.producer = producer
 
-    def send(self, qid, request, **any):
+    def send(self, address, request, **any):
         """
         Send the request..
-        @param qid: The destination queue id.
-        @type qid: str
+        @param address: The destination queue address.
+        @type address: str
         @param request: A request to send.
         @type request: object
         @keyword any: Any (extra) data.
         """
         pass
 
-    def broadcast(self, qids, request, **any):
+    def broadcast(self, addresses, request, **any):
         """
         Broadcast the request.
-        @param qids: A list of destination queue ids.
-        @type qids: [str,..]
+        @param addresses: A list of destination queue addresses.
+        @type addresses: [str,..]
         @param request: A request to send.
         @type request: object
         @keyword any: Any (extra) data.
@@ -93,18 +93,18 @@ class Synchronous(RequestMethod):
         @param timeout: The request timeout (seconds).
         @type timeout: int
         """
-        self.id = getuuid()
         self.timeout = timeout
+        self.queue = Queue(getuuid())
         RequestMethod.__init__(self, producer)
-        reader = QueueReader(self.id, self.producer.url)
+        reader = Reader(self.queue, self.producer.url)
         reader.start()
         self.reader = reader
 
-    def send(self, qid, request, **any):
+    def send(self, destination, request, **any):
         """
         Send the request then read the reply.
-        @param qid: The destination queue id.
-        @type qid: str
+        @param destination: The destination queue address.
+        @type destination: str
         @param request: A request to send.
         @type request: object
         @keyword any: Any (extra) data.
@@ -113,8 +113,8 @@ class Synchronous(RequestMethod):
         @raise Exception: returned by the peer.
         """
         sn = self.producer.send(
-            qid,
-            replyto=self.id,
+            destination,
+            replyto=str(self.queue),
             request=request,
             **any)
         self.__getstarted(sn)
@@ -161,12 +161,12 @@ class Asynchronous(RequestMethod):
         RequestMethod.__init__(self, producer)
         self.tag = tag
 
-    def send(self, qid, request, **any):
+    def send(self, destination, request, **any):
         """
         Send the specified request and redirect the reply to the
         queue for the specified reply I{correlation} tag.
-        @param qid: The destination queue id.
-        @type qid: str
+        @param destination: The AMQP destination.
+        @type destination: L{Destination}
         @param request: A request to send.
         @type request: object
         @keyword any: Any (extra) data.
@@ -174,27 +174,25 @@ class Asynchronous(RequestMethod):
         @rtype: str
         """
         sn = self.producer.send(
-                qid,
+                destination,
                 replyto=self.tag,
                 request=request,
                 **any)
         return sn
 
-    def broadcast(self, qids, request, **any):
+    def broadcast(self, destinations, request, **any):
         """
         Send the specified request and redirect the reply to the
         queue for the specified reply I{correlation} tag.
-        @param qids: A list of destination queue ids.
-        @type qids: [str,..]
+        @param destinations: A list of destinations.
+        @type destinations: [L{Destination},..]
         @param request: A request to send.
         @type request: object
         @keyword any: Any (extra) data.
         """
         sns = self.producer.broadcast(
-                qids,
+                destinations,
                 replyto=self.tag,
                 request=request,
                 **any)
         return sns
-
-

@@ -28,12 +28,12 @@ log = getLogger(__name__)
 class Endpoint:
     """
     Base class for QPID endpoint.
-    @cvar connecton: An AMQP connection.
-    @type connecton: L{qpid.messaging.Connection}
-    @ivar id: The unique AMQP session ID.
-    @type id: str
-    @ivar session: An AMQP session.
-    @type session: L{qpid.messaging.Session}
+    @cvar connectons: An AMQP connection.
+    @type connectons: L{qpid.messaging.Connection}
+    @ivar uuid: The unique endpoint id.
+    @type uuid: str
+    @ivar __session: An AMQP session.
+    @type __session: L{qpid.messaging.Session}
     """
 
     connections = {}
@@ -50,15 +50,25 @@ class Endpoint:
                 pass
         cls.connections = {}
 
-    def __init__(self, id=None, url='localhost:5672'):
+    def __init__(self, uuid=getuuid(), url='localhost:5672'):
         """
+        @param uuid: The endpoint uuid.
+        @type uuid: str
         @param url: The broker url <user>/<pass>@<host>:<port>.
         @type url: str
         """
-        self.id = ( id or getuuid() )
+        self.uuid = uuid
         self.url = url
         self.__session = None
         self.open()
+
+    def id(self):
+        """
+        Get the endpoint id
+        @return: The id.
+        @rtype: str
+        """
+        return self.uuid
 
     def connection(self):
         """
@@ -71,7 +81,7 @@ class Endpoint:
         if con is None:
             con = Connection(self.url, reconnect=True)
             con.attach()
-            log.info('{%s} connected to AMQP' % self.id)
+            log.info('{%s} connected to AMQP' % self.id())
             self.connections[key] = con
         return con
 
@@ -113,35 +123,8 @@ class Endpoint:
         except:
             pass
 
-    def queueAddress(self, name):
-        """
-        Get a QPID queue address.
-        @param name: The queue name.
-        @type name: str
-        @return: A QPID address.
-        @rtype: str
-        """
-        basic = 'create:always'
-        node = 'node:{type:queue}'
-        link = 'link:{x-subscribe:{exclusive:True}}'
-        flags = ','.join((basic, node, link))
-        return '%s;{%s}' % (name, flags)
-
-    def topicAddress(self, topic, subject=None):
-        """
-        Get a QPID topic address.
-        @param topic: The topic name and (optional) subject.
-            format: topic
-            (or)
-            format: topic/subject
-        @type topic: str
-        @return: A QPID address.
-        @rtype: str
-        """
-        return '%s;{create:always,node:{type:topic}}' % topic
-
     def __del__(self):
         self.close()
 
     def __str__(self):
-        return 'Endpoint id:%s broker @ %s' % (self.id, self.url)
+        return 'Endpoint id:%s broker @ %s' % (self.id(), self.url)

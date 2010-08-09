@@ -103,10 +103,25 @@ class Container:
         Add stubs found in the I{stubs} dictionary.
         Each is added as an attribute matching the dictionary key.
         """
+        destination = self.__destination()
         for ns, sclass in Remote.stubs.items():
-            stub = sclass(self.__id, self.__options)
+            stub = sclass(destination, self.__options)
             setattr(self, ns, stub)
             self.__stubs.append(stub)
+
+    def __destination(self):
+        """
+        Get the stub destination(s).
+        @return: Either a queue destination or a list of queues.
+        @rtype: list
+        """
+        if isinstance(self.__id, (list,tuple)):
+            queues = []
+            for d in self.__id:
+                queues.append(Queue(d))
+            return queues
+        else:
+            return Queue(self.__id)
 
     def __async(self):
         """

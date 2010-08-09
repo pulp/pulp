@@ -48,7 +48,7 @@ class ReceiverThread(Thread):
         """
         self.__run = True
         self.consumer = consumer
-        Thread.__init__(self, name=consumer.id)
+        Thread.__init__(self, name=consumer.id())
 
     def run(self):
         """
@@ -78,6 +78,40 @@ class Consumer(Endpoint):
     """
     An AMQP (abstract) consumer.
     """
+
+    def __init__(self, destination, *other):
+        """
+        @param destination: The destination to consumer.
+        @type destination: L{Destination}
+        """
+        self.destination = destination
+        Endpoint.__init__(self, *other)
+
+    def id(self):
+        """
+        Get the endpoint id
+        @return: The destination (simple) address.
+        @rtype: str
+        """
+        return repr(self.destination)
+
+    def address(self):
+        """
+        Get the AMQP address for this endpoint.
+        @return: The AMQP address.
+        @rtype: str
+        """
+        return str(self.destination)
+
+    def open(self):
+        """
+        Open and configure the consumer.
+        """
+        session = self.session()
+        address = self.address()
+        log.info('{%s} opening %s', self.id(), address)
+        receiver = session.receiver(address)
+        self.receiver = receiver
 
     def start(self):
         """
@@ -112,7 +146,7 @@ class Consumer(Endpoint):
         envelope.load(message.content)
         if subject:
             envelope.subject = subject
-        log.info('{%s} received:\n%s', self.id, envelope)
+        log.info('{%s} received:\n%s', self.id(), envelope)
         if self.valid(envelope):
             self.dispatch(envelope)
         self.ack()
@@ -127,7 +161,7 @@ class Consumer(Endpoint):
         if envelope.version != version:
             valid = False
             log.info('{%s} version mismatch (discarded):\n%s',
-                self.id, envelope)
+                self.id(), envelope)
         return valid
 
     def dispatch(self, envelope):
@@ -149,24 +183,7 @@ class Consumer(Endpoint):
         return message.properties.get('qpid.subject')
 
 
-class QueueConsumer(Consumer):
-    """
-    An AMQP (abstract) queue consumer.
-    @ivar receiver: The message receiver.
-    @type receiver: L{qpid.messaging.Receiver}
-    """
-
-    def open(self):
-        """
-        Open and configure the consumer.
-        """
-        session = self.session()
-        address = self.queueAddress(self.id)
-        receiver = session.receiver(address)
-        self.receiver = receiver
-
-
-class QueueReader(QueueConsumer):
+class Reader(Consumer):
 
     def start(self):
         pass
@@ -186,7 +203,7 @@ class QueueReader(QueueConsumer):
             message = self.receiver.fetch(timeout=timeout)
             envelope = Envelope()
             envelope.load(message.content)
-            log.info('{%s} read next:\n%s', self.id, envelope)
+            log.info('{%s} read next:\n%s', self.id(), envelope)
             return envelope
         except Empty:
             pass
@@ -202,20 +219,20 @@ class QueueReader(QueueConsumer):
         @return: The next envelope.
         @rtype: L{Envelope}
         """
-        log.info('{%s} searching for: sn=%s', self.id, sn)
+        log.info('{%s} searching for: sn=%s', self.id(), sn)
         while True:
             envelope = self.next(timeout)
             if not envelope:
                 return
             if sn == envelope.sn:
-                log.info('{%s} search found:\n%s', self.id, envelope)
+                log.info('{%s} search found:\n%s', self.id(), envelope)
                 return envelope
             else:
-                log.info('{%s} search discarding:\n%s', self.id, envelope)
+                log.info('{%s} search discarding:\n%s', self.id(), envelope)
                 self.ack()
 
 
-class RequestConsumer(QueueConsumer):
+class RequestConsumer(Consumer):
     """
     An AMQP request consumer.
     @ivar producer: A reply producer.
@@ -231,10 +248,10 @@ class RequestConsumer(QueueConsumer):
         @param dispatcher: An RMI dispatcher.
         @type dispatcher: L{pmf.Dispatcher}
         """
-        q = PendingQueue(self.id)
+        q = PendingQueue(self.id())
         self.pending = PendingReceiver(q, self)
         self.dispatcher = dispatcher
-        self.producer = Producer(self.id, self.url)
+        self.producer = Producer(self.url)
         Consumer.start(self)
         self.pending.start()
 
@@ -311,40 +328,18 @@ class RequestConsumer(QueueConsumer):
             pass
 
 
-class TopicConsumer(Consumer):
+class EventConsumer(Consumer):
     """
-    An AMQP topic consumer.
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
+    An AMQP event consumer.
     """
 
-    def open(self):
+    def __init__(self, subject, name=None, *other):
         """
-        Open and configure the consumer.
+        @param subject: An event subject.
+        @type subject: str
         """
-        session = self.session()
-        topic = self.id
-        address = self.topicAddress(topic)
-        receiver = session.receiver(address)
-        self.receiver = receiver
-
-
-class EventConsumer(TopicConsumer):
-    """
-    An AMQP topic consumer.
-    @ivar session: An AMQP session.
-    @type session: L{qpid.Session}
-    """
-
-    def open(self):
-        """
-        Open and configure the consumer.
-        """
-        session = self.session()
-        topic = 'event/%s' % self.id
-        address = self.topicAddress(topic)
-        receiver = session.receiver(address)
-        self.receiver = receiver
+        topic = Topic('event', subject, name)
+        Consumer.__init__(self, topic, *other)
 
     def dispatch(self, envelope):
         """

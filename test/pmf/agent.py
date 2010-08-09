@@ -20,6 +20,7 @@ import sys
 sys.path.append('../../')
 
 from time import sleep
+from pmf import Queue
 from pmf.base import Agent as Base
 from pmf.decorators import remote, remotemethod
 from pmf.consumer import RequestConsumer
@@ -52,7 +53,8 @@ class Dog:
 
 class Agent(Base):
     def __init__(self, id):
-        Base.__init__(self, RequestConsumer(id))
+        queue = Queue(id)
+        Base.__init__(self, RequestConsumer(queue))
         while True:
             sleep(10)
             print 'Agent: sleeping...'

@@ -19,13 +19,13 @@ Provides async AMQP message consumer classes.
 
 from pmf import *
 from pmf.dispatcher import Return
-from pmf.consumer import Consumer, QueueConsumer
+from pmf.consumer import Consumer
 from logging import getLogger
 
 log = getLogger(__name__)
 
 
-class ReplyConsumer(QueueConsumer):
+class ReplyConsumer(Consumer):
     """
     A request, reply consumer.
     @ivar listener: An reply listener.

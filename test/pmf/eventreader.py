@@ -29,7 +29,7 @@ class MyConsumer(EventConsumer):
         print '(%s) %s' % (subject, body)
 
 def main():
-    c = MyConsumer('user.#')
+    c = MyConsumer('user.#', 'myqueue')
     c.start()
     c.join()
 

@@ -23,7 +23,7 @@ on the agent.
 from pmf.stub import Stub
 from pmf.decorators import stub
 from pmf.base import Container
-from pmf.producer import QueueProducer
+from pmf.producer import Producer
 from pulp.config import config
 
 
@@ -57,7 +57,10 @@ class Agent(Container):
         """
         @param uuid: The consumer uuid.
         @type uuid: str|list
+        @param options: Messaging L{pmf.Options}
         """
-        url = '%s:%s' % (config.get('pmf', 'host'), config.get('pmf', 'port'))
-        producer = QueueProducer(url)
+        host = config.get('pmf', 'host')
+        port = config.get('pmf', 'port')
+        url = '%s:%s' % (host, port)
+        producer = Producer(url)
         Container.__init__(self, uuid, producer, **options)

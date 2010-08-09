@@ -20,6 +20,7 @@ import sys
 sys.path.append('../../')
 
 from time import sleep
+from pmf import Queue
 from pmf.async import ReplyConsumer
 from logging import INFO, basicConfig
 
@@ -44,7 +45,7 @@ class Listener:
 
 if __name__ == '__main__':
     tag = 'xyz'
-    c = ReplyConsumer(tag)
+    c = ReplyConsumer(Queue(tag))
     #c.start(Listener())
     c.start(callback)
     while True:
