@@ -1,11 +1,13 @@
 import pprint
 import time
 import unittest
+from datetime import timedelta
 
 from pulp.tasking.task import (
-    Task, task_created, task_waiting, task_finished, task_error,
-    task_complete_states)
+    Task, task_waiting, task_finished, task_error, task_timed_out,
+    task_canceled, task_complete_states)
 from pulp.tasking.queue.fifo import FIFOTaskQueue
+from pulp.tasking.queue.thread import TimeoutException, CancelException
 
 
 def noop():
@@ -25,6 +27,13 @@ def result():
 def error():
     raise Exception('Aaaargh!')
 
+def interrupt_me():
+    while True:
+        try:
+            time.sleep(0.5)
+        except (TimeoutException, CancelException):
+            break
+
 
 class TaskTester(unittest.TestCase):
 
@@ -36,7 +45,7 @@ class TaskTester(unittest.TestCase):
     
     def test_task_create(self):
         task = Task(noop)
-        self.assertTrue(task.state == task_created)
+        self.assertTrue(task.state == task_waiting)
 
     def test_task_noop(self):
         task = Task(noop)
@@ -200,7 +209,26 @@ class FIFOQueueTester(QueueTester):
         # Test & Verify
         self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
 
-
+        
+class InterruptFIFOQueueTester(QueueTester):
+    
+    def setUp(self):
+        self.queue = FIFOTaskQueue(timeout=timedelta(seconds=1))
+        
+    def test_task_timeout(self):
+        task = Task(interrupt_me)
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        self.assertTrue(task.state == task_timed_out)
+        
+    #def test_task_cancel(self):
+    #    task = Task(interrupt_me)
+    #    self.queue.enqueue(task)
+    #    time.sleep(3)
+    #    self.queue.cancel(task)
+    #    self._wait_for_task(task)
+    #    self.assertTrue(task.state == task_canceled)
+        
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
