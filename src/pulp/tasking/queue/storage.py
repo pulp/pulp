@@ -38,7 +38,15 @@ class VolatileStorage(object):
         return itertools.chain(self.__complete_tasks[:],
                                self.__running_tasks[:],
                                self.__waiting_tasks[:])
-        
+
+    def unfinished_tasks(self):
+        """
+        Return an iterator over all unfinished tasks in the queue in descending order
+        by length of time in the queue.
+        @return: iterator
+        """
+        return itertools.chain(self.__running_tasks[:], self.__waiting_tasks[:])
+
     def waiting_tasks(self):
         """
         Return an iterator over all waiting tasks in the queue, in descending
@@ -108,16 +116,31 @@ class VolatileStorage(object):
             
     # query methods
     
-    def find_task(self, criteria):
+    def find_task(self, criteria, include_finished=True):
         """
         Find a task in the storage based on the given criteria.
         @type criteria: dict
         @param criteria: dict of task attr -> value to match against
-        @return: the first (oldest) task in the queue that matches on success,
+        @type include_finished: bool
+        @param include_finished: If True, finished tasks will be included in the search;
+                                 otherwise only running and waiting tasks are searched
+                                 (defaults to True)
+        @return: the last (newest) task in the queue that matches on success,
                  None otherwise
         """
         num_criteria = len(criteria)
-        for task in self.all_tasks():
+
+        if include_finished:
+            searchable_tasks = self.all_tasks()
+        else:
+            searchable_tasks = self.unfinished_tasks()
+
+        # In order to get the newest task and punch out early in the search algorithm,
+        # reverse the tasks before starting the search (reversed returns a list, so
+        # this call isn't destructive).
+        sorted_tasks = reversed(list(searchable_tasks))
+
+        for task in sorted_tasks:
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):

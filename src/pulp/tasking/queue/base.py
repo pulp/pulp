@@ -20,11 +20,15 @@ class TaskQueue(object):
     """
     Abstract base class for task queues for interface definition and typing.
     """
-    def enqueue(self, task):
+    def enqueue(self, task, unique=False):
         """
         Add a task to the task queue
         @type task: pulp.tasking.task.Task
         @param task: Task instance
+        @type unique: bool
+        @param unique: If True, the task will only be added if there are no
+                       non-finished tasks with the same method_name, args,
+                       and kwargs; otherwise the task will always be added
         """
         raise NotImplementedError()
     
@@ -44,17 +48,21 @@ class TaskQueue(object):
         """
         raise NotImplementedError()
     
-    def find(self, **kwargs):
+    def find(self, include_finished=True, **kwargs):
         """
         Find a task in this task queue. Only the oldest task in the queue will be
         returned.
         @type kwargs: dict
         @param kwargs: task attributes and values as search criteria
+        @type include_finished: bool
+        @param include_finished: If True, finished tasks will be included in the search;
+                                 otherwise only running and waiting tasks are searched
+                                 (defaults to True)
         @return: Task instance on success, None otherwise
         """
         raise NotImplementedError()
 
-    def exists(self, task, criteria):
+    def exists(self, task, criteria, include_finished=True):
         """
         Returns whether or not the given task exists in this queue. The list
         of which attributes that will be checked on the task for equality is
@@ -69,6 +77,11 @@ class TaskQueue(object):
                          considered equal to the given task if the values for
                          all attributes listed in here are equal in an existing
                          task in the queue
+
+        @type  include_finished: bool
+        @param include_finished: If True, finished tasks will be included in the search;
+                                 otherwise only running and waiting tasks are searched
+                                 (defaults to True)
         """
         
         # Convert the list of attributes to check into a criteria dict used
@@ -80,7 +93,7 @@ class TaskQueue(object):
             find_criteria[attr_name] = getattr(task, attr_name)
 
         # Use the find functionality to determine if a task matches
-        return self.find(**find_criteria) is not None
+        return self.find(include_finished, **find_criteria) is not None
         
     
 # no-frills task queue --------------------------------------------------------
@@ -98,6 +111,5 @@ class SimpleTaskQueue(TaskQueue):
     def complete(self, task):
         pass
     
-    def find(self, **kwargs):
+    def find(self, include_finished=True, **kwargs):
         return None
-    
