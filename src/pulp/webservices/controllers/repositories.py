@@ -218,7 +218,6 @@ class RepositoryActions(AsyncController):
     
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
-        'list',
         'sync',
         'upload',
         'add_package',
@@ -240,13 +239,11 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        task_info = self.start_task(api.sync, True, id)
-
+        task_info = self.start_task(api.sync, [id], unique=True)
         if task_info:
             return self.accepted(task_info)
-        else:
-            return self.conflict('Sync already in process for repo [%s]' % id)
-          
+        return self.conflict('Sync already in process for repo [%s]' % id)
+    
     @JSONController.error_handler
     @RoleCheck()
     def upload(self, id):
