@@ -17,31 +17,30 @@
 import ctypes
 import inspect
 import threading
-import time
 
 # interruptable thread base class ---------------------------------------------
 
 # based on an answer from stack overflow:
 # http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
 
-def _raise_exception_in_thread(tid, exctype):
+def _raise_exception_in_thread(tid, exc_type):
     """
     Raises an exception in the threads with id tid.
     """
-    if not inspect.isclass(exctype):
-        raise TypeError('Only types can be raised (not instances)')
+    assert inspect.isclass(exc_type)
     # NOTE this returns the number of threads that it modified, which should
     # only be 1 or 0 (if the thread id wasn't found)
-    excptr = ctypes.py_object(exctype)
-    num = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, excptr)
+    long_tid = ctypes.c_long(tid)
+    exc_ptr = ctypes.py_object(exc_type)
+    num = ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, exc_ptr)
     if num == 1:
         return
     if num == 0:
         raise ValueError('Invalid thread id')
     # NOTE if it returns a number greater than one, you're in trouble, 
     # and you should call it again with exc=NULL to revert the effect
-    nullptr = ctypes.py_object()
-    ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, nullptr)
+    null_ptr = ctypes.py_object()
+    ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, null_ptr)
     raise SystemError('PyThreadState_SetAsyncExc failed')
     
     
@@ -50,6 +49,7 @@ class InterruptableThread(threading.Thread):
     A thread class that supports raising exception in the thread from another
     thread.
     """
+    _default_timeout = 0.0005
     
     @property
     def _tid(self):
@@ -73,32 +73,17 @@ class InterruptableThread(threading.Thread):
                 return tid
 
         raise AssertionError('Could not determine thread id')
-
-
-    def raise_exception(self, exctype):
+    
+    def raise_exception(self, exc_type):
         """
-        Raises the given exception type in the context of this thread.
-
-        If the thread is busy in a system call
-        (time.sleep(), socket.accept(), ...) the exception is simply ignored.
-
-        If you are sure that your exception should terminate the thread, one way
-        to ensure that it works is:
-        t = InterruptableThread(...)
-        ...
-        t.raise_exception(SomeException)
-        while t.isAlive():
-            time.sleep(0.1)
-            t.raise_exception(SomeException)
-
-        If the exception is to be caught by the thread, you need a way to check
-        that your thread has caught it.
-
-        CAREFUL : this method is executed in the context of the caller thread,
-        to raise an exception in the context of the thread represented by this
-        instance.
         """
-        _raise_exception_in_thread(self._tid, exctype)
+        try:
+            while self.is_alive():
+                _raise_exception_in_thread(self._tid, exc_type)
+                self.join(self._default_timeout)
+        except threading.ThreadError:
+            # a threading.ThreadError get raised if the thread is already dead
+            pass
 
 # task thread -----------------------------------------------------------------
 
@@ -127,32 +112,15 @@ class TaskThread(InterruptableThread):
     """
     Derived task thread class that allows for task-specific interruptions.
     """
-    _default_sleep = 0.0005
-    
-    def _ensure_exception(self, exctype):
-        """
-        Ensure that the exception gets raised in the thread or that the thread
-        is already dead.
-        @type exctype: type or class
-        @param exctype: type or class of exception to raise in the tread
-        """
-        try:
-            while self.is_alive():
-                self.raise_exception(exctype)
-                time.sleep(self._default_sleep)
-        except threading.ThreadError:
-            # a threading.ThreadError gets raised if the thread is already dead
-            pass
-    
     def timeout(self):
         """
         Raise a TimeoutException in the thread.
         """
-        self._ensure_exception(TimeoutException)
+        self.raise_exception(TimeoutException)
             
     def cancel(self):
         """
         Raise a CancelException in the thread.
         """
-        self._ensure_exception(CancelException)
+        self.raise_exception(CancelException)
         
