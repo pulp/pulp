@@ -22,23 +22,22 @@ import traceback
 import uuid
 
 from pulp.tasking.queue.base import SimpleTaskQueue
+from pulp.tasking.queue.thread import TimeoutException, CancelException
 
 
 log = logging.getLogger(__name__)
 
 # task states -----------------------------------------------------------------
 
-task_created = 'created'
-task_reset = 'reset'
 task_waiting = 'waiting'
 task_running = 'running'
 task_finished = 'finished'
 task_error = 'error'
 task_timed_out = 'timed out'
 task_canceled = 'canceled'
+task_reset = 'reset'
 
 task_states = (
-    task_created,
     task_waiting,
     task_running,
     task_finished,
@@ -49,7 +48,6 @@ task_states = (
 )
 
 task_ready_states = (
-    task_created,
     task_waiting,
     task_reset,
 )
@@ -82,7 +80,7 @@ class Task(object):
         self.queue = SimpleTaskQueue()
         
         self.method_name = callable.__name__
-        self.state = task_created
+        self.state = task_waiting
         self.start_time = None
         self.finish_time = None
         self.next_time = None
@@ -90,13 +88,6 @@ class Task(object):
         self.exception = None
         self.traceback = None
 
-    def wait(self):
-        """
-        Mark this task as waiting.
-        """
-        assert self.state in task_ready_states
-        self.state = task_waiting
-        
     def run(self):
         """
         Run this task and record the result or exception.
@@ -107,37 +98,24 @@ class Task(object):
         try:
             result = self.callable(*self.args, **self.kwargs)
         except Exception, e:
-            self.state = task_error
+            if isinstance(e, TimeoutException):
+                self.state = task_timed_out
+            elif isinstance(e, CancelException):
+                self.state = task_canceled
+            else:
+                self.state = task_error
             self.exception = e
             # exc_info returns tuple (class, exception, traceback)
             # format_exception takes 3 arguments (class, exception, traceback)
             exc_info = sys.exc_info()
             self.traceback = traceback.format_exception(*exc_info)
-            log.error("Task id:%s, method_name:%s:  %s" % (self.id,
-                self.method_name, traceback.format_exc()))
+            log.error("Task id:%s, method_name:%s:  %s" %
+                      (self.id, self.method_name, ''.join(self.traceback)))
         else:
             self.state = task_finished
             self.result = result
         self.finish_time = datetime.datetime.now()
         self.queue.complete(self)
-        
-    def timeout(self):
-        """
-        Mark this task as timed out.
-        """
-        assert self.state in task_complete_states
-        # works by raising an exception in the thread
-        if self.state is task_error:
-            self.state = task_timed_out
-        
-    def cancel(self):
-        """
-        Mark this task as canceled.
-        """
-        assert self.state in task_complete_states
-        # works by raising an exception in the thread
-        if self.state is task_error:
-            self.state = task_canceled
         
     def reset(self):
         """
