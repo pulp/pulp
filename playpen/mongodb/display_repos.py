@@ -32,6 +32,8 @@ if __name__ == "__main__":
         print "\nRepo: "
         print "\tid=%s name=%s arch=%s" % (r["id"], r["name"], r["arch"])
         print "\tsource=%s" % (r["source"])
+        print "\t# groups=%s" % (len(r["packagegroups"]))
+        print "\t# categories=%s" % (len(r["packagegroupcategories"]))
         print "\t%s packages" % (len(r["packages"]))
         for key in r["packages"].keys()[:int(options.num_packages)]:
             pkg = r["packages"][key]
