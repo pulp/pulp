@@ -277,7 +277,7 @@ class packagegroup(BaseCore):
             print("Please specify the repo")
             sys.exit(0)
         if not self.options.pkgname:
-            print("Please specify the package name to add to the group")
+            print("Please specify the package name to delete from the group")
             sys.exit(0)
         if not self.options.groupid:
             print("Please specify the package group id")
