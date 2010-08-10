@@ -240,21 +240,13 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        task = Task(api.sync, id)
+        task_info = self.start_task(api.sync, True, id)
 
-        # if fifo.exists(task, ['method_name', 'args']):
-        #    log.debug('Attempt to schedule multiple syncs for repo [%s]' % id)
-        #    return self.conflict(msg='Sync already scheduled for repo [%s]' % id)
-        #else:
-        #    fifo.enqueue(task)
-        #    task_info = self._task_to_dict(task)
-        #    return self.accepted(task_info)
-
-        fifo.enqueue(task)
-        task_info = self._task_to_dict(task)
-        return self.accepted(task_info)
-    
-       
+        if task_info:
+            return self.accepted(task_info)
+        else:
+            return self.conflict('Sync already in process for repo [%s]' % id)
+          
     @JSONController.error_handler
     @RoleCheck()
     def upload(self, id):

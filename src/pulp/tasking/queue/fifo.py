@@ -138,10 +138,12 @@ class FIFOTaskQueue(TaskQueue):
             task.queue = self
             task.next_time = datetime.now()
             
-            if unique and self.exists(task, ['method_name', 'args', 'kwargs']):
-                return
+            if unique and self.exists(task, ['method_name', 'args', 'kwargs'],
+                                      include_finished=False):
+                return False
 
             self.__storage.add_waiting_task(task)
+            return True
         finally:
             self.__lock.release()
     

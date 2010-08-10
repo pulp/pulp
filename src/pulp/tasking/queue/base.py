@@ -29,6 +29,8 @@ class TaskQueue(object):
         @param unique: If True, the task will only be added if there are no
                        non-finished tasks with the same method_name, args,
                        and kwargs; otherwise the task will always be added
+        @return: True if a new task was created; False if it was rejected (due to
+                 the unique flag
         """
         raise NotImplementedError()
     

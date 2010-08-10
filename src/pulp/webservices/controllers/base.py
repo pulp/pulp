@@ -238,7 +238,7 @@ class AsyncController(JSONController):
             return http.uri_path()
         return http.extend_uri_path(id)
     
-    def start_task(self, func, *args, **kwargs):
+    def start_task(self, func, unique, *args, **kwargs):
         """
         Execute the function and its arguments as an asynchronous task.
         @param func: python callable
@@ -247,8 +247,9 @@ class AsyncController(JSONController):
         @return: dict representing the task
         """
         task = Task(func, *args, **kwargs)
-        fifo.enqueue(task)
-        return self._task_to_dict(task)
+        was_queued = fifo.enqueue(task, unique)
+
+        return self._task_to_dict(task) if was_queued else None
        
     def task_status(self, id):
         """
