@@ -94,7 +94,7 @@ class Synchronous(RequestMethod):
         @type timeout: int
         """
         self.timeout = timeout
-        self.queue = Queue(getuuid())
+        self.queue = Queue(getuuid(), durable=False)
         RequestMethod.__init__(self, producer)
         reader = Reader(self.queue, self.producer.url)
         reader.start()
@@ -175,7 +175,7 @@ class Asynchronous(RequestMethod):
         """
         sn = self.producer.send(
                 destination,
-                replyto=self.tag,
+                replyto=self.__replyto(),
                 request=request,
                 **any)
         return sn
@@ -192,7 +192,19 @@ class Asynchronous(RequestMethod):
         """
         sns = self.producer.broadcast(
                 destinations,
-                replyto=self.tag,
+                replyto=self.__replyto(),
                 request=request,
                 **any)
         return sns
+
+    def __replyto(self):
+        """
+        Get replyto based on the correlation I{tag}.
+        @return: The replyto AMQP address.
+        @rtype: str
+        """
+        if self.tag:
+            queue = Queue(self.tag)
+            return str(queue)
+        else:
+            return None

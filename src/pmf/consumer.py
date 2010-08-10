@@ -283,12 +283,16 @@ class RequestConsumer(Consumer):
         sn = envelope.sn
         any = envelope.any
         replyto = envelope.replyto
-        if replyto:
+        if not replyto:
+            return
+        try:
             self.producer.send(
                 replyto,
                 sn=sn,
                 any=any,
                 result=result)
+        except:
+            log.error('send failed:\n%s', result, exc_info=True)
 
     def sendstarted(self, envelope):
         """
@@ -299,12 +303,16 @@ class RequestConsumer(Consumer):
         sn = envelope.sn
         any = envelope.any
         replyto = envelope.replyto
-        if replyto:
+        if not replyto:
+            return
+        try:
             self.producer.send(
                 replyto,
                 sn=sn,
                 any=any,
                 status='started')
+        except:
+            log.error('send (started), failed', exc_info=True)
 
     def checkwindow(self, envelope):
         """

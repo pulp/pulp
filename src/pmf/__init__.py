@@ -200,7 +200,7 @@ class Queue(Destination):
         s = []
         s.append(self.name)
         s.append(';{')
-        s.append('create:always')
+        s.append('create:always,delete:receiver')
         s.append(',node:{type:queue}')
         s.append(',link:{durable:True}')
         s.append('}')
