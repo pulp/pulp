@@ -21,15 +21,43 @@ import os.path
 from pulptools.core import core_consumer
 from pulptools import pulpcli
 import pulptools.utils as utils
+CONSUMERID = "/etc/pulp/consumer"
+
+class Local(core_consumer.consumer):
+    """
+     This class is directly called from pulp-register and only handles
+     consumer operations for local consumer.
+     """
+    def __init__(self):
+        core_consumer.consumer.__init__(self, is_admin=False)
+        self.actions = {"create"        : "Register this system as a consumer",
+                        "delete"        : "Delete a consumer",
+                        "update"        : "Update consumer profile",
+                        #"list"          : "List of accessible consumer info",
+                        "bind"          : "Bind the consumer to listed repos",
+                        "unbind"        : "UnBind the consumer from repos",}
+    
+    def getConsumer(self):
+        ##TODO: this will eventually be a x509 cert, 
+        ##extract consumer id from cert oid schema
+        if not os.path.exists(CONSUMERID):
+            print("Error: This client is currently not registered. Please register to continue")
+            sys.exit(0)
+        try:
+            consumerid = open(CONSUMERID).read()
+        except Exception, e:
+            print("Error reading consumer." + e)
+            sys.exit(-1)
+        return consumerid
 
 class PulpRegister(pulpcli.PulpCore):
     def __init__(self):
         self.cli_cores = {}
         self.args = utils.findSysvArgs(sys.argv)
         if len(self.args) > 1:
-            self.cli_cores["consumer"] = core_consumer.Local()
+            self.cli_cores["consumer"] = Local()
         else:
-            cmd = core_consumer.Local()
+            cmd = Local()
             if cmd.name != "cli":
                     self.cli_cores[cmd.name] = cmd
 

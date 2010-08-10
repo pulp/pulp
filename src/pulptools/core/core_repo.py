@@ -154,7 +154,7 @@ class repo(BaseCore):
                 sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
             for repo in repos:
-                repo["packages"] = len(repo["packages"])
+                #repo["packages"] = repo["packages"]
                 print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"],
                                                         repo["source"], repo["arch"],
                                                         repo["sync_schedule"], repo["packages"])

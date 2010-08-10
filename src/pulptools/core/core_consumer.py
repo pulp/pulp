@@ -247,25 +247,3 @@ class consumer(BaseCore):
             sys.exit(0)
             
         return self.options.consumerid
-
-        
-class Local(consumer):
-    """
-     This class is directly called from pulp-register and only handles
-     consumer operations for local consumer.
-     """
-    def __init__(self):
-        consumer.__init__(self, is_admin=False)
-    
-    def getConsumer(self):
-        ##TODO: this will eventually be a x509 cert, 
-        ##extract consumer id from cert oid schema
-        if not os.path.exists(CONSUMERID):
-            print("Error: This client is currently not registered. Please register to continue")
-            sys.exit(0)
-        try:
-            consumerid = open(CONSUMERID).read()
-        except Exception, e:
-            print("Error reading consumer." + e)
-            sys.exit(-1)
-        return consumerid
