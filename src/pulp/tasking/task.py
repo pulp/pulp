@@ -97,13 +97,16 @@ class Task(object):
         self.start_time = datetime.datetime.now()
         try:
             result = self.callable(*self.args, **self.kwargs)
+        except TimeoutException:
+            self.state = task_timed_out
+            log.error('Task id:%s, method_name:%s: TIMED OUT' %
+                      self.id, self.method_name)
+        except CancelException:
+            self.state = task_canceled
+            log.info('Task id:%s, method_name:%s: CANCELLED' %
+                     self.id, self.method_name)
         except Exception, e:
-            if isinstance(e, TimeoutException):
-                self.state = task_timed_out
-            elif isinstance(e, CancelException):
-                self.state = task_canceled
-            else:
-                self.state = task_error
+            self.state = task_error
             self.exception = e
             # exc_info returns tuple (class, exception, traceback)
             # format_exception takes 3 arguments (class, exception, traceback)
