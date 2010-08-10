@@ -112,8 +112,7 @@ class FIFOTaskQueue(TaskQueue):
                 continue
             thread = self.__threads[task]
             thread.timeout()
-            self._wait_for_task(task)
-            task.timeout()
+            #self._wait_for_task(task)
                 
     def _cull_tasks(self):
         """
@@ -134,7 +133,6 @@ class FIFOTaskQueue(TaskQueue):
         try:
             task.queue = self
             task.next_time = datetime.now()
-            task.wait()
             self.__storage.add_waiting_task(task)
         finally:
             self.__lock.release()
@@ -164,8 +162,7 @@ class FIFOTaskQueue(TaskQueue):
         try:
             thread = self.__threads[task]
             thread.cancel()
-            self._wait_for_task(task)
-            task.cancel()
+            #self._wait_for_task(task)
         finally:
             self.__lock.release()
     
