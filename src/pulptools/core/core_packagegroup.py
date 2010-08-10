@@ -63,7 +63,7 @@ class packagegroup(BaseCore):
             usage = "packagegroup info [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="groupid",
-                           help="package name to lookup")
+                           help="Packagegroup id to lookup")
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repository Label")
         if self.action == "install":
