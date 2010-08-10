@@ -48,12 +48,12 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(task.state == task_finished)
 
     def test_task_args(self):
-        task = Task(args, 1, 2, 'foo')
+        task = Task(args, args=[1, 2, 'foo'])
         task.run()
         self.assertTrue(task.state == task_finished)
 
     def test_task_kwargs(self):
-        task = Task(kwargs, arg1=1, arg2=2, argfoo='foo')
+        task = Task(kwargs, kwargs={'arg1':1, 'arg2':2, 'argfoo':'foo'})
         task.run()
         self.assertTrue(task.state == task_finished)
 
@@ -122,13 +122,13 @@ class FIFOQueueTester(QueueTester):
 
     def test_enqueue_duplicate_with_same_kw_args(self):
         # Setup
-        task1 = Task(kwargs, foo=1, bar=2)
+        task1 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task1)
 
         self.assertEqual(1, len(list( self.queue._FIFOTaskQueue__storage.all_tasks())))
 
         # Test
-        task2 = Task(kwargs, foo=1, bar=2)
+        task2 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task2, unique=True)
 
         # Verify
@@ -136,13 +136,13 @@ class FIFOQueueTester(QueueTester):
 
     def test_enqueue_duplicate_with_different_kw_args(self):
         # Setup
-        task1 = Task(kwargs, foo=1, bar=2)
+        task1 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task1)
 
         self.assertEqual(1, len(list( self.queue._FIFOTaskQueue__storage.all_tasks())))
 
         # Test
-        task2 = Task(kwargs, foo=2, bar=3)
+        task2 = Task(kwargs, kwargs={'foo':2, 'bar':3})
         self.queue.enqueue(task2, unique=True)
 
         # Verify
@@ -150,13 +150,13 @@ class FIFOQueueTester(QueueTester):
 
     def test_enqueue_duplicate_with_same_args(self):
         # Setup
-        task1 = Task(args, 1, 2)
+        task1 = Task(args, args=[1, 2])
         self.queue.enqueue(task1)
 
         self.assertEqual(1, len(list( self.queue._FIFOTaskQueue__storage.all_tasks())))
 
         # Test
-        task2 = Task(args, 1, 2)
+        task2 = Task(args, args=[1, 2])
         self.queue.enqueue(task2, unique=True)
 
         # Verify
@@ -164,13 +164,13 @@ class FIFOQueueTester(QueueTester):
 
     def test_enqueue_duplicate_with_different_args(self):
         # Setup
-        task1 = Task(args, 1, 2)
+        task1 = Task(args, args=[1, 2])
         self.queue.enqueue(task1)
 
         self.assertEqual(1, len(list( self.queue._FIFOTaskQueue__storage.all_tasks())))
 
         # Test
-        task2 = Task(args, 2, 3)
+        task2 = Task(args, args=[2, 3])
         self.queue.enqueue(task2, unique=True)
 
         # Verify
@@ -267,14 +267,14 @@ class FIFOQueueTester(QueueTester):
 
     def test_exists_multiple_criteria(self):
         # Setup
-        task1 = Task(args, 1, 2)
-        task2 = Task(args, 2, 3)
+        task1 = Task(args, args=[1, 2])
+        task2 = Task(args, args=[2, 3])
 
         self.queue.enqueue(task1)
         self.queue.enqueue(task2)
 
         # Test
-        find_me = Task(args, 2, 3)
+        find_me = Task(args, args=[2, 3])
 
         found = self.queue.exists(find_me, ['method_name', 'args'])
 
@@ -292,10 +292,10 @@ class FIFOQueueTester(QueueTester):
 class InterruptFIFOQueueTester(QueueTester):
     
     def setUp(self):
-        self.queue = FIFOTaskQueue(timeout=timedelta(seconds=1))
+        self.queue = FIFOTaskQueue()
         
     def test_task_timeout(self):
-        task = Task(interrupt_me)
+        task = Task(interrupt_me, timeout=timedelta(seconds=1))
         self.queue.enqueue(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_timed_out)
