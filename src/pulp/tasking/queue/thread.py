@@ -49,37 +49,38 @@ class InterruptableThread(threading.Thread):
     A thread class that supports raising exception in the thread from another
     thread.
     """
-    _default_timeout = 0.0005
+    _default_timeout = 0.005
     
     @property
     def _tid(self):
         """
         Determine this thread's id.
-
-        CAREFUL : method is executed in the context of the caller thread,
-        to get the identity of the thread represented by this instance.
         """
         if not self.is_alive():
             raise threading.ThreadError('Thread is not active')
-
         # do we have it cached?
         if hasattr(self, '_thread_id'):
             return self._thread_id
-
         # no, look for it in the _active dict
         for tid, tobj in threading._active.items():
             if tobj is self:
                 self._thread_id = tid
                 return tid
-
         raise AssertionError('Could not determine thread id')
     
     def raise_exception(self, exc_type):
         """
+        Raise and exception in this thread.
+        
+        NOTE this is executed in the context of the calling thread and blocks
+        until the exception has been delivered to this thread and this thread
+        exists.
         """
         try:
             while self.is_alive():
                 _raise_exception_in_thread(self._tid, exc_type)
+                # this requires that the thread exists....
+                # convert this to and Event to keep that from happening
                 self.join(self._default_timeout)
         except threading.ThreadError:
             # a threading.ThreadError get raised if the thread is already dead
