@@ -57,22 +57,12 @@ class FIFOTaskQueue(TaskQueue):
         self.__running_count = 0
         self.__storage = VolatileStorage()
         self.__threads = {}
+        self.__canceled_tasks = []
         
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
         self.__dispatcher.daemon = True
         self.__dispatcher.start()
-        
-    # protected methods: utils
-    
-    def _wait_for_task(self, task):
-        """
-        Wait for a task to complete.
-        @type task: pulp.tasking.task.Task instance
-        @param task: task to wait for
-        """
-        while task.state not in task_complete_states:
-            time.sleep(self._default_sleep)
 
     # protected methods: scheduling
         
@@ -85,6 +75,7 @@ class FIFOTaskQueue(TaskQueue):
             self.__condition.wait(self.__dispatcher_timeout)
             for task in self._get_tasks():
                 self.run(task)
+            self._cancel_tasks()
             self._timeout_tasks()
             self._cull_tasks()
                 
@@ -94,6 +85,20 @@ class FIFOTaskQueue(TaskQueue):
         """
         num_tasks = self.max_running - self.__running_count
         return self.__storage.waiting_tasks()[:num_tasks]
+    
+    def _cancel_tasks(self):
+        """
+        Stop any tasks that have been flagged as canceled.
+        """
+        for task in self.__canceled_tasks[:]:
+            if task.state in task_complete_states:
+                self.__canceled_tasks.remove(task)
+                continue
+            thread = self.__threads.get(task, None)
+            if thread is None:
+                continue
+            thread.cancel()
+            self.__canceled_tasks.remove(task)
     
     def _timeout_tasks(self):
         """
@@ -112,7 +117,6 @@ class FIFOTaskQueue(TaskQueue):
                 continue
             thread = self.__threads[task]
             thread.timeout()
-            #self._wait_for_task(task)
                 
     def _cull_tasks(self):
         """
@@ -147,8 +151,8 @@ class FIFOTaskQueue(TaskQueue):
             self.__running_count += 1
             self.__storage.add_running_task(task)
             thread = TaskThread(target=task.run)
-            self.__threads[task] = thread
             thread.start()
+            self.__threads[task] = thread
         finally:
             self.__lock.release()
         
@@ -164,9 +168,7 @@ class FIFOTaskQueue(TaskQueue):
     def cancel(self, task):
         self.__lock.acquire()
         try:
-            thread = self.__threads[task]
-            thread.cancel()
-            #self._wait_for_task(task)
+            self.__canceled_tasks.append(task)
         finally:
             self.__lock.release()
     

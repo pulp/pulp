@@ -48,6 +48,14 @@ class TaskQueue(object):
         """
         raise NotImplementedError()
     
+    def cancel(self, task):
+        """
+        Cancel a running task.
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
+        raise NotImplementedError()
+    
     def find(self, include_finished=True, **kwargs):
         """
         Find a task in this task queue. Only the oldest task in the queue will be
@@ -103,7 +111,7 @@ class SimpleTaskQueue(TaskQueue):
     Derived task queue that provides no special functionality
     """
     def enqueue(self, task):
-        task.wait()
+        pass
     
     def run(self, task):
         task.run()
