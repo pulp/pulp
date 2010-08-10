@@ -15,7 +15,6 @@
 # in this software or its documentation.
 
 import threading
-import time
 from datetime import datetime, timedelta
 
 from pulp.tasking.queue.base import TaskQueue
@@ -31,24 +30,18 @@ class FIFOTaskQueue(TaskQueue):
     which they were enqueued and stores the finished tasks for a specified
     amount of time.
     """
-    _default_sleep = 0.0005
-    
     def __init__(self,
                  max_running=4,
-                 timeout=None,
                  finished_lifetime=timedelta(seconds=3600)):
         """
         @type max_running: int
         @param max_running: maximum number of tasks to run simultaneously
-        @type timeout: datetime.timedelta instance or None
-        @param timeout: maximum length of time to allow tasks to run,
                         None means indefinitely
         @type finished_lifetime: datetime.timedelta instance
         @param finished_lifetime: length of time to keep finished tasks
         @return: FIFOTaskQueue instance
         """
         self.max_running = max_running
-        self.timeout = timeout
         self.finished_lifetime = finished_lifetime
         
         self.__lock = threading.RLock()
@@ -102,10 +95,8 @@ class FIFOTaskQueue(TaskQueue):
     
     def _timeout_tasks(self):
         """
-        Stop tasks that have met or exceeded the queue's timeout length.
+        Stop tasks that have met or exceeded their timeout length.
         """
-        if self.timeout is None:
-            return
         running_tasks = self.__storage.running_tasks()
         if not running_tasks:
             return
@@ -113,7 +104,9 @@ class FIFOTaskQueue(TaskQueue):
         for task in running_tasks:
             # the task.start_time can be None if the task has been 'run' by the
             # queue, but the task thread has not had a chance to execute yet
-            if task.start_time is None or now - task.start_time < self.timeout:
+            if None in (task.timeout, task.start_time):
+                continue
+            if now - task.start_time < task.timeout:
                 continue
             thread = self.__threads[task]
             thread.timeout()

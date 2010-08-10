@@ -66,17 +66,21 @@ class Task(object):
     Task class
     Meta data for executing a long-running task.
     """
-    def __init__(self, callable, *args, **kwargs):
+    def __init__(self, callable, args=[], kwargs={}, timeout=None):
         """
         Create a Task for the passed in callable and arguments.
         @param callable: function, method, lambda, or object with __call__
         @param args: positional arguments to be passed into the callable
         @param kwargs: keyword arguments to be passed into the callable
+        @type timeout: datetime.timedelta instance or None
+        @param timeout: maximum length of time to allow task to run,
+                        None means indefinitely
         """
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
         self.callable = callable
         self.args = args
         self.kwargs = kwargs
+        self.timeout = timeout
         self.queue = SimpleTaskQueue()
         
         self.method_name = callable.__name__
@@ -100,11 +104,11 @@ class Task(object):
         except TimeoutException:
             self.state = task_timed_out
             log.error('Task id:%s, method_name:%s: TIMED OUT' %
-                      self.id, self.method_name)
+                      (self.id, self.method_name))
         except CancelException:
             self.state = task_canceled
             log.info('Task id:%s, method_name:%s: CANCELLED' %
-                     self.id, self.method_name)
+                     (self.id, self.method_name))
         except Exception, e:
             self.state = task_error
             self.exception = e
