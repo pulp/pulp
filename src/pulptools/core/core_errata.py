@@ -35,17 +35,18 @@ _ = gettext.gettext
 log = getLogger(__name__)
 
 class errata(BaseCore):
-    def __init__(self):
+    def __init__(self, is_admin=True, actions=None):
         usage = "errata [OPTIONS]"
         shortdesc = "errata specific actions to pulp server."
         desc = ""
         self.name = "errata"
-        self.actions = {"create" : "Create a custom errata", 
-                        "update" : "Update an existing errata", 
-                        "list"   : "List applicable errata", 
-                        "delete" : "Delete an errata", 
-                        "info"   : "See details on a specific errata",
-                        "install" : "Install Errata on a consumer",}
+        self.actions = actions or {"create" : "Create a custom errata", 
+                                   "update" : "Update an existing errata", 
+                                   "list"   : "List applicable errata", 
+                                   "delete" : "Delete an errata", 
+                                   "info"   : "See details on a specific errata",
+                                   "install" : "Install Errata on a consumer",}
+        self.is_admin = is_admin
         BaseCore.__init__(self, "errata", usage, shortdesc, desc)
 
     def load_server(self):
@@ -81,8 +82,9 @@ class errata(BaseCore):
         if self.action == "list":
             usage = "errata list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Id")
+            if self.is_admin:
+                self.parser.add_option("--consumerid", dest="consumerid",
+                                       help="Consumer Id")
             self.parser.add_option("--repoid", dest="repoid",
                             help="Repository Id")
             self.parser.add_option("--type", dest="type", action="append",
@@ -120,15 +122,15 @@ class errata(BaseCore):
         pass
 
     def _list(self):
-        if not (self.options.consumerid or self.options.repoid):
+        if not (self.getConsumer() or self.options.repoid):
             print _("A consumer or a repo is required to lookup errata")
             sys.exit(0)
             
         try:
             if self.options.repoid:
                 errata = self.rconn.errata(self.options.repoid, self.options.type)
-            elif self.options.consumerid:
-                errata = self.cconn.errata(self.options.consumerid, self.options.type)
+            elif self.getConsumer():
+                errata = self.cconn.errata(self.getConsumer(), self.options.type)
             if not len(errata):
                 print _("No errata available to list")
                 sys.exit(0)
@@ -178,7 +180,12 @@ class errata(BaseCore):
             log.error("Error: %s" % e)
             raise
         
+    def getConsumer(self):
+        if not self.options.consumerid:
+            print("consumer id required. Try --help")
+            sys.exit(0)
             
+        return self.options.consumerid            
 
 class FileError(Exception):
     pass

@@ -38,17 +38,16 @@ import gettext
 _ = gettext.gettext
 
 class consumer(BaseCore):
-    def __init__(self, is_admin=True):
+    def __init__(self, is_admin=True, actions=None):
         usage = "usage: %prog consumer [OPTIONS]"
         shortdesc = "consumer specific actions to pulp server."
         desc = ""
         self.name = "consumer"
-        self.actions = {"create"        : "Register this system as a consumer",
-                        "delete"        : "Delete a consumer",
-                        "update"        : "Update consumer profile",
-                        "list"          : "List of accessible consumer info",
-                        "bind"          : "Bind the consumer to listed repos",
-                        "unbind"        : "UnBind the consumer from repos",}
+        self.actions = actions or {"delete"        : "Delete a consumer",
+                                   "update"        : "Update consumer profile",
+                                   "list"          : "List of accessible consumer info",
+                                   "bind"          : "Bind the consumer to listed repos",
+                                   "unbind"        : "UnBind the consumer from repos",}
         self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None

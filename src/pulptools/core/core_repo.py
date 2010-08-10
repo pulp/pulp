@@ -34,18 +34,18 @@ _ = gettext.gettext
 log = getLogger(__name__)
 
 class repo(BaseCore):
-    def __init__(self):
+    def __init__(self, actions=None):
         usage = "repo [OPTIONS]"
         shortdesc = "repository specifc actions to pulp server."
         desc = ""
         self.name = "repo"
-        self.actions = {"create" : "Create a repo", 
-                        "update" : "Update a repo", 
-                        "list"   : "List available repos", 
-                        "delete" : "Delete a repo", 
-                        "sync"   : "Sync data to this repo from the feed",
-                        "upload" : "Upload package(s) to this repo",
-                        "schedules" : "List all repo schedules",}
+        self.actions = actions or {"create" : "Create a repo", 
+                                   "update" : "Update a repo", 
+                                   "list"   : "List available repos", 
+                                   "delete" : "Delete a repo", 
+                                   "sync"   : "Sync data to this repo from the feed",
+                                   "upload" : "Upload package(s) to this repo",
+                                   "schedules" : "List all repo schedules",}
         BaseCore.__init__(self, "repo", usage, shortdesc, desc)
 
     def load_server(self):
