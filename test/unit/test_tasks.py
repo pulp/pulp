@@ -27,10 +27,7 @@ def error():
 
 def interrupt_me():
     while True:
-        try:
-            time.sleep(0.5)
-        except (TimeoutException, CancelException):
-            break
+        time.sleep(0.5)
 
 
 class TaskTester(unittest.TestCase):
@@ -303,13 +300,12 @@ class InterruptFIFOQueueTester(QueueTester):
         self._wait_for_task(task)
         self.assertTrue(task.state == task_timed_out)
         
-    #def test_task_cancel(self):
-    #    task = Task(interrupt_me)
-    #    self.queue.enqueue(task)
-    #    time.sleep(3)
-    #    self.queue.cancel(task)
-    #    self._wait_for_task(task)
-    #    self.assertTrue(task.state == task_canceled)
+    def test_task_cancel(self):
+        task = Task(interrupt_me)
+        self.queue.enqueue(task)
+        self.queue.cancel(task)
+        self._wait_for_task(task)
+        self.assertTrue(task.state == task_canceled)
         
 # run the unit tests ----------------------------------------------------------
 
