@@ -12,7 +12,7 @@ def thread_main():
             #time.sleep(0.05)
             pass
     except Exception, e:
-        raise
+        pass
 
 
 def inject_exception(thread):
