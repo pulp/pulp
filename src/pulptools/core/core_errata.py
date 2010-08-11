@@ -25,7 +25,7 @@ import pulptools.utils as utils
 import pulptools.constants as constants
 from pulptools.core.basecore import BaseCore, systemExit
 from pulptools.connection import ErrataConnection, RestlibException,\
-    RepoConnection, ConsumerConnection
+    RepoConnection, ConsumerConnection, ConsumerGroupConnection
 from pulptools.logutil import getLogger
 from pulptools.config import Config
 CFG = Config()
@@ -59,6 +59,10 @@ class errata(BaseCore):
                                     username=self.username, 
                                     password=self.password)
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
+                                    port=CFG.server.port or 8811,
+                                    username=self.username, 
+                                    password=self.password)
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
                                     port=CFG.server.port or 8811,
                                     username=self.username, 
                                     password=self.password)
@@ -102,6 +106,8 @@ class errata(BaseCore):
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
+            self.parser.add_option("--consumergroupid", dest="consumergroupid",
+                           help="Consumer group Id")
 
     def _do_core(self):
         if self.action == "create":
@@ -163,8 +169,8 @@ class errata(BaseCore):
         
     def _install(self):
         (self.options, data) = self.parser.parse_args()
-        if not self.options.consumerid:
-            print _("A consumer id is required to perform an install")
+        if not (self.options.consumerid or self.options.consumergroupid):
+            print _("A consumerid or a consumergroupid is required to perform an install")
             sys.exit(0)
         errataids = data[2:]
         if not len(errataids):
@@ -172,7 +178,10 @@ class errata(BaseCore):
             sys.exit(0)
 
         try:
-            print self.cconn.installerrata(self.options.consumerid, errataids)
+            if self.options.consumerid:
+                print self.cconn.installerrata(self.options.consumerid, errataids)
+            elif self.options.consumergroupid:
+                print self.cgconn.installerrata(self.options.consumergroupid, errataids)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

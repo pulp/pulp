@@ -88,7 +88,7 @@ class consumer(BaseCore):
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             if self.is_admin:
-                self.parser.add_option("--id", dest="consumerid",
+                self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
         if self.action == "unbind":
             usage = "usage: %prog consumer unbind [OPTIONS]"
@@ -96,7 +96,7 @@ class consumer(BaseCore):
             self.parser.add_option("--repoid", dest="repoid",
                            help="Repo Identifier")
             if self.is_admin:
-                self.parser.add_option("--id", dest="consumerid",
+                self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
@@ -105,7 +105,7 @@ class consumer(BaseCore):
             usage = "usage: %prog consumer delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             if self.is_admin:
-                self.parser.add_option("--id", dest="consumerid",
+                self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
 
     def _do_core(self):
@@ -241,8 +241,8 @@ class consumer(BaseCore):
             raise
     
     def getConsumer(self):
-        if not self.options.consumerid:
+        if not self.options.id:
             print("consumer id required. Try --help")
             sys.exit(0)
             
-        return self.options.consumerid
+        return self.options.id

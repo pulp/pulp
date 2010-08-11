@@ -179,3 +179,39 @@ class ConsumerGroupApi(BaseApi):
             agent = Agent(consumerid)
             agent.packages.install(packagenames)
         return packagenames
+    
+    def installerrata(self, id, errataids=[], types=[]):
+        """
+        Install errata on a consumer group.
+        @param id: A consumergroup id.
+        @type id: str
+        @param errataids: The errata ids to install.
+        @type errataids: [str,..]
+        @param types: Errata type filter
+        @type types: str
+        """
+        consumergroup = self.consumergroup(id)
+        if consumergroup is None:   
+            raise PulpException("No Consumer Group with id: %s found" % id)
+        consumerids = consumergroup['consumerids']
+        consumer_pkg = {}
+        for consumerid in consumerids:
+            consumer = self.consumerApi.consumer(consumerid)
+            agent = Agent(consumerid)
+            pkgs = []
+            if errataids:
+                applicable_errata = self.consumerApi._applicable_errata(consumer, types)
+                for eid in errataids:
+                    for pobj in applicable_errata[eid]:
+                        if pobj["arch"] != "src":
+                            pkgs.append(pobj["name"]) # + "." + pobj["arch"])
+            else:
+                #apply all updates
+                pkgobjs = self.consumerApi.list_package_updates(id, types)
+                for pobj in pkgobjs:
+                    if pobj["arch"] != "src":
+                        pkgs.append(pobj["name"]) # + "." + pobj["arch"])
+            log.error("Foe consumer id %s Packages to install %s" % (consumerid, pkgs))
+            agent.packages.install(pkgs)
+            consumer_pkg[consumerid] = pkgs
+        return consumer_pkg

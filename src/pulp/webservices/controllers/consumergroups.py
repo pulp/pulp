@@ -104,6 +104,7 @@ class ConsumerGroupActions(JSONController):
         'add_consumer',
         'delete_consumer',
         'installpackages',
+        'installerrata',
     )
 
     def bind(self, id):
@@ -152,6 +153,16 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         names = data.get('packagenames', [])
         return self.ok(api.installpackages(id, names))
+    
+    def installerrata(self, id):
+        """
+         Install applicable errata
+         Body contains a list of consumer groups 
+        """
+        data = self.params()
+        errataids = data.get('errataids', [])
+        types     = data.get('types', [])
+        return self.ok(api.installerrata(id, errataids, types)) 
 
     @JSONController.error_handler
     @RoleCheck()
