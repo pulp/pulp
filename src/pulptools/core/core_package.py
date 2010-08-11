@@ -66,7 +66,7 @@ class package(BaseCore):
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("-n", "--name", action="append", dest="pnames",
                            help="Packages to be installed. \
-                           To specify multiple packages use multiple -p")
+                           To specify multiple packages use multiple -n")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
             self.parser.add_option("--consumergroupid", dest="consumergroupid",

@@ -69,9 +69,9 @@ class packagegroup(BaseCore):
         if self.action == "install":
             usage = "packagegroup install [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("-p", "--pkggroupid", action="append", dest="pkggroupid",
+            self.parser.add_option("-g", "--pkggroupid", action="append", dest="pkggroupid",
                            help="PackageGroup to install on a given consumer. \
-                           To specify multiple package groups use multiple -p")
+                           To specify multiple package groups use multiple -g")
             self.parser.add_option("--consumerid", dest="consumerid",
                            help="Consumer Id")
         if self.action == "list":
