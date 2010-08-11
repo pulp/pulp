@@ -46,6 +46,7 @@ setup(
     packages=find_packages(),
     scripts = [
         '../bin/pulp',
+        '../bin/pulp-register',
     ],
     include_package_data=False,
     data_files=[],

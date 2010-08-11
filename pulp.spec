@@ -144,6 +144,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{python_sitelib}/pulptools/
 %{python_sitelib}/pmf/
 %{_bindir}/pulp
+%{_bindir}/pulp-register
 %{_bindir}/pulpd
 %attr(755,root,root) %{_sysconfdir}/init.d/pulpd
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
