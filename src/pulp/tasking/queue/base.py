@@ -13,7 +13,8 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-from pulp.tasking.task import task_complete_states
+
+import pulp.tasking.task
 
 # base task queue -------------------------------------------------------------
 
@@ -103,7 +104,7 @@ class TaskQueue(object):
         # Use the find functionality to determine if a task matches
         task = self.find(**find_criteria)
         if task is None or (not include_finished and
-                            task.state in task_complete_states):
+                            task.state in pulp.tasking.task.task_complete_states):
             return False
         return True
         

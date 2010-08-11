@@ -129,7 +129,7 @@ class VolatileStorage(object):
         # In order to get the newest task and punch out early in the search algorithm,
         # reverse the tasks before starting the search (reversed returns a list, so
         # this call isn't destructive).
-        for task in reversed(self.all_tasks()):
+        for task in reversed(list(self.all_tasks())):
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
