@@ -27,7 +27,7 @@ except ImportError:
 import pymongo.json_util 
 import web
 
-from pulp.tasking.task import Task
+from pulp.tasking.task import Task, task_complete_states
 from pulp.webservices import auth
 from pulp.webservices import http
 from pulp.webservices.queues import fifo
@@ -141,6 +141,11 @@ class JSONController(object):
         http.header('Location', location)
         return self._output(data)
     
+    def no_content(self):
+        """
+        """
+        return
+    
     def bad_request(self, msg=None):
         """
         Return a not found error.
@@ -252,7 +257,16 @@ class AsyncController(JSONController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return task_info
-       
+    
+    def cancel_task(self, id):
+        """
+        """
+        task = self.find_task(id)
+        if task is None or task.state in task_complete_states:
+            return False
+        fifo.cancel(task)
+        return True
+        
     def task_status(self, id):
         """
         Get the current status of an asynchronous task.
@@ -265,6 +279,11 @@ class AsyncController(JSONController):
             status = self._task_to_dict(task)
             status.update({'status_path': self._status_path(id)})
         return status
+    
+    def find_task(self, id):
+        """
+        """
+        return fifo.find(id=id)
     
     def accepted(self, status):
         """

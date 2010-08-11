@@ -13,6 +13,7 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+from httplib import HTTP
 """
 HTTP utilities to help pulp web services with HTTP using the web.py framework
 """
@@ -130,6 +131,13 @@ def status_created():
     Set response code to created
     """
     _status(httplib.CREATED)
+    
+    
+def status_no_content():
+    """
+    Set response code to no content
+    """
+    _status(httplib.NO_CONTENT)
     
 
 def status_accepted():

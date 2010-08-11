@@ -428,9 +428,17 @@ class RepositoryActionStatus(AsyncController):
     @RoleCheck()
     def DELETE(self, id, action_name, action_id):
         """
-        Place holder to cancel an action
+        Cancel an action
         """
-        return self.method_not_allowed('Action cancellation is not yet implemented')
+        task = self.find_task(id)
+        if task is None:
+            return self.not_found('No %s with id %s found' % (action_name, action_id))
+        if self.cancel_task(id):
+            return self.accepted({'status_uri': http.uri_path()})
+        # action is complete and, therfore, not cancelled
+        # a no-content return means the client should *not* adjust its view of
+        # the resource
+        return self.no_content()
 
 
 class Schedules(JSONController):
