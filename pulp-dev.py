@@ -102,8 +102,10 @@ def install(opts):
     if not os.path.exists('/var/www/pub'):
         os.symlink('/var/lib/pulp', '/var/www/pub')
 
-    # Grant apache write access to the pulp tools log file
+    # Grant apache write access to the pulp tools log file and pulp 
+    # packages dir
     os.system('setfacl -m user:apache:rwx /var/log/pulp')
+    os.system('setfacl -m user:apache:rwx /var/lib/pulp')
     # guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
