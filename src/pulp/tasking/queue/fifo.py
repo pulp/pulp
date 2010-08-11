@@ -130,11 +130,9 @@ class FIFOTaskQueue(TaskQueue):
         try:
             task.queue = self
             task.next_time = datetime.now()
-            
-            if unique and self.exists(task, ['method_name', 'args', 'kwargs'],
-                                      include_finished=False):
+            fields = ('method_name', 'args', 'kwargs')
+            if unique and self.exists(task, fields, include_finished=False):
                 return False
-
             self.__storage.add_waiting_task(task)
             return True
         finally:
@@ -167,9 +165,9 @@ class FIFOTaskQueue(TaskQueue):
         finally:
             self.__lock.release()
     
-    def find(self, include_finished=True, **kwargs):
+    def find(self, **kwargs):
         self.__lock.acquire()
         try:
-            return self.__storage.find_task(kwargs, include_finished)
+            return self.__storage.find_task(kwargs)
         finally:
             self.__lock.release()

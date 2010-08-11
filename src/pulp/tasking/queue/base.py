@@ -13,6 +13,7 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+from pulp.tasking.task import task_complete_states
 
 # base task queue -------------------------------------------------------------
 
@@ -58,16 +59,13 @@ class TaskQueue(object):
         """
         raise NotImplementedError()
     
-    def find(self, include_finished=True, **kwargs):
+    def find(self, **kwargs):
         """
         Find a task in this task queue. Only the oldest task in the queue will be
         returned.
         @type kwargs: dict
         @param kwargs: task attributes and values as search criteria
         @type include_finished: bool
-        @param include_finished: If True, finished tasks will be included in the search;
-                                 otherwise only running and waiting tasks are searched
-                                 (defaults to True)
         @return: Task instance on success, None otherwise
         """
         raise NotImplementedError()
@@ -103,7 +101,11 @@ class TaskQueue(object):
             find_criteria[attr_name] = getattr(task, attr_name)
 
         # Use the find functionality to determine if a task matches
-        return self.find(include_finished, **find_criteria) is not None
+        task = self.find(**find_criteria)
+        if task is None or (not include_finished and
+                            task.state in task_complete_states):
+            return False
+        return True
         
     
 # no-frills task queue --------------------------------------------------------
@@ -112,7 +114,7 @@ class SimpleTaskQueue(TaskQueue):
     """
     Derived task queue that provides no special functionality
     """
-    def enqueue(self, task):
+    def enqueue(self, task, unique=False):
         pass
     
     def run(self, task):
@@ -121,5 +123,5 @@ class SimpleTaskQueue(TaskQueue):
     def complete(self, task):
         pass
     
-    def find(self, include_finished=True, **kwargs):
+    def find(self, **kwargs):
         return None
