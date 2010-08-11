@@ -15,16 +15,17 @@
 
 import logging
 
-from pulp import model
+import pulp.cert_generator as cert_generator
 from pulp.agent import Agent
 from pulp.api.base import BaseApi
+from pulp.api.errata import ErrataApi
+from pulp.api.package import PackageApi
+from pulp.api.repo import RepoApi
 from pulp.auditing import audit
+from pulp.db import model
+from pulp.db.connection import get_object_db
 from pulp.pexceptions import PulpException
 from pulp.util import chunks, compare_packages
-from pulp.api.errata import ErrataApi
-from pulp.api.repo import RepoApi
-from pulp.api.package import PackageApi
-import pulp.cert_generator as cert_generator
 
 # Pulp
 
@@ -42,12 +43,16 @@ class ConsumerApi(BaseApi):
         self.packageapi = PackageApi()
 
     def _getcollection(self):
-        return self.db.consumers
+        return get_object_db('consumers',
+                             self._unique_indexes,
+                             self._indexes)
 
-    def _get_unique_indexes(self):
+    @property
+    def _unique_indexes(self):
         return ["id"]
 
-    def _get_indexes(self):
+    @property
+    def _indexes(self):
         return ["package_profile.name", "repoids"]
 
     @audit(params=['id'])

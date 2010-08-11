@@ -43,10 +43,10 @@ from pulp.api.repo import RepoApi
 from pulp.api.errata import ErrataApi
 from pulp.certificate import Certificate
 
-from pulp.model import Package
-from pulp.model import PackageGroup
-from pulp.model import PackageGroupCategory
-from pulp.model import Consumer
+from pulp.db.model import Package
+from pulp.db.model import PackageGroup
+from pulp.db.model import PackageGroupCategory
+from pulp.db.model import Consumer
 from pulp.util import random_string
 from pulp.util import get_rpm_information
 from pulptools.utils import generatePakageProfile

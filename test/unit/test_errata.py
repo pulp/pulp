@@ -35,7 +35,7 @@ from pulp.api.errata import ErrataApi
 from pulp.api.repo import RepoApi
 from pulp.api.consumer import ConsumerApi
 from pulp.api.package import PackageApi
-from pulp.model import Errata
+from pulp.db.model import Errata
 from pulp.util import random_string
 from pulp.util import get_rpm_information
 from pulptools.utils import generatePakageProfile

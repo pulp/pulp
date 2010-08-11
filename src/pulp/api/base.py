@@ -15,16 +15,11 @@
 
 import logging
 
-import pymongo
-from pymongo.son_manipulator import AutoReference, NamespaceInjector
-
 from pulp.config import config
 
 # logging and db connection
 
 log = logging.getLogger(__name__)
-
-_connection = pymongo.Connection()
 
 # base api class --------------------------------------------------------------
 
@@ -32,30 +27,14 @@ class BaseApi(object):
 
     def __init__(self):
         self.config = config
-
-        # Mongo DB
-        self.connection = _connection
-        self.db = self.connection._database
-        # Inject the collection's namespace into each object
-        self.db.add_son_manipulator(NamespaceInjector())
-        # Provides auto-referencing/auto-dereferencing ability
-        self.db.add_son_manipulator(AutoReference(self.db))
         self.objectdb = self._getcollection()
-
-        if self.objectdb:
-            # Indexes
-            for index in self._get_unique_indexes():
-                log.debug("'%s' ensure_index('%s', unique=True)" % (self._getcollection().name, index))
-                self.objectdb.ensure_index([(index, pymongo.DESCENDING)], unique=True, 
-                                   background=True)
-            for index in self._get_indexes():
-                log.debug("'%s' ensure_index('%s')" % (self._getcollection().name, index))
-                self.objectdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
    
-    def _get_unique_indexes(self):
+    @property
+    def _unique_indexes(self):
         return ["id"]
 
-    def _get_indexes(self):
+    @property
+    def _indexes(self):
         return []
 
     def clean(self):
@@ -85,4 +64,4 @@ class BaseApi(object):
         self.objectdb.remove(kwargs, safe=True)
         
     def _getcollection(self):
-        pass
+        raise NotImplementedError()

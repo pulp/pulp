@@ -30,17 +30,12 @@ from pulp import auth
 from pulp.api.base import BaseApi
 from pulp.config import config
 from pulp.crontab import CronTab
-from pulp.model import Event
+from pulp.db.connection import get_object_db
+from pulp.db.model import Event
 
 # globals ---------------------------------------------------------------------
 
-# setup the database connection, collection, and indices
-# XXX this use a centralized connection manager....
-_connection = pymongo.Connection()
-_objdb = _connection._database.events
-_objdb.ensure_index([('id', pymongo.DESCENDING)], unique=True, background=True)
-for index in ['timestamp', 'principal', 'api']:
-    _objdb.ensure_index([(index, pymongo.DESCENDING)], background=True)
+_objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
 
 # setup log - do not change this to __name__
 _log = logging.getLogger('auditing')

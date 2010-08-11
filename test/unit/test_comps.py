@@ -28,7 +28,7 @@ srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.append(srcdir)
 import pulp.comps_util
 import pulp.util
-import pulp.model
+import pulp.db.model
 from pulp.api.repo import RepoApi
 from pulp.api.repo_sync import BaseSynchronizer
 from pulp.pexceptions import PulpException
@@ -103,7 +103,7 @@ class TestComps(unittest.TestCase):
     def test_basic_comps(self):
         repo = self.rapi.create('test_comps_id','test_comps_name', 
             'i386', 'yum:http://example.com/')
-        grp = pulp.model.PackageGroup("groupid1", "groupname1", 
+        grp = pulp.db.model.PackageGroup("groupid1", "groupname1", 
             "description", "user_visible", "display_order", "default"
             "langonly")
         grp['mandatory_package_names'] = ["mandatory_package_name1"]
@@ -118,7 +118,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(found['name'] == 'groupname1')
         self.assertTrue("mandatory_package_name1" in found['mandatory_package_names'])
 
-        ctg = pulp.model.PackageGroupCategory("categoryid1", 
+        ctg = pulp.db.model.PackageGroupCategory("categoryid1", 
                     "categoryname", "description", "display_order")
         ctg['packagegroupids'] = ["groupid1"]
         ctg['translated_name'] = {"a":"name"}
@@ -153,7 +153,7 @@ class TestComps(unittest.TestCase):
         """
         Test translation of model.PackageGroup to yum.comps.Group
         """
-        grp = pulp.model.PackageGroup("groupid1", "groupname1", 
+        grp = pulp.db.model.PackageGroup("groupid1", "groupname1", 
             "description", "user_visible", "display_order", "default"
             "langonly")
         grp['mandatory_package_names'] = ["mandatory_package_name1"]
@@ -173,7 +173,7 @@ class TestComps(unittest.TestCase):
         """
         Test translation of model.PackageGroupCategory to yum.comps.Category
         """
-        ctg = pulp.model.PackageGroupCategory("categoryid1", 
+        ctg = pulp.db.model.PackageGroupCategory("categoryid1", 
                     "categoryname", "description", "display_order")
         ctg['packagegroupids'] = ["groupid1"]
         ctg['translated_name'] = {"a":"name"}
@@ -427,7 +427,7 @@ class TestComps(unittest.TestCase):
         #           added a new category, 'development'
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         repo = self.rapi.repository(repo["id"])
-        repo["source"] = pulp.model.RepoSource("local:file://%s" % (repo_path))
+        repo["source"] = pulp.db.model.RepoSource("local:file://%s" % (repo_path))
         self.rapi.update(repo)
         self.rapi.sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])

@@ -30,7 +30,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.api.user import UserApi
-from pulp.model import User
+from pulp.db.model import User
 from pulp.util import random_string
 from pulp.certificate import Certificate
 

@@ -16,10 +16,11 @@
 import logging
 import uuid
 
-from pulp import model
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
 from pulp.config import config
+from pulp.db import model
+from pulp.db.connection import get_object_db
 import pulp.password_util as password_util
 
 log = logging.getLogger(__name__)
@@ -34,7 +35,9 @@ class UserApi(BaseApi):
         self._ensure_default_admin()
 
     def _getcollection(self):
-        return self.db.users
+        return get_object_db('users',
+                             self._unique_indexes,
+                             self._indexes)
 
     def _ensure_default_admin(self):
         admin = self.user(self.default_login)

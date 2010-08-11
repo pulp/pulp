@@ -16,9 +16,10 @@
 import pymongo
 
 # Pulp
-from pulp import model
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
+from pulp.db import model
+from pulp.db.connection import get_object_db
 
 
 package_fields = model.Package(None, None, None, None, None, None, None, None, None).keys()
@@ -38,15 +39,19 @@ class PackageApi(BaseApi):
             unique=True, background=True)
         
 
-    def _get_unique_indexes(self):
+    @property
+    def _unique_indexes(self):
         return []
 
-    def _get_indexes(self):
+    @property
+    def _indexes(self):
         return ["name", "filename", "checksum", "epoch", "version", "release",
                 "arch", "description"]
         
     def _getcollection(self):
-        return self.db.packages
+        return get_object_db('packages',
+                             self._unique_indexes,
+                             self._indexes)
         
         
     @audit()

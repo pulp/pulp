@@ -23,7 +23,6 @@ from itertools import chain
 # Pulp
 from pulp import comps_util
 from pulp import crontab
-from pulp import model
 from pulp import upload
 from pulp.api import repo_sync
 from pulp.api.base import BaseApi
@@ -31,6 +30,8 @@ from pulp.api.package import PackageApi
 from pulp.api.errata import ErrataApi
 from pulp.auditing import audit
 from pulp.config import config
+from pulp.db import model
+from pulp.db.connection import get_object_db
 from pulp.pexceptions import PulpException
 
 
@@ -50,14 +51,18 @@ class RepoApi(BaseApi):
         self.errataapi  = ErrataApi()
         self.localStoragePath = config.get('paths', 'local_storage')
    
-    def _get_indexes(self):
+    @property
+    def _indexes(self):
         return ["packages", "packagegroups", "packagegroupcategories"]
 
-    def _get_unique_indexes(self):
+    @property
+    def _unique_indexes(self):
         return ["id"]
 
     def _getcollection(self):
-        return self.db.repos
+        return get_object_db('repos',
+                             self._unique_indexes,
+                             self._indexes)
 
     def _validate_schedule(self, sync_schedule):
         '''

@@ -13,9 +13,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp import model
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
+from pulp.db import model
+from pulp.db.connection import get_object_db
 
 
 errata_fields = model.Errata(None, None, None, None, None, None).keys()
@@ -26,13 +27,16 @@ class ErrataApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
 
-    def _get_indexes(self):
+    @property
+    def _indexes(self):
         return ["title", "description", "version", "release", "type", "status",
                 "updated", "issued", "pushcount", "from_str",
                 "reboot_suggested"]
 
     def _getcollection(self):
-        return self.db.errata
+        return get_object_db('errata',
+                             self._unique_indexes,
+                             self._indexes)
 
     @audit(params=["id", "title", "type"])
     def create(self, id, title, description, version, release, type,

@@ -14,10 +14,11 @@
 # in this software or its documentation.
 import logging
 
-from pulp import model
 from pulp.agent import Agent
 from pulp.api.base import BaseApi
 from pulp.auditing import audit
+from pulp.db import model
+from pulp.db.connection import get_object_db
 from pulp.pexceptions import PulpException
 
 # Pulp
@@ -35,7 +36,9 @@ class ConsumerGroupApi(BaseApi):
         self.repoApi = RepoApi()
 
     def _getcollection(self):
-        return self.db.consumergroups
+        return get_object_db('consumergroups',
+                             self._unique_indexes,
+                             self._indexes)
 
 
     @audit(params=['id', 'consumerids'])
