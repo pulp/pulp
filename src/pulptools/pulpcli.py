@@ -34,9 +34,12 @@ class PulpCore:
     def __init__(self):
         self.cli_cores = {}
         self.args = utils.findSysvArgs(sys.argv)
-        cls  = self._load_core(self.args[1])
-        if len(self.args) > 1 and cls:
-            self.cli_cores[self.args[1]] = cls()
+        if len(self.args) > 1:
+            cls  = self._load_core(self.args[1])
+            if cls not in self._load_all_cores():
+		print ("Invalid Command. Please see --help for valid modules")
+                sys.exit(0)
+	    self.cli_cores[self.args[1]] = cls()
         else:
             for cls in self._load_all_cores():
                 cmd = cls()
