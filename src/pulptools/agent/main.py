@@ -21,6 +21,7 @@ from pulptools.agent.actions import *
 from pulptools.agent.remote import *
 from pulptools.logutil import getLogger
 from pmf import Queue
+from pmf.broker import Broker
 from pmf.base import Agent as Base
 from pmf.consumer import RequestConsumer
 from time import sleep
@@ -63,9 +64,12 @@ class Agent(Base):
         actionThread = ActionThread(actions)
         actionThread.start()
         cfg = Config()
-        url = '%s:%s' % (cfg.pmf.host, cfg.pmf.port)
         queue = Queue(id)
-        consumer = RequestConsumer(queue, url)
+        url = cfg.pmf.url
+        broker = Broker.get(url)
+        broker.cacert = cfg.pmf.cacert
+        broker.clientcert = cfg.pmf.clientcert
+        consumer = RequestConsumer(queue, url=url)
         Base.__init__(self, consumer)
         log.info('agent {%s} - started.', id)
         actionThread.join()

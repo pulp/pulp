@@ -96,7 +96,7 @@ class Synchronous(RequestMethod):
         self.timeout = timeout
         self.queue = Queue(getuuid(), durable=False)
         RequestMethod.__init__(self, producer)
-        reader = Reader(self.queue, self.producer.url)
+        reader = Reader(self.queue, url=self.producer.url)
         reader.start()
         self.reader = reader
 

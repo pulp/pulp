@@ -79,13 +79,13 @@ class Consumer(Endpoint):
     An AMQP (abstract) consumer.
     """
 
-    def __init__(self, destination, *other):
+    def __init__(self, destination, **other):
         """
         @param destination: The destination to consumer.
         @type destination: L{Destination}
         """
         self.destination = destination
-        Endpoint.__init__(self, *other)
+        Endpoint.__init__(self, **other)
 
     def id(self):
         """
@@ -251,7 +251,7 @@ class RequestConsumer(Consumer):
         q = PendingQueue(self.id())
         self.pending = PendingReceiver(q, self)
         self.dispatcher = dispatcher
-        self.producer = Producer(self.url)
+        self.producer = Producer(url=self.url)
         Consumer.start(self)
         self.pending.start()
 
@@ -341,13 +341,13 @@ class EventConsumer(Consumer):
     An AMQP event consumer.
     """
 
-    def __init__(self, subject, name=None, *other):
+    def __init__(self, subject, name=None, **other):
         """
         @param subject: An event subject.
         @type subject: str
         """
         topic = Topic('event', subject, name)
-        Consumer.__init__(self, topic, *other)
+        Consumer.__init__(self, topic, **other)
 
     def dispatch(self, envelope):
         """

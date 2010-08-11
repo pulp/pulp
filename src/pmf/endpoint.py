@@ -18,6 +18,8 @@ AMQP endpoint base classes.
 """
 
 from pmf import *
+from pmf.broker import Broker
+from pmf.transport import SSLTransport
 from qpid.messaging import Connection
 from time import sleep
 from logging import getLogger
@@ -36,25 +38,24 @@ class Endpoint:
     @type __session: qpid.messaging.Session
     """
 
-    connections = {}
+    LOCALHOST = 'tcp://localhost:5672'
 
     @classmethod
     def shutdown(cls):
         """
         Shutdown all connections.
         """
-        for con in cls.connections.values():
+        for broker in Broker.domain.values():
             try:
-                con.close()
+                broker.close()
             except:
                 pass
-        cls.connections = {}
 
-    def __init__(self, uuid=getuuid(), url='localhost:5672'):
+    def __init__(self, uuid=getuuid(), url=LOCALHOST):
         """
         @param uuid: The endpoint uuid.
         @type uuid: str
-        @param url: The broker url <user>/<pass>@<host>:<port>.
+        @param url: The broker url <transport>://<user>/<pass>@<host>:<port>.
         @type url: str
         """
         self.uuid = uuid
@@ -76,13 +77,9 @@ class Endpoint:
         @return: The global connection.
         @rtype: L{Connection}
         """
-        key = self.url
-        con = self.connections.get(key)
-        if con is None:
-            con = Connection(self.url, reconnect=True)
-            con.attach()
-            log.info('{%s} connected to AMQP' % self.id())
-            self.connections[key] = con
+        broker = Broker.get(self.url)
+        con = broker.connect()
+        log.info('{%s} connected to AMQP' % self.id())
         return con
 
     def session(self):
@@ -122,6 +119,13 @@ class Endpoint:
             session.close()
         except:
             pass
+
+    def __parsedurl(self):
+        urlpart = self.url.split('://', 1)
+        if len(urlpart) == 1:
+            return (urlpart[0], 'tcp')
+        else:
+            return (urlpart[0], urlpart[1])
 
     def __del__(self):
         self.close()

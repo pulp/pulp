@@ -20,6 +20,7 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
+from pmf.broker import Broker
 from pmf.stub import Stub
 from pmf.decorators import stub
 from pmf.base import Container
@@ -59,8 +60,9 @@ class Agent(Container):
         @type uuid: str|list
         @param options: Messaging L{pmf.Options}
         """
-        host = config.get('pmf', 'host')
-        port = config.get('pmf', 'port')
-        url = '%s:%s' % (host, port)
-        producer = Producer(url)
+        url = config.get('pmf', 'url')
+        broker = Broker.get(url)
+        broker.cacert = config.get('pmf', 'cacert')
+        broker.clientcert = config.get('pmf', 'clientcert')
+        producer = Producer(url=url)
         Container.__init__(self, uuid, producer, **options)

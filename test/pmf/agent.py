@@ -24,6 +24,7 @@ from pmf import Queue
 from pmf.base import Agent as Base
 from pmf.decorators import remote, remotemethod
 from pmf.consumer import RequestConsumer
+from pmf.broker import Broker
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
@@ -54,7 +55,11 @@ class Dog:
 class Agent(Base):
     def __init__(self, id):
         queue = Queue(id)
-        Base.__init__(self, RequestConsumer(queue))
+        url = 'ssl://localhost:5674'
+        broker = Broker.get(url)
+        broker.cacert = '/etc/pki/qpid/ca/ca.crt'
+        broker.clientcert = '/etc/pki/qpid/client/client.pem'
+        Base.__init__(self, RequestConsumer(queue, url=url))
         while True:
             sleep(10)
             print 'Agent: sleeping...'
