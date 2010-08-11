@@ -34,8 +34,9 @@ class PulpCore:
     def __init__(self):
         self.cli_cores = {}
         self.args = utils.findSysvArgs(sys.argv)
-        if len(self.args) > 1:
-            self.cli_cores[self.args[1]] = self._load_core(self.args[1])()
+        cls  = self._load_core(self.args[1])
+        if len(self.args) > 1 and cls:
+            self.cli_cores[self.args[1]] = cls()
         else:
             for cls in self._load_all_cores():
                 cmd = cls()
@@ -49,7 +50,10 @@ class PulpCore:
     def _load_core(self, core):
         name = "core_" + core
         mod = __import__('pulptools.core.', globals(), locals(), [name])
-        submod = getattr(mod, name)
+        try:
+            submod = getattr(mod, name)
+        except AttributeError:
+            return None
         return getattr(submod, core)
     
     def _load_all_cores(self):
