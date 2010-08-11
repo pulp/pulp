@@ -27,9 +27,12 @@ from pmf.window import *
 from time import sleep
 from datetime import datetime as dt
 from datetime import timedelta as delta
-from logging import INFO, basicConfig
+from logging import INFO, basicConfig, getLogger
 
 basicConfig(filename='/tmp/pmf.log', level=INFO)
+
+log = getLogger(__name__)
+
 
 @stub('repolib')
 class RepoLib(Stub):
@@ -55,11 +58,13 @@ def demo(agent):
     try:
         print agent.repolib.updated()
     except Exception, e:
-        print repr(e)
+        log.info('failed:', exc_info=True)
+        print e
     try:
         print agent.dog.notpermitted()
     except Exception, e:
-        print repr(e)
+        log.info('failed:', exc_info=True)
+        print e
 
 def later(**offset):
     return dt.utcnow()+delta(**offset)

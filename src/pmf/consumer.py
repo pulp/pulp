@@ -266,8 +266,8 @@ class RequestConsumer(Consumer):
             request = envelope.request
             self.sendstarted(envelope)
             result = self.dispatcher.dispatch(request)
-        except WindowMissed, m:
-            result = Return.exception(m)
+        except WindowMissed:
+            result = Return.exception()
         except WindowPending:
             return
         self.sendreply(envelope, result)

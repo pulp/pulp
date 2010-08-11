@@ -16,9 +16,12 @@
 Provides RMI dispatcher classes.
 """
 
+import sys
+import traceback as tb
 from pmf import *
 from pmf.decorators import mayinvoke
 from logging import getLogger
+
 
 log = getLogger(__name__)
 
@@ -69,15 +72,15 @@ class Return(Envelope):
         return Return(retval=x)
 
     @classmethod
-    def exception(cls, x):
+    def exception(cls):
         """
         Return raised exception.
-        @param x: The raised exception.
-        @type x: any
         @return: A return envelope.
         @rtype: L{Return}
         """
-        return Return(exval=repr(x))
+        info = sys.exc_info()
+        ex = '\n'.join(tb.format_exception(*info))
+        return Return(exval=ex)
 
     def succeeded(self):
         """
@@ -176,8 +179,8 @@ class RMI(object):
             inst, method = self.resolve()
             retval = method(*args, **keywords)
             return Return.succeed(retval)
-        except Exception, dx:
-            return Return.exception(dx)
+        except:
+            return Return.exception()
 
     def __str__(self):
         return str(self.request)
