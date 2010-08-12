@@ -65,7 +65,7 @@ class TestRoleCheck(unittest.TestCase):
         
     def test_id_cert(self):
         consumerUid = "someconsumer.example.com"
-        temp_cert = cert_generator.make_cert(consumerUid)
+        (temp_pk, temp_cert) = cert_generator.make_cert(consumerUid)
         self.assertTrue(temp_cert != None)
         cert = Certificate()
         cert.update(temp_cert.as_pem())

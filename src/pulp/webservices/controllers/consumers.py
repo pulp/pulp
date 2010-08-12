@@ -190,8 +190,8 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('id')
         filters = self.filters(valid_filters)
-        certificate = api.certificate(id)
-        certificate = {'certificate': certificate}
+        private_key, certificate = api.certificate(id)
+        certificate = {'certificate': certificate, 'private_key': private_key}
         log.debug("Returning certificate: [%s]" % certificate)
         return self.ok(certificate)
 

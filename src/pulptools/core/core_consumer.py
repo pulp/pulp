@@ -55,11 +55,14 @@ class consumer(BaseCore):
         
     def load_server(self):
         cert_path = None 
-        if (os.path.exists(CERT_PATH)):
+        key_path = None
+        if (os.path.exists(CERT_PATH) and
+                os.path.exists(KEY_PATH)):
             cert_path = CERT_PATH
+            key_path = KEY_PATH
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
                                         port=8811, cert_file=cert_path,
-                                        key_file=None, username=self.username, 
+                                        key_file=key_path, username=self.username, 
                                         password=self.password)
 
     def generate_options(self):
@@ -142,6 +145,7 @@ class consumer(BaseCore):
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s", exc_info=True)
+            raise
             
     def _update(self):
         
@@ -155,6 +159,7 @@ class consumer(BaseCore):
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
+            raise
 
     def _info(self):
         try:

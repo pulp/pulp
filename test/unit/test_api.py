@@ -381,7 +381,7 @@ class TestApi(unittest.TestCase):
         
     def test_consumer_certificate(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
-        pem = self.capi.certificate(c['id'])
+        (pk, pem) = self.capi.certificate(c['id'])
         self.assertTrue(pem != None)
         cert = Certificate()
         cert.update(str(pem))
