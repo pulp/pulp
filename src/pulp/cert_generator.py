@@ -1,4 +1,4 @@
-from M2Crypto import X509, EVP, RSA, ASN1
+from M2Crypto import X509, EVP, RSA, ASN1, util
 import subprocess
 import time
 import socket
@@ -25,7 +25,8 @@ def make_cert(uid):
     # Sorta hacky but necessary.
     # rsa = RSA.gen_key(1024, 65537, callback=passphrase_callback)
     private_key_pem = _make_priv_key()
-    rsa = RSA.load_key_string(private_key_pem, callback=passphrase_callback)
+    rsa = RSA.load_key_string(private_key_pem,
+                              callback=util.no_passphrase_callback)
     
     # Make the Cert Request
     req, pub_key = _make_cert_request(uid, rsa)
@@ -89,8 +90,4 @@ def _make_cert_request(uid, rsa):
     x.sign(pub_key,'sha1')
     pk2 = x.get_pubkey()
     return x, pub_key
-
-def passphrase_callback(v, prompt1='Enter passphrase:', 
-                           prompt2='Verify passphrase:'):
-    return None
 
