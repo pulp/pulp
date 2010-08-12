@@ -136,7 +136,6 @@ class consumer(BaseCore):
             cert_dict = self.cconn.certificate(self.options.id)
             certificate = cert_dict['certificate']
             key = cert_dict['private_key']
-            print "Cert dict: %s" % certificate
             utils.writeToFile(CONSUMERID, consumer['id'])
             utils.writeToFile(CERT_PATH, certificate)
             utils.writeToFile(KEY_PATH, key)
