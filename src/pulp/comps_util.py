@@ -32,7 +32,7 @@ def yum_group_to_model_group(obj):
     @param obj: yum.comps.Group object
     @return: model.PackageGroup object
     """
-    grp = pulp.model.PackageGroup(obj.groupid, obj.name, 
+    grp = pulp.db.model.PackageGroup(obj.groupid, obj.name,
         obj.description, obj.user_visible, obj.display_order, obj.default, 
         obj.langonly)
     grp['mandatory_package_names'].extend(obj.mandatory_packages.keys())
@@ -49,7 +49,7 @@ def yum_category_to_model_category(obj):
     @param obj: yum.comps.Category object
     @return: model.PackageGroupCategory object
     """
-    ctg = pulp.model.PackageGroupCategory(obj.categoryid, 
+    ctg = pulp.db.model.PackageGroupCategory(obj.categoryid,
         obj.name, obj.description, obj.display_order)
     groupids = [grp for grp in obj.groups]
     ctg['packagegroupids'].extend(groupids)

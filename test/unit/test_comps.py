@@ -26,6 +26,10 @@ import time
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.append(srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
+
 import pulp.comps_util
 import pulp.util
 import pulp.db.model
