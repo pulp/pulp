@@ -241,7 +241,6 @@ class consumer(BaseCore):
         except RestlibException, re:
             print _(" Deleted operation failed on Consumer [ %s ] " % \
                   consumerid)
-            print _(" %s " % re.msg)    
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
