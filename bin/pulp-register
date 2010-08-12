@@ -68,7 +68,7 @@ class PulpRegister(pulpcli.PulpCore):
         self.cli_cores = {}
         self.args = utils.findSysvArgs(sys.argv)
         if len(self.args) > 1:
-	    if self.args[1] not in [consumer, repo, errata]:
+            if self.args[1] not in ['consumer', 'repo', 'errata']:
                 print ("Invalid command. Please see --help")
                 sys.exit(0) 
             self.cli_cores[self.args[1]] =  eval(self.args[1])()

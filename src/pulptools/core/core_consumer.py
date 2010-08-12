@@ -67,7 +67,6 @@ class consumer(BaseCore):
 
     def generate_options(self):
         self.action = self._get_action()
-        print self.is_admin
         if self.action == "create":
             usage = "consumer create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -134,9 +133,13 @@ class consumer(BaseCore):
             self.load_server()
         try:
             consumer = self.cconn.create(self.options.id, self.options.description)
-            certificate = self.cconn.certificate(self.options.id)
+            cert_dict = self.cconn.certificate(self.options.id)
+            certificate = cert_dict['certificate']
+            key = cert_dict['private_key']
+            print "Cert dict: %s" % certificate
             utils.writeToFile(CONSUMERID, consumer['id'])
             utils.writeToFile(CERT_PATH, certificate)
+            utils.writeToFile(KEY_PATH, key)
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer['id'], pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])

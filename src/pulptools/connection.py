@@ -189,7 +189,6 @@ class RepoConnection(PulpConnection):
         addinfo = {'repoid' : repoid,
                       'packageid' : packageid}
         method = "/repositories/%s/add_package/" % repoid
-        print "Add info: %s" % addinfo
         return self.conn.request_post(method, params=addinfo)
 
     def get_package(self, repoid, pkg_name):
@@ -295,7 +294,7 @@ class ConsumerConnection(PulpConnection):
     def certificate(self, id):
         method = "/consumers/%s/certificate/" % str(id)
         cert_dict = self.conn.request_get(method)
-        return cert_dict['certificate']
+        return cert_dict
 
     def consumers(self):
         method = "/consumers/"
