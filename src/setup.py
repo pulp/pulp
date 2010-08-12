@@ -45,7 +45,7 @@ setup(
     license='GPLv2+',
     packages=find_packages(),
     scripts = [
-        '../bin/pulp',
+        '../bin/pulp-admin',
         '../bin/pulp-client',
     ],
     include_package_data=False,

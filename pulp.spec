@@ -143,7 +143,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 # For noarch packages: sitelib
 %{python_sitelib}/pulptools/
 %{python_sitelib}/pmf/
-%{_bindir}/pulp
+%{_bindir}/pulp-admin
 %{_bindir}/pulp-client
 %{_bindir}/pulpd
 %attr(755,root,root) %{_sysconfdir}/init.d/pulpd
