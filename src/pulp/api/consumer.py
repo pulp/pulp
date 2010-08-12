@@ -68,6 +68,13 @@ class ConsumerApi(BaseApi):
         return c
     
     @audit()
+    def delete(self, id):
+        consumer = self.consumer(id)
+        if not consumer:
+            raise PulpException('Consumer "%s" does not exist', id)
+        self.objectdb.remove(consumer, safe=True)
+    
+    @audit()
     def certificate(self, id):
         """
         Create a X509 Consumer Identity Certificate to associate with the 
