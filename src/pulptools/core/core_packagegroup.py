@@ -140,7 +140,7 @@ class packagegroup(BaseCore):
 
     def _list(self):
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("Repo id required. Try --help")
             sys.exit(0)
         try:
             groups = self.pconn.packagegroups(self.options.repoid)
@@ -164,10 +164,10 @@ class packagegroup(BaseCore):
 
     def _info(self):
         if not self.options.groupid:
-            print("Please specify the package group id to lookup")
+            print("package group id required. Try --help")
             sys.exit(0)
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("Repo id required. Try --help")
             sys.exit(0)
         try:
             groups = self.pconn.packagegroups(self.options.repoid)
@@ -190,10 +190,10 @@ class packagegroup(BaseCore):
 
     def _install(self):
         if not self.options.consumerid:
-            print("Please specify a consumer to install the package group")
+            print("consumer id required. Try --help")
             sys.exit(0)
         if not self.options.pkggroupid:
-            print("Please specify a package group id")
+            print("package group id required. Try --help")
             sys.exit(0)
         try:
             print self.cconn.installpackagegroups(self.options.consumerid, 
@@ -207,13 +207,13 @@ class packagegroup(BaseCore):
 
     def _create(self):
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print ("Please specify the group id")
+            print ("package group id required. Try --help")
             sys.exit(0)
         if not self.options.groupname:
-            print ("Please specify the group name")
+            print ("package group name required. Try --help")
             sys.exit(0)
         try:
             self.pconn.create_packagegroup(self.options.repoid, 
@@ -232,10 +232,10 @@ class packagegroup(BaseCore):
     
     def _delete(self):
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("Please specify the package group id")
+            print("package group id required. Try --help")
             sys.exit(0)
         try:
             self.pconn.delete_packagegroup(self.options.repoid, self.options.groupid)
@@ -250,13 +250,13 @@ class packagegroup(BaseCore):
     
     def _add_package(self):
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.pkgname:
-            print("Please specify the package name to add to the group")
+            print("package name required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("Please specify the package group id")
+            print("package group id required. Try --help")
             sys.exit(0)
         try:
             self.pconn.add_package_to_group(self.options.repoid, 
@@ -274,13 +274,13 @@ class packagegroup(BaseCore):
 
     def _delete_package(self):
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.pkgname:
-            print("Please specify the package name to delete from the group")
+            print("package name required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("Please specify the package group id")
+            print("package group id required. Try --help")
             sys.exit(0)
         try:
             self.pconn.delete_package_from_group(self.options.repoid, 

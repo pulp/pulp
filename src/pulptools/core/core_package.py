@@ -80,10 +80,10 @@ class package(BaseCore):
 
     def _info(self):
         if not self.options.name:
-            print("Please specify the pkg name to lookup")
+            print("package name required. Try --help")
             sys.exit(0)
         if not self.options.repoid:
-            print("Please specify the repo")
+            print("repo id required. Try --help")
             sys.exit(0)
         try:
             pkg = self.pconn.get_package(self.options.repoid, self.options.name)
@@ -102,7 +102,7 @@ class package(BaseCore):
     
     def _install(self):
         if not self.options.consumerid and not self.options.consumergroupid:
-            print("Please specify a consumer or a consumer group to install the package")
+            print("consumer or consumer group id required. Try --help")
             sys.exit(0)
         if not self.options.pnames:
             print("Nothing to Upload.")
