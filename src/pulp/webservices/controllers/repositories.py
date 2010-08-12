@@ -445,7 +445,7 @@ class Schedules(JSONController):
     
     @JSONController.error_handler
     @RoleCheck()
-    def GET(self, id, action_name):
+    def GET(self):
         '''
         Retrieve a map of all repository IDs to their associated synchronization
         schedules.
