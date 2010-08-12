@@ -239,8 +239,11 @@ class consumer(BaseCore):
             self.cconn.delete(consumerid)
             print _(" Successfully deleted consumer [%s]" % consumerid)
         except RestlibException, re:
+            print _(" Deleted operation failed on Consumer [ %s ] " % \
+                  consumerid)
+            print _(" %s " % re.msg)    
             log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
+            sys.exit(-1)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
