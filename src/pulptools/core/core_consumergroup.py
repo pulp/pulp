@@ -192,8 +192,9 @@ class consumergroup(BaseCore):
             self.cgconn.add_consumer(self.options.groupid, self.options.consumerid)
             print _(" Successfully added Consumer [%s] to Group [%s]" % (self.options.consumerid, self.options.groupid))
         except RestlibException, re:
+            print _(" Adding consumer failed ")
             log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
+            sys.exit(-1)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
