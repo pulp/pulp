@@ -13,6 +13,9 @@
 # in this software or its documentation.
 #
 
+import sys
+import os
+from getopt import getopt
 from pulptools import *
 from pulptools.lock import Lock, LockFailed
 from pulptools.agent import *
@@ -100,7 +103,7 @@ class AgentLock(Lock):
         Lock.__init__(self, self.PATH)
 
 
-def main():
+def main(daemon=True):
     """
     Agent main.
     Add recurring, time-based actions here.
@@ -111,6 +114,8 @@ def main():
         lock.acquire(wait=False)
     except LockFailed, e:
         raise Exception('Agent already running')
+    if daemon:
+        daemonize()
     try:
         actions = []
         for cls, interval in Action.actions:
@@ -121,6 +126,48 @@ def main():
     finally:
         lock.release()
 
+def usage():
+    """
+    Show usage.
+    """
+    s = []
+    s.append('\npulpd <optoins>')
+    s.append('  -h, --help')
+    s.append('      Show help')
+    s.append('  -c, --console')
+    s.append('      Run in the foreground and not as a daemon.')
+    s.append('      default: 0')
+    s.append('\n')
+    print '\n'.join(s)
+
+def daemonize():
+    """
+    Daemon configuration.
+    """
+    pid = os.fork()
+    if pid == 0: # child
+        os.setsid()
+        os.chdir('/')
+        os.close(0)
+        os.close(1)
+        os.close(2)
+        dn = os.open('/dev/null', os.O_RDWR)
+        os.dup(dn)
+        os.dup(dn)
+        os.dup(dn)
+    else: # parent
+        os.waitpid(pid, os.WNOHANG)
+        os._exit(0)
+
 
 if __name__ == '__main__':
-    main()
+    daemon = True
+    opts, args = getopt(sys.argv[1:], 'hc', ['help','console'])
+    for opt,arg in opts:
+        if opt in ('-h', '--help'):
+            usage()
+            sys.exit(0)
+        if opt in ('-c', '--console'):
+            daemon = False
+            continue
+    main(daemon)
