@@ -46,7 +46,7 @@ class UserApi(BaseApi):
             self.create(self.default_login, password=default_password)
 
     @audit(params=['login', 'name'])
-    def create(self, login, id=None, password=None, name=None):
+    def create(self, login, password=None, name=None,  id=None):
         """
         Create a new User object and return it
         """

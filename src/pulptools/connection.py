@@ -449,7 +449,7 @@ class UserConnection(PulpConnection):
     """
     Connection class to access consumer group related calls
     """
-    def create(self, login, id=None, password=None, name=None):
+    def create(self, login, password=None, name=None):
         user_data = {"login" : login, "password" : password,
                         "name" : name}
         method = "/users/"
