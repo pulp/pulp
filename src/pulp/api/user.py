@@ -45,7 +45,7 @@ class UserApi(BaseApi):
             default_password = config.get('server', 'default_password') 
             self.create(self.default_login, password=default_password)
 
-    @audit(params=['login', 'name'])
+    @audit(params=['login'])
     def create(self, login, password=None, name=None,  id=None):
         """
         Create a new User object and return it
