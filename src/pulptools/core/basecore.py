@@ -44,11 +44,11 @@ class BaseCore(object):
 
     def _add_common_options(self):
         """ Common options to all modules. """
-        help = "<REQUIRED> username for access to Pulp."  
+        help = "username for access to Pulp."  
         help = help + "  Default user admin is included with base install."
         self.parser.add_option("-u", "--username", dest="username",
                        help=help)
-        help = "<REQUIRED> password for access to Pulp."  
+        help = "password for access to Pulp."  
         self.parser.add_option("-p", "--password", dest="password",
                        help=help)
         
@@ -104,13 +104,13 @@ class BaseCore(object):
     
     def main(self):
         (self.options, self.args) = self.parser.parse_args()
-        if (not self.options.username and not self.options.password 
-                and (len(self.args) > 0)):
-            print("username and password are required. Try --help")
-            sys.exit(1)
-        else:
-            self.username = self.options.username
-            self.password = self.options.password
+        #if (not self.options.username and not self.options.password 
+        #        and (len(self.args) > 0)):
+        #    print("username and password are required. Try --help")
+        #    sys.exit(1)
+        # else:
+        self.username = self.options.username
+        self.password = self.options.password
         self.load_server()
         self._do_core()
 

@@ -134,7 +134,7 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @RoleCheck(consumer=True, admin=True)
     def DELETE(self, id):
         """
         Delete a consumer.

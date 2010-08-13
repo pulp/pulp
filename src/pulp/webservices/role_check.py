@@ -64,8 +64,8 @@ class RoleCheck(object):
                 roles[key] = self.dec_kw[key]
             
             log.debug("Roles to check: %s" % roles)
-            admin_failed = False
-            certificate_failed = False
+            admin_access_granted = False
+            consumer_access_granted = False
             
             # Admin role trumps any other checking.  do it first
             if (roles['admin']):
@@ -73,8 +73,8 @@ class RoleCheck(object):
                 # TODO: Implement uname/pass checking
                 log.debug("Checking username/pass")
                 try:
-                    admin_failed = self.check_username_pass(*fargs)
-                    log.debug("Unamepass vfail: %s" % admin_failed)
+                    admin_access_granted = self.check_username_pass(*fargs)
+                    log.debug("admin access granted: %s" % admin_access_granted)
                 except PulpException, pe:
                     # TODO: Figure out how to re-use the same return function in base.py
                     http.status_unauthorized()
@@ -83,21 +83,18 @@ class RoleCheck(object):
             
             ## Check cert
             if (roles['consumer']):
-                certificate_failed = self.check_consumer_id(*fargs)
-                log.debug("certificate_failed? %s " % certificate_failed)
-                
-            if (admin_failed):
+                consumer_access_granted = self.check_consumer_id(*fargs)
+                log.debug("consumer_access_granted? %s " % consumer_access_granted)
+            
+            log.debug("AAG: %s, CAG: %s" % (admin_access_granted, consumer_access_granted))
+            if (not admin_access_granted and not consumer_access_granted):
+                log.debug("Access denied.")
                 http.status_unauthorized()
                 http.header('Content-Type', 'application/json')
-                return json.dumps("Username/password combination is not correct", 
+                return json.dumps("Authorization Failure.  Check your username and password or your Certificate", 
                                   default=pymongo.json_util.default)
-            if (certificate_failed):
-                    # TODO: Figure out how to re-use the same return function in base.py
-                    http.status_unauthorized()
-                    http.header('Content-Type', 'application/json')
-                    return json.dumps("Certificate Validation Failed", 
-                                      default=pymongo.json_util.default)
-
+            # Access granted, proceed
+            log.debug("check_roles : Access granted")
             # Does this wrap a class instance?
             if fargs and getattr(fargs[0], '__class__', None):
                 instance, fargs = fargs[0], fargs[1:]
@@ -118,7 +115,7 @@ class RoleCheck(object):
     def check_username_pass(self, *fargs):
         environment = web.ctx.environ
         auth_string = environment.get('HTTP_AUTHORIZATION', None)
-        if (auth_string != None and auth_string.startswith("Basic")) :
+        if (auth_string != None and auth_string.startswith("Basic")):
             log.debug("auth_string string: %s" % auth_string)
             encoded_auth = auth_string.split(" ")[1]
             auth_string = base64.decodestring(encoded_auth)
@@ -131,10 +128,10 @@ class RoleCheck(object):
                                     % username)
             log.debug("Username: %s hashed password: %s" % (username, password))
             log.debug("Stored user password: %s" % user['password'])
-            badPassword = not password_util.check_password(user['password'], password) 
-            log.debug("Bad Password? [%s]" % badPassword)
-            return badPassword
-        return True
+            goodPassword = password_util.check_password(user['password'], password) 
+            log.debug("Good Password? [%s]" % goodPassword)
+            return goodPassword
+        return False
         
         
 
@@ -148,7 +145,7 @@ class RoleCheck(object):
                 log.debug("SSL k: " + key + ", v: " + value)
         cs = environment.get('SSL_CLIENT_CERT', None)
         
-        validation_failed = False
+        good_certificate = False
         if (cs != None):
             idcert = Certificate(content=cs)
             log.debug("parsed ID CERT: %s" % idcert)
@@ -157,20 +154,20 @@ class RoleCheck(object):
             if (consumer_cert_uid == None):
                 log.error("Consumer UID not found in certificate.  " + \
                           "Not a valid Consumer certificate")
-                return validation_failed
+                good_certificate = False
+                return good_certificate 
             log.error("Consumer UID: %s " % consumer_cert_uid)
             # Check the consumer_id matches 
-            validation_failed = True
             for arg in fargs:
                 log.debug("Arg [%s]" % arg)
                 if (arg == consumer_cert_uid):
-                    validation_failed = False
+                    good_certificate = True
                     break
             consumer_id = arg
-            if (validation_failed):
+            if (not good_certificate):
                 log.error("Certificate UID doesnt match the consumer UID you passed in") 
             else:
                 log.error("Certificate UID matched.  continue")
 
-        return validation_failed
+        return good_certificate
             

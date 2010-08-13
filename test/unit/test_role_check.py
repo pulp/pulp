@@ -64,7 +64,7 @@ class TestRoleCheck(unittest.TestCase):
 
     @RoleCheck(admin=True, consumer=True)
     def some_other_method2(self, someparam, otherparam):
-        print "some_other_method executed"
+        print "some_other_method2 executed"
         return otherparam
 
         
@@ -97,7 +97,7 @@ class TestRoleCheck(unittest.TestCase):
         # create a user
         login = "test_auth"
         password = "some password"
-        user = self.uapi.create(login, password=password)
+        self.uapi.create(login, password=password)
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         
