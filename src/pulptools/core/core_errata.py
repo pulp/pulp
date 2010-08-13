@@ -122,10 +122,12 @@ class errata(BaseCore):
             self._install()
 
     def _create(self):
-        pass
-
+        print _("Not Implemented")
+        sys.exit(0)
+        
     def _delete(self):
-        pass
+        print _("Not Implemented")
+        sys.exit(0)
 
     def _list(self):
         if not (self.getConsumer() or self.options.repoid):
