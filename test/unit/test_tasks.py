@@ -1,7 +1,7 @@
 import pprint
 import time
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from pulp.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
