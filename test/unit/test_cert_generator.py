@@ -19,18 +19,27 @@ import sys
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
+from pulp.certificate import Certificate
 import pulp.cert_generator as cert_generator
 import unittest
 import logging
 
 class TestCertGeneration(unittest.TestCase):
 
-    def test_pk(self):
+    def test_generation(self):
+        cid = "foobarbaz"
         pem = cert_generator._make_priv_key()
         self.assertTrue(pem.startswith('-----BEGIN RSA PRIVATE KEY-----'))
-        (pk, cert) = cert_generator.make_cert('foobarbaz')
+        (pk, x509_pem) = cert_generator.make_cert(cid)
+        print "CERT!: %s" % x509_pem
         self.assertTrue(pk != None)
-        self.assertTrue(cert != None)
+        self.assertTrue(x509_pem != None)
+        cert = Certificate()
+        cert.update(str(x509_pem))
+        subject = cert.subject()
+        consumer_cert_uid = subject.get('CN', None)
+        self.assertEqual(cid, consumer_cert_uid)
+        
         # pk.save_key('/tmp/foo.out')
         # print "PK Pem: %s" % str(pk.as_pem())
         

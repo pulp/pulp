@@ -84,7 +84,7 @@ class ConsumerApi(BaseApi):
         if not consumer:
             raise PulpException('consumer "%s", not-found', id)
         private_key, cert = cert_generator.make_cert(id)
-        return (private_key, cert.as_pem()) 
+        return (private_key, cert) 
         
     @audit()
     def bulkcreate(self, consumers):

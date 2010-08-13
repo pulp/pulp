@@ -57,44 +57,47 @@ class RoleCheck(object):
               the "self" will be the first argument.
             '''
             # Check the roles
-            log.debug("Role checking start")
+            log.debug("Role checking start, function: %s" % str(f))
             roles = {'consumer':None, 'admin': None}
             for key in self.dec_kw.keys():
                 log.debug("Role Name [%s], check? [%s]" % (key, self.dec_kw[key]))
                 roles[key] = self.dec_kw[key]
-
-            ## First check cert
-            if (roles['consumer'] and not roles['admin']):
-                validation_failed = self.check_consumer_id(*fargs)
-                log.debug("validation_failed? %s " % validation_failed)
-                if (validation_failed):
-                    # TODO: Figure out how to re-use the same return function in base.py
-                    http.status_unauthorized()
-                    http.header('Content-Type', 'application/json')
-                    return json.dumps("Certificate Validation Failed", 
-                                      default=pymongo.json_util.default)
-                
-                 
+            
+            log.debug("Roles to check: %s" % roles)
+            admin_failed = False
+            certificate_failed = False
+            
+            # Admin role trumps any other checking.  do it first
             if (roles['admin']):
                 ## If not using cert check uname and password
                 # TODO: Implement uname/pass checking
                 log.debug("Checking username/pass")
-                validation_failed = False
                 try:
-                    validation_failed = self.check_username_pass(*fargs)
-                    log.debug("Unamepass vfail: %s" % validation_failed)
+                    admin_failed = self.check_username_pass(*fargs)
+                    log.debug("Unamepass vfail: %s" % admin_failed)
                 except PulpException, pe:
                     # TODO: Figure out how to re-use the same return function in base.py
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
                     return json.dumps(pe.value, default=pymongo.json_util.default)
-                if (validation_failed):
+            
+            ## Check cert
+            if (roles['consumer']):
+                certificate_failed = self.check_consumer_id(*fargs)
+                log.debug("certificate_failed? %s " % certificate_failed)
+                
+            if (admin_failed):
+                http.status_unauthorized()
+                http.header('Content-Type', 'application/json')
+                return json.dumps("Username/password combination is not correct", 
+                                  default=pymongo.json_util.default)
+            if (certificate_failed):
+                    # TODO: Figure out how to re-use the same return function in base.py
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
-                    return json.dumps("Username/password combination is not correct", 
+                    return json.dumps("Certificate Validation Failed", 
                                       default=pymongo.json_util.default)
-                 
-            
+
             # Does this wrap a class instance?
             if fargs and getattr(fargs[0], '__class__', None):
                 instance, fargs = fargs[0], fargs[1:]
@@ -127,6 +130,7 @@ class RoleCheck(object):
                 raise PulpException("User with login [%s] does not exist" 
                                     % username)
             log.debug("Username: %s hashed password: %s" % (username, password))
+            log.debug("Stored user password: %s" % user['password'])
             badPassword = not password_util.check_password(user['password'], password) 
             log.debug("Bad Password? [%s]" % badPassword)
             return badPassword

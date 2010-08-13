@@ -1,10 +1,9 @@
 from M2Crypto import X509, EVP, RSA, ASN1, util
 import subprocess
-import time
-import socket
 import logging
 
 log = logging.getLogger(__name__)
+
 
 def make_cert(uid):
     """
@@ -30,36 +29,20 @@ def make_cert(uid):
     
     # Make the Cert Request
     req, pub_key = _make_cert_request(uid, rsa)
-    
-    # Now make the x509 Certificate
-    pkey = req.get_pubkey()
-    sub = req.get_subject()
-    cert = X509.X509()
-    cert.set_serial_number(1)
-    cert.set_version(2)
-    cert.set_subject(sub)
-    t = long(time.time()) + time.timezone
-    now = ASN1.ASN1_UTCTIME()
-    now.set_time(t)
-    nowPlusYear = ASN1.ASN1_UTCTIME()
-    nowPlusYear.set_time(t + 60 * 60 * 24 * 365)
-    cert.set_not_before(now)
-    # Set to expire 1Y from now
-    cert.set_not_after(nowPlusYear)
-    issuer = X509.X509_Name()
-    issuer.CN = socket.gethostname()
-    issuer.O = 'Pulp Certificate Issuer.'
-    cert.set_issuer(issuer)
-    cert.set_pubkey(pkey)
-    cert.set_pubkey(cert.get_pubkey()) # Make sure get/set work
-    ext = X509.new_extension('subjectAltName', uid)
-    ext.set_critical(0)
-    cert.add_ext(ext)
-    cert.sign(pub_key, 'sha1')
-    assert cert.verify()
-    assert cert.verify(pkey)
-    assert cert.verify(cert.get_pubkey())
-    return private_key_pem, cert
+    # Sign it with the Pulp server CA
+    # We can't do this in m2crypto either so we have to shell out
+    # TODO: We technically should be incrementing these serial numbers
+    serial = "01"
+    cmd = 'openssl x509 -req -sha1 -CA /etc/pki/pulp/ca.crt -CAkey /etc/pki/pulp/ca.key -set_serial %s -days 3650' % serial
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = p.communicate(input=req.as_pem())[0]
+    p.wait()
+    exit_code = p.returncode
+    if (exit_code != 0):
+        raise Exception("error signing cert request: %s" % output)
+    cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
+    return private_key_pem, cert_pem_string
 
 def _make_priv_key():
     cmd = 'openssl genrsa 1024'

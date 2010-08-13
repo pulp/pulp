@@ -36,6 +36,7 @@ LINKS = (
     'etc/pulp/pulp.conf',
     'etc/pulp/client.conf',
     'etc/httpd/conf.d/pulp.conf',
+    'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
     'etc/pki/pulp/server.crt',
     'etc/pki/pulp/server.key',

@@ -38,7 +38,7 @@ default_fields = ['id', 'description']
 class Consumers(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self):
         """
         List all available consumers.
@@ -61,7 +61,7 @@ class Consumers(JSONController):
         return self.ok(consumers)
      
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self):
         """
         Create a new consumer.
@@ -77,7 +77,7 @@ class Consumers(JSONController):
         return self.created(path, consumer)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self):
         """
         Delete all consumers.
@@ -90,7 +90,7 @@ class Consumers(JSONController):
 class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def POST(self):
         api.bulkcreate(self.params())
         return self.ok(True)
@@ -99,7 +99,7 @@ class Bulk(JSONController):
 class Consumer(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(consumer=True, admin=True)
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -115,7 +115,7 @@ class Consumer(JSONController):
         return self.ok(consumer)
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self, id):
         """
         Update consumer
@@ -134,7 +134,7 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self, id):
         """
         Delete a consumer.
@@ -153,7 +153,7 @@ class ConsumerDeferredFields(JSONController):
         'repoids',
         'certificate'
     )
-    
+    @RoleCheck(consumer=True, admin=True)
     def package_profile(self, id):
         """
         Get a consumer's set of packages
@@ -166,6 +166,7 @@ class ConsumerDeferredFields(JSONController):
         packages = self.filter_results(packages, filters)
         return self.ok(packages)
     
+    @RoleCheck(consumer=True, admin=True)
     def repoids(self, id):
         """
         Get the ids of the repositories the consumer is bound to.
@@ -179,7 +180,8 @@ class ConsumerDeferredFields(JSONController):
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
-
+    
+    @RoleCheck(admin=True)
     def certificate(self, id):
         """
         Get a X509 Certificate for this Consumer.  Useful for uniquely and securely 
@@ -196,7 +198,6 @@ class ConsumerDeferredFields(JSONController):
         return self.ok(certificate)
 
     @JSONController.error_handler
-    @RoleCheck()
     def GET(self, id, field_name):
         """
         Deferred field dispatcher.
@@ -222,6 +223,7 @@ class ConsumerActions(JSONController):
         'installerrata',
     )
     
+    @RoleCheck(consumer=True, admin=True)
     def bind(self, id):
         """
         Bind (subscribe) a user to a repository.
@@ -230,7 +232,8 @@ class ConsumerActions(JSONController):
         data = self.params()
         api.bind(id, data)
         return self.ok(True)
-
+    
+    @RoleCheck(consumer=True, admin=True)
     def unbind(self, id):
         """
         Unbind (unsubscribe) a user to a repository.
@@ -240,6 +243,7 @@ class ConsumerActions(JSONController):
         api.unbind(id, data)
         return self.ok(None)
     
+    @RoleCheck(consumer=True, admin=True)
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
@@ -248,6 +252,7 @@ class ConsumerActions(JSONController):
         api.profile_update(id, self.params())
         return self.ok(True)
 
+    @RoleCheck(consumer=True, admin=True)
     def installpackages(self, id):
         """
         Install packages.
@@ -256,7 +261,8 @@ class ConsumerActions(JSONController):
         data = self.params()
         names = data.get('packagenames', [])
         return self.ok(api.installpackages(id, names))
-        
+    
+    @RoleCheck(consumer=True, admin=True)
     def installpackagegroups(self, id):
         """
         Install package groups.
@@ -266,7 +272,7 @@ class ConsumerActions(JSONController):
         ids = data.get('packageids', [])
         return self.ok(api.installpackagegroups(id, ids))
 
-    
+    @RoleCheck(consumer=True, admin=True)
     def installerrata(self, id):
         """
         Install errata
@@ -278,7 +284,7 @@ class ConsumerActions(JSONController):
         return self.ok(api.installerrata(id, eids, types))
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(consumer=True, admin=True)
     def listerrata(self, id):
         """
          list applicable errata for a given repo.
@@ -289,7 +295,6 @@ class ConsumerActions(JSONController):
         
         
     @JSONController.error_handler
-    @RoleCheck()
     def POST(self, id, action_name):
         """
         Consumer action dispatcher

@@ -31,7 +31,7 @@ log = logging.getLogger('pulp')
 class Errata(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self):
         """
         List all available errata.
@@ -41,7 +41,7 @@ class Errata(JSONController):
         return self.ok(api.errata())
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self):
         """
         Create a new errata
@@ -67,7 +67,7 @@ class Errata(JSONController):
         return self.created(errata['id'], errata)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self):
         """
         @return: True on successful deletion of all users
@@ -79,7 +79,7 @@ class Errata(JSONController):
 class Erratum(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self, id):
         """
         Get a erratum information
@@ -89,7 +89,7 @@ class Erratum(JSONController):
         return self.ok(api.erratum(id))
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self, id):
         """
         Update errata
@@ -100,7 +100,7 @@ class Erratum(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self, id):
         """
         Delete an errata

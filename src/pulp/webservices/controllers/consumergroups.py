@@ -29,7 +29,7 @@ api = ConsumerGroupApi()
 class ConsumerGroups(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self):
         """
         List all available consumergroups.
@@ -39,7 +39,7 @@ class ConsumerGroups(JSONController):
         return self.ok(api.consumergroups())
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self):
         """
         Create a new consumer group.
@@ -51,7 +51,7 @@ class ConsumerGroups(JSONController):
         return self.created(consumergroup['id'], consumergroup)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self):
         """
         @return: True on successful deletion of all consumer groups
@@ -63,7 +63,7 @@ class ConsumerGroups(JSONController):
 class ConsumerGroup(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self, id):
         """
         Get a consumergroup's meta data.
@@ -73,7 +73,7 @@ class ConsumerGroup(JSONController):
         return self.ok(api.consumergroup(id))
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self, id):
         """
         Update consumer group
@@ -84,7 +84,7 @@ class ConsumerGroup(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self, id):
         """
         Delete a consumer group.
@@ -165,7 +165,7 @@ class ConsumerGroupActions(JSONController):
         return self.ok(api.installerrata(id, errataids, types)) 
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def POST(self, id, action_name):
         """
         Consumer action dispatcher

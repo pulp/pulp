@@ -62,13 +62,18 @@ class TestRoleCheck(unittest.TestCase):
         print "some_other_method executed"
         return otherparam
 
+    @RoleCheck(admin=True, consumer=True)
+    def some_other_method2(self, someparam, otherparam):
+        print "some_other_method executed"
+        return otherparam
+
         
     def test_id_cert(self):
         consumerUid = "someconsumer.example.com"
         (temp_pk, temp_cert) = cert_generator.make_cert(consumerUid)
         self.assertTrue(temp_cert != None)
         cert = Certificate()
-        cert.update(temp_cert.as_pem())
+        cert.update(temp_cert)
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
@@ -97,7 +102,6 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx['environ'] = dict()
         
         # Check we can run the method with no setup in web
-        retval = self.some_other_method('somevalue')
         retval = self.some_other_method('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
         
@@ -121,7 +125,31 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
         retval = self.some_other_method('somevalue', 'baz')
         self.assertEquals(retval, 'baz')
-         
+
+        # Check for bad pass
+        loginpass = "%s:%s" % (login, "invalid password")
+        encoded = base64.encodestring(loginpass)
+        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
+        retval = self.some_other_method2('somevalue', 'baz')
+        self.assertNotEqual(retval, 'baz')
+        
+        # Check for bad username
+        loginpass = "%s:%s" % ("non existing user", password)
+        encoded = base64.encodestring(loginpass)
+        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
+        retval = self.some_other_method2('somevalue', 'baz')
+        self.assertNotEqual(retval, 'baz')
+        
+        # Check for a proper result
+        loginpass = "%s:%s" % (login, password)
+        encoded = base64.encodestring(loginpass)
+        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
+        retval = self.some_other_method2('somevalue', 'baz')
+        self.assertEquals(retval, 'baz')
+
+    
+    
+        
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

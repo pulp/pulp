@@ -33,7 +33,7 @@ log = logging.getLogger('pulp')
 class Packages(JSONController):
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self):
         """
         List available packages.
@@ -45,7 +45,7 @@ class Packages(JSONController):
         return self.ok(api.package_descriptions(spec))
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def DELETE(self):
         """
         Delete all packages.
@@ -55,7 +55,7 @@ class Packages(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def PUT(self):
         """
         Create a new package.
@@ -71,7 +71,7 @@ class Packages(JSONController):
 class Package(JSONController):
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self, id):
         """
         Get information on a sinble package.
@@ -96,7 +96,7 @@ class PackageDeferredFields(JSONController):
     )
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:
@@ -113,7 +113,7 @@ class PackageActions(JSONController):
     )
     
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def POST(self, id, action_name):
         action = getattr(self, action_name, None)
         if action is None:
@@ -124,7 +124,7 @@ class PackageActions(JSONController):
 class Versions(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck()
+    @RoleCheck(admin=True)
     def GET(self, name, version, release, epoch, arch):
         pv = api.package_by_ivera(name, version, epoch, release, arch)
         return self.ok(pv)
