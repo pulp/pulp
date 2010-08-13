@@ -88,9 +88,9 @@ class user(BaseCore):
         if not self.options.newpassword:
             self.options.newpassword = ""
         try:
-            user = self.userconn.create(self.options.newusername, 
-                                        self.options.newpassword, 
-                                        self.options.name)
+            user = self.userconn.create(login=self.options.newusername, 
+                                        password=self.options.newpassword, 
+                                        name=self.options.name)
             print _(" Successfully created User [ %s ] with name [ %s ]" % \
                                      (user['login'], user["name"]))
         except RestlibException, re:
