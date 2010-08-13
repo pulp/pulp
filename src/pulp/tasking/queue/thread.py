@@ -16,7 +16,11 @@
 
 import ctypes
 import inspect
+import logging
 import threading
+
+
+_log = logging.getLogger(__name__)
 
 # interruptable thread base class ---------------------------------------------
 
@@ -42,15 +46,15 @@ def _raise_exception_in_thread(tid, exc_type):
     null_ptr = ctypes.py_object()
     ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, null_ptr)
     raise SystemError('PyThreadState_SetAsyncExc failed')
-    
-    
+
+
 class InterruptableThread(threading.Thread):
     """
     A thread class that supports raising exception in the thread from another
     thread.
     """
     _default_timeout = 0.005
-    
+
     @property
     def _tid(self):
         """
@@ -67,7 +71,7 @@ class InterruptableThread(threading.Thread):
                 self._thread_id = tid
                 return tid
         raise AssertionError('Could not determine thread id')
-    
+
     def raise_exception(self, exc_type):
         """
         Raise and exception in this thread.
@@ -76,15 +80,17 @@ class InterruptableThread(threading.Thread):
         until the exception has been delivered to this thread and this thread
         exists.
         """
-        try:
-            while self.is_alive():
+        while self.is_alive():
+            try:
                 _raise_exception_in_thread(self._tid, exc_type)
                 # this requires that the thread exists....
                 # convert this to and Event to keep that from happening
                 self.join(self._default_timeout)
-        except threading.ThreadError:
-            # a threading.ThreadError get raised if the thread is already dead
-            pass
+            except (threading.ThreadError, AssertionError,
+                    ValueError, SystemError), e:
+                _log.error('Failed to deliver exception %s to thread[%s]: %s' %
+                           (exc_type.__name__, str(self.ident), e.message))
+                break
 
 # task thread -----------------------------------------------------------------
 
@@ -118,10 +124,9 @@ class TaskThread(InterruptableThread):
         Raise a TimeoutException in the thread.
         """
         self.raise_exception(TimeoutException)
-            
+
     def cancel(self):
         """
         Raise a CancelException in the thread.
         """
         self.raise_exception(CancelException)
-        
