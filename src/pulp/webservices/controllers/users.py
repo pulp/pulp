@@ -46,8 +46,8 @@ class Users(JSONController):
         @return: user that was created
         """
         user_data = self.params()
-        user = api.create(login=user_data['login'], password=user_data['password'],
-                                   name=user_data['name'])
+        user = api.create(user_data['login'], user_data['password'],
+                                   user_data['name'])
         return self.created(user['id'], user)
 
     @JSONController.error_handler
