@@ -16,15 +16,14 @@
 
 import itertools
 import logging
+from datetime import timedelta
 
 import web
 
 from pulp.api.repo import RepoApi
-from pulp.tasking.task import Task
 from pulp.webservices import http
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController, AsyncController
-from pulp.webservices.queues import fifo
 from pulp.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
@@ -38,7 +37,7 @@ default_fields = ['id', 'source', 'name', 'arch', 'sync_schedule', 'use_symlinks
 # restful controllers ---------------------------------------------------------
 
 class Repositories(JSONController):
- 
+
     @JSONController.error_handler
     @RoleCheck()
     def GET(self):
@@ -47,19 +46,19 @@ class Repositories(JSONController):
         @return: a list of all available repositories
         """
         valid_filters = ['id', 'name', 'arch']
-        
+
         filters = self.filters(valid_filters)
         spec = mongo.filters_to_re_spec(filters)
-        
+
         repositories = api.repositories(spec, default_fields)
-        
+
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
             for field in RepositoryDeferredFields.exposed_fields:
                 repo[field] = http.extend_uri_path('/'.join((repo['id'], field)))
-        
+
         return self.ok(repositories)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def PUT(self):
@@ -68,11 +67,11 @@ class Repositories(JSONController):
         @return: repository meta data on successful creation of repository
         """
         repo_data = self.params()
-        
+
         id = repo_data['id']
         if api.repository(id, default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % id)
-        
+
         repo = api.create(id,
                           repo_data['name'],
                           repo_data['arch'],
@@ -80,7 +79,7 @@ class Repositories(JSONController):
                           symlinks=repo_data.get('use_symlinks', False),
                           sync_schedule=repo_data.get('sync_schedule', None),
                           cert_data=repo_data.get('cert_data', None))
-        
+
         path = http.extend_uri_path(repo.id)
         repo['uri_ref'] = path
         return self.created(path, repo)
@@ -93,7 +92,7 @@ class Repositories(JSONController):
         """
         api.clean()
         return self.ok(True)
-    
+
 
 class Repository(JSONController):
 
@@ -112,7 +111,7 @@ class Repository(JSONController):
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
         return self.ok(repo)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def PUT(self, id):
@@ -143,10 +142,10 @@ class Repository(JSONController):
         """
         api.delete(id=id)
         return self.ok(True)
-    
-    
+
+
 class RepositoryDeferredFields(JSONController):
-    
+
     # NOTE the intersection of exposed_fields and exposed_actions must be empty
     exposed_fields = (
         'packages',
@@ -154,7 +153,7 @@ class RepositoryDeferredFields(JSONController):
         'packagegroupcategories',
         'errata'
     )
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def packages(self, id):
@@ -165,7 +164,7 @@ class RepositoryDeferredFields(JSONController):
             return self.not_found('No repository %s' % id)
         filtered_packages = self.filter_results(repo.get('packages', []), filters)
         return self.ok(filtered_packages)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def packagegroups(self, id):
@@ -173,7 +172,7 @@ class RepositoryDeferredFields(JSONController):
         if repo is None:
             return self.not_found('No repository %s' % id)
         return self.ok(repo.get('packagegroups'))
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def packagegroupcategories(self, id):
@@ -181,7 +180,7 @@ class RepositoryDeferredFields(JSONController):
         if repo is None:
             return self.not_found('No repository %s' % id)
         return self.ok(repo.get('packagegroupcategories', []))
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def errata(self, id):
@@ -192,7 +191,7 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('type')
         types = self.filters(valid_filters)['type']
         return self.ok(api.errata(id, types))
-        
+
     @JSONController.error_handler
     @RoleCheck()
     def GET(self, id, field_name):
@@ -203,7 +202,7 @@ class RepositoryDeferredFields(JSONController):
 
 
 class RepositoryActions(AsyncController):
-    
+
     # All actions have been gathered here into one controller class for both
     # convenience and automatically generate the regular expression that will
     # map valid actions to this class. This also provides a single point for
@@ -215,7 +214,7 @@ class RepositoryActions(AsyncController):
     #    that takes two positional arguments: 'self' and 'id' where id is the
     #    the repository id. Additional parameters from the body can be
     #    fetched and de-serialized via the self.params() call.
-    
+
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
         'sync',
@@ -239,11 +238,12 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        task_info = self.start_task(api.sync, [id], unique=True)
+        timeout = self.timeout(self.params())
+        task_info = self.start_task(api.sync, [id], timeout=timeout, unique=True)
         if task_info:
             return self.accepted(task_info)
         return self.conflict('Sync already in process for repo [%s]' % id)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def upload(self, id):
@@ -257,7 +257,7 @@ class RepositoryActions(AsyncController):
                    data['pkginfo'],
                    data['pkgstream'])
         return self.ok(True)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def add_package(self, id):
@@ -268,7 +268,7 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.add_package(id, data['packageid'])
         return self.ok(True)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def get_package(self, id):
@@ -319,8 +319,8 @@ class RepositoryActions(AsyncController):
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype)) 
-     
+        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype))
+
     @JSONController.error_handler
     @RoleCheck()
     def create_packagegroup(self, id):
@@ -339,9 +339,9 @@ class RepositoryActions(AsyncController):
         if "description" not in p:
             return self.not_found('No description specified')
         descrp = p["description"]
-        return self.ok(api.create_packagegroup(id, groupid, groupname, 
+        return self.ok(api.create_packagegroup(id, groupid, groupname,
                                                descrp))
-        
+
     @JSONController.error_handler
     @RoleCheck()
     def delete_packagegroup(self, id):
@@ -355,7 +355,7 @@ class RepositoryActions(AsyncController):
             return self.not_found('No groupid specified')
         groupid = p["groupid"]
         return self.ok(api.delete_packagegroup(id, groupid))
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def add_errata(self, id):
@@ -366,7 +366,7 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.add_errata(id, data['errataid'])
         return self.ok(True)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def delete_errata(self, id):
@@ -377,7 +377,7 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.delete_errata(id, data['errataid'])
         return self.ok(True)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def list_errata(self, id):
@@ -405,8 +405,8 @@ class RepositoryActions(AsyncController):
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         return action(id)
-    
-    
+
+
 class RepositoryActionStatus(AsyncController):
 
     @JSONController.error_handler
@@ -423,7 +423,7 @@ class RepositoryActionStatus(AsyncController):
         if task_info is None:
             return self.not_found('No %s with id %s found' % (action_name, action_id))
         return self.ok(task_info)
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def DELETE(self, id, action_name, action_id):
@@ -442,7 +442,7 @@ class RepositoryActionStatus(AsyncController):
 
 
 class Schedules(JSONController):
-    
+
     @JSONController.error_handler
     @RoleCheck()
     def GET(self):
@@ -456,20 +456,20 @@ class Schedules(JSONController):
         # tasks that are specified by the action_name
         schedules = api.all_schedules()
         return self.ok(schedules)
- 
+
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'Repositories',
     '/schedules/', 'Schedules',
     '/([^/]+)/$', 'Repository',
-    
+
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),
     'RepositoryDeferredFields',
-    
+
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryActions.exposed_actions),
     'RepositoryActions',
-    
+
     '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions),
     'RepositoryActionStatus',
 )

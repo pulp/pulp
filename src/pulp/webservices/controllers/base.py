@@ -18,13 +18,14 @@ import functools
 import logging
 import sys
 import traceback
+from datetime import timedelta
 
 try:
     import json
 except ImportError:
     import simplejson as json
-    
-import pymongo.json_util 
+
+import pymongo.json_util
 import web
 
 from pulp.tasking.task import Task, task_complete_states
@@ -54,7 +55,7 @@ class JSONController(object):
                 log.error("%s" % (traceback.format_exc()))
                 return self.internal_server_error(tb_msg)
         return report_error
-    
+
     @staticmethod
     def user_auth_required(roles=[]):
         """
@@ -68,16 +69,19 @@ class JSONController(object):
                 return method(self, *args, **kwargs)
             return check_user_auth
         return _user_auth_required
-    
+
     # input methods -----------------------------------------------------------
-    
+
     def params(self):
         """
         JSON decode the objects in the requests body and return them
         @return: dict of parameters passed in through the body
         """
-        return json.loads(web.data())
-    
+        data = web.data()
+        if not data:
+            return {}
+        return json.loads(data)
+
     def filters(self, valid):
         """
         Fetch any parameters passed on the url
@@ -86,7 +90,7 @@ class JSONController(object):
         @return: dict of param: [value(s)] of uri query parameters
         """
         return http.query_parameters(valid)
-    
+
     def filter_results(self, results, filters):
         """
         @deprecated: use mongo.filters_to_re_spec and pass the result into pulp's api instead
@@ -108,16 +112,16 @@ class JSONController(object):
             if is_good:
                 new_results.append(result)
         return new_results
-    
+
     # response methods --------------------------------------------------------
-    
+
     def _output(self, data):
         """
         JSON encode the response and set the appropriate headers
         """
         http.header('Content-Type', 'application/json')
         return json.dumps(data, default=pymongo.json_util.default)
-    
+
     def ok(self, data):
         """
         Return an ok response.
@@ -127,7 +131,7 @@ class JSONController(object):
         """
         http.status_ok()
         return self._output(data)
-    
+
     def created(self, location, data):
         """
         Return a created response.
@@ -140,12 +144,12 @@ class JSONController(object):
         http.status_created()
         http.header('Location', location)
         return self._output(data)
-    
+
     def no_content(self):
         """
         """
         return
-    
+
     def bad_request(self, msg=None):
         """
         Return a not found error.
@@ -155,13 +159,13 @@ class JSONController(object):
         """
         http.status_bad_request()
         return self._output(msg)
-    
+
     def unauthorized(self, msg=None):
         """
         """
         http.status_unauthorized()
         return self._output(msg)
-    
+
     def not_found(self, msg=None):
         """
         Return a not found error.
@@ -171,7 +175,7 @@ class JSONController(object):
         """
         http.status_not_found()
         return self._output(msg)
-        
+
     def method_not_allowed(self, msg=None):
         """
         Return a method not allowed error.
@@ -181,7 +185,7 @@ class JSONController(object):
         """
         http.status_method_not_allowed()
         return None
-    
+
     def not_acceptable(self, msg=None):
         """
         Return a not acceptable error.
@@ -191,7 +195,7 @@ class JSONController(object):
         """
         http.status_not_acceptable()
         return self._output(msg)
-    
+
     def conflict(self, msg=None):
         """
         Return a conflict error.
@@ -201,7 +205,7 @@ class JSONController(object):
         """
         http.status_conflict()
         return self._output(msg)
-    
+
     def internal_server_error(self, msg=None):
         """
         Return an internal server error.
@@ -230,7 +234,7 @@ class AsyncController(JSONController):
         fields = ('id', 'method_name', 'state', 'start_time', 'finish_time',
                   'next_time', 'result', 'exception', 'traceback')
         return dict((f, getattr(task, f)) for f in fields)
- 
+
     def _status_path(self, id):
         """
         Construct a URL path that can be used to poll a task's status
@@ -242,7 +246,7 @@ class AsyncController(JSONController):
         if parts[-2] == id:
             return http.uri_path()
         return http.extend_uri_path(id)
-    
+
     def start_task(self, func, args=[], kwargs={}, timeout=None, unique=False):
         """
         Execute the function and its arguments as an asynchronous task.
@@ -257,7 +261,7 @@ class AsyncController(JSONController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return task_info
-    
+
     def cancel_task(self, id):
         """
         """
@@ -266,7 +270,7 @@ class AsyncController(JSONController):
             return False
         fifo.cancel(task)
         return True
-        
+
     def task_status(self, id):
         """
         Get the current status of an asynchronous task.
@@ -279,12 +283,37 @@ class AsyncController(JSONController):
             status = self._task_to_dict(task)
             status.update({'status_path': self._status_path(id)})
         return status
-    
+
     def find_task(self, id):
         """
         """
         return fifo.find(id=id)
-    
+
+    def timeout(self, data):
+        if 'timeout' not in data:
+            return None
+        timeouts = {
+            'days': lambda x: timedelta(days=x),
+            'seconds': lambda x: timedelta(seconds=x),
+            'microseconds': lambda x: timedelta(microseconds=x),
+            'milliseconds': lambda x: timedelta(milliseconds=x),
+            'minutes': lambda x: timedelta(minutes=x),
+            'hours': lambda x: timedelta(hours=x),
+            'weeks': lambda x: timedelta(weeks=x)
+        }
+        timeout = data['timeout']
+        if timeout.find('=') < 0:
+            return None
+        units, length = timeout.split('=', 1)
+        units = units.strip().lower()
+        if units not in timeouts:
+            return None
+        try:
+            length = int(length.strip())
+        except ValueError:
+            return None
+        return timeouts[units](length)
+
     def accepted(self, status):
         """
         Return an accepted response with status information in the body.
