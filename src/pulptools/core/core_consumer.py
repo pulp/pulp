@@ -140,7 +140,7 @@ class consumer(BaseCore):
             utils.writeToFile(CERT_PATH, certificate)
             utils.writeToFile(KEY_PATH, key)
             pkginfo = PackageProfile().getPackageList()
-            self.cconn.profile(consumer['id'], pkginfo)
+            self.cconn.profile(self.options.id, pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)
