@@ -64,5 +64,15 @@ class Agent(Container):
         broker = Broker.get(url)
         broker.cacert = config.get('pmf', 'cacert')
         broker.clientcert = config.get('pmf', 'clientcert')
-        producer = Producer(url=url)
-        Container.__init__(self, uuid, producer, **options)
+        self.__producer = Producer(url=url)
+        Container.__init__(self, uuid, self.__producer, **options)
+
+    def delete(self):
+        """
+        Delete all messaging resources.
+        """
+        queue = self._Container__destination()
+        if isinstance(queue, (list,tuple)):
+            raise Exception, 'group delete, not permitted'
+        session = self.__producer.session()
+        queue.delete(session)

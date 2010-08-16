@@ -19,6 +19,7 @@
 import sys
 sys.path.append('../../')
 
+from pmf import Queue
 from pmf.stub import Stub
 from pmf.decorators import stub
 from pmf.base import Container
@@ -46,8 +47,15 @@ class Dog(Stub):
 class Agent(Container):
 
     def __init__(self, id, **options):
-        producer = Producer()
-        Container.__init__(self, id, producer, **options)
+        self.__producer = Producer()
+        Container.__init__(self, id, self.__producer, **options)
+
+    def delete(self):
+        queue = self._Container__destination()
+        if isinstance(queue, (list,tuple)):
+            raise Exception, 'group delete, not permitted'
+        session = self.__producer.session()
+        queue.delete(session)
 
 
 def demo(agent):
@@ -74,6 +82,7 @@ if __name__ == '__main__':
     print '(demo) synchronous'
     agent = Agent('123')
     demo(agent)
+    agent.delete()
     agent = None
 
     # asynchronous (fire and forget)
@@ -117,4 +126,5 @@ if __name__ == '__main__':
     print agent.dog.bark('hello', **opts)
     print agent.dog.wag(3, **opts)
     print agent.dog.bark('hello again', **opts)
+
     agent = None

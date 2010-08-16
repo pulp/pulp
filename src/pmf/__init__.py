@@ -79,6 +79,27 @@ class Destination:
     AMQP destinations (topics & queues)
     """
 
+    def address(self):
+        """
+        Get the destination I{formal} AMQP address which contains
+        properties used to create the destination.
+        @return: The destination address.
+        @rtype: str
+        """
+        pass
+
+    def delete(self, session):
+        """
+        Delete the destination.
+        Implemented using a hack becauase python API does not
+        directly support removing destinations.
+        @param session: An AMQP session.
+        @type session: I{qpid.messaging.Session}
+        """
+        address = '%s;{delete:always}' % repr(self)
+        sender = session.sender(address)
+        sender.close()
+
     def __repr__(self):
         return str(self).split(';', 1)[0]
 
