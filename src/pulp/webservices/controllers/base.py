@@ -262,10 +262,9 @@ class AsyncController(JSONController):
         task_info['status_path'] = self._status_path(task.id)
         return task_info
 
-    def cancel_task(self, id):
+    def cancel_task(self, task):
         """
         """
-        task = self.find_task(id)
         if task is None or task.state in task_complete_states:
             return False
         fifo.cancel(task)

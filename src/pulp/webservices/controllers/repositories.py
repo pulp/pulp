@@ -16,7 +16,6 @@
 
 import itertools
 import logging
-from datetime import timedelta
 
 import web
 
@@ -433,9 +432,9 @@ class RepositoryActionStatus(AsyncController):
         task = self.find_task(action_id)
         if task is None:
             return self.not_found('No %s with id %s found' % (action_name, action_id))
-        if self.cancel_task(action_id):
+        if self.cancel_task(task):
             return self.accepted(self._task_to_dict(task))
-        # action is complete and, therfore, not cancelled
+        # action is complete and, therefore, not canceled
         # a no-content return means the client should *not* adjust its view of
         # the resource
         return self.no_content()
