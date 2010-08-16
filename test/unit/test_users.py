@@ -73,9 +73,9 @@ class TestUsers(unittest.TestCase):
     def test_duplicate(self):
         id = uuid.uuid4()
         login = 'dupe-test'
-        user = self.uapi.create(login, id)
+        user = self.uapi.create(login=login, id=id)
         try:
-            user = self.uapi.create(login, id)
+            user = self.uapi.create(login=login, id=id)
             raise Exception, 'Duplicate allowed'
         except:
             pass
