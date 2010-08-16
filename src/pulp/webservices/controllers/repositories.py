@@ -430,11 +430,11 @@ class RepositoryActionStatus(AsyncController):
         """
         Cancel an action
         """
-        task = self.find_task(id)
+        task = self.find_task(action_id)
         if task is None:
             return self.not_found('No %s with id %s found' % (action_name, action_id))
-        if self.cancel_task(id):
-            return self.accepted({'status_uri': http.uri_path()})
+        if self.cancel_task(action_id):
+            return self.accepted(self._task_to_dict(task))
         # action is complete and, therfore, not cancelled
         # a no-content return means the client should *not* adjust its view of
         # the resource
