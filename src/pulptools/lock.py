@@ -73,12 +73,14 @@ class LockFile:
                 self.pid = int(content)
         return self.pid
 
-    def setpid(self):
+    def setpid(self, pid=os.getpid()):
         """
         Write our procecss id and flush.
+        @param pid: The process ID.
+        @type pid: int
         """
         self.fp.seek(0)
-        content = str(os.getpid())
+        content = str(pid)
         self.fp.write(content)
         self.fp.flush()
 
@@ -179,6 +181,21 @@ class Lock:
                     break
             self.P()
             f.setpid()
+        finally:
+            f.close()
+            
+    def update(self, pid):
+        """
+        Update the process ID.
+        @param pid: The process ID.
+        @type pid: int
+        """
+        if not self.acquired():
+            raise Exception, 'not acquired'
+        f = LockFile(self.path)
+        try:
+            f.open()
+            f.setpid(pid)
         finally:
             f.close()
 

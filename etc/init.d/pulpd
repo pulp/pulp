@@ -24,10 +24,9 @@ start() {
     return $RETVAL
   fi
   echo -n "Starting $PROG"
-  $BINDIR/$PROG & >/dev/null 2>&1
+  $BINDIR/$PROG
   RETVAL=$?
   if [ $RETVAL -eq "0" ]; then
-    echo $! > $PID
     touch $LOCK
     success
   else
@@ -46,7 +45,6 @@ stop() {
   RETVAL=$?
   if [ $RETVAL -eq "0" ]; then
     rm -f $LOCK
-    rm -f $PID
     success
   else
     failure

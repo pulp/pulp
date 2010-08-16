@@ -97,13 +97,13 @@ class AgentLock(Lock):
     @type PATH: str
     """
 
-    PATH = '/var/run/subsys/pulp/pulpd.pid'
+    PATH = '/var/run/pulpd.pid'
 
     def __init__(self):
         Lock.__init__(self, self.PATH)
 
 
-def main(daemon=True):
+def start(daemon=True):
     """
     Agent main.
     Add recurring, time-based actions here.
@@ -115,7 +115,7 @@ def main(daemon=True):
     except LockFailed, e:
         raise Exception('Agent already running')
     if daemon:
-        daemonize()
+        daemonize(lock)
     try:
         actions = []
         for cls, interval in Action.actions:
@@ -140,7 +140,7 @@ def usage():
     s.append('\n')
     print '\n'.join(s)
 
-def daemonize():
+def daemonize(lock):
     """
     Daemon configuration.
     """
@@ -156,11 +156,11 @@ def daemonize():
         os.dup(dn)
         os.dup(dn)
     else: # parent
+        lock.update(pid)
         os.waitpid(pid, os.WNOHANG)
         os._exit(0)
 
-
-if __name__ == '__main__':
+def main():
     daemon = True
     opts, args = getopt(sys.argv[1:], 'hc', ['help','console'])
     for opt,arg in opts:
@@ -170,4 +170,7 @@ if __name__ == '__main__':
         if opt in ('-c', '--console'):
             daemon = False
             continue
-    main(daemon)
+    start(daemon)
+
+if __name__ == '__main__':
+    main()
