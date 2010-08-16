@@ -22,6 +22,39 @@ import threading
 
 _log = logging.getLogger(__name__)
 
+# debugging re-entrant lock ---------------------------------------------------
+
+class DRLock(object):
+    """
+    Re-entrant lock that logs when it is acquired and when it is released at the
+    debug log level.
+    """
+    def __init__(self):
+        self.__lock = threading.RLock()
+        self._is_owned = self.__lock._is_owned
+        #self._acquire_restore = self.__lock._acquire_restore
+        #self._release_save = self.__lock._release_save
+
+    def __repr__(self):
+        return repr(self.__lock)
+
+    def acquire(self, blocking=1):
+        _log.debug('Thread %s called acquire' % threading.current_thread())
+        if not self.__lock.acquire(blocking):
+            return False
+        _log.debug('Lock %s ACQUIRED' % repr(self))
+        return True
+
+    def release(self):
+        _log.debug('Thread %s called release' % threading.current_thread())
+        self.__lock.release()
+        _log.debug('Lock %s RELEASED' % repr(self))
+
+    __enter__ = acquire
+
+    def __exit__(self, *args, **kwargs):
+        self.release()
+
 # interruptable thread base class ---------------------------------------------
 
 # based on an answer from stack overflow:
@@ -53,7 +86,11 @@ class InterruptableThread(threading.Thread):
     A thread class that supports raising exception in the thread from another
     thread.
     """
-    _default_timeout = 0.005
+
+    def __init__(self, *args, **kwargs):
+        super(InterruptableThread, self).__init__(*args, **kwargs)
+        self.__default_timeout = 0.05
+        self.__exception_event = threading.Event()
 
     @property
     def _tid(self):
@@ -72,6 +109,9 @@ class InterruptableThread(threading.Thread):
                 return tid
         raise AssertionError('Could not determine thread id')
 
+    def exception_event(self):
+        self.__exception_event.set()
+
     def raise_exception(self, exc_type):
         """
         Raise and exception in this thread.
@@ -80,12 +120,10 @@ class InterruptableThread(threading.Thread):
         until the exception has been delivered to this thread and this thread
         exists.
         """
-        while self.is_alive():
+        while not self.__exception_event.is_set():
             try:
                 _raise_exception_in_thread(self._tid, exc_type)
-                # this requires that the thread exists....
-                # convert this to and Event to keep that from happening
-                self.join(self._default_timeout)
+                self.__exception_event.wait(self.__default_timeout)
             except (threading.ThreadError, AssertionError,
                     ValueError, SystemError), e:
                 _log.error('Failed to deliver exception %s to thread[%s]: %s' %

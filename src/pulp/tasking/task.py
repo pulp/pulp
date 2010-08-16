@@ -60,7 +60,7 @@ task_complete_states = (
 )
 
 # task ------------------------------------------------------------------------
-    
+
 class Task(object):
     """
     Task class
@@ -82,7 +82,8 @@ class Task(object):
         self.kwargs = kwargs
         self.timeout = timeout
         self.queue = SimpleTaskQueue()
-        
+        self.thread = None
+
         self.method_name = callable.__name__
         self.state = task_waiting
         self.start_time = None
@@ -103,10 +104,14 @@ class Task(object):
             result = self.callable(*self.args, **self.kwargs)
         except TimeoutException:
             self.state = task_timed_out
+            if hasattr(self.thread, 'exception_event'):
+                self.thread.exception_event()
             log.error('Task id:%s, method_name:%s: TIMED OUT' %
                       (self.id, self.method_name))
         except CancelException:
             self.state = task_canceled
+            if hasattr(self.thread, 'exception_event'):
+                self.thread.exception_event()
             log.info('Task id:%s, method_name:%s: CANCELLED' %
                      (self.id, self.method_name))
         except Exception, e:
@@ -116,14 +121,17 @@ class Task(object):
             # format_exception takes 3 arguments (class, exception, traceback)
             exc_info = sys.exc_info()
             self.traceback = traceback.format_exception(*exc_info)
+            if hasattr(self.thread, 'exception_event'):
+                self.thread.exception_event()
             log.error("Task id:%s, method_name:%s:  %s" %
                       (self.id, self.method_name, ''.join(self.traceback)))
         else:
             self.state = task_finished
             self.result = result
+        self.thread = None
         self.finish_time = datetime.datetime.now()
         self.queue.complete(self)
-        
+
     def reset(self):
         """
         Reset this task's recorded data.
@@ -131,6 +139,7 @@ class Task(object):
         if self.state not in task_complete_states:
             return
         self.state = task_reset
+        self.thread = None
         self.start_time = None
         self.finish_time = None
         self.next_time = None

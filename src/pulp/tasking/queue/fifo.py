@@ -18,7 +18,7 @@ import threading
 from datetime import datetime, timedelta
 
 from pulp.tasking.queue.base import TaskQueue
-from pulp.tasking.queue.thread import  TaskThread
+from pulp.tasking.queue.thread import  DRLock, TaskThread
 from pulp.tasking.queue.storage import VolatileStorage
 from pulp.tasking.task import task_complete_states
 
@@ -43,42 +43,46 @@ class FIFOTaskQueue(TaskQueue):
         """
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
-        
-        self.__lock = threading.RLock()
+
+        #self.__lock = threading.RLock()
+        self.__lock = DRLock()
         self.__condition = threading.Condition(self.__lock)
-        
+
         self.__running_count = 0
         self.__storage = VolatileStorage()
         self.__threads = {}
         self.__canceled_tasks = []
-        
+
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
         self.__dispatcher.daemon = True
         self.__dispatcher.start()
 
     # protected methods: scheduling
-        
+
     def _dispatch(self):
         """
         Scheduling method that that executes the scheduling hooks.
         """
         self.__lock.acquire()
-        while True:
-            self.__condition.wait(self.__dispatcher_timeout)
-            for task in self._get_tasks():
-                self.run(task)
-            self._cancel_tasks()
-            self._timeout_tasks()
-            self._cull_tasks()
-                
+        try:
+            while True:
+                self.__condition.wait(self.__dispatcher_timeout)
+                for task in self._get_tasks():
+                    self.run(task)
+                self._cancel_tasks()
+                self._timeout_tasks()
+                self._cull_tasks()
+        finally:
+            self.__lock.release()
+
     def _get_tasks(self):
         """
         Get the next 'n' tasks to run, where is max - currently running tasks
         """
         num_tasks = self.max_running - self.__running_count
         return self.__storage.waiting_tasks()[:num_tasks]
-    
+
     def _cancel_tasks(self):
         """
         Stop any tasks that have been flagged as canceled.
@@ -92,7 +96,7 @@ class FIFOTaskQueue(TaskQueue):
                 continue
             thread.cancel()
             self.__canceled_tasks.remove(task)
-    
+
     def _timeout_tasks(self):
         """
         Stop tasks that have met or exceeded their timeout length.
@@ -110,7 +114,7 @@ class FIFOTaskQueue(TaskQueue):
                 continue
             thread = self.__threads[task]
             thread.timeout()
-                
+
     def _cull_tasks(self):
         """
         Clean up finished task data
@@ -122,9 +126,9 @@ class FIFOTaskQueue(TaskQueue):
         for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
                 self.__storage.remove_task(task)
-    
+
     # public methods: queue operations
-    
+
     def enqueue(self, task, unique=False):
         self.__lock.acquire()
         try:
@@ -134,21 +138,23 @@ class FIFOTaskQueue(TaskQueue):
             if unique and self.exists(task, fields, include_finished=False):
                 return False
             self.__storage.add_waiting_task(task)
+            self.__condition.notify()
             return True
         finally:
             self.__lock.release()
-    
+
     def run(self, task):
         self.__lock.acquire()
         try:
             self.__running_count += 1
             self.__storage.add_running_task(task)
             thread = TaskThread(target=task.run)
+            task.thread = thread
             thread.start()
             self.__threads[task] = thread
         finally:
             self.__lock.release()
-        
+
     def complete(self, task):
         self.__lock.acquire()
         try:
@@ -157,14 +163,14 @@ class FIFOTaskQueue(TaskQueue):
             self.__threads.pop(task)
         finally:
             self.__lock.release()
-            
+
     def cancel(self, task):
         self.__lock.acquire()
         try:
             self.__canceled_tasks.append(task)
         finally:
             self.__lock.release()
-    
+
     def find(self, **kwargs):
         self.__lock.acquire()
         try:
