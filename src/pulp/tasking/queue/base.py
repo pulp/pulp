@@ -110,22 +110,3 @@ class TaskQueue(object):
                             task.state in _task_complete_states):
             return False
         return True
-
-
-# no-frills task queue --------------------------------------------------------
-
-class SimpleTaskQueue(TaskQueue):
-    """
-    Derived task queue that provides no special functionality
-    """
-    def enqueue(self, task, unique=False):
-        pass
-
-    def run(self, task):
-        task.run()
-
-    def complete(self, task):
-        pass
-
-    def find(self, **kwargs):
-        return None

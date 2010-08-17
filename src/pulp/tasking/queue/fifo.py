@@ -44,13 +44,12 @@ class FIFOTaskQueue(TaskQueue):
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
 
-        #self.__lock = threading.RLock()
-        self.__lock = DRLock()
+        self.__lock = threading.RLock()
+        #self.__lock = DRLock()
         self.__condition = threading.Condition(self.__lock)
 
         self.__running_count = 0
         self.__storage = VolatileStorage()
-        self.__threads = {}
         self.__canceled_tasks = []
 
         self.__dispatcher_timeout = 0.5
@@ -91,10 +90,9 @@ class FIFOTaskQueue(TaskQueue):
             if task.state in task_complete_states:
                 self.__canceled_tasks.remove(task)
                 continue
-            thread = self.__threads.get(task, None)
-            if thread is None:
+            if task.thread is None:
                 continue
-            thread.cancel()
+            task.thread.cancel()
             self.__canceled_tasks.remove(task)
 
     def _timeout_tasks(self):
@@ -112,8 +110,7 @@ class FIFOTaskQueue(TaskQueue):
                 continue
             if now - task.start_time < task.timeout:
                 continue
-            thread = self.__threads[task]
-            thread.timeout()
+            task.thread.timeout()
 
     def _cull_tasks(self):
         """
@@ -132,11 +129,10 @@ class FIFOTaskQueue(TaskQueue):
     def enqueue(self, task, unique=False):
         self.__lock.acquire()
         try:
-            task.queue = self
-            task.next_time = datetime.now()
             fields = ('method_name', 'args', 'kwargs')
             if unique and self.exists(task, fields, include_finished=False):
                 return False
+            task.complete_callback = self.complete
             self.__storage.add_waiting_task(task)
             self.__condition.notify()
             return True
@@ -148,10 +144,8 @@ class FIFOTaskQueue(TaskQueue):
         try:
             self.__running_count += 1
             self.__storage.add_running_task(task)
-            thread = TaskThread(target=task.run)
-            task.thread = thread
-            thread.start()
-            self.__threads[task] = thread
+            task.thread = TaskThread(target=task.run)
+            task.thread.start()
         finally:
             self.__lock.release()
 
@@ -160,7 +154,8 @@ class FIFOTaskQueue(TaskQueue):
         try:
             self.__running_count -= 1
             self.__storage.add_complete_task(task)
-            self.__threads.pop(task)
+            task.thread = None
+            task.complete_callback = None
         finally:
             self.__lock.release()
 

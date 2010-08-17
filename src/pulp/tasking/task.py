@@ -21,7 +21,6 @@ import time
 import traceback
 import uuid
 
-from pulp.tasking.queue.base import SimpleTaskQueue
 from pulp.tasking.queue.thread import TimeoutException, CancelException
 
 
@@ -81,17 +80,25 @@ class Task(object):
         self.args = args
         self.kwargs = kwargs
         self.timeout = timeout
-        self.queue = SimpleTaskQueue()
+        # resources managed by the task queue to deliver events
+        self.complete_callback = None
         self.thread = None
 
         self.method_name = callable.__name__
         self.state = task_waiting
         self.start_time = None
         self.finish_time = None
-        self.next_time = None
         self.result = None
         self.exception = None
         self.traceback = None
+
+    def _exception_event(self):
+        """
+        Let the contextual thread know that an exception has been received.
+        """
+        if not hasattr(self.thread, 'exception_event'):
+            return
+        self.thread.exception_event()
 
     def run(self):
         """
@@ -104,33 +111,27 @@ class Task(object):
             result = self.callable(*self.args, **self.kwargs)
         except TimeoutException:
             self.state = task_timed_out
-            if hasattr(self.thread, 'exception_event'):
-                self.thread.exception_event()
+            self._exception_event()
             log.error('Task id:%s, method_name:%s: TIMED OUT' %
                       (self.id, self.method_name))
         except CancelException:
             self.state = task_canceled
-            if hasattr(self.thread, 'exception_event'):
-                self.thread.exception_event()
+            self._exception_event()
             log.info('Task id:%s, method_name:%s: CANCELLED' %
                      (self.id, self.method_name))
         except Exception, e:
             self.state = task_error
             self.exception = e
-            # exc_info returns tuple (class, exception, traceback)
-            # format_exception takes 3 arguments (class, exception, traceback)
-            exc_info = sys.exc_info()
-            self.traceback = traceback.format_exception(*exc_info)
-            if hasattr(self.thread, 'exception_event'):
-                self.thread.exception_event()
-            log.error("Task id:%s, method_name:%s:  %s" %
+            self.traceback = traceback.format_exception(*sys.exc_info())
+            self._exception_event()
+            log.error('Task id:%s, method_name:%s:\n%s' %
                       (self.id, self.method_name, ''.join(self.traceback)))
         else:
             self.state = task_finished
             self.result = result
-        self.thread = None
         self.finish_time = datetime.datetime.now()
-        self.queue.complete(self)
+        if self.complete_callback is not None:
+            self.complete_callback(self)
 
     def reset(self):
         """
@@ -142,7 +143,6 @@ class Task(object):
         self.thread = None
         self.start_time = None
         self.finish_time = None
-        self.next_time = None
         self.result = None
         self.exception = None
         self.traceback = None

@@ -110,6 +110,10 @@ class InterruptableThread(threading.Thread):
         raise AssertionError('Could not determine thread id')
 
     def exception_event(self):
+        """
+        Flag that an exception has been delivered to the thread and handled.
+        This will unblock the thread trying to deliver the exception.
+        """
         self.__exception_event.set()
 
     def raise_exception(self, exc_type):
