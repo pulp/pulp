@@ -16,6 +16,9 @@
 
 import pulp.tasking.task
 
+
+_task_complete_states = pulp.tasking.task.task_complete_states
+
 # base task queue -------------------------------------------------------------
 
 class TaskQueue(object):
@@ -35,7 +38,7 @@ class TaskQueue(object):
                  the unique flag
         """
         raise NotImplementedError()
-    
+
     def run(self, task):
         """
         Run a task from this task queue
@@ -43,7 +46,7 @@ class TaskQueue(object):
         @param task: Task instance
         """
         raise NotImplementedError()
-    
+
     def complete(self, task):
         """
         Mark a task run as completed
@@ -51,7 +54,7 @@ class TaskQueue(object):
         @param task: Task instance
         """
         raise NotImplementedError()
-    
+
     def cancel(self, task):
         """
         Cancel a running task.
@@ -59,7 +62,7 @@ class TaskQueue(object):
         @param task: Task instance
         """
         raise NotImplementedError()
-    
+
     def find(self, **kwargs):
         """
         Find a task in this task queue. Only the oldest task in the queue will be
@@ -92,7 +95,7 @@ class TaskQueue(object):
                                  otherwise only running and waiting tasks are searched
                                  (defaults to True)
         """
-        
+
         # Convert the list of attributes to check into a criteria dict used
         # by the storage API, using the task to test as the values
         find_criteria = {}
@@ -104,25 +107,25 @@ class TaskQueue(object):
         # Use the find functionality to determine if a task matches
         task = self.find(**find_criteria)
         if task is None or (not include_finished and
-                            task.state in pulp.tasking.task.task_complete_states):
+                            task.state in _task_complete_states):
             return False
         return True
-        
-    
+
+
 # no-frills task queue --------------------------------------------------------
-    
+
 class SimpleTaskQueue(TaskQueue):
     """
     Derived task queue that provides no special functionality
     """
     def enqueue(self, task, unique=False):
         pass
-    
+
     def run(self, task):
         task.run()
-    
+
     def complete(self, task):
         pass
-    
+
     def find(self, **kwargs):
         return None
