@@ -140,7 +140,6 @@ class Task(object):
         if self.state not in task_complete_states:
             return
         self.state = task_reset
-        self.thread = None
         self.start_time = None
         self.finish_time = None
         self.result = None
