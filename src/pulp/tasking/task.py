@@ -121,7 +121,7 @@ class Task(object):
                      (self.id, self.method_name))
         except Exception, e:
             self.state = task_error
-            self.exception = e
+            self.exception = e.message
             self.traceback = traceback.format_exception(*sys.exc_info())
             self._exception_event()
             log.error('Task id:%s, method_name:%s:\n%s' %
