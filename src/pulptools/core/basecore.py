@@ -104,11 +104,6 @@ class BaseCore(object):
     
     def main(self):
         (self.options, self.args) = self.parser.parse_args()
-        #if (not self.options.username and not self.options.password 
-        #        and (len(self.args) > 0)):
-        #    print("username and password are required. Try --help")
-        #    sys.exit(1)
-        # else:
         self.username = self.options.username
         self.password = self.options.password
         self.load_server()

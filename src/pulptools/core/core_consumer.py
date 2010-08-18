@@ -122,6 +122,10 @@ class consumer(BaseCore):
             self._unbind()
 
     def _create(self):
+        if (not self.options.username and not self.options.password 
+                and (len(self.args) > 0)):
+            print("username and password are required. Try --help")
+            sys.exit(1)
         if not self.options.id:
             print("consumer id required. Try --help")
             sys.exit(0)
