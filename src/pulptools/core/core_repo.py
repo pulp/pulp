@@ -178,7 +178,9 @@ class repo(BaseCore):
                 state= status['state']
                 print "Sync Status::",state
             packages =  self.pconn.packages(self.options.id)
-            pkg_count = len(packages)
+            pkg_count = 0
+            if packages:
+                pkg_count = len(packages)
             if state == "error":
                 raise SyncError(status['traceback'][-1])
             else:
