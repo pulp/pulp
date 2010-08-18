@@ -112,7 +112,7 @@ class Repository(JSONController):
         return self.ok(repo)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @RoleCheck(admin=True, consumer=True)
     def PUT(self, id):
         """
         Change a repository.

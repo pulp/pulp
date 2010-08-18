@@ -16,15 +16,18 @@
 
 import web
 
+
 from pulp.auditing import events
 from pulp.webservices import mongo
 from pulp.webservices.controllers.base import JSONController
+from pulp.webservices.role_check import RoleCheck
 
 # audit events controller -----------------------------------------------------
 
 class Events(JSONController):
     
     @JSONController.error_handler
+    @RoleCheck(admin=True)
     def GET(self):
         """
         List all available events.
