@@ -55,31 +55,31 @@ class MethodInspector(object):
                        None means all parameters are of interest
         """
         assert params is None or 'self' not in params
-        
+
         self.method = method.__name__
-        
+
         # returns a tuple: (args, varargs, keywords, defaults)
         spec = inspect.getargspec(method)
-        
+
         args = list(spec[0])
         # for some reason, self is sometimes in the args, and sometimes not
         if 'self' in args:
             args.remove('self')
-            
-        self.__param_to_index = dict((a,i+1) for i,a in
+
+        self.__param_to_index = dict((a, i + 1) for i, a in
                                      enumerate(args)
                                      if params is None or a in params)
-        
+
         self.params = params if params is not None else list(args)
-            
+
         defaults = spec[3]
         if defaults:
-            self.__param_defaults = dict((a,d) for a,d in
-                                         zip(args[0-len(defaults):], defaults)
+            self.__param_defaults = dict((a, d) for a, d in
+                                         zip(args[0 - len(defaults):], defaults)
                                          if params is None or a in params)
         else:
             self.__param_defaults = {}
-            
+
     def api_name(self, args):
         """
         Return the api class name for the given instance method positional
@@ -93,7 +93,7 @@ class MethodInspector(object):
         if not isinstance(api_obj, BaseApi):
             return 'Unknown API'
         return api_obj.__class__.__name__
-    
+
     def audit_repr(self, value):
         """
         Return an audit-friendly representation of a value.
@@ -110,7 +110,7 @@ class MethodInspector(object):
         elif '_id' in value:
             return '<_id: %s>' % str(value['_id'])
         return '%s instance' % str(type(value))
-    
+
     def param_values(self, args, kwargs):
         """
         Grep through passed in arguments and keyword arguments and return a list
@@ -130,7 +130,7 @@ class MethodInspector(object):
                 value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Parameter'))
                 values.append(self.audit_repr(value))
         return zip(self.params, values)
-        
+
 
 def audit(params=None, record_result=False):
     """
@@ -151,27 +151,27 @@ def audit(params=None, record_result=False):
     @param record_result: whether or not to record the result
     """
     def _audit_decorator(method):
-        
+
         inspector = MethodInspector(method, params)
-        
+
         @functools.wraps(method)
         def _audit(*args, **kwargs):
-            
+
             # convenience function for recording events
             def _record_event():
                 _objdb.insert(event, safe=False, check_keys=False)
                 _log.info('[%s] %s called %s.%s on %s' %
                           (event.timestamp,
-                           principal,
+                           unicode(principal),
                            api,
                            inspector.method,
                            param_values_str))
-            
+
             # build up the data to record
             principal = auth.get_principal()
             api = inspector.api_name(args)
             param_values = inspector.param_values(args, kwargs)
-            param_values_str = ', '.join('%s: %s' % (p,v) for p,v in param_values)
+            param_values_str = ', '.join('%s: %s' % (p, v) for p, v in param_values)
             action = '%s.%s: %s' % (api,
                                     inspector.method,
                                     param_values_str)
@@ -180,7 +180,7 @@ def audit(params=None, record_result=False):
                           api,
                           inspector.method,
                           param_values)
-                                
+
             # execute the wrapped method and record the results
             try:
                 result = method(*args, **kwargs)
@@ -194,9 +194,9 @@ def audit(params=None, record_result=False):
                 event.result = inspector.audit_repr(result) if record_result else None
                 _record_event()
                 return result
-    
+
         return _audit
-    
+
     return _audit_decorator
 
 # auditing api ----------------------------------------------------------------
@@ -348,8 +348,8 @@ def _check_crontab():
     entry.parse('%s %s' % (schedule, cmd))
     tab.write()
     _log.info('Added crontab entry for culling events')
-    
-    
+
+
 def _clear_crontab():
     """
     Check to see that the cull auditing events crontab entry exists, and remove
@@ -361,7 +361,7 @@ def _clear_crontab():
         return
     tab.remove_all(cmd)
     tab.write()
-    
+
 
 def _get_lifetime():
     """
