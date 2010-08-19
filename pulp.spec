@@ -150,6 +150,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %files common
 %defattr(-,root,root,-)
 %doc
+%{python_sitelib}/pulp-*
 %{python_sitelib}/pulp/*.py*
 %{python_sitelib}/pulp/messaging/
 
