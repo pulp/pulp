@@ -27,6 +27,8 @@ import time
 import unittest
 import logging
 
+logging.root.setLevel(logging.ERROR)
+
 class TestUtil(unittest.TestCase):
 
     def test_getrpminfo(self):
@@ -64,6 +66,4 @@ class TestUtil(unittest.TestCase):
         
         
 if __name__ == '__main__':
-    logging.root.addHandler(logging.StreamHandler())
-    logging.root.setLevel(logging.INFO)
     unittest.main()

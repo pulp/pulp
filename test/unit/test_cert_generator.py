@@ -24,6 +24,8 @@ import pulp.cert_generator as cert_generator
 import unittest
 import logging
 
+logging.root.setLevel(logging.ERROR)
+
 class TestCertGeneration(unittest.TestCase):
 
     def test_generation(self):

@@ -38,10 +38,7 @@ from pulp.certificate import Certificate
 from pulp.webservices.role_check import RoleCheck
 from ConfigParser import ConfigParser
 
-logging.root.addHandler(logging.StreamHandler())
-logging.root.setLevel(logging.DEBUG)
-
-
+logging.root.setLevel(logging.ERROR)
 
 class TestRoleCheck(unittest.TestCase):
 
