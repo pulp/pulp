@@ -39,7 +39,7 @@ package_deferred_fields = []
 repository_deferred_fields = ['packages', 'packagegroups', 'packagegroupcategories']
 
 class RestlibException(Exception):
-    def __init__(self, code, msg = ""):
+    def __init__(self, code, msg=""):
         self.code = code
         self.msg = msg
 
@@ -50,13 +50,13 @@ class Restlib(object):
     """
      A wrapper around httplib to make rest calls easier
     """
-    def __init__(self, host, port, apihandler, cert_file=None, key_file=None, 
-                 username=None, password=None):
+    def __init__(self, host, port, apihandler, apiprefix='/pulp/api',
+                 cert_file=None, key_file=None, username=None, password=None):
         self.host = host
         # ensure we have an integer, httpslib is picky about the type
         # passed in for the port
         self.port = int(port)
-        self.apihandler = apihandler
+        self.apihandler = ''.join((apiprefix, apihandler))
         self.username = username
         self.password = password
         if (self.username != None):
@@ -70,11 +70,11 @@ class Restlib(object):
                         "Accept": "application/json",
                         "Accept-Language": locale.getdefaultlocale()[0].lower().replace('_', '-')}
         self.cert_file = cert_file
-        self.key_file  = key_file
+        self.key_file = key_file
 
     def _request(self, request_type, method, info=None):
         handler = self.apihandler + method
-        log.debug("_request calling: %s to host:port : %s:%s" % 
+        log.debug("_request calling: %s to host:port : %s:%s" %
                   (handler, self.host, type(self.port)))
         if self.cert_file:
             log.info("Using SSLv3 context")
@@ -122,7 +122,7 @@ class PulpConnection:
     Proxy connection to Pulp Server
     """
 
-    def __init__(self, host='localhost', port=8811, handler="", cert_file=None, key_file=None, 
+    def __init__(self, host='localhost', port=443, handler="", cert_file=None, key_file=None,
                  username=None, password=None):
         self.host = host
         self.port = port
@@ -136,11 +136,12 @@ class PulpConnection:
         self.setUp()
 
     def setUp(self):
-        self.conn = Restlib(self.host, self.port, self.handler, self.cert_file, 
-                            self.key_file, self.username, self.password)
-        log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" % 
+        self.conn = Restlib(self.host, self.port, self.handler,
+                            cert_file=self.cert_file, key_file=self.key_file,
+                            username=self.username, password=self.password)
+        log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" %
                  (self.host, self.port, self.handler))
-        log.info("Using cert_file: %s and key_file: %s" % 
+        log.info("Using cert_file: %s and key_file: %s" %
                  (self.cert_file, self.key_file))
 
     def shutDown(self):
@@ -151,7 +152,7 @@ class RepoConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, name, arch, feed=None, symlinks=False, 
+    def create(self, id, name, arch, feed=None, symlinks=False,
                sync_schedule=None, cert_data=None):
         method = "/repositories/"
         repodata = {"id"   : id,
@@ -209,16 +210,16 @@ class RepoConnection(PulpConnection):
     def packagegroups(self, repoid):
         method = "/repositories/%s/packagegroups/" % repoid
         return self.conn.request_get(method)
-    
+
     def create_packagegroup(self, repoid, groupid, groupname, description):
         method = "/repositories/%s/create_packagegroup/" % repoid
-        return self.conn.request_post(method, params={"groupid":groupid, 
+        return self.conn.request_post(method, params={"groupid":groupid,
             "groupname":groupname, "description":description})
 
     def delete_packagegroup(self, repoid, groupid):
         method = "/repositories/%s/delete_packagegroup/" % repoid
         return self.conn.request_post(method, params={"groupid":groupid})
-    
+
     def add_package_to_group(self, repoid, groupid, pkgname, gtype):
         method = "/repositories/%s/add_package_to_group/" % repoid
         return self.conn.request_post(method,
@@ -239,28 +240,28 @@ class RepoConnection(PulpConnection):
     def all_schedules(self):
         method = "/repositories/schedules/"
         return self.conn.request_get(method)
-    
+
     def sync_status(self, status_path):
         return self.conn.request_get(status_path)
-        
+
     def add_errata(self, id, errataids):
         erratainfo = {'repoid' : id,
                       'errataid' : errataids}
         method = "/repositories/%s/add_errata/" % id
         return self.conn.request_post(method, params=erratainfo)
-    
+
     def delete_errata(self, id, errataids):
         erratainfo = {'repoid' : id,
                       'errataid' : errataids}
         method = "/repositories/%s/delete_errata/" % id
         return self.conn.request_post(method, params=erratainfo)
-    
+
     def errata(self, id, types=[]):
         erratainfo = {'repoid' : id,
                       'types' : types}
         method = "/repositories/%s/list_errata/" % id
         return self.conn.request_post(method, params=erratainfo)
-        
+
 
 class ConsumerConnection(PulpConnection):
     """
@@ -270,7 +271,7 @@ class ConsumerConnection(PulpConnection):
         consumerdata = {"id"   : id, "description" : description}
         method = "/consumers/"
         return self.conn.request_put(method, params=consumerdata)
-    
+
     def update(self, consumer):
         method = "/consumers/%s/" % consumer['id']
         return self.conn.request_put(method, params=consumer)
@@ -318,7 +319,7 @@ class ConsumerConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
-    
+
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
@@ -327,17 +328,17 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installpackages/" % id
         body = dict(packagenames=packagenames)
         return self.conn.request_post(method, params=body)
-    
+
     def installpackagegroups(self, id, packageids):
         method = "/consumers/%s/installpackagegroups/" % id
         body = dict(packageids=packageids)
         return self.conn.request_post(method, params=body)
-    
+
     def errata(self, id, types=None):
         method = "/consumers/%s/listerrata/" % id
         body = dict(types=types)
         return self.conn.request_post(method, params=body)
-    
+
     def installerrata(self, id, errataids, types=[]):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
@@ -345,12 +346,12 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
-         
+
 class ConsumerGroupConnection(PulpConnection):
     """
     Connection class to access consumer group related calls
     """
-    def create(self, id, description, consumerids = []):
+    def create(self, id, description, consumerids=[]):
         consumergroup_data = {"id" : id, "description" : description,
                         "consumerids" : consumerids}
         method = "/consumergroups/"
@@ -391,7 +392,7 @@ class ConsumerGroupConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumergroups/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
-    
+
     def installpackages(self, id, packagenames):
         method = "/consumergroups/%s/installpackages/" % id
         body = dict(packagenames=packagenames)
@@ -410,7 +411,7 @@ class PackageConnection(PulpConnection):
         method = "/packages/"
         return self.conn.request_delete(method)
 
-    def create(self, name, epoch, version, release, arch, description, 
+    def create(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename):
         method = "/packages/"
         repodata = {"name"   : name,
@@ -421,7 +422,7 @@ class PackageConnection(PulpConnection):
                     "description" : description,
                     "checksum_type" : checksum_type,
                     "checksum": checksum,
-                    "filename": filename,}
+                    "filename": filename, }
         return self.conn.request_put(method, params=repodata)
 
     def packages(self):
@@ -511,11 +512,11 @@ if __name__ == '__main__':
     print "+--------------------------------+"
     print "   Repo API Tests                "
     print "+--------------------------------+"
-    
-    repo = rconn.create('test-f12', 'f12','i386', 'yum:http://mmccune.fedorapeople.org/pulp/')
+
+    repo = rconn.create('test-f12', 'f12', 'i386', 'yum:http://mmccune.fedorapeople.org/pulp/')
     print "create Repos", repo['id']
     print "list repos:", rconn.repositories()
-    print "Get repo By Id: ",rconn.repository(repo['id'])
+    print "Get repo By Id: ", rconn.repository(repo['id'])
     newdata = {'id' : 'test-f12',
                 'name' : 'f12',
                 'arch' : 'noarch',
