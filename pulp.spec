@@ -19,10 +19,10 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 
+Requires: pulp-common
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-qpid >= 0.7
 Requires: python-simplejson
 Requires: grinder
 Requires: httpd
@@ -42,19 +42,31 @@ Requires: python-hashlib
 %description
 Pulp provides replication, access, and accounting for software repositories.
 
-%package tools
-Summary:        Client side tools for managing content on pulp server
+
+%package common
+Summary:        Pulp common modules.
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
-Requires: m2crypto
 Requires: python-qpid >= 0.7
+
+%description common
+Contains modules common to the Pulp server and client.
+
+
+%package client
+Summary:        Client side tools for managing content on pulp server
+Group:          Development/Languages
+BuildRequires:  rpm-python
+Requires: pulp-common
+Requires: python-simplejson
+Requires: m2crypto
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
 %endif
 
-%description    tools
+%description client
 A collection of tools to interact and perform content specific operations such as repo management, 
 package profile updates etc.
  
@@ -62,12 +74,10 @@ package profile updates etc.
 %prep
 %setup -q
 
-
 %build
 pushd src
 %{__python} setup.py build
 popd
-
 
 %install
 rm -rf %{buildroot}
@@ -122,9 +132,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulp/*
-%{python_sitelib}/pulp-*
-%{python_sitelib}/pmf/*
+%{python_sitelib}/pulp/server/
 %config(noreplace) /etc/pulp/pulp.conf
 %config(noreplace) /etc/httpd/conf.d/pulp.conf
 %attr(775, apache, apache) /etc/pulp
@@ -139,12 +147,18 @@ setfacl -m u:apache:rwx /etc/pki/content/
 /etc/pki/pulp/server.key
 
 
-%files tools
+%files common
+%defattr(-,root,root,-)
+%doc
+%{python_sitelib}/pulp/*.py
+%{python_sitelib}/pulp/messaging/
+
+
+%files client
 %defattr(-,root,root,-)
 %doc
 # For noarch packages: sitelib
-%{python_sitelib}/pulptools/
-%{python_sitelib}/pmf/
+%{python_sitelib}/pulp/client/
 %{_bindir}/pulp-admin
 %{_bindir}/pulp-client
 %{_bindir}/pulpd
@@ -152,11 +166,11 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) /etc/pulp/client.conf
 
-%post tools
+%post client
 chkconfig --add pulpd
 /sbin/service pulpd start
 
-%preun tools
+%preun client
 if [ $1 = 0 ] ; then
    /sbin/service pulpd stop >/dev/null 2>&1
    /sbin/chkconfig --del pulpd
