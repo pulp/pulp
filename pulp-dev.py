@@ -29,7 +29,7 @@ DIRS = (
     '/srv/pulp',
     '/var/lib/pulp',
     '/var/log/pulp',
-    '/var/www/.python-eggs',    # needed for older versions of mod_wsgi
+    '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
 
 LINKS = (
@@ -48,7 +48,7 @@ def parse_cmdline():
     Parse and validate the command line options.
     """
     parser = optparse.OptionParser()
-    
+
     parser.add_option('-I', '--install',
                       action='store_true',
                       help='install pulp development files')
@@ -58,19 +58,19 @@ def parse_cmdline():
     parser.add_option('-D', '--debug',
                       action='store_true',
                       help=optparse.SUPPRESS_HELP)
-    
+
     parser.set_defaults(install=False,
                         uninstall=False,
                         debug=False)
-    
+
     opts, args = parser.parse_args()
-    
+
     if opts.install and opts.uninstall:
         parser.error('both install and uninstall specified')
-    
+
     if not (opts.install or opts.uninstall):
         parser.error('neither install or uninstall specified')
-        
+
     return (opts, args)
 
 
@@ -78,7 +78,7 @@ def debug(opts, msg):
     if not opts.debug:
         return
     sys.stderr.write('%s\n' % msg)
-    
+
 
 def create_dirs(opts):
     for d in DIRS:
@@ -94,10 +94,10 @@ def install(opts):
     currdir = os.path.abspath(os.path.dirname(__file__))
     for l in LINKS:
         debug(opts, 'creating link: /%s' % l)
-        if os.path.exists('/'+l):
+        if os.path.exists('/' + l):
             debug(opts, '/%s exists, skipping' % l)
             continue
-        os.symlink(os.path.join(currdir, l), '/'+l)
+        os.symlink(os.path.join(currdir, l), '/' + l)
 
     # Link between pulp and apache
     if not os.path.exists('/var/www/pub'):
@@ -113,8 +113,8 @@ def install(opts):
     os.system('chmod 3775 /var/lib/pulp')
 
     # Disable existing SSL configuration
-    if os.path.exists('/etc/httpd/conf.d/ssl.conf'):
-        shutil.move('/etc/httpd/conf.d/ssl.conf', '/etc/httpd/conf.d/ssl.off')
+    #if os.path.exists('/etc/httpd/conf.d/ssl.conf'):
+    #    shutil.move('/etc/httpd/conf.d/ssl.conf', '/etc/httpd/conf.d/ssl.off')
 
     return os.EX_OK
 
@@ -122,10 +122,10 @@ def install(opts):
 def uninstall(opts):
     for l in LINKS:
         debug(opts, 'removing link: /%s' % l)
-        if not os.path.exists('/'+l):
+        if not os.path.exists('/' + l):
             debug(opts, '/%s does not exist, skipping' % l)
             continue
-        os.unlink('/'+l)
+        os.unlink('/' + l)
 
     # Link between pulp and apache
     if os.path.exists('/var/www/pub'):
