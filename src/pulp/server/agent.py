@@ -20,12 +20,12 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
-from pmf.broker import Broker
-from pmf.stub import Stub
-from pmf.decorators import stub
-from pmf.base import Container
-from pmf.producer import Producer
-from pulp.config import config
+from pulp.messaging.broker import Broker
+from pulp.messaging.stub import Stub
+from pulp.messaging.decorators import stub
+from pulp.messaging.base import Container
+from pulp.messaging.producer import Producer
+from pulp.server.config import config
 
 
 @stub('admin')
@@ -58,12 +58,12 @@ class Agent(Container):
         """
         @param uuid: The consumer uuid.
         @type uuid: str|list
-        @param options: Messaging L{pmf.Options}
+        @param options: Messaging L{pulp.messaging.Options}
         """
-        url = config.get('pmf', 'url')
+        url = config.get('messaging', 'url')
         broker = Broker.get(url)
-        broker.cacert = config.get('pmf', 'cacert')
-        broker.clientcert = config.get('pmf', 'clientcert')
+        broker.cacert = config.get('messaging', 'cacert')
+        broker.clientcert = config.get('messaging', 'clientcert')
         self.__producer = Producer(url=url)
         Container.__init__(self, uuid, self.__producer, **options)
 
