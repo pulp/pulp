@@ -21,7 +21,7 @@ import time
 import traceback
 import uuid
 
-from pulp.tasking.queue.thread import TimeoutException, CancelException
+from pulp.server.tasking.queue.thread import TimeoutException, CancelException
 
 
 log = logging.getLogger(__name__)

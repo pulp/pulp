@@ -20,19 +20,20 @@ import gzip
 import os
 import traceback
 from itertools import chain
+
 # Pulp
-from pulp import comps_util
-from pulp import crontab
-from pulp import upload
-from pulp.api import repo_sync
-from pulp.api.base import BaseApi
-from pulp.api.package import PackageApi
-from pulp.api.errata import ErrataApi
-from pulp.auditing import audit
-from pulp.config import config
-from pulp.db import model
-from pulp.db.connection import get_object_db
-from pulp.pexceptions import PulpException
+from pulp.server import comps_util
+from pulp.server import crontab
+from pulp.server import upload
+from pulp.server.api import repo_sync
+from pulp.server.api.base import BaseApi
+from pulp.server.api.package import PackageApi
+from pulp.server.api.errata import ErrataApi
+from pulp.server.auditing import audit
+from pulp.server.config import config
+from pulp.server.db import model
+from pulp.server.db.connection import get_object_db
+from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -211,7 +212,7 @@ class RepoApi(BaseApi):
         repo['packages'].pop(p['id'], None)
         self.update(repo)
         
-    def errata(self, id, types=[]):
+    def errata(self, id, types=()):
         """
          Look up all applicable errata for a given repo id
         """
@@ -236,7 +237,7 @@ class RepoApi(BaseApi):
         self._add_erratum(repo, erratumid)
         self.update(repo)
         
-    def add_errata(self, repoid, errataids=[]):
+    def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
         """

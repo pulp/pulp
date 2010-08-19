@@ -24,13 +24,13 @@ except ImportError:
 import pymongo.json_util 
 import web
 
-from pulp.api.user import UserApi
-from pulp.certificate import Certificate
-from pulp.pexceptions import PulpException
-from pulp.webservices import http
-import pulp.password_util as password_util
+from pulp.server.api.user import UserApi
+from pulp.server.certificate import Certificate
+from pulp.server.pexceptions import PulpException
+from pulp.server.webservices import http
+import pulp.server.password_util as password_util
 
-log = logging.getLogger('pulp')
+log = logging.getLogger(__name__)
 userApi = UserApi()
 
 
@@ -63,7 +63,6 @@ class RoleCheck(object):
                 log.debug("Role Name [%s], check? [%s]" % (key, self.dec_kw[key]))
                 roles[key] = self.dec_kw[key]
             
-            log.debug("Roles to check: %s" % roles)
             admin_access_granted = False
             consumer_access_granted = False
             
@@ -115,7 +114,7 @@ class RoleCheck(object):
     def check_username_pass(self, *fargs):
         environment = web.ctx.environ
         auth_string = environment.get('HTTP_AUTHORIZATION', None)
-        if (auth_string != None and auth_string.startswith("Basic")):
+        if (auth_string is not None and auth_string.startswith("Basic")):
             log.debug("auth_string string: %s" % auth_string)
             encoded_auth = auth_string.split(" ")[1]
             auth_string = base64.decodestring(encoded_auth)
@@ -123,7 +122,7 @@ class RoleCheck(object):
             username = uname_pass[0]
             password = uname_pass[1]
             user = userApi.user(username)
-            if (user == None):
+            if (user is None):
                 raise PulpException("User with login [%s] does not exist" 
                                     % username)
             log.debug("Username: %s hashed password: %s" % (username, password))
@@ -146,12 +145,12 @@ class RoleCheck(object):
         cs = environment.get('SSL_CLIENT_CERT', None)
         
         good_certificate = False
-        if (cs != None):
+        if (cs is not None):
             idcert = Certificate(content=cs)
             log.debug("parsed ID CERT: %s" % idcert)
             subject = idcert.subject()
             consumer_cert_uid = subject.get('CN', None)
-            if (consumer_cert_uid == None):
+            if (consumer_cert_uid is None):
                 log.error("Consumer UID not found in certificate.  " + \
                           "Not a valid Consumer certificate")
                 good_certificate = False
@@ -163,7 +162,6 @@ class RoleCheck(object):
                 if (arg == consumer_cert_uid):
                     good_certificate = True
                     break
-            consumer_id = arg
             if (not good_certificate):
                 log.error("Certificate UID doesnt match the consumer UID you passed in") 
             else:

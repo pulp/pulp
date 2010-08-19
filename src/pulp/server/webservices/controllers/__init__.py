@@ -14,6 +14,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+# These imports are necessary to load the URLs into the web application,
+# even though they aren't used directly by this module
 import audit
 import consumergroups
 import consumers

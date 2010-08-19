@@ -16,7 +16,7 @@
 
 import threading
 
-from pulp.util import Singleton
+from pulp.server.util import Singleton
 
 # default system principal ----------------------------------------------------
 

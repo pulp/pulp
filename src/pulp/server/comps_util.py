@@ -22,7 +22,7 @@ import xml.dom
 # 3rd Party
 import yum.comps
 
-import pulp
+import pulp.server
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def yum_group_to_model_group(obj):
     @param obj: yum.comps.Group object
     @return: model.PackageGroup object
     """
-    grp = pulp.db.model.PackageGroup(obj.groupid, obj.name,
+    grp = pulp.server.db.model.PackageGroup(obj.groupid, obj.name,
         obj.description, obj.user_visible, obj.display_order, obj.default, 
         obj.langonly)
     grp['mandatory_package_names'].extend(obj.mandatory_packages.keys())
@@ -49,7 +49,7 @@ def yum_category_to_model_category(obj):
     @param obj: yum.comps.Category object
     @return: model.PackageGroupCategory object
     """
-    ctg = pulp.db.model.PackageGroupCategory(obj.categoryid,
+    ctg = pulp.server.db.model.PackageGroupCategory(obj.categoryid,
         obj.name, obj.description, obj.display_order)
     groupids = [grp for grp in obj.groups]
     ctg['packagegroupids'].extend(groupids)
@@ -168,8 +168,8 @@ def update_repomd_xml_string(repomd_xml, compsxml_checksum,
         data_elem.appendChild(ts_elem)
         repomd_elems[0].appendChild(data_elem)
 
-    if compsxml_gz_checksum != None and open_compsxml_gz_checksum != None \
-            and compsxml_gz_timestamp != None:
+    if compsxml_gz_checksum is not None and open_compsxml_gz_checksum is not None \
+            and compsxml_gz_timestamp is not None:
         group_gz_elems = filter(lambda x: x.getAttribute("type") == "group_gz",
                 dom.getElementsByTagName("data"))
         if len(group_gz_elems) > 0:
@@ -192,16 +192,16 @@ def update_repomd_xml_file(repomd_path, comps_path, comps_gz_path=None):
     @param comps_gz_path:  optional comps.xml.gz file path
     @return: True if repomd_path has been updated, False otherwise
     """
-    compsxml_checksum = pulp.util.get_file_checksum(hashtype="sha256",
+    compsxml_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
             filename=comps_path)
-    compsxml_timestamp = pulp.util.get_file_timestamp(comps_path)
+    compsxml_timestamp = pulp.server.util.get_file_timestamp(comps_path)
     compsxml_gz_checksum = None
     open_compsxml_gz_checksum = None
     compsxml_gz_timestamp = None
     if comps_gz_path:
-        compsxml_gz_checksum = pulp.util.get_file_checksum(hashtype="sha256",
+        compsxml_gz_checksum = pulp.server.util.get_file_checksum(hashtype="sha256",
                 filename=comps_gz_path)
-        compsxml_gz_timestamp = pulp.util.get_file_timestamp(comps_gz_path)
+        compsxml_gz_timestamp = pulp.server.util.get_file_timestamp(comps_gz_path)
         uncompressed = gzip.open(comps_gz_path, 'r').read()
         open_compsxml_gz_checksum = compsxml_checksum
     try:

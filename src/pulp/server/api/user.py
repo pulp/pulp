@@ -16,12 +16,12 @@
 import logging
 import uuid
 
-from pulp.api.base import BaseApi
-from pulp.auditing import audit
-from pulp.config import config
-from pulp.db import model
-from pulp.db.connection import get_object_db
-import pulp.password_util as password_util
+from pulp.server.api.base import BaseApi
+from pulp.server.auditing import audit
+from pulp.server.config import config
+from pulp.server.db import model
+from pulp.server.db.connection import get_object_db
+import pulp.server.password_util as password_util
 
 log = logging.getLogger(__name__)
 user_fields = model.User(None, None, None, None).keys()
@@ -41,7 +41,7 @@ class UserApi(BaseApi):
 
     def _ensure_default_admin(self):
         admin = self.user(self.default_login)
-        if (admin == None):
+        if (admin is None):
             default_password = config.get('server', 'default_password') 
             self.create(self.default_login, password=default_password)
 
@@ -53,7 +53,7 @@ class UserApi(BaseApi):
         if id is None:
             id = str(uuid.uuid4())
         hashed_password = None
-        if (password != None):
+        if (password is not None):
             log.info("password received is %s" % password)
             log.info("login %s" % login)
             log.info("name %s" % name)

@@ -15,17 +15,17 @@
 
 import logging
 
-import pulp.cert_generator as cert_generator
-from pulp.agent import Agent
-from pulp.api.base import BaseApi
-from pulp.api.errata import ErrataApi
-from pulp.api.package import PackageApi
-from pulp.api.repo import RepoApi
-from pulp.auditing import audit
-from pulp.db import model
-from pulp.db.connection import get_object_db
-from pulp.pexceptions import PulpException
-from pulp.util import chunks, compare_packages
+import pulp.server.cert_generator as cert_generator
+from pulp.server.agent import Agent
+from pulp.server.api.base import BaseApi
+from pulp.server.api.errata import ErrataApi
+from pulp.server.api.package import PackageApi
+from pulp.server.api.repo import RepoApi
+from pulp.server.auditing import audit
+from pulp.server.db import model
+from pulp.server.db.connection import get_object_db
+from pulp.server.pexceptions import PulpException
+from pulp.server.util import chunks, compare_packages
 
 # Pulp
 

@@ -12,21 +12,20 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+
 import logging
 
-from pulp.agent import Agent
-from pulp.api.base import BaseApi
-from pulp.auditing import audit
-from pulp.db import model
-from pulp.db.connection import get_object_db
-from pulp.pexceptions import PulpException
-
-# Pulp
-from pulp.api.consumer import ConsumerApi
-from pulp.api.repo import RepoApi
-
+from pulp.server.agent import Agent
+from pulp.server.api.base import BaseApi
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.repo import RepoApi
+from pulp.server.auditing import audit
+from pulp.server.db import model
+from pulp.server.db.connection import get_object_db
+from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
+
 
 class ConsumerGroupApi(BaseApi):
 
@@ -42,7 +41,7 @@ class ConsumerGroupApi(BaseApi):
 
 
     @audit(params=['id', 'consumerids'])
-    def create(self, id, description, consumerids=[]):
+    def create(self, id, description, consumerids=()):
         """
         Create a new ConsumerGroup object and return it
         """
@@ -52,7 +51,7 @@ class ConsumerGroupApi(BaseApi):
         
         for consumerid in consumerids:
             consumer = self.consumerApi.consumer(consumerid)
-            if (consumer == None):
+            if (consumer is None):
                 raise PulpException("No Consumer with id: %s found" % consumerid)
                 
         c = model.ConsumerGroup(id, description, consumerids)
@@ -88,10 +87,10 @@ class ConsumerGroupApi(BaseApi):
         Adds the passed in consumer to this group
         """
         consumergroup = self.consumergroup(groupid)
-        if (consumergroup == None):
+        if (consumergroup is None):
             raise PulpException("No Consumer Group with id: %s found" % groupid)
         consumer = self.consumerApi.consumer(consumerid)
-        if (consumer == None):
+        if (consumer is None):
             raise PulpException("No Consumer with id: %s found" % consumerid)
         self._add_consumer(consumergroup, consumer)
         self.update(consumergroup)
@@ -110,7 +109,7 @@ class ConsumerGroupApi(BaseApi):
     @audit()
     def delete_consumer(self, groupid, consumerid):
         consumergroup = self.consumergroup(groupid)
-        if (consumergroup == None):
+        if (consumergroup is None):
             raise PulpException("No Consumer Group with id: %s found" % groupid)
         consumerids = consumergroup['consumerids']
         if consumerid not in consumerids:
@@ -154,7 +153,7 @@ class ConsumerGroupApi(BaseApi):
         if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
         repo = self.repoApi.repository(repoid)
-        if (repo == None):
+        if (repo is None):
             raise PulpException("No Repository with id: %s found" % repoid)
 
         consumerids = consumergroup['consumerids']

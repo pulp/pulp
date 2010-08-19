@@ -13,10 +13,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.api.base import BaseApi
-from pulp.auditing import audit
-from pulp.db import model
-from pulp.db.connection import get_object_db
+from pulp.server.api.base import BaseApi
+from pulp.server.auditing import audit
+from pulp.server.db import model
+from pulp.server.db.connection import get_object_db
 
 
 errata_fields = model.Errata(None, None, None, None, None, None).keys()
@@ -41,7 +41,7 @@ class ErrataApi(BaseApi):
     @audit(params=["id", "title", "type"])
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
-            reboot_suggested="", references=[], pkglist=[],
+            reboot_suggested="", references=(), pkglist=(),
             repo_defined=False, immutable=False):
         """
         Create a new Errata object and return it

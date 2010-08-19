@@ -21,10 +21,10 @@ import logging
 import os
 import tempfile
 
-from pulp import util
-from pulp.api.repo_sync import BaseSynchronizer
-from pulp.config import config
-from pulp.pexceptions import PulpException
+from pulp.server import util
+from pulp.server.api.repo_sync import BaseSynchronizer
+from pulp.server.config import config
+from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 

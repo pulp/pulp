@@ -17,7 +17,7 @@
 import base64
 import re
 
-from pulp.webservices import http
+from pulp.server.webservices import http
 
 
 _whitespace_regex = re.compile('\w+')

@@ -17,10 +17,10 @@
 import threading
 from datetime import datetime, timedelta
 
-from pulp.tasking.queue.base import TaskQueue
-from pulp.tasking.queue.thread import  DRLock, TaskThread
-from pulp.tasking.queue.storage import VolatileStorage
-from pulp.tasking.task import task_complete_states
+from pulp.server.tasking.queue.base import TaskQueue
+from pulp.server.tasking.queue.thread import  DRLock, TaskThread
+from pulp.server.tasking.queue.storage import VolatileStorage
+from pulp.server.tasking.task import task_complete_states
 
 # fifo task queue -------------------------------------------------------------
 

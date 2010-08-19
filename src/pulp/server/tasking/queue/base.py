@@ -14,10 +14,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import pulp.tasking.task
+import pulp.server.tasking.task
 
 
-_task_complete_states = pulp.tasking.task.task_complete_states
+_task_complete_states = pulp.server.tasking.task.task_complete_states
 
 # base task queue -------------------------------------------------------------
 

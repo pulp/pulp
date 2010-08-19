@@ -15,7 +15,7 @@
 
 import logging
 
-from pulp.config import config
+from pulp.server.config import config
 
 # logging and db connection
 

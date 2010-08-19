@@ -19,7 +19,7 @@ import logging
 
 from yum.update_md import UpdateMetadata
 
-from pulp.db.model import Errata
+from pulp.server.db.model import Errata
 
 log = logging.getLogger(__name__)
 

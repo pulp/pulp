@@ -14,7 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.tasking.queue.fifo import FIFOTaskQueue
+from pulp.server.tasking.queue.fifo import FIFOTaskQueue
 
 
 fifo = FIFOTaskQueue()

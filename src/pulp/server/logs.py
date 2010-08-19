@@ -14,10 +14,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 import logging.handlers
+import os
 import os.path
 
-from pulp.config import config
+from pulp.server.config import config
 
 # logging configuration -------------------------------------------------------
 

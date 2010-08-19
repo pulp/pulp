@@ -24,7 +24,7 @@ with mod_python imports not being available at unit test time.
 import logging
 import re
 
-import pulp.certificate
+import pulp.server.certificate
 
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def is_valid(dest, cert_pem):
     @type  cert_pem: string
     '''
 
-    cert = pulp.certificate.Certificate(content=cert_pem)
+    cert = pulp.server.certificate.Certificate(content=cert_pem)
     extensions = cert.extensions()
 
     log.debug('Destination [%s]' % dest)

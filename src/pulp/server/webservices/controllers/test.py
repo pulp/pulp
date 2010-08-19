@@ -17,8 +17,8 @@
 import logging
 import web
 
-from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.role_check import RoleCheck
+from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.role_check import RoleCheck
 
 log = logging.getLogger('pulp')
 

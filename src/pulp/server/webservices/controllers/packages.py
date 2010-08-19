@@ -18,10 +18,10 @@ import logging
 
 import web
 
-from pulp.api.package import PackageApi
-from pulp.webservices import mongo
-from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.role_check import RoleCheck
+from pulp.server.api.package import PackageApi
+from pulp.server.webservices import mongo
+from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 

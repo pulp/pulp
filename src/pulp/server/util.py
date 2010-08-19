@@ -25,7 +25,7 @@ import time
 import rpm
 import yum
 
-from pulp.pexceptions import PulpException
+from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -150,7 +150,7 @@ def get_repo_package(repo_path, package_filename):
     for p in repoPackages:
         if (p.relativepath == package_filename):
             found = p 
-    if (found == None):
+    if found is None:
         raise PulpException("No package with file name: %s found in repository: %s" 
                             % (package_filename, repo_path))
     return found

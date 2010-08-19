@@ -16,9 +16,9 @@
 
 import web
 
-from pulp.api.consumer_group import ConsumerGroupApi
-from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.role_check import RoleCheck
+from pulp.server.api.consumer_group import ConsumerGroupApi
+from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.role_check import RoleCheck
 
 # consumers api ---------------------------------------------------------------
 

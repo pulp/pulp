@@ -16,10 +16,10 @@
 import pymongo
 
 # Pulp
-from pulp.api.base import BaseApi
-from pulp.auditing import audit
-from pulp.db import model
-from pulp.db.connection import get_object_db
+from pulp.server.api.base import BaseApi
+from pulp.server.auditing import audit
+from pulp.server.db import model
+from pulp.server.db.connection import get_object_db
 
 
 package_fields = model.Package(None, None, None, None, None, None, None, None, None).keys()

@@ -17,10 +17,10 @@
 import web
 
 
-from pulp.auditing import events
-from pulp.webservices import mongo
-from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.role_check import RoleCheck
+from pulp.server.auditing import events
+from pulp.server.webservices import mongo
+from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.role_check import RoleCheck
 
 # audit events controller -----------------------------------------------------
 

@@ -19,11 +19,11 @@ import logging
 
 import web
 
-from pulp.api.repo import RepoApi
-from pulp.webservices import http
-from pulp.webservices import mongo
-from pulp.webservices.controllers.base import JSONController, AsyncController
-from pulp.webservices.role_check import RoleCheck
+from pulp.server.api.repo import RepoApi
+from pulp.server.webservices import http
+from pulp.server.webservices import mongo
+from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 

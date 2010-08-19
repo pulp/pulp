@@ -23,17 +23,17 @@ from urlparse import urlparse
 
 import yum
 
-import pulp.comps_util
-import pulp.crontab
-import pulp.upload
-import pulp.util
+import pulp.server.comps_util
+import pulp.server.crontab
+import pulp.server.upload
+import pulp.server.util
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
-from pulp import updateinfo
-from pulp.api.errata import ErrataApi
-from pulp.api.package import PackageApi
-from pulp.config import config
-from pulp.pexceptions import PulpException
+from pulp.server import updateinfo
+from pulp.server.api.errata import ErrataApi
+from pulp.server.api.package import PackageApi
+from pulp.server.config import config
+from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def update_schedule(repo):
     @param repo: repo containg the id and sync schedule; may not be None
     @type  repo: L{pulp.model.Repo}
     '''
-    tab = pulp.crontab.CronTab()
+    tab = pulp.server.crontab.CronTab()
 
     cmd = _cron_command(repo)
     entries = tab.find_command(cmd)
@@ -88,7 +88,7 @@ def delete_schedule(repo):
     @param repo: repo containg the id and sync schedule; may not be None
     @type  repo: L{pulp.model.Repo}
     '''
-    tab = pulp.crontab.CronTab()
+    tab = pulp.server.crontab.CronTab()
 
     cmd = _cron_command(repo)
     entries = tab.find_command(cmd)
@@ -120,13 +120,13 @@ class BaseSynchronizer(object):
         
         startTime = time.time()
         log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
-        package_list = pulp.util.get_repo_packages(dir)
+        package_list = pulp.server.util.get_repo_packages(dir)
         added_packages = []
         added_errataids = []
         log.debug("Processing %s potential packages" % (len(package_list)))
         for package in package_list:
             package = self.import_package(package, repo)
-            if (package != None):
+            if (package is not None):
                 added_packages.append(package)
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" % 
@@ -135,10 +135,10 @@ class BaseSynchronizer(object):
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):
             repo["repomd_xml_path"] = repomd_xml_path
-            ftypes = pulp.util.get_repomd_filetypes(repomd_xml_path)
+            ftypes = pulp.server.util.get_repomd_filetypes(repomd_xml_path)
             log.debug("repodata has filetypes of %s" % (ftypes))
             if "group" in ftypes:
-                group_xml_path = pulp.util.get_repomd_filetype_path(repomd_xml_path, "group")
+                group_xml_path = pulp.server.util.get_repomd_filetype_path(repomd_xml_path, "group")
                 group_xml_path = os.path.join(dir.encode("ascii", "ignore"), group_xml_path)
                 if os.path.isfile(group_xml_path):
                     groupfile = open(group_xml_path, "r")
@@ -148,13 +148,13 @@ class BaseSynchronizer(object):
                 else:
                     log.info("Group info not found at file: %s" % (group_xml_path))
             if "group_gz" in ftypes:
-                group_gz_xml_path = pulp.util.get_repomd_filetype_path(
+                group_gz_xml_path = pulp.server.util.get_repomd_filetype_path(
                         repomd_xml_path, "group_gz")
                 group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
                         group_gz_xml_path)
                 repo['group_gz_xml_path'] = group_gz_xml_path
             if "updateinfo" in ftypes:
-                updateinfo_xml_path = pulp.util.get_repomd_filetype_path(
+                updateinfo_xml_path = pulp.server.util.get_repomd_filetype_path(
                         repomd_xml_path, "updateinfo")
                 updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
                         updateinfo_xml_path)
@@ -212,12 +212,12 @@ class BaseSynchronizer(object):
                     del repo["packagegroupcategories"][cat_id]
             # Add all groups/categories from repo
             for c in comps.categories:
-                ctg = pulp.comps_util.yum_category_to_model_category(c)
+                ctg = pulp.server.comps_util.yum_category_to_model_category(c)
                 ctg["immutable"] = True
                 ctg["repo_defined"] = True
                 repo['packagegroupcategories'][ctg['id']] = ctg
             for g in comps.groups:
-                grp = pulp.comps_util.yum_group_to_model_group(g)
+                grp = pulp.server.comps_util.yum_group_to_model_group(g)
                 grp["immutable"] = True
                 grp["repo_defined"] = True
                 repo['packagegroups'][grp['id']] = grp
@@ -294,7 +294,7 @@ class LocalSynchronizer(BaseSynchronizer):
             else:
                 if not os.path.exists(repo_dir):
                     os.makedirs(repo_dir)
-                pkglist = pulp.util.listdir(pkg_dir)
+                pkglist = pulp.server.util.listdir(pkg_dir)
                 log.debug("Found %s packages in %s" % (len(pkglist), pkg_dir))
                 for count, pkg in enumerate(pkglist):
                     if pkg.endswith(".rpm"):
@@ -305,10 +305,10 @@ class LocalSynchronizer(BaseSynchronizer):
                 updateinfo_path = None
                 src_repomd_xml = os.path.join(pkg_dir, "repodata/repomd.xml")
                 if os.path.isfile(src_repomd_xml):
-                    ftypes = pulp.util.get_repomd_filetypes(src_repomd_xml)
+                    ftypes = pulp.server.util.get_repomd_filetypes(src_repomd_xml)
                     log.debug("repodata has filetypes of %s" % (ftypes))
                     if "group" in ftypes:
-                        g = pulp.util.get_repomd_filetype_path(src_repomd_xml, "group")
+                        g = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "group")
                         src_groups = os.path.join(pkg_dir, g)
                         if os.path.isfile(src_groups):
                             shutil.copy(src_groups,
@@ -317,7 +317,7 @@ class LocalSynchronizer(BaseSynchronizer):
                         groups_xml_path = os.path.join(repo_dir,
                             os.path.basename(src_groups))
                     if "updateinfo" in ftypes:
-                        f = pulp.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
+                        f = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
                         src_updateinfo_path = os.path.join(pkg_dir, f)
                         if os.path.isfile(src_updateinfo_path):
                             # Copy the updateinfo metadata to 'updateinfo.xml'
@@ -337,12 +337,12 @@ class LocalSynchronizer(BaseSynchronizer):
                             updateinfo_path = os.path.join(repo_dir, "updateinfo.xml")
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
-                pulp.upload.create_repo(repo_dir, groups=groups_xml_path)
+                pulp.server.upload.create_repo(repo_dir, groups=groups_xml_path)
                 end = time.time()
                 log.info("Createrepo finished in %s seconds" % (end - start))
                 if updateinfo_path:
                     log.debug("Modifying repo for updateinfo")
-                    pulp.upload.modify_repo(os.path.join(repo_dir, "repodata"),
+                    pulp.server.upload.modify_repo(os.path.join(repo_dir, "repodata"),
                             updateinfo_path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (pkg_dir))

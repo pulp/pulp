@@ -19,11 +19,11 @@ import logging
 
 import web
 
-from pulp.api.consumer import ConsumerApi
-from pulp.webservices import http
-from pulp.webservices import mongo
-from pulp.webservices.controllers.base import JSONController
-from pulp.webservices.role_check import RoleCheck
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.webservices import http
+from pulp.server.webservices import mongo
+from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -194,7 +194,6 @@ class ConsumerDeferredFields(JSONController):
         filters = self.filters(valid_filters)
         private_key, certificate = api.certificate(id)
         certificate = {'certificate': certificate, 'private_key': private_key}
-        log.debug("Returning certificate: [%s]" % certificate)
         return self.ok(certificate)
 
     @JSONController.error_handler

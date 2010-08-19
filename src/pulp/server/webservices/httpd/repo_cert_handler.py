@@ -17,8 +17,8 @@ import logging
 
 from mod_python import apache
 
-from pulp.config import config
-from pulp.webservices.httpd import repo_cert_validation as validation
+from pulp.server.config import config
+from pulp.server.webservices.httpd import repo_cert_validation as validation
 
 # Logging
 format = logging.Formatter('%(asctime)s  %(message)s')

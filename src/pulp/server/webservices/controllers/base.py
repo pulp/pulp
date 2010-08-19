@@ -28,10 +28,10 @@ except ImportError:
 import pymongo.json_util
 import web
 
-from pulp.tasking.task import Task, task_complete_states
-from pulp.webservices import auth
-from pulp.webservices import http
-from pulp.webservices.queues import fifo
+from pulp.server.tasking.task import Task, task_complete_states
+from pulp.server.webservices import auth
+from pulp.server.webservices import http
+from pulp.server.webservices.queues import fifo
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class JSONController(object):
         return report_error
 
     @staticmethod
-    def user_auth_required(roles=[]):
+    def user_auth_required(roles=()):
         """
         Static Controller method to check user permissions on web service calls
         """

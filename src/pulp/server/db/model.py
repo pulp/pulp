@@ -16,7 +16,7 @@
 import datetime
 import uuid
 
-from pulp.pexceptions import PulpException
+from pulp.server.pexceptions import PulpException
 
 class Base(dict):
     

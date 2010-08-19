@@ -16,9 +16,9 @@
 
 import web
 
-from pulp.config import config
-from pulp.logs import start_logging
-from pulp.webservices import controllers
+from pulp.server.config import config
+from pulp.server.logs import start_logging
+from pulp.server.webservices import controllers
 
 
 # NOTE: If you add a item here make sure you also add 
