@@ -1,7 +1,7 @@
 ## Simple file you can run with ipython if you want to poke around the API ##
 import sys
 sys.path.append("../../src")
-from pulp.api.user import UserApi
+from pulp.server.api.user import UserApi
 
 uapi = UserApi()
 admin = uapi.user('admin')

@@ -36,20 +36,18 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util 
 
-from pulp.api.consumer import ConsumerApi
-from pulp.api.consumer_group import ConsumerGroupApi
-from pulp.api.package import PackageApi
-from pulp.api.repo import RepoApi
-from pulp.api.errata import ErrataApi
-from pulp.certificate import Certificate
-
-from pulp.db.model import Package
-from pulp.db.model import PackageGroup
-from pulp.db.model import PackageGroupCategory
-from pulp.db.model import Consumer
-from pulp.util import random_string
-from pulp.util import get_rpm_information
-from pulptools.utils import generatePakageProfile
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.consumer_group import ConsumerGroupApi
+from pulp.server.api.package import PackageApi
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.errata import ErrataApi
+from pulp.server.certificate import Certificate
+from pulp.server.db.model import PackageGroup
+from pulp.server.db.model import PackageGroupCategory
+from pulp.server.db.model import Consumer
+from pulp.server.util import random_string
+from pulp.server.util import get_rpm_information
+from pulp.client.utils import generatePakageProfile
 
 
 import testutil
@@ -79,11 +77,11 @@ class TestApi(unittest.TestCase):
     def test_create(self):
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
-        assert(repo != None)
+        assert(repo is not None)
 
     def test_create_feedless(self):
         repo = self.rapi.create('some-id-no-feed', 'some name', 'i386')
-        assert(repo != None)
+        assert(repo is not None)
 
     def test_duplicate(self):
         id = 'some-id'
@@ -116,7 +114,7 @@ class TestApi(unittest.TestCase):
         
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
-        assert(repo != None)
+        assert(repo is not None)
         assert(repo['source']['type'] == 'yum')
         
         
@@ -165,7 +163,7 @@ class TestApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         
         found = self.rapi.repository('some-id')
-        assert(found != None)
+        assert(found is not None)
         assert(found['id'] == 'some-id')
         
     def test_consumer_group(self):
@@ -173,12 +171,12 @@ class TestApi(unittest.TestCase):
         cg = self.cgapi.create('some-id','some description')
 
         found = self.cgapi.consumergroup('some-id')
-        assert(found != None)
+        assert(found is not None)
         print found['description']
         assert(found['id'] == 'some-id')
 
         found = self.cgapi.consumergroup('some-id-that-doesnt-exist')
-        assert(found == None)
+        assert(found is None)
 
     def test_repo_packages(self):
         repo = self.rapi.create('some-id','some name', \
@@ -191,8 +189,8 @@ class TestApi(unittest.TestCase):
         
         found = self.rapi.repository('some-id')
         packages = found['packages']
-        assert(packages != None)
-        assert(packages[p['id']] != None)
+        assert(packages is not None)
+        assert(packages[p['id']] is not None)
         
     def test_repo_erratum(self):
         repo = self.rapi.create('some-id','some name', \
@@ -205,7 +203,7 @@ class TestApi(unittest.TestCase):
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
 
-        self.assertTrue(test_errata_1 != None)
+        self.assertTrue(test_errata_1 is not None)
         self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
@@ -226,7 +224,7 @@ class TestApi(unittest.TestCase):
         release = '0'
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
-        self.assertTrue(test_errata_1 != None)
+        self.assertTrue(test_errata_1 is not None)
         
         id = 'test_errata_id_2'
         title = 'test_errata_title_2'
@@ -235,7 +233,7 @@ class TestApi(unittest.TestCase):
         release = '0'
         type = 'test_errata_type'
         test_errata_2 = self.eapi.create(id, title, description, version, release, type)
-        self.assertTrue(test_errata_2 != None)
+        self.assertTrue(test_errata_2 is not None)
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
@@ -257,7 +255,7 @@ class TestApi(unittest.TestCase):
         release = '0'
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
-        assert(test_errata_1 != None)
+        assert(test_errata_1 is not None)
         
         epkg = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
         test_pkg_name = epkg["name"]
@@ -287,7 +285,7 @@ class TestApi(unittest.TestCase):
 
         cid = 'test-consumer'
         c = self.capi.create(cid, 'some consumer desc')
-        self.assertTrue(c != None)
+        self.assertTrue(c is not None)
 
         info1 = get_rpm_information(my_dir + \
                         "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
@@ -296,7 +294,7 @@ class TestApi(unittest.TestCase):
         
         packages = generatePakageProfile([info1, info2])
         c['package_profile'] = packages
-        self.assertTrue(c['package_profile'] != None)
+        self.assertTrue(c['package_profile'] is not None)
         self.capi.update(c)
 
         self.rapi.update(repo)
@@ -316,7 +314,7 @@ class TestApi(unittest.TestCase):
         self.rapi.add_package(repo["id"], p['id'])
         
         pkg = self.rapi.get_package(repo['id'], p['name'])
-        assert(pkg != None)
+        assert(pkg is not None)
     
     def test_repo_package_groups(self):
         repo = self.rapi.create('some-id','some name', \
@@ -330,7 +328,7 @@ class TestApi(unittest.TestCase):
                 package["name"], gtype="default")
         # Verify package is present in group
         found = self.rapi.repository('some-id')
-        self.assertTrue(found['packagegroups'] != None)
+        self.assertTrue(found['packagegroups'] is not None)
         self.assertTrue(pkggroup['id'] in found['packagegroups'])
         self.assertTrue(package["name"] in \
                 found['packagegroups'][pkggroup['id']]['default_package_names'])
@@ -338,7 +336,7 @@ class TestApi(unittest.TestCase):
         self.rapi.delete_package_from_group(repo["id"], pkggroup["id"],
                 package["name"], gtype="default")
         found = self.rapi.repository('some-id')
-        self.assertTrue(found['packagegroups'] != None)
+        self.assertTrue(found['packagegroups'] is not None)
         self.assertTrue(pkggroup['id'] in found['packagegroups'])
         self.assertTrue(package["name"] not in \
                 found['packagegroups'][pkggroup['id']]['default_package_names'])
@@ -363,16 +361,16 @@ class TestApi(unittest.TestCase):
         self.rapi.update(repo)
         
         found = self.rapi.repository('some-id_pkg_group_categories')
-        assert(found['packagegroups'] != None)
+        assert(found['packagegroups'] is not None)
         assert(pkggroup['id'] in found['packagegroups'])
-        assert(found['packagegroupcategories'] != None)
+        assert(found['packagegroupcategories'] is not None)
         assert(ctg['id'] in found['packagegroupcategories'])
     
     def test_consumer_create(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
-        self.assertTrue(c != None)
+        self.assertTrue(c is not None)
         found = self.capi.consumer('test-consumer')
-        self.assertTrue(found != None)
+        self.assertTrue(found is not None)
         
         # test that we get back the consumer from the list method
         consumers = self.capi.consumers()
@@ -382,7 +380,7 @@ class TestApi(unittest.TestCase):
     def test_consumer_certificate(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         (pk, pem) = self.capi.certificate(c['id'])
-        self.assertTrue(pem != None)
+        self.assertTrue(pem is not None)
         cert = Certificate()
         cert.update(str(pem))
         subject = cert.subject()
@@ -448,7 +446,7 @@ class TestApi(unittest.TestCase):
             
         c['package_profile'] = packages
         self.capi.update(c)
-        self.assertTrue(c['package_profile'] != None)
+        self.assertTrue(c['package_profile'] is not None)
         ## Look back up from DB
         c = self.capi.consumer(c['id'])
         found = False
@@ -463,16 +461,16 @@ class TestApi(unittest.TestCase):
         assert(len(found) > 0)
         
         packages = self.capi.packages(c['id'])
-        self.assertTrue(packages != None)
+        self.assertTrue(packages is not None)
         self.assertTrue(len(packages) > 0)
         
     def test_json(self):
         repo = self.rapi.create('some-id','some name', 
             'i386', 'yum:http://example.com')
         jsonrepo = json.dumps(repo, default=pymongo.json_util.default)
-        assert(jsonrepo != None)
+        assert(jsonrepo is not None)
         parsed = json.loads(jsonrepo)
-        assert(parsed != None)
+        assert(parsed is not None)
         print parsed
     
     def test_sync_two_repos_same_nevra_different_checksum(self):
@@ -508,13 +506,13 @@ class TestApi(unittest.TestCase):
         for p in found_a["packages"].values():
             if (p['name'].index(test_pkg_name) >= 0):
                 found_a_pid = p['id']
-        assert(found_a_pid != None)
+        assert(found_a_pid is not None)
         
         found_b_pid = None
         for p in found_b["packages"].values():
             if (p['name'].index(test_pkg_name) >= 0):
                 found_b_pid = p['id']
-        assert(found_b_pid != None)
+        assert(found_b_pid is not None)
         packagea = found_a["packages"][found_a_pid]
         packageb = found_b["packages"][found_b_pid]
         
@@ -555,13 +553,13 @@ class TestApi(unittest.TestCase):
         for p in found_a["packages"].values():
             if (p['name'].index(test_pkg_name) >= 0):
                 found_a_pid = p['id']
-        assert(found_a_pid != None)
+        assert(found_a_pid is not None)
         
         found_b_pid = None
         for p in found_b["packages"].values():
             if (p['name'].index(test_pkg_name) >= 0):
                 found_b_pid = p['id']
-        assert(found_b_pid != None)
+        assert(found_b_pid is not None)
         packagea = found_a["packages"][found_a_pid]
         packageb = found_b["packages"][found_b_pid]
 
@@ -587,7 +585,7 @@ class TestApi(unittest.TestCase):
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
-        assert(packages != None)
+        assert(packages is not None)
         assert(len(packages) > 0)
     
     def test_sync_feedless(self):
@@ -612,11 +610,11 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo['id'])
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
-        assert(packages != None)
+        assert(packages is not None)
         assert(len(packages) > 0)
         print packages
         p = packages.values()[0]
-        assert(p != None)
+        assert(p is not None)
         # versions = p['versions']
         
     # Meant to make sure we can create a repo with 5000+ packages without BSON
@@ -699,7 +697,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["packages"].has_key(p['id']))
         packageid = p['id']
-        self.assertTrue(len(repo["packages"][p['id']]) != None)
+        self.assertTrue(len(repo["packages"][p['id']]) is not None)
         saved_pkg = repo["packages"][packageid]
         self.assertTrue(saved_pkg['name'] == test_pkg_name)
         self.assertTrue(saved_pkg['epoch'] == test_epoch)
@@ -713,7 +711,7 @@ class TestApi(unittest.TestCase):
         # Verify we can find this package version through repo api calls
         pkgs = self.rapi.packages(repo['id'])
         self.assertTrue(pkgs.has_key(packageid))
-        self.assertTrue(pkgs[packageid] != None)
+        self.assertTrue(pkgs[packageid] is not None)
         self.assertTrue(pkgs[packageid]['filename'] == test_filename)
         pkgs = self.rapi.packages(repo['id'], test_pkg_name)
         self.assertTrue(len(pkgs) == 1)

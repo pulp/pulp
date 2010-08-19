@@ -29,15 +29,14 @@ import copy
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
-from pulp.api.repo import RepoApi
-from pulp.api.package import PackageApi
-from pulp.api.consumer import ConsumerApi
-from pulp.model import Package
-from pulp.model import Consumer
-from pulp.util import random_string
-import pulp.util
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.package import PackageApi
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.db import Consumer
+from pulp.server.util import random_string
+import pulp.server.util
 from testutil import create_package
-from pulptools.utils import generatePakageProfile
+from pulp.client.utils import generatePakageProfile
  
 TEST_PACKAGE_ID = 'random-package'
 

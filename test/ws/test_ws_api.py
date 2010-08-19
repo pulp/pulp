@@ -23,16 +23,14 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../unit/'
 sys.path.insert(0, commondir)
 
-from pulptools.connection import RepoConnection
-from pulptools.connection import ConsumerConnection
-from pulptools.connection import ConsumerGroupConnection
-from pulptools.connection import ErrataConnection
-from pulptools.connection import PackageConnection
-from pulptools.connection import PackageGroupConnection
-from pulptools.connection import PackageGroupCategoryConnection
-
+from pulp.client.connection import RepoConnection
+from pulp.client.connection import ConsumerConnection
+from pulp.client.connection import ConsumerGroupConnection
+from pulp.client.connection import ErrataConnection
+from pulp.client.connection import PackageConnection
+from pulp.client.connection import PackageGroupConnection
+from pulp.client.connection import PackageGroupCategoryConnection
 from test_api import TestApi
-
 import testutil
 
 class RemoteTestApi(TestApi):

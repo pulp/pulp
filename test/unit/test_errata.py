@@ -15,10 +15,8 @@
 # in this software or its documentation.
 
 # Python
-import logging
-import sys
 import os
-import time
+import sys
 import unittest
 
 from pymongo.errors import DuplicateKeyError
@@ -30,15 +28,13 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp import updateinfo
-from pulp.api.errata import ErrataApi
-from pulp.api.repo import RepoApi
-from pulp.api.consumer import ConsumerApi
-from pulp.api.package import PackageApi
-from pulp.db.model import Errata
-from pulp.util import random_string
-from pulp.util import get_rpm_information
-from pulptools.utils import generatePakageProfile
+from pulp.server import updateinfo
+from pulp.server.api.errata import ErrataApi
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.package import PackageApi
+from pulp.server.util import get_rpm_information
+from pulp.client.utils import generatePakageProfile
 import testutil
 
 class TestErrata(unittest.TestCase):
@@ -124,7 +120,7 @@ class TestErrata(unittest.TestCase):
                 pushcount=pushcount, from_str=from_str,
                 reboot_suggested=reboot_suggested, references=references,
                 pkglist=pkglist)
-        assert(sample_errata != None)
+        assert(sample_errata is not None)
         self.assertTrue(sample_errata["id"] == id)
         self.assertTrue(sample_errata["title"] == title)
         self.assertTrue(sample_errata["description"] == description)
@@ -143,7 +139,7 @@ class TestErrata(unittest.TestCase):
     def test_duplicate(self):
         id = 'test_duplicate_id'
         sample_errata = self.eapi.create(id, None, None, None, None, None)
-        assert(sample_errata != None)
+        assert(sample_errata is not None)
         # Should fail since we already created an exact copy of this.
         exception_caught = False
         try:
@@ -162,36 +158,36 @@ class TestErrata(unittest.TestCase):
     def test_clean(self):
         id = 'test_clean_id'
         sample_errata = self.eapi.create(id, None, None, None, None, None)
-        self.assertTrue(sample_errata != None)
+        self.assertTrue(sample_errata is not None)
         found = self.eapi.erratum(id)
-        self.assertTrue(found != None)
+        self.assertTrue(found is not None)
         self.eapi.clean()
         found = self.eapi.erratum(id)
-        self.assertTrue(found == None)
+        self.assertTrue(found is None)
 
     def test_delete(self):
         id = 'test_delete_id'
         sample_errata = self.eapi.create(id, None, None, None, None, None)
-        self.assertTrue(sample_errata != None)
+        self.assertTrue(sample_errata is not None)
         found = self.eapi.erratum(id)
-        self.assertTrue(found != None)
+        self.assertTrue(found is not None)
         self.eapi.delete(id)
         found = self.eapi.erratum(id)
-        self.assertTrue(found == None)
+        self.assertTrue(found is None)
 
     def test_update(self):
         id = 'test_update_id'
         title = "valueA"
         sample_errata = self.eapi.create(id, title, None, None, None, None)
-        self.assertTrue(sample_errata != None)
+        self.assertTrue(sample_errata is not None)
         found = self.eapi.erratum(id)
-        self.assertTrue(found != None)
+        self.assertTrue(found is not None)
         self.assertTrue(found['title'] == title)
         new_title = "B"
         found['title'] = new_title
         self.eapi.update(found)
         found = self.eapi.erratum(id)
-        self.assertTrue(found != None)
+        self.assertTrue(found is not None)
         self.assertTrue(found['title'] == new_title)
 
     def test_erratum_lookup(self):
@@ -203,11 +199,11 @@ class TestErrata(unittest.TestCase):
         type = 'test_erratum_type'
         sample_errata = self.eapi.create(id, title, description, version, release,
                 type)
-        assert(sample_errata != None)
+        assert(sample_errata is not None)
         found = self.eapi.erratum(id="bad_id")
-        self.assertTrue(found == None)
+        self.assertTrue(found is None)
         found = self.eapi.erratum(id=id)
-        self.assertTrue(found != None)
+        self.assertTrue(found is not None)
         self.assertTrue(found['id'] == id)
         self.assertTrue(found['title'] == title)
         self.assertTrue(found['description'] == description)
@@ -227,10 +223,10 @@ class TestErrata(unittest.TestCase):
         # Create 2 errata with different ids and type
         sample_errata = self.eapi.create(id_a, title, description, version, release,
                 type_a)
-        assert(sample_errata != None)
+        assert(sample_errata is not None)
         sample_errata = self.eapi.create(id_b, title, description, version, release,
                 type_b)
-        assert(sample_errata != None)
+        assert(sample_errata is not None)
         found = self.eapi.errata()
         self.assertTrue(len(found) == 2)
         found = self.eapi.errata(title=title, description=description, version=version,
@@ -263,7 +259,7 @@ class TestErrata(unittest.TestCase):
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
 
-        self.assertTrue(test_errata_1 != None)
+        self.assertTrue(test_errata_1 is not None)
         self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
@@ -284,7 +280,7 @@ class TestErrata(unittest.TestCase):
         release = '0'
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
-        self.assertTrue(test_errata_1 != None)
+        self.assertTrue(test_errata_1 is not None)
         
         id = 'test_errata_id_2'
         title = 'test_errata_title_2'
@@ -293,7 +289,7 @@ class TestErrata(unittest.TestCase):
         release = '0'
         type = 'test_errata_type'
         test_errata_2 = self.eapi.create(id, title, description, version, release, type)
-        self.assertTrue(test_errata_2 != None)
+        self.assertTrue(test_errata_2 is not None)
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
@@ -315,7 +311,7 @@ class TestErrata(unittest.TestCase):
         release = '0'
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
-        assert(test_errata_1 != None)
+        assert(test_errata_1 is not None)
         
         epkg = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
         test_pkg_name = epkg["name"]
@@ -344,7 +340,7 @@ class TestErrata(unittest.TestCase):
 
         cid = 'test-consumer'
         c = self.capi.create(cid, 'some consumer desc')
-        self.assertTrue(c != None)
+        self.assertTrue(c is not None)
 
         info1 = get_rpm_information(my_dir + \
                         "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
@@ -353,7 +349,7 @@ class TestErrata(unittest.TestCase):
         
         packages = generatePakageProfile([info1, info2])
         c['package_profile'] = packages
-        self.assertTrue(c['package_profile'] != None)
+        self.assertTrue(c['package_profile'] is not None)
         self.capi.update(c)
 
         self.rapi.update(repo)
@@ -396,13 +392,13 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(len(r['errata']['bugfix']) == len(bugfix))
         for erratum in enhancement:
             self.assertTrue(erratum in r['errata']['enhancement'])
-            self.assertTrue(self.eapi.erratum(erratum) != None)
+            self.assertTrue(self.eapi.erratum(erratum) is not None)
         for erratum in security:
             self.assertTrue(erratum in r['errata']['security'])
-            self.assertTrue(self.eapi.erratum(erratum) != None)
+            self.assertTrue(self.eapi.erratum(erratum) is not None)
         for erratum in bugfix:
             self.assertTrue(erratum in r['errata']['bugfix'])
-            self.assertTrue(self.eapi.erratum(erratum) != None)
+            self.assertTrue(self.eapi.erratum(erratum) is not None)
 
     def test_errata_query_by_cve(self):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")

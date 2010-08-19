@@ -4,17 +4,9 @@ import random
 import time
 import re
 
-from pulp.api.consumer import ConsumerApi
-from pulp.api.package import PackageApi
-from pulp.api.package_group import PackageGroupApi
-from pulp.api.package_group_category import PackageGroupCategoryApi
-from pulp.api.package_version import PackageVersionApi
-from pulp.api.repo import RepoApi
-
-from pulp.model import Package
-from pulp.model import PackageGroup
-from pulp.model import PackageGroupCategory
-from pulp.model import Consumer
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.package import PackageApi
+from pulp.server.api.repo import RepoApi
 
 TEST_PACKAGE_ID = 'random-package'
 

@@ -16,10 +16,8 @@
 
 # Python
 import os
-import shutil
 import sys
 import unittest
-
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
@@ -28,21 +26,20 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import pulp.crontab
-
-import pulp.api.repo
-import pulp.api.repo_sync
+import pulp.server.api.repo
+import pulp.server.api.repo_sync
+import pulp.server.crontab
 import testutil
 
 class TestRepoSyncSchedule(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.repo_api = pulp.api.repo.RepoApi()
+        self.repo_api = pulp.server.api.repo.RepoApi()
 
     def tearDown(self):
         self.repo_api.clean()
-        tab = pulp.crontab.CronTab()
+        tab = pulp.server.crontab.CronTab()
 
         for entry in tab.find_command('pulp repo sync'):
             tab.remove(entry)
@@ -68,7 +65,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = pulp.crontab.CronTab()
+        tab = pulp.server.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(1, len(items))
 
@@ -80,7 +77,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = pulp.crontab.CronTab()
+        tab = pulp.server.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(1, len(items))
 
@@ -92,7 +89,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = pulp.crontab.CronTab()
+        tab = pulp.server.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(0, len(items))
 
@@ -102,7 +99,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.update(repo)
 
         # Verify
-        tab = pulp.crontab.CronTab()
+        tab = pulp.server.crontab.CronTab()
         items = tab.find_command('pulp repo sync %s' % repo_id)
         self.assertEqual(0, len(items))
 

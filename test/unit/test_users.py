@@ -29,13 +29,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.api.user import UserApi
-from pulp.db.model import User
-from pulp.util import random_string
-from pulp.certificate import Certificate
-
-from ConfigParser import ConfigParser
-
+from pulp.server.api.user import UserApi
 import testutil
 
 
@@ -57,9 +51,9 @@ class TestUsers(unittest.TestCase):
         user = self.uapi.create('login-test', id=str(uuid.uuid4()), 
                                 password=clear_txt_pass,
                                 name='Fred Franklin') 
-        self.assertTrue(user != None)
+        self.assertTrue(user is not None)
         user = self.uapi.user('login-test')
-        self.assertTrue(user != None)
+        self.assertTrue(user is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
     def test_default_admin(self):
@@ -68,7 +62,7 @@ class TestUsers(unittest.TestCase):
         """
         default_login = self.config.get('server', 'default_login')
         admin = self.uapi.user(default_login)
-        self.assertTrue(admin != None)
+        self.assertTrue(admin is not None)
         
     def test_duplicate(self):
         id = uuid.uuid4()

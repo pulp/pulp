@@ -15,8 +15,8 @@
 
 import unittest
 
-import pulp.webservices.httpd.repo_cert_validation as validation
-import pulp.certificate
+import pulp.server.webservices.httpd.repo_cert_validation as validation
+import pulp.server.certificate
 
 ENTITLED_CERT_NO_VARS = '''
 -----BEGIN CERTIFICATE-----
@@ -117,9 +117,9 @@ class TestEntitlementCerts(unittest.TestCase):
 
     def test_is_download_url_ext(self):
         # Test
-        self.assertTrue(validation.is_download_url_ext(pulp.certificate.OID('1.3.6.1.4.1.2312.9.2.1111.1.6')))
-        self.assertTrue(validation.is_download_url_ext(pulp.certificate.OID('1.3.6.1.4.1.2312.9.2.2222.1.6')))
-        self.assertTrue(not validation.is_download_url_ext(pulp.certificate.OID('foo')))
+        self.assertTrue(validation.is_download_url_ext(pulp.server.certificate.OID('1.3.6.1.4.1.2312.9.2.1111.1.6')))
+        self.assertTrue(validation.is_download_url_ext(pulp.server.certificate.OID('1.3.6.1.4.1.2312.9.2.2222.1.6')))
+        self.assertTrue(not validation.is_download_url_ext(pulp.server.certificate.OID('foo')))
 
     def test_is_valid(self):
         # Test
@@ -163,5 +163,3 @@ class TestEntitlementCerts(unittest.TestCase):
         # Make sure both variables need to be specified when two variables are adjacent to each other
         self.assertTrue(not validation._validate('content/dist/rhel/server/$version/$basearch/os',
                                              '/content/dist/rhel/server/i386/os/repomd.xml'))
-
-        

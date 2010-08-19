@@ -14,15 +14,17 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+
+import logging
 import os
 import sys
+import unittest
+
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
-from pulp.password_util import hash_password
-from pulp.password_util import check_password
-import unittest
-import logging
+from pulp.server.password_util import hash_password
+from pulp.server.password_util import check_password
 
 class TestUtil(unittest.TestCase):
 

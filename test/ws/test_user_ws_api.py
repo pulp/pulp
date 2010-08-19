@@ -23,10 +23,8 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../unit/'
 sys.path.insert(0, commondir)
 
-from pulptools.connection import UserConnection
-
+from pulp.client.connection import UserConnection
 from test_users import TestUsers
-
 import testutil
 
 class RemoteTestUsers(TestUsers):

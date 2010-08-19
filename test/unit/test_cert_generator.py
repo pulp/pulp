@@ -14,15 +14,17 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
+
+import logging
 import os
 import sys
+import unittest
+
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
-from pulp.certificate import Certificate
-import pulp.cert_generator as cert_generator
-import unittest
-import logging
+from pulp.server.certificate import Certificate
+import pulp.server.cert_generator as cert_generator
 
 class TestCertGeneration(unittest.TestCase):
 
@@ -32,20 +34,15 @@ class TestCertGeneration(unittest.TestCase):
         self.assertTrue(pem.startswith('-----BEGIN RSA PRIVATE KEY-----'))
         (pk, x509_pem) = cert_generator.make_cert(cid)
         print "CERT!: %s" % x509_pem
-        self.assertTrue(pk != None)
-        self.assertTrue(x509_pem != None)
+        self.assertTrue(pk is not None)
+        self.assertTrue(x509_pem is not None)
         cert = Certificate()
         cert.update(str(x509_pem))
         subject = cert.subject()
         consumer_cert_uid = subject.get('CN', None)
         self.assertEqual(cid, consumer_cert_uid)
         
-        # pk.save_key('/tmp/foo.out')
-        # print "PK Pem: %s" % str(pk.as_pem())
-        
-        
-        
-        
+
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.INFO)

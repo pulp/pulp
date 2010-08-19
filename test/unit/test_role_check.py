@@ -16,10 +16,10 @@
 
 # Python
 import base64
-import sys
-import os
-import unittest
 import logging
+import os
+import sys
+import unittest
 import web
 
 # Pulp
@@ -29,14 +29,13 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+
+from pulp.server.api.user import UserApi
+import pulp.server.cert_generator as cert_generator
+from pulp.server.certificate import Certificate
+from pulp.server.webservices.role_check import RoleCheck
 import testutil
 testutil.load_test_config()
-
-import pulp.cert_generator as cert_generator
-from pulp.api.user import UserApi
-from pulp.certificate import Certificate
-from pulp.webservices.role_check import RoleCheck
-from ConfigParser import ConfigParser
 
 logging.root.addHandler(logging.StreamHandler())
 logging.root.setLevel(logging.DEBUG)
@@ -71,7 +70,7 @@ class TestRoleCheck(unittest.TestCase):
     def test_id_cert(self):
         consumerUid = "someconsumer.example.com"
         (temp_pk, temp_cert) = cert_generator.make_cert(consumerUid)
-        self.assertTrue(temp_cert != None)
+        self.assertTrue(temp_cert is not None)
         cert = Certificate()
         cert.update(temp_cert)
         web.ctx['headers'] = []
@@ -148,9 +147,6 @@ class TestRoleCheck(unittest.TestCase):
         self.assertEquals(retval, 'baz')
 
     
-    
-        
-
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.ERROR)

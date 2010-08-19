@@ -15,8 +15,8 @@
 
 import os
 
-from pulp.config import config, _config_files, add_config_file
-from pulp.logs import start_logging, stop_logging
+from pulp.server.config import config, _config_files, add_config_file
+from pulp.server.logs import start_logging, stop_logging
 
 def load_test_config():
     override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.conf'
