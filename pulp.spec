@@ -114,13 +114,8 @@ cp bin/pulpd %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/init.d
 cp etc/init.d/pulpd %{buildroot}/etc/init.d
 
-# RHEL 5 packages don't have egg-info files, so remove the requires.txt
-# It isn't needed, because RPM will guarantee the dependency itself
-%if 0%{?rhel} > 0
-%if 0%{?rhel} <= 5
-rm -f %{buildroot}/%{python_sitelib}/%{name}*.egg-info/requires.txt
-%endif
-%endif
+# Remove egg info
+rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 
 %clean
 rm -rf %{buildroot}
@@ -150,7 +145,6 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %files common
 %defattr(-,root,root,-)
 %doc
-%{python_sitelib}/pulp-*
 %{python_sitelib}/pulp/*.py*
 %{python_sitelib}/pulp/messaging/
 
