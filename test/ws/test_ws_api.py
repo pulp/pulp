@@ -44,8 +44,8 @@ class RemoteTestApi(TestApi):
 
     def setUp(self):
         d = dict(host='localhost',
-                 port=8811,
-                 cert_file='/etc/pki/pulp/server.crt', 
+                 port=443,
+                 cert_file='/etc/pki/pulp/server.crt',
                  key_file='/etc/pki/pulp/server.key',
                  username="admin",
                  password="admin")
@@ -57,7 +57,7 @@ class RemoteTestApi(TestApi):
         self.cgapi = ConsumerGroupConnection(**d)
         self.pgapi = PackageGroupConnection(**d)
         self.pgcapi = PackageGroupCategoryConnection(**d)
-        
+
     def test_sync_two_repos_share_common_package(self):
         pass
 
@@ -78,7 +78,7 @@ class RemoteTestApi(TestApi):
 
     def test_consumerwithpackage(self):
         pass
-    
+
     def test_sync_feedless(self):
         pass
 
