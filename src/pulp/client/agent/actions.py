@@ -18,11 +18,11 @@ Action classes for pulp agent.
 ** Add custome actions here **
 """
 
-from pulptools import ConsumerId
-from pulptools.agent.action import *
-from pulptools.connection import ConsumerConnection, RestlibException
-from pulptools.package_profile import PackageProfile
-from pulptools.config import Config
+from pulp.client import ConsumerId
+from pulp.client.agent.action import *
+from pulp.client.connection import ConsumerConnection, RestlibException
+from pulp.client.package_profile import PackageProfile
+from pulp.client.config import Config
 from logging import getLogger
 
 log = getLogger(__name__)

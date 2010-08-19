@@ -18,7 +18,7 @@
 import os
 import sys
 from optparse import OptionParser
-import pulptools.utils as utils
+import pulp.client.utils as utils
 
 
 class BaseCore(object):

@@ -18,10 +18,10 @@ Remoted class for pulp agent.
 """
 
 import os
-from pulptools import *
-from pulptools.repolib import RepoLib
-from pulptools.config import Config
-from pmf.decorators import remote, remotemethod
+from pulp.client import *
+from pulp.client.repolib import RepoLib
+from pulp.client.config import Config
+from pulp.messaging.decorators import remote, remotemethod
 from yum import YumBase
 from logging import getLogger
 

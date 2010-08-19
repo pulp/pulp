@@ -14,7 +14,7 @@
 #
 
 """
-Pulp Tools.
+Pulp Client
 """
 
 import os

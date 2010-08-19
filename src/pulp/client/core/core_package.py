@@ -17,11 +17,11 @@
 
 import sys
 import os.path
-from pulptools.core.basecore import BaseCore, systemExit
-from pulptools.connection import RepoConnection, ConsumerConnection, RestlibException
-from pulptools.connection import ConsumerGroupConnection
-from pulptools.logutil import getLogger
-from pulptools.config import Config
+from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.connection import RepoConnection, ConsumerConnection, RestlibException
+from pulp.client.connection import ConsumerGroupConnection
+from pulp.client.logutil import getLogger
+from pulp.client.config import Config
 log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config

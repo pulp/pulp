@@ -16,17 +16,17 @@
 import sys
 import os
 from getopt import getopt
-from pulptools import *
-from pulptools.lock import Lock, LockFailed
-from pulptools.agent import *
-from pulptools.agent.action import Action
-from pulptools.agent.actions import *
-from pulptools.agent.remote import *
-from pulptools.logutil import getLogger
-from pmf import Queue
-from pmf.broker import Broker
-from pmf.base import Agent as Base
-from pmf.consumer import RequestConsumer
+from pulp.client import *
+from pulp.client.lock import Lock, LockFailed
+from pulp.client.agent import *
+from pulp.client.agent.action import Action
+from pulp.client.agent.actions import *
+from pulp.client.agent.remote import *
+from pulp.client.logutil import getLogger
+from pulp.messaging import Queue
+from pulp.messaging.broker import Broker
+from pulp.messaging.base import Agent as Base
+from pulp.messaging.consumer import RequestConsumer
 from time import sleep
 from threading import Thread
 
@@ -68,10 +68,10 @@ class Agent(Base):
         actionThread.start()
         cfg = Config()
         queue = Queue(id)
-        url = cfg.pmf.url
+        url = cfg.messaging.url
         broker = Broker.get(url)
-        broker.cacert = cfg.pmf.cacert
-        broker.clientcert = cfg.pmf.clientcert
+        broker.cacert = cfg.messaging.cacert
+        broker.clientcert = cfg.messaging.clientcert
         consumer = RequestConsumer(queue, url=url)
         Base.__init__(self, consumer)
         log.info('agent {%s} - started.', id)

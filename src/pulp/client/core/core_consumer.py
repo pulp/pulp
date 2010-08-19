@@ -17,14 +17,14 @@
 
 import sys
 import os.path
-import pulptools.utils as utils
-import pulptools.constants as constants
-from pulptools.core.basecore import BaseCore, systemExit
-from pulptools.connection import ConsumerConnection, RestlibException
-from pulptools.repolib import RepoLib
-from pulptools.logutil import getLogger
-from pulptools.config import Config
-from pulptools.package_profile import PackageProfile
+import pulp.client.utils as utils
+import pulp.client.constants as constants
+from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.connection import ConsumerConnection, RestlibException
+from pulp.client.repolib import RepoLib
+from pulp.client.logutil import getLogger
+from pulp.client.config import Config
+from pulp.client.package_profile import PackageProfile
 import urlparse
 log = getLogger(__name__)
 CFG = Config()

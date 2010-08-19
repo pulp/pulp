@@ -13,7 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 #
-from pulptools.logutil import getLogger
+from pulp.client.logutil import getLogger
 import utils
 import rpm
 log = getLogger(__name__)

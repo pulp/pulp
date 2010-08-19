@@ -18,10 +18,10 @@ import os
 import logging
 import sys
 import pkgutil
-import pulptools.utils as utils
-from pulptools.logutil import getLogger
+import pulp.client.utils as utils
+from pulp.client.logutil import getLogger
 
-import pulptools.core as core
+import pulp.client.core as core
 
 import gettext
 _ = gettext.gettext
@@ -29,7 +29,7 @@ log = getLogger(__name__)
 
 class PulpCore:
     """
-     A top level class to load modules dynamically from pulptools.cores package
+     A top level class to load modules dynamically from pulp.client.cores package
     """
     def __init__(self):
         self.cli_cores = {}
@@ -52,7 +52,7 @@ class PulpCore:
         
     def _load_core(self, core):
         name = "core_" + core
-        mod = __import__('pulptools.core.', globals(), locals(), [name])
+        mod = __import__('pulp.client.core.', globals(), locals(), [name])
         try:
             submod = getattr(mod, name)
         except AttributeError:
@@ -65,7 +65,7 @@ class PulpCore:
                    if name.startswith("core_")]
         cls = []
         for name in modules:
-            mod = __import__('pulptools.core.', globals(), locals(), [name])
+            mod = __import__('pulp.client.core.', globals(), locals(), [name])
             submod = getattr(mod, name)
             cls.append(getattr(submod, name.split("_")[-1]))
         return cls

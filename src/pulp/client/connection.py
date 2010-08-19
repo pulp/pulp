@@ -29,7 +29,7 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
-from pulptools.logutil import getLogger
+from pulp.client.logutil import getLogger
 
 
 log = getLogger(__name__)

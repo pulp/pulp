@@ -19,12 +19,12 @@
 import os
 import sys
 
-import pulptools.constants as constants
-from pulptools.core.basecore import BaseCore, systemExit
-from pulptools.connection import UserConnection, RestlibException
-from pulptools.logutil import getLogger
-from pulptools.repolib import RepoLib
-from pulptools.config import Config
+import pulp.client.constants as constants
+from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.connection import UserConnection, RestlibException
+from pulp.client.logutil import getLogger
+from pulp.client.repolib import RepoLib
+from pulp.client.config import Config
 CFG = Config()
 
 import gettext

@@ -19,7 +19,7 @@ from logging import root, Formatter
 from logging.handlers import RotatingFileHandler
 
 LOGDIR = '/var/log/pulp'
-LOGFILE = 'pulptools.log'
+LOGFILE = 'client.log'
 
 handler = None
 

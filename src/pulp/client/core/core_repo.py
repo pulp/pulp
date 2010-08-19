@@ -21,12 +21,12 @@ import sys
 import time
 import base64
 
-import pulptools.utils as utils
-import pulptools.constants as constants
-from pulptools.core.basecore import BaseCore, systemExit
-from pulptools.connection import RepoConnection, RestlibException
-from pulptools.logutil import getLogger
-from pulptools.config import Config
+import pulp.client.utils as utils
+import pulp.client.constants as constants
+from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.connection import RepoConnection, RestlibException
+from pulp.client.logutil import getLogger
+from pulp.client.config import Config
 CFG = Config()
 
 import gettext
