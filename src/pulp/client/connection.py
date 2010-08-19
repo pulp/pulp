@@ -50,13 +50,13 @@ class Restlib(object):
     """
      A wrapper around httplib to make rest calls easier
     """
-    def __init__(self, host, port, apihandler, apiprefix='/pulp/api',
-                 cert_file=None, key_file=None, username=None, password=None):
+    def __init__(self, host, port, apihandler, cert_file=None, key_file=None,
+                 username=None, password=None):
         self.host = host
         # ensure we have an integer, httpslib is picky about the type
         # passed in for the port
         self.port = int(port)
-        self.apihandler = ''.join((apiprefix, apihandler))
+        self.apihandler = apihandler
         self.username = username
         self.password = password
         if (self.username != None):
@@ -122,7 +122,7 @@ class PulpConnection:
     Proxy connection to Pulp Server
     """
 
-    def __init__(self, host='localhost', port=443, handler="", cert_file=None, key_file=None,
+    def __init__(self, host='localhost', port=443, handler="/pulp/api", cert_file=None, key_file=None,
                  username=None, password=None):
         self.host = host
         self.port = port
@@ -136,9 +136,8 @@ class PulpConnection:
         self.setUp()
 
     def setUp(self):
-        self.conn = Restlib(self.host, self.port, self.handler,
-                            cert_file=self.cert_file, key_file=self.key_file,
-                            username=self.username, password=self.password)
+        self.conn = Restlib(self.host, self.port, self.handler, self.cert_file,
+                            self.key_file, self.username, self.password)
         log.info("Connection Established for cli: Host: %s, Port: %s, handler: %s" %
                  (self.host, self.port, self.handler))
         log.info("Using cert_file: %s and key_file: %s" %
