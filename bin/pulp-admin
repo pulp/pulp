@@ -23,7 +23,7 @@ if os.getuid() != 0:
     sys.stderr.write('ERROR: must be root to execute\n')
     sys.exit(8)
 
-from pulptools import pulpcli
+from pulp.client import pulpcli
 
 
 if __name__ == "__main__":

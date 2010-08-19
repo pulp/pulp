@@ -14,7 +14,7 @@
 # in this software or its documentation.
 #
 
-from pulptools.agent.main import main
+from pulp.client.agent.main import main
 
 if __name__ == '__main__':
     main()

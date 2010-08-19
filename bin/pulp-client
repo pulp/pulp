@@ -22,11 +22,11 @@ if os.getuid() != 0:
     sys.stderr.write('ERROR: must be root to execute\n')
     sys.exit(8)
 
-from pulptools.core import core_consumer
-from pulptools.core import core_repo
-from pulptools.core import core_errata
-from pulptools import pulpcli
-import pulptools.utils as utils
+from pulp.client.core import core_consumer
+from pulp.client.core import core_repo
+from pulp.client.core import core_errata
+from pulp.client import pulpcli
+import pulp.client.utils as utils
 CONSUMERID = "/etc/pulp/consumer"
 
 class consumer(core_consumer.consumer):
