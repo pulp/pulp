@@ -19,25 +19,19 @@
 import sys
 sys.path.append('../../')
 
-from pmf.producer import EventProducer
-from time import sleep
+from pulp.messaging.consumer import EventConsumer
 from logging import INFO, basicConfig
 
-basicConfig(filename='/tmp/pmf.log', level=INFO)
+basicConfig(filename='/tmp/messaging.log', level=INFO)
+
+class MyConsumer(EventConsumer):
+    def notify(self, subject, body):
+        print '(%s) %s' % (subject, body)
 
 def main():
-    p = EventProducer()
-    for n in range(0, 1000):
-        p.send('bogus', 'bogus')
-        p.send('user', 'user without subject')
-        p.send('user.hello', 'user.%d' % n)
-        p.send('user.created', '{%d} user.created' % n)
-        p.send('user.updated', '{%d} user.updated' % n)
-        p.send('user.deleted', '{%d} user-deleted' % n)
-        p.send('repo.created', '{%d} repo.created' % n)
-        p.send('repo.updated', '{%d} repo.updated' % n)
-        p.send('repo.deleted', '{%d} repo-deleted' % n)
-        sleep(3)
+    c = MyConsumer('user.#', 'myqueue')
+    c.start()
+    c.join()
 
 if __name__ == '__main__':
     main()

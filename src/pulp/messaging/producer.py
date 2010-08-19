@@ -17,8 +17,8 @@
 Contains AMQP message producer classes.
 """
 
-from pmf import *
-from pmf.endpoint import Endpoint
+from pulp.messaging import *
+from pulp.messaging.endpoint import Endpoint
 from qpid.messaging import Message
 from logging import getLogger
 

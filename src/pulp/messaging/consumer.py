@@ -17,12 +17,12 @@
 Provides AMQP message consumer classes.
 """
 
-from pmf import *
-from pmf.endpoint import Endpoint
-from pmf.producer import Producer
-from pmf.dispatcher import Return
-from pmf.window import *
-from pmf.store import PendingQueue, PendingReceiver
+from pulp.messaging import *
+from pulp.messaging.endpoint import Endpoint
+from pulp.messaging.producer import Producer
+from pulp.messaging.dispatcher import Return
+from pulp.messaging.window import *
+from pulp.messaging.store import PendingQueue, PendingReceiver
 from qpid.messaging import Empty
 from threading import Thread
 from logging import getLogger
@@ -39,7 +39,7 @@ class ReceiverThread(Thread):
         messages are read.
     @type consumer: L{Consumer}
     """
-    
+
     def __init__(self, consumer):
         """
         @param consumer: A consumer that is notified when
@@ -65,7 +65,7 @@ class ReceiverThread(Thread):
                 pass
             except Exception:
                 log.error('failed:\n%s', m, exc_info=True)
-            
+
     def stop(self):
         """
         Stop reading the receiver and terminate
@@ -236,9 +236,9 @@ class RequestConsumer(Consumer):
     """
     An AMQP request consumer.
     @ivar producer: A reply producer.
-    @type producer: L{pmf.producer.Producer}
+    @type producer: L{pulp.messaging.producer.Producer}
     @ivar dispatcher: An RMI dispatcher.
-    @type dispatcher: L{pmf.dispatcher.Dispatcher}
+    @type dispatcher: L{pulp.messaging.dispatcher.Dispatcher}
     """
 
     def start(self, dispatcher):
@@ -246,7 +246,7 @@ class RequestConsumer(Consumer):
         Start processing messages on the queue using the
         specified dispatcher.
         @param dispatcher: An RMI dispatcher.
-        @type dispatcher: L{pmf.Dispatcher}
+        @type dispatcher: L{pulp.messaging.Dispatcher}
         """
         q = PendingQueue(self.id())
         self.pending = PendingReceiver(q, self)

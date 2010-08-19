@@ -18,8 +18,8 @@ Provides RMI dispatcher classes.
 
 import sys
 import traceback as tb
-from pmf import *
-from pmf.decorators import mayinvoke
+from pulp.messaging import *
+from pulp.messaging.decorators import mayinvoke
 from logging import getLogger
 
 

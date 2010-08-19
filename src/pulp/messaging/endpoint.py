@@ -17,9 +17,9 @@
 AMQP endpoint base classes.
 """
 
-from pmf import *
-from pmf.broker import Broker
-from pmf.transport import SSLTransport
+from pulp.messaging import *
+from pulp.messaging.broker import Broker
+from pulp.messaging.transport import SSLTransport
 from qpid.messaging import Connection
 from time import sleep
 from logging import getLogger

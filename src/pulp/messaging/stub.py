@@ -19,9 +19,9 @@ Proxies (stubs) are the I{local} representation of I{remote}
 classes on which we invoke methods.
 """
 
-from pmf import *
-from pmf.dispatcher import Request
-from pmf.window import Window
+from pulp.messaging import *
+from pulp.messaging.dispatcher import Request
+from pulp.messaging.window import Window
 
 
 class Method:

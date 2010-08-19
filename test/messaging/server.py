@@ -19,18 +19,18 @@
 import sys
 sys.path.append('../../')
 
-from pmf import Queue
-from pmf.stub import Stub
-from pmf.decorators import stub
-from pmf.base import Container
-from pmf.producer import Producer
-from pmf.window import *
+from pulp.messaging import Queue
+from pulp.messaging.stub import Stub
+from pulp.messaging.decorators import stub
+from pulp.messaging.base import Container
+from pulp.messaging.producer import Producer
+from pulp.messaging.window import *
 from time import sleep
 from datetime import datetime as dt
 from datetime import timedelta as delta
 from logging import INFO, basicConfig, getLogger
 
-basicConfig(filename='/tmp/pmf.log', level=INFO)
+basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 log = getLogger(__name__)
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     print agent.dog.bark('hello again', **opts)
 
     # group 1
-    
+
     print 'group 1'
     begin = later(seconds=10)
     window = Window(begin=begin, minutes=10)

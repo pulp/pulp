@@ -20,11 +20,11 @@ import sys
 sys.path.append('../../')
 
 from time import sleep
-from pmf import Queue
-from pmf.async import ReplyConsumer
+from pulp.messaging import Queue
+from pulp.messaging.async import ReplyConsumer
 from logging import INFO, basicConfig
 
-basicConfig(filename='/tmp/pmf.log', level=INFO)
+basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 
 def callback(reply):

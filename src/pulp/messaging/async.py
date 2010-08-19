@@ -17,9 +17,9 @@
 Provides async AMQP message consumer classes.
 """
 
-from pmf import *
-from pmf.dispatcher import Return
-from pmf.consumer import Consumer
+from pulp.messaging import *
+from pulp.messaging.dispatcher import Return
+from pulp.messaging.consumer import Consumer
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -75,7 +75,7 @@ class AsyncReply:
     @ivar any: User defined (round-tripped) data.
     @type any: object
     """
-    
+
     def __init__(self, envelope):
         """
         @param envelope: The received envelope.
@@ -92,7 +92,7 @@ class AsyncReply:
         @type listener: L{Listener} or callable.
         """
         pass
-    
+
     def __str__(self):
         s = []
         s.append(self.__class__.__name__)
@@ -139,14 +139,14 @@ class FinalReply(AsyncReply):
         """
         pass
 
-   
+
 class Succeeded(FinalReply):
     """
     Successful reply to asynchronous operation.
     @ivar retval: The returned value.
     @type retval: object
     """
-    
+
     def __init__(self, envelope):
         """
         @param envelope: The received envelope.
@@ -158,7 +158,7 @@ class Succeeded(FinalReply):
 
     def succeeded(self):
         return True
-    
+
     def __str__(self):
         s = []
         s.append(AsyncReply.__str__(self))
@@ -175,7 +175,7 @@ class Failed(FinalReply):
     @type exval: object
     @see: L{Failed.throw}
     """
-    
+
     def __init__(self, envelope):
         """
         @param envelope: The received envelope.
@@ -184,10 +184,10 @@ class Failed(FinalReply):
         AsyncReply.__init__(self, envelope)
         reply = Return(envelope.result)
         self.exval = Exception(reply.exval)
-        
+
     def throw(self):
         raise self.exval
-    
+
     def __str__(self):
         s = []
         s.append(AsyncReply.__str__(self))
@@ -229,7 +229,7 @@ class Listener:
     """
     An asynchronous operation callback listener.
     """
-    
+
     def succeeded(self, reply):
         """
         Async request succeeded.
@@ -237,7 +237,7 @@ class Listener:
         @type reply: L{Succeeded}.
         """
         pass
-    
+
     def failed(self, reply):
         """
         Async request failed (raised an exception).

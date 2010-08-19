@@ -17,7 +17,7 @@
 Contains maintenance window classes.
 """
 
-from pmf import *
+from pulp.messaging import *
 from datetime import datetime as dt
 from datetime import timedelta as delta
 

@@ -17,11 +17,11 @@
 Agent base classes.
 """
 
-from pmf import *
-from pmf.decorators import Remote
-from pmf.dispatcher import Dispatcher
-from pmf.window import Window
-from pmf.policy import *
+from pulp.messaging import *
+from pulp.messaging.decorators import Remote
+from pulp.messaging.dispatcher import Dispatcher
+from pulp.messaging.window import Window
+from pulp.messaging.policy import *
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -33,7 +33,7 @@ class Agent:
     The agent base provides a dispatcher and automatic
     registration of methods based on decorators.
     @ivar consumer: A qpid consumer.
-    @type consumer: L{pmf.Consumer}
+    @type consumer: L{pulp.messaging.Consumer}
     """
 
     def __init__(self, consumer):
@@ -41,7 +41,7 @@ class Agent:
         Construct the L{Dispatcher} using the specified
         AMQP I{consumer} and I{start} the AMQP consumer.
         @param consumer: A qpid consumer.
-        @type consumer: L{pmf.Consumer}
+        @type consumer: L{pulp.messaging.Consumer}
         """
         dispatcher = Dispatcher()
         dispatcher.register(*Remote.classes)
@@ -61,7 +61,7 @@ class Container:
     @ivar __id: The peer ID.
     @type __id: str
     @ivar __producer: An AMQP producer.
-    @type __producer: L{pmf.producer.Producer}
+    @type __producer: L{pulp.messaging.producer.Producer}
     @ivar __stubs: A list of L{Stub} objects.
     @type __stubs: [L{Stub},..]
     @ivar __options: Container options.
@@ -73,7 +73,7 @@ class Container:
         @param id: The peer ID.
         @type id: str
         @param producer: An AMQP producer.
-        @type producer: L{pmf.producer.Producer}
+        @type producer: L{pulp.messaging.producer.Producer}
         @param options: keyword options.
         @type options: dict
         """
@@ -89,7 +89,7 @@ class Container:
         Set the request method based on options.
         The selected method is added to I{options}.
         @param producer: An AMQP producer.
-        @type producer: L{pmf.producer.Producer}
+        @type producer: L{pulp.messaging.producer.Producer}
         """
         if self.__async():
             ctag = self.__options.ctag

@@ -20,14 +20,14 @@ import sys
 sys.path.append('../../')
 
 from time import sleep
-from pmf import Queue
-from pmf.base import Agent as Base
-from pmf.decorators import remote, remotemethod
-from pmf.consumer import RequestConsumer
-from pmf.broker import Broker
+from pulp.messaging import Queue
+from pulp.messaging.base import Agent as Base
+from pulp.messaging.decorators import remote, remotemethod
+from pulp.messaging.consumer import RequestConsumer
+from pulp.messaging.broker import Broker
 from logging import INFO, basicConfig
 
-basicConfig(filename='/tmp/pmf.log', level=INFO)
+basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 @remote
 class RepoLib:

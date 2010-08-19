@@ -17,7 +17,7 @@
 Defined AMQP broker objects.
 """
 
-from pmf import *
+from pulp.messaging import *
 from qpid.messaging import Connection
 from logging import getLogger
 

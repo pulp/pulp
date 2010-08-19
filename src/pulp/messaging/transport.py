@@ -17,7 +17,7 @@
 Contains custom QPID transport classes.
 """
 
-from pmf.broker import Broker
+from pulp.messaging.broker import Broker
 from ssl import wrap_socket, CERT_NONE, CERT_REQUIRED
 from qpid.messaging.transports import connect, TRANSPORTS, tls
 from logging import getLogger

@@ -18,8 +18,8 @@ Provides (local) message storage classes.
 """
 
 import os
-from pmf import *
-from pmf.window import Window
+from pulp.messaging import *
+from pulp.messaging.window import Window
 from time import sleep
 from stat import *
 from threading import Thread, RLock
@@ -45,7 +45,7 @@ class PendingQueue:
     @type uncommitted: [path,..]
     """
 
-    ROOT = '/var/lib/pulp/pmf'
+    ROOT = '/var/lib/pulp/messaging'
 
     def __init__(self, id):
         """
@@ -200,10 +200,10 @@ class PendingQueue:
         @rtype: str
         """
         return os.path.join(self.ROOT, self.id, envelope.sn)
-    
+
     def lock(self):
         self.__lock.acquire()
-        
+
     def unlock(self):
         self.__lock.release()
 
@@ -216,7 +216,7 @@ class PendingReceiver(Thread):
     @ivar queue: The L{PendingQueue} being read.
     @type queue: L{PendingQueue}
     @ivar consumer: The queue listener.
-    @type consumer: L{pmf.consumer.Consumer}
+    @type consumer: L{pulp.messaging.consumer.Consumer}
     """
 
     def __init__(self, queue, listener):
