@@ -62,6 +62,7 @@ class Agent(Base):
     """
     Pulp agent.
     """
+
     def __init__(self, actions=[]):
         id = self.id()
         actionThread = ActionThread(actions)
@@ -69,11 +70,14 @@ class Agent(Base):
         cfg = Config()
         queue = Queue(id)
         url = cfg.messaging.url
-        broker = Broker.get(url)
-        broker.cacert = cfg.messaging.cacert
-        broker.clientcert = cfg.messaging.clientcert
-        consumer = RequestConsumer(queue, url=url)
-        Base.__init__(self, consumer)
+        if url and isinstance(url, str):
+            broker = Broker.get(url)
+            broker.cacert = cfg.messaging.cacert
+            broker.clientcert = cfg.messaging.clientcert
+            consumer = RequestConsumer(queue, url=url)
+            Base.__init__(self, consumer)
+        else:
+            log.warn('agent {%s} has messaging disabled.', id)
         log.info('agent {%s} - started.', id)
         actionThread.join()
 
