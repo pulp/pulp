@@ -52,16 +52,20 @@ class Packages:
     """
 
     @remotemethod
-    def install(self, packagenames):
+    def install(self, packageinfo):
         """
         Install packages by name.
-        @param packagenames: A list of simple package names.
-        @param packagenames: str
+        @param packageinfo: A list of strings for pkg names 
+                            or tuples for name/arch info.
+        @type packageinfo: str or tuple
         """
-        log.info('installing packages: %s', packagenames)
+        log.info('installing packages: %s', packageinfo)
         yb = YumBase()
-        for n in packagenames:
-            pkgs = yb.pkgSack.returnNewestByName(n)
+        for info in packageinfo:
+            if isinstance(info, tuple): 
+                pkgs = yb.pkgSack.returnNewestByNameArch('.'.join(info))
+            else:
+                pkgs = yb.pkgSack.returnNewestByName(info)
             for p in pkgs:
                 yb.tsInfo.addInstall(p)
         yb.resolveDeps()
