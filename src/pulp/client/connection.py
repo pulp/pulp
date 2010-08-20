@@ -53,7 +53,9 @@ class Restlib(object):
     def __init__(self, host, port, apihandler, cert_file=None, key_file=None, 
                  username=None, password=None):
         self.host = host
-        self.port = port
+        # ensure we have an integer, httpslib is picky about the type
+        # passed in for the port
+        self.port = int(port)
         self.apihandler = apihandler
         self.username = username
         self.password = password
@@ -72,6 +74,8 @@ class Restlib(object):
 
     def _request(self, request_type, method, info=None):
         handler = self.apihandler + method
+        log.debug("_request calling: %s to host:port : %s:%s" % 
+                  (handler, self.host, type(self.port)))
         if self.cert_file:
             log.info("Using SSLv3 context")
             context = SSL.Context("sslv3")
@@ -79,6 +83,9 @@ class Restlib(object):
             conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
         else:
             conn = httplib.HTTPSConnection(self.host, self.port)
+        log.debug("Request_type: %s" % request_type)
+        log.debug("info: %s" % info)
+        log.debug("headers: %s" % self.headers)
         conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
         response = conn.getresponse()

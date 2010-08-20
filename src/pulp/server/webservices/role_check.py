@@ -57,8 +57,8 @@ class RoleCheck(object):
               the "self" will be the first argument.
             '''
             # Check the roles
-            log.debug("Role checking start, function: %s" % str(f))
-            roles = {'consumer':None, 'admin': None}
+            log.debug("\n\nRole checking start, function: %s" % str(f))
+            roles = {'consumer':None, 'admin': None, 'consumer_id': None}
             for key in self.dec_kw.keys():
                 log.debug("Role Name [%s], check? [%s]" % (key, self.dec_kw[key]))
                 roles[key] = self.dec_kw[key]
@@ -131,9 +131,7 @@ class RoleCheck(object):
             log.debug("Good Password? [%s]" % goodPassword)
             return goodPassword
         return False
-        
-        
-
+    
     def check_consumer_id(self, *fargs): 
         ## This is where we will extract CERT fields
         environment = web.ctx.environ
@@ -142,7 +140,7 @@ class RoleCheck(object):
             if (key.startswith('SSL_')):
                 value = str(environment.get(key, None))
                 log.debug("SSL k: " + key + ", v: " + value)
-        cs = environment.get('SSL_CLIENT_CERT', None)
+        cs = str(environment.get('SSL_CLIENT_CERT', None))
         
         good_certificate = False
         if (cs is not None):
@@ -157,11 +155,13 @@ class RoleCheck(object):
                 return good_certificate 
             log.error("Consumer UID: %s " % consumer_cert_uid)
             # Check the consumer_id matches 
-            for arg in fargs:
-                log.debug("Arg [%s]" % arg)
-                if (arg == consumer_cert_uid):
-                    good_certificate = True
-                    break
+            # Disabled for now.  Adding new type of check.
+            good_certificate = True
+            #for arg in fargs:
+            #    log.debug("Arg [%s]" % arg)
+            #    if (arg == consumer_cert_uid):
+            #        good_certificate = True
+            #        break
             if (not good_certificate):
                 log.error("Certificate UID doesnt match the consumer UID you passed in") 
             else:

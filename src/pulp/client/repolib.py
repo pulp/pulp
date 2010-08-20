@@ -48,12 +48,17 @@ class RepoLib:
     @type lock: L{Lock}
     """
 
-    def __init__(self, lock=ActionLock()):
+    def __init__(self, lock=ActionLock(), cert_file=None, key_file=None, 
+                 username=None, password=None):
         """
         @param lock: A lock.
         @type lock: L{Lock}
         """
         self.lock = lock
+        self.cert_file = cert_file
+        self.key_file = key_file
+        self.username = username
+        self.password = password
 
     def update(self):
         """
@@ -62,7 +67,8 @@ class RepoLib:
         lock = self.lock
         lock.acquire()
         try:
-            action = UpdateAction()
+            action = UpdateAction(self.cert_file, self.key_file, self.username, 
+                                  self.password)
             return action.perform()
         finally:
             lock.release()
@@ -72,11 +78,16 @@ class Pulp:
     """
     The pulp server.
     """
-    def __init__(self, cfg):
+    def __init__(self, cfg,  cert_file=None, key_file=None, 
+                 username=None, password=None):
         host = cfg.server.host
         port = cfg.server.port
-        self.rapi = RepoConnection(host=host, port=port)
-        self.capi = ConsumerConnection(host=host, port=port)
+        self.rapi = RepoConnection(host=host, port=port, cert_file=cert_file,
+                                        key_file=key_file, username=username, 
+                                        password=password)
+        self.capi = ConsumerConnection(host=host, port=port, cert_file=cert_file,
+                                        key_file=key_file, username=username, 
+                                        password=password)
 
     def getProducts(self):
         # TODO: hack for demo, replace w/ real stuff later.
@@ -100,9 +111,10 @@ class Action:
     Action base class.
     """
 
-    def __init__(self):
+    def __init__(self, cert_file=None, key_file=None, 
+                 username=None, password=None):
         self.cfg = Config()
-        self.pulp = Pulp(self.cfg)
+        self.pulp = Pulp(self.cfg, cert_file, key_file, username, password)
 
 
 class UpdateAction(Action):

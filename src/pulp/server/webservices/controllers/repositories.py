@@ -96,7 +96,7 @@ class Repositories(JSONController):
 class Repository(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @RoleCheck(consumer=True, admin=True)
     def GET(self, id):
         """
         Get information on a single repository.
@@ -154,7 +154,6 @@ class RepositoryDeferredFields(JSONController):
     )
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
     def packages(self, id):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
@@ -165,7 +164,6 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(filtered_packages)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
     def packagegroups(self, id):
         repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
@@ -173,7 +171,6 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(repo.get('packagegroups'))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
     def packagegroupcategories(self, id):
         repo = api.repository(id, ['id', 'packagegroupcategories'])
         if repo is None:
@@ -181,7 +178,6 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(repo.get('packagegroupcategories', []))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
     def errata(self, id):
         """
          list applicable errata for a given repo.
@@ -192,7 +188,7 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(api.errata(id, types))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @RoleCheck(consumer=True, admin=True)
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:

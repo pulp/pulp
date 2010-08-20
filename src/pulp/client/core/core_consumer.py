@@ -51,7 +51,7 @@ class consumer(BaseCore):
         self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
-        self.repolib = RepoLib()
+        
         
     def load_server(self):
         cert_path = None 
@@ -64,6 +64,8 @@ class consumer(BaseCore):
                                         port=8811, cert_file=cert_path,
                                         key_file=key_path, username=self.username, 
                                         password=self.password)
+        self.repolib = RepoLib(cert_file=cert_path, key_file=key_path, 
+                               username=self.username, password=self.password)
 
     def generate_options(self):
         self.action = self._get_action()
