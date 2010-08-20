@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.52
+Version:        0.0.53
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -173,6 +173,33 @@ fi
 
 
 %changelog
+* Fri Aug 20 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.53-1
+- Missed a server import rename (jason.dobies@redhat.com)
+- Merge branch 'master' into code-reorganization (jason.dobies@redhat.com)
+- Discontinue installing the egg into site-packages. (jortel@redhat.com)
+- Fix .spec problem with pulp-* egg. (jortel@redhat.com)
+- Update spec to match code refactoring. (jortel@redhat.com)
+- Update spec to match code refactoring. (jortel@redhat.com)
+- Update imports for refactoring. (jortel@redhat.com)
+- Updated for new package structure and cleaned up unused imports
+  (jason.dobies@redhat.com)
+- Updated imports for new structure (jason.dobies@redhat.com)
+- quiet the logging (mmccune@redhat.com)
+- Move pulptools to: pulp.client.  Update pmf imports. (jortel@redhat.com)
+- update section names pmf->messaging. (jortel@redhat.com)
+- moved to server where it belongs.  Updated imports and .conf section.
+  (jortel@redhat.com)
+- moved pmf to: pulp.messaging. (jortel@redhat.com)
+- First steps in major package refactoring: just shuffling files into the
+  proper directories (jason.dobies@redhat.com)
+- added unicode cast to principal (jconnor@redhat.com)
+- reset does not need to manage a queue managed resource (jconnor@redhat.com)
+- check if packages exist before computing the length (pkilambi@redhat.com)
+- set the exception to jus message instead of an object so its serializable
+  (pkilambi@redhat.com)
+- removing bad attributes on Task objects causing tracebacks
+  (pkilambi@redhat.com)
+
 * Wed Aug 18 2010 Mike McCune <mmccune@redhat.com> 0.0.52-1
 - rebuild
 
