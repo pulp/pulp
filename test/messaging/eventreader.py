@@ -28,10 +28,13 @@ class MyConsumer(EventConsumer):
     def notify(self, subject, body):
         print '(%s) %s' % (subject, body)
 
+
 def main():
-    c = MyConsumer('user.#', 'myqueue')
-    c.start()
-    c.join()
+    consumer = MyConsumer('user.#')
+    #consumer = MyConsumer('user.#', 'myqueue') # durable subscriber
+    consumer.start()
+    consumer.join()
+
 
 if __name__ == '__main__':
     main()
