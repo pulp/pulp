@@ -52,6 +52,7 @@ from pulp.client.utils import generatePakageProfile
 
 import testutil
 
+logging.root.setLevel(logging.ERROR)
 
 class TestApi(unittest.TestCase):
 
@@ -746,6 +747,4 @@ class TestApi(unittest.TestCase):
         
         
 if __name__ == '__main__':
-    logging.root.addHandler(logging.StreamHandler())
-    logging.root.setLevel(logging.ERROR)
     unittest.main()

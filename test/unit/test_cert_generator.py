@@ -26,6 +26,8 @@ sys.path.insert(0, srcdir)
 from pulp.server.certificate import Certificate
 import pulp.server.cert_generator as cert_generator
 
+logging.root.setLevel(logging.ERROR)
+
 class TestCertGeneration(unittest.TestCase):
 
     def test_generation(self):

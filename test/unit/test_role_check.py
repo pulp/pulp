@@ -37,10 +37,7 @@ from pulp.server.webservices.role_check import RoleCheck
 import testutil
 testutil.load_test_config()
 
-logging.root.addHandler(logging.StreamHandler())
-logging.root.setLevel(logging.DEBUG)
-
-
+logging.root.setLevel(logging.ERROR)
 
 class TestRoleCheck(unittest.TestCase):
 

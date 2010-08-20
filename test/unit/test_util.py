@@ -28,6 +28,8 @@ from pulp.server.util import get_repo_packages
 from pulp.server.util import get_repo_package
 
 
+logging.root.setLevel(logging.ERROR)
+
 class TestUtil(unittest.TestCase):
 
     def test_getrpminfo(self):
@@ -65,6 +67,4 @@ class TestUtil(unittest.TestCase):
         
         
 if __name__ == '__main__':
-    logging.root.addHandler(logging.StreamHandler())
-    logging.root.setLevel(logging.INFO)
     unittest.main()
