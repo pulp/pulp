@@ -51,19 +51,19 @@ class errata(BaseCore):
 
     def load_server(self):
         self.econn = ErrataConnection(host=CFG.server.host or "localhost", 
-                                    port=CFG.server.port or 8811,
+                                    port=CFG.server.port or 443,
                                     username=self.username, 
                                     password=self.password)
         self.rconn = RepoConnection(host=CFG.server.host or "localhost", 
-                                    port=CFG.server.port or 8811,
+                                    port=CFG.server.port or 443,
                                     username=self.username, 
                                     password=self.password)
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
-                                    port=CFG.server.port or 8811,
+                                    port=CFG.server.port or 443,
                                     username=self.username, 
                                     password=self.password)
         self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
-                                    port=CFG.server.port or 8811,
+                                    port=CFG.server.port or 443,
                                     username=self.username, 
                                     password=self.password)
     def generate_options(self):

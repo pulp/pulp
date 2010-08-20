@@ -57,7 +57,7 @@ class Index(JSONController):
     
     
 class AuthTest(JSONController):
-    #https://localhost:8811/test/some-id/auth/
+    #https://localhost:443/test/some-id/auth/
     @RoleCheck(admin=True, consumer=True)
     def GET(self, id):
         log.error("AuthTest.GET")

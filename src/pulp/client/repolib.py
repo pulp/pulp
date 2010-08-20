@@ -416,7 +416,7 @@ class Reader:
 
 def test():
     host = 'localhost'
-    port = 8811
+    port = 443
     f = open('/etc/pulp/consumer', 'w')
     f.write('0')
     f.flush()

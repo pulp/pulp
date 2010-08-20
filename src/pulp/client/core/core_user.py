@@ -46,7 +46,7 @@ class user(BaseCore):
 
     def load_server(self):
         self.userconn = UserConnection(host=CFG.server.host or "localhost", 
-                                              port=CFG.server.port or 8811,
+                                              port=CFG.server.port or 443,
                                               username=self.username, 
                                               password=self.password)
         

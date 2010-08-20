@@ -29,7 +29,7 @@ class TestApi(unittest.TestCase):
         failed = False
         out = None
         try:
-            rl = Restlib('localhost', 8811, '/test/invalid-id/', 
+            rl = Restlib('localhost', 443, '/test/invalid-id/', 
                          cert_file=certpath, key_file=keypath)
             out = rl.request_get('auth/')
         except Exception, e:
@@ -37,7 +37,7 @@ class TestApi(unittest.TestCase):
         self.assertTrue(failed)
         self.assertTrue(out == None)
          
-        rl = Restlib('localhost', 8811, '/test/fb12d975-1f33-4b34-8ac9-0adb6089fb87/', 
+        rl = Restlib('localhost', 443, '/test/fb12d975-1f33-4b34-8ac9-0adb6089fb87/', 
              cert_file=certpath, key_file=keypath)
         out = rl.request_get('auth/')
         print "Valid request output: %s" % out

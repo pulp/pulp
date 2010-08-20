@@ -51,10 +51,10 @@ class packagegroup(BaseCore):
 
     def load_server(self):
         self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
-                                    port=8811, username=self.username, 
+                                    port=443, username=self.username, 
                                         password=self.password)
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
-                                        port=8811, username=self.username, 
+                                        port=443, username=self.username, 
                                         password=self.password)
 
     def generate_options(self):

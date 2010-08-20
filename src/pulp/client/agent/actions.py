@@ -54,7 +54,7 @@ class ProfileUpdateAction(Action):
             return
         try:
             cconn = ConsumerConnection(host=cfg.server.host or "localhost", 
-                                       port=cfg.server.port or 8811)
+                                       port=cfg.server.port or 443)
             pkginfo = PackageProfile().getPackageList()
             cconn.profile(cid.read(), pkginfo)
             log.info("Profile updated successfully for consumer %s" % cid.read())

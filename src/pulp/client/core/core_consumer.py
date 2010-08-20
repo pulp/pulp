@@ -61,7 +61,7 @@ class consumer(BaseCore):
             cert_path = CERT_PATH
             key_path = KEY_PATH
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
-                                        port=8811, cert_file=cert_path,
+                                        port=443, cert_file=cert_path,
                                         key_file=key_path, username=self.username, 
                                         password=self.password)
         self.repolib = RepoLib(cert_file=cert_path, key_file=key_path, 

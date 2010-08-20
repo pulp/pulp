@@ -75,7 +75,7 @@ class Restlib(object):
     def _request(self, request_type, method, info=None):
         handler = self.apihandler + method
         log.debug("_request calling: %s to host:port : %s:%s" %
-                  (handler, self.host, type(self.port)))
+                  (handler, self.host, self.port))
         if self.cert_file:
             log.info("Using SSLv3 context")
             context = SSL.Context("sslv3")

@@ -323,6 +323,7 @@ class InterruptFIFOQueueTester(QueueTester):
         self.queue.enqueue(task)
         self.queue.cancel(task)
         self._wait_for_task(task)
+        print task.state
         self.assertTrue(task.state == task_canceled)
 
 # run the unit tests ----------------------------------------------------------
