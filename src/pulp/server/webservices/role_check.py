@@ -25,13 +25,16 @@ import pymongo.json_util
 import web
 
 from pulp.server.api.user import UserApi
+from pulp.server.api.consumer import ConsumerApi
 from pulp.server.certificate import Certificate
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 import pulp.server.password_util as password_util
 
 log = logging.getLogger(__name__)
+
 userApi = UserApi()
+consumerApi = ConsumerApi()
 
 
 class RoleCheck(object):
@@ -56,6 +59,7 @@ class RoleCheck(object):
               the argument list, which is redundant.  If this wraps a class instance,
               the "self" will be the first argument.
             '''
+            
             # Check the roles
             log.debug("\n\nRole checking start, function: %s" % str(f))
             roles = {'consumer':None, 'admin': None, 'consumer_id': None}
@@ -81,8 +85,8 @@ class RoleCheck(object):
                     return json.dumps(pe.value, default=pymongo.json_util.default)
             
             ## Check cert
-            if (roles['consumer']):
-                consumer_access_granted = self.check_consumer_id(*fargs)
+            if (roles['consumer'] or roles['consumer_id']):
+                consumer_access_granted = self.check_consumer(roles['consumer_id'], *fargs)
                 log.debug("consumer_access_granted? %s " % consumer_access_granted)
             
             log.debug("AAG: %s, CAG: %s" % (admin_access_granted, consumer_access_granted))
@@ -115,6 +119,8 @@ class RoleCheck(object):
         environment = web.ctx.environ
         auth_string = environment.get('HTTP_AUTHORIZATION', None)
         if (auth_string is not None and auth_string.startswith("Basic")):
+            logging.root.setLevel(logging.DEBUG)
+            logging.root.addHandler(logging.StreamHandler())
             log.debug("auth_string string: %s" % auth_string)
             encoded_auth = auth_string.split(" ")[1]
             auth_string = base64.decodestring(encoded_auth)
@@ -132,18 +138,17 @@ class RoleCheck(object):
             return goodPassword
         return False
     
-    def check_consumer_id(self, *fargs): 
+    def check_consumer(self, check_id=False, *fargs): 
         ## This is where we will extract CERT fields
         environment = web.ctx.environ
-        # log.debug("Env: %s" % environment)
+        # print("Env: %s" % environment)
         for key in environment.keys():
             if (key.startswith('SSL_')):
                 value = str(environment.get(key, None))
                 log.debug("SSL k: " + key + ", v: " + value)
-        cs = str(environment.get('SSL_CLIENT_CERT', None))
-        
+        cs = environment.get('SSL_CLIENT_CERT', None)
         good_certificate = False
-        if (cs is not None):
+        if cs != None:
             idcert = Certificate(content=cs)
             log.debug("parsed ID CERT: %s" % idcert)
             subject = idcert.subject()
@@ -154,14 +159,25 @@ class RoleCheck(object):
                 good_certificate = False
                 return good_certificate 
             log.error("Consumer UID: %s " % consumer_cert_uid)
-            # Check the consumer_id matches 
-            # Disabled for now.  Adding new type of check.
-            good_certificate = True
-            #for arg in fargs:
-            #    log.debug("Arg [%s]" % arg)
-            #    if (arg == consumer_cert_uid):
-            #        good_certificate = True
-            #        break
+            # Check that it is a valid consumer in our db
+            consumer = consumerApi.consumer(consumer_cert_uid)
+            if not consumer:
+                log.error("Consumer with id: %s does not exist" % 
+                          consumer_cert_uid)
+                good_certificate = False
+                return good_certificate 
+                
+            # Check the consumer_id matches
+            log.debug("check_id: %s" % check_id) 
+            if check_id:
+                log.debug("Checking ID in cert vs param passed in")            
+                for arg in fargs:
+                    log.debug("Arg [%s]" % arg)
+                    if (arg == consumer_cert_uid):
+                        good_certificate = True
+                        break
+            else:
+                good_certificate = True
             if (not good_certificate):
                 log.error("Certificate UID doesnt match the consumer UID you passed in") 
             else:

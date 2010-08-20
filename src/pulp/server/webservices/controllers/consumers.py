@@ -99,7 +99,7 @@ class Bulk(JSONController):
 class Consumer(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -134,7 +134,7 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def DELETE(self, id):
         """
         Delete a consumer.
@@ -153,7 +153,7 @@ class ConsumerDeferredFields(JSONController):
         'repoids',
         'certificate'
     )
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def package_profile(self, id):
         """
         Get a consumer's set of packages
@@ -166,7 +166,7 @@ class ConsumerDeferredFields(JSONController):
         packages = self.filter_results(packages, filters)
         return self.ok(packages)
     
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def repoids(self, id):
         """
         Get the ids of the repositories the consumer is bound to.
@@ -222,7 +222,7 @@ class ConsumerActions(JSONController):
         'installerrata',
     )
     
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def bind(self, id):
         """
         Bind (subscribe) a user to a repository.
@@ -232,7 +232,7 @@ class ConsumerActions(JSONController):
         api.bind(id, data)
         return self.ok(True)
     
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def unbind(self, id):
         """
         Unbind (unsubscribe) a user to a repository.
@@ -242,7 +242,7 @@ class ConsumerActions(JSONController):
         api.unbind(id, data)
         return self.ok(None)
     
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
@@ -251,7 +251,7 @@ class ConsumerActions(JSONController):
         api.profile_update(id, self.params())
         return self.ok(True)
 
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def installpackages(self, id):
         """
         Install packages.
@@ -261,7 +261,7 @@ class ConsumerActions(JSONController):
         names = data.get('packagenames', [])
         return self.ok(api.installpackages(id, names))
     
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroups(self, id):
         """
         Install package groups.
@@ -271,7 +271,7 @@ class ConsumerActions(JSONController):
         ids = data.get('packageids', [])
         return self.ok(api.installpackagegroups(id, ids))
 
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def installerrata(self, id):
         """
         Install errata
@@ -283,7 +283,7 @@ class ConsumerActions(JSONController):
         return self.ok(api.installerrata(id, eids, types))
     
     @JSONController.error_handler
-    @RoleCheck(consumer=True, admin=True)
+    @RoleCheck(consumer_id=True, admin=True)
     def listerrata(self, id):
         """
          list applicable errata for a given repo.
