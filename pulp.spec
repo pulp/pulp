@@ -163,7 +163,6 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 %post client
 chkconfig --add pulpd
-/sbin/service pulpd start
 
 %preun client
 if [ $1 = 0 ] ; then
