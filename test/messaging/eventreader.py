@@ -25,8 +25,8 @@ from logging import INFO, basicConfig
 basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 class MyConsumer(EventConsumer):
-    def notify(self, subject, body):
-        print '(%s) %s' % (subject, body)
+    def raised(self, subject, event):
+        print 'Event (%s) "%s" raised' % (subject, event)
 
 
 def main():

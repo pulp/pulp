@@ -358,17 +358,17 @@ class EventConsumer(Consumer):
         try:
             subject = envelope.subject
             body = envelope.event
-            self.notify(subject, body)
+            self.raised(subject, body)
         except Exception, e:
             log.exception(e)
         self.ack()
 
-    def notify(self, subject, body):
+    def raised(self, subject, event):
         """
-        Notify the listener that an event has been consumed.
+        Notify the listener that an event has been raised.
         @param subject: The event subject.
         @type subject: str
-        @param body: The event body.
-        @type body: any
+        @param event: The event body.
+        @type event: any
         """
         pass
