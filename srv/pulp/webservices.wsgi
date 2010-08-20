@@ -14,7 +14,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.webservices.application import wsgi_application
+from pulp.server.webservices.application import wsgi_application
 
 
 application = wsgi_application()
