@@ -227,13 +227,13 @@ class ConsumerApi(BaseApi):
             for eid in errataids:
                 for pobj in applicable_errata[eid]:
                     if pobj["arch"] != "src":
-                        pkgs.append((pobj["name"], pobj["arch"]))
+                        pkgs.append(pobj["name"])
         else:
             #apply all updates
             pkgobjs = self.list_package_updates(id, types)
             for pobj in pkgobjs:
                 if pobj["arch"] != "src":
-                    pkgs.append((pobj["name"], pobj["arch"]))
+                    pkgs.append(pobj["name"])
         log.error("Packages to install %s" % pkgs)
         agent.packages.install(pkgs)
         return pkgs
