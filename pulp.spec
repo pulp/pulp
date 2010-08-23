@@ -138,8 +138,6 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %attr(3775, root, root) /etc/pki/content
 /etc/pki/pulp/ca.key
 /etc/pki/pulp/ca.crt
-/etc/pki/pulp/server.crt
-/etc/pki/pulp/server.key
 
 
 %files common
