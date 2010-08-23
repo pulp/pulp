@@ -147,7 +147,7 @@ class consumer(BaseCore):
                 print ""
                 print "You have: [%s] configured but got: [%s] from the server." % (wh.expectedHost, wh.actualHost)
                 print ""
-                print "Either correct the host in /etc/pulp/ or use the --server parameter"
+                print "Either correct the host in /etc/pulp/ or specify --server=%s" % wh.actualHost
                 sys.exit(1)   
 
             cert_dict = self.cconn.certificate(self.options.id)
