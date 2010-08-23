@@ -43,7 +43,7 @@ class consumergroup(BaseCore):
                         "list"   : "List available consumer groups",
                         "delete" : "Delete a consumer group",
                         "bind"   : "Bind the consumer group to listed repos",
-                        "unbind" : "UnBind the consumer group from repos",}
+                        "unbind" : "Unbind the consumer group from repos",}
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.repolib = RepoLib()
 

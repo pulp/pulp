@@ -48,7 +48,7 @@ class consumer(BaseCore):
                                    "update"        : "Update consumer profile",
                                    "list"          : "List of accessible consumer info",
                                    "bind"          : "Bind the consumer to listed repos",
-                                   "unbind"        : "UnBind the consumer from repos",}
+                                   "unbind"        : "Unbind the consumer from repos",}
         self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
