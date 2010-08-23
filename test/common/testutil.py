@@ -19,6 +19,10 @@ from pulp.server import config
 from pulp.server.logs import start_logging, stop_logging
 
 def load_test_config():
+
+    if not os.path.exists('/tmp/pulp'):
+        os.makedirs('/tmp/pulp')
+
     override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.conf'
     stop_logging()
     try:
@@ -26,6 +30,7 @@ def load_test_config():
     except RuntimeError:
         pass
     start_logging()
+
     return config.config
 
 def create_package(api, name):
