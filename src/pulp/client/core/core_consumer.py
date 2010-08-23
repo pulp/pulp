@@ -17,6 +17,7 @@
 
 import sys
 import os.path
+from M2Crypto import SSL
 import pulp.client.utils as utils
 import pulp.client.constants as constants
 from pulp.client.core.basecore import BaseCore, systemExit
@@ -77,7 +78,7 @@ class consumer(BaseCore):
             self.parser.add_option("--description", dest="description",
                            help="consumer description eg: foo's web server")
             self.parser.add_option("--server", dest="server",
-                           help="Server hostname to register the consumer. Defaults to localhost")
+                           help="The fully qualified hostname of the Pulp server you wish to create this Consumer on")
         if self.action == "update":
             usage = "usage: %prog consumer update [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -138,7 +139,17 @@ class consumer(BaseCore):
             CFG.write()
             self.load_server()
         try:
-            consumer = self.cconn.create(self.options.id, self.options.description)
+            try:
+                consumer = self.cconn.create(self.options.id, self.options.description)
+            except SSL.Checker.WrongHost, wh:
+                print "ERROR: The server hostname you have configured in /etc/pulp/ does not match the"
+                print "hostname returned from the Pulp server you are connecting to.  "
+                print ""
+                print "You have: [%s] configured but got: [%s] from the server." % (wh.expectedHost, wh.actualHost)
+                print ""
+                print "Either correct the host in /etc/pulp/ or use the --server parameter"
+                sys.exit(1)   
+
             cert_dict = self.cconn.certificate(self.options.id)
             certificate = cert_dict['certificate']
             key = cert_dict['private_key']
