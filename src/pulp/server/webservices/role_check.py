@@ -94,7 +94,7 @@ class RoleCheck(object):
                 log.debug("Access denied.")
                 http.status_unauthorized()
                 http.header('Content-Type', 'application/json')
-                return json.dumps("Authorization Failure.  Check your username and password or your Certificate", 
+                return json.dumps("Authorization Failure.  Check your username and password or your certificate", 
                                   default=pymongo.json_util.default)
             # Access granted, proceed
             log.debug("check_roles : Access granted")
