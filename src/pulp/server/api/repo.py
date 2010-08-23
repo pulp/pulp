@@ -30,7 +30,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.auditing import audit
-from pulp.server.config import config
+from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
@@ -49,9 +49,9 @@ class RepoApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         self.packageApi = PackageApi()
-        self.errataapi  = ErrataApi()
-        self.localStoragePath = config.get('paths', 'local_storage')
-   
+        self.errataapi = ErrataApi()
+        self.localStoragePath = config.config.get('paths', 'local_storage')
+
     @property
     def _indexes(self):
         return ["packages", "packagegroups", "packagegroupcategories"]
@@ -74,7 +74,7 @@ class RepoApi(BaseApi):
             item = crontab.CronItem(sync_schedule + ' null') # CronItem expects a command
             if not item.is_valid():
                 raise PulpException('Invalid sync schedule specified [%s]' % sync_schedule)
-            
+
     def _get_existing_repo(self, id):
         """
         Protected helper function to look up a repository by id and raise a
@@ -84,7 +84,7 @@ class RepoApi(BaseApi):
         if repo is None:
             raise PulpException("No Repo with id: %s found" % id)
         return repo
- 
+
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None):
         """
@@ -100,7 +100,7 @@ class RepoApi(BaseApi):
         r['use_symlinks'] = symlinks
         if cert_data:
             cert_dir = "/etc/pki/content/" + name
-            
+
             if not os.path.exists(cert_dir):
                 os.makedirs(cert_dir)
             for key, value in cert_data.items():
@@ -149,7 +149,7 @@ class RepoApi(BaseApi):
         Return a list of Repositories
         """
         return list(self.objectdb.find(spec=spec, fields=fields))
-        
+
     def repository(self, id, fields=None):
         """
         Return a single Repository object
@@ -158,7 +158,7 @@ class RepoApi(BaseApi):
         if not repos:
             return None
         return repos[0]
-        
+
     def packages(self, id, name=None):
         """
         Return list of Package objects in this Repo
@@ -170,8 +170,8 @@ class RepoApi(BaseApi):
         if name is None:
             return packages
         return [p for p in packages.values() if p['name'].find(name) >= 0]
-    
-    
+
+
     def get_package(self, id, name):
         """
         Return matching Package object in this Repo
@@ -180,7 +180,7 @@ class RepoApi(BaseApi):
         if not packages:
             return None
         return packages[0]
-    
+
     @audit()
     def add_package(self, repoid, packageid):
         """
@@ -203,7 +203,7 @@ class RepoApi(BaseApi):
         if p['id'] in packages:
             # No need to update repo, this Package is already under this repo
             return
-        packages[p['id']] = p           
+        packages[p['id']] = p
 
     @audit()
     def remove_package(self, repoid, p):
@@ -211,7 +211,7 @@ class RepoApi(BaseApi):
         # this won't fail even if the package is not in the repo's packages
         repo['packages'].pop(p['id'], None)
         self.update(repo)
-        
+
     def errata(self, id, types=()):
         """
          Look up all applicable errata for a given repo id
@@ -220,14 +220,14 @@ class RepoApi(BaseApi):
         errata = repo['errata']
         if not errata:
             return []
-        if types: 
+        if types:
             try:
-                return [item for type in types for item in errata[type]]    
+                return [item for type in types for item in errata[type]]
             except KeyError, ke:
                 log.debug("Invalid errata type requested :[%s]" % (ke))
                 raise PulpException("Invalid errata type requested :[%s]" % (ke))
-        return list(chain.from_iterable(errata.values())) 
-      
+        return list(chain.from_iterable(errata.values()))
+
     @audit()
     def add_erratum(self, repoid, erratumid):
         """
@@ -236,7 +236,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         self._add_erratum(repo, erratumid)
         self.update(repo)
-        
+
     def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
@@ -245,7 +245,7 @@ class RepoApi(BaseApi):
         for erratumid in errataids:
             self._add_erratum(repo, erratumid)
         self.update(repo)
-        
+
     def _add_erratum(self, repo, erratumid):
         """
         Responsible for properly associating an Erratum to a Repo
@@ -263,7 +263,7 @@ class RepoApi(BaseApi):
             errata[erratum['type']] = []
 
         errata[erratum['type']].append(erratum['id'])
-        
+
     @audit()
     def delete_erratum(self, repoid, erratumid):
         """
@@ -272,7 +272,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         self._delete_erratum(repo, erratumid)
         self.update(repo)
-        
+
     def delete_errata(self, repoid, errataids):
         """
         delete list of errata from this repo
@@ -281,7 +281,7 @@ class RepoApi(BaseApi):
         for erratumid in errataids:
             self._delete_erratum(repo, erratumid)
         self.update(repo)
-        
+
     def _delete_erratum(self, repo, erratumid):
         """
         Responsible for properly removing an Erratum from a Repo
@@ -292,7 +292,7 @@ class RepoApi(BaseApi):
         try:
             curr_errata = repo['errata'][erratum['type']]
             if erratum['id'] not in curr_errata:
-                log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'] )
+                log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
         except Exception, e:
@@ -374,7 +374,7 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(id)
         return repo['packagegroups']
-    
+
     def packagegroup(self, repoid, groupid):
         """
         Return a PackageGroup from this Repo
@@ -385,7 +385,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         return repo['packagegroups'].get(groupid, None)
 
-    
+
     @audit()
     def add_package_to_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
@@ -397,7 +397,7 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
-            raise PulpException("No PackageGroup with id: %s exists in repo %s" 
+            raise PulpException("No PackageGroup with id: %s exists in repo %s"
                                 % (groupid, repoid))
         group = repo["packagegroups"][groupid]
         if group["immutable"]:
@@ -415,8 +415,8 @@ class RepoApi(BaseApi):
                 group["default_package_names"].append(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
-        
-        
+
+
     @audit()
     def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
@@ -428,7 +428,7 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
-            raise PulpException("No PackageGroup with id: %s exists in repo %s" 
+            raise PulpException("No PackageGroup with id: %s exists in repo %s"
                                 % (groupid, repoid))
         group = repo["packagegroups"][groupid]
         if group["immutable"]:
@@ -446,7 +446,7 @@ class RepoApi(BaseApi):
                 group["default_package_names"].remove(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
-    
+
     @audit(params=['repoid', 'cat_id', 'cat_name'])
     def create_packagegroupcategory(self, repoid, cat_id, cat_name, description):
         """
@@ -466,7 +466,7 @@ class RepoApi(BaseApi):
         self.update(repo)
         self._update_groups_metadata(repo["id"])
         return cat
-    
+
     @audit()
     def delete_packagegroupcategory(self, repoid, categoryid):
         """
@@ -493,7 +493,7 @@ class RepoApi(BaseApi):
         repo['packagegroupcategories'][pgc['id']] = pgc
         self.update(repo)
         self._update_groups_metadata(repo["id"])
-    
+
     @audit()
     def update_packagegroupcategories(self, repoid, pgclist):
         """
@@ -533,7 +533,7 @@ class RepoApi(BaseApi):
             # If the repomd file is not valid, or if we are missingg
             # a group metadata file, no point in continuing. 
             if not os.path.exists(repo["repomd_xml_path"]):
-                log.debug("Skipping update of groups metadata since missing repomd file: '%s'" % 
+                log.debug("Skipping update of groups metadata since missing repomd file: '%s'" %
                           (repo["repomd_xml_path"]))
                 return False
             xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
@@ -556,7 +556,7 @@ class RepoApi(BaseApi):
             log.debug("_update_groups_metadata exception caught: %s" % (e))
             log.debug("Traceback: %s" % (traceback.format_exc()))
             return False
-       
+
     @audit()
     def sync(self, id):
         """
@@ -567,7 +567,7 @@ class RepoApi(BaseApi):
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         added_packages, added_errataids = repo_sync.sync(repo, repo_source)
-        log.info("Sync returned %s packages, %s errata" % (len(added_packages), 
+        log.info("Sync returned %s packages, %s errata" % (len(added_packages),
             len(added_errataids)))
         for p in added_packages:
             self._add_package(repo, p)
@@ -596,4 +596,4 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
-        
+

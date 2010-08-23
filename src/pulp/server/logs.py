@@ -19,7 +19,7 @@ import logging.handlers
 import os
 import os.path
 
-from pulp.server.config import config
+from pulp.server import config
 
 # logging configuration -------------------------------------------------------
 
@@ -41,14 +41,14 @@ def configure_pulp_grinder_logging():
     Pull the log file configurations from the global config and/or default
     config and initialize the top-level logging for both pulp and grinder.
     """
-    level_name = config.get('logs', 'level').upper()
+    level_name = config.config.get('logs', 'level').upper()
     level = getattr(logging, level_name, logging.INFO)
-    max_size = config.getint('logs', 'max_size')
-    backups = config.getint('logs', 'backups')
-    
+    max_size = config.config.getint('logs', 'max_size')
+    backups = config.config.getint('logs', 'backups')
+
     formatter = logging.Formatter('%(asctime)s  %(message)s')
-    
-    pulp_file = config.get('logs', 'pulp_file')
+
+    pulp_file = config.config.get('logs', 'pulp_file')
     check_log_file(pulp_file)
     pulp_logger = logging.getLogger('pulp')
     pulp_logger.setLevel(level)
@@ -57,8 +57,8 @@ def configure_pulp_grinder_logging():
                                                         backupCount=backups)
     pulp_handler.setFormatter(formatter)
     pulp_logger.addHandler(pulp_handler)
-    
-    grinder_file = config.get('logs', 'grinder_file')
+
+    grinder_file = config.config.get('logs', 'grinder_file')
     check_log_file(grinder_file)
     grinder_logger = logging.getLogger('grinder')
     grinder_logger.setLevel(level)
@@ -67,18 +67,18 @@ def configure_pulp_grinder_logging():
                                                            backupCount=backups)
     grinder_handler.setFormatter(formatter)
     grinder_logger.addHandler(grinder_handler)
-    
-    
+
+
 def configure_audit_logging():
     """
     Pull the audit logging configuration from the global config and/or default
     config and initialize pulp's audit logging.
     """
-    file = config.get('auditing', 'events_file')
+    file = config.config.get('auditing', 'events_file')
     check_log_file(file)
-    lifetime = config.getint('auditing', 'lifetime')
-    backups = config.getint('auditing', 'backups')
-    
+    lifetime = config.config.getint('auditing', 'lifetime')
+    backups = config.config.getint('auditing', 'backups')
+
     # NOTE, this cannot be a descendant of the pulp log as it will inherit
     # pulp's rotating log and handler and log to both files. Yes, I've tried
     # removing the handler to no avail...
@@ -89,25 +89,25 @@ def configure_audit_logging():
                                                         interval=lifetime,
                                                         backupCount=backups)
     logger.addHandler(handler)
-    
+
 # pulp logging api ------------------------------------------------------------
-    
+
 def start_logging():
     """
     Convenience function to start pulp's different logging mechanisms.
     """
-    assert config is not None
+    assert config.config is not None
     configure_pulp_grinder_logging()
     configure_audit_logging()
-    
-    
+
+
 def stop_logging():
     """
     Convenience function to stop pulp's different logging mechanisms.
     """
     logging.shutdown()
-    
-    
+
+
 def restart_logging():
     """
     Convenience function to restart pulp's different logging mechanisms.

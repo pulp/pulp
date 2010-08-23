@@ -25,7 +25,7 @@ from pulp.messaging.stub import Stub
 from pulp.messaging.decorators import stub
 from pulp.messaging.base import Container
 from pulp.messaging.producer import Producer
-from pulp.server.config import config
+from pulp.server import config
 
 
 @stub('admin')
@@ -60,10 +60,10 @@ class Agent(Container):
         @type uuid: str|list
         @param options: Messaging L{pulp.messaging.Options}
         """
-        url = config.get('messaging', 'url')
+        url = config.config.get('messaging', 'url')
         broker = Broker.get(url)
-        broker.cacert = config.get('messaging', 'cacert')
-        broker.clientcert = config.get('messaging', 'clientcert')
+        broker.cacert = config.config.get('messaging', 'cacert')
+        broker.clientcert = config.config.get('messaging', 'clientcert')
         self.__producer = Producer(url=url)
         Container.__init__(self, uuid, self.__producer, **options)
 
@@ -72,7 +72,7 @@ class Agent(Container):
         Delete all messaging resources.
         """
         queue = self._Container__destination()
-        if isinstance(queue, (list,tuple)):
+        if isinstance(queue, (list, tuple)):
             raise Exception, 'group delete, not permitted'
         session = self.__producer.session()
         queue.delete(session)

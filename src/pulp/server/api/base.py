@@ -15,8 +15,6 @@
 
 import logging
 
-from pulp.server.config import config
-
 # logging and db connection
 
 log = logging.getLogger(__name__)
@@ -26,9 +24,8 @@ log = logging.getLogger(__name__)
 class BaseApi(object):
 
     def __init__(self):
-        self.config = config
         self.objectdb = self._getcollection()
-   
+
     @property
     def _unique_indexes(self):
         return ["id"]
@@ -42,7 +39,7 @@ class BaseApi(object):
         Delete all the Objects in the database.  WARNING: Destructive
         """
         self.objectdb.remove(safe=True)
-        
+
     def insert(self, object, check_keys=False):
         """
         Insert the object document to the database
@@ -62,6 +59,6 @@ class BaseApi(object):
         Delete a single stored Object
         """
         self.objectdb.remove(kwargs, safe=True)
-        
+
     def _getcollection(self):
         raise NotImplementedError()

@@ -18,7 +18,7 @@ import uuid
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-from pulp.server.config import config
+from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 import pulp.server.password_util as password_util
@@ -31,7 +31,7 @@ class UserApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.default_login = config.get('server', 'default_login')
+        self.default_login = config.config.get('server', 'default_login')
         self._ensure_default_admin()
 
     def _getcollection(self):
@@ -42,11 +42,11 @@ class UserApi(BaseApi):
     def _ensure_default_admin(self):
         admin = self.user(self.default_login)
         if (admin is None):
-            default_password = config.get('server', 'default_password') 
+            default_password = config.config.get('server', 'default_password')
             self.create(self.default_login, password=default_password)
 
     @audit(params=['login'])
-    def create(self, login, password=None, name=None,  id=None):
+    def create(self, login, password=None, name=None, id=None):
         """
         Create a new User object and return it
         """

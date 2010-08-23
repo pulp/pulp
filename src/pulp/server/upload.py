@@ -23,7 +23,7 @@ import tempfile
 
 from pulp.server import util
 from pulp.server.api.repo_sync import BaseSynchronizer
-from pulp.server.config import config
+from pulp.server import config
 from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class PackageUpload:
         self.pkginfo = pkginfo
         self.stream = payload
         self.pkgname = pkginfo['pkgname']
-        self.repo_dir = "%s/%s/" % (config.get('paths', 'local_storage'), repo['id'])
+        self.repo_dir = "%s/%s/" % (config.config.get('paths', 'local_storage'), repo['id'])
         self.repo = repo
 
     def upload(self):
@@ -56,7 +56,7 @@ class PackageUpload:
             log.error("Unexpected Error %s " % e)
             raise
         return imp_pkg, self.repo
-    
+
     def bindPackageToRepo(self, repo_path, pkg_path, repo):
         log.debug("Binding package [%s] to repo [%s]" % (pkg_path, repo))
         bsync = BaseSynchronizer()
@@ -81,7 +81,7 @@ def create_repo(dir, groups=None):
     if groups:
         cmd = "createrepo -g %s --update %s" % (groups, dir)
     status, out = commands.getstatusoutput(cmd)
-    
+
     if status != 0:
         log.error("createrepo on %s failed" % dir)
         raise CreateRepoError(out)

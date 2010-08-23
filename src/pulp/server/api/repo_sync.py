@@ -32,7 +32,7 @@ from grinder.RHNSync import RHNSync
 from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
-from pulp.server.config import config
+from pulp.server import config
 from pulp.server.pexceptions import PulpException
 
 
@@ -117,7 +117,7 @@ class BaseSynchronizer(object):
         self.errata_api = ErrataApi()
 
     def add_packages_from_dir(self, dir, repo):
-        
+
         startTime = time.time()
         log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
         package_list = pulp.server.util.get_repo_packages(dir)
@@ -129,7 +129,7 @@ class BaseSynchronizer(object):
             if (package is not None):
                 added_packages.append(package)
         endTime = time.time()
-        log.debug("Repo: %s read [%s] packages took %s seconds" % 
+        log.debug("Repo: %s read [%s] packages took %s seconds" %
                 (repo['id'], len(added_packages), endTime - startTime))
         # Import groups metadata if present
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
@@ -171,10 +171,10 @@ class BaseSynchronizer(object):
             file_name = package.relativepath
             hashtype = "sha256"
             checksum = package.checksum
-            found = self.package_api.packages(name=package.name, 
-                    epoch=package.epoch, version=package.version, 
+            found = self.package_api.packages(name=package.name,
+                    epoch=package.epoch, version=package.version,
                     release=package.release, arch=package.arch,
-                    filename=file_name, 
+                    filename=file_name,
                     checksum_type=hashtype, checksum=checksum)
             if len(found) == 1:
                 retval = found[0]
@@ -186,9 +186,9 @@ class BaseSynchronizer(object):
                     retval.requires.append(dep[0])
                 for prov in package.provides:
                     retval.provides.append(prov[0])
-                retval.download_url = config.get('server', 'base_url') + "/" + \
-                                      config.get('server', 'relative_url') + "/" + \
-                                      repo["id"] + "/" +  file_name
+                retval.download_url = config.config.get('server', 'base_url') + "/" + \
+                                      config.config.get('server', 'relative_url') + "/" + \
+                                      repo["id"] + "/" + file_name
                 self.package_api.update(retval)
             return retval
         except Exception, e:
@@ -268,14 +268,14 @@ class YumSynchronizer(BaseSynchronizer):
         cacert = clicert = clikey = None
         if repo['ca'] and repo['cert'] and repo['key']:
             cacert = repo['ca'].encode('utf8')
-            clicert=repo['cert'].encode('utf8')
-            clikey=repo['key'].encode('utf8')
-        yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'), 
+            clicert = repo['cert'].encode('utf8')
+            clikey = repo['key'].encode('utf8')
+        yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'),
                                 1, cacert=cacert, clicert=clicert, clikey=clikey)
-        yfetch.fetchYumRepo(config.get('paths', 'local_storage'))
-        repo_dir = "%s/%s/" % (config.get('paths', 'local_storage'), repo['id'])
+        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'))
+        repo_dir = "%s/%s/" % (config.config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
-    
+
 
 class LocalSynchronizer(BaseSynchronizer):
     """
@@ -285,7 +285,7 @@ class LocalSynchronizer(BaseSynchronizer):
         pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (pkg_dir, repo['id']))
         try:
-            repo_dir = "%s/%s" % (config.get('paths', 'local_storage'), repo['id'])
+            repo_dir = "%s/%s" % (config.config.get('paths', 'local_storage'), repo['id'])
             if not os.path.exists(pkg_dir):
                 raise InvalidPathError("Path %s is invalid" % pkg_dir)
             if repo['use_symlinks']:
@@ -332,7 +332,7 @@ class LocalSynchronizer(BaseSynchronizer):
                             f = src_updateinfo_path.endswith('.gz') and gzip.open(src_updateinfo_path) \
                                     or open(src_updateinfo_path, 'rt')
                             shutil.copyfileobj(f, open(
-                                os.path.join(repo_dir, "updateinfo.xml"),"wt"))
+                                os.path.join(repo_dir, "updateinfo.xml"), "wt"))
                             log.debug("Copied %s to %s" % (src_updateinfo_path, repo_dir))
                             updateinfo_path = os.path.join(repo_dir, "updateinfo.xml")
                 log.info("Running createrepo, this may take a few minutes to complete.")
@@ -370,10 +370,10 @@ class RHNSynchronizer(BaseSynchronizer):
         # Create and configure the grinder hook to RHN
         s = RHNSync()
         s.setURL(host)
-        s.setParallel(config.get('rhn', 'threads'))
+        s.setParallel(config.config.get('rhn', 'threads'))
 
         # Perform the sync
-        dest_dir = '%s/%s/' % (config.get('paths', 'local_storage'), repo['id'])
+        dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
         s.syncPackages(channel, savePath=dest_dir)
         s.createRepo(dest_dir)
         updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
@@ -382,9 +382,9 @@ class RHNSynchronizer(BaseSynchronizer):
             s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
 
         return dest_dir
-    
+
 # synchronization type map ----------------------------------------------------
-        
+
 type_classes = {
     'yum': YumSynchronizer,
     'local': LocalSynchronizer,

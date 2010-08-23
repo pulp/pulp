@@ -28,7 +28,7 @@ from pymongo.son import SON
 
 from pulp.server import auth
 from pulp.server.api.base import BaseApi
-from pulp.server.config import config
+from pulp.server import config
 from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Event
@@ -368,7 +368,7 @@ def _get_lifetime():
     Get the configured auditing lifeteime as a datetime.timedelta instance.
     @return: dateteime.timedelta instance
     """
-    days = config.getint('auditing', 'lifetime')
+    days = config.config.getint('auditing', 'lifetime')
     return datetime.timedelta(days=days)
 
 

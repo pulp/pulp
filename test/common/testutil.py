@@ -15,16 +15,18 @@
 
 import os
 
-from pulp.server.config import config, _config_files, add_config_file
+from pulp.server import config
 from pulp.server.logs import start_logging, stop_logging
 
 def load_test_config():
     override_file = os.path.abspath(os.path.dirname(__file__)) + '/test-override-pulp.conf'
-    if override_file not in _config_files:
-        stop_logging()
-        add_config_file(override_file)
-        start_logging()
-    return config
+    stop_logging()
+    try:
+        config.add_config_file(override_file)
+    except RuntimeError:
+        pass
+    start_logging()
+    return config.config
 
 def create_package(api, name):
     test_pkg_name = name
@@ -37,12 +39,12 @@ def create_package(api, name):
     test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
     test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
     p = api.package_by_ivera(name, test_version, test_epoch, test_release, test_arch)
-    if (p == None):    
-        p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
-            release=test_release, arch=test_arch, description=test_description, 
+    if (p == None):
+        p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+            release=test_release, arch=test_arch, description=test_description,
             checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         lookedUp = api.package(p['id'])
         return lookedUp
     else:
         return p
-    
+
