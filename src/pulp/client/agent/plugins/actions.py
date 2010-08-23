@@ -31,7 +31,7 @@ cfg = Config()
 
 @action(minutes=10)
 class TestAction(Action):
-    
+
     def perform(self):
         log.info('Hello')
 
@@ -39,21 +39,21 @@ class TestAction(Action):
 @action(minutes=cfg.server.interval)
 class ProfileUpdateAction(Action):
     """
-    Package Profile Update Action to update installed package info for a 
+    Package Profile Update Action to update installed package info for a
     registered consumer
     """
 
     def perform(self):
-        """ 
+        """
         Looks up the consumer id and latest pkg profile info and cals
-        the api to update the consumer profile 
+        the api to update the consumer profile
         """
         cid = ConsumerId()
         if not cid.exists():
             log.error("Not Registered")
             return
         try:
-            cconn = ConsumerConnection(host=cfg.server.host or "localhost", 
+            cconn = ConsumerConnection(host=cfg.server.host or "localhost",
                                        port=cfg.server.port or 443)
             pkginfo = PackageProfile().getPackageList()
             cconn.profile(cid.read(), pkginfo)
@@ -62,4 +62,3 @@ class ProfileUpdateAction(Action):
             log.error("Error: %s" % re)
         except Exception, e:
             log.error("Error: %s" % e)
-

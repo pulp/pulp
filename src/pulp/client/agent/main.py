@@ -17,11 +17,12 @@ import sys
 import os
 from getopt import getopt
 from pulp.client import *
+from pulp.client.config import Config
 from pulp.client.lock import Lock, LockFailed
 from pulp.client.agent import *
 from pulp.client.agent.action import Action
-from pulp.client.agent.actions import *
-from pulp.client.agent.remote import *
+from pulp.client.agent.plugin import PluginLoader
+from pulp.client.agent.plugins import *
 from pulp.client.logutil import getLogger
 from pulp.messaging import Queue
 from pulp.messaging.broker import Broker
@@ -31,6 +32,55 @@ from time import sleep
 from threading import Thread
 
 log = getLogger(__name__)
+
+
+class PluginLoader:
+    """
+    Agent plugins loader.
+    """
+
+    ROOT = '/var/lib/pulp/agent'
+    PLUGINS = 'plugins'
+
+    @classmethod
+    def abspath(cls):
+        return os.path.join(cls.ROOT, cls.PLUGINS)
+
+    def __init__(self):
+        path = self.abspath()
+        if os.path.exists(path):
+            return
+        os.makedirs(path)
+        pkg = os.path.join(path, '__init__.py')
+        f = open(pkg, 'w')
+        f.close()
+
+    def load(self):
+        """
+        Load the plugins.
+        """
+        sys.path.append(self.ROOT)
+        path = self.abspath()
+        for fn in os.listdir(path):
+            if fn.startswith('__'):
+                continue
+            if not fn.endswith('.py'):
+                continue
+            self.__import(fn)
+
+    def __import(self, fn):
+        """
+        Import a module by file name.
+        @param fn: The module file name.
+        @type fn: str
+        """
+        mod = fn.rsplit('.', 1)[0]
+        imp = '%s.%s' % (self.PLUGINS, mod)
+        try:
+            __import__(imp)
+            log.info('plugin "%s", imported', imp)
+        except:
+            log.error('plugin "%s", import failed', imp, exc_info=True)
 
 
 class ActionThread(Thread):
@@ -121,6 +171,8 @@ def start(daemon=True):
     if daemon:
         daemonize(lock)
     try:
+        pl = PluginLoader()
+        pl.load()
         actions = []
         for cls, interval in Action.actions:
             action = cls(**interval)

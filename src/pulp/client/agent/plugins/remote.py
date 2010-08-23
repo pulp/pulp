@@ -55,14 +55,14 @@ class Packages:
     def install(self, packageinfo):
         """
         Install packages by name.
-        @param packageinfo: A list of strings for pkg names 
+        @param packageinfo: A list of strings for pkg names
                             or tuples for name/arch info.
         @type packageinfo: str or tuple
         """
         log.info('installing packages: %s', packageinfo)
         yb = YumBase()
         for info in packageinfo:
-            if isinstance(info, tuple): 
+            if isinstance(info, tuple):
                 pkgs = yb.pkgSack.returnNewestByNameArch('.'.join(info))
             else:
                 pkgs = yb.pkgSack.returnNewestByName(info)
@@ -76,7 +76,7 @@ class PackageGroups:
     """
     PackageGroup management object
     """
-    
+
     @remotemethod
     def install(self, packagegroupids):
         """
@@ -91,7 +91,7 @@ class PackageGroups:
             log.info("Added '%s' group to transaction, packages: %s", grp_id, txmbrs)
         yb.resolveDeps()
         yb.processTransaction()
-        
+
 @remote
 class AgentAdmin:
 
@@ -108,7 +108,7 @@ class AgentAdmin:
 
 @remote
 class Shell:
-    
+
     @remotemethod
     def run(self, cmd):
         """
@@ -123,4 +123,3 @@ class Shell:
             return f.read()
         finally:
             f.close()
-
