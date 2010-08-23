@@ -44,7 +44,7 @@ class consumer(BaseCore):
         shortdesc = "consumer specific actions to pulp server."
         desc = ""
         self.name = "consumer"
-        self.actions = actions or {"delete"        : "Delete a consumer",
+        self.actions = actions or {"delete"        : "Delete the consumer",
                                    "update"        : "Update consumer profile",
                                    "list"          : "List of accessible consumer info",
                                    "bind"          : "Bind the consumer to listed repos",

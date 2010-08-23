@@ -41,7 +41,7 @@ class consumergroup(BaseCore):
                         "add_consumer" : "Add a consumer to the group",
                         "delete_consumer" : "Delete a consumer from the group",
                         "list"   : "List available consumer groups",
-                        "delete" : "Delete a consumer group",
+                        "delete" : "Delete the consumer group",
                         "bind"   : "Bind the consumer group to listed repos",
                         "unbind" : "Unbind the consumer group from repos",}
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
