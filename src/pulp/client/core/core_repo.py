@@ -39,19 +39,19 @@ class repo(BaseCore):
         shortdesc = "repository specifc actions to pulp server."
         desc = ""
         self.name = "repo"
-        self.actions = actions or {"create" : "Create a repo", 
-                                   "update" : "Update a repo", 
-                                   "list"   : "List available repos", 
-                                   "delete" : "Delete a repo", 
+        self.actions = actions or {"create" : "Create a repo",
+                                   "update" : "Update a repo",
+                                   "list"   : "List available repos",
+                                   "delete" : "Delete a repo",
                                    "sync"   : "Sync data to this repo from the feed",
                                    "upload" : "Upload package(s) to this repo",
-                                   "schedules" : "List all repo schedules",}
+                                   "schedules" : "List all repo schedules", }
         BaseCore.__init__(self, "repo", usage, shortdesc, desc)
 
     def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
+        self.pconn = RepoConnection(host=CFG.server.host or "localhost",
                                     port=CFG.server.port or 443,
-                                    username=self.username, 
+                                    username=self.username,
                                     password=self.password)
     def generate_options(self):
         self.action = self._get_action()
@@ -123,7 +123,7 @@ class repo(BaseCore):
             self.options.name = self.options.id
         if not self.options.arch:
             self.options.arch = "noarch"
-        
+
         symlinks = False
         if self.options.symlinks:
             symlinks = self.options.symlinks
@@ -172,12 +172,14 @@ class repo(BaseCore):
         try:
             task_object = self.pconn.sync(self.options.id)
             state = "waiting"
-            while state not in ["finished", "error"]:
+            while state not in ["finished", "error", 'timed out', 'canceled']:
                 time.sleep(5)
                 status = self.pconn.sync_status(task_object['status_path'])
-                state= status['state']
-                print "Sync Status::",state
-            packages =  self.pconn.packages(self.options.id)
+                if status is None:
+                    raise SyncError(_('No sync for repository [%s] found') % self.options.id)
+                state = status['state']
+                print "Sync Status::", state
+            packages = self.pconn.packages(self.options.id)
             pkg_count = 0
             if packages:
                 pkg_count = len(packages)
@@ -228,7 +230,7 @@ class repo(BaseCore):
         uploadinfo = {}
         uploadinfo['repo'] = self.options.id
         for frpm in files:
-            try: 
+            try:
                 pkginfo = utils.processRPM(frpm)
             except FileError, e:
                 print('Error: %s' % e)
@@ -249,7 +251,7 @@ class repo(BaseCore):
             except Exception, e:
                 log.error("Error: %s" % e)
                 raise #continue
- 
+
     def _schedules(self):
         print("""+-------------------------------------+\n    Available Repository Schedules \n+-------------------------------------+""")
 
