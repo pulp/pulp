@@ -40,6 +40,11 @@ log = logging.getLogger(__name__)
 
 # sync api --------------------------------------------------------------------
 
+def progressCallback(info):
+    log.info("Progress: %s on <%s>, %s/%s items %s/%s bytes" % (info.status,
+            info.item_name, info.items_left, info.items_total,
+            info.size_left, info.size_total))
+
 def sync(repo, repo_source):
     '''
     Synchronizes content for the given RepoSource.
@@ -272,7 +277,8 @@ class YumSynchronizer(BaseSynchronizer):
             clikey = repo['key'].encode('utf8')
         yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'),
                                 1, cacert=cacert, clicert=clicert, clikey=clikey)
-        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'))
+        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'), 
+                callback=progressCallback)
         repo_dir = "%s/%s/" % (config.config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
 
@@ -374,7 +380,7 @@ class RHNSynchronizer(BaseSynchronizer):
 
         # Perform the sync
         dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
-        s.syncPackages(channel, savePath=dest_dir)
+        s.syncPackages(channel, savePath=dest_dir, callback=progressCallback)
         s.createRepo(dest_dir)
         updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
         if os.path.isfile(updateinfo_path):
