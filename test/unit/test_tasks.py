@@ -93,7 +93,7 @@ class QueueTester(unittest.TestCase):
             time.sleep(0.1)
             if datetime.now() - start >= timeout:
                 raise RuntimeError('Task wait timed out after %d seconds, with state: %s' %
-                                       (seconds, task.state))
+                                       (timeout.seconds, task.state))
         if task.state == task_error:
             pprint.pprint(task.traceback)
 
