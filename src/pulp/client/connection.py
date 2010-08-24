@@ -73,7 +73,10 @@ class Restlib(object):
         self.key_file = key_file
 
     def _request(self, request_type, method, info=None):
-        handler = self.apihandler + method
+        handler = method
+        if not handler.startswith(self.apihandler):
+            #handler = self.apihandler + handler
+            handler = '/'.join((self.apihandler, handler))
         log.debug("_request calling: %s to host:port : %s:%s" %
                   (handler, self.host, self.port))
         if self.cert_file:
