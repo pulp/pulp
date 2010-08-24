@@ -138,10 +138,15 @@ class RoleCheck(object):
             # Verify a user exists with the given name
             user = userApi.user(username)
             if (user is None):
+                log.error("User [%s] specified in authentication was not found in the system" %
+                          username)
                 return False
 
             # Verify the correct password was specified
             good_password = password_util.check_password(user['password'], password)
+            if not good_password:
+                log.error('Password for user [%s] was incorrect' % username)
+
             return good_password
 
         return False
@@ -188,7 +193,7 @@ class RoleCheck(object):
         good_certificate = False
         if check_id:
             for arg in fargs:
-                log.debug("Checking ID in cert [%s] against expected ID [%s]" %
+                log.error("Checking ID in cert [%s] against expected ID [%s]" %
                           (consumer_cert_uid, arg))
                 if arg == consumer_cert_uid:
                     good_certificate = True
