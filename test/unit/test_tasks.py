@@ -23,7 +23,6 @@ from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
 from pulp.server.tasking.queue.fifo import FIFOTaskQueue
-from _xmlplus.xpath import RuntimeException
 
 
 def noop():
@@ -93,7 +92,7 @@ class QueueTester(unittest.TestCase):
         while task.state not in task_complete_states:
             time.sleep(0.1)
             if datetime.now() - start >= timeout:
-                raise RuntimeException('Task wait timed out after %d seconds, with state: %s' %
+                raise RuntimeError('Task wait timed out after %d seconds, with state: %s' %
                                        (seconds, task.state))
         if task.state == task_error:
             pprint.pprint(task.traceback)
