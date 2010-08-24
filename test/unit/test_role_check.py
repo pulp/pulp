@@ -36,7 +36,6 @@ import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.certificate import Certificate
 from pulp.server.webservices.role_check import RoleCheck
 import testutil
-testutil.load_test_config()
 
 class TestRoleCheck(unittest.TestCase):
 
@@ -69,103 +68,105 @@ class TestRoleCheck(unittest.TestCase):
         print "some_other_method3 executed"
         return otherparam
 
-    def test_id_cert(self):
-        consumerUid = "some-id-cert-test"
-        self.capi.create(consumerUid, "desc")
-        (temp_pk, temp_cert) = cert_generator.make_cert(consumerUid)
+    def test_consumer_cert(self):
+        # Setup
+        consumer_uid = "some-id-cert-test"
+        self.capi.create(consumer_uid, "desc")
+
+        temp_pk, temp_cert = cert_generator.make_cert(consumer_uid)
         self.assertTrue(temp_cert is not None)
-        cert = Certificate()
-        cert.update(temp_cert)
+
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
-        web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
-        retval = self.some_method("blippy","baz")
-        print "retval %s" % retval
+        web.ctx.environ['SSL_CLIENT_CERT'] = temp_cert
+
+        # Tests
+        retval = self.some_method("blippy", "baz")
         self.assertEquals(retval, "baz")
 
-        # Test that both the cert + id *in* the cert match
-        retval = self.some_other_method3(consumerUid,"baz")
+        #   Test that both the cert + id *in* the cert match
+        retval = self.some_other_method3(consumer_uid, "baz")
         self.assertEquals(retval, "baz")
         
-        # Test the opposite, good cert, bad param
-        retval = self.some_other_method3("fake-consumer-uid","baz")
+        #   Test the opposite, good cert, bad param
+        retval = self.some_other_method3("fake-consumer-uid", "baz")
         self.assertNotEquals(retval, "baz")
-        
-        
-        # Test with non-existing consumer
-        consumerUid = "non-existing-consumer"
-        (temp_pk, temp_cert) = cert_generator.make_cert(consumerUid)
-        cert = Certificate()
-        cert.update(temp_cert)
-        web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
-        retval = self.some_method(consumerUid,"baz")
-        print "retval %s" % retval
+
+        #   Test with non-existing consumer (not in the DB)
+        consumer_uid = "non-existing-consumer"
+        (temp_pk, temp_cert) = cert_generator.make_cert(consumer_uid)
+
+        web.ctx.environ['SSL_CLIENT_CERT'] = temp_cert
+
+        retval = self.some_method(consumer_uid, "baz")
         self.assertNotEquals(retval, "baz")
-        
-         
-    def test_role_check(self):
+
+    def test_admin_cert(self):
+        # Setup
+        admin = self.uapi.create('test-admin', 'test-admin')
+        pk, cert_pem = cert_generator.make_admin_user_cert(admin)
+
+        web.ctx['headers'] = []
+        web.ctx['environ'] = dict()
+        web.ctx.environ['SSL_CLIENT_CERT'] = cert_pem
+
+        # Test
+        retval = self.some_other_method('foo', 'baz')
+        self.assertEqual(retval, 'baz')
+
+    def test_consumer_role_check(self):
+        # Setup
         my_dir = os.path.abspath(os.path.dirname(__file__))
         test_cert = my_dir + "/data/test_cert.pem"
         cert = Certificate()
         cert.read(test_cert)
+
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
-        retval = self.some_method('somevalue')
+
+        # Test
+        self.some_method('somevalue')
         self.assertTrue(web.ctx.status.startswith('401'))
         
-    def test_uname_pass(self):
-        # create a user
+    def test_username_pass(self):
+        # Setup
+
+        web.ctx['headers'] = []
+        web.ctx['environ'] = dict()
+
+        #   Create a user
         login = "test_auth"
         password = "some password"
         self.uapi.create(login, password=password)
-        web.ctx['headers'] = []
-        web.ctx['environ'] = dict()
-        
-        # Check we can run the method with no setup in web
-        retval = self.some_other_method('somevalue', 'baz')
-        self.assertNotEqual(retval, 'baz')
-        
-        # Check for bad pass
-        loginpass = "%s:%s" % (login, "invalid password")
-        encoded = base64.encodestring(loginpass)
-        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_other_method('somevalue', 'baz')
-        self.assertNotEqual(retval, 'baz')
-        
-        # Check for bad username
-        loginpass = "%s:%s" % ("non existing user", password)
-        encoded = base64.encodestring(loginpass)
-        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_other_method('somevalue', 'baz')
-        self.assertNotEqual(retval, 'baz')
-        
-        # Check for a proper result
-        loginpass = "%s:%s" % (login, password)
-        encoded = base64.encodestring(loginpass)
-        web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_other_method('somevalue', 'baz')
-        self.assertEquals(retval, 'baz')
 
-        # Check for bad pass
+        # Test
+        #   Check we can't run the method with no setup in web
+        retval = self.some_other_method('somevalue', 'baz')
+        self.assertNotEqual(retval, 'baz')
+        
+        #   Check with bad password
         loginpass = "%s:%s" % (login, "invalid password")
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_other_method2('somevalue', 'baz')
+
+        retval = self.some_other_method('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
         
-        # Check for bad username
+        #   Check with bad username
         loginpass = "%s:%s" % ("non existing user", password)
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_other_method2('somevalue', 'baz')
+
+        retval = self.some_other_method('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
         
-        # Check for a proper result
+        #   Check a successful test
         loginpass = "%s:%s" % (login, password)
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
-        retval = self.some_other_method2('somevalue', 'baz')
+
+        retval = self.some_other_method('somevalue', 'baz')
         self.assertEquals(retval, 'baz')
 
     

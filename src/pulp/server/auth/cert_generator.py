@@ -14,21 +14,41 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 from M2Crypto import X509, EVP, RSA, ASN1, util
 import subprocess
-import logging
+
+from pulp.server.pexceptions import PulpException
+
 
 log = logging.getLogger(__name__)
 
+ADMIN_PREFIX = 'admin:'
+ADMIN_SPLITTER = ':'
+
+def make_admin_user_cert(user):
+    '''
+    Generates a x509 certificate for an admin user.
+
+    @param user: identification the certificate will be created for; may not be None
+    @type  user: pulp.server.db.model.User
+
+    @return: PEM encoded string
+    @rtype:  string
+    '''
+
+    return make_cert(encode_admin_user(user))
 
 def make_cert(uid):
     """
-    Generate an x509 Certificate with the Subject set to
-    the uid passed into this method:
+    Generate an x509 certificate with the Subject set to the uid passed into this method:
     Subject: CN=someconsumer.example.com
     
-    @param uid: ID of the Consumer you wish to embed in Certificate
-    @return: X509 PEM Certificate string
+    @param uid: ID to be embedded in the certificate
+    @type  uid: string
+
+    @return: X509 PEM encoded certificate string
+    @rtype:  string
     """
     # Ensure we are dealing with a string and not unicode
     uid = str(uid)
@@ -59,6 +79,56 @@ def make_cert(uid):
         raise Exception("error signing cert request: %s" % output)
     cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
     return private_key_pem, cert_pem_string
+
+def encode_admin_user(user):
+    '''
+    Encodes an admin user's identity into a single line suitable for identification.
+    This is intended to be the identity used in admin certificates.
+
+    @param user: admin user; may not be None
+    @type user:  pulp.server.db.model.User
+
+    @return: single line identification of the admin user safe for public visibility;
+             any sensitive information is hashed
+    @rtype:  string
+    '''
+    return '%s%s%s%s' % (ADMIN_PREFIX, user['login'], ADMIN_SPLITTER, user['id'])
+
+def is_admin_user(encoded_string):
+    '''
+    Indicates if the encoded user string represents an admin user. If the string is
+    identified as an admin user, it can be parsed with decode_admin_user.
+
+    @return: True if the user string represents an admin user; False otherwise
+    @rtype:  boolean
+    '''
+    return encoded_string.startswith(ADMIN_PREFIX)
+
+def decode_admin_user(encoded_string):
+    '''
+    Decodes the single line admin user identification produced by encode_admin_user
+    into all of the parts that make up that identification.
+
+    @param encoded_string: string representation of the user provided by encode_admin_user
+    @type  encoded_string: string
+
+    @return: tuple of information describing the admin user; (username, id)
+    @rtype:  (string, string)
+    '''
+
+    # Strip off the leading "admin:" prefix
+    encoded_string = encoded_string[len(ADMIN_PREFIX):]
+
+    # Find where to split
+    parsed = encoded_string.split(ADMIN_SPLITTER)
+
+    if len(parsed) != 2:
+        raise PulpException('Invalid encoded admin user information [%s]' % encoded_string)
+
+    username = parsed[0]
+    id = parsed[1]
+
+    return username, id
 
 def _make_priv_key():
     cmd = 'openssl genrsa 1024'

@@ -28,13 +28,14 @@ from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth.certificate import Certificate
 import pulp.server.auth.password_util as password_util
+import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 
 log = logging.getLogger(__name__)
 
-userApi = UserApi()
-consumerApi = ConsumerApi()
+USER_API = UserApi()
+CONSUMER_API = ConsumerApi()
 
 
 class RoleCheck(object):
@@ -72,7 +73,7 @@ class RoleCheck(object):
             if roles['admin']:
                 # If not using cert check uname and password
                 try:
-                    admin_access_granted = self.check_username_pass(*fargs)
+                    admin_access_granted = self.check_admin(*fargs)
                 except PulpException, pe:
                     # TODO: Figure out how to re-use the same return function in base.py
                     http.status_unauthorized()
@@ -88,7 +89,7 @@ class RoleCheck(object):
             if not admin_access_granted and not consumer_access_granted:
                 http.status_unauthorized()
                 http.header('Content-Type', 'application/json')
-                return json.dumps("Authorization Failure.  Check your username and password or your certificate", 
+                return json.dumps("Authorization failed. Check your username and password or your certificate", 
                                   default=pymongo.json_util.default)
 
             # If we get this far, access has been granted (in access failed the method
@@ -110,6 +111,61 @@ class RoleCheck(object):
         check_roles.__dict__.update(f.__dict__)
         check_roles.__doc__ = f.__doc__
         return check_roles
+
+    def check_admin(self, *fargs):
+        '''
+        Checks the request to see if it contains a valid admin authentication.
+
+        @return: True if the request authenticates as a valid admin; False otherwise
+        @rtype:  boolean
+        '''
+
+        return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
+
+    def check_admin_cert(self, *fargs):
+        '''
+        Determines if the certificate in the request represents a valid admin certificate.
+
+        @return: True if the request contains a valid admin certificate; False otherwise
+        @rtype:  boolean
+        '''
+
+        # Extract the certificate from the request
+        environment = web.ctx.environ
+        cert_pem = environment.get('SSL_CLIENT_CERT', None)
+
+        # If there's no certificate, punch out early
+        if cert_pem is None:
+            return False
+
+        # Parse the certificate and extract the consumer UUID
+        idcert = Certificate(content=cert_pem)
+        subject = idcert.subject()
+        encoded_user = subject.get('CN', None)
+
+        # If there is no user/pass combo, this is not a valid admin certificate
+        if not encoded_user:
+            return False
+
+        # Make sure the certificate is an admin certificate
+        if not cert_generator.is_admin_user(encoded_user):
+            return False
+
+        # Parse out the username and password hash from the certificate information
+        username, id = cert_generator.decode_admin_user(encoded_user)
+
+        # Verify a user exists with the given name
+        user = USER_API.user(username)
+        if user is None:
+            log.error('User [%s] specified in certificate was not found in the system' % username)
+            return False
+
+        # Verify the correct user ID
+        if id != user['id']:
+            log.error('ID in admin certificate for user [%s] was incorrect' % username)
+            return False
+
+        return True
 
     def check_username_pass(self, *fargs):
         '''
@@ -136,9 +192,9 @@ class RoleCheck(object):
             password = uname_pass[1]
 
             # Verify a user exists with the given name
-            user = userApi.user(username)
-            if (user is None):
-                log.error("User [%s] specified in authentication was not found in the system" %
+            user = USER_API.user(username)
+            if user is None:
+                log.error('User [%s] specified in certificate was not found in the system' %
                           username)
                 return False
 
@@ -160,7 +216,7 @@ class RoleCheck(object):
                          will be that the UID exists in the DB (default = False)
         @type  check_id: boolean
 
-        @return: True if the request contains a valid certificate; False otherwise
+        @return: True if the request contains a valid consumer certificate; False otherwise
         @rtype:  boolean
         '''
 
@@ -183,7 +239,7 @@ class RoleCheck(object):
             return False
 
         # Check that it is a valid consumer in our DB
-        consumer = consumerApi.consumer(consumer_cert_uid)
+        consumer = CONSUMER_API.consumer(consumer_cert_uid)
         if not consumer:
             log.error("Consumer with id [%s] does not exist" % consumer_cert_uid)
             return False
