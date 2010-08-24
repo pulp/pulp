@@ -45,8 +45,6 @@ class RemoteTestApi(TestApi):
     def setUp(self):
         d = dict(host='localhost',
                  port=443,
-                 cert_file='/etc/pki/pulp/server.crt',
-                 key_file='/etc/pki/pulp/server.key',
                  username="admin",
                  password="admin")
         self.config = testutil.load_test_config()
