@@ -23,8 +23,7 @@ import unittest
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
-from pulp.server.password_util import hash_password
-from pulp.server.password_util import check_password
+from pulp.server.auth.password_util import hash_password, check_password
 
 class TestUtil(unittest.TestCase):
 

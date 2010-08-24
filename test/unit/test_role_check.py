@@ -32,8 +32,8 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
-import pulp.server.cert_generator as cert_generator
-from pulp.server.certificate import Certificate
+import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.auth.certificate import Certificate
 from pulp.server.webservices.role_check import RoleCheck
 import testutil
 testutil.load_test_config()

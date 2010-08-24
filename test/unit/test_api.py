@@ -41,7 +41,7 @@ from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.errata import ErrataApi
-from pulp.server.certificate import Certificate
+from pulp.server.auth.certificate import Certificate
 from pulp.server.db.model import PackageGroup
 from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer

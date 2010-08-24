@@ -21,7 +21,7 @@ from pulp.server.auditing import audit
 from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
-import pulp.server.password_util as password_util
+import pulp.server.auth.password_util as password_util
 
 log = logging.getLogger(__name__)
 user_fields = model.User(None, None, None, None).keys()

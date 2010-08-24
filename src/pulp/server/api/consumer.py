@@ -15,7 +15,7 @@
 
 import logging
 
-import pulp.server.cert_generator as cert_generator
+import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.errata import ErrataApi

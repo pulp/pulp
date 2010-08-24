@@ -26,7 +26,7 @@ import pymongo
 from pymongo.bson import BSON
 from pymongo.son import SON
 
-from pulp.server import auth
+from pulp.server.auth import auth
 from pulp.server.api.base import BaseApi
 from pulp.server import config
 from pulp.server.crontab import CronTab

@@ -23,8 +23,8 @@ import unittest
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
-from pulp.server.certificate import Certificate
-import pulp.server.cert_generator as cert_generator
+from pulp.server.auth.certificate import Certificate
+import pulp.server.auth.cert_generator as cert_generator
 
 logging.root.setLevel(logging.ERROR)
 

@@ -26,10 +26,10 @@ import web
 
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.certificate import Certificate
+from pulp.server.auth.certificate import Certificate
+import pulp.server.auth.password_util as password_util
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
-import pulp.server.password_util as password_util
 
 log = logging.getLogger(__name__)
 

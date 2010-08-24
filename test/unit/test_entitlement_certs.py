@@ -16,7 +16,7 @@
 import unittest
 
 import pulp.server.webservices.httpd.repo_cert_validation as validation
-import pulp.server.certificate
+from pulp.server.auth.certificate import OID
 
 ENTITLED_CERT_NO_VARS = '''
 -----BEGIN CERTIFICATE-----
@@ -117,9 +117,9 @@ class TestEntitlementCerts(unittest.TestCase):
 
     def test_is_download_url_ext(self):
         # Test
-        self.assertTrue(validation.is_download_url_ext(pulp.server.certificate.OID('1.3.6.1.4.1.2312.9.2.1111.1.6')))
-        self.assertTrue(validation.is_download_url_ext(pulp.server.certificate.OID('1.3.6.1.4.1.2312.9.2.2222.1.6')))
-        self.assertTrue(not validation.is_download_url_ext(pulp.server.certificate.OID('foo')))
+        self.assertTrue(validation.is_download_url_ext(OID('1.3.6.1.4.1.2312.9.2.1111.1.6')))
+        self.assertTrue(validation.is_download_url_ext(OID('1.3.6.1.4.1.2312.9.2.2222.1.6')))
+        self.assertTrue(not validation.is_download_url_ext(OID('foo')))
 
     def test_is_valid(self):
         # Test
