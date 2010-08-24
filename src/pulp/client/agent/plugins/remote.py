@@ -62,7 +62,7 @@ class Packages:
         log.info('installing packages: %s', packageinfo)
         yb = YumBase()
         for info in packageinfo:
-            if isinstance(info, tuple):
+            if isinstance(info, list):
                 pkgs = yb.pkgSack.returnNewestByNameArch('.'.join(info))
             else:
                 pkgs = yb.pkgSack.returnNewestByName(info)

@@ -193,7 +193,15 @@ class ConsumerApi(BaseApi):
         @type packagenames: [str,..]
         """
         agent = Agent(id)
-        agent.packages.install(packagenames)
+        data = []
+        for pkg in packagenames:
+            info = pkg.split('.')
+            if len(info) > 1:
+                data.append(('.'.join(info[:-1]), info[-1]))
+            else:
+                data.append(info)
+        log.debug("Packages to Install: %s" % data)
+        agent.packages.install(data)
         return packagenames
     
     @audit()
