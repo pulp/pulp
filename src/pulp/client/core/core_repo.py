@@ -82,6 +82,8 @@ class repo(BaseCore):
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
+            self.parser.add_option("--timeout", dest="timeout",
+                           help="Sync Timeout")
         if self.action == "delete":
             usage = "repo delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -170,7 +172,7 @@ class repo(BaseCore):
             print("repo id required. Try --help")
             sys.exit(0)
         try:
-            task_object = self.pconn.sync(self.options.id)
+            task_object = self.pconn.sync(self.options.id, self.options.timeout)
             state = "waiting"
             while state not in ["finished", "error", 'timed out', 'canceled']:
                 time.sleep(5)
