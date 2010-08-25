@@ -114,21 +114,22 @@ class TestRoleCheck(unittest.TestCase):
         retval = self.some_other_method('foo', 'baz')
         self.assertEqual(retval, 'baz')
 
-    def test_consumer_role_check(self):
+    def test_consumer_role_check_foreign_ca(self):
         # Setup
-        my_dir = os.path.abspath(os.path.dirname(__file__))
-        test_cert = my_dir + "/data/test_cert.pem"
+        data_dir = os.path.abspath(os.path.dirname(__file__))
+        test_cert = data_dir + '/data/test_cert_bad_ca.pem'
         cert = Certificate()
         cert.read(test_cert)
 
+        # Test
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
 
         # Test
         self.some_method('somevalue')
-        self.assertTrue(web.ctx.status.startswith('401'))
-        
+        self.assertTrue(web.ctx.status.startswith('401'))    
+
     def test_username_pass(self):
         # Setup
 
