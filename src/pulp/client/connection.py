@@ -209,6 +209,10 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/sync/" % repoid
         return self.conn.request_post(method, params={"timeout":timeout})
 
+    def cancel_sync(self, repoid, taskid):
+        method = "/repositories/%s/sync/$s" % (repoid, taskid)
+        return self.conn.request_delete(method)
+
     def add_package(self, repoid, packageid):
         addinfo = {'repoid' : repoid,
                       'packageid' : packageid}
