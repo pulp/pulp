@@ -113,8 +113,8 @@ class Task(object):
         """
         assert self.state in task_ready_states
         self.state = task_running
-        self.start_time = datetime.datetime.now()
         self.progress = 0
+        self.start_time = datetime.datetime.now()
         try:
             result = self.callable(*self.args, **self.kwargs)
         except TimeoutException:
@@ -136,8 +136,8 @@ class Task(object):
                        (self.id, self.method_name, ''.join(self.traceback)))
         else:
             self.state = task_finished
-            self.result = result
             self.progress = 100
+            self.result = result
         self.finish_time = datetime.datetime.now()
         if self.complete_callback is not None:
             self.complete_callback(self)
