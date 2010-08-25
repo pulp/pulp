@@ -93,16 +93,25 @@ XGuaPqfHaos=
 
 class TestCertGeneration(unittest.TestCase):
 
-    def test_generation(self):
-        cid = "foobarbaz"
+    def test_priv_key(self):
+        # Test
         pem = cert_generator._make_priv_key()
+
+        # Verify
         self.assertTrue(pem.startswith('-----BEGIN RSA PRIVATE KEY-----'))
-        (pk, x509_pem) = cert_generator.make_cert(cid)
-        print "CERT!: %s" % x509_pem
+
+    def test_generation(self):
+        # Setup
+        cid = "foobarbaz"
+
+        # Test
+        pk, x509_pem = cert_generator.make_cert(cid)
+
+        # Verify
         self.assertTrue(pk is not None)
         self.assertTrue(x509_pem is not None)
-        cert = Certificate()
-        cert.update(str(x509_pem))
+
+        cert = Certificate(content=x509_pem)
         subject = cert.subject()
         consumer_cert_uid = subject.get('CN', None)
         self.assertEqual(cid, consumer_cert_uid)
