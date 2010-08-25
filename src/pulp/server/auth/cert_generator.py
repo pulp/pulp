@@ -80,6 +80,37 @@ def make_cert(uid):
     cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
     return private_key_pem, cert_pem_string
 
+def verify_cert(cert_pem):
+    '''
+    Ensures the given certificate can be verified against the server's CA.
+
+    @param cert_pem: PEM encoded certificate to be verified
+    @type  cert_pem: string
+
+    @return: True if the certificate is successfully verified against the CA; False otherwise
+    @rtype:  boolean
+    '''
+
+    # M2Crypto doesn't support verifying a cert against a CA, so call out to openssl
+    cmd = 'openssl verify -CAfile /etc/pki/pulp/ca.crt'
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Use communicate to pipe the certificate to the verify call
+    stdout, stderr = p.communicate(input=cert_pem)
+
+    # Successful result example:
+    #   stdin: OK\n
+    # Failed result example:
+    #   stdin: C = US, ST = NC, L = Raleigh, O = Red Hat, CN = localhost
+    #   error 20 at 0 depth lookup:unable to get local issuer certificate\n
+    result = stdout.rstrip()
+
+    if result.endswith('OK'):
+        return True
+    else:
+        return False
+
 def encode_admin_user(user):
     '''
     Encodes an admin user's identity into a single line suitable for identification.
