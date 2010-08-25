@@ -35,6 +35,10 @@ _default_values = {
         'lifetime': '90',
         'backups': '4',
     },
+    'security': {
+        'cacert': '/etc/pki/pulp/ca.crt',
+        'cakey': '/etc/pki/pulp/ca.key',
+    },
 }
 
 # to add a default configuration file, list the full path here
