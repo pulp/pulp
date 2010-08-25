@@ -137,7 +137,6 @@ class TestRoleCheck(unittest.TestCase):
         cert = Certificate()
         cert.read(test_cert)
 
-        # Test
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
