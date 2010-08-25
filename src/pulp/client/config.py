@@ -29,7 +29,7 @@ class Config(Base):
     """
 
     PATH = '/etc/pulp/client.conf'
-    ALTVAR = 'PULP_CLIENT_ALTCONFIG'
+    ALTVAR = 'PULP_CLIENT_ALTCONF'
 
     def __init__(self):
         """
