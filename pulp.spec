@@ -33,6 +33,7 @@ Requires: mongo
 Requires: mongo-server
 Requires: m2crypto
 Requires: openssl
+Requires: %{name}-client
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
