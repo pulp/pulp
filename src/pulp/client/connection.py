@@ -19,6 +19,7 @@ import base64
 import httplib
 import locale
 import sys
+import os
 
 from gettext import gettext as _
 
@@ -37,6 +38,14 @@ log = getLogger(__name__)
 consumer_deferred_fields = ['package_profile', 'repoids']
 package_deferred_fields = []
 repository_deferred_fields = ['packages', 'packagegroups', 'packagegroupcategories']
+
+
+def realpath(path):
+    if os.path.exists(path):
+        return path
+    else:
+        return None
+
 
 class RestlibException(Exception):
     def __init__(self, code, msg=""):
@@ -125,8 +134,12 @@ class PulpConnection:
     Proxy connection to Pulp Server
     """
 
-    def __init__(self, host='localhost', port=443, handler="/pulp/api", cert_file=None, key_file=None,
-                 username=None, password=None):
+    CERT_PATH = "/etc/pki/consumer/cert.pem"
+    KEY_PATH = "/etc/pki/consumer/key.pem"
+
+    def __init__(self, host='localhost', port=443, handler="/pulp/api",
+            cert_file=realpath(CERT_PATH), key_file=realpath(KEY_PATH),
+            username=None, password=None):
         self.host = host
         self.port = port
         self.handler = handler
@@ -149,6 +162,7 @@ class PulpConnection:
     def shutDown(self):
         self.conn.close()
         log.info("remote connection closed")
+
 
 class RepoConnection(PulpConnection):
     """

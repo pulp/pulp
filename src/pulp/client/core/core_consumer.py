@@ -31,8 +31,6 @@ log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
 CONSUMERID = "/etc/pulp/consumer"
-CERT_PATH = "/etc/pki/consumer/cert.pem"
-KEY_PATH = "/etc/pki/consumer/key.pem"
 
 
 import gettext
@@ -55,18 +53,10 @@ class consumer(BaseCore):
         
         
     def load_server(self):
-        cert_path = None 
-        key_path = None
-        if (os.path.exists(CERT_PATH) and
-                os.path.exists(KEY_PATH)):
-            cert_path = CERT_PATH
-            key_path = KEY_PATH
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
-                                        port=443, cert_file=cert_path,
-                                        key_file=key_path, username=self.username, 
+                                        port=443, username=self.username,
                                         password=self.password)
-        self.repolib = RepoLib(cert_file=cert_path, key_file=key_path, 
-                               username=self.username, password=self.password)
+        self.repolib = RepoLib()
 
     def generate_options(self):
         self.action = self._get_action()
@@ -154,8 +144,8 @@ class consumer(BaseCore):
             certificate = cert_dict['certificate']
             key = cert_dict['private_key']
             utils.writeToFile(CONSUMERID, consumer['id'])
-            utils.writeToFile(CERT_PATH, certificate)
-            utils.writeToFile(KEY_PATH, key)
+            utils.writeToFile(ConsumerConnection.CERT_PATH, certificate)
+            utils.writeToFile(ConsumerConnection.KEY_PATH, key)
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(self.options.id, pkginfo)
             print _(" Successfully created Consumer [ %s ]" % consumer['id'])
