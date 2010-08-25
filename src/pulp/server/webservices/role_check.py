@@ -143,6 +143,12 @@ class RoleCheck(object):
         subject = idcert.subject()
         encoded_user = subject.get('CN', None)
 
+        # Verify the certificate has been signed by the pulp CA
+        valid = cert_generator.verify_cert(cert_pem)
+        if not valid:
+            log.error('Admin certificate with CN [%s] is signed by a foreign CA' % encoded_user)
+            return False
+
         # If there is no user/pass combo, this is not a valid admin certificate
         if not encoded_user:
             return False

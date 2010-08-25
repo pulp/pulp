@@ -101,20 +101,7 @@ class TestRoleCheck(unittest.TestCase):
         retval = self.some_method(consumer_uid, "baz")
         self.assertNotEquals(retval, "baz")
 
-    def test_admin_cert(self):
-        # Setup
-        admin = self.uapi.create('test-admin', 'test-admin')
-        pk, cert_pem = cert_generator.make_admin_user_cert(admin)
-
-        web.ctx['headers'] = []
-        web.ctx['environ'] = dict()
-        web.ctx.environ['SSL_CLIENT_CERT'] = cert_pem
-
-        # Test
-        retval = self.some_other_method('foo', 'baz')
-        self.assertEqual(retval, 'baz')
-
-    def test_consumer_role_check_foreign_ca(self):
+    def test_consumer_cert_foreign_ca(self):
         # Setup
         data_dir = os.path.abspath(os.path.dirname(__file__))
         test_cert = data_dir + '/data/test_cert_bad_ca.pem'
@@ -128,7 +115,37 @@ class TestRoleCheck(unittest.TestCase):
 
         # Test
         self.some_method('somevalue')
-        self.assertTrue(web.ctx.status.startswith('401'))    
+        self.assertTrue(web.ctx.status.startswith('401'))
+
+    def test_admin_cert(self):
+        # Setup
+        admin = self.uapi.create('test-admin', 'test-admin')
+        pk, cert_pem = cert_generator.make_admin_user_cert(admin)
+
+        web.ctx['headers'] = []
+        web.ctx['environ'] = dict()
+        web.ctx.environ['SSL_CLIENT_CERT'] = cert_pem
+
+        # Test
+        retval = self.some_other_method('foo', 'baz')
+        self.assertEqual(retval, 'baz')
+
+    def test_admin_cert_foreign_ca(self):
+        # Setup
+        data_dir = os.path.abspath(os.path.dirname(__file__))
+        test_cert = data_dir + '/data/test_admin_cert_bad_ca.pem'
+        cert = Certificate()
+        cert.read(test_cert)
+
+        # Test
+        web.ctx['headers'] = []
+        web.ctx['environ'] = dict()
+        web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
+
+        # Test
+        self.some_other_method('somevalue')
+        self.assertTrue(web.ctx.status.startswith('401'))
+
 
     def test_username_pass(self):
         # Setup
