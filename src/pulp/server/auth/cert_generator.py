@@ -19,7 +19,7 @@ from M2Crypto import X509, EVP, RSA, ASN1, util
 import subprocess
 
 from pulp.server.pexceptions import PulpException
-
+from pulp.server import config
 
 log = logging.getLogger(__name__)
 
@@ -68,8 +68,13 @@ def make_cert(uid):
     # Sign it with the Pulp server CA
     # We can't do this in m2crypto either so we have to shell out
     # TODO: We technically should be incrementing these serial numbers
-    serial = "01"
-    cmd = 'openssl x509 -req -sha1 -CA /etc/pki/pulp/ca.crt -CAkey /etc/pki/pulp/ca.key -set_serial %s -days 3650' % serial
+
+    ca_cert = config.config.get('security', 'cacert')
+    ca_key = config.config.get('security', 'cakey')
+
+    serial = '01'
+    cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days 3650' % \
+          (ca_cert, ca_key, serial)
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.communicate(input=req.as_pem())[0]
@@ -92,7 +97,8 @@ def verify_cert(cert_pem):
     '''
 
     # M2Crypto doesn't support verifying a cert against a CA, so call out to openssl
-    cmd = 'openssl verify -CAfile /etc/pki/pulp/ca.crt'
+    ca_cert = config.config.get('security', 'cacert')
+    cmd = 'openssl verify -CAfile %s' % ca_cert
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
