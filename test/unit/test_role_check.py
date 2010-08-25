@@ -49,22 +49,22 @@ class TestRoleCheck(unittest.TestCase):
         self.capi.clean()
         
     @RoleCheck(consumer=True)
-    def some_method(self, someparam, otherparam):
+    def consumer_only(self, someparam, otherparam):
         print "some method executed"
         return otherparam
 
     @RoleCheck(admin=True)
-    def some_other_method(self, someparam, otherparam):
+    def admin_only(self, someparam, otherparam):
         print "some_other_method executed"
         return otherparam
 
     @RoleCheck(admin=True, consumer=True)
-    def some_other_method2(self, someparam, otherparam):
+    def consumer_and_admin(self, someparam, otherparam):
         print "some_other_method2 executed"
         return otherparam
 
     @RoleCheck(admin=True, consumer_id=True)
-    def some_other_method3(self, consumer_id, otherparam):
+    def consumer_id_and_admin(self, consumer_id, otherparam):
         print "some_other_method3 executed"
         return otherparam
 
@@ -81,15 +81,15 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['SSL_CLIENT_CERT'] = temp_cert
 
         # Tests
-        retval = self.some_method("blippy", "baz")
+        retval = self.consumer_only("blippy", "baz")
         self.assertEquals(retval, "baz")
 
         #   Test that both the cert + id *in* the cert match
-        retval = self.some_other_method3(consumer_uid, "baz")
+        retval = self.consumer_id_and_admin(consumer_uid, "baz")
         self.assertEquals(retval, "baz")
         
         #   Test the opposite, good cert, bad param
-        retval = self.some_other_method3("fake-consumer-uid", "baz")
+        retval = self.consumer_id_and_admin("fake-consumer-uid", "baz")
         self.assertNotEquals(retval, "baz")
 
         #   Test with non-existing consumer (not in the DB)
@@ -98,7 +98,7 @@ class TestRoleCheck(unittest.TestCase):
 
         web.ctx.environ['SSL_CLIENT_CERT'] = temp_cert
 
-        retval = self.some_method(consumer_uid, "baz")
+        retval = self.consumer_only(consumer_uid, "baz")
         self.assertNotEquals(retval, "baz")
 
     def test_consumer_cert_foreign_ca(self):
@@ -114,7 +114,7 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
 
         # Test
-        self.some_method('somevalue')
+        self.consumer_only('somevalue')
         self.assertTrue(web.ctx.status.startswith('401'))
 
     def test_admin_cert(self):
@@ -127,7 +127,7 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['SSL_CLIENT_CERT'] = cert_pem
 
         # Test
-        retval = self.some_other_method('foo', 'baz')
+        retval = self.admin_only('foo', 'baz')
         self.assertEqual(retval, 'baz')
 
     def test_admin_cert_foreign_ca(self):
@@ -143,7 +143,7 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
 
         # Test
-        self.some_other_method('somevalue')
+        self.admin_only('somevalue')
         self.assertTrue(web.ctx.status.startswith('401'))
 
 
@@ -160,7 +160,7 @@ class TestRoleCheck(unittest.TestCase):
 
         # Test
         #   Check we can't run the method with no setup in web
-        retval = self.some_other_method('somevalue', 'baz')
+        retval = self.admin_only('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
         
         #   Check with bad password
@@ -168,7 +168,7 @@ class TestRoleCheck(unittest.TestCase):
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
 
-        retval = self.some_other_method('somevalue', 'baz')
+        retval = self.admin_only('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
         
         #   Check with bad username
@@ -176,7 +176,7 @@ class TestRoleCheck(unittest.TestCase):
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
 
-        retval = self.some_other_method('somevalue', 'baz')
+        retval = self.admin_only('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
         
         #   Check a successful test
@@ -184,7 +184,7 @@ class TestRoleCheck(unittest.TestCase):
         encoded = base64.encodestring(loginpass)
         web.ctx.environ['HTTP_AUTHORIZATION'] = "Basic %s" % encoded
 
-        retval = self.some_other_method('somevalue', 'baz')
+        retval = self.admin_only('somevalue', 'baz')
         self.assertEquals(retval, 'baz')
 
     
