@@ -54,9 +54,6 @@ class UserApi(BaseApi):
             id = str(uuid.uuid4())
         hashed_password = None
         if (password is not None):
-            log.info("password received is %s" % password)
-            log.info("login %s" % login)
-            log.info("name %s" % name)
             hashed_password = password_util.hash_password(password)
         user = model.User(login, id, hashed_password, name)
         self.insert(user)
