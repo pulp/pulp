@@ -17,12 +17,14 @@
 import web
 
 from pulp.server.api.user import UserApi
+from pulp.server.api.auth import AuthApi
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.role_check import RoleCheck
 
 # users api ---------------------------------------------------------------
 
 api = UserApi()
+auth_api = AuthApi()
 
 # controllers -----------------------------------------------------------------
 
@@ -93,10 +95,25 @@ class User(JSONController):
         """
         api.delete(login=login)
         return self.ok(True)
-# web.py application ----------------------------------------------------------
+
+class AdminAuthCertificates(JSONController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def GET(self):
+        '''
+        Creates and returns an authentication certificate for the currently
+        logged in user.
+        '''
+        private_key, cert = auth_api.admin_certificate()
+        certificate = {'certificate': cert, 'private_key': private_key}
+        return self.ok(certificate)
+
+    # web.py application ----------------------------------------------------------
 
 URLS = (
     '/$', 'Users',
+    '/admin_certificate/$', 'AdminAuthCertificates',
     '/([^/]+)/$', 'User',
 )
 
