@@ -558,7 +558,7 @@ class RepoApi(BaseApi):
             return False
 
     @audit()
-    def sync(self, id):
+    def sync(self, id, progress_callback=None):
         """
         Sync a repo from the URL contained in the feed
         """
@@ -566,7 +566,7 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        added_packages, added_errataids = repo_sync.sync(repo, repo_source)
+        added_packages, added_errataids = repo_sync.sync(repo, repo_source, progress_callback)
         log.info("Sync returned %s packages, %s errata" % (len(added_packages),
             len(added_errataids)))
         for p in added_packages:

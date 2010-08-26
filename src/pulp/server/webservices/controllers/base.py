@@ -232,7 +232,7 @@ class AsyncController(JSONController):
         @return dict representing task
         """
         fields = ('id', 'method_name', 'state', 'start_time', 'finish_time',
-                 'result', 'exception', 'traceback')
+                 'result', 'exception', 'traceback', 'progress')
         return dict((f, getattr(task, f)) for f in fields)
 
     def _status_path(self, id):
@@ -247,7 +247,12 @@ class AsyncController(JSONController):
             return http.uri_path()
         return http.extend_uri_path(id)
 
-    def start_task(self, func, args=[], kwargs={}, timeout=None, unique=False):
+    def start_task(self,
+                   func,
+                   args=[],
+                   kwargs={},
+                   timeout=None,
+                   unique=False):
         """
         Execute the function and its arguments as an asynchronous task.
         @param func: python callable
@@ -258,12 +263,14 @@ class AsyncController(JSONController):
         task = Task(func, args, kwargs, timeout)
         if not fifo.enqueue(task, unique=unique):
             return None
-        task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
-        return task_info
+        return task
 
     def cancel_task(self, task):
         """
+        Cancel the passed in task
+        @type task: Task instance
+        @param task: task to cancel
+        @return: True if the task was successfully canceled, False otherwise
         """
         if task is None or task.state in task_complete_states:
             return False
@@ -285,10 +292,21 @@ class AsyncController(JSONController):
 
     def find_task(self, id):
         """
+        Find and return a task with the given id
+        @type id: str
+        @param id: id of task to find
+        @return: Task instance if a task with the id exists, None otherwise
         """
         return fifo.find(id=id)
 
     def timeout(self, data):
+        """
+        Parse any timeout values out of the passed in data
+        @type data: dict
+        @param data: values passed in via a request body
+        @return: datetime.timedelta instance corresponding to a properly
+                 formatted timeout value if found in data, None otherwise
+        """
         if 'timeout' not in data or data['timeout'] is None:
             return None
         timeouts = {

@@ -65,31 +65,29 @@ class Task(object):
     Task class
     Meta data for executing a long-running task.
     """
-    def __init__(self, callable, args=[], kwargs={}, progress_arg=None, timeout=None):
+    def __init__(self, callable, args=[], kwargs={}, timeout=None):
         """
         Create a Task for the passed in callable and arguments.
         @param callable: function, method, lambda, or object with __call__
         @param args: positional arguments to be passed into the callable
         @param kwargs: keyword arguments to be passed into the callable
-        @type progress_arg: str or None
-        @param progress_arg: the name of the keyword argument to pass the
-                             progress callback in as, None means no progress
-                             callback support in the callable
         @type timeout: datetime.timedelta instance or None
         @param timeout: maximum length of time to allow task to run,
                         None means indefinitely
         """
+        # task resources
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
         self.callable = callable
         self.args = args
         self.kwargs = kwargs
-        if progress_arg is not None:
-            self.kwargs[progress_arg] = self.progress_callback
+        self._progress_callback = None
         self.timeout = timeout
+
         # resources managed by the task queue to deliver events
         self.complete_callback = None
         self.thread = None
 
+        # resources for a task run
         self.method_name = callable.__name__
         self.state = task_waiting
         self.progress = None
@@ -107,13 +105,23 @@ class Task(object):
             return
         self.thread.exception_event()
 
+    def set_progress(self, arg, callback):
+        """
+        Setup a progress callback for the task, if it accepts one
+        @type arg: str
+        @param arg: name of the callable's progress callback argument
+        @type callback: callable, returning a dict
+        @param callback: value of the callable's progress callback argument
+        """
+        self.kwargs[arg] = self.progress_callback
+        self._progress_callback = callback
+
     def run(self):
         """
         Run this task and record the result or exception.
         """
         assert self.state in task_ready_states
         self.state = task_running
-        self.progress = 0
         self.start_time = datetime.datetime.now()
         try:
             result = self.callable(*self.args, **self.kwargs)
@@ -136,28 +144,22 @@ class Task(object):
                        (self.id, self.method_name, ''.join(self.traceback)))
         else:
             self.state = task_finished
-            self.progress = 100
             self.result = result
         self.finish_time = datetime.datetime.now()
         if self.complete_callback is not None:
             self.complete_callback(self)
 
-    def progress_callback(self, complete, total):
+    def progress_callback(self, *args, **kwargs):
         """
         Provide a callback for runtime progress reporting.
         """
         try:
-            self.progress = int(complete / total)
-        except TypeError:
-            _log.error('Task progress called with arguments that do not support division')
-            _log.debug('Type complete: %s; Type total: %s' %
-                       (str(type(complete)), str(type(total))))
-        except ValueError:
-            _log.error('Task progress called with arguments that cannot be cast to an integer')
-            _log.debug('Type complete: %s; Type total: %s' %
-                       (str(type(complete)), str(type(total))))
-        except ZeroDivisionError:
-            _log.error('Task progress called with 0 total')
+            # NOTE, the self._progress_callback method should return a dict
+            self.progress = self._progress_callback(*args, **kwargs)
+        except Exception, e:
+            _log.error('Exception, %s, in task %s progress callback: %s' %
+                       (repr(e), self.id, self._progress_callback.__name__))
+            raise
 
     def reset(self):
         """
@@ -167,6 +169,7 @@ class Task(object):
             return
         self.state = task_reset
         self.progress = None
+        self._progress_callback = None
         self.start_time = None
         self.finish_time = None
         self.result = None
