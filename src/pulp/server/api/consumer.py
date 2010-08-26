@@ -199,7 +199,7 @@ class ConsumerApi(BaseApi):
             if len(info) > 1:
                 data.append(('.'.join(info[:-1]), info[-1]))
             else:
-                data.append(info)
+                data.append(pkg)
         log.debug("Packages to Install: %s" % data)
         agent.packages.install(data)
         return packagenames
