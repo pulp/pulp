@@ -184,7 +184,7 @@ class repo(BaseCore):
         try:
             task_object = self.pconn.sync(self.options.id, self.options.timeout)
             state = "waiting"
-            #print "Task created with ID::", task_object['id']
+            print "Task created with ID::", task_object['id']
             while state not in ["finished", "error", 'timed out', 'canceled']:
                 time.sleep(5)
                 status = self.pconn.sync_status(task_object['status_path'])
