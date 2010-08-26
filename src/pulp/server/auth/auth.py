@@ -46,7 +46,10 @@ def set_principal(principal):
 def get_principal():
     """
     Get the current principal (user) of the system.
+
     @return: current principal
+    @rtype: pulp.server.db.model.User instance if one was specified in set_principal;
+            pulp.server.auth.auth.SystemPrincipal otherwise
     """
     if not hasattr(_storage, 'principal'):
         _storage.principal = SystemPrincipal()
