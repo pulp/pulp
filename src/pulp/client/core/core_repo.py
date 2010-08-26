@@ -39,14 +39,13 @@ class repo(BaseCore):
         shortdesc = "repository specifc actions to pulp server."
         desc = ""
         self.name = "repo"
-        self.actions = actions or {"create"     : "Create a repo",
-                                   "update"     : "Update a repo",
-                                   "list"       : "List available repos",
-                                   "delete"     : "Delete a repo",
-                                   "sync"       : "Sync data to this repo from the feed",
-                                   "cancel_sync": "Cancel a running sync",
-                                   "upload"     : "Upload package(s) to this repo",
-                                   "schedules"  : "List all repo schedules", }
+        self.actions = actions or {"create" : "Create a repo",
+                                   "update" : "Update a repo",
+                                   "list"   : "List available repos",
+                                   "delete" : "Delete a repo",
+                                   "sync"   : "Sync data to this repo from the feed",
+                                   "upload" : "Upload package(s) to this repo",
+                                   "schedules" : "List all repo schedules", }
         BaseCore.__init__(self, "repo", usage, shortdesc, desc)
 
     def load_server(self):
@@ -85,13 +84,6 @@ class repo(BaseCore):
                            help="Repository Id")
             self.parser.add_option("--timeout", dest="timeout",
                            help="Sync Timeout")
-        if self.action == "cancel_sync":
-            usage = "repo cancel_sync [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
-            self.parser.add_option("--taskid", dest="taskid",
-                           help="Task ID")
         if self.action == "delete":
             usage = "repo delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -118,8 +110,6 @@ class repo(BaseCore):
             self._list()
         if self.action == "sync":
             self._sync()
-        if self.action == "cancel_sync":
-            self._cancel_sync()
         if self.action == "delete":
             self._delete()
         if self.action == "upload":
@@ -208,23 +198,6 @@ class repo(BaseCore):
             systemExit("Error : %s" % se)
         except Exception, e:
             log.error("General Error: %s" % e)
-            raise
-
-    def _cancel_sync(self):
-        if not self.options.id:
-            print("repo id required. Try --help")
-            sys.exit(0)
-        if not self.options.taskid:
-            print("task id required. Try --help")
-            sys.exit(0)
-        try:
-            repos = self.pconn.cancel_sync(self.options.id, self.options.taskid)
-            print _(" Sync task %s cancelled") % self.options.taskid
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
             raise
 
     def _delete(self):
