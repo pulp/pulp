@@ -20,6 +20,7 @@ import logging
 import web
 
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.repo_sync import yum_rhn_progress_callback
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -234,10 +235,15 @@ class RepositoryActions(AsyncController):
         @return: True on successful sync of repository from feed
         """
         timeout = self.timeout(self.params())
-        task_info = self.start_task(api.sync, [id], timeout=timeout, unique=True)
-        if task_info:
-            return self.accepted(task_info)
-        return self.conflict('Sync already in process for repo [%s]' % id)
+        task = self.start_task(api.sync, [id], timeout=timeout, unique=True)
+        if not task:
+            return self.conflict('Sync already in process for repo [%s]' % id)
+        repo = api.repository(id, fields=['source'])
+        if repo['source']['type'] in ('yum', 'rhn'):
+            task.set_progress('progress_callback', yum_rhn_progress_callback)
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -396,6 +402,9 @@ class RepositoryActions(AsyncController):
         @param action_name: name of the action
         @return: http response
         """
+        repo = api.repository(id, fields=['id'])
+        if not repo:
+            return self.not_found('No repository with id %s found' % id)
         action = getattr(self, action_name, None)
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)

@@ -40,12 +40,19 @@ log = logging.getLogger(__name__)
 
 # sync api --------------------------------------------------------------------
 
-def progressCallback(info):
-    log.info("Progress: %s on <%s>, %s/%s items %s/%s bytes" % (info.status,
-            info.item_name, info.items_left, info.items_total,
-            info.size_left, info.size_total))
+def yum_rhn_progress_callback(info):
+    fields = ('status',
+              'item_name',
+              'items_left',
+              'items_total',
+              'size_left',
+              'size_total')
+    values = tuple(getattr(info, f) for f in fields)
+    log.info("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
+    return dict(zip(fields, values))
 
-def sync(repo, repo_source):
+
+def sync(repo, repo_source, progress_callback=None):
     '''
     Synchronizes content for the given RepoSource.
 
@@ -59,7 +66,7 @@ def sync(repo, repo_source):
     if source_type not in type_classes:
         raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
     synchronizer = type_classes[source_type]()
-    repo_dir = synchronizer.sync(repo, repo_source)
+    repo_dir = synchronizer.sync(repo, repo_source, progress_callback)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
 
 
@@ -269,7 +276,7 @@ class BaseSynchronizer(object):
 
 class YumSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source):
+    def sync(self, repo, repo_source, progress_callback=None):
         cacert = clicert = clikey = None
         if repo['ca'] and repo['cert'] and repo['key']:
             cacert = repo['ca'].encode('utf8')
@@ -277,8 +284,8 @@ class YumSynchronizer(BaseSynchronizer):
             clikey = repo['key'].encode('utf8')
         yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'),
                                 1, cacert=cacert, clicert=clicert, clikey=clikey)
-        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'), 
-                callback=progressCallback)
+        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'),
+                callback=progress_callback)
         repo_dir = "%s/%s/" % (config.config.get('paths', 'local_storage'), repo['id'])
         return repo_dir
 
@@ -287,7 +294,7 @@ class LocalSynchronizer(BaseSynchronizer):
     """
     Sync class to synchronize a directory of rpms from a local filer
     """
-    def sync(self, repo, repo_source):
+    def sync(self, repo, repo_source, progress_callback=None):
         pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (pkg_dir, repo['id']))
         try:
@@ -360,7 +367,7 @@ class LocalSynchronizer(BaseSynchronizer):
 
 class RHNSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source):
+    def sync(self, repo, repo_source, progress_callback=None):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
         pieces = repo_source['url'].split('/')
@@ -380,7 +387,7 @@ class RHNSynchronizer(BaseSynchronizer):
 
         # Perform the sync
         dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
-        s.syncPackages(channel, savePath=dest_dir, callback=progressCallback)
+        s.syncPackages(channel, savePath=dest_dir, callback=progress_callback)
         s.createRepo(dest_dir)
         updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
         if os.path.isfile(updateinfo_path):
