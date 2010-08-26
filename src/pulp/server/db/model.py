@@ -34,7 +34,7 @@ class Base(dict):
     __delattr__= dict.__delitem__
 
 class Repo(Base):
-    def __init__(self, id, name, arch, source=None):
+    def __init__(self, id, name, arch, source=None, productid=None):
         self._id = id
         self.id = id
         if source:
@@ -55,6 +55,7 @@ class Repo(Base):
         self.cert = None
         self.key  = None
         self.errata = {}
+        self.productid = None
         
     def get_repo_source(self):
         if not self.source:

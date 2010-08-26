@@ -48,17 +48,12 @@ class RepoLib:
     @type lock: L{Lock}
     """
 
-    def __init__(self, lock=ActionLock(), cert_file=None, key_file=None, 
-                 username=None, password=None):
+    def __init__(self, lock=ActionLock()):
         """
         @param lock: A lock.
         @type lock: L{Lock}
         """
         self.lock = lock
-        self.cert_file = cert_file
-        self.key_file = key_file
-        self.username = username
-        self.password = password
 
     def update(self):
         """
@@ -67,8 +62,7 @@ class RepoLib:
         lock = self.lock
         lock.acquire()
         try:
-            action = UpdateAction(self.cert_file, self.key_file, self.username, 
-                                  self.password)
+            action = UpdateAction()
             return action.perform()
         finally:
             lock.release()
@@ -78,19 +72,18 @@ class Pulp:
     """
     The pulp server.
     """
-    def __init__(self, cfg,  cert_file=None, key_file=None, 
-                 username=None, password=None):
+    def __init__(self, cfg):
         host = cfg.server.host
         port = cfg.server.port
-        self.rapi = RepoConnection(host=host, port=port, cert_file=cert_file,
-                                        key_file=key_file, username=username, 
-                                        password=password)
-        self.capi = ConsumerConnection(host=host, port=port, cert_file=cert_file,
-                                        key_file=key_file, username=username, 
-                                        password=password)
+        self.rapi = RepoConnection(host=host, port=port)
+        self.capi = ConsumerConnection(host=host, port=port)
 
     def getProducts(self):
-        # TODO: hack for demo, replace w/ real stuff later.
+        """
+        Get subscribed products.
+        @return: A list of products
+        @rtype: list
+        """
         repos = []
         product = dict(content=repos)
         products = (product,)
@@ -98,7 +91,10 @@ class Pulp:
         consumer = self.capi.consumer(cid)
         for repoid in consumer['repoids']:
             repo = self.rapi.repository(repoid)
-            d = dict(id=repoid, name=repo['name'], enabled='1')
+            d = dict(
+                id=repoid,
+                name=repo['name'],
+                enabled='1')
             repos.append(d)
         return products
     
@@ -111,10 +107,9 @@ class Action:
     Action base class.
     """
 
-    def __init__(self, cert_file=None, key_file=None, 
-                 username=None, password=None):
+    def __init__(self, ):
         self.cfg = Config()
-        self.pulp = Pulp(self.cfg, cert_file, key_file, username, password)
+        self.pulp = Pulp(self.cfg)
 
 
 class UpdateAction(Action):
@@ -217,7 +212,7 @@ class Repo(dict):
         ('name', 0, None),
         ('baseurl', 0, None),
         ('enabled', 1, '1'),
-        ('sslverify', 1, '0'),
+        ('sslverify', 0, '0'),
     )
 
     def __init__(self, id):
@@ -253,8 +248,6 @@ class Repo(dict):
         for k,m,d in self.PROPERTIES:
             v = other.get(k)
             if not m:
-                if v is None:
-                    continue
                 if self[k] == v:
                     continue
                 self[k] = v
@@ -414,20 +407,6 @@ class Reader:
         return ln
 
 
-def test():
-    host = 'localhost'
-    port = 443
-    f = open('/etc/pulp/consumer', 'w')
-    f.write('0')
-    f.flush()
-    f.close()
-    rapi = RepoConnection(host=host, port=port)
-    capi = ConsumerConnection(host=host, port=port)
-    rapi.create('xyz', 'The xyz repository', 'noarch', 'yum:http://foo')
-    capi.create('0', 'The local consumer.')
-    capi.bind('0', 'xyz')
-    main()
-
 def main():
     print 'Updating Pulp repository'
     repolib = RepoLib()
@@ -436,5 +415,4 @@ def main():
     print 'done'
 
 if __name__ == '__main__':
-    #main()
-    test()
+    main()

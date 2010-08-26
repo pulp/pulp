@@ -23,17 +23,26 @@ class Config(Base):
     The pulp client configuration.
     @cvar PATH: The absolute path to the config directory.
     @type PATH: str
+    @cvar ALTVAR: The environment variable with a path to an alternate
+        configuration file.  This file is merged.
+    @type ALTVAR: str
     """
 
     PATH = '/etc/pulp/client.conf'
+    ALTVAR = 'PULP_CLIENT_ALTCONF'
 
     def __init__(self):
         """
         Open the configuration.
+        Merge alternate configuration file when specified
+        by environment variable.
         """
         fp = open(self.PATH)
         try:
             Base.__init__(self, fp)
+            alt = os.environ.get(self.ALTVAR)
+            if alt:
+                self.__merge(alt)
         finally:
             fp.close()
 
@@ -46,3 +55,24 @@ class Config(Base):
             fp.write(str(self))
         finally:
             fp.close()
+
+    def __merge(self, path):
+        """
+        Merge the configuration file at the specified path.
+        @param path: The path to a configuration file.
+        @type path: str
+        @return: self
+        @rtype: L{Config}
+        """
+        fp = open(path)
+        try:
+            other = Base(fp)
+        finally:
+            fp.close()
+        for section in other:
+            sA = self[section]
+            sB = other[section]
+            for key in sB:
+                value = sB[key]
+                setattr(sA, key, value)
+        return self

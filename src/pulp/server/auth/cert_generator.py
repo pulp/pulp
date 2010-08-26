@@ -19,7 +19,7 @@ from M2Crypto import X509, EVP, RSA, ASN1, util
 import subprocess
 
 from pulp.server.pexceptions import PulpException
-
+from pulp.server import config
 
 log = logging.getLogger(__name__)
 
@@ -68,8 +68,13 @@ def make_cert(uid):
     # Sign it with the Pulp server CA
     # We can't do this in m2crypto either so we have to shell out
     # TODO: We technically should be incrementing these serial numbers
-    serial = "01"
-    cmd = 'openssl x509 -req -sha1 -CA /etc/pki/pulp/ca.crt -CAkey /etc/pki/pulp/ca.key -set_serial %s -days 3650' % serial
+
+    ca_cert = config.config.get('security', 'cacert')
+    ca_key = config.config.get('security', 'cakey')
+
+    serial = '01'
+    cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days 3650' % \
+          (ca_cert, ca_key, serial)
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = p.communicate(input=req.as_pem())[0]
@@ -79,6 +84,38 @@ def make_cert(uid):
         raise Exception("error signing cert request: %s" % output)
     cert_pem_string = output[output.index("-----BEGIN CERTIFICATE-----"):]
     return private_key_pem, cert_pem_string
+
+def verify_cert(cert_pem):
+    '''
+    Ensures the given certificate can be verified against the server's CA.
+
+    @param cert_pem: PEM encoded certificate to be verified
+    @type  cert_pem: string
+
+    @return: True if the certificate is successfully verified against the CA; False otherwise
+    @rtype:  boolean
+    '''
+
+    # M2Crypto doesn't support verifying a cert against a CA, so call out to openssl
+    ca_cert = config.config.get('security', 'cacert')
+    cmd = 'openssl verify -CAfile %s' % ca_cert
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Use communicate to pipe the certificate to the verify call
+    stdout, stderr = p.communicate(input=cert_pem)
+
+    # Successful result example:
+    #   stdin: OK\n
+    # Failed result example:
+    #   stdin: C = US, ST = NC, L = Raleigh, O = Red Hat, CN = localhost
+    #   error 20 at 0 depth lookup:unable to get local issuer certificate\n
+    result = stdout.rstrip()
+
+    if result.endswith('OK'):
+        return True
+    else:
+        return False
 
 def encode_admin_user(user):
     '''

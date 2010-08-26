@@ -289,7 +289,7 @@ class AsyncController(JSONController):
         return fifo.find(id=id)
 
     def timeout(self, data):
-        if 'timeout' not in data:
+        if 'timeout' not in data or data['timeout'] is None:
             return None
         timeouts = {
             'days': lambda x: timedelta(days=x),
@@ -301,9 +301,9 @@ class AsyncController(JSONController):
             'weeks': lambda x: timedelta(weeks=x)
         }
         timeout = data['timeout']
-        if timeout.find('=') < 0:
+        if timeout.find(':') < 0:
             return None
-        units, length = timeout.split('=', 1)
+        units, length = timeout.split(':', 1)
         units = units.strip().lower()
         if units not in timeouts:
             return None
