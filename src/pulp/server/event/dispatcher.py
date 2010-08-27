@@ -199,7 +199,7 @@ class EventDispatcher(EventConsumer):
             method = cls.inbounds.get(action)
             if method is None:
                 raise Exception,\
-                    '{inbound} method %s()", not found' % (action)
+                    '{inbound} method %s()", not found' % action
             else:
                 return method
         finally:
@@ -219,7 +219,7 @@ class EventDispatcher(EventConsumer):
             method = cls.outbounds.get(action)
             if method is None:
                 raise Exception,\
-                    '{outbound} method %s()", not found' % (action)
+                    '{outbound} method %s()", not found' % action
             else:
                 return method
         finally:
