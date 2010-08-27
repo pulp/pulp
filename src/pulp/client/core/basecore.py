@@ -19,7 +19,7 @@ import os
 import sys
 from optparse import OptionParser
 import pulp.client.utils as utils
-
+import pulp.client.auth_utils as auth_utils
 
 class BaseCore(object):
     """ Base class for all sub-calls. """
@@ -35,6 +35,8 @@ class BaseCore(object):
         self.name = name
         self.username = None
         self.password = None
+        self.cert_filename = None
+        self.key_filename = None
 
     def setup_option_parser(self, usage, description, skip_actions):
         self.usage = "usage: %prog -u <username> -p <password> " + usage
@@ -106,6 +108,14 @@ class BaseCore(object):
         (self.options, self.args) = self.parser.parse_args()
         self.username = self.options.username
         self.password = self.options.password
+
+        # It looks like this main method is only called by pulp-admin, so it should
+        # be safe to hook in the admin certificates here
+        cert_filename, key_filename = auth_utils.admin_cert_paths()
+        if os.path.exists(cert_filename):
+            self.cert_filename = cert_filename
+            self.key_filename = key_filename
+
         self.load_server()
         self._do_core()
 

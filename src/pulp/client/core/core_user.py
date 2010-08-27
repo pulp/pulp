@@ -48,7 +48,9 @@ class user(BaseCore):
         self.userconn = UserConnection(host=CFG.server.host or "localhost", 
                                               port=CFG.server.port or 443,
                                               username=self.username, 
-                                              password=self.password)
+                                              password=self.password,
+                                              cert_file=self.cert_filename,
+                                              key_file=self.key_filename)
         
     def generate_options(self):
         self.action = self._get_action()
@@ -56,7 +58,7 @@ class user(BaseCore):
             usage = "user create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--newusername", dest="newusername",
-                           help="new username to create"),
+                           help="new username to create")
             self.parser.add_option("--newpassword", dest="newpassword",
                            help="password for authentication")
             self.parser.add_option("--name", dest="name",
