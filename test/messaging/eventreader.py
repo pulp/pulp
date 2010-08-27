@@ -19,6 +19,7 @@
 import sys
 sys.path.append('../../')
 
+from pulp.server.event.dispatcher import EventDispatcher
 from pulp.messaging.consumer import EventConsumer
 from logging import INFO, basicConfig
 
@@ -36,5 +37,11 @@ def main():
     consumer.join()
 
 
+def main2():
+    dispatcher = EventDispatcher()
+    dispatcher.start()
+    dispatcher.join()
+
+
 if __name__ == '__main__':
-    main()
+    main2()

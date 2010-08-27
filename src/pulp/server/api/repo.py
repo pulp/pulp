@@ -30,6 +30,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.auditing import audit
+from pulp.server.event.dispatcher import event
 from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
@@ -85,6 +86,7 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         return repo
 
+    @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None):
         """
