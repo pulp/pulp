@@ -18,7 +18,13 @@ import ctypes
 import inspect
 import logging
 import threading
+import time
 
+# globals ---------------------------------------------------------------------
+
+_Thread = threading.Thread
+
+_thread_tree = {}
 
 _log = logging.getLogger(__name__)
 
@@ -55,46 +61,66 @@ class DRLock(object):
     def __exit__(self, *args, **kwargs):
         self.release()
 
-# trackable thread class ------------------------------------------------------
+# descendant thread tracking api ----------------------------------------------
 
-_thread_tree = {}
-
-_Thread = threading.Thread
-
-class TrackableThread(_Thread):
+class TrackedThread(_Thread):
     """
-    Monkey patch thread class that records the parent thread in the thread tree
-    E.g. the thread that called this thread object's start() method
     """
     def start(self):
+        """
+        """
         parent = threading.current_thread()
         _thread_tree.setdefault(parent, []).append(self)
-        super(TrackableThread, self).start()
+        return super(TrackedThread, self).start()
 
 # monkey patch the threading module in order to track threads
 # this allows us to cancel tasks that have spawned threads of their own
-threading.Thread = TrackableThread
+threading.Thread = TrackedThread
 
 
 def get_descendants(thread):
     """
     Get a list of all the descendant threads for the given thread.
-    @type thread: TrackableThread instance
+    @type thread: L{TrackedThread} instance
     @param thread: thread to find the descendants of
-    @raise RuntimeError: if the thread is not an instance of TrackableThread
-    @return: list of TrackableThread instances
+    @raise RuntimeError: if the thread is not an instance of TrackedThread
+    @return: list of TrackedThread instances
     """
-    if not isinstance(thread, TrackableThread):
-        raise RuntimeError('Cannot find descendants of an untrackable thread')
+    if not isinstance(thread, TrackedThread):
+        raise RuntimeError('Cannot find descendants of an untracked thread')
     descendants = _thread_tree.get(thread, [])
     for d in descendants:
         descendants.extend(_thread_tree.get(d, []))
     return descendants
 
-# interruptable thread base class ---------------------------------------------
+
+def remove_subtree(thread):
+    if not isinstance(thread, TrackedThread):
+        raise RuntimeError('Cannot clear subtree of an untracked thread')
+    descendents = _thread_tree.pop(thread, [])
+    for d in descendents:
+        descendents.extend(_thread_tree.pop(d, []))
+    return len(descendents)
+
+# thread interruption api -----------------------------------------------------
 
 # based on an answer from stack overflow:
 # http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
+
+def _tid(thread):
+    """
+    Determine a thread's id.
+    """
+    if not thread.is_alive():
+        raise threading.ThreadError('Thread is not active')
+    if hasattr(thread, '_thread_id'):
+        return thread._thread_id
+    for tid, tobj in threading._active.items():
+        if tobj is thread:
+            thread._thread_id = tid
+            return tid
+    raise AssertionError('Could not determine thread id')
+
 
 def _raise_exception_in_thread(tid, exc_type):
     """
@@ -116,61 +142,7 @@ def _raise_exception_in_thread(tid, exc_type):
     ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, null_ptr)
     raise SystemError('PyThreadState_SetAsyncExc failed')
 
-
-class InterruptableThread(TrackableThread):
-    """
-    A thread class that supports raising exception in the thread from another
-    thread.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(InterruptableThread, self).__init__(*args, **kwargs)
-        self.__default_timeout = 0.05
-        self.__exception_event = threading.Event()
-
-    @property
-    def _tid(self):
-        """
-        Determine this thread's id.
-        """
-        if not self.is_alive():
-            raise threading.ThreadError('Thread is not active')
-        # do we have it cached?
-        if hasattr(self, '_thread_id'):
-            return self._thread_id
-        # no, look for it in the _active dict
-        for tid, tobj in threading._active.items():
-            if tobj is self:
-                self._thread_id = tid
-                return tid
-        raise AssertionError('Could not determine thread id')
-
-    def exception_event(self):
-        """
-        Flag that an exception has been delivered to the thread and handled.
-        This will unblock the thread trying to deliver the exception.
-        """
-        self.__exception_event.set()
-
-    def raise_exception(self, exc_type):
-        """
-        Raise and exception in this thread.
-        
-        NOTE this is executed in the context of the calling thread and blocks
-        until the exception has been delivered to this thread and this thread
-        exists.
-        """
-        while not self.__exception_event.is_set():
-            try:
-                _raise_exception_in_thread(self._tid, exc_type)
-                self.__exception_event.wait(self.__default_timeout)
-            except (threading.ThreadError, AssertionError,
-                    ValueError, SystemError), e:
-                _log.error('Failed to deliver exception %s to thread[%s]: %s' %
-                           (exc_type.__name__, str(self.ident), e.message))
-                break
-
-# task thread -----------------------------------------------------------------
+# task exceptions -------------------------------------------------------------
 
 class TaskThreadException(Exception):
     """
@@ -192,11 +164,58 @@ class CancelException(TaskThreadException):
     """
     pass
 
+# task thread -----------------------------------------------------------------
 
-class TaskThread(InterruptableThread):
+class TaskThread(TrackedThread):
     """
     Derived task thread class that allows for task-specific interruptions.
     """
+    def __init__(self, *args, **kwargs):
+        super(TaskThread, self).__init__(*args, **kwargs)
+        self.__default_timeout = 0.05
+        self.__exception_event = threading.Event()
+
+    # interrupt-able thread methods
+
+    def exception_delivered(self):
+        """
+        Flag that an exception has been delivered to the thread and handled.
+        This will unblock the thread trying to deliver the exception.
+        """
+        self.__exception_event.set()
+
+    exception_event = exception_delivered
+
+    def raise_exception(self, exc_type):
+        """
+        Raise and exception in this thread.
+        
+        NOTE this is executed in the context of the calling thread and blocks
+        until the exception has been delivered to this thread and this thread
+        exists.
+        """
+        # first, kill off all the descendants
+        for thread in get_descendants(self):
+            while thread.is_alive():
+                try:
+                    _raise_exception_in_thread(_tid(self), exc_type)
+                    time.sleep(self.__default_timeout)
+                except (threading.ThreadError, AssertionError,
+                        ValueError, SystemError), e:
+                    _log.error('Failed to deliver exception %s to thread[%s]: %s' %
+                               (exc_type.__name__, str(self.ident), e.message))
+                    break
+        # then kill and wait for the task thread
+        while not self.__exception_event.is_set():
+            try:
+                _raise_exception_in_thread(_tid(self), exc_type)
+                self.__exception_event.wait(self.__default_timeout)
+            except (threading.ThreadError, AssertionError,
+                    ValueError, SystemError), e:
+                _log.error('Failed to deliver exception %s to thread[%s]: %s' %
+                           (exc_type.__name__, str(self.ident), e.message))
+                break
+
     def timeout(self):
         """
         Raise a TimeoutException in the thread.
