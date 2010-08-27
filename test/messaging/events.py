@@ -20,15 +20,21 @@ import sys
 sys.path.append('../../')
 
 from pulp.messaging.producer import EventProducer
+from pulp.server.event.dispatcher import EventDispatcher
 from time import sleep
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 def main():
+    ed = EventDispatcher()
+    ed.start()
     p = EventProducer()
     for n in range(0, 1000):
-        d = dict(id='repo%d' % n, name='Repository%d' % n)
+        d = dict(
+            id='repo%d' % n,
+            name='Repository%d' % n,
+            arch='noarch',)
         p.send('bogus', 'bogus')
         p.send('user', 'user without subject')
         p.send('user.hello', 'user.%d' % n)

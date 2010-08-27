@@ -19,13 +19,15 @@ Contains QPID event classes.
 """
 
 import os
-from logging import getLogger
+from pulp.server.event import *
 from pulp.messaging.consumer import EventConsumer
 from threading import RLock as Mutex
 import pulp.server.event.handler as hpx
+from logging import getLogger
 
 log = getLogger(__name__)
 mutex = Mutex()
+flags = EventFlags()
 
 
 def handler(entity):
@@ -85,16 +87,9 @@ def event(subject):
     @param subject: An AMQP subject form: <entity>.<action>.
     @type subject: str
     """
-    NOEVENT = 'noevent'
-    def send(d):
-        noevent = 0
-        if NOEVENT in d:
-            noevent = d[NOEVENT]
-            del d[NOEVENT]
-        return ( not noevent )
     def decorator(fn):
         def call(*args, **kwargs):
-            if send(kwargs):
+            if not flags.suspended:
                 entity, action = subject.split('.',1)
                 inst, method = \
                     EventDispatcher.handler(entity, outbound=action)
@@ -251,7 +246,9 @@ class EventDispatcher(EventConsumer):
                 event,
                 inst.__class__,
                 method.__name__)
+            flags.suspend()
             method(inst, event)
+            flags.resume()
         except:
             log.error('{inbound} event failed (%s):\n%s',
                 subject,

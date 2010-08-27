@@ -36,6 +36,7 @@ class RepoEvent(EventHandler):
 
     def __init__(self):
         self.rapi = RepoApi()
+        self.producer = EventProducer()
 
     @outbound(action='created')
     def create(self, *args, **kwargs):
@@ -47,7 +48,10 @@ class RepoEvent(EventHandler):
         @param kwargs: The keyword arguments passed to RepoApi.create()
         @type kwargs: list
         """
-        pass
+        event = dict(
+            id=args[1],
+            name=args[2],)
+        self.producer.send('repo.created', event)
 
     @outbound(action='updated')
     def update(self, *args, **kwargs):
@@ -86,7 +90,7 @@ class RepoEvent(EventHandler):
         id = event['id']
         name = event['name']
         arch = event.get('arch', 'noarch')
-        self.rapi.create(id, name, arch, noevent=1)
+        self.rapi.create(id, name, arch)
 
     @inbound(action='updated')
     def updated(self, event):
