@@ -74,8 +74,8 @@ class auth(BaseCore):
         cert_dict = self.authconn.admin_certificate()
 
         # Determine the destination and store the cert information there
-        if not os.path.exists(auth_utils.PULP_DIR):
-            os.makedirs(auth_utils.PULP_DIR)
+        if not os.path.exists(auth_utils.admin_cert_dir()):
+            os.makedirs(auth_utils.admin_cert_dir())
 
         # Write the certificate data
         cert_filename, key_filename = auth_utils.admin_cert_paths()
@@ -88,7 +88,7 @@ class auth(BaseCore):
         f.write(cert_dict['private_key'])
         f.close()
 
-        print('User credentials successfully stored at [%s]' % auth_utils.PULP_DIR)
+        print('User credentials successfully stored at [%s]' % auth_utils.admin_cert_dir())
 
     def _logout(self):
         # Determine the destination and store the cert information there
@@ -101,4 +101,4 @@ class auth(BaseCore):
         if os.path.exists(key_filename):
             os.remove(key_filename)
 
-        print('User credentials removed from [%s]' % auth_utils.PULP_DIR)
+        print('User credentials removed from [%s]' % auth_utils.admin_cert_dir())

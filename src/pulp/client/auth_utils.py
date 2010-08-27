@@ -23,6 +23,17 @@ CERT_FILENAME = 'admin-cert.pem'
 KEY_FILENAME = 'admin-key.pem'
 
 
+def admin_cert_dir():
+    '''
+    Returns the directory in which admin certificates will be stored, customized
+    for the user executing the client.
+
+    @return: path to the admin certificate directory
+    @rtype:  string
+    '''
+
+    return os.path.join(os.environ['HOME'], PULP_DIR)
+
 def admin_cert_paths():
     '''
     Returns the current user's specific location to admin certificates.
@@ -31,7 +42,7 @@ def admin_cert_paths():
     @rtype:  (string, string)
     '''
 
-    dest_dir = os.path.join(os.environ['HOME'], PULP_DIR)
+    dest_dir = admin_cert_dir()
     cert_filename = os.path.join(dest_dir, CERT_FILENAME)
     key_filename = os.path.join(dest_dir, KEY_FILENAME)
 
