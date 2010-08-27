@@ -163,7 +163,7 @@ class RoleCheck(object):
         if not cert_generator.is_admin_user(encoded_user):
             return None
 
-        # Parse out the username and password hash from the certificate information
+        # Parse out the username and id from the certificate information
         username, id = cert_generator.decode_admin_user(encoded_user)
 
         # Verify a user exists with the given name
