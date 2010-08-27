@@ -38,7 +38,7 @@ _ = gettext.gettext
 
 class consumer(BaseCore):
     def __init__(self, is_admin=True, actions=None):
-        usage = "usage: %prog consumer [OPTIONS]"
+        usage = "consumer [OPTIONS]"
         shortdesc = "consumer specific actions to pulp server."
         desc = ""
         self.name = "consumer"
