@@ -55,6 +55,42 @@ class DRLock(object):
     def __exit__(self, *args, **kwargs):
         self.release()
 
+# trackable thread class ------------------------------------------------------
+
+_thread_tree = {}
+
+_Thread = threading.Thread
+
+class TrackableThread(_Thread):
+    """
+    Monkey patch thread class that records the parent thread in the thread tree
+    E.g. the thread that called this thread object's start() method
+    """
+    def start(self):
+        parent = threading.current_thread()
+        _thread_tree.setdefault(parent, []).append(self)
+        super(TrackableThread, self).start()
+
+# monkey patch the threading module in order to track threads
+# this allows us to cancel tasks that have spawned threads of their own
+threading.Thread = TrackableThread
+
+
+def get_descendants(thread):
+    """
+    Get a list of all the descendant threads for the given thread.
+    @type thread: TrackableThread instance
+    @param thread: thread to find the descendants of
+    @raise RuntimeError: if the thread is not an instance of TrackableThread
+    @return: list of TrackableThread instances
+    """
+    if not isinstance(thread, TrackableThread):
+        raise RuntimeError('Cannot find descendants of an untrackable thread')
+    descendants = _thread_tree.get(thread, [])
+    for d in descendants:
+        descendants.extend(_thread_tree.get(d, []))
+    return descendants
+
 # interruptable thread base class ---------------------------------------------
 
 # based on an answer from stack overflow:
@@ -81,7 +117,7 @@ def _raise_exception_in_thread(tid, exc_type):
     raise SystemError('PyThreadState_SetAsyncExc failed')
 
 
-class InterruptableThread(threading.Thread):
+class InterruptableThread(TrackableThread):
     """
     A thread class that supports raising exception in the thread from another
     thread.
