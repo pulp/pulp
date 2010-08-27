@@ -18,6 +18,7 @@
 import os
 import sys
 
+import pulp.client.auth_utils as auth_utils
 from pulp.client.logutil import getLogger
 from pulp.client.config import Config
 from pulp.client.connection import UserConnection
@@ -29,9 +30,6 @@ log = getLogger(__name__)
 
 
 CFG = Config()
-PULP_DIR = '.pulp'
-CERT_FILENAME = 'admin-cert.pem'
-KEY_FILENAME = 'admin-key.pem'
 
 
 class auth(BaseCore):
@@ -52,7 +50,9 @@ class auth(BaseCore):
         self.authconn = UserConnection(host=CFG.server.host or "localhost",
                                        port=CFG.server.port or 443,
                                        username=self.username,
-                                       password=self.password)
+                                       password=self.password,
+                                       cert_file=self.cert_filename,
+                                       key_file=self.key_filename)
 
     def generate_options(self):
         usage = 'auth'
@@ -74,14 +74,11 @@ class auth(BaseCore):
         cert_dict = self.authconn.admin_certificate()
 
         # Determine the destination and store the cert information there
-        dest_dir = os.path.join(os.environ['HOME'], PULP_DIR)
-
-        if not os.path.exists(dest_dir):
-            os.makedirs(dest_dir)
+        if not os.path.exists(auth_utils.PULP_DIR):
+            os.makedirs(auth_utils.PULP_DIR)
 
         # Write the certificate data
-        cert_filename = os.path.join(dest_dir, CERT_FILENAME)
-        key_filename = os.path.join(dest_dir, KEY_FILENAME)
+        cert_filename, key_filename = auth_utils.admin_cert_paths()
 
         f = open(cert_filename, 'w')
         f.write(cert_dict['certificate'])
@@ -91,14 +88,11 @@ class auth(BaseCore):
         f.write(cert_dict['private_key'])
         f.close()
 
-        print('User credentials successfully stored at [%s]' % dest_dir)
+        print('User credentials successfully stored at [%s]' % auth_utils.PULP_DIR)
 
     def _logout(self):
         # Determine the destination and store the cert information there
-        dest_dir = os.path.join(os.environ['HOME'], PULP_DIR)
-
-        cert_filename = os.path.join(dest_dir, CERT_FILENAME)
-        key_filename = os.path.join(dest_dir, KEY_FILENAME)
+        cert_filename, key_filename = auth_utils.admin_cert_paths()
 
         # Remove the certificate and private key files
         if os.path.exists(cert_filename):
@@ -107,4 +101,4 @@ class auth(BaseCore):
         if os.path.exists(key_filename):
             os.remove(key_filename)
 
-        print('User credentials removed from [%s]' % dest_dir)
+        print('User credentials removed from [%s]' % auth_utils.PULP_DIR)
