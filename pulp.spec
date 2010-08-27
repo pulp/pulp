@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.57
+Version:        0.0.58
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -171,6 +171,57 @@ fi
 
 
 %changelog
+* Fri Aug 27 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.58-1
+- Make sure to include the user's home directory in the destination
+  (jason.dobies@redhat.com)
+- Added hook to use the admin certificate if one is found.
+  (jason.dobies@redhat.com)
+- Fix the consumer help to list usage correctly (pkilambi@redhat.com)
+- Merge branch 'master' of git+ssh://git.fedorahosted.org/git/pulp
+  (pkilambi@redhat.com)
+- fixing regression where we add list instead of str to install list of there
+  is no arch (pkilambi@redhat.com)
+- Added CLI hooks for admin login/logout. (jason.dobies@redhat.com)
+- Refactored so we have access to the user object to store as the principal if
+  the user is authenticated. (jason.dobies@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (jconnor@redhat.com)
+- implemented progress callbacks for rhn and yum repo syncs this includes a
+  "pass-through" callback in tasks, that take a callback argument name and the
+  callback function then passes in its own callback wrapper which executes the
+  callback and assigns it to a progress field added callback parameters to all
+  repo sync methods modified jmathews callback to return a dictionary
+  (jconnor@redhat.com)
+- Added webservice calls for admin auth certificates (jason.dobies@redhat.com)
+- Added API for retrieving an admin certificate for the currently logged in
+  user (jason.dobies@redhat.com)
+- Merge config writes to alt config when specified. (jortel@redhat.com)
+- Renamed to reflect it's an API test (jason.dobies@redhat.com)
+- Added return type docs (jason.dobies@redhat.com)
+- Removed plain text echo of the user's password (jason.dobies@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (jconnor@redhat.com)
+- Revert "Reverting cancel sync change to check whether this commit cause json
+  errors" Confirmed that JSON errors were not because of this commit This
+  reverts commit 983791a517a85dd84b4df7197eef207b7e100489.
+  (skarmark@redhat.com)
+- Reverting cancel sync change to check whether this commit cause json errors
+  (skarmark@redhat.com)
+- Not printing task id at the time of sync (skarmark@redhat.com)
+- Adding cancel sync and sync status to cli (skarmark@redhat.com)
+- shortten environment var. (jortel@redhat.com)
+- Add certlib (work in progress) (jortel@redhat.com)
+- Default key and cert. (jortel@redhat.com)
+- Add PULP_CLIENT_ALTCONF envrionment var to specify alt conf to be merged.
+  (jortel@redhat.com)
+- changing client.conf to point to localhost and not guardian
+  (skarmark@redhat.com)
+- repo sync timeout changes (skarmark@redhat.com)
+- repo sync timeout changes (skarmark@redhat.com)
+- adding productid identifier as an optional reference to tie candlepin product
+  to repos (pkilambi@redhat.com)
+- some re-organization (jconnor@redhat.com)
+
 * Wed Aug 25 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.57-1
 - Missed an entry in the package refactor (jason.dobies@redhat.com)
 
