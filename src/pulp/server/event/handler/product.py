@@ -19,7 +19,6 @@ Contains product event handler classes.
 """
 
 from pulp.server.event.dispatcher import *
-from pulp.server.api.product import productApi
 from pulp.messaging.producer import EventProducer
 from logging import getLogger
 
@@ -35,7 +34,7 @@ class ProductEvent(EventHandler):
     """
 
     def __init__(self):
-        self.rapi = productApi()
+        pass
 
     @outbound(action='created')
     def create(self, *args, **kwargs):
