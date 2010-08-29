@@ -24,6 +24,7 @@ except ImportError:
 import pymongo.json_util 
 import web
 
+import pulp.server.auth.auth as principal
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth.certificate import Certificate
@@ -32,20 +33,24 @@ import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 
-log = logging.getLogger(__name__)
+# globals ---------------------------------------------------------------------
 
+LOG = logging.getLogger(__name__)
 USER_API = UserApi()
 CONSUMER_API = ConsumerApi()
 
+# decorator--------------------------------------------------------------------
 
 class RoleCheck(object):
-    '''decorator class to check Roles of caller.  Copied and modified from:
-       
-       http://wiki.python.org/moin/PythonDecoratorLibrary#DifferentDecoratorForms
     '''
-    
+    Decorator class to check roles of web service caller.
+
+    Copied and modified from:
+      http://wiki.python.org/moin/PythonDecoratorLibrary#DifferentDecoratorForms
+    '''
+
     def __init__(self, *dec_args, **dec_kw):
-        '''The decorator arguments are passed here.  Save them for runtime.'''
+        '''The decorator arguments are passed here. Save them for runtime.'''
         self.dec_args = dec_args
         self.dec_kw = dec_kw
         
@@ -66,14 +71,13 @@ class RoleCheck(object):
             for key in self.dec_kw.keys():
                 roles[key] = self.dec_kw[key]
             
-            admin_access_granted = False
-            consumer_access_granted = False
-            
+            user = None
+
             # Admin role trumps any other checking
             if roles['admin']:
                 # If not using cert check uname and password
                 try:
-                    admin_access_granted = self.check_admin(*fargs)
+                    user = self.check_admin(*fargs)
                 except PulpException, pe:
                     # TODO: Figure out how to re-use the same return function in base.py
                     http.status_unauthorized()
@@ -81,12 +85,11 @@ class RoleCheck(object):
                     return json.dumps(pe.value, default=pymongo.json_util.default)
             
             # Consumer role checking
-            if not admin_access_granted and (roles['consumer'] or roles['consumer_id']):
-                consumer_access_granted = self.check_consumer(roles['consumer_id'], *fargs)
-                log.debug("consumer_access_granted? %s " % consumer_access_granted)
+            if not user and (roles['consumer'] or roles['consumer_id']):
+                user = self.check_consumer(roles['consumer_id'], *fargs)
 
             # Process the results of the auth checks
-            if not admin_access_granted and not consumer_access_granted:
+            if not user:
                 http.status_unauthorized()
                 http.header('Content-Type', 'application/json')
                 return json.dumps("Authorization failed. Check your username and password or your certificate", 
@@ -94,6 +97,7 @@ class RoleCheck(object):
 
             # If we get this far, access has been granted (in access failed the method
             # would have returned by now)
+            principal.set_principal(user)
 
             # If it wraps a class instance, call the function on the instance;
             # otherwise just call it directly
@@ -116,8 +120,9 @@ class RoleCheck(object):
         '''
         Checks the request to see if it contains a valid admin authentication.
 
-        @return: True if the request authenticates as a valid admin; False otherwise
-        @rtype:  boolean
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
         '''
 
         return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
@@ -126,8 +131,9 @@ class RoleCheck(object):
         '''
         Determines if the certificate in the request represents a valid admin certificate.
 
-        @return: True if the request contains a valid admin certificate; False otherwise
-        @rtype:  boolean
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
         '''
 
         # Extract the certificate from the request
@@ -136,7 +142,7 @@ class RoleCheck(object):
 
         # If there's no certificate, punch out early
         if cert_pem is None:
-            return False
+            return None
 
         # Parse the certificate and extract the consumer UUID
         idcert = Certificate(content=cert_pem)
@@ -146,41 +152,41 @@ class RoleCheck(object):
         # Verify the certificate has been signed by the pulp CA
         valid = cert_generator.verify_cert(cert_pem)
         if not valid:
-            log.error('Admin certificate with CN [%s] is signed by a foreign CA' % encoded_user)
-            return False
+            LOG.error('Admin certificate with CN [%s] is signed by a foreign CA' % encoded_user)
+            return None
 
         # If there is no user/pass combo, this is not a valid admin certificate
         if not encoded_user:
-            return False
+            return None
 
         # Make sure the certificate is an admin certificate
         if not cert_generator.is_admin_user(encoded_user):
-            return False
+            return None
 
-        # Parse out the username and password hash from the certificate information
+        # Parse out the username and id from the certificate information
         username, id = cert_generator.decode_admin_user(encoded_user)
 
         # Verify a user exists with the given name
         user = USER_API.user(username)
         if user is None:
-            log.error('User [%s] specified in certificate was not found in the system' % username)
-            return False
+            LOG.error('User [%s] specified in certificate was not found in the system' % username)
+            return None
 
         # Verify the correct user ID
         if id != user['id']:
-            log.error('ID in admin certificate for user [%s] was incorrect' % username)
-            return False
+            LOG.error('ID in admin certificate for user [%s] was incorrect' % username)
+            return None
 
-        return True
+        return user
 
     def check_username_pass(self, *fargs):
         '''
         If the request uses HTTP authorization, verify the credentials identify a
         valid user in the system.
 
-        @return: True if the user credentials are in the requests and are valid;
-                 False otherwise
-        @rtype:  boolean
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
         '''
 
         # Get the credentials from the request
@@ -200,18 +206,19 @@ class RoleCheck(object):
             # Verify a user exists with the given name
             user = USER_API.user(username)
             if user is None:
-                log.error('User [%s] specified in certificate was not found in the system' %
+                LOG.error('User [%s] specified in certificate was not found in the system' %
                           username)
-                return False
+                return None
 
             # Verify the correct password was specified
             good_password = password_util.check_password(user['password'], password)
             if not good_password:
-                log.error('Password for user [%s] was incorrect' % username)
+                LOG.error('Password for user [%s] was incorrect' % username)
+                return None
 
-            return good_password
+            return user
 
-        return False
+        return None
             
     def check_consumer(self, check_id=False, *fargs):
         '''
@@ -222,8 +229,9 @@ class RoleCheck(object):
                          will be that the UID exists in the DB (default = False)
         @type  check_id: boolean
 
-        @return: True if the request contains a valid consumer certificate; False otherwise
-        @rtype:  boolean
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
         '''
 
         # Extract the certificate from the request
@@ -232,7 +240,7 @@ class RoleCheck(object):
 
         # If there's no certificate, punch out early
         if cert_pem is None:
-            return False
+            return None
 
         # Parse the certificate and extract the consumer UUID
         idcert = Certificate(content=cert_pem)
@@ -242,26 +250,26 @@ class RoleCheck(object):
         # Verify the certificate has been signed by the pulp CA
         valid = cert_generator.verify_cert(cert_pem)
         if not valid:
-            log.error('Consumer certificate with CN [%s] is signed by a foreign CA' % consumer_cert_uid)
-            return False
+            LOG.error('Consumer certificate with CN [%s] is signed by a foreign CA' % consumer_cert_uid)
+            return None
 
         # If there is no consumer ID, this is not a valid consumer certificate
         if consumer_cert_uid is None:
-            log.error("Consumer UID not found in certificate")
-            return False
+            LOG.error("Consumer UID not found in certificate")
+            return None
 
         # Check that it is a valid consumer in our DB
         consumer = CONSUMER_API.consumer(consumer_cert_uid)
         if not consumer:
-            log.error("Consumer with id [%s] does not exist" % consumer_cert_uid)
-            return False
+            LOG.error("Consumer with id [%s] does not exist" % consumer_cert_uid)
+            return None
 
         # If the ID should be explicitly verified against a provided list, the ID in the
         # certificate will be verified against the ID found in the certificate
         good_certificate = False
         if check_id:
             for arg in fargs:
-                log.error("Checking ID in cert [%s] against expected ID [%s]" %
+                LOG.error("Checking ID in cert [%s] against expected ID [%s]" %
                           (consumer_cert_uid, arg))
                 if arg == consumer_cert_uid:
                     good_certificate = True
@@ -269,5 +277,8 @@ class RoleCheck(object):
         else:
             good_certificate = True
 
-        return good_certificate
+        if good_certificate:
+            return consumer
+        else:
+            return None
             

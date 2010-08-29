@@ -53,7 +53,9 @@ class repo(BaseCore):
         self.pconn = RepoConnection(host=CFG.server.host or "localhost",
                                     port=CFG.server.port or 443,
                                     username=self.username,
-                                    password=self.password)
+                                    password=self.password,
+                                    cert_file=self.cert_filename,
+                                    key_file=self.key_filename)
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":

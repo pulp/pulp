@@ -504,6 +504,9 @@ class UserConnection(PulpConnection):
         method = "/users/%s/" % str(login)
         return self.conn.request_get(method)
 
+    def admin_certificate(self):
+        method = '/users/admin_certificate/'
+        return self.conn.request_get(method)
 
 class ErrataConnection(PulpConnection):
     """

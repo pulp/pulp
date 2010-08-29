@@ -34,15 +34,16 @@ class Config(Base):
     def __init__(self):
         """
         Open the configuration.
-        Merge alternate configuration file when specified
+        Merge (in) alternate configuration file when specified
         by environment variable.
         """
         fp = open(self.PATH)
         try:
             Base.__init__(self, fp)
-            alt = os.environ.get(self.ALTVAR)
-            if alt:
-                self.__merge(alt)
+            altpath = os.environ.get(self.ALTVAR)
+            if altpath:
+                alt = self.__open(altpath)
+                self.__mergeIn(alt)
         finally:
             fp.close()
 
@@ -50,29 +51,67 @@ class Config(Base):
         """
         Write the configuration.
         """
-        fp = open(self.PATH, 'w')
+        altpath = os.environ.get(self.ALTVAR)
+        if altpath:
+            alt = self.__open(altpath)
+            self.__mergeOut(alt)
+            path = altpath
+            s = str(alt)
+        else:
+            path = self.PATH
+            s = str(self)
+        fp = open(path, 'w')
         try:
-            fp.write(str(self))
+            fp.write(s)
         finally:
             fp.close()
 
-    def __merge(self, path):
+    def __mergeIn(self, other):
         """
-        Merge the configuration file at the specified path.
-        @param path: The path to a configuration file.
-        @type path: str
+        Merge (in) the specified I{other} configuration.
+        @param other: The conf to merge in.
+        @type other: Base
         @return: self
         @rtype: L{Config}
         """
-        fp = open(path)
-        try:
-            other = Base(fp)
-        finally:
-            fp.close()
         for section in other:
+            if section not in self:
+                continue
             sA = self[section]
             sB = other[section]
             for key in sB:
                 value = sB[key]
                 setattr(sA, key, value)
         return self
+
+    def __mergeOut(self, other):
+        """
+        Merge (out) to the specified I{other} configuration.
+        @param other: The conf to merge out.
+        @type other: Base
+        @return: self
+        @rtype: L{Config}
+        """
+        for section in other:
+            if section not in self:
+                continue
+            sA = self[section]
+            sB = other[section]
+            for key in sB:
+                value = sA[key]
+                setattr(sB, key, value)
+        return self
+
+    def __open(self, path):
+        """
+        Open and load the configuration at the specified path.
+        @param path: The fully qualified path.
+        @type path: str
+        @return: The configuration object.
+        @rtype: Base
+        """
+        fp = open(path)
+        try:
+            return Base(fp)
+        finally:
+            fp.close()

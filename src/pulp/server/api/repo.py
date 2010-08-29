@@ -30,6 +30,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.auditing import audit
+from pulp.server.event.dispatcher import event
 from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
@@ -85,6 +86,7 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         return repo
 
+    @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None):
         """
@@ -558,7 +560,7 @@ class RepoApi(BaseApi):
             return False
 
     @audit()
-    def sync(self, id):
+    def sync(self, id, progress_callback=None):
         """
         Sync a repo from the URL contained in the feed
         """
@@ -566,7 +568,7 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        added_packages, added_errataids = repo_sync.sync(repo, repo_source)
+        added_packages, added_errataids = repo_sync.sync(repo, repo_source, progress_callback)
         log.info("Sync returned %s packages, %s errata" % (len(added_packages),
             len(added_errataids)))
         for p in added_packages:
