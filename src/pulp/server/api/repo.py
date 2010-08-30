@@ -138,13 +138,16 @@ class RepoApi(BaseApi):
         """
          Creates a repo associated to a product. Usually through an event raised
          from candlepin
-         @param productid: A the candidate repo should be associated with.
+         @param productid: A product the candidate repo should be associated with.
          @type productid: str
          @param content_set: a dict of content set labels and relative urls
          @type content_set: dict(<label> : <relative_url>,)
          @param cert_data: a dictionary of ca_cert, cert and key for this product
          @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
         """ 
+        if not cert_data:
+            # Nothing further can be done, exit
+            return
         cert_files = self._write_certs_to_disk(productid, cert_data)
         CDN_URL= config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
@@ -159,6 +162,15 @@ class RepoApi(BaseApi):
             repo['relative_path'] = uri
             self.update(repo)
         serv.disconnect()
+        
+    @audit()    
+    def get_repo_by_product(self, productid):
+        """
+        Lookup available repos associated to a product id
+        @param productid: productid a candidate repo is associated.
+        @type productid: str
+        """
+        return list(self.objectdb.find({"productid" : productid}))
         
     @audit()
     def delete(self, id):
