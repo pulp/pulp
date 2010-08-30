@@ -20,6 +20,7 @@ import gzip
 import os
 import traceback
 from itertools import chain
+from urlparse import urlparse
 
 # Pulp
 from pulp.server import comps_util
@@ -35,12 +36,11 @@ from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
-
+from pulp.server.api.fetch_listings import CDNConnection
 
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
-
 
 class RepoApi(BaseApi):
     """
@@ -88,7 +88,7 @@ class RepoApi(BaseApi):
 
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None):
+    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None, productid=None):
         """
         Create a new Repository object and return it
         """
@@ -101,27 +101,65 @@ class RepoApi(BaseApi):
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
         if cert_data:
-            cert_dir = "/etc/pki/content/" + name
-
-            if not os.path.exists(cert_dir):
-                os.makedirs(cert_dir)
-            for key, value in cert_data.items():
-                fname = os.path.join(cert_dir, name + "." + key)
-                try:
-                    log.error("storing file %s" % fname)
-                    f = open(fname, 'w')
-                    f.write(value)
-                    f.close()
-                    r[key] = fname
-                except:
-                    raise PulpException("Error storing file %s " % key)
+            cert_files = self._write_certs_to_disk(id, cert_data)
+            for key, value in cert_files.items():
+                r[key] = value
+        if productid:
+            r['productid'].append(productid)
         self.insert(r)
 
         if sync_schedule:
             repo_sync.update_schedule(r)
 
         return r
+    
+    def _write_certs_to_disk(self, repoid, cert_data):
+        CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
+        cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)
 
+        if not os.path.exists(cert_dir):
+            os.makedirs(cert_dir)
+        cert_files = {}
+        for key, value in cert_data.items():
+            fname = os.path.join(cert_dir, repoid + "." + key)
+            try:
+                log.error("storing file %s" % fname)
+                f = open(fname, 'w')
+                f.write(value)
+                f.close()
+                cert_files[key] = fname
+            except:
+                raise PulpException("Error storing certificate file %s " % key)
+        return cert_files
+    
+    @event(subject='repo.created')
+    @audit(params=['productid', 'content_set'])
+    def create_product_repo(self, content_set, cert_data, productid):
+        """
+         Creates a repo associated to a product. Usually through an event raised
+         from candlepin
+         @param productid: A the candidate repo should be associated with.
+         @type productid: str
+         @param content_set: a dict of content set labels and relative urls
+         @type content_set: dict(<label> : <relative_url>,)
+         @param cert_data: a dictionary of ca_cert, cert and key for this product
+         @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
+        """ 
+        cert_files = self._write_certs_to_disk(productid, cert_data)
+        CDN_URL= config.config.get("repos", "content_url")
+        CDN_HOST = urlparse(CDN_URL).hostname
+        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'], 
+                                     cert=cert_files['cert'], key=cert_files['key'])
+        serv.connect()
+        repo_info = serv.fetch_urls(content_set)
+        
+        for label, uri in repo_info.items():
+            repo = self.create(label, label, arch=label.split("-")[-1], 
+                        feed="yum:" + CDN_URL + '/' + uri, cert_data=cert_data, productid=productid)
+            repo['relative_path'] = uri
+            self.update(repo)
+        serv.disconnect()
+        
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)

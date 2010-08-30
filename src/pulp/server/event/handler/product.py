@@ -19,6 +19,7 @@ Contains product event handler classes.
 """
 
 from pulp.server.event.dispatcher import *
+from pulp.server.api.repo import RepoApi
 from pulp.messaging.producer import EventProducer
 from logging import getLogger
 
@@ -34,7 +35,8 @@ class ProductEvent(EventHandler):
     """
 
     def __init__(self):
-        pass
+        self.rapi = RepoApi()
+        
 
     @outbound(action='created')
     def create(self, *args, **kwargs):
@@ -82,7 +84,12 @@ class ProductEvent(EventHandler):
         @param event: The event payload.
         @type event: dict.
         """
-        pass
+        log.error("Repo event create processing %s" % event)
+        productid   = event['id']
+        content_set = event['content_set']
+        cert_data   = event['cert_data']
+        log.error("Repo event data %s %s %s" % (productid, content_set, cert_data))
+        self.rapi.create_product_repo(content_set, cert_data, productid)
 
     @inbound(action='updated')
     def updated(self, event):
