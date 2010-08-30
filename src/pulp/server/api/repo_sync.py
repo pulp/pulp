@@ -288,7 +288,7 @@ class YumSynchronizer(BaseSynchronizer):
         if relative_path:
             store_path = "%s/%s" % (config.config.get('paths', 'local_storage'), relative_path)
         else:
-            store_path = config.config.get('paths', 'local_storage')
+            store_path = "%s/%s" % (config.config.get('paths', 'local_storage'), repo['id'])
         yfetch.fetchYumRepo(store_path, callback=progress_callback)
 
         return store_path
