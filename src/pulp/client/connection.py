@@ -262,7 +262,7 @@ class RepoConnection(PulpConnection):
         return self.conn.request_get(method)
 
     def sync_status(self, status_path):
-        return self.conn.request_get(status_path)
+        return self.conn.request_get(str(status_path))
 
     def add_errata(self, id, errataids):
         erratainfo = {'repoid' : id,
