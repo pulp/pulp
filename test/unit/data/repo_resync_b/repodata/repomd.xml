@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<repomd xmlns="http://linux.duke.edu/metadata/repo" xmlns:rpm="http://linux.duke.edu/metadata/rpm">
+<?xml version="1.0" ?><repomd xmlns="http://linux.duke.edu/metadata/repo" xmlns:rpm="http://linux.duke.edu/metadata/rpm">
   <revision>1279036204</revision>
   <data type="other">
     <checksum type="sha256">1d9db2a4c00407461ca0c1519973a1e86e11fbe914e4109c9bc7c5eecc37eb81</checksum>
@@ -35,5 +34,11 @@
     <location href="repodata/comps.xml"/>
     <checksum type="sha256">f388fcdaa811cd2f8691b66cc78590e82a670d1b05737bc504dc0a5ce654bcdc</checksum>
     <timestamp>1279036204</timestamp>
+  </data>
+  <data type="updateinfo">
+    <location href="repodata/4a25660fe8d9890f60d507915a73a4aa9ee0ec81e57efe72f24d33ac760057b5-updateinfo.xml.gz"/>
+    <checksum type="sha256">4a25660fe8d9890f60d507915a73a4aa9ee0ec81e57efe72f24d33ac760057b5</checksum>
+    <timestamp>1283180404.65</timestamp>
+    <open-checksum type="sha256">075110ef5b095598621fff0d4940b7a50a9330bbe0a05ba5465625a5e35d1e0b</open-checksum>
   </data>
 </repomd>

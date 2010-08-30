@@ -28,6 +28,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import pulp
 from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
@@ -399,6 +400,86 @@ class TestErrata(unittest.TestCase):
         for erratum in bugfix:
             self.assertTrue(erratum in r['errata']['bugfix'])
             self.assertTrue(self.eapi.erratum(erratum) is not None)
+
+    def test_errata_repo_resync(self):
+        # We shall sync a repo
+        # Simulate an errata is deleted and another errata is updated
+        # Verify the deleted errata is not in the repo
+        # The info from the updated errata is present
+        repo_path = os.path.join(self.data_path, "repo_resync_a")
+        r = self.rapi.create('test_errata_repo_resync',
+                'test_errata_repo_resync_name', 'i386',
+                'local:file://%s' % (repo_path))
+        self.assertTrue(r != None)
+        self.rapi.sync(r["id"])
+        # Refresh object now it's been sync'd
+        r = self.rapi.repository(r['id'])
+        #LOOK UP ERRATA AND VERIFY
+        enhancement = [u'RHEA-2009:1270', u'RHEA-2007:0637', u'RHEA-2007:0636',
+                        u'RHEA-2007:0635', u'RHEA-2009:1302', u'RHEA-2009:1269',
+                        u'RHEA-2008:0467', u'RHEA-2007:0643', u'RHEA-2008:0371']
+        security = [u'RHSA-2008:0194', u'RHSA-2009:0003', u'RHSA-2007:0114',
+                    u'RHSA-2009:1472', u'RHSA-2009:0382', u'RHSA-2008:0892',
+                    u'RHSA-2007:0323']
+        bugfix = ['RHBA-2008:0279', u'RHBA-2008:0291', u'RHBA-2010:0281',
+                    u'RHBA-2010:0222', u'RHBA-2009:0118', u'RHBA-2010:0010',
+                    u'RHBA-2008:0026', u'RHBA-2009:1514', u'RHBA-2010:0282',
+                    u'RHBA-2008:0198', u'RHBA-2009:1412', u'RHBA-2010:0205',
+                    u'RHBA-2008:0480', u'RHBA-2009:1299', u'RHBA-2007:0611',
+                    u'RHBA-2010:0251', u'RHBA-2009:0140', u'RHBA-2009:0141',
+                    u'RHBA-2009:1092', u'RHBA-2009:1328', u'RHBA-2009:0216',
+                    u'RHBA-2008:0280', u'RHBA-2009:0142', u'RHBA-2010:0294',
+                    u'RHBA-2008:0554', u'RHBA-2008:0433', u'RHBA-2008:0305',
+                    u'RHBA-2008:0189', u'RHBA-2009:0401', u'RHBA-2010:0418',
+                    u'RHBA-2009:1421', u'RHBA-2009:1424', u'RHBA-2009:1285',
+                    u'RHBA-2009:0137', u'RHBA-2010:0206', u'RHBA-2007:0112']
+        self.assertTrue(len(r['errata']['enhancement']) == len(enhancement))
+        self.assertTrue(len(r['errata']['security']) == len(security))
+        self.assertTrue(len(r['errata']['bugfix']) == len(bugfix))
+
+        found = self.eapi.errata(id="RHSA-2008:0194")
+        self.assertTrue(len(found) == 1)
+        not_found_777777 = True
+        not_found_350421 = True
+        for ref in found[0]["references"]:
+            if ref["id"] == "777777":
+                not_found_777777 = False
+            if ref["id"] == "350421":
+                not_found_350421 = False
+        self.assertTrue(not_found_777777)
+        self.assertFalse(not_found_350421)
+        # Simulate a change to 'updateinfo' from repo source
+        # Changes:  removed 'RHBA-2009:1092'
+        #           modified RHSA-2008:0194
+        #            Original UPDATED Date = '2008-05-13 00:00:00'
+        #            Changing to '2010-08-30'
+        #            Adding a new bugzilla entry: 777777
+        #            Removing old entry: bugzilla 350421
+        #           added a new category, 'development'
+        repo_path = os.path.join(self.data_path, "repo_resync_b")
+        r = self.rapi.repository(r["id"])
+        r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
+        self.rapi.update(r)
+        self.rapi.sync(r["id"])
+        #Refresh Repo Object and Verify Changes
+        r = self.rapi.repository(r["id"])
+        self.assertTrue(len(r['errata']['enhancement']) == len(enhancement))
+        self.assertTrue(len(r['errata']['security']) == len(security))
+        # One bugfix errata was deleted, so make sure this is reflected
+        self.assertTrue(len(r['errata']['bugfix']) == (len(bugfix) - 1))
+        self.assertTrue("RHBA-2009:1092" not in r['errata']['bugfix'])
+        self.assertTrue("RHSA-2008:0194" in r['errata']['security'])
+        not_found_777777 = True
+        not_found_350421 = True
+        found = self.eapi.errata(id="RHSA-2008:0194")
+        for ref in found[0]["references"]:
+            if ref["id"] == "777777":
+                not_found_777777 = False
+            if ref["id"] == "350421":
+                not_found_350421 = False
+        #self.assertFalse(not_found_777777)
+        #self.assertTrue(not_found_350421)
+
 
     def test_errata_query_by_cve(self):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")

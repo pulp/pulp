@@ -618,12 +618,22 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        added_packages, added_errataids = repo_sync.sync(repo, repo_source, progress_callback)
-        log.info("Sync returned %s packages, %s errata" % (len(added_packages),
-            len(added_errataids)))
-        for p in added_packages:
+        sync_packages, sync_errataids = repo_sync.sync(repo, repo_source, progress_callback)
+        log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
+            len(sync_errataids)))
+        for p in sync_packages:
             self._add_package(repo, p)
-        for eid in added_errataids:
+        # Update repo for package additions
+        self.update(repo)
+        # Determine removed errata
+        log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
+        for eid in self.errata(id):
+            if eid not in sync_errataids:
+                log.info("Removing errata %s from repo %s" % (eid, id))
+                self.delete_erratum(id, eid)
+        # Add in all errata, existing errata will be skipped
+        repo = self._get_existing_repo(id) #repo object must be refreshed
+        for eid in sync_errataids:
             self._add_erratum(repo, eid)
         self.update(repo)
 
