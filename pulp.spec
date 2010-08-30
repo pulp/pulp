@@ -133,6 +133,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) /etc/httpd/conf.d/pulp.conf
 %attr(775, apache, apache) /etc/pulp
 %attr(750, apache, apache) /srv/pulp/webservices.wsgi
+%attr(750, apache, apache) /srv/pulp/bootstrap.wsgi
 %attr(3775, apache, apache) /var/lib/pulp
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp

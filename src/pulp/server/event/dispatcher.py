@@ -30,6 +30,11 @@ mutex = Mutex()
 flags = EventFlags()
 
 
+# decorator workspace for correlating
+# methods to classes.
+_method = ({},{})
+
+
 def handler(entity):
     """
     Event handler decorator.
@@ -40,7 +45,13 @@ def handler(entity):
     def decorator(cls):
         mutex.acquire()
         try:
-            EventDispatcher.classes[entity] = cls
+            global _method
+            EventDispatcher.register(
+                entity,
+                cls,
+                _method[0],
+                _method[1])
+            _method = ({},{})
         finally:
             mutex.release()
         return cls
@@ -56,7 +67,7 @@ def inbound(action):
     def decorator(fn):
         mutex.acquire()
         try:
-            EventDispatcher.inbounds[action] = fn
+            _method[0][action] = fn
         finally:
             mutex.release()
         return fn
@@ -72,7 +83,7 @@ def outbound(action):
     def decorator(fn):
         mutex.acquire()
         try:
-            EventDispatcher.outbounds[action] = fn
+            _method[1][action] = fn
         finally:
             mutex.release()
         return fn
@@ -100,24 +111,81 @@ def event(subject):
     return decorator
 
 
+class Handler:
+    """
+    Handler specification.
+    @ivar hclass: The handler class name.
+    @type hclass: str
+    @ivar ibmethod: registered I{inbound} methods.
+    @type ibmethod: method
+    @ivar obmethod: registered I{outbound} methods.
+    @type obmethod: method
+    """
+
+    def __init__(self, hclass, inbound, outbound):
+        """
+        @param hclass: The handler class name.
+        @type hclass: str
+        @param ibmethod: registered I{inbound} methods.
+        @type ibmethod: method
+        @param obmethod: registered I{outbound} methods.
+        @type obmethod: method
+        """
+        self.hclass = hclass
+        self.ibmethod = inbound
+        self.obmethod = outbound
+
+    def inst(self):
+        """
+        Get an instance of the handler.
+        @return: An instance of the handler.
+        @rtype: L{EventHandler}
+        """
+        return self.hclass()
+
+    def inbound(self, action):
+        """
+        Find  the I{inbound} method for the specified action.
+        @param action: An event subject action.
+        @type action: str
+        @return: The method registered for the (inbound) action.
+        @rtype: method
+        """
+        method = self.ibmethod.get(action)
+        if method:
+            return method
+        raise Exception,\
+            'handler %s has not method registered for (inbound) action: %s' %\
+            (self.hclass.__name__,
+            action)
+
+    def outbound(self, action):
+        """
+        Find the I{outbound} method for the specified action.
+        @param action: An event subject action.
+        @type action: str
+        @return: The method registered for the (outbound) action.
+        @rtype: method
+        """
+        method = self.obmethod.get(action)
+        if method:
+            return method
+        raise Exception,\
+            'handler %s has not method registered for (outbound) action: %s' %\
+            (self.hclass.__name__,
+            action)
+
+
 class EventDispatcher(EventConsumer):
     """
     The main event dispatcher.
     Dispatches events by subject to the registered handler.
-    @cvar classes: Registered event handler classes.
+    @cvar handlers: Registered event handler classes.
         Key: entity.
-    @type classes: dict
-    @cvar inbound: Registered event handler (inbound) methods.
-        Key: action
-    @type inbound: dict
-    @cvar outbound: Registered event handler (inbound) methods.
-        Key: action
-    @type outbound: dict
+    @type handlers: dict
     """
 
-    classes = {}
-    inbounds = {}
-    outbounds = {}
+    handlers = {}
 
     def __init__(self):
         EventConsumer.__init__(self, None)
@@ -127,13 +195,29 @@ class EventDispatcher(EventConsumer):
         log.info('Event dispatcher - started.')
 
     @classmethod
+    def register(cls, entity, hclass, inbound, outbound):
+        """
+        Register a handler.
+        @param entity: The entity name.
+        @type entity: str
+        @param hclass: The handler class.
+        @param hclass: class
+        @param inbound: The I{inbound} method mappings.
+        @type inbound: dict
+        @param outbound: The I{outbound} method mappings.
+        @type outbound: dict
+        """
+        cls.handlers[entity] = \
+            Handler(hclass, inbound, outbound)
+
+    @classmethod
     def load(cls):
         """
         Load handlers.
         """
         mutex.acquire()
         try:
-            if cls.classes:
+            if cls.handlers:
                 return
             loader = DynLoader(hpx)
             loader.load()
@@ -157,72 +241,16 @@ class EventDispatcher(EventConsumer):
         mutex.acquire()
         try:
             cls.load()
-            hclass = cls.hclass(entity)
-            if inbound:
-                method = cls.inbound(inbound)
-            else:
-                method = cls.outbound(outbound)
-            return (hclass(), method)
-        finally:
-            mutex.release()
-
-    @classmethod
-    def hclass(cls, entity):
-        """
-        Find the handler class for the specified I{entity}.
-        @param entity: The I{entity} part of an event subject.
-        @type entity: str
-        @return: The handler class.
-        @rtype: class
-        """
-        mutex.acquire()
-        try:
-            handler = cls.classes.get(entity)
+            handler = cls.handlers.get(entity)
             if handler is None:
                 raise Exception,\
-                    'handler "%s", not found' % entity
+                    'handler for entity "%s", not found' % entity
+            inst = handler.inst()
+            if inbound:
+                method = handler.inbound(inbound)
             else:
-                return handler
-        finally:
-            mutex.release()
-
-    @classmethod
-    def inbound(cls, action):
-        """
-        Find the handler B{inbound} method for the specified I{action}.
-        @param action: The I{action} part of an event subject.
-        @type action: str
-        @return: The handler instance method.
-        @rtype: instancemethod
-        """
-        mutex.acquire()
-        try:
-            method = cls.inbounds.get(action)
-            if method is None:
-                raise Exception,\
-                    '{inbound} method %s()", not found' % action
-            else:
-                return method
-        finally:
-            mutex.release()
-
-    @classmethod
-    def outbound(cls, action):
-        """
-        Find the handler B{outbound} method for the specified I{action}.
-        @param action: The I{action} part of an event subject.
-        @type action: str
-        @return: The handler instance method.
-        @rtype: instancemethod
-        """
-        mutex.acquire()
-        try:
-            method = cls.outbounds.get(action)
-            if method is None:
-                raise Exception,\
-                    '{outbound} method %s()", not found' % action
-            else:
-                return method
+                method = handler.outbound(outbound)
+            return (inst, method)
         finally:
             mutex.release()
 

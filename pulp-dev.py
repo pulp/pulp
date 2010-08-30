@@ -39,6 +39,7 @@ LINKS = (
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
     'srv/pulp/webservices.wsgi',
+    'srv/pulp/bootstrap.wsgi',
 )
 
 def parse_cmdline():
