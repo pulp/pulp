@@ -89,12 +89,13 @@ def event(subject):
     """
     def decorator(fn):
         def call(*args, **kwargs):
+            retval = fn(*args, **kwargs)
             if not flags.suspended:
                 entity, action = subject.split('.',1)
                 inst, method = \
                     EventDispatcher.handler(entity, outbound=action)
                 method(inst, *args, **kwargs)
-            return fn(*args, **kwargs)
+            return retval
         return call
     return decorator
 
