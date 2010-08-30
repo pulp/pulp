@@ -282,12 +282,16 @@ class YumSynchronizer(BaseSynchronizer):
             cacert = repo['ca'].encode('utf8')
             clicert = repo['cert'].encode('utf8')
             clikey = repo['key'].encode('utf8')
-        yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'),
+        yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 1, cacert=cacert, clicert=clicert, clikey=clikey)
-        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'),
-                callback=progress_callback)
-        repo_dir = "%s/%s/" % (config.config.get('paths', 'local_storage'), repo['id'])
-        return repo_dir
+        relative_path = repo['relative_path']
+        if relative_path:
+            store_path = "%s/%s" % (config.config.get('paths', 'local_storage'), relative_path)
+        else:
+            store_path = config.config.get('paths', 'local_storage')
+        yfetch.fetchYumRepo(store_path, callback=progress_callback)
+
+        return store_path
 
 
 class LocalSynchronizer(BaseSynchronizer):
