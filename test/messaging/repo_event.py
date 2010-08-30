@@ -26,9 +26,9 @@ from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/messaging.log', level=INFO)
 # change these paths appropriately to suit your env
-CERT_FILE="/home/pkilambi/certs/nimbus_cloude_debug.crt"
-CERT_KEY="/home/pkilambi/certs/nimbus_cloude_debug.key"
-CA_CERT="/home/pkilambi/certs/cdn.redhat.com-chain.crt"
+CERT_FILE="/certs/nimbus_cloude_debug.crt"
+CERT_KEY="/certs/nimbus_cloude_debug.key"
+CA_CERT="/certs/cdn.redhat.com-chain.crt"
 
 def repo_driver():
     ed = EventDispatcher()
