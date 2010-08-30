@@ -42,12 +42,10 @@ class TestProductRepo(unittest.TestCase):
 
     def clean(self):
         self.rapi.clean()
-        self.capi.clean()
         
     def setUp(self):
         self.config = testutil.load_test_config()
         self.rapi = RepoApi()
-        self.capi = ConsumerApi()
         self.clean()
         
     def tearDown(self):
