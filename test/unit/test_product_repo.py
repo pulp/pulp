@@ -59,7 +59,7 @@ class TestProductRepo(unittest.TestCase):
                          'cert' : open(CERT_FILE, "rb").read(),
                          'key' : open(CERT_KEY, 'rb').read()}
             self.rapi.create_product_repo(content_set, cert_data, productid="test-product")
-            repos = self.rapi.get_repo_by_product("test-product")
+            repos = self.rapi.get_repos_by_product("test-product")
             self.assertTrue(len(repos) > 0)
         except IOError, ie:
             print("IOError:: Make sure the certificates paths are readable %s" % ie)

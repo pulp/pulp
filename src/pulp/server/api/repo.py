@@ -132,7 +132,6 @@ class RepoApi(BaseApi):
                 raise PulpException("Error storing certificate file %s " % key)
         return cert_files
     
-    @event(subject='repo.created')
     @audit(params=['productid', 'content_set'])
     def create_product_repo(self, content_set, cert_data, productid):
         """
@@ -157,14 +156,19 @@ class RepoApi(BaseApi):
         repo_info = serv.fetch_urls(content_set)
         
         for label, uri in repo_info.items():
-            repo = self.create(label, label, arch=label.split("-")[-1], 
-                        feed="yum:" + CDN_URL + '/' + uri, cert_data=cert_data, productid=productid)
-            repo['relative_path'] = uri
-            self.update(repo)
+            try:
+                repo = self.create(label, label, arch=label.split("-")[-1], 
+                                   feed="yum:" + CDN_URL + '/' + uri, cert_data=cert_data, productid=productid)
+                repo['relative_path'] = uri
+                self.update(repo)
+            except:
+                log.error("Error creating repo %s for product %s" % (label, productid))
+                continue
+                
         serv.disconnect()
         
     @audit()    
-    def get_repo_by_product(self, productid):
+    def get_repos_by_product(self, productid):
         """
         Lookup available repos associated to a product id
         @param productid: productid a candidate repo is associated.

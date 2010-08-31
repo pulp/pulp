@@ -30,7 +30,7 @@ CERT_FILE="/certs/nimbus_cloude_debug.crt"
 CERT_KEY="/certs/nimbus_cloude_debug.key"
 CA_CERT="/certs/cdn.redhat.com-chain.crt"
 
-def repo_driver():
+def product_driver():
     ed = EventDispatcher()
     ed.start()
     p = EventProducer()
@@ -47,4 +47,4 @@ def repo_driver():
     ed.stop()
 
 if __name__ == '__main__':
-    repo_driver()
+    product_driver()
