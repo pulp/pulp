@@ -27,8 +27,8 @@ from logging import INFO, basicConfig
 basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 def main():
-    ed = EventDispatcher()
-    ed.start()
+    #ed = EventDispatcher()
+    #ed.start()
     p = EventProducer()
     for n in range(0, 1):
         d = dict(
