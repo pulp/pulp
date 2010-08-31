@@ -23,13 +23,18 @@ class Config(Base):
     The pulp client configuration.
     @cvar PATH: The absolute path to the config directory.
     @type PATH: str
-    @cvar ALTVAR: The environment variable with a path to an alternate
-        configuration file.  This file is merged.
-    @type ALTVAR: str
+    @cvar USER: The path to an alternate configuration file
+        within the user's home.
+    @type USER: str
+    @cvar ALT: The environment variable with a path to an alternate
+        configuration file.
+    @type ALT: str
     """
 
-    PATH = '/etc/pulp/client.conf'
-    ALTVAR = 'PULP_CLIENT_ALTCONF'
+    FILE = 'client.conf'
+    PATH = os.path.join('/etc/pulp', FILE)
+    USER = os.path.join('~/.pulp', FILE)
+    ALT = 'PULP_CLIENT_OVERRIDE'
 
     def __init__(self):
         """
@@ -40,9 +45,9 @@ class Config(Base):
         fp = open(self.PATH)
         try:
             Base.__init__(self, fp)
-            altpath = os.environ.get(self.ALTVAR)
+            altpath = self.__altpath()
             if altpath:
-                alt = self.__open(altpath)
+                alt = self.__read(altpath)
                 self.__mergeIn(alt)
         finally:
             fp.close()
@@ -51,9 +56,9 @@ class Config(Base):
         """
         Write the configuration.
         """
-        altpath = os.environ.get(self.ALTVAR)
+        altpath = self.__altpath()
         if altpath:
-            alt = self.__open(altpath)
+            alt = self.__read(altpath)
             self.__mergeOut(alt)
             path = altpath
             s = str(alt)
@@ -102,9 +107,9 @@ class Config(Base):
                 setattr(sB, key, value)
         return self
 
-    def __open(self, path):
+    def __read(self, path):
         """
-        Open and load the configuration at the specified path.
+        Read the configuration at the specified path.
         @param path: The fully qualified path.
         @type path: str
         @return: The configuration object.
@@ -115,3 +120,20 @@ class Config(Base):
             return Base(fp)
         finally:
             fp.close()
+
+
+    def __altpath(self):
+        """
+        Get the I{alternate} configuration path.
+        Resolution order: ALT, USER
+        @return: The path to the alternate configuration file.
+        @rtype: str
+        """
+        path =  os.environ.get(self.ALT)
+        if path:
+            return path
+        path = os.path.expanduser(self.USER)
+        if os.path.exists(path):
+            return path
+        else:
+            None
