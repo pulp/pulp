@@ -87,10 +87,10 @@ class RepoEvent(EventHandler):
         @param event: The event payload.
         @type event: dict.
         """
-        productid   = event['id']
-        content_set = event['content_set']
-        cert_data   = event['cert_data']
-        self.rapi.create_product_repo(content_set, cert_data, productid)
+        id   = event['id']
+        name = event['name']
+        arch = event.get('arch', 'noarch')
+        self.rapi.create(id, name, arch)
 
     @inbound(action='updated')
     def updated(self, event):

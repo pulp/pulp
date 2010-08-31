@@ -30,7 +30,7 @@ def main():
     #ed = EventDispatcher()
     #ed.start()
     p = EventProducer()
-    for n in range(0, 1):
+    for n in range(0, 1000):
         d = dict(
             id='repo%d' % n,
             name='Repository%d' % n,
