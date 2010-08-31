@@ -620,7 +620,7 @@ class TestApi(unittest.TestCase):
         
     # Meant to make sure we can create a repo with 5000+ packages without BSON
     # size errors
-    def test_sync_large_repo(self):
+    def disabled_sync_large_repo(self):
         repo = self.rapi.create('large-sync','some name', 'i386')
         numpacks = 5000
         for x in range(numpacks):
