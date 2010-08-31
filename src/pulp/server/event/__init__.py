@@ -18,24 +18,16 @@
 from threading import local as Local
 
 class EventFlags(Local):
-    """
-    Thread (local) event flags.
-    """
+
     def __init__(self):
-        """
-        @ivar suspended: Outbound is suspended.
-        @type suspended: bool
-        """
-        self.suspended = 0
+        self.__suspended = []
         
-    def suspend(self):
-        """
-        Suspend outbound events.
-        """
-        self.suspended = 1
+    def suspended(self, subject):
+        return ( subject in self.__suspended )
         
-    def resume(self):
-        """
-        Resume outbound events.
-        """
-        self.suspended = 0
+    def suspend(self, subject):
+        self.__suspended.append(subject)
+        
+    def resume(self, subject):
+        if subject in self.__suspended:
+            self.__suspended.remove(subject)

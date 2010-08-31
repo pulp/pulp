@@ -101,7 +101,7 @@ def event(subject):
     def decorator(fn):
         def call(*args, **kwargs):
             retval = fn(*args, **kwargs)
-            if not flags.suspended:
+            if not flags.suspended(subject):
                 entity, action = subject.split('.',1)
                 inst, method = \
                     EventDispatcher.handler(entity, outbound=action)
@@ -275,9 +275,11 @@ class EventDispatcher(EventConsumer):
                 event,
                 inst.__class__,
                 method.__name__)
-            flags.suspend()
-            method(inst, event)
-            flags.resume()
+            flags.suspend(subject)
+            try:
+                method(inst, event)
+            finally:
+                flags.resume(subject)
         except:
             log.error('{inbound} event failed (%s):\n%s',
                 subject,
