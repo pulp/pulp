@@ -468,6 +468,7 @@ class TestErrata(unittest.TestCase):
         # One bugfix errata was deleted, so make sure this is reflected
         self.assertTrue(len(r['errata']['bugfix']) == (len(bugfix) - 1))
         self.assertTrue("RHBA-2009:1092" not in r['errata']['bugfix'])
+        # Verify updated errata info
         self.assertTrue("RHSA-2008:0194" in r['errata']['security'])
         not_found_777777 = True
         not_found_350421 = True
@@ -477,8 +478,8 @@ class TestErrata(unittest.TestCase):
                 not_found_777777 = False
             if ref["id"] == "350421":
                 not_found_350421 = False
-        #self.assertFalse(not_found_777777)
-        #self.assertTrue(not_found_350421)
+        self.assertFalse(not_found_777777)
+        self.assertTrue(not_found_350421)
 
 
     def test_errata_query_by_cve(self):

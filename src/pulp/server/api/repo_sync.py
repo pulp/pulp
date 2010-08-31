@@ -254,8 +254,10 @@ class BaseSynchronizer(object):
                 # Replace existing errata if the update date is newer
                 found = self.errata_api.erratum(e['id'])
                 if found:
-                    if found['updated'] <= e['updated']:
+                    if e['updated'] <= found['updated']:
                         continue
+                    log.debug("Updating errata %s, it's updated date %s is newer than %s." % \
+                            (e['id'], e["updated"], found["updated"]))
                     self.errata_api.delete(e['id'])
                 pkglist = e['pkglist']
                 self.errata_api.create(id=e['id'], title=e['title'],

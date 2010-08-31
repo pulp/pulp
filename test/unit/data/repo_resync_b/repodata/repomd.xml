@@ -36,9 +36,9 @@
     <timestamp>1279036204</timestamp>
   </data>
   <data type="updateinfo">
-    <location href="repodata/4a25660fe8d9890f60d507915a73a4aa9ee0ec81e57efe72f24d33ac760057b5-updateinfo.xml.gz"/>
-    <checksum type="sha256">4a25660fe8d9890f60d507915a73a4aa9ee0ec81e57efe72f24d33ac760057b5</checksum>
-    <timestamp>1283180404.65</timestamp>
-    <open-checksum type="sha256">075110ef5b095598621fff0d4940b7a50a9330bbe0a05ba5465625a5e35d1e0b</open-checksum>
+    <location href="repodata/ae9be374b8d55de0a4e4634450a60ad6f7595c9f3c30a9f0cb54de71bd5793e3-updateinfo.xml.gz"/>
+    <checksum type="sha256">ae9be374b8d55de0a4e4634450a60ad6f7595c9f3c30a9f0cb54de71bd5793e3</checksum>
+    <timestamp>1283268939.37</timestamp>
+    <open-checksum type="sha256">3a916598b597ec6ab24fdb996dcb8fc654c34c56ec57c1fc089cb5f744b7e4e5</open-checksum>
   </data>
 </repomd>
