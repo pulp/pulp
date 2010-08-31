@@ -19,15 +19,15 @@ import uuid
 from pulp.server.pexceptions import PulpException
 
 class Base(dict):
-    
-    def __init__(self):
-        self._id = str(uuid.uuid4())
-        self.id = self._id
-        
     '''
     Base object that has convenience methods to get and put
     attrs into the base dict object with dot notation
     '''
+
+    def __init__(self):
+        self._id = str(uuid.uuid4())
+        self.id = self._id
+
     def __getattr__(self, attr):
         return self.get(attr, None)
     __setattr__= dict.__setitem__
