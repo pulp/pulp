@@ -45,8 +45,8 @@ def configure_pulp_grinder_logging():
     level = getattr(logging, level_name, logging.INFO)
     max_size = config.config.getint('logs', 'max_size')
     backups = config.config.getint('logs', 'backups')
-
-    formatter = logging.Formatter('%(asctime)s  %(message)s')
+    fmt = '%(asctime)s [%(levelname)s][%(threadName)s] %(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
+    formatter = logging.Formatter(fmt)
 
     pulp_file = config.config.get('logs', 'pulp_file')
     check_log_file(pulp_file)
@@ -92,20 +92,28 @@ def configure_audit_logging():
 
 # pulp logging api ------------------------------------------------------------
 
+started = False
+
 def start_logging():
     """
     Convenience function to start pulp's different logging mechanisms.
     """
     assert config.config is not None
-    configure_pulp_grinder_logging()
-    configure_audit_logging()
+    global started
+    if not started:
+        configure_pulp_grinder_logging()
+        configure_audit_logging()
+        started = True
 
 
 def stop_logging():
     """
     Convenience function to stop pulp's different logging mechanisms.
     """
-    logging.shutdown()
+    global started
+    if started:
+        logging.shutdown()
+        started = False
 
 
 def restart_logging():
