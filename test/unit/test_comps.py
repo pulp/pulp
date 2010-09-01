@@ -91,7 +91,6 @@ class TestComps(unittest.TestCase):
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
         self.rapi.add_package_to_group(repo["id"], pkg_group["id"], "test_package_name")
-        found = self.rapi.packagegroups(repo['id'])
         # Update repo object so we can test that group_xml_path was set
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["group_xml_path"] != "")
