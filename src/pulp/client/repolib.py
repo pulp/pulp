@@ -91,11 +91,7 @@ class Pulp:
         consumer = self.capi.consumer(cid)
         for repoid in consumer['repoids']:
             repo = self.rapi.repository(repoid)
-            d = dict(
-                id=repoid,
-                name=repo['name'],
-                enabled='1')
-            repos.append(d)
+            repos.append(repo)
         return products
     
     def consumerId(self):
@@ -173,9 +169,10 @@ class UpdateAction(Action):
         lst = []
         for cont in product['content']:
             id = cont['id']
+            path = cont['relative_path']
             repo = Repo(id)
             repo['name'] = cont['name']
-            repo['baseurl'] = self.join(baseurl, id)
+            repo['baseurl'] = self.join(baseurl, path)
             repo['enabled'] = cont.get('enabled', '1')
             lst.append(repo)
         return lst
