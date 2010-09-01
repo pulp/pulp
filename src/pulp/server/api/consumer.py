@@ -15,6 +15,7 @@
 
 import logging
 
+# Pulp
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
@@ -27,7 +28,6 @@ from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
 
-# Pulp
 
 log = logging.getLogger(__name__)
     
