@@ -157,6 +157,15 @@ class ConsumerGroup(Base):
         self.description = description
         self.consumerids = consumerids
 
+class ConsumerHistoryEvent(Base):
+    def __init__(self, consumer_id, originator, type_name, details):
+        Base.__init__(self)
+        self.consumer_id = consumer_id
+        self.originator = originator
+        self.type_name = type_name
+        self.details = details
+        self.timestamp = datetime.datetime.now()
+
 class User(Base):
     def __init__(self, login, id, password, name):
         self._id = id
