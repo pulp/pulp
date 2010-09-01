@@ -106,6 +106,10 @@ class RepoApi(BaseApi):
                 r[key] = value
         if productid:
             r['productid'].append(productid)
+            
+        if not r['relative_path']:
+            # For none product repos, default to repoid
+            r['relative_path'] = r['id']
         self.insert(r)
 
         if sync_schedule:
