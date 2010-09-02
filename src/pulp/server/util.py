@@ -61,7 +61,7 @@ def chunks(l, n):
     return [l[i:i+n] for i in range(0, len(l), n)]
 
 
-def get_file_checksum(hashtype, filename=None, fd=None, file=None, buffer_size=None):
+def get_file_checksum(hashtype="sha", filename=None, fd=None, file=None, buffer_size=None):
     """
     Compute a file's checksum.
     """
@@ -217,6 +217,16 @@ def compare_packages(pkgA, pkgB):
     evrA, evrB = (build_evr(pkgA), build_evr(pkgB))
     return rpm.labelCompare(evrA, evrB)
 
+def check_package_exists(pkg_path, hashsum, hashtype="sha", force=0):
+    if not os.path.exists(pkg_path):
+        return False
+    # File exists, same hash?
+    curr_hash = get_file_checksum(hashtype, pkg_path)
+    if curr_hash == hashsum and not force:
+        return True
+    if force:
+        return False
+    return False
 
 class Singleton(type):
     """

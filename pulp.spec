@@ -24,7 +24,7 @@ Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson
-Requires: grinder
+Requires: grinder >= 0.0.59
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_python
