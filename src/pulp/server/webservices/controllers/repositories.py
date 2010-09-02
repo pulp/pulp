@@ -32,7 +32,15 @@ api = RepoApi()
 log = logging.getLogger('pulp')
 
 # default fields for repositories being sent to the client
-default_fields = ['id', 'source', 'name', 'arch', 'sync_schedule', 'use_symlinks', 'productid']
+default_fields = [
+    'id',
+    'source',
+    'name', 
+    'arch', 
+    'sync_schedule', 
+    'use_symlinks', 
+    'productid',
+    'relative_path',]
 
 # restful controllers ---------------------------------------------------------
 

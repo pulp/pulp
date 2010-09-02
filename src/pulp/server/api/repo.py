@@ -106,6 +106,10 @@ class RepoApi(BaseApi):
                 r[key] = value
         if productid:
             r['productid'].append(productid)
+            
+        if not r['relative_path']:
+            # For none product repos, default to repoid
+            r['relative_path'] = r['id']
         self.insert(r)
 
         if sync_schedule:
@@ -625,7 +629,17 @@ class RepoApi(BaseApi):
         sync_packages, sync_errataids = repo_sync.sync(repo, repo_source, progress_callback)
         log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
             len(sync_errataids)))
-        for p in sync_packages:
+        # We need to update the repo object in Mongo to account for
+        # package_group info added in sync call
+        self.update(repo)
+        # Remove packages that are no longer in source repo
+        for pid in repo["packages"]:
+            if pid not in sync_packages:
+                log.info("Removing package <%s> from repo <%s>" % (repo["packages"][pid], repo["id"]))
+                self.remove_package(repo["id"], repo["packages"][pid])
+        # Refresh repo object since we may have deleted some packages
+        repo = self._get_existing_repo(id)
+        for p in sync_packages.values():
             self._add_package(repo, p)
         # Update repo for package additions
         self.update(repo)

@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.58
+Version:        0.0.59
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -172,6 +172,42 @@ fi
 
 
 %changelog
+* Wed Sep 01 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.59-1
+- adding productid to default fields and query ability (mmccune@redhat.com)
+- Refine how re-raised (inbound) events are suppressed. (jortel@redhat.com)
+- add builtin support for: ~/.pulp/client.conf (jortel@redhat.com)
+- Fix for Errata Re-Sync updating info in an existing errata
+  (jmatthew@redhat.com)
+- Minor changes to event based repos (pkilambi@redhat.com)
+- Fix bootstrap startup in wsgi so wont do foreach thread. (jortel@redhat.com)
+- expand log format and make start_loggin() idempotent. (jortel@redhat.com)
+- add bootstrap to start event listener. (jortel@redhat.com)
+- update for errata sync, partial check-in adds fix for removed errata to be
+  disassociated with the repo needs fix for updating an existing errata needs
+  fix for deleting an errata if no repos are associated to it
+  (jmatthew@redhat.com)
+- if no relative path, user repoid (pkilambi@redhat.com)
+- Invoke API before and only send event on succeeded. (jortel@redhat.com)
+- convert the status path to string from unicode before doing a GET
+  (pkilambi@redhat.com)
+- Adding API call to look up repos by product and unit tests
+  (pkilambi@redhat.com)
+- fix relativepaths to certs (pkilambi@redhat.com)
+- Use relative paths when syncing content to store on filesystem instead of
+  repoid. This should help validate the client requests for content via cert
+  validation (pkilambi@redhat.com)
+- Correcting error in string conversion of argument (skarmark@redhat.com)
+- fix product handler import. (jortel@redhat.com)
+- Fix method not found exception syntax. (jortel@redhat.com)
+- Replace noevent pseudo argument with thread data. (jortel@redhat.com)
+- Add stubbed product event hanlder. (jortel@redhat.com)
+- Add pulp event framework. (jortel@redhat.com)
+- "Printing task id at the time of sync" (skarmark@redhat.com)
+- Revert "Reverting cancel sync change to check whether this commit cause json
+  errors" Verified that JSON errors were not because of this commit. This
+  reverts commit 983791a517a85dd84b4df7197eef207b7e100489.
+  (skarmark@redhat.com)
+
 * Fri Aug 27 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.58-1
 - Make sure to include the user's home directory in the destination
   (jason.dobies@redhat.com)

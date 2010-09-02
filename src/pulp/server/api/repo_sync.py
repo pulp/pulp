@@ -133,13 +133,13 @@ class BaseSynchronizer(object):
         startTime = time.time()
         log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
         package_list = pulp.server.util.get_repo_packages(dir)
-        added_packages = []
+        added_packages = {}
         added_errataids = []
         log.debug("Processing %s potential packages" % (len(package_list)))
         for package in package_list:
             package = self.import_package(package, repo)
             if (package is not None):
-                added_packages.append(package)
+                added_packages[package["id"]] = package
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" %
                 (repo['id'], len(added_packages), endTime - startTime))
@@ -314,12 +314,22 @@ class LocalSynchronizer(BaseSynchronizer):
                 if not os.path.exists(repo_dir):
                     os.makedirs(repo_dir)
                 pkglist = pulp.server.util.listdir(pkg_dir)
-                log.debug("Found %s packages in %s" % (len(pkglist), pkg_dir))
+                log.debug("Found %s files in %s" % (len(pkglist), pkg_dir))
                 for count, pkg in enumerate(pkglist):
                     if pkg.endswith(".rpm"):
                         if count % 500 == 0:
                             log.debug("Working on %s/%s" % (count, len(pkglist)))
                         shutil.copy(pkg, os.path.join(repo_dir, os.path.basename(pkg)))
+                # Remove rpms which are no longer in source
+                existing_pkgs = []
+                for pkg in pulp.server.util.listdir(repo_dir):
+                    if pkg.endswith(".rpm"):
+                        existing_pkgs.append(os.path.basename(pkg))
+                source_pkgs = [os.path.basename(p) for p in pkglist]
+                for epkg in existing_pkgs:
+                    if epkg not in source_pkgs:
+                        log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, repo["id"]))
+                        os.remove(os.path.join(repo_dir, epkg))
                 groups_xml_path = None
                 updateinfo_path = None
                 src_repomd_xml = os.path.join(pkg_dir, "repodata/repomd.xml")
