@@ -104,7 +104,9 @@ class ConsumerHistoryApi(BaseApi):
 
         @return: list of consumer history entries that match the given parameters;
                  empty list (not None) if no matching entries are found
-        @rtype:  list of L{pulp.server.db.model.ConsumerHistoryEvent} instances 
+        @rtype:  list of L{pulp.server.db.model.ConsumerHistoryEvent} instances
+
+        @raise PulpException: if any of the input values are invalid 
         '''
 
         # Verify the consumer ID represents a valid consumer

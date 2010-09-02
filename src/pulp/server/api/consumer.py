@@ -67,6 +67,7 @@ class ConsumerApi(BaseApi):
             raise PulpException("Consumer [%s] already exists" % id)
         c = model.Consumer(id, description)
         self.insert(c)
+        self.consumer_history_api.consumer_created(c.id)
         return c
     
     @audit()
@@ -75,6 +76,7 @@ class ConsumerApi(BaseApi):
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         self.objectdb.remove(consumer, safe=True)
+        self.consumer_history_api.consumer_deleted(id)
     
     @audit()
     def certificate(self, id):
@@ -153,6 +155,7 @@ class ConsumerApi(BaseApi):
             return
         repoids.append(repoid)
         self.update(consumer)
+        self.consumer_history_api.repo_bound(id, repoid)
 
     @audit()
     def unbind(self, id, repoid):
@@ -172,6 +175,7 @@ class ConsumerApi(BaseApi):
             return
         repoids.remove(repoid)
         self.update(consumer)
+        self.consumer_history_api.repo_unbound(id, repoid)
         
     @audit(params=['id'])
     def profile_update(self, id, package_profile):
@@ -202,7 +206,9 @@ class ConsumerApi(BaseApi):
             else:
                 data.append(pkg)
         log.debug("Packages to Install: %s" % data)
-        return agent.packages.install(data)
+        installed_packages = agent.packages.install(data)
+        self.consumer_history_api.packages_installed(id, installed_packages)
+        return installed_packages
     
     @audit()
     def installpackagegroups(self, id, packageids=()):
