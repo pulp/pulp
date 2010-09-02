@@ -74,10 +74,13 @@ class Restlib(object):
             auth = "Basic %s" % base64string
         else:
             auth = None
+        default_locale = locale.getdefaultlocale()[0]
+        if default_locale:
+            default_locale = default_locale.lower().replace('_', '-')
         self.headers = {"Content-type":"application/json",
                         "Authorization": auth,
                         "Accept": "application/json",
-                        "Accept-Language": locale.getdefaultlocale()[0].lower().replace('_', '-')}
+                        "Accept-Language": default_locale}
         self.cert_file = cert_file
         self.key_file = key_file
 
