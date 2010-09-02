@@ -33,6 +33,7 @@ DIRS = (
 )
 
 LINKS = (
+    'etc/init.d/pulpd',
     'etc/pulp/pulp.conf',
     'etc/pulp/client.conf',
     'etc/httpd/conf.d/pulp.conf',
