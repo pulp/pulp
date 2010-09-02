@@ -47,6 +47,7 @@ setup(
     scripts = [
         '../bin/pulp-admin',
         '../bin/pulp-client',
+        '../bin/pulpd',
     ],
     include_package_data=False,
     data_files=[],
