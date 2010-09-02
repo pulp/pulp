@@ -40,7 +40,8 @@ class consumer(core_consumer.consumer):
                    "delete"        : "Delete a consumer",
                    "update"        : "Update consumer profile",
                    "bind"          : "Bind the consumer to listed repos",
-                   "unbind"        : "UnBind the consumer from repos",}
+                   "unbind"        : "Unbind the consumer from repos",
+                   }
         core_consumer.consumer.__init__(self, is_admin=False, actions=actions)
     
     def getConsumer(self):
