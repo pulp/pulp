@@ -201,8 +201,7 @@ class ConsumerApi(BaseApi):
             else:
                 data.append(pkg)
         log.debug("Packages to Install: %s" % data)
-        agent.packages.install(data)
-        return packagenames
+        return agent.packages.install(data)
     
     @audit()
     def installpackagegroups(self, id, packageids=[]):
