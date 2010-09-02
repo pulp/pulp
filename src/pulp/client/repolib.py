@@ -169,6 +169,8 @@ class UpdateAction(Action):
         """
         lst = []
         for cont in product['content']:
+            if not cont:
+                continue
             id = cont['id']
             path = cont['relative_path']
             repo = Repo(id)

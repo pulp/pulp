@@ -217,6 +217,14 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         self.assertRaises(PulpException, self.consumer_history_api.query, consumer_id='foo')
 
+    def test_query_none(self):
+        # Test
+        results = self.consumer_history_api.query()
+
+        # Verify
+        self.assertTrue(results is not None)
+        self.assertEqual(len(results), 0)
+
     def test_query_all(self):
         # Setup
         self._populate_for_queries()
@@ -293,6 +301,14 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         for entry in results:
             self.assertEqual(entry['consumer_id'], 2)
+
+    def test_query_with_negative_limit(self):
+        # Setup
+        self._populate_for_queries()
+
+        # Test
+        self.assertRaises(PulpException, self.consumer_history_api.query, limit=0)
+        self.assertRaises(PulpException, self.consumer_history_api.query, limit=-1)
 
     def test_query_sort_directions(self):
         # Setup
