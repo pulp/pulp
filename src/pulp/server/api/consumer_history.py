@@ -25,7 +25,6 @@ import pymongo
 
 # Pulp
 from pulp.server.api.base import BaseApi
-from pulp.server.api.consumer import ConsumerApi
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
 from pulp.server.pexceptions import PulpException
@@ -64,7 +63,6 @@ class ConsumerHistoryApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.consumer_api = ConsumerApi()
 
     def _getcollection(self):
         return get_object_db('consumer_history',
@@ -110,8 +108,8 @@ class ConsumerHistoryApi(BaseApi):
         '''
 
         # Verify the consumer ID represents a valid consumer
-        if consumer_id and not self.consumer_api.consumer(consumer_id):
-            raise PulpException('Invalid consumer ID [%s]' % consumer_id)
+        # if consumer_id and not self.consumer_api.consumer(consumer_id):
+        #    raise PulpException('Invalid consumer ID [%s]' % consumer_id)
 
         # Verify the event type is valid
         if event_type and event_type not in TYPES:
