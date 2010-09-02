@@ -41,6 +41,7 @@ class consumer(core_consumer.consumer):
                    "update"        : "Update consumer profile",
                    "bind"          : "Bind the consumer to listed repos",
                    "unbind"        : "Unbind the consumer from repos",
+                   "history"       : "Displays the consumer history",
                    }
         core_consumer.consumer.__init__(self, is_admin=False, actions=actions)
     

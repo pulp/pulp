@@ -15,6 +15,7 @@
 # in this software or its documentation.
 #
 
+import datetime
 import sys
 import os.path
 from M2Crypto import SSL
@@ -46,7 +47,9 @@ class consumer(BaseCore):
                                    "update"        : "Update consumer profile",
                                    "list"          : "List of accessible consumer info",
                                    "bind"          : "Bind the consumer to listed repos",
-                                   "unbind"        : "Unbind the consumer from repos",}
+                                   "unbind"        : "Unbind the consumer from repos",
+                                   "history"       : "View the consumer history",
+        }
         self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
@@ -70,12 +73,14 @@ class consumer(BaseCore):
             self.parser.add_option("--description", dest="description",
                            help="consumer description eg: foo's web server")
             self.parser.add_option("--server", dest="server",
-                           help="The fully qualified hostname of the Pulp server you wish to create this Consumer on")
+                           help="The fully qualified hostname of the Pulp server you wish to create this consumer on")
+
         if self.action == "update":
             usage = "usage: %prog consumer update [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
-                           help="Consumer Identifier eg: foo.example.com") 
+                           help="Consumer Identifier eg: foo.example.com")
+
         if self.action == "bind":
             usage = "usage: %prog consumer bind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -84,6 +89,7 @@ class consumer(BaseCore):
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
+
         if self.action == "unbind":
             usage = "usage: %prog consumer unbind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -92,15 +98,23 @@ class consumer(BaseCore):
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
+
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
+
         if self.action == "delete":
             usage = "usage: %prog consumer delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
+
+        if self.action == "history":
+            # TODO: This will be flushed out with query options eventually, for now I'm
+            # just getting the base functionality in place for the sprint demo
+            usage = "usage: %prog consumer history"
+            self.setup_option_parser(usage, "", True)
 
     def _do_core(self):
         if self.action == "create":
@@ -115,6 +129,8 @@ class consumer(BaseCore):
             self._bind()
         if self.action == "unbind":
             self._unbind()
+        if self.action == "history":
+            self._history()
 
     def _create(self):
         if (not self.options.username and not self.options.password 
@@ -137,7 +153,7 @@ class consumer(BaseCore):
                 print "ERROR: The server hostname you have configured in /etc/pulp/ does not match the"
                 print "hostname returned from the Pulp server you are connecting to.  "
                 print ""
-                print "You have: [%s] configured but got: [%s] from the server." % (wh.expectedHost, wh.actualHost)
+                print "You have: [%s] configured but received: [%s] from the server." % (wh.expectedHost, wh.actualHost)
                 print ""
                 print "Either correct the host in /etc/pulp/ or specify --server=%s" % wh.actualHost
                 sys.exit(1)   
@@ -150,7 +166,7 @@ class consumer(BaseCore):
             utils.writeToFile(ConsumerConnection.KEY_PATH, key)
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(self.options.id, pkginfo)
-            print _(" Successfully created Consumer [ %s ]" % consumer['id'])
+            print _(" Successfully created consumer [ %s ]" % consumer['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -216,7 +232,7 @@ class consumer(BaseCore):
         try:
             self.cconn.bind(consumerid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully subscribed Consumer [%s] to Repo [%s]" % (consumerid, self.options.repoid))
+            print _(" Successfully subscribed consumer [%s] to repo [%s]" % (consumerid, self.options.repoid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -232,7 +248,7 @@ class consumer(BaseCore):
         try:
             self.cconn.unbind(consumerid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully unsubscribed Consumer [%s] from Repo [%s]" % (consumerid, self.options.repoid))
+            print _(" Successfully unsubscribed consumer [%s] from repo [%s]" % (consumerid, self.options.repoid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -247,14 +263,29 @@ class consumer(BaseCore):
             self.cconn.delete(consumerid)
             print _(" Successfully deleted consumer [%s]" % consumerid)
         except RestlibException, re:
-            print _(" Deleted operation failed on Consumer [ %s ] " % \
+            print _(" Deleted operation failed on consumer [ %s ] " % \
                   consumerid)
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-    
+
+    def _history(self):
+        consumerid = self.getConsumer()
+        try:
+            results = self.cconn.history(consumerid)
+
+            print """+-------------------------------------------+\n    Consumer History \n+-------------------------------------------+"""
+            for entry in results:
+                print constants.CONSUMER_HISTORY_ENTRY % \
+                      (entry['type_name'], entry['timestamp'], entry['originator'])
+                print('')
+
+        except RestlibException, re:
+            print _(" History retrieval failed for consumer [%s]" % consumerid)
+            sys.exit(-1)
+
     def getConsumer(self):
         if not self.options.id:
             print("consumer id required. Try --help")

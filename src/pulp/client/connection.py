@@ -369,6 +369,10 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
+    def history(self, id):
+        method = "/consumers/%s/history/" % id
+        return self.conn.request_post(method)
+
 
 class ConsumerGroupConnection(PulpConnection):
     """

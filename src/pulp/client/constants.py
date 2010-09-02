@@ -56,7 +56,7 @@ Conditional packages\t%-25s
 
 AVAILABLE_USERS_LIST = """
 Login :               \t%-25s    
-Name  :                \t%-25s
+Name  :               \t%-25s
 """
 
 ERRATA_INFO="""
@@ -71,4 +71,10 @@ Release               \t%-25s
 Status                \t%-25s
 Packages Effected     \t%-25s
 References            \t%-25s
+"""
+
+CONSUMER_HISTORY_ENTRY = """
+Event Type            \t%-25s
+Timestamp             \t%-25s
+Originator            \t%-25s
 """
