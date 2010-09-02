@@ -19,6 +19,7 @@ import logging
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -41,6 +42,7 @@ class ConsumerApi(BaseApi):
         self.errataapi  = ErrataApi()
         self.repoapi    = RepoApi()
         self.packageapi = PackageApi()
+        self.consumer_history_api = ConsumerHistoryApi()
 
     def _getcollection(self):
         return get_object_db('consumers',
@@ -62,7 +64,7 @@ class ConsumerApi(BaseApi):
         """
         consumer = self.consumer(id)
         if(consumer):
-            raise PulpException("A Consumer with id %s already exists" % id)
+            raise PulpException("Consumer [%s] already exists" % id)
         c = model.Consumer(id, description)
         self.insert(c)
         return c
@@ -71,7 +73,7 @@ class ConsumerApi(BaseApi):
     def delete(self, id):
         consumer = self.consumer(id)
         if not consumer:
-            raise PulpException('Consumer "%s" does not exist', id)
+            raise PulpException('Consumer [%s] does not exist', id)
         self.objectdb.remove(consumer, safe=True)
     
     @audit()
@@ -82,7 +84,7 @@ class ConsumerApi(BaseApi):
         """
         consumer = self.consumer(id)
         if not consumer:
-            raise PulpException('consumer "%s", not-found', id)
+            raise PulpException('Consumer [%s] not found', id)
         private_key, cert = cert_generator.make_cert(id)
         return (private_key, cert) 
         
@@ -120,14 +122,13 @@ class ConsumerApi(BaseApi):
     def packages(self, id):
         consumer = self.consumer(id)
         if consumer is None:
-            raise PulpException('consumer "%s", not-found', id)
+            raise PulpException('Consumer [%s] not found', id)
         return consumer.get('package_profile', [])
     
     def consumers_with_package_names(self, names, fields=None):
         """
         List consumers using passed in names
         """
-        log.debug("consumers_with_package_names : %s" % names)
         consumers = []
         for name in names:
             #consumers.extend(self.objectdb.find({'package_profile.name': name}, fields))
@@ -146,7 +147,7 @@ class ConsumerApi(BaseApi):
         """
         consumer = self.consumer(id)
         if consumer is None:
-            raise PulpException('consumer "%s", not-found', id)
+            raise PulpException('Consumer [%s] not found', id)
         repoids = consumer.setdefault('repoids', [])
         if repoid in repoids:
             return
@@ -165,7 +166,7 @@ class ConsumerApi(BaseApi):
         """
         consumer = self.consumer(id)
         if consumer is None:
-            raise PulpException('consumer "%s", not-found', id)
+            raise PulpException('Consumer [%s] not found', id)
         repoids = consumer.setdefault('repoids', [])
         if repoid not in repoids:
             return
@@ -179,12 +180,12 @@ class ConsumerApi(BaseApi):
         """
         consumer = self.consumer(id)
         if consumer is None:
-            raise PulpException('consumer "%s", not-found', id)
+            raise PulpException('Consumer [%s] not found', id)
         consumer["package_profile"] =  package_profile
         self.update(consumer)
 
     @audit()
-    def installpackages(self, id, packagenames=[]):
+    def installpackages(self, id, packagenames=()):
         """
         Install packages on the consumer.
         @param id: A consumer id.
@@ -204,7 +205,7 @@ class ConsumerApi(BaseApi):
         return agent.packages.install(data)
     
     @audit()
-    def installpackagegroups(self, id, packageids=[]):
+    def installpackagegroups(self, id, packageids=()):
         """
         Install package groups on the consumer.
         @param id: A consumer id.
@@ -216,7 +217,7 @@ class ConsumerApi(BaseApi):
         agent.packagegroups.install(packageids)
         return packageids
     
-    def installerrata(self, id, errataids=[], types=[]):
+    def installerrata(self, id, errataids=(), types=()):
         """
         Install errata on the consumer.
         @param id: A consumer id.
@@ -241,18 +242,18 @@ class ConsumerApi(BaseApi):
             for pobj in pkgobjs:
                 if pobj["arch"] != "src":
                     pkgs.append(pobj["name"])
-        log.error("Packages to install %s" % pkgs)
+        log.error("Packages to install [%s]" % pkgs)
         agent.packages.install(pkgs)
         return pkgs
         
-    def listerrata(self, id, types=[]):
+    def listerrata(self, id, types=()):
         """
         List applicable errata for a given consumer id
         """
         consumer = self.consumer(id)
         return self._applicable_errata(consumer, types).keys()
     
-    def list_package_updates(self, id, types=[]):
+    def list_package_updates(self, id, types=()):
         """
         List applicable package updates for a given consumer id
         """
@@ -260,7 +261,7 @@ class ConsumerApi(BaseApi):
         return [ item for etype in self._applicable_errata(consumer, types).values() \
                 for item in etype ]
     
-    def _applicable_errata(self, consumer, types=[]):
+    def _applicable_errata(self, consumer, types=()):
         """ 
         Logic to filter applicable errata for a consumer
         """
