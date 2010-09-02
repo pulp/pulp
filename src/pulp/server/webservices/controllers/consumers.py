@@ -20,6 +20,7 @@ import logging
 import web
 
 from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
@@ -27,7 +28,8 @@ from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
-api = ConsumerApi()
+consumer_api = ConsumerApi()
+history_api = ConsumerHistoryApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
@@ -48,11 +50,11 @@ class Consumers(JSONController):
         filters = self.filters(valid_filters)
         package_names = filters.pop('package_name', None)
         if package_names is not None:
-            result = api.consumers_with_package_names(package_names, default_fields)
+            result = consumer_api.consumers_with_package_names(package_names, default_fields)
             consumers = self.filter_results(result, filters)
         else:
             spec = mongo.filters_to_re_spec(filters)
-            consumers = api.consumers(spec, default_fields)
+            consumers = consumer_api.consumers(spec, default_fields)
         # add the uri ref and deferred fields
         for c in consumers:
             c['uri_ref'] = http.extend_uri_path(c['id'])
@@ -69,10 +71,10 @@ class Consumers(JSONController):
         """
         consumer_data = self.params()
         id = consumer_data['id']
-        consumer = api.consumer(id)
+        consumer = consumer_api.consumer(id)
         if consumer is not None:
             return self.conflict('Consumer with id: %s, already exists' % id)
-        consumer = api.create(id, consumer_data['description'])
+        consumer = consumer_api.create(id, consumer_data['description'])
         path = http.extend_uri_path(consumer.id)
         return self.created(path, consumer)
 
@@ -83,7 +85,7 @@ class Consumers(JSONController):
         Delete all consumers.
         @return: True on successful deletion of all consumers
         """
-        api.clean()
+        consumer_api.clean()
         return self.ok(True)
     
 
@@ -92,7 +94,7 @@ class Bulk(JSONController):
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def POST(self):
-        api.bulkcreate(self.params())
+        consumer_api.bulkcreate(self.params())
         return self.ok(True)
 
  
@@ -106,7 +108,7 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: consumer meta data
         """
-        consumer = api.consumer(id, fields=default_fields)
+        consumer = consumer_api.consumer(id, fields=default_fields)
         if consumer is None:
             return self.not_found('No consumer %s' % id)
         consumer['uri_ref'] = http.uri_path()
@@ -130,7 +132,7 @@ class Consumer(JSONController):
         for field in itertools.chain(['uri_ref'], # web services only field
                                      ConsumerDeferredFields.exposed_fields):
             consumer_data.pop(field, None)
-        api.update(consumer_data)
+        consumer_api.update(consumer_data)
         return self.ok(True)
 
     @JSONController.error_handler
@@ -141,7 +143,7 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: True on successful deletion of consumer
         """
-        api.delete(id=id)
+        consumer_api.delete(id=id)
         return self.ok(True)
 
 
@@ -162,7 +164,7 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
-        packages = api.packages(id)
+        packages = consumer_api.packages(id)
         packages = self.filter_results(packages, filters)
         return self.ok(packages)
     
@@ -176,7 +178,7 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('id')
         filters = self.filters(valid_filters)
-        consumer = api.consumer(id, fields=['repoids'])
+        consumer = consumer_api.consumer(id, fields=['repoids'])
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
@@ -192,7 +194,7 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('id')
         filters = self.filters(valid_filters)
-        private_key, certificate = api.certificate(id)
+        private_key, certificate = consumer_api.certificate(id)
         certificate = {'certificate': certificate, 'private_key': private_key}
         return self.ok(certificate)
 
@@ -220,6 +222,7 @@ class ConsumerActions(JSONController):
         'installpackagegroups',
         'listerrata',
         'installerrata',
+        'history',
     )
     
     @RoleCheck(consumer_id=True, admin=True)
@@ -229,7 +232,7 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        api.bind(id, data)
+        consumer_api.bind(id, data)
         return self.ok(True)
     
     @RoleCheck(consumer_id=True, admin=True)
@@ -239,7 +242,7 @@ class ConsumerActions(JSONController):
         @param id: consumer id
         """
         data = self.params()
-        api.unbind(id, data)
+        consumer_api.unbind(id, data)
         return self.ok(None)
     
     @RoleCheck(consumer_id=True, admin=True)
@@ -248,7 +251,7 @@ class ConsumerActions(JSONController):
         update/add Consumer profile information. eg:package, hardware etc
         """
         log.debug("consumers.py profile() with id: %s" % id)
-        api.profile_update(id, self.params())
+        consumer_api.profile_update(id, self.params())
         return self.ok(True)
 
     @RoleCheck(consumer_id=True, admin=True)
@@ -259,7 +262,7 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         names = data.get('packagenames', [])
-        return self.ok(api.installpackages(id, names))
+        return self.ok(consumer_api.installpackages(id, names))
     
     @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroups(self, id):
@@ -269,7 +272,7 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         ids = data.get('packageids', [])
-        return self.ok(api.installpackagegroups(id, ids))
+        return self.ok(consumer_api.installpackagegroups(id, ids))
 
     @RoleCheck(consumer_id=True, admin=True)
     def installerrata(self, id):
@@ -280,8 +283,8 @@ class ConsumerActions(JSONController):
         data = self.params()
         eids = data.get('errataids', [])
         types = data.get('types', [])
-        return self.ok(api.installerrata(id, eids, types))
-    
+        return self.ok(consumer_api.installerrata(id, eids, types))
+
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def listerrata(self, id):
@@ -290,9 +293,14 @@ class ConsumerActions(JSONController):
          filter by errata type if any
         """
         data = self.params()
-        return self.ok(api.listerrata(id, data['types']))
-        
-        
+        return self.ok(consumer_api.listerrata(id, data['types']))
+
+    @JSONController.error_handler
+    @RoleCheck(consumer_id=True, admin=True)
+    def history(self, id):
+        results = history_api.query(consumer_id=id)
+        return self.ok(results)
+
     @JSONController.error_handler
     def POST(self, id, action_name):
         """
