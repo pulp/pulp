@@ -20,13 +20,15 @@ Publicly accessible consumer history related API methods.
 # Python
 import logging
 
+import pymongo
+
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.task import Task
+
 
 # -- constants ----------------------------------------
 
@@ -47,6 +49,11 @@ TYPES = (TYPE_CONSUMER_CREATED, TYPE_CONSUMER_DELETED, TYPE_REPO_BOUND,
 # Used to identify an event as triggered by the consumer (as compared to an admin)
 ORIGINATOR_CONSUMER = 'consumer'
 
+SORT_DIRECTION = {
+    'ascending' : pymongo.ASCENDING,
+    'descending' : pymongo.DESCENDING,
+}
+
 
 class ConsumerHistoryApi(BaseApi):
 
@@ -63,7 +70,8 @@ class ConsumerHistoryApi(BaseApi):
 
     # -- public api ----------------------------------------
 
-    def query(self, consumer_id=None, event_type=None, limit=None):
+    def query(self, consumer_id=None, event_type=None, limit=None, sort='descending',
+              start_date=None, end_date=None):
 
         # Verify the consumer ID represents a valid consumer
         if consumer_id and not self.consumer_api.consumer(consumer_id):
@@ -73,6 +81,11 @@ class ConsumerHistoryApi(BaseApi):
         if event_type and event_type not in TYPES:
             raise PulpException('Invalid event type [%s]' % event_type)
 
+        # Verify the sort direction was valid
+        if not sort in SORT_DIRECTION:
+            valid_sorts = ', '.join(SORT_DIRECTION)
+            raise PulpException('Invalid sort direction [%s], valid values [%s]' % (sort, valid_sorts))
+
         # Assemble the mongo search parameters
         search_params = {}
         if consumer_id:
@@ -80,11 +93,24 @@ class ConsumerHistoryApi(BaseApi):
         if event_type:
             search_params['type_name'] = event_type
 
+        # Add in date range limits if specified
+        date_range = {}
+        if start_date:
+            date_range['$gt'] = start_date
+        if end_date:
+            date_range['$lt'] = end_date
+
+        if len(date_range) > 0:
+            search_params['timestamp'] = date_range
+
         # Determine the correct mongo cursor to retrieve
         if len(search_params) == 0:
             cursor = self.objectdb.find()
         else:
             cursor = self.objectdb.find(search_params)
+
+        # Sort by most recent entry first
+        cursor.sort('timestamp', direction=SORT_DIRECTION[sort])
 
         # If a limit was specified, add it to the cursor
         if limit:
