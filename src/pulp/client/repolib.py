@@ -91,7 +91,8 @@ class Pulp:
         consumer = self.capi.consumer(cid)
         for repoid in consumer['repoids']:
             repo = self.rapi.repository(repoid)
-            repos.append(repo)
+            if repo:
+                repos.append(repo)
         return products
     
     def consumerId(self):
