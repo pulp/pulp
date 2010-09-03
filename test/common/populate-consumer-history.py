@@ -16,11 +16,9 @@
 
 # Python
 import datetime
+import optparse
 import os
 import sys
-
-# 3rd Party
-import pymongo
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
@@ -30,23 +28,31 @@ import pulp.server.api.consumer_history as history
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
 
-EVENTS = []
+# -- events ----------------------------------------
 
 CONSUMER_ID = 'jdob'
+
+EVENTS = []
 
 event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_CONSUMER_CREATED, None)
 EVENTS.append(event)
 
 event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_REPO_BOUND, {'repo_id': 'repo1'})
+event.timestamp = datetime.datetime.now() - datetime.timedelta(days=365)
 EVENTS.append(event)
-event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_REPO_BOUND, {'repo_id': 'repo2'})
-EVENTS.append(event)
+
 event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_REPO_BOUND, {'repo_id': 'repo3'})
 EVENTS.append(event)
 
-event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_REPO_BOUND, {'repo_id': 'repo1'})
-event.timestamp = datetime.datetime.now() - datetime.timedelta(days=365)
+package_nveras = ['emacs-23.2-4', 'emacs-goodies-33.5-1', 'emacs-common-23.2-4']
+event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_PACKAGE_INSTALLED, {'package_nveras' : package_nveras})
 EVENTS.append(event)
+
+package_nveras = ['emacs-goodies-33.5-1']
+event = ConsumerHistoryEvent(CONSUMER_ID, 'consumer', history.TYPE_PACKAGE_UNINSTALLED, {'package_nveras' : package_nveras})
+EVENTS.append(event)
+
+# -- methods ----------------------------------------
 
 def db():
     return get_object_db('consumer_history', [], [])
@@ -61,5 +67,17 @@ def populate():
         db_conn.insert(event)
 
 if __name__ == '__main__':
-    populate()
+
+    parser = optparse.OptionParser()
+    parser.add_option('--populate', dest='populate', action='store_true')
+    parser.add_option('--clean', dest='clean', action='store_true')
+    options, args = parser.parse_args()
+
+    if options.clean:
+        print('Cleaning consumer history')
+        clean()
+    
+    if options.populate:
+        print('Populating consumer history')
+        populate()
     
