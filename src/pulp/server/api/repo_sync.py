@@ -330,7 +330,7 @@ class LocalSynchronizer(BaseSynchronizer):
                         pkg_info = pulp.server.util.get_rpm_information(pkg)
                         pkg_location = "%s/%s/%s/%s/%s/%s" % (package_location(), pkg_info.name, pkg_info.version, 
                                                                 pkg_info.release, pkg_info.arch, os.path.basename(pkg))
-                        
+                        log.debug('Expected Package Location: %s' % pkg_location) 
                         if not pulp.server.util.check_package_exists(pkg_location,\
                                                  pulp.server.util.get_file_checksum(filename=pkg)):
                             log.error("package doesn't exist. \
