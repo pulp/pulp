@@ -59,17 +59,20 @@ class Packages:
                             or tuples for name/arch info.
         @type packageinfo: str or tuple
         """
-        log.info('installing packages: %s', packageinfo)
+        installed = []
         yb = YumBase()
+        log.info('installing packages: %s', packageinfo)
         for info in packageinfo:
             if isinstance(info, list):
                 pkgs = yb.pkgSack.returnNewestByNameArch('.'.join(info))
             else:
                 pkgs = yb.pkgSack.returnNewestByName(info)
             for p in pkgs:
+                installed.append(str(p))
                 yb.tsInfo.addInstall(p)
         yb.resolveDeps()
         yb.processTransaction()
+        return installed
 
 @remote
 class PackageGroups:

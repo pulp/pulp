@@ -74,10 +74,13 @@ class Restlib(object):
             auth = "Basic %s" % base64string
         else:
             auth = None
+        default_locale = locale.getdefaultlocale()[0]
+        if default_locale:
+            default_locale = default_locale.lower().replace('_', '-')
         self.headers = {"Content-type":"application/json",
                         "Authorization": auth,
                         "Accept": "application/json",
-                        "Accept-Language": locale.getdefaultlocale()[0].lower().replace('_', '-')}
+                        "Accept-Language": default_locale}
         self.cert_file = cert_file
         self.key_file = key_file
 
@@ -210,7 +213,7 @@ class RepoConnection(PulpConnection):
         return self.conn.request_post(method, params={"timeout":timeout})
 
     def cancel_sync(self, repoid, taskid):
-        method = "/repositories/%s/sync/$s" % (repoid, taskid)
+        method = "/repositories/%s/sync/%s" % (repoid, taskid)
         return self.conn.request_delete(method)
 
     def add_package(self, repoid, packageid):
@@ -262,7 +265,7 @@ class RepoConnection(PulpConnection):
         return self.conn.request_get(method)
 
     def sync_status(self, status_path):
-        return self.conn.request_get(status_path)
+        return self.conn.request_get(str(status_path))
 
     def add_errata(self, id, errataids):
         erratainfo = {'repoid' : id,
@@ -365,6 +368,10 @@ class ConsumerConnection(PulpConnection):
                       'types'    :   types}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
+
+    def history(self, id):
+        method = "/consumers/%s/history/" % id
+        return self.conn.request_post(method)
 
 
 class ConsumerGroupConnection(PulpConnection):

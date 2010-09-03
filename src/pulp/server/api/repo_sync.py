@@ -38,6 +38,9 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
+REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
+PACKAGE_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
+
 # sync api --------------------------------------------------------------------
 
 def yum_rhn_progress_callback(info):
@@ -133,13 +136,13 @@ class BaseSynchronizer(object):
         startTime = time.time()
         log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
         package_list = pulp.server.util.get_repo_packages(dir)
-        added_packages = []
+        added_packages = {}
         added_errataids = []
         log.debug("Processing %s potential packages" % (len(package_list)))
         for package in package_list:
             package = self.import_package(package, repo)
             if (package is not None):
-                added_packages.append(package)
+                added_packages[package["id"]] = package
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" %
                 (repo['id'], len(added_packages), endTime - startTime))
@@ -254,8 +257,10 @@ class BaseSynchronizer(object):
                 # Replace existing errata if the update date is newer
                 found = self.errata_api.erratum(e['id'])
                 if found:
-                    if found['updated'] <= e['updated']:
+                    if e['updated'] <= found['updated']:
                         continue
+                    log.debug("Updating errata %s, it's updated date %s is newer than %s." % \
+                            (e['id'], e["updated"], found["updated"]))
                     self.errata_api.delete(e['id'])
                 pkglist = e['pkglist']
                 self.errata_api.create(id=e['id'], title=e['title'],
@@ -282,12 +287,18 @@ class YumSynchronizer(BaseSynchronizer):
             cacert = repo['ca'].encode('utf8')
             clicert = repo['cert'].encode('utf8')
             clikey = repo['key'].encode('utf8')
-        yfetch = YumRepoGrinder(repo['id'], repo_source['url'].encode('ascii', 'ignore'),
-                                1, cacert=cacert, clicert=clicert, clikey=clikey)
-        yfetch.fetchYumRepo(config.config.get('paths', 'local_storage'),
-                callback=progress_callback)
-        repo_dir = "%s/%s/" % (config.config.get('paths', 'local_storage'), repo['id'])
-        return repo_dir
+
+        yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
+                                1, cacert=cacert, clicert=clicert, 
+                                clikey=clikey, packages_location=PACKAGE_LOCATION)
+        relative_path = repo['relative_path']
+        if relative_path:
+            store_path = "%s/%s" % (REPOS_LOCATION, relative_path)
+        else:
+            store_path = "%s/%s" % (REPOS_LOCATION, repo['id'])
+        yfetch.fetchYumRepo(store_path, callback=progress_callback)
+
+        return store_path
 
 
 class LocalSynchronizer(BaseSynchronizer):
@@ -298,7 +309,7 @@ class LocalSynchronizer(BaseSynchronizer):
         pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (pkg_dir, repo['id']))
         try:
-            repo_dir = "%s/%s" % (config.config.get('paths', 'local_storage'), repo['id'])
+            repo_dir = "%s/%s" % (REPOS_LOCATION, repo['id'])
             if not os.path.exists(pkg_dir):
                 raise InvalidPathError("Path %s is invalid" % pkg_dir)
             if repo['use_symlinks']:
@@ -307,13 +318,43 @@ class LocalSynchronizer(BaseSynchronizer):
             else:
                 if not os.path.exists(repo_dir):
                     os.makedirs(repo_dir)
+
                 pkglist = pulp.server.util.listdir(pkg_dir)
                 log.debug("Found %s packages in %s" % (len(pkglist), pkg_dir))
                 for count, pkg in enumerate(pkglist):
                     if pkg.endswith(".rpm"):
                         if count % 500 == 0:
                             log.debug("Working on %s/%s" % (count, len(pkglist)))
-                        shutil.copy(pkg, os.path.join(repo_dir, os.path.basename(pkg)))
+                        pkg_info = pulp.server.util.get_rpm_information(pkg)
+                        pkg_location = "%s/%s/%s/%s/%s/%s" % (PACKAGE_LOCATION, pkg_info.name, pkg_info.version, 
+                                                                pkg_info.release, pkg_info.arch, os.path.basename(pkg))
+                        
+                        if not pulp.server.util.check_package_exists(pkg_location,\
+                                                 pulp.server.util.get_file_checksum(filename=pkg)):
+                            log.error("package doesn't exist. \
+                                        Write the package to packages location: %s" % pkg_location)
+                            pkg_dirname = os.path.dirname(pkg_location)
+                            if not os.path.exists(pkg_dirname):
+                                os.makedirs(pkg_dirname)
+                            shutil.copy(pkg, pkg_location)
+                        else:
+                            log.error("package Already exists. continue")
+
+                        repo_pkg_path = os.path.join(repo_dir, os.path.basename(pkg))
+                        if not os.path.islink(repo_pkg_path):
+                            os.symlink(pkg_location, repo_pkg_path)
+
+##TODO: Need to revist the removal case
+#                # Remove rpms which are no longer in source
+#                existing_pkgs = []
+#                for pkg in pulp.server.util.listdir(repo_dir):
+#                    if pkg.endswith(".rpm"):
+#                        existing_pkgs.append(os.path.basename(pkg))
+#                source_pkgs = [os.path.basename(p) for p in pkglist]
+#                for epkg in existing_pkgs:
+#                    if epkg not in source_pkgs:
+#                        log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, repo["id"]))
+#                        os.remove(os.path.join(repo_dir, epkg))
                 groups_xml_path = None
                 updateinfo_path = None
                 src_repomd_xml = os.path.join(pkg_dir, "repodata/repomd.xml")

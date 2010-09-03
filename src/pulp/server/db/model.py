@@ -19,22 +19,22 @@ import uuid
 from pulp.server.pexceptions import PulpException
 
 class Base(dict):
-    
-    def __init__(self):
-        self._id = str(uuid.uuid4())
-        self.id = self._id
-        
     '''
     Base object that has convenience methods to get and put
     attrs into the base dict object with dot notation
     '''
+
+    def __init__(self):
+        self._id = str(uuid.uuid4())
+        self.id = self._id
+
     def __getattr__(self, attr):
         return self.get(attr, None)
     __setattr__= dict.__setitem__
     __delattr__= dict.__delitem__
 
 class Repo(Base):
-    def __init__(self, id, name, arch, source=None, productid=None):
+    def __init__(self, id, name, arch, source=None):
         self._id = id
         self.id = id
         if source:
@@ -55,7 +55,8 @@ class Repo(Base):
         self.cert = None
         self.key  = None
         self.errata = {}
-        self.productid = None
+        self.productid = []
+        self.relative_path = None
         
     def get_repo_source(self):
         if not self.source:
@@ -155,6 +156,15 @@ class ConsumerGroup(Base):
         self.id = id
         self.description = description
         self.consumerids = consumerids
+
+class ConsumerHistoryEvent(Base):
+    def __init__(self, consumer_id, originator, type_name, details):
+        Base.__init__(self)
+        self.consumer_id = consumer_id
+        self.originator = originator
+        self.type_name = type_name
+        self.details = details
+        self.timestamp = datetime.datetime.now()
 
 class User(Base):
     def __init__(self, login, id, password, name):

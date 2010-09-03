@@ -32,7 +32,15 @@ api = RepoApi()
 log = logging.getLogger('pulp')
 
 # default fields for repositories being sent to the client
-default_fields = ['id', 'source', 'name', 'arch', 'sync_schedule', 'use_symlinks']
+default_fields = [
+    'id',
+    'source',
+    'name', 
+    'arch', 
+    'sync_schedule', 
+    'use_symlinks', 
+    'productid',
+    'relative_path',]
 
 # restful controllers ---------------------------------------------------------
 
@@ -45,7 +53,7 @@ class Repositories(JSONController):
         List all available repositories.
         @return: a list of all available repositories
         """
-        valid_filters = ['id', 'name', 'arch']
+        valid_filters = ['id', 'name', 'arch', 'productid']
 
         filters = self.filters(valid_filters)
         spec = mongo.filters_to_re_spec(filters)

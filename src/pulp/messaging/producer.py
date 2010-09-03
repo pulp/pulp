@@ -48,10 +48,9 @@ class Producer(Endpoint):
         sn = getuuid()
         envelope = Envelope(sn=sn, version=version, origin=self.id())
         envelope.update(body)
-        message = Message(envelope.dump())
+        message = Message(content=envelope.dump(), durable=True)
         address = str(destination)
         sender = self.session().sender(address)
-        message = Message(envelope.dump())
         sender.send(message);
         log.info('{%s} sent (%s)\n%s', self.id(), address, envelope)
         return sn

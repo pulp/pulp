@@ -20,6 +20,7 @@ import gzip
 import os
 import traceback
 from itertools import chain
+from urlparse import urlparse
 
 # Pulp
 from pulp.server import comps_util
@@ -30,16 +31,16 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.auditing import audit
+from pulp.server.event.dispatcher import event
 from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
-
+from pulp.server.api.fetch_listings import CDNConnection
 
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
-
 
 class RepoApi(BaseApi):
     """
@@ -85,8 +86,9 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         return repo
 
+    @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None):
+    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, cert_data=None, productid=None):
         """
         Create a new Repository object and return it
         """
@@ -99,27 +101,85 @@ class RepoApi(BaseApi):
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
         if cert_data:
-            cert_dir = "/etc/pki/content/" + name
-
-            if not os.path.exists(cert_dir):
-                os.makedirs(cert_dir)
-            for key, value in cert_data.items():
-                fname = os.path.join(cert_dir, name + "." + key)
-                try:
-                    log.error("storing file %s" % fname)
-                    f = open(fname, 'w')
-                    f.write(value)
-                    f.close()
-                    r[key] = fname
-                except:
-                    raise PulpException("Error storing file %s " % key)
+            cert_files = self._write_certs_to_disk(id, cert_data)
+            for key, value in cert_files.items():
+                r[key] = value
+        if productid:
+            r['productid'].append(productid)
+            
+        if not r['relative_path']:
+            # For none product repos, default to repoid
+            r['relative_path'] = r['id']
         self.insert(r)
 
         if sync_schedule:
             repo_sync.update_schedule(r)
 
         return r
+    
+    def _write_certs_to_disk(self, repoid, cert_data):
+        CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
+        cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)
 
+        if not os.path.exists(cert_dir):
+            os.makedirs(cert_dir)
+        cert_files = {}
+        for key, value in cert_data.items():
+            fname = os.path.join(cert_dir, repoid + "." + key)
+            try:
+                log.error("storing file %s" % fname)
+                f = open(fname, 'w')
+                f.write(value)
+                f.close()
+                cert_files[key] = fname
+            except:
+                raise PulpException("Error storing certificate file %s " % key)
+        return cert_files
+    
+    @audit(params=['productid', 'content_set'])
+    def create_product_repo(self, content_set, cert_data, productid):
+        """
+         Creates a repo associated to a product. Usually through an event raised
+         from candlepin
+         @param productid: A product the candidate repo should be associated with.
+         @type productid: str
+         @param content_set: a dict of content set labels and relative urls
+         @type content_set: dict(<label> : <relative_url>,)
+         @param cert_data: a dictionary of ca_cert, cert and key for this product
+         @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
+        """ 
+        if not cert_data:
+            # Nothing further can be done, exit
+            return
+        cert_files = self._write_certs_to_disk(productid, cert_data)
+        CDN_URL= config.config.get("repos", "content_url")
+        CDN_HOST = urlparse(CDN_URL).hostname
+        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'], 
+                                     cert=cert_files['cert'], key=cert_files['key'])
+        serv.connect()
+        repo_info = serv.fetch_urls(content_set)
+        
+        for label, uri in repo_info.items():
+            try:
+                repo = self.create(label, label, arch=label.split("-")[-1], 
+                                   feed="yum:" + CDN_URL + '/' + uri, cert_data=cert_data, productid=productid)
+                repo['relative_path'] = uri
+                self.update(repo)
+            except:
+                log.error("Error creating repo %s for product %s" % (label, productid))
+                continue
+                
+        serv.disconnect()
+        
+    @audit()    
+    def get_repos_by_product(self, productid):
+        """
+        Lookup available repos associated to a product id
+        @param productid: productid a candidate repo is associated.
+        @type productid: str
+        """
+        return list(self.objectdb.find({"productid" : productid}))
+        
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
@@ -566,12 +626,32 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        added_packages, added_errataids = repo_sync.sync(repo, repo_source, progress_callback)
-        log.info("Sync returned %s packages, %s errata" % (len(added_packages),
-            len(added_errataids)))
-        for p in added_packages:
+        sync_packages, sync_errataids = repo_sync.sync(repo, repo_source, progress_callback)
+        log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
+            len(sync_errataids)))
+        # We need to update the repo object in Mongo to account for
+        # package_group info added in sync call
+        self.update(repo)
+        # Remove packages that are no longer in source repo
+        for pid in repo["packages"]:
+            if pid not in sync_packages:
+                log.info("Removing package <%s> from repo <%s>" % (repo["packages"][pid], repo["id"]))
+                self.remove_package(repo["id"], repo["packages"][pid])
+        # Refresh repo object since we may have deleted some packages
+        repo = self._get_existing_repo(id)
+        for p in sync_packages.values():
             self._add_package(repo, p)
-        for eid in added_errataids:
+        # Update repo for package additions
+        self.update(repo)
+        # Determine removed errata
+        log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
+        for eid in self.errata(id):
+            if eid not in sync_errataids:
+                log.info("Removing errata %s from repo %s" % (eid, id))
+                self.delete_erratum(id, eid)
+        # Add in all errata, existing errata will be skipped
+        repo = self._get_existing_repo(id) #repo object must be refreshed
+        for eid in sync_errataids:
             self._add_erratum(repo, eid)
         self.update(repo)
 

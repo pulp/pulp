@@ -1,8 +1,7 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
-#
-# Authors: Jeff Ortel <jortel@redhat.com>
+# Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -14,27 +13,10 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
-
-import sys
-sys.path.append('../../')
 
 from pulp.server.event.dispatcher import EventDispatcher
-from pulp.messaging.consumer import EventConsumer
-from logging import INFO, basicConfig
+from pulp.server.logs import start_logging
 
-basicConfig(filename='/tmp/messaging.log', level=INFO)
-
-class MyConsumer(EventConsumer):
-    def raised(self, subject, event):
-        print 'Event (%s) "%s" raised' % (subject, event)
-
-
-def main():
-    consumer = MyConsumer('user.#')
-    #consumer = MyConsumer('user.#', 'myqueue') # durable subscriber
-    consumer.start()
-    consumer.join()
-
-if __name__ == '__main__':
-    main()
+start_logging()
+dispatcher = EventDispatcher()
+dispatcher.start()

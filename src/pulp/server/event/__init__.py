@@ -2,8 +2,6 @@
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# Authors: Jeff Ortel <jortel@redhat.com>
-#
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
 # implied, including the implied warranties of MERCHANTABILITY or FITNESS
@@ -16,25 +14,20 @@
 # in this software or its documentation.
 #
 
-import sys
-sys.path.append('../../')
 
-from pulp.server.event.dispatcher import EventDispatcher
-from pulp.messaging.consumer import EventConsumer
-from logging import INFO, basicConfig
+from threading import local as Local
 
-basicConfig(filename='/tmp/messaging.log', level=INFO)
+class EventFlags(Local):
 
-class MyConsumer(EventConsumer):
-    def raised(self, subject, event):
-        print 'Event (%s) "%s" raised' % (subject, event)
-
-
-def main():
-    consumer = MyConsumer('user.#')
-    #consumer = MyConsumer('user.#', 'myqueue') # durable subscriber
-    consumer.start()
-    consumer.join()
-
-if __name__ == '__main__':
-    main()
+    def __init__(self):
+        self.__suspended = []
+        
+    def suspended(self, subject):
+        return ( subject in self.__suspended )
+        
+    def suspend(self, subject):
+        self.__suspended.append(subject)
+        
+    def resume(self, subject):
+        if subject in self.__suspended:
+            self.__suspended.remove(subject)

@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 #
+# This Driver script simulates a product create event on the bus
+# similar to what's expected of candlepin
+# 
 # Copyright (c) 2010 Red Hat, Inc.
-#
-# Authors: Jeff Ortel <jortel@redhat.com>
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -21,31 +22,29 @@ sys.path.append('../../')
 
 from pulp.messaging.producer import EventProducer
 from pulp.server.event.dispatcher import EventDispatcher
-from time import sleep
 from logging import INFO, basicConfig
 
 basicConfig(filename='/tmp/messaging.log', level=INFO)
+# change these paths appropriately to suit your env
+CERT_FILE="/certs/nimbus_cloude_debug.crt"
+CERT_KEY="/certs/nimbus_cloude_debug.key"
+CA_CERT="/certs/cdn.redhat.com-chain.crt"
 
-def main():
-    #ed = EventDispatcher()
-    #ed.start()
+def product_driver():
+    ed = EventDispatcher()
+    ed.start()
     p = EventProducer()
-    for n in range(0, 1000):
-        d = dict(
-            id='repo%d' % n,
-            name='Repository%d' % n,
-            arch='noarch',)
-        p.send('bogus', 'bogus')
-        #p.send('user', 'user without subject')
-        #p.send('user.hello', 'user.%d' % n)
-        #p.send('user.created', '{%d} user.created' % n)
-        #p.send('user.updated', '{%d} user.updated' % n)
-        #p.send('user.deleted', '{%d} user-deleted' % n)
-        p.send('repo.created', d)
-        #p.send('repo.updated', d)
-        #p.send('repo.deleted', d)
-        p.send('product.created', d)
-        sleep(3)
+    content_set = {
+            "rhel-server" : "/content/dist/rhel/server/$releasever/$basearch/os"}
+    cert_data = {'ca' : open(CA_CERT, "rb").read(),
+                 'cert' : open(CERT_FILE, "rb").read(),
+                 'key' : open(CERT_KEY, 'rb').read()}
+    d = dict(
+        id='rhel-server',
+        content_set=content_set,
+        cert_data = cert_data)
+    p.send('product.created', d)
+    ed.stop()
 
 if __name__ == '__main__':
-    main()
+    product_driver()
