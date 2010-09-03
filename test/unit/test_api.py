@@ -328,7 +328,7 @@ class TestApi(unittest.TestCase):
                 'test-group-description')
         package = self.create_package('test_repo_packages')
         self.rapi.add_package(repo["id"], package["id"])
-        self.rapi.add_package_to_group(repo["id"], pkggroup["id"],
+        self.rapi.add_packages_to_group(repo["id"], pkggroup["id"],
                 package["name"], gtype="default")
         # Verify package is present in group
         found = self.rapi.repository('some-id')
