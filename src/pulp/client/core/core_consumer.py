@@ -15,9 +15,7 @@
 # in this software or its documentation.
 #
 
-
 import sys
-import os.path
 from M2Crypto import SSL
 import pulp.client.utils as utils
 import pulp.client.constants as constants
@@ -288,6 +286,8 @@ class consumer(BaseCore):
                 'event_type' : self.options.event_type,
                 'limit' : self.options.limit,
                 'sort' : self.options.sort,
+                'start_date' : self.options.start_date,
+                'end_date' : self.options.end_date,
             }
 
             results = self.cconn.history(consumerid, query_params)
@@ -310,8 +310,13 @@ class consumer(BaseCore):
                 # by the details rendering.
                 if entry['type_name'] == 'repo_bound' or entry['type_name'] == 'repo_unbound':
                     print(constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id']))
-                else:
-                    print('')
+                if entry['type_name'] == 'package_installed' or entry['type_name'] == 'package_uninstalled':
+                    print(constants.CONSUMER_HISTORY_PACKAGES)
+
+                    for package_nvera in entry['details']['package_nveras']:
+                        print('  %s' % package_nvera)
+
+                print('')
 
         except RestlibException, re:
             print _(" History retrieval failed for consumer [%s]" % consumerid)

@@ -82,8 +82,9 @@ Event Type            \t%-25s
 Timestamp             \t%-25s
 Originator            \t%-25s"""
 
-CONSUMER_HISTORY_REPO = """Repo ID               \t%-25s
-"""
+CONSUMER_HISTORY_REPO = """Repo ID               \t%-25s"""
+
+CONSUMER_HISTORY_PACKAGES = """Packages"""
 
 CONSUMER_HISTORY_EVENT_TYPES = {
     'consumer_created' : 'Consumer Created',
