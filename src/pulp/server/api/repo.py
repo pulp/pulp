@@ -466,14 +466,14 @@ class RepoApi(BaseApi):
             if gtype == "mandatory":
                 if pkg_name not in group["mandatory_package_names"]:
                     group["mandatory_package_names"].append(pkg_name)
-                elif gtype == "conditional":
-                    raise NotImplementedError("No support for creating conditional groups")
-                elif gtype == "optional":
-                    if pkg_name not in group["optional_package_names"]:
-                        group["optional_package_names"].append(pkg_name)
-                else:
-                    if pkg_name not in group["default_package_names"]:
-                        group["default_package_names"].append(pkg_name)
+            elif gtype == "conditional":
+                raise NotImplementedError("No support for creating conditional groups")
+            elif gtype == "optional":
+                if pkg_name not in group["optional_package_names"]:
+                    group["optional_package_names"].append(pkg_name)
+            else:
+                if pkg_name not in group["default_package_names"]:
+                    group["default_package_names"].append(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
