@@ -15,7 +15,7 @@
 # in this software or its documentation.
 #
 
-import datetime
+
 import sys
 import os.path
 from M2Crypto import SSL
@@ -27,6 +27,7 @@ from pulp.client.repolib import RepoLib
 from pulp.client.logutil import getLogger
 from pulp.client.config import Config
 from pulp.client.package_profile import PackageProfile
+from pulp.client import json_utils
 import urlparse
 log = getLogger(__name__)
 CFG = Config()
@@ -279,7 +280,7 @@ class consumer(BaseCore):
             print """+-------------------------------------------+\n    Consumer History \n+-------------------------------------------+"""
             for entry in results:
                 print constants.CONSUMER_HISTORY_ENTRY % \
-                      (entry['type_name'], entry['timestamp'], entry['originator'])
+                      (entry['type_name'], json_utils.parse_date(entry['timestamp']), entry['originator'])
                 print('')
 
         except RestlibException, re:
