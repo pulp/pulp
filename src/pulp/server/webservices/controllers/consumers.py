@@ -20,7 +20,7 @@ import logging
 import web
 
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_ASCENDING, SORT_DESCENDING
+from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
@@ -302,10 +302,13 @@ class ConsumerActions(JSONController):
 
         event_type = data.get('event_type', None)
         limit = data.get('limit', None)
-        sort = data.get('sort', SORT_DESCENDING)
+        sort = data.get('sort', None)
         start_date = data.get('start_date', None)
         end_date = data.get('end_date', None)
 
+        if sort is None:
+            sort = SORT_DESCENDING
+            
         results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
                                     sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
