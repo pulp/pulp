@@ -213,7 +213,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         self.assertRaises(PulpException, self.consumer_history_api.query, sort='foo')
 
-    def disabled_query_invalid_consumer_id(self):
+    def test_query_invalid_consumer_id(self):
         # Test
         self.assertRaises(PulpException, self.consumer_history_api.query, consumer_id='foo')
 

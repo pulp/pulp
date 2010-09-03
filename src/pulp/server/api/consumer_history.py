@@ -69,6 +69,19 @@ class ConsumerHistoryApi(BaseApi):
                              self._unique_indexes,
                              self._indexes)
 
+    def _get_consumer_collection(self):
+        '''
+        The circular dependency of requiring the consumer API causes issues, so
+        when looking up a consumer as a validation check we go directly to the consumer
+        collection. This method returns a hook to that collection.
+
+        @return: pymongo database connection to the consumer connection
+        @rtype:  ?
+        '''
+        return get_object_db('consumers',
+                             ['id'],
+                             [])
+
     # -- public api ----------------------------------------
 
     def query(self, consumer_id=None, event_type=None, limit=None, sort='descending',
@@ -108,8 +121,10 @@ class ConsumerHistoryApi(BaseApi):
         '''
 
         # Verify the consumer ID represents a valid consumer
-        # if consumer_id and not self.consumer_api.consumer(consumer_id):
-        #    raise PulpException('Invalid consumer ID [%s]' % consumer_id)
+        if consumer_id:
+            consumer_db = self._get_consumer_collection()
+            if len(list(consumer_db.find({'id' : consumer_id}))) == 0:
+                raise PulpException('Invalid consumer ID [%s]' % consumer_id)
 
         # Verify the event type is valid
         if event_type and event_type not in TYPES:
