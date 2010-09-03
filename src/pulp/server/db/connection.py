@@ -61,10 +61,10 @@ def get_object_db(name, unique_indexes=[], other_indexes=[], order=pymongo.DESCE
         raise RuntimeError('Database is not initialized')
     objdb = getattr(_database, name)
     for index in unique_indexes:
-        _log.debug('Object DB %s: adding unique index: %s' % (objdb.name, index))
+        #_log.debug('Object DB %s: adding unique index: %s' % (objdb.name, index))
         objdb.ensure_index([(index, order)], unique=True, background=True)
     for index in other_indexes:
-        _log.debug('Object DB %s: adding non-unique index: %s' % (objdb.name, index))
+        #_log.debug('Object DB %s: adding non-unique index: %s' % (objdb.name, index))
         objdb.ensure_index([(index, order)], unique=False, background=True)
     return objdb
 
