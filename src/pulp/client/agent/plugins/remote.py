@@ -64,7 +64,7 @@ class Packages:
         log.info('installing packages: %s', packageinfo)
         for info in packageinfo:
             if isinstance(info, list):
-                pkgs = yb.pkgSack.returnNewestByNameArch('.'.join(info))
+                pkgs = yb.pkgSack.returnNewestByNameArch(tuple(info))
             else:
                 pkgs = yb.pkgSack.returnNewestByName(info)
             for p in pkgs:
