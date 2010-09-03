@@ -116,6 +116,12 @@ def delete_schedule(repo):
 def _cron_command(repo):
     return 'pulp repo sync %s' % repo['id']
 
+def repos_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
+
+def package_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
+   
 # synchronization classes -----------------------------------------------------
 
 class InvalidPathError(Exception):
@@ -274,13 +280,6 @@ class BaseSynchronizer(object):
             log.error("Unable to parse updateinfo file %s for %s" % (updateinfo_xml_path, repo["id"]))
             return []
         return eids
-
-    def repos_location():
-        return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-
-    def package_location():
-        return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
-
 
 class YumSynchronizer(BaseSynchronizer):
 
