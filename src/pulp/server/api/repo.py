@@ -447,11 +447,11 @@ class RepoApi(BaseApi):
 
 
     @audit()
-    def add_package_to_group(self, repoid, groupid, pkg_name, gtype="default"):
+    def add_packages_to_group(self, repoid, groupid, pkg_names=[], gtype="default"):
         """
         @param repoid: repository id
         @param groupid: group id
-        @param pkg_name: package name
+        @param pkg_names: package names
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional"
         """
@@ -462,17 +462,18 @@ class RepoApi(BaseApi):
         group = repo["packagegroups"][groupid]
         if group["immutable"]:
             raise PulpException("Changes to immutable groups are not supported: %s" % (group["id"]))
-        if gtype == "mandatory":
-            if pkg_name not in group["mandatory_package_names"]:
-                group["mandatory_package_names"].append(pkg_name)
-        elif gtype == "conditional":
-            raise NotImplementedError("No support for creating conditional groups")
-        elif gtype == "optional":
-            if pkg_name not in group["optional_package_names"]:
-                group["optional_package_names"].append(pkg_name)
-        else:
-            if pkg_name not in group["default_package_names"]:
-                group["default_package_names"].append(pkg_name)
+        for pkg_name in pkg_names:
+            if gtype == "mandatory":
+                if pkg_name not in group["mandatory_package_names"]:
+                    group["mandatory_package_names"].append(pkg_name)
+                elif gtype == "conditional":
+                    raise NotImplementedError("No support for creating conditional groups")
+                elif gtype == "optional":
+                    if pkg_name not in group["optional_package_names"]:
+                        group["optional_package_names"].append(pkg_name)
+                else:
+                    if pkg_name not in group["default_package_names"]:
+                        group["default_package_names"].append(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 

@@ -108,8 +108,9 @@ class packagegroup(BaseCore):
                             help="Repository Label")
             self.parser.add_option("--id", dest="groupid",
                             help="Group id")
-            self.parser.add_option("--pkgname", dest="pkgname",
-                            help="Package name")
+            self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                            help="Packages to be added. \
+                                To specify multiple packages use multiple -n")
             self.parser.add_option("--type", dest="grouptype",
                             help="Type of list to add package to, example 'mandatory', 'optional', 'default'",
                             default="default")
@@ -256,19 +257,19 @@ class packagegroup(BaseCore):
         if not self.options.repoid:
             print("Repo id required. Try --help")
             sys.exit(0)
-        if not self.options.pkgname:
+        if not self.options.pnames:
             print("package name required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
             print("package group id required. Try --help")
             sys.exit(0)
         try:
-            self.pconn.add_package_to_group(self.options.repoid, 
-                    self.options.groupid, self.options.pkgname, 
+            self.pconn.add_packages_to_group(self.options.repoid,
+                    self.options.groupid, self.options.pnames,
                     self.options.grouptype)
-            print "Package [%s] added to group [%s] in repository [%s]" % \
-                    (self.options.pkgname, self.options.groupid, 
-                            self.options.repoid)
+            print "Following packages added to group [%s] in repository [%s]: \n %s" % \
+                    (self.options.groupid, self.options.repoid,
+                        self.options.pnames)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
