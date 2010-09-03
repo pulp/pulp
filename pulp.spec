@@ -171,6 +171,10 @@ fi
 
 
 %changelog
+* Fri Sep 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.57.1-1
+- 629718 - more defensive code if we have no default locale
+  (mmccune@redhat.com)
+
 * Wed Aug 25 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.57-1
 - Missed an entry in the package refactor (jason.dobies@redhat.com)
 
