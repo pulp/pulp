@@ -20,7 +20,7 @@ import logging
 import web
 
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.consumer_history import ConsumerHistoryApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_ASCENDING, SORT_DESCENDING
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
@@ -298,7 +298,16 @@ class ConsumerActions(JSONController):
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def history(self, id):
-        results = history_api.query(consumer_id=id)
+        data = self.params()
+
+        event_type = data.get('event_type', None)
+        limit = data.get('limit', None)
+        sort = data.get('sort', SORT_DESCENDING)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
+
+        results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
+                                    sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
     @JSONController.error_handler

@@ -362,7 +362,7 @@ class ConsumerConnection(PulpConnection):
         body = dict(types=types)
         return self.conn.request_post(method, params=body)
 
-    def installerrata(self, id, errataids, types=[]):
+    def installerrata(self, id, errataids, types=()):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types}
@@ -371,7 +371,7 @@ class ConsumerConnection(PulpConnection):
 
     def history(self, id):
         method = "/consumers/%s/history/" % id
-        return self.conn.request_post(method)
+        return self.conn.request_post(method, params={})
 
 
 class ConsumerGroupConnection(PulpConnection):

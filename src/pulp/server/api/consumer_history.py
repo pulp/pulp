@@ -51,9 +51,11 @@ TYPES = (TYPE_CONSUMER_CREATED, TYPE_CONSUMER_DELETED, TYPE_REPO_BOUND,
 ORIGINATOR_CONSUMER = 'consumer'
 
 # Maps user entered query sort parameters to the pymongo representation
+SORT_ASCENDING = 'ascending'
+SORT_DESCENDING = 'descending'
 SORT_DIRECTION = {
-    'ascending' : pymongo.ASCENDING,
-    'descending' : pymongo.DESCENDING,
+    SORT_ASCENDING : pymongo.ASCENDING,
+    SORT_DESCENDING : pymongo.DESCENDING,
 }
 
 

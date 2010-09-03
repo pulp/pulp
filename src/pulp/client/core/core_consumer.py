@@ -114,7 +114,7 @@ class consumer(BaseCore):
         if self.action == "history":
             # TODO: This will be flushed out with query options eventually, for now I'm
             # just getting the base functionality in place for the sprint demo
-            usage = "usage: %prog consumer history"
+            usage = "usage: %prog consumer history [OPTIONS]"
             self.setup_option_parser(usage, "", True)
 
     def _do_core(self):
