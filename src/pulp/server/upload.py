@@ -41,7 +41,7 @@ class PackageUpload:
 
     def upload(self):
         (name, version, release, epoch, arch) = self.pkginfo['nvrea']
-        pkg_path = "%s/%s/%s/%s/%s/%s" % (PACKAGE_LOCATION, name, version, release, arch, self.pkgname)
+        pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (PACKAGE_LOCATION, self.pkginfo['checksum'][:3], name, version, release, arch, self.pkgname)
         repo_path = "%s/%s" % (self.repo_dir, self.pkgname)
         
         imp_pkg = None
