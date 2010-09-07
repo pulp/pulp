@@ -39,8 +39,8 @@ class PluginLoader:
     Agent plugins loader.
     """
 
-    ROOT = '/var/lib/pulp/agent'
-    PLUGINS = 'plugins'
+    ROOT = '/var/lib/pulp'
+    PLUGINS = 'agentplugins'
 
     @classmethod
     def abspath(cls):
