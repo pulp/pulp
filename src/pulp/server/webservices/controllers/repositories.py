@@ -247,7 +247,7 @@ class RepositoryActions(AsyncController):
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
-        if repo['source']['type'] in ('yum', 'rhn'):
+        if repo['source'] is not None and repo['source']['type'] in ('yum', 'rhn'):
             task.set_progress('progress_callback', yum_rhn_progress_callback)
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
