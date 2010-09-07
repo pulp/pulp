@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.59
+Version:        0.0.60
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -173,6 +173,42 @@ fi
 
 
 %changelog
+* Tue Sep 07 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.60-1
+- Setup callbacks only for repos with source set. A feedless repo can have a
+  source as None (pkilambi@redhat.com)
+- fixing arch based pkg installs to pass in tuple to yum instead of str
+  (pkilambi@redhat.com)
+- Added date and limit support to the CLI consumer history queries
+  (jason.dobies@redhat.com)
+- fixes needed from rename of add_packages_to_group (jmatthew@redhat.com)
+- Fixed check for consumer's existence to not rely on the consumer API.
+  (jason.dobies@redhat.com)
+- Added parser call for handling JSON datetime encodings.
+  (jason.dobies@redhat.com)
+- 618820 - Fixing indentation error (skarmark@redhat.com)
+- 618820 - Adding multiple package support for packagegroup add_package
+  (skarmark@redhat.com)
+- adding apache perms to /src/pulp so lock files dont complain about perms
+  error (pkilambi@redhat.com)
+- Wired in consumer history calls to consumer API (jason.dobies@redhat.com)
+- 629718 - more defensive code if we have no default locale
+  (mmccune@redhat.com)
+- Centralized Package Location Feature: (pkilambi@redhat.com)
+- Mark messages as persistent. (jortel@redhat.com)
+- adding pulpd as a script (mmccune@redhat.com)
+- adding pulpd to setup script and making it executable (mmccune@redhat.com)
+- 629075 - Return complete NVRE for installed packages. (jortel@redhat.com)
+- Added sorting and date range query functionality (jason.dobies@redhat.com)
+- Adding a dir for curl scripts to help test ws api (jmatthew@redhat.com)
+- Protect against bind to repo that does not exist. (jortel@redhat.com)
+- Package re-sync, if a package is deleted from the source it will be removed
+  from the repo (jmatthew@redhat.com)
+- Add relative_path to repo default fields. (jortel@redhat.com)
+- Remove dead file & update repolib to use repo.relative_path instead of repo
+  id. (jortel@redhat.com)
+- make relativepath default to repoid for non product repos. This should make
+  the full path basepath + <repoid> (pkilambi@redhat.com)
+
 * Wed Sep 01 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.59-1
 - adding productid to default fields and query ability (mmccune@redhat.com)
 - Refine how re-raised (inbound) events are suppressed. (jortel@redhat.com)
