@@ -199,7 +199,8 @@ class TaskThread(TrackedThread):
     def exception_delivered(self):
         """
         Flag that an exception has been delivered to the thread and handled.
-        This will unblock the thread trying to deliver the exception.
+        This needs to be called by the task thread and will unblock the thread
+        trying to deliver the exception.
         """
         self.__exception_event.set()
 
