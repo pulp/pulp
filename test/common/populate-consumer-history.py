@@ -30,7 +30,7 @@ from pulp.server.db.model import ConsumerHistoryEvent
 
 # -- events ----------------------------------------
 
-CONSUMER_ID = 'jdob'
+CONSUMER_ID = 'demo2'
 
 EVENTS = []
 
