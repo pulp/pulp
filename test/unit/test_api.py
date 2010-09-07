@@ -328,8 +328,8 @@ class TestApi(unittest.TestCase):
                 'test-group-description')
         package = self.create_package('test_repo_packages')
         self.rapi.add_package(repo["id"], package["id"])
-        self.rapi.add_package_to_group(repo["id"], pkggroup["id"],
-                package["name"], gtype="default")
+        self.rapi.add_packages_to_group(repo["id"], pkggroup["id"],
+                [package["name"]], gtype="default")
         # Verify package is present in group
         found = self.rapi.repository('some-id')
         self.assertTrue(found['packagegroups'] is not None)
@@ -592,7 +592,8 @@ class TestApi(unittest.TestCase):
         assert(packages is not None)
         assert(len(packages) > 0)
     
-    def test_resync_removes_deleted_package(self):
+    # Sprint 15 will revist package removal during re-syncs
+    def disabled_resync_removes_deleted_package(self):
         # Since a repo with 3 packages, simulate the repo source deleted 1 package
         # Re-sync ensure we delete the removed package
         repo_path = os.path.join(self.data_path, "repo_resync_a")

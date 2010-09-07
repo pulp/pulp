@@ -73,8 +73,24 @@ Packages Effected     \t%-25s
 References            \t%-25s
 """
 
+# The quotes are intentionally placed odd on the consumer history constants to
+# allow additional details to be concatenated on to the base information. It looks
+# ugly in code but makes the actual CLI output much cleaner. So be careful when
+# dorking with these.
 CONSUMER_HISTORY_ENTRY = """
 Event Type            \t%-25s
 Timestamp             \t%-25s
-Originator            \t%-25s
-"""
+Originator            \t%-25s"""
+
+CONSUMER_HISTORY_REPO = """Repo ID               \t%-25s"""
+
+CONSUMER_HISTORY_PACKAGES = """Packages"""
+
+CONSUMER_HISTORY_EVENT_TYPES = {
+    'consumer_created' : 'Consumer Created',
+    'consumer_deleted' : 'Consumer Deleted',
+    'repo_bound' : 'Repo Bound',
+    'repo_unbound' : 'Repo Unbound',
+    'package_installed' : 'Package Installed',
+    'package_uninstalled' : 'Package Uninstalled',
+}

@@ -90,7 +90,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(repo["group_gz_xml_path"] == "")
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
-        self.rapi.add_package_to_group(repo["id"], pkg_group["id"], "test_package_name")
+        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["test_package_name"])
         # Update repo object so we can test that group_xml_path was set
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["group_xml_path"] != "")
@@ -368,8 +368,8 @@ class TestComps(unittest.TestCase):
         # Verify we cannot add a package
         caught = False
         try:
-            self.rapi.add_package_to_group(repo["id"], "admin-tools", 
-                "newPackage", gtype="default")
+            self.rapi.add_packages_to_group(repo["id"], "admin-tools", 
+                ["newPackage"], gtype="default")
         except PulpException, e:
             caught = True
         self.assertTrue(caught)
@@ -386,8 +386,8 @@ class TestComps(unittest.TestCase):
         # Verify if we create a new package group, we can add/delete packages
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
-        self.rapi.add_package_to_group(repo["id"], pkg_group["id"], 
-                "test_package_name", gtype="default")
+        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], 
+                ["test_package_name"], gtype="default")
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
         self.assertTrue("test_package_name" in found["default_package_names"])

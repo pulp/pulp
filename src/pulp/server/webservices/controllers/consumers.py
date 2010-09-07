@@ -14,13 +14,14 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import datetime
 import itertools
 import logging
 
 import web
 
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.consumer_history import ConsumerHistoryApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
@@ -298,7 +299,28 @@ class ConsumerActions(JSONController):
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def history(self, id):
-        results = history_api.query(consumer_id=id)
+        data = self.params()
+
+        event_type = data.get('event_type', None)
+        limit = data.get('limit', None)
+        sort = data.get('sort', None)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
+
+        if sort is None:
+            sort = SORT_DESCENDING
+
+        if limit:
+            limit = int(limit)
+
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+
+        results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
+                                    sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
     @JSONController.error_handler

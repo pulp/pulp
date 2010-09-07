@@ -38,9 +38,6 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
-REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-PACKAGE_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
-
 # sync api --------------------------------------------------------------------
 
 def yum_rhn_progress_callback(info):
@@ -119,6 +116,12 @@ def delete_schedule(repo):
 def _cron_command(repo):
     return 'pulp repo sync %s' % repo['id']
 
+def repos_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
+
+def package_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
+   
 # synchronization classes -----------------------------------------------------
 
 class InvalidPathError(Exception):
@@ -278,7 +281,6 @@ class BaseSynchronizer(object):
             return []
         return eids
 
-
 class YumSynchronizer(BaseSynchronizer):
 
     def sync(self, repo, repo_source, progress_callback=None):
@@ -290,12 +292,12 @@ class YumSynchronizer(BaseSynchronizer):
 
         yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 1, cacert=cacert, clicert=clicert, 
-                                clikey=clikey, packages_location=PACKAGE_LOCATION)
+                                clikey=clikey, packages_location=package_location())
         relative_path = repo['relative_path']
         if relative_path:
-            store_path = "%s/%s" % (REPOS_LOCATION, relative_path)
+            store_path = "%s/%s" % (repos_location(), relative_path)
         else:
-            store_path = "%s/%s" % (REPOS_LOCATION, repo['id'])
+            store_path = "%s/%s" % (repos_location(), repo['id'])
         yfetch.fetchYumRepo(store_path, callback=progress_callback)
 
         return store_path
@@ -309,7 +311,7 @@ class LocalSynchronizer(BaseSynchronizer):
         pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (pkg_dir, repo['id']))
         try:
-            repo_dir = "%s/%s" % (REPOS_LOCATION, repo['id'])
+            repo_dir = "%s/%s" % (repos_location(), repo['id'])
             if not os.path.exists(pkg_dir):
                 raise InvalidPathError("Path %s is invalid" % pkg_dir)
             if repo['use_symlinks']:
@@ -326,9 +328,9 @@ class LocalSynchronizer(BaseSynchronizer):
                         if count % 500 == 0:
                             log.debug("Working on %s/%s" % (count, len(pkglist)))
                         pkg_info = pulp.server.util.get_rpm_information(pkg)
-                        pkg_location = "%s/%s/%s/%s/%s/%s" % (PACKAGE_LOCATION, pkg_info.name, pkg_info.version, 
+                        pkg_location = "%s/%s/%s/%s/%s/%s" % (package_location(), pkg_info.name, pkg_info.version, 
                                                                 pkg_info.release, pkg_info.arch, os.path.basename(pkg))
-                        
+                        log.debug('Expected Package Location: %s' % pkg_location) 
                         if not pulp.server.util.check_package_exists(pkg_location,\
                                                  pulp.server.util.get_file_checksum(filename=pkg)):
                             log.error("package doesn't exist. \

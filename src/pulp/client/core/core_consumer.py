@@ -15,9 +15,7 @@
 # in this software or its documentation.
 #
 
-import datetime
 import sys
-import os.path
 from M2Crypto import SSL
 import pulp.client.utils as utils
 import pulp.client.constants as constants
@@ -27,6 +25,7 @@ from pulp.client.repolib import RepoLib
 from pulp.client.logutil import getLogger
 from pulp.client.config import Config
 from pulp.client.package_profile import PackageProfile
+from pulp.client import json_utils
 import urlparse
 log = getLogger(__name__)
 CFG = Config()
@@ -111,10 +110,18 @@ class consumer(BaseCore):
                                        help="Consumer Identifier")
 
         if self.action == "history":
-            # TODO: This will be flushed out with query options eventually, for now I'm
-            # just getting the base functionality in place for the sprint demo
-            usage = "usage: %prog consumer history"
+            usage = "usage: %prog consumer history [OPTIONS]"
             self.setup_option_parser(usage, "", True)
+            self.parser.add_option('--event_type', dest='event_type',
+                                   help='Limits displayed history entries to the given type')
+            self.parser.add_option('--limit', dest='limit',
+                                   help='Limits displayed history entries to the given amount (must be greater than zero)')
+            self.parser.add_option('--sort', dest='sort',
+                                   help='Indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp')
+            self.parser.add_option('--start_date', dest='start_date',
+                                   help='Only return entries that occur after the given date (format: mm-dd-yyyy)')
+            self.parser.add_option('--end_date', dest='end_date',
+                                   help='Only return entries that occur before the given date (format: mm-dd-yyyy)')
 
     def _do_core(self):
         if self.action == "create":
@@ -274,12 +281,41 @@ class consumer(BaseCore):
     def _history(self):
         consumerid = self.getConsumer()
         try:
-            results = self.cconn.history(consumerid)
+            # Assemble the query parameters
+            query_params = {
+                'event_type' : self.options.event_type,
+                'limit' : self.options.limit,
+                'sort' : self.options.sort,
+                'start_date' : self.options.start_date,
+                'end_date' : self.options.end_date,
+            }
+
+            results = self.cconn.history(consumerid, query_params)
 
             print """+-------------------------------------------+\n    Consumer History \n+-------------------------------------------+"""
             for entry in results:
+
+                # Attempt to translate the programmatic event type name to a user readable one
+                if constants.CONSUMER_HISTORY_EVENT_TYPES.has_key(entry['type_name']):
+                    event_type = constants.CONSUMER_HISTORY_EVENT_TYPES[entry['type_name']]
+                else:
+                    event_type = entry['type_name']
+
+                # Common event details
                 print constants.CONSUMER_HISTORY_ENTRY % \
-                      (entry['type_name'], entry['timestamp'], entry['originator'])
+                      (event_type, json_utils.parse_date(entry['timestamp']), entry['originator'])
+
+                # Based on the type of event, add on the event specific details. Otherwise,
+                # just throw an empty line to account for the blank line that's added
+                # by the details rendering.
+                if entry['type_name'] == 'repo_bound' or entry['type_name'] == 'repo_unbound':
+                    print(constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id']))
+                if entry['type_name'] == 'package_installed' or entry['type_name'] == 'package_uninstalled':
+                    print(constants.CONSUMER_HISTORY_PACKAGES)
+
+                    for package_nvera in entry['details']['package_nveras']:
+                        print('  %s' % package_nvera)
+
                 print('')
 
         except RestlibException, re:

@@ -225,7 +225,7 @@ class RepositoryActions(AsyncController):
         'upload',
         'add_package',
         'get_package',
-        'add_package_to_group',
+        'add_packages_to_group',
         'delete_package_from_group',
         'delete_packagegroup',
         'create_packagegroup',
@@ -247,7 +247,7 @@ class RepositoryActions(AsyncController):
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
-        if repo['source']['type'] in ('yum', 'rhn'):
+        if repo['source'] is not None and repo['source']['type'] in ('yum', 'rhn'):
             task.set_progress('progress_callback', yum_rhn_progress_callback)
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
@@ -292,7 +292,7 @@ class RepositoryActions(AsyncController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def add_package_to_group(self, id):
+    def add_packages_to_group(self, id):
         """
         Add a package to an existing package group
         @param id: repository id
@@ -301,14 +301,14 @@ class RepositoryActions(AsyncController):
         p = self.params()
         if "groupid" not in p:
             return self.not_found('No groupid specified')
-        if "name" not in p:
+        if "packagenames" not in p:
             return self.not_found('No package name specified')
         groupid = p["groupid"]
-        pkg_name = p["name"]
+        pkg_names = p.get('packagenames', [])
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(api.add_package_to_group(id, groupid, pkg_name, gtype))
+        return self.ok(api.add_packages_to_group(id, groupid, pkg_names, gtype))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

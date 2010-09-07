@@ -115,9 +115,11 @@ class package(BaseCore):
             sys.exit(0)
         try:
             if self.options.consumergroupid:
-                print self.cgconn.installpackages(self.options.consumergroupid, self.options.pnames)
+                pkgs = self.cgconn.installpackages(self.options.consumergroupid, self.options.pnames)
+                print("Successfully Installed Packages %s on consumergroup [%s]" % (pkgs, self.options.consumergroupid))
             else:     
-                print self.cconn.installpackages(self.options.consumerid, self.options.pnames)
+                pkgs = self.cconn.installpackages(self.options.consumerid, self.options.pnames)
+                print("Successfully Installed Packages %s on consumer [%s]" % (pkgs, self.options.consumerid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
