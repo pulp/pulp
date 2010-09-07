@@ -19,6 +19,7 @@ import inspect
 import logging
 import threading
 import time
+from threading import _get_ident
 
 # globals ---------------------------------------------------------------------
 
@@ -73,9 +74,27 @@ class TrackedThread(_Thread):
         _thread_tree.setdefault(parent, []).append(self)
         return super(TrackedThread, self).start()
 
+
+class DummyTrackedThread(TrackedThread):
+    def __init__(self):
+        TrackedThread.__init__(self, name=threading._newname('Dummy-%d'))
+        del self._Thread__block
+        self._Thread__started.set()
+        self._set_ident()
+        threading._active_limbo_lock.acquire()
+        threading._active[threading._get_ident()] = self
+        threading._active_limbo_lock.release()
+
+    def _set_daemon(self):
+        return True
+
+    def join(self, timeout=None):
+        assert False
+
 # monkey patch the threading module in order to track threads
 # this allows us to cancel tasks that have spawned threads of their own
 threading.Thread = TrackedThread
+threading._DummyThread = DummyTrackedThread
 
 
 def get_descendants(thread):
@@ -205,6 +224,7 @@ class TaskThread(TrackedThread):
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
                                (exc_type.__name__, str(self.ident), e.message))
                     break
+        remove_subtree(self)
         # then kill and wait for the task thread
         while not self.__exception_event.is_set():
             try:
