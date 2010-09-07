@@ -214,7 +214,7 @@ class Dispatcher:
         log.info('dispatching:%s', rmi)
         return rmi()
 
-    def register(self, *classes):
+    def register(self, *classes, **aliases):
         """
         Register classes exposed as RMI targets.
         @param classes: A list of classes
@@ -222,6 +222,8 @@ class Dispatcher:
         @return self
         @rtype: L{Dispatcher}
         """
+        for alias,cls in aliases.items():
+            self.classes[alias] = cls
         for cls in classes:
             self.classes[cls.__name__] = cls
         return self

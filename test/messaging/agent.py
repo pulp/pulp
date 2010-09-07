@@ -22,7 +22,7 @@ sys.path.append('../../')
 from time import sleep
 from pulp.messaging import Queue
 from pulp.messaging.base import Agent as Base
-from pulp.messaging.decorators import remote, remotemethod
+from pulp.messaging.decorators import *
 from pulp.messaging.consumer import RequestConsumer
 from pulp.messaging.broker import Broker
 from logging import INFO, basicConfig
@@ -30,12 +30,14 @@ from logging import INFO, basicConfig
 basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 @remote
+@alias(name=['repolib'])
 class RepoLib:
     @remotemethod
     def update(self):
         print 'Repo updated'
 
 @remote
+@alias('dog')
 class Dog:
     @remotemethod
     def bark(self, words):

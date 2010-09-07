@@ -18,10 +18,12 @@ Agent base classes.
 """
 
 from pulp.messaging import *
+from pulp.messaging.stub import Stub
 from pulp.messaging.decorators import Remote
 from pulp.messaging.dispatcher import Dispatcher
 from pulp.messaging.window import Window
 from pulp.messaging.policy import *
+from new import classobj
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -44,7 +46,7 @@ class Agent:
         @type consumer: L{pulp.messaging.Consumer}
         """
         dispatcher = Dispatcher()
-        dispatcher.register(*Remote.classes)
+        dispatcher.register(*Remote.classes, **Remote.aliases)
         consumer.start(dispatcher)
         self.consumer = consumer
 
@@ -82,7 +84,6 @@ class Container:
         self.__stubs = []
         self.__options.update(options)
         self.__setmethod(producer)
-        self.__addstubs()
 
     def __setmethod(self, producer):
         """
@@ -97,17 +98,6 @@ class Container:
         else:
             timeout = int(self.__options.timeout)
             self.__options.method = Synchronous(producer, timeout)
-
-    def __addstubs(self):
-        """
-        Add stubs found in the I{stubs} dictionary.
-        Each is added as an attribute matching the dictionary key.
-        """
-        destination = self.__destination()
-        for ns, sclass in Remote.stubs.items():
-            stub = sclass(destination, self.__options)
-            setattr(self, ns, stub)
-            self.__stubs.append(stub)
 
     def __destination(self):
         """
@@ -134,6 +124,15 @@ class Container:
              or self.__options.async ):
             return True
         return isinstance(self.__id, (list,tuple))
+    
+    def __getattr__(self, name):
+        """
+        Add stubs found in the I{stubs} dictionary.
+        Each is added as an attribute matching the dictionary key.
+        """
+        destination = self.__destination()
+        subclass = classobj(name, (Stub,), {})
+        return subclass(destination, self.__options)
 
     def __str__(self):
         return '{%s} opt:%s' % (self.__id, str(self.__options))
