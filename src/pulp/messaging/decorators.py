@@ -20,12 +20,12 @@ Provides decorator classes & funcitons.
 class Remote:
     """
     @cvar classes: A list of remoted classes.
+    @cvar aliases: A list of class aliases.
     @cvar methods: A list of remoted methods.
-    @cvar stubs: A dict of stubs.
     """
     classes = []
+    aliases = {}
     methods = []
-    stubs = {}
 
 
 def remote(cls):
@@ -36,6 +36,26 @@ def remote(cls):
     """
     Remote.classes.append(cls)
     return cls
+
+def alias(name=[]):
+    """
+    @param name: The aliased name.
+    @type name: (str|[str,])
+    """
+    def decorator(cls):
+        """
+        Decorator used to register remote class synonyms.
+        @param cls: A class to register.
+        @type cls: python class.
+        """
+        if isinstance(name, (list,tuple)):
+            aliases = name
+        else:
+            aliases = (name,)
+        for alias in aliases:
+            Remote.aliases[alias] = cls
+        return cls
+    return decorator
 
 def remotemethod(fn):
     """
@@ -57,14 +77,3 @@ def mayinvoke(im):
     @rtype: bool
     """
     return im.im_func in Remote.methods
-
-def stub(ns):
-    """
-    Decorator used to register sub classes.
-    @param ns: The stub namespace.
-    @type ns: str.
-    """
-    def decorator(cls):
-        Remote.stubs[ns] = cls
-        return cls
-    return decorator

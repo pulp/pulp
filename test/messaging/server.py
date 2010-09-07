@@ -20,8 +20,6 @@ import sys
 sys.path.append('../../')
 
 from pulp.messaging import Queue
-from pulp.messaging.stub import Stub
-from pulp.messaging.decorators import stub
 from pulp.messaging.base import Container
 from pulp.messaging.producer import Producer
 from pulp.messaging.window import *
@@ -34,14 +32,6 @@ basicConfig(filename='/tmp/messaging.log', level=INFO)
 
 log = getLogger(__name__)
 
-
-@stub('repolib')
-class RepoLib(Stub):
-    pass
-
-@stub('dog')
-class Dog(Stub):
-    pass
 
 
 class Agent(Container):
@@ -59,17 +49,20 @@ class Agent(Container):
 
 
 def demo(agent):
-    print agent.dog.bark('hello')
-    print agent.dog.wag(3)
-    print agent.dog.bark('hello again')
-    print agent.repolib.update()
+    dog = agent.Dog()
+    repolib = agent.RepoLib()
+    print agent.dog.bark('RUF')
+    print dog.bark('hello')
+    print dog.wag(3)
+    print dog.bark('hello again')
+    print repolib.update()
     try:
-        print agent.repolib.updated()
+        print repolib.updated()
     except Exception, e:
         log.info('failed:', exc_info=True)
         print e
     try:
-        print agent.dog.notpermitted()
+        print dog.notpermitted()
     except Exception, e:
         log.info('failed:', exc_info=True)
         print e
@@ -107,15 +100,16 @@ if __name__ == '__main__':
 
     # future
     print 'maintenance window'
+    dog = agent.Dog()
 
     # group 2
     print 'group 2'
     begin = later(seconds=20)
     window = Window(begin=begin, minutes=10)
     opts = dict(window=window, any='group 2')
-    print agent.dog.bark('hello', **opts)
-    print agent.dog.wag(3, **opts)
-    print agent.dog.bark('hello again', **opts)
+    print dog.bark('hello', **opts)
+    print dog.wag(3, **opts)
+    print dog.bark('hello again', **opts)
 
     # group 1
 
@@ -123,8 +117,8 @@ if __name__ == '__main__':
     begin = later(seconds=10)
     window = Window(begin=begin, minutes=10)
     opts = dict(window=window, any='group 1')
-    print agent.dog.bark('hello', **opts)
-    print agent.dog.wag(3, **opts)
-    print agent.dog.bark('hello again', **opts)
+    print dog.bark('hello', **opts)
+    print dog.wag(3, **opts)
+    print dog.bark('hello again', **opts)
 
     agent = None

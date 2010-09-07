@@ -21,32 +21,9 @@ on the agent.
 """
 
 from pulp.messaging.broker import Broker
-from pulp.messaging.stub import Stub
-from pulp.messaging.decorators import stub
 from pulp.messaging.base import Container
 from pulp.messaging.producer import Producer
 from pulp.server import config
-
-
-@stub('admin')
-class AgentAdmin(Stub):
-    pass
-
-@stub('repo')
-class Repo(Stub):
-    pass
-
-@stub('packages')
-class Packages(Stub):
-    pass
-
-@stub('packagegroups')
-class PackageGroups(Stub):
-    pass
-
-@stub('shell')
-class Shell(Stub):
-    pass
 
 
 class Agent(Container):

@@ -170,7 +170,8 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        repoids = consumer.setdefault('repoids', [])
+        repoids = consumer["repoids"] #.  setdefault('repoids', [])
+        log.error("Consumer repos %s" % repoids)
         if repoid not in repoids:
             return
         repoids.remove(repoid)

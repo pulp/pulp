@@ -21,7 +21,7 @@ import os
 from pulp.client import *
 from pulp.client.repolib import RepoLib
 from pulp.client.config import Config
-from pulp.messaging.decorators import remote, remotemethod
+from pulp.messaging.decorators import *
 from yum import YumBase
 from logging import getLogger
 
@@ -29,6 +29,7 @@ log = getLogger(__name__)
 
 
 @remote
+@alias(name=['RepoLib', 'repolib'])
 class Repo:
     """
     Pulp (pulp.repo) yum repository object.
@@ -46,6 +47,7 @@ class Repo:
 
 
 @remote
+@alias(name='packages')
 class Packages:
     """
     Package management object.
@@ -75,6 +77,7 @@ class Packages:
         return installed
 
 @remote
+@alias(name='packagegroups')
 class PackageGroups:
     """
     PackageGroup management object
@@ -96,6 +99,7 @@ class PackageGroups:
         yb.processTransaction()
 
 @remote
+@alias(name='admin')
 class AgentAdmin:
 
     @remotemethod
@@ -110,6 +114,7 @@ class AgentAdmin:
 
 
 @remote
+@alias(name='shell')
 class Shell:
 
     @remotemethod

@@ -121,3 +121,6 @@ class Stub:
         """
         cn = self.__class__.__name__
         return Method(cn, name, self)
+
+    def __call__(self):
+        return self
