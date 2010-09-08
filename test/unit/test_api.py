@@ -585,7 +585,7 @@ class TestApi(unittest.TestCase):
         self.rapi.sync(repo['id'])
         
         # Check that local storage has dir and rpms
-        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/' + repo['id'])
+        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/repos/' + repo['id'])
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
