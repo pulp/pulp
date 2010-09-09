@@ -140,13 +140,13 @@ class RepoApi(BaseApi):
                 raise PulpException("Error storing certificate file %s " % key)
         return cert_files
     
-    @audit(params=['productid', 'content_set'])
+    @audit(params=['groupid', 'content_set'])
     def create_product_repo(self, content_set, cert_data, groupid=None):
         """
          Creates a repo associated to a product. Usually through an event raised
          from candlepin
-         @param productid: A product the candidate repo should be associated with.
-         @type productid: str
+         @param groupid: A product the candidate repo should be associated with.
+         @type groupid: str
          @param content_set: a dict of content set labels and relative urls
          @type content_set: dict(<label> : <relative_url>,)
          @param cert_data: a dictionary of ca_cert, cert and key for this product
@@ -177,13 +177,13 @@ class RepoApi(BaseApi):
         serv.disconnect()
         
     @audit()    
-    def get_repos_by_product(self, productid):
+    def get_repos_by_product(self, groupid):
         """
-        Lookup available repos associated to a product id
-        @param productid: productid a candidate repo is associated.
-        @type productid: str
+        Lookup available repos associated to a group id
+        @param groupid: groupid a candidate repo is associated.
+        @type groupid: str
         """
-        return list(self.objectdb.find({"productid" : productid}))
+        return list(self.objectdb.find({"groupid" : groupid}))
         
     @audit()
     def delete(self, id):
