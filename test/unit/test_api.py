@@ -170,6 +170,30 @@ class TestApi(unittest.TestCase):
         assert(found is not None)
         assert(found['id'] == 'some-id')
         
+    def test_repository_with_groupid(self):
+        repo = self.rapi.create('some-id','some name', \
+            'i386', 'yum:http://example.com/mypath', groupid="testgroup")
+        found = self.rapi.repository('some-id')
+        assert(found is not None)
+        assert(found['id'] == 'some-id')
+        assert(found['groupid'] == ["testgroup"])
+        
+    def test_repository_with_relativepath(self):
+        repo = self.rapi.create('some-id-mypath','some name', \
+            'i386', 'yum:http://example.com/mypath', relative_path="/mypath/")
+        found = self.rapi.repository('some-id-mypath')
+        assert(found is not None)
+        assert(found['id'] == 'some-id-mypath')
+        assert(found['relative_path'] == "/mypath/")
+        
+        # default path
+        repo = self.rapi.create('some-id-default-path','some name', \
+            'i386', 'yum:http://example.com/mypath')
+        found = self.rapi.repository('some-id-default-path')
+        assert(found is not None)
+        assert(found['id'] == 'some-id-default-path')
+        assert(found['relative_path'] == "/mypath")
+        
     def test_consumer_group(self):
         print "Consumer group tests:"
         cg = self.cgapi.create('some-id','some description')

@@ -89,7 +89,7 @@ class ProductEvent(EventHandler):
         content_set = event['content_set']
         cert_data   = event['cert_data']
         log.error("Repo event data %s %s %s" % (productid, content_set, cert_data))
-        self.rapi.create_product_repo(content_set, cert_data, productid)
+        self.rapi.create_product_repo(content_set, cert_data, groupid=productid)
 
     @inbound(action='updated')
     def updated(self, event):

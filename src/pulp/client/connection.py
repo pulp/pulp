@@ -172,7 +172,8 @@ class RepoConnection(PulpConnection):
     Connection class to access repo specific calls
     """
     def create(self, id, name, arch, feed=None, symlinks=False,
-               sync_schedule=None, cert_data=None):
+               sync_schedule=None, cert_data=None, relative_path=None,
+               groupid=None):
         method = "/repositories/"
         repodata = {"id"   : id,
                     "name" : name,
@@ -180,7 +181,9 @@ class RepoConnection(PulpConnection):
                     "feed" : feed,
                     "use_symlinks" : symlinks,
                     "sync_schedule" : sync_schedule,
-                    "cert_data"     : cert_data}
+                    "cert_data"     : cert_data,
+                    "relative_path" : relative_path,
+                    "groupid"       : groupid}
         return self.conn.request_put(method, params=repodata)
 
     def repository(self, id, fields=None):
