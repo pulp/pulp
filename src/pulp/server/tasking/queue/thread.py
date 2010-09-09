@@ -22,8 +22,11 @@ import time
 
 # globals ---------------------------------------------------------------------
 
+# threading classes, tracked here for monkey-patching
 _Thread = threading.Thread
+_DummyThread = threading._DummyThread
 
+# tracked thread descendant tree
 _thread_tree = {}
 
 _log = logging.getLogger(__name__)
@@ -37,9 +40,10 @@ class DRLock(object):
     """
     def __init__(self):
         self.__lock = threading.RLock()
+        # inherit some of the lock's api methods
         self._is_owned = self.__lock._is_owned
-        #self._acquire_restore = self.__lock._acquire_restore
-        #self._release_save = self.__lock._release_save
+        self._acquire_restore = self.__lock._acquire_restore
+        self._release_save = self.__lock._release_save
 
     def __repr__(self):
         return repr(self.__lock)
@@ -55,6 +59,8 @@ class DRLock(object):
         _log.debug('Thread %s called release' % threading.current_thread())
         self.__lock.release()
         _log.debug('Lock %s RELEASED' % repr(self))
+
+    # magic methods used with 'with' block
 
     __enter__ = acquire
 
@@ -77,30 +83,19 @@ class TrackedThread(_Thread):
         return super(TrackedThread, self).start()
 
 
-class DummyTrackedThread(TrackedThread):
+class _DummyTrackedThread(TrackedThread, _DummyThread):
     """
     Derived dummy thread class that records the thread hierarchy whenever this
     thread is started.
     """
     def __init__(self):
-        TrackedThread.__init__(self, name=threading._newname('Dummy-%d'))
-        del self._Thread__block
-        self._Thread__started.set()
-        self._set_ident()
-        threading._active_limbo_lock.acquire()
-        threading._active[threading._get_ident()] = self
-        threading._active_limbo_lock.release()
+        _DummyThread.__init__(self)
+        # XXX may need to set _set_daemon and join method to _DummyThread's
 
-    def _set_daemon(self):
-        return True
-
-    def join(self, timeout=None):
-        assert False
-
-# monkey patch the threading module in order to track threads
+# monkey-patch the threading module in order to track threads
 # this allows us to cancel tasks that have spawned threads of their own
 threading.Thread = TrackedThread
-threading._DummyThread = DummyTrackedThread
+threading._DummyThread = _DummyTrackedThread
 
 
 def get_descendants(thread):
@@ -120,12 +115,19 @@ def get_descendants(thread):
 
 
 def remove_subtree(thread):
+    """
+    Remove the subtree of threads rooted at the passed in thread.
+    @type thread: L{TrackedThread} instance
+    @param thread: root of subtree
+    @raise RuntimeError: if thread is not an instance of TrackedThread
+    @return: number of threads removed
+    """
     if not isinstance(thread, TrackedThread):
         raise RuntimeError('Cannot clear subtree of an untracked thread')
     descendents = _thread_tree.pop(thread, [])
     for d in descendents:
         descendents.extend(_thread_tree.pop(d, []))
-    return len(descendents)
+    return len(descendents) + 1
 
 # thread interruption api -----------------------------------------------------
 
@@ -217,6 +219,7 @@ class TaskThread(TrackedThread):
         """
         self.__exception_event.set()
 
+    # XXX deprecated call with crappy name
     exception_event = exception_delivered
 
     def raise_exception(self, exc_type):
