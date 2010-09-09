@@ -18,12 +18,14 @@ Consumer history related API methods.
 '''
 
 # Python
+import datetime
 import logging
 
 # 3rd Party
 import pymongo
 
 # Pulp
+from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
@@ -292,3 +294,25 @@ class ConsumerHistoryApi(BaseApi):
         details = {'package_nveras' : package_nveras}
         event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PACKAGE_UNINSTALLED, details)
         self.insert(event)
+
+    def cull_history(self, lifetime):
+        '''
+        Deletes all consumer history entries that are older than the given lifetime.
+
+        @param lifetime: length in days; history entries older than this many days old
+                         are deleted in this call
+        @type  lifetime: L{datetime.timedelta}
+        '''
+        now = datetime.datetime.now()
+        spec = {'timestamp': {'$lt': now - lifetime}}
+        self.objectdb.remove(spec, safe=False)
+
+    def _get_lifetime(self):
+        '''
+        Returns the configured maximum lifetime for consumer history entries.
+
+        @return: time in days
+        @rtype:  L{datetime.timedelta}
+        '''
+        days = config.config.getint('consumer_history', 'lifetime')
+        return datetime.timedelta(days=days)
