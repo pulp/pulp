@@ -39,7 +39,7 @@ default_fields = [
     'arch', 
     'sync_schedule', 
     'use_symlinks', 
-    'productid',
+    'groupid',
     'relative_path',]
 
 # restful controllers ---------------------------------------------------------
@@ -53,7 +53,7 @@ class Repositories(JSONController):
         List all available repositories.
         @return: a list of all available repositories
         """
-        valid_filters = ['id', 'name', 'arch', 'productid']
+        valid_filters = ['id', 'name', 'arch', 'groupid', 'relative_path']
 
         filters = self.filters(valid_filters)
         spec = mongo.filters_to_re_spec(filters)
@@ -86,7 +86,9 @@ class Repositories(JSONController):
                           feed=repo_data.get('feed', None),
                           symlinks=repo_data.get('use_symlinks', False),
                           sync_schedule=repo_data.get('sync_schedule', None),
-                          cert_data=repo_data.get('cert_data', None))
+                          cert_data=repo_data.get('cert_data', None),
+                          relative_path = repo_data.get('relative_path', None),
+                          groupid = repo_data.get('groupid', None),)
 
         path = http.extend_uri_path(repo.id)
         repo['uri_ref'] = path

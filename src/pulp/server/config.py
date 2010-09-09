@@ -35,6 +35,9 @@ _default_values = {
         'lifetime': '90',
         'backups': '4',
     },
+    'consumer_history': {
+        'lifetime': '180', # in days
+    },
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',

@@ -80,6 +80,11 @@ class repo(BaseCore):
             self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
                            help="Use symlinks instead of copying bits locally. \
                             Applicable for local syncs")
+            self.parser.add_option("--relativepath", dest="relativepath",
+                           help="Relative path where the repo is stored and exposed to clients.\
+                                 This defaults to feed path if not specified.")
+            self.parser.add_option("--groupid", dest="groupid",
+                           help="A group to which the repo belongs.This is just a string identifier.")
         if self.action == "sync":
             usage = "repo sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -138,10 +143,12 @@ class repo(BaseCore):
         if not self.options.arch:
             self.options.arch = "noarch"
 
-        symlinks = False
-        if self.options.symlinks:
-            symlinks = self.options.symlinks
-
+        symlinks = self.options.symlinks or False
+            
+        relative_path = self.options.relativepath or None
+            
+        groupid = self.options.groupid or None
+        
         cert_data = None
         if self.options.cacert and self.options.cert and self.options.key:
             cert_data = {"ca" : utils.readFile(self.options.cacert),
@@ -151,7 +158,8 @@ class repo(BaseCore):
         try:
             repo = self.pconn.create(self.options.id, self.options.name, \
                                      self.options.arch, self.options.feed, \
-                                     symlinks, self.options.schedule, cert_data=cert_data)
+                                     symlinks, self.options.schedule, cert_data=cert_data, \
+                                     relative_path=relative_path, groupid=groupid)
             print _(" Successfully created Repo [ %s ]" % repo['id'])
         except RestlibException, re:
             log.error("Error: %s" % re)

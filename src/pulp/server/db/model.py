@@ -55,7 +55,7 @@ class Repo(Base):
         self.cert = None
         self.key  = None
         self.errata = {}
-        self.productid = []
+        self.groupid = [] # this is productid in kalpana terms
         self.relative_path = None
         
     def get_repo_source(self):

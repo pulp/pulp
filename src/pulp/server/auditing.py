@@ -18,6 +18,7 @@ import datetime
 import functools
 import inspect
 import logging
+import os
 import sys
 import traceback
 from pprint import pformat
@@ -340,7 +341,7 @@ def _check_crontab():
     if it doesn't.
     """
     tab = CronTab()
-    cmd = 'python %s' % __file__
+    cmd = 'python %s' % os.path.abspath(__file__)
     if tab.find_command(cmd):
         return
     schedule = '0,30 * * * *'
@@ -356,7 +357,7 @@ def _clear_crontab():
     it if it does.
     """
     tab = CronTab()
-    cmd = 'python %s' % __file__
+    cmd = 'python %s' % os.path.abspath(__file__)
     if not tab.find_command(cmd):
         return
     tab.remove_all(cmd)
@@ -365,7 +366,7 @@ def _clear_crontab():
 
 def _get_lifetime():
     """
-    Get the configured auditing lifeteime as a datetime.timedelta instance.
+    Get the configured auditing lifetime as a datetime.timedelta instance.
     @return: dateteime.timedelta instance
     """
     days = config.config.getint('auditing', 'lifetime')

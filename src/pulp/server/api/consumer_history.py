@@ -18,13 +18,17 @@ Consumer history related API methods.
 '''
 
 # Python
+import datetime
 import logging
+import os
 
 # 3rd Party
 import pymongo
 
 # Pulp
+from pulp.server import config
 from pulp.server.api.base import BaseApi
+from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
 from pulp.server.pexceptions import PulpException
@@ -292,3 +296,63 @@ class ConsumerHistoryApi(BaseApi):
         details = {'package_nveras' : package_nveras}
         event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PACKAGE_UNINSTALLED, details)
         self.insert(event)
+
+    def cull_history(self, lifetime):
+        '''
+        Deletes all consumer history entries that are older than the given lifetime.
+
+        @param lifetime: length in days; history entries older than this many days old
+                         are deleted in this call
+        @type  lifetime: L{datetime.timedelta}
+        '''
+        now = datetime.datetime.now()
+        spec = {'timestamp': {'$lt': now - lifetime}}
+        self.objectdb.remove(spec, safe=False)
+
+    def _get_lifetime(self):
+        '''
+        Returns the configured maximum lifetime for consumer history entries.
+
+        @return: time in days
+        @rtype:  L{datetime.timedelta}
+        '''
+        days = config.config.getint('consumer_history', 'lifetime')
+        return datetime.timedelta(days=days)
+
+def _check_crontab():
+    '''
+    Check to see that the cull consumer history events crontab entry exists, adding it
+    if it doesn't.
+    '''
+    tab = CronTab()
+    cmd = 'python %s' % os.path.abspath(__file__)
+    if tab.find_command(cmd):
+        return
+    schedule = '0 1 * * *'
+    entry = tab.new(cmd, 'cull consumer history events')
+    entry.parse('%s %s' % (schedule, cmd))
+    tab.write()
+    LOG.info('Added crontab entry for culling consumer history events')
+
+def _clear_crontab():
+    '''
+    Check to see that the cull consumer history events crontab entry exists, and remove
+    it if it does.
+    '''
+    tab = CronTab()
+    cmd = 'python %s' % os.path.abspath(__file__)
+    if not tab.find_command(cmd):
+        return
+    tab.remove_all(cmd)
+    tab.write()
+
+# Ensure the crontab entry is present each time the module is loaded; this will
+# cause it to get put in place when the server is started
+_check_crontab()
+
+# The crontab entry will call this module, so the following is used to trigger the
+# purge when that happens
+if __name__ == '__main__':
+    api = ConsumerHistoryApi()
+    lifetime = api._get_lifetime()
+    api.cull_history(lifetime)

@@ -372,7 +372,22 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0]['type_name'], consumer_history.TYPE_REPO_BOUND)
         self.assertEqual(results[1]['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
-        
+
+    def test_cull_history(self):
+        # Setup
+        self._populate_for_cull()
+        self.assertEqual(5, len(self.consumer_history_api.query()))
+
+        # Test
+        self.consumer_history_api.cull_history(datetime.timedelta(days=100))
+        self.assertEqual(4, len(self.consumer_history_api.query()))
+
+        self.consumer_history_api.cull_history(datetime.timedelta(days=40))
+        self.assertEqual(2, len(self.consumer_history_api.query()))
+
+        self.consumer_history_api.cull_history(datetime.timedelta(days=1))
+        self.assertEqual(1, len(self.consumer_history_api.query()))
+
     def _populate_for_queries(self):
         '''
         Populates the history store with a number of entries to help test the query
@@ -410,3 +425,33 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.consumer_history_api.objectdb.insert(e2)
         self.consumer_history_api.objectdb.insert(e3)
         self.consumer_history_api.objectdb.insert(e4)
+
+    def _populate_for_cull(self):
+        '''
+        Populates the history with events created in terms of today, suitable for
+        testing the cull functionality.
+        '''
+
+        e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+        e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+        e3 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+        e4 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+        e5 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
+
+        now = datetime.datetime.now()
+        days_ago_30 = datetime.timedelta(days=30)
+        days_ago_60 = datetime.timedelta(days=60)
+        days_ago_90 = datetime.timedelta(days=90)
+        days_ago_120 = datetime.timedelta(days=120)
+
+        e1.timestamp = now
+        e2.timestamp = now - days_ago_30
+        e3.timestamp = now - days_ago_60
+        e4.timestamp = now - days_ago_90
+        e5.timestamp = now - days_ago_120
+
+        self.consumer_history_api.objectdb.insert(e1)
+        self.consumer_history_api.objectdb.insert(e2)
+        self.consumer_history_api.objectdb.insert(e3)
+        self.consumer_history_api.objectdb.insert(e4)
+        self.consumer_history_api.objectdb.insert(e5)
