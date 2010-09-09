@@ -176,15 +176,6 @@ class RepoApi(BaseApi):
                 
         serv.disconnect()
         
-    @audit()    
-    def get_repos_by_product(self, groupid):
-        """
-        Lookup available repos associated to a group id
-        @param groupid: groupid a candidate repo is associated.
-        @type groupid: str
-        """
-        return list(self.objectdb.find({"groupid" : groupid}))
-        
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
