@@ -366,7 +366,7 @@ def _clear_crontab():
 
 def _get_lifetime():
     """
-    Get the configured auditing lifeteime as a datetime.timedelta instance.
+    Get the configured auditing lifetime as a datetime.timedelta instance.
     @return: dateteime.timedelta instance
     """
     days = config.config.getint('auditing', 'lifetime')
