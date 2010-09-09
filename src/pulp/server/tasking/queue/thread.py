@@ -19,7 +19,6 @@ import inspect
 import logging
 import threading
 import time
-from threading import _get_ident
 
 # globals ---------------------------------------------------------------------
 
@@ -66,9 +65,12 @@ class DRLock(object):
 
 class TrackedThread(_Thread):
     """
+    Derived thread class that records the thread hierarchy (ie the parent and
+    the child threads) whenever this thread is started.
     """
     def start(self):
         """
+        Start execution in a separate thread of control.
         """
         parent = threading.current_thread()
         _thread_tree.setdefault(parent, []).append(self)
@@ -76,6 +78,10 @@ class TrackedThread(_Thread):
 
 
 class DummyTrackedThread(TrackedThread):
+    """
+    Derived dummy thread class that records the thread hierarchy whenever this
+    thread is started.
+    """
     def __init__(self):
         TrackedThread.__init__(self, name=threading._newname('Dummy-%d'))
         del self._Thread__block
@@ -126,19 +132,26 @@ def remove_subtree(thread):
 # based on an answer from stack overflow:
 # http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
 
+class _ThreadInterruptionError(Exception):
+    """
+    Exception class used to flag and catch exceptions thrown by this api.
+    """
+    pass
+
+
 def _tid(thread):
     """
     Determine a thread's id.
     """
     if not thread.is_alive():
-        raise threading.ThreadError('Thread is not active')
+        raise _ThreadInterruptionError('Thread is not active')
     if hasattr(thread, '_thread_id'):
         return thread._thread_id
     for tid, tobj in threading._active.items():
         if tobj is thread:
             thread._thread_id = tid
             return tid
-    raise AssertionError('Could not determine thread id')
+    raise _ThreadInterruptionError('Could not determine thread id')
 
 
 def _raise_exception_in_thread(tid, exc_type):
@@ -154,12 +167,12 @@ def _raise_exception_in_thread(tid, exc_type):
     if num == 1:
         return
     if num == 0:
-        raise ValueError('Invalid thread id')
+        raise _ThreadInterruptionError('Invalid thread id')
     # NOTE if it returns a number greater than one, you're in trouble, 
     # and you should call it again with exc=NULL to revert the effect
     null_ptr = ctypes.py_object()
     ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, null_ptr)
-    raise SystemError('PyThreadState_SetAsyncExc failed')
+    raise _ThreadInterruptionError('PyThreadState_SetAsyncExc failed')
 
 # task exceptions -------------------------------------------------------------
 
@@ -218,10 +231,9 @@ class TaskThread(TrackedThread):
         for thread in get_descendants(self):
             while thread.is_alive():
                 try:
-                    _raise_exception_in_thread(_tid(self), exc_type)
+                    _raise_exception_in_thread(_tid(thread), exc_type)
                     time.sleep(self.__default_timeout)
-                except (threading.ThreadError, AssertionError,
-                        ValueError, SystemError), e:
+                except _ThreadInterruptionError, e:
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
                                (exc_type.__name__, str(self.ident), e.message))
                     break
@@ -231,8 +243,7 @@ class TaskThread(TrackedThread):
             try:
                 _raise_exception_in_thread(_tid(self), exc_type)
                 self.__exception_event.wait(self.__default_timeout)
-            except (threading.ThreadError, AssertionError,
-                    ValueError, SystemError), e:
+            except _ThreadInterruptionError, e:
                 _log.error('Failed to deliver exception %s to thread[%s]: %s' %
                            (exc_type.__name__, str(self.ident), e.message))
                 break
