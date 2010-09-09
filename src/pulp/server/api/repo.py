@@ -108,10 +108,10 @@ class RepoApi(BaseApi):
         if groupid:
             r['groupid'].append(groupid)
             
-        if relative_path is None and r['source'] is not None : #r['relative_path']:
+        if relative_path is None and r['source'] is not None : 
             # For none product repos, default to repoid
             url_parse = urlparse(str(r['source']["url"]))
-            r['relative_path'] = url_parse.path #r['id']
+            r['relative_path'] = url_parse.path 
         else:
             r['relative_path'] = relative_path
         self.insert(r)
@@ -169,7 +169,6 @@ class RepoApi(BaseApi):
                                    feed="yum:" + CDN_URL + '/' + uri, 
                                    cert_data=cert_data, groupid=groupid,
                                    relative_path=uri)
-#                repo['relative_path'] = uri
                 self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
