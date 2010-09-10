@@ -29,7 +29,7 @@ def load_test_config():
         config.add_config_file(override_file)
     except RuntimeError:
         pass
-    start_logging()
+    # start_logging()
 
     return config.config
 
