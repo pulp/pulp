@@ -87,17 +87,17 @@ class MethodInspector(object):
         if 'self' in args:
             args.remove('self')
 
+        self.params = params if params is not None else list(args)
+
         self.__param_to_index = dict((a, i + 1) for i, a in
                                      enumerate(args)
-                                     if params is None or a in params)
-
-        self.params = params if params is not None else list(args)
+                                     if a in self.params)
 
         defaults = spec[3]
         if defaults:
             self.__param_defaults = dict((a, d) for a, d in
                                          zip(args[0 - len(defaults):], defaults)
-                                         if params is None or a in params)
+                                         if a in self.params)
         else:
             self.__param_defaults = {}
 
