@@ -45,11 +45,12 @@ TYPE_REPO_BOUND = 'repo_bound'
 TYPE_REPO_UNBOUND = 'repo_unbound'
 TYPE_PACKAGE_INSTALLED = 'package_installed'
 TYPE_PACKAGE_UNINSTALLED = 'package_uninstalled'
+TYPE_ERRATA_INSTALLED = 'errata_installed'
 TYPE_PROFILE_CHANGED = 'profile_changed'
 
 TYPES = (TYPE_CONSUMER_CREATED, TYPE_CONSUMER_DELETED, TYPE_REPO_BOUND,
          TYPE_REPO_UNBOUND, TYPE_PACKAGE_INSTALLED, TYPE_PACKAGE_UNINSTALLED,
-         TYPE_PROFILE_CHANGED)
+         TYPE_ERRATA_INSTALLED, TYPE_PROFILE_CHANGED)
 
 # Used to identify an event as triggered by the consumer (as compared to an admin)
 ORIGINATOR_CONSUMER = 'consumer'
@@ -251,7 +252,7 @@ class ConsumerHistoryApi(BaseApi):
         event = ConsumerHistoryEvent(consumer_id, originator, TYPE_REPO_UNBOUND, details)
         self.insert(event)
 
-    def packages_installed(self, consumer_id, package_nveras, originator=ORIGINATOR_CONSUMER):
+    def packages_installed(self, consumer_id, package_nveras, errata_titles=None, originator=ORIGINATOR_CONSUMER):
         '''
         Creates a new event to represent packages that were installed on a consumer.
 
@@ -262,6 +263,10 @@ class ConsumerHistoryApi(BaseApi):
         @type  package_nveras: list or string; a single string will automatically be wrapped
                                in a list
 
+        @param errata_titles: if the package installs are the result of applying errata,
+                              this is the list of errata titles that were requested
+        @type  errata_titles: list of strings
+
         @param originator: if specified, should be the username of the admin who installed
                            packages through the admin API; defaults to indicate the
                            create was triggered by the consumer itself
@@ -270,8 +275,17 @@ class ConsumerHistoryApi(BaseApi):
         if type(package_nveras) != list:
             package_nveras = [package_nveras]
 
-        details = {'package_nveras' : package_nveras}
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PACKAGE_INSTALLED, details)
+        details = {'package_nveras' : package_nveras,
+                   'errata_titles'  : errata_titles,}
+
+        # If any errata were installed, flag the consumer event as an errata install;
+        # otherwise flag it as a plain package installation
+        if errata_titles:
+            event_type = TYPE_ERRATA_INSTALLED
+        else:
+            event_type = TYPE_PACKAGE_INSTALLED
+
+        event = ConsumerHistoryEvent(consumer_id, originator, event_type, details)
         self.insert(event)
 
     def packages_removed(self, consumer_id, package_nveras, originator=ORIGINATOR_CONSUMER):
@@ -295,6 +309,27 @@ class ConsumerHistoryApi(BaseApi):
 
         details = {'package_nveras' : package_nveras}
         event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PACKAGE_UNINSTALLED, details)
+        self.insert(event)
+
+    def profile_updated(self, consumer_id, package_profile, originator=ORIGINATOR_CONSUMER):
+        '''
+        Creates a new event to represent a consumer's package profile has been updated. The
+        entire profile will be snapshotted in this event, whereas the consumer will only
+        hold on to its current profile.
+
+        @param consumer_id: identifies the consumer being modified
+        @type  consumer_id: string or number
+
+        @param package_profile: consumer's full package profile that was sent to the server
+        @type  package_profile: ?
+
+        @param originator: if specified, should be the username of the admin who removed
+                           packages through the admin API; defaults to indicate the
+                           create was triggered by the consumer itself
+        @type  originator: string
+        '''
+        details = {'package_profile' : package_profile}
+        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PROFILE_CHANGED, details)
         self.insert(event)
 
     def cull_history(self, lifetime):
