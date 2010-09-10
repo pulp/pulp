@@ -97,13 +97,13 @@ class Task(object):
         self.exception = None
         self.traceback = None
 
-    def _exception_event(self):
+    def _exception_delivered(self):
         """
         Let the contextual thread know that an exception has been received.
         """
-        if not hasattr(self.thread, 'exception_event'):
+        if not hasattr(self.thread, 'exception_delivered'):
             return
-        self.thread.exception_event()
+        self.thread.exception_delivered()
 
     def set_progress(self, arg, callback):
         """
@@ -127,19 +127,19 @@ class Task(object):
             result = self.callable(*self.args, **self.kwargs)
         except TimeoutException:
             self.state = task_timed_out
-            self._exception_event()
+            self._exception_delivered()
             _log.error('Task id:%s, method_name:%s: TIMED OUT' %
                        (self.id, self.method_name))
         except CancelException:
             self.state = task_canceled
-            self._exception_event()
+            self._exception_delivered()
             _log.info('Task id:%s, method_name:%s: CANCELLED' %
                       (self.id, self.method_name))
         except Exception, e:
             self.state = task_error
             self.exception = repr(e)
             self.traceback = traceback.format_exception(*sys.exc_info())
-            self._exception_event()
+            self._exception_delivered()
             _log.error('Task id:%s, method_name:%s:\n%s' %
                        (self.id, self.method_name, ''.join(self.traceback)))
         else:
