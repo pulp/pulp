@@ -171,6 +171,36 @@ class TestConsumerHistoryApi(unittest.TestCase):
         package_list = entry['details']['package_nveras']
         self.assertTrue(len(package_list), 1)
 
+    def test_errata_installed(self):
+        # Test
+        packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
+        errata_titles = ['err123', 'err456']
+        self.consumer_history_api.packages_installed(123, packages, errata_titles=errata_titles, originator='admin')
+        time.sleep(.1)
+        self.consumer_history_api.packages_installed(123, 'zombie-1.0', errata_titles=errata_titles)
+
+        # Verify
+        entries = self.consumer_history_api.query()
+        self.assertEqual(2, len(entries))
+
+        entry = entries[1]
+        self.assertEqual(entry['consumer_id'], 123)
+        self.assertEqual(entry['originator'], 'admin')
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_ERRATA_INSTALLED)
+        self.assertTrue(entry['timestamp'] is not None)
+        package_list = entry['details']['package_nveras']
+        self.assertTrue(len(package_list), len(packages))
+        self.assertEqual(entry['details']['errata_titles'], errata_titles)
+
+        entry = entries[0]
+        self.assertEqual(entry['consumer_id'], 123)
+        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_ERRATA_INSTALLED)
+        self.assertTrue(entry['timestamp'] is not None)
+        package_list = entry['details']['package_nveras']
+        self.assertTrue(len(package_list), 1)
+        self.assertEqual(entry['details']['errata_titles'], errata_titles)
+        
     def test_packages_removed(self):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
@@ -197,6 +227,51 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
         self.assertTrue(len(package_list), 1)
+
+    def test_profile_updated(self):
+        # Test
+        profile = {'libtasn1-devel-2.4-2.fc13.x86_64':
+                       {'OS': 'linux',
+                        'Platform': 'x86_64-redhat-linux-gnu',
+                        'Size': 56009L,
+                        'URL': 'http://www.gnu.org/software/libtasn1/'
+                        ,
+                        'Vendor': 'Fedora Project',
+                        'arch': 'x86_64',
+                        'description': 'This is the ASN.1 library used in GNUTLS.'
+                        ,
+                        'epoch': '',
+                        'group': 'Development/Libraries',
+                        'installtime': 1276010433L,
+                        'name': 'libtasn1-devel',
+                        'release': '2.fc13',
+                        'summary': 'Files for development of applications which will use libtasn1'
+                        ,
+                        'version': '2.4'}}
+
+        self.consumer_history_api.profile_updated(123, profile, originator='admin')
+        time.sleep(.1)
+        self.consumer_history_api.profile_updated(123, profile)
+
+        # Verify
+        entries = self.consumer_history_api.query()
+        self.assertEqual(2, len(entries))
+
+        entry = entries[1]
+        self.assertEqual(entry['consumer_id'], 123)
+        self.assertEqual(entry['originator'], 'admin')
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_PROFILE_CHANGED)
+        self.assertTrue(entry['timestamp'] is not None)
+        self.assertTrue(entry['details']['package_profile'] is not None)
+        self.assertEqual(profile, entry['details']['package_profile'])
+
+        entry = entries[0]
+        self.assertEqual(entry['consumer_id'], 123)
+        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['type_name'], consumer_history.TYPE_PROFILE_CHANGED)
+        self.assertTrue(entry['timestamp'] is not None)
+        self.assertTrue(entry['details']['package_profile'] is not None)
+        self.assertEqual(profile, entry['details']['package_profile'])
 
     def test_types(self):
         # Test

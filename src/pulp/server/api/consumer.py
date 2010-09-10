@@ -237,9 +237,11 @@ class ConsumerApi(BaseApi):
         agent = Agent(id)
         consumer = self.consumer(id)
         pkgs = []
+        errata_titles = []
         if errataids:
             applicable_errata = self._applicable_errata(consumer, types)
             for eid in errataids:
+                errata_titles.append(applicable_errata[eid]['title'])
                 for pobj in applicable_errata[eid]:
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"])
@@ -250,7 +252,8 @@ class ConsumerApi(BaseApi):
                 if pobj["arch"] != "src":
                     pkgs.append(pobj["name"])
         log.error("Packages to install [%s]" % pkgs)
-        agent.packages.install(pkgs)
+        installed_packages = agent.packages.install(pkgs)
+        self.consumer_history_api.packages_installed(id, installed_packages, errata_titles=errata_titles)
         return pkgs
         
     def listerrata(self, id, types=()):
