@@ -14,9 +14,12 @@
 # in this software or its documentation.
 
 import os
+from datetime import timedelta
 
+from pulp.server import auditing
 from pulp.server import config
 from pulp.server.logs import start_logging, stop_logging
+
 
 def load_test_config():
 
@@ -32,6 +35,12 @@ def load_test_config():
     start_logging()
 
     return config.config
+
+
+def common_cleanup():
+    auditing._clear_crontab()
+    auditing.cull_events(timedelta())
+
 
 def create_package(api, name):
     test_pkg_name = name

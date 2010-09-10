@@ -92,6 +92,7 @@ class _DummyTrackedThread(TrackedThread, _DummyThread):
         _DummyThread.__init__(self)
         # XXX may need to set _set_daemon and join method to _DummyThread's
 
+
 # monkey-patch the threading module in order to track threads
 # this allows us to cancel tasks that have spawned threads of their own
 threading.Thread = TrackedThread

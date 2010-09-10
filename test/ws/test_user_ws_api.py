@@ -40,4 +40,6 @@ class RemoteTestUsers(TestUsers):
         d = dict(host='localhost', port=443, username="admin", password="admin")
         self.config = testutil.load_test_config()
         self.uapi = UserConnection(**d)
-        
+
+    def tearDown(self):
+        testutil.common_cleanup()

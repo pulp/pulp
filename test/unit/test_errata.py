@@ -58,6 +58,7 @@ class TestErrata(unittest.TestCase):
 
     def tearDown(self):
         self.clean()
+        testutil.common_cleanup()
 
     def test_parse_updateinfo_xml(self):
         # Test against expected updateinfo.xml from RHEL 5 i386
@@ -248,9 +249,9 @@ class TestErrata(unittest.TestCase):
         found = self.eapi.errata(title=title, description=description, version=version,
                 release=release, type="bad value")
         self.assertTrue(len(found) == 0)
-        
+
     def test_repo_erratum(self):
-        repo = self.rapi.create('some-id','some name', \
+        repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
@@ -265,14 +266,14 @@ class TestErrata(unittest.TestCase):
 
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 1)
-        
+
         self.rapi.delete_erratum(repo['id'], test_errata_1['id'])
-        
+
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
-        
+
     def test_repo_errata(self):
-        repo = self.rapi.create('some-id','some name', \
+        repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
@@ -282,7 +283,7 @@ class TestErrata(unittest.TestCase):
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
         self.assertTrue(test_errata_1 is not None)
-        
+
         id = 'test_errata_id_2'
         title = 'test_errata_title_2'
         description = 'test_errata_description_2'
@@ -292,18 +293,18 @@ class TestErrata(unittest.TestCase):
         test_errata_2 = self.eapi.create(id, title, description, version, release, type)
         self.assertTrue(test_errata_2 is not None)
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
-        
+
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 2)
 
         self.rapi.delete_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
-        
+
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
-        
+
     def test_consumer_errata(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
-        repo = self.rapi.create('some-id','some name', \
+        repo = self.rapi.create('some-id', 'some name', \
             'x86_64', 'yum:http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
@@ -313,7 +314,7 @@ class TestErrata(unittest.TestCase):
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
         assert(test_errata_1 is not None)
-        
+
         epkg = get_rpm_information(my_dir + "/data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm")
         test_pkg_name = epkg["name"]
         test_epoch = epkg["epoch"]
@@ -324,17 +325,17 @@ class TestErrata(unittest.TestCase):
         test_checksum_type = "sha256"
         test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
         test_filename = 'test-filename-0.3.1-1.fc11.x86_64.rpm'
-        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version, 
-                release=test_release, arch=test_arch, description=test_description, 
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+                release=test_release, arch=test_arch, description=test_description,
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         print "Package! %s" % p
         # Add this package version to the repo
         self.rapi.add_package(repo["id"], p['id'])
         self.rapi.update(repo)
-        test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
-                                                    'name': 'pulp-test-package', 
-                                                    'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm', 
-                                                    'epoch': '0', 'version': '0.3.1', 'release': '1.fc11', 
+        test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
+                                                    'name': 'pulp-test-package',
+                                                    'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
+                                                    'epoch': '0', 'version': '0.3.1', 'release': '1.fc11',
                                                     'arch': 'x86_64'}]}]
         self.eapi.update(test_errata_1)
         repo["errata"] = {"security" : [test_errata_1['id']]}
@@ -347,7 +348,7 @@ class TestErrata(unittest.TestCase):
                         "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
         info2 = get_rpm_information(my_dir + \
                         "/data/pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
-        
+
         packages = generatePakageProfile([info1, info2])
         c['package_profile'] = packages
         self.assertTrue(c['package_profile'] is not None)
@@ -359,7 +360,7 @@ class TestErrata(unittest.TestCase):
 
         errlist = self.capi.listerrata(c['id'], types=['security'])
         assert(len(errlist) == 1)
-        
+
         pkguplist = self.capi.list_package_updates(c['id'])
         assert(len(pkguplist) == 1)
 

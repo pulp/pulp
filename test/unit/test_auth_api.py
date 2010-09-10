@@ -38,6 +38,7 @@ class TestAuthApi(unittest.TestCase):
 
     def clean(self):
         self.user_api.clean()
+        testutil.common_cleanup()
 
     def setUp(self):
         self.config = testutil.load_test_config()

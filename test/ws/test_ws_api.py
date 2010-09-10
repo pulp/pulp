@@ -56,6 +56,9 @@ class RemoteTestApi(TestApi):
         self.pgapi = PackageGroupConnection(**d)
         self.pgcapi = PackageGroupCategoryConnection(**d)
 
+    def tearDown(self):
+        testutil.common_cleanup()
+
     def test_sync_two_repos_share_common_package(self):
         pass
 

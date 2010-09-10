@@ -47,7 +47,8 @@ class TestRoleCheck(unittest.TestCase):
     def tearDown(self):
         self.uapi.clean()
         self.capi.clean()
-        
+        testutil.common_cleanup()
+
     @RoleCheck(consumer=True)
     def consumer_only(self, someparam, otherparam):
         print "some method executed"
@@ -87,7 +88,7 @@ class TestRoleCheck(unittest.TestCase):
         #   Test that both the cert + id *in* the cert match
         retval = self.consumer_id_and_admin(consumer_uid, "baz")
         self.assertEquals(retval, "baz")
-        
+
         #   Test the opposite, good cert, bad param
         retval = self.consumer_id_and_admin("fake-consumer-uid", "baz")
         self.assertNotEquals(retval, "baz")
@@ -161,7 +162,7 @@ class TestRoleCheck(unittest.TestCase):
         #   Check we can't run the method with no setup in web
         retval = self.admin_only('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
-        
+
         #   Check with bad password
         loginpass = "%s:%s" % (login, "invalid password")
         encoded = base64.encodestring(loginpass)
@@ -169,7 +170,7 @@ class TestRoleCheck(unittest.TestCase):
 
         retval = self.admin_only('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
-        
+
         #   Check with bad username
         loginpass = "%s:%s" % ("non existing user", password)
         encoded = base64.encodestring(loginpass)
@@ -177,7 +178,7 @@ class TestRoleCheck(unittest.TestCase):
 
         retval = self.admin_only('somevalue', 'baz')
         self.assertNotEqual(retval, 'baz')
-        
+
         #   Check a successful test
         loginpass = "%s:%s" % (login, password)
         encoded = base64.encodestring(loginpass)
@@ -186,7 +187,7 @@ class TestRoleCheck(unittest.TestCase):
         retval = self.admin_only('somevalue', 'baz')
         self.assertEquals(retval, 'baz')
 
-    
+
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.ERROR)

@@ -44,6 +44,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         for entry in tab.find_command('pulp repo sync'):
             tab.remove(entry)
         tab.write()
+        testutil.common_cleanup()
 
     def test_update_delete_schedule(self):
         '''

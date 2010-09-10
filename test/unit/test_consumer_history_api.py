@@ -50,6 +50,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
     def tearDown(self):
         self.clean()
+        testutil.common_cleanup()
 
     def test_consumer_created(self):
         # Test
@@ -268,7 +269,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.assertEqual(len(results_bound), 5)
         for entry in results_bound:
             self.assertEqual(entry['type_name'], consumer_history.TYPE_REPO_BOUND)
-        
+
     def test_query_by_consumer_and_type(self):
         # Setup
         self._populate_for_queries()
@@ -308,7 +309,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         # Test
         self.assertRaises(PulpException, self.consumer_history_api.query, limit=0)
-        self.assertRaises(PulpException, self.consumer_history_api.query, limit=-1)
+        self.assertRaises(PulpException, self.consumer_history_api.query, limit= -1)
 
     def test_query_sort_directions(self):
         # Setup

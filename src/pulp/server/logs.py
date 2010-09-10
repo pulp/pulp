@@ -76,8 +76,14 @@ def configure_audit_logging():
     """
     file = config.config.get('auditing', 'events_file')
     check_log_file(file)
-    lifetime = config.config.getint('auditing', 'lifetime')
+    units = 'D'
     backups = config.config.getint('auditing', 'backups')
+    lifetime = config.config.getint('auditing', 'lifetime')
+
+    # the logging module will get into an infinite loop if the interval is 0
+    if lifetime <= 0:
+        units = 'H'
+        lifetime = 1
 
     # NOTE, this cannot be a descendant of the pulp log as it will inherit
     # pulp's rotating log and handler and log to both files. Yes, I've tried
@@ -85,7 +91,7 @@ def configure_audit_logging():
     logger = logging.getLogger('auditing')
     logger.setLevel(logging.INFO)
     handler = logging.handlers.TimedRotatingFileHandler(file,
-                                                        when='D',
+                                                        when=units,
                                                         interval=lifetime,
                                                         backupCount=backups)
     logger.addHandler(handler)

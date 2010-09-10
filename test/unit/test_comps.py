@@ -51,10 +51,11 @@ class TestComps(unittest.TestCase):
 
     def tearDown(self):
         self.rapi.clean()
+        testutil.common_cleanup()
 
     def test_sync_groups_data(self):
         repo = self.rapi.create('test_sync_groups_data_id',
-                'test_sync_groups_data_id', 'i386', 
+                'test_sync_groups_data_id', 'i386',
                 'yum:http://example.com/')
         # Parse existing comps.xml
         compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
@@ -104,7 +105,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue("test_package_name" not in groups[0].mandatory_packages)
 
     def test_basic_comps(self):
-        repo = self.rapi.create('test_comps_id','test_comps_name', 
+        repo = self.rapi.create('test_comps_id', 'test_comps_name',
             'i386', 'yum:http://example.com/')
         grp = pulp.server.db.model.PackageGroup("groupid1", "groupname1",
             "description", "user_visible", "display_order", "default"
@@ -127,7 +128,7 @@ class TestComps(unittest.TestCase):
         ctg['translated_name'] = {"a":"name"}
         ctg['translated_description'] = {"b":"description"}
         self.rapi.update_packagegroupcategory(repo["id"], ctg)
-        found = self.rapi.packagegroupcategory(repo["id"], ctg["id"]) 
+        found = self.rapi.packagegroupcategory(repo["id"], ctg["id"])
         self.assertTrue(found is not None)
         self.assertTrue(found["name"] == "categoryname")
         self.assertTrue("groupid1" in found["packagegroupids"])
@@ -137,9 +138,9 @@ class TestComps(unittest.TestCase):
         repo = self.rapi.create('test_delete_group_category',
                 'test_delete_group_category', 'i386',
                 'yum:http://example.com/')
-        cat = self.rapi.create_packagegroupcategory(repo["id"], 
+        cat = self.rapi.create_packagegroupcategory(repo["id"],
                 "test_cat", "test_cat_name", "test description")
-        grp = self.rapi.create_packagegroup(repo["id"], 
+        grp = self.rapi.create_packagegroup(repo["id"],
                 "test_group", "test_group_name", "test description")
         found = self.rapi.packagegroupcategory(repo['id'], cat["id"])
         self.assertTrue(found is not None)
@@ -201,7 +202,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(len(comps.get_categories()) != 0)
 
         # Create empty repo, we will populate it with our groups/categories
-        repo = self.rapi.create('test_comps_id','test_comps_name', 
+        repo = self.rapi.create('test_comps_id', 'test_comps_name',
                 'i386', 'yum:http://example.com/')
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
@@ -279,8 +280,8 @@ class TestComps(unittest.TestCase):
                 (actualGroups, expectedGroups))
         log.debug("new comps has %s categoriess we expected %s categoriess" \
                 % (actualCats, expectedCats))
-        self.assertTrue(actualGroups == expectedGroups) 
-        self.assertTrue(actualCats == expectedCats) 
+        self.assertTrue(actualGroups == expectedGroups)
+        self.assertTrue(actualCats == expectedCats)
         groups = parsedComps.get_groups()
         for g in groups:
             if g.groupid == "web-server":
@@ -342,7 +343,7 @@ class TestComps(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_with_groups")
         # Create repo with 1 group
         repo = self.rapi.create('test_immutable_groups_id',
-                'test_import_groups_data_id', 'i386', 
+                'test_import_groups_data_id', 'i386',
                 'local:file://%s' % (repo_path))
         self.rapi.sync(repo["id"])
         # Ensure groups/categories were found and they are all immutable
@@ -360,7 +361,7 @@ class TestComps(unittest.TestCase):
         # Verify we cannot delete a package from an immutable group
         caught = False
         try:
-            self.rapi.delete_package_from_group(repo["id"], found["id"], 
+            self.rapi.delete_package_from_group(repo["id"], found["id"],
                 "system-config-boot", gtype="default")
         except PulpException, e:
             caught = True
@@ -368,7 +369,7 @@ class TestComps(unittest.TestCase):
         # Verify we cannot add a package
         caught = False
         try:
-            self.rapi.add_packages_to_group(repo["id"], "admin-tools", 
+            self.rapi.add_packages_to_group(repo["id"], "admin-tools",
                 ["newPackage"], gtype="default")
         except PulpException, e:
             caught = True
@@ -386,12 +387,12 @@ class TestComps(unittest.TestCase):
         # Verify if we create a new package group, we can add/delete packages
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
-        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], 
+        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"],
                 ["test_package_name"], gtype="default")
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
         self.assertTrue("test_package_name" in found["default_package_names"])
-        self.rapi.delete_package_from_group(repo["id"], pkg_group["id"], 
+        self.rapi.delete_package_from_group(repo["id"], pkg_group["id"],
                 "test_package_name", gtype="default")
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
@@ -407,7 +408,7 @@ class TestComps(unittest.TestCase):
 
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         repo = self.rapi.create('test_comps_resync_with_group_changes',
-                'test_comps_resync_with_group_changes_name', 'i386', 
+                'test_comps_resync_with_group_changes_name', 'i386',
                 'local:file://%s' % (repo_path))
         self.rapi.sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
@@ -445,7 +446,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(self.rapi.packagegroupcategory(
             repo["id"], "desktops") is not None)
         self.assertTrue(self.rapi.packagegroupcategory(
-            repo["id"],"apps") is not None)
+            repo["id"], "apps") is not None)
         self.assertTrue(self.rapi.packagegroupcategory(
-            repo["id"],"development") is not None)
+            repo["id"], "development") is not None)
 

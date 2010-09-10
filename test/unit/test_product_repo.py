@@ -30,9 +30,9 @@ sys.path.insert(0, commondir)
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 
-CERT_FILE="/certs/nimbus_cloude_debug.crt"
-CERT_KEY="/certs/nimbus_cloude_debug.key"
-CA_CERT="/certs/cdn.redhat.com-chain.crt"
+CERT_FILE = "/certs/nimbus_cloude_debug.crt"
+CERT_KEY = "/certs/nimbus_cloude_debug.key"
+CA_CERT = "/certs/cdn.redhat.com-chain.crt"
 
 import testutil
 
@@ -42,15 +42,16 @@ class TestProductRepo(unittest.TestCase):
 
     def clean(self):
         self.rapi.clean()
-        
+        testutil.common_cleanup()
+
     def setUp(self):
         self.config = testutil.load_test_config()
         self.rapi = RepoApi()
         self.clean()
-        
+
     def tearDown(self):
         self.clean()
-        
+
     def test_create_product_repo(self):
         content_set = {
             "rhel-server" : "/content/dist/rhel/server/$releasever/$basearch/os"}
@@ -63,7 +64,7 @@ class TestProductRepo(unittest.TestCase):
             self.assertTrue(len(repos) > 0)
         except IOError, ie:
             print("IOError:: Make sure the certificates paths are readable %s" % ie)
-            
+
 
 if __name__ == '__main__':
     unittest.main()

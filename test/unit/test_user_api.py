@@ -37,20 +37,21 @@ class TestUsers(unittest.TestCase):
 
     def clean(self):
         self.uapi.clean()
-        
+
     def setUp(self):
         self.config = testutil.load_test_config()
         self.uapi = UserApi()
         self.clean()
-        
+
     def tearDown(self):
         self.clean()
-        
+        testutil.common_cleanup()
+
     def test_create(self):
         clear_txt_pass = 'some password'
-        user = self.uapi.create('login-test', id=str(uuid.uuid4()), 
+        user = self.uapi.create('login-test', id=str(uuid.uuid4()),
                                 password=clear_txt_pass,
-                                name='Fred Franklin') 
+                                name='Fred Franklin')
         self.assertTrue(user is not None)
         user = self.uapi.user('login-test')
         self.assertTrue(user is not None)
@@ -63,7 +64,7 @@ class TestUsers(unittest.TestCase):
         default_login = self.config.get('server', 'default_login')
         admin = self.uapi.user(default_login)
         self.assertTrue(admin is not None)
-        
+
     def test_duplicate(self):
         id = uuid.uuid4()
         login = 'dupe-test'
@@ -73,26 +74,26 @@ class TestUsers(unittest.TestCase):
             raise Exception, 'Duplicate allowed'
         except:
             pass
-        
+
     def test_user_list(self):
         user = self.uapi.create('login-test')
         users = self.uapi.users()
         assert(len(users) == 2)
-        
+
     def test_clean(self):
         user = self.uapi.create('login-test')
         self.uapi.clean()
         users = self.uapi.users()
         assert(len(users) == 1)
-        
+
     def test_delete(self):
         login = 'some-login'
         user = self.uapi.create(login)
         self.uapi.delete(login=login)
         user = self.uapi.user(login)
         assert(user is None)
-        
-        
+
+
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.ERROR)
