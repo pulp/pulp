@@ -19,6 +19,7 @@ import inspect
 import logging
 import threading
 import time
+import weakref
 
 # globals ---------------------------------------------------------------------
 
@@ -27,7 +28,7 @@ _Thread = threading.Thread
 _DummyThread = threading._DummyThread
 
 # tracked thread descendant tree
-_thread_tree = {}
+_thread_tree = weakref.WeakKeyDictionary()
 
 _log = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ class TrackedThread(_Thread):
         Start execution in a separate thread of control.
         """
         parent = threading.current_thread()
-        _thread_tree.setdefault(parent, []).append(self)
+        _thread_tree.setdefault(parent, []).append(weakref.ref(self))
         return super(TrackedThread, self).start()
 
 
@@ -90,7 +91,6 @@ class _DummyTrackedThread(TrackedThread, _DummyThread):
     """
     def __init__(self):
         _DummyThread.__init__(self)
-        # XXX may need to set _set_daemon and join method to _DummyThread's
 
 
 # monkey-patch the threading module in order to track threads
@@ -112,23 +112,7 @@ def get_descendants(thread):
     descendants = _thread_tree.get(thread, [])
     for d in descendants:
         descendants.extend(_thread_tree.get(d, []))
-    return descendants
-
-
-def remove_subtree(thread):
-    """
-    Remove the subtree of threads rooted at the passed in thread.
-    @type thread: L{TrackedThread} instance
-    @param thread: root of subtree
-    @raise RuntimeError: if thread is not an instance of TrackedThread
-    @return: number of threads removed
-    """
-    if not isinstance(thread, TrackedThread):
-        raise RuntimeError('Cannot clear subtree of an untracked thread')
-    descendents = _thread_tree.pop(thread, [])
-    for d in descendents:
-        descendents.extend(_thread_tree.pop(d, []))
-    return len(descendents) + 1
+    return [d() for d in descendants if d() is not None]
 
 # thread interruption api -----------------------------------------------------
 
@@ -171,8 +155,8 @@ def _raise_exception_in_thread(tid, exc_type):
         return
     if num == 0:
         raise _ThreadInterruptionError('Invalid thread id')
-    # NOTE if it returns a number greater than one, you're in trouble, 
-    # and you should call it again with exc=NULL to revert the effect
+    # NOTE if it returns a number greater than one, we're in trouble, and
+    # should call it again with exc=NULL to revert the effect
     null_ptr = ctypes.py_object()
     ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, null_ptr)
     raise _ThreadInterruptionError('PyThreadState_SetAsyncExc failed')
@@ -220,9 +204,6 @@ class TaskThread(TrackedThread):
         """
         self.__exception_event.set()
 
-    # XXX deprecated call with crappy name
-    exception_event = exception_delivered
-
     def raise_exception(self, exc_type):
         """
         Raise and exception in this thread.
@@ -241,7 +222,6 @@ class TaskThread(TrackedThread):
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
                                (exc_type.__name__, str(self.ident), e.message))
                     break
-        remove_subtree(self)
         # then kill and wait for the task thread
         while not self.__exception_event.is_set():
             try:
