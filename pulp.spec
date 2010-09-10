@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.60
+Version:        0.0.61
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -173,6 +173,30 @@ fi
 
 
 %changelog
+* Fri Sep 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.61-1
+- Added errata install and package profile entries to consumer history.
+  (jason.dobies@redhat.com)
+- Added defaults to pulp.conf to make the config file more self-documenting.
+  This way users can look at a single location for information needed to change
+  pulp behavior. (jason.dobies@redhat.com)
+- consoldated exception types in thread interruption api to keep me from
+  catching an exception that I do not mean to found bug in monkey patch, cut-
+  copy-paster error in TaskThread.raise_exception (jconnor@redhat.com)
+- use existing repositories method with fields and spec to query repos by group
+  instead of a separate method (pkilambi@redhat.com)
+- changing product reference to group (pkilambi@redhat.com)
+- Added cron tab addition and hook so the cull will be run periodically.
+  (jason.dobies@redhat.com)
+- Added API call for culling consumer history older than a certain number of
+  days. (jason.dobies@redhat.com)
+- Adding support for relative_path and groupid when doing a repo create
+  (pkilambi@redhat.com)
+- include checksum in package store path (pkilambi@redhat.com)
+- On demand stub creation for better plugin support. (jortel@redhat.com)
+- added tracked thread and made task thread inherit from it monkey patching
+  tasking.Thread wit tracked thread added look to task thread raise exception
+  to deliver the same exception to all descendant threads (jconnor@redhat.com)
+
 * Tue Sep 07 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.60-1
 - Setup callbacks only for repos with source set. A feedless repo can have a
   source as None (pkilambi@redhat.com)
