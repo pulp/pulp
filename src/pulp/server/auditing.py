@@ -36,12 +36,32 @@ from pulp.server.db.model import Event
 
 # globals ---------------------------------------------------------------------
 
+# auditing events database
 _objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
 
 # setup log - do not change this to __name__
 _log = logging.getLogger('auditing')
 
-# auditing decorator ----------------------------------------------------------
+# auditing helper api and classes ---------------------------------------------
+
+def audit_repr(value):
+    """
+    Return an audit-friendly representation of a value.
+    @type value: any
+    @param value: parameter value
+    @rtype: str
+    @return: string representing the value
+    """
+    if isinstance(value, basestring):
+        return value
+    if not isinstance(value, (dict, BSON, SON)):
+        return repr(value)
+    if 'id' in value:
+        return '<id: %s>' % value['id']
+    elif '_id' in value:
+        return '<_id: %s>' % str(value['_id'])
+    return '%s instance' % str(type(value))
+
 
 class MethodInspector(object):
     """
@@ -87,6 +107,7 @@ class MethodInspector(object):
         arguments.
         @type args: list
         @param args: positional arguments of an api instance method
+        @rtype: str
         @return: name of api class
         """
         assert args
@@ -94,23 +115,6 @@ class MethodInspector(object):
         if not isinstance(api_obj, BaseApi):
             return 'Unknown API'
         return api_obj.__class__.__name__
-
-    def audit_repr(self, value):
-        """
-        Return an audit-friendly representation of a value.
-        @type value: any
-        @param value: parameter value
-        @return: string representing the value
-        """
-        if isinstance(value, basestring):
-            return value
-        if not isinstance(value, (dict, BSON, SON)):
-            return repr(value)
-        if 'id' in value:
-            return '<id: %s>' % value['id']
-        elif '_id' in value:
-            return '<_id: %s>' % str(value['_id'])
-        return '%s instance' % str(type(value))
 
     def param_values(self, args, kwargs):
         """
@@ -120,18 +124,20 @@ class MethodInspector(object):
         @param args: positional arguments
         @type kwargs: dict
         @param kwargs: keyword arguments
+        @rtype: tuple of tuples
         @return: list of (paramter, value) for parameters of interest
         """
         values = []
         for p in self.params:
             i = self.__param_to_index[p]
             if i < len(args):
-                values.append(self.audit_repr(args[i]))
+                values.append(audit_repr(args[i]))
             else:
                 value = kwargs.get(p, self.__param_defaults.get(p, 'Unknown Parameter'))
-                values.append(self.audit_repr(value))
+                values.append(audit_repr(value))
         return zip(self.params, values)
 
+# auditing decorator ----------------------------------------------------------
 
 def audit(params=None, record_result=False):
     """
@@ -192,7 +198,7 @@ def audit(params=None, record_result=False):
                 _record_event()
                 raise
             else:
-                event.result = inspector.audit_repr(result) if record_result else None
+                event.result = audit_repr(result) if record_result else None
                 _record_event()
                 return result
 
@@ -216,6 +222,7 @@ def events(spec=None, fields=None, limit=None, errors_only=False):
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
+    @rtype: list of L{Event} instances
     @return: list of events containing fields and matching spec
     """
     assert isinstance(spec, (dict, BSON, SON)) or spec is None
@@ -243,6 +250,7 @@ def events_on_api(api, fields=None, limit=None, errors_only=False):
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
+    @rtype: list of L{Event} instances
     @return: list of events for the given api containing fields
     """
     return events({'api': api}, fields, limit, errors_only)
@@ -261,6 +269,7 @@ def events_by_principal(principal, fields=None, limit=None, errors_only=False):
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
+    @rtype: list of L{Event} instances
     @return: list of events for the given principal containing fields
     """
     return events({'principal': unicode(principal)}, fields, limit, errors_only)
@@ -280,6 +289,7 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
+    @rtype: list of L{Event} instances
     @return: list of events in the given time range containing fields
     """
     assert isinstance(lower_bound, datetime.datetime) or lower_bound is None
@@ -291,6 +301,7 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
         timestamp_range['$lt'] = upper_bound
     spec = {'timestamp': timestamp_range} if timestamp_range else None
     return events(spec, fields, limit, errors_only)
+
 
 def events_since_delta(delta, fields=None, limit=None, errors_only=False):
     """
@@ -305,6 +316,7 @@ def events_since_delta(delta, fields=None, limit=None, errors_only=False):
     @param errors_only: if True, only return events that match the spec and have 
                         an exception associated with them, otherwise return all
                         events that match spec
+    @rtype: list of L{Event} instances
     @return: list of events in the given length of time containing fields
     """
     assert isinstance(delta, datetime.timedelta)
@@ -320,6 +332,7 @@ def cull_events(delta):
     @type delta: dateteime.timedelta instance or None
     @param delta: length of time from current time to keep events,
                   None means don't keep any events
+    @rtype: int
     @return: the number of events removed from the database
     """
     spec = None
@@ -344,7 +357,7 @@ def _check_crontab():
     cmd = 'python %s' % os.path.abspath(__file__)
     if tab.find_command(cmd):
         return
-    schedule = '0,30 * * * *'
+    schedule = '3 1,13 * * *'
     entry = tab.new(cmd, 'cull auditing events')
     entry.parse('%s %s' % (schedule, cmd))
     tab.write()
