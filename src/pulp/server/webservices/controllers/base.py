@@ -28,10 +28,10 @@ except ImportError:
 import pymongo.json_util
 import web
 
-from pulp.server.tasking.task import Task, task_complete_states
+from pulp.server import async
+from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import auth
 from pulp.server.webservices import http
-from pulp.server.webservices.queues import fifo
 
 log = logging.getLogger(__name__)
 
@@ -260,10 +260,7 @@ class AsyncController(JSONController):
         @param kwargs: key word arguments for func
         @return: dict representing the task
         """
-        task = Task(func, args, kwargs, timeout)
-        if not fifo.enqueue(task, unique=unique):
-            return None
-        return task
+        return async.run_async(func, args, kwargs, timeout, unique)
 
     def cancel_task(self, task):
         """
@@ -274,7 +271,7 @@ class AsyncController(JSONController):
         """
         if task is None or task.state in task_complete_states:
             return False
-        fifo.cancel(task)
+        async.cancel_async(task)
         return True
 
     def task_status(self, id):
@@ -283,11 +280,12 @@ class AsyncController(JSONController):
         @param id: task id
         @return: TaskModel instance
         """
-        task = fifo.find(id=id)
-        status = None
-        if task is not None:
-            status = self._task_to_dict(task)
-            status.update({'status_path': self._status_path(id)})
+        tasks = async.find_async(id=id)
+        if not tasks:
+            return None
+        task = tasks[0]
+        status = self._task_to_dict(task)
+        status.update({'status_path': self._status_path(id)})
         return status
 
     def find_task(self, id):
@@ -297,7 +295,10 @@ class AsyncController(JSONController):
         @param id: id of task to find
         @return: Task instance if a task with the id exists, None otherwise
         """
-        return fifo.find(id=id)
+        tasks = async.find_async(id=id)
+        if not tasks:
+            return None
+        return tasks[0]
 
     def timeout(self, data):
         """
