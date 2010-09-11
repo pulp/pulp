@@ -169,6 +169,6 @@ class FIFOTaskQueue(TaskQueue):
     def find(self, **kwargs):
         self.__lock.acquire()
         try:
-            return self.__storage.find_task(kwargs)
+            return self.__storage.find_tasks(kwargs)
         finally:
             self.__lock.release()
