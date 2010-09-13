@@ -136,5 +136,5 @@ class VolatileStorage(object):
                     break;
                 matches += 1
             if matches == num_criteria:
-                return tasks.append(task)
+                tasks.append(task)
         return tasks
