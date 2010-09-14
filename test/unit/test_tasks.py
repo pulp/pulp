@@ -204,7 +204,7 @@ class FIFOQueueTester(QueueTester):
     def test_task_find(self):
         task1 = Task(noop)
         self.queue.enqueue(task1)
-        task2 = self.queue.find(id=task1.id)
+        task2 = self.queue.find(id=task1.id)[0]
         self.assertTrue(task1 is task2)
 
     def test_find_invalid_criteria(self):
@@ -216,14 +216,14 @@ class FIFOQueueTester(QueueTester):
         found = self.queue.find(foo=task1.id)
 
         # Verify
-        self.assertTrue(found is None)
+        self.assertTrue(not found)
 
     def test_find_empty_queue(self):
         # Test
         found = self.queue.find(id=1)
 
         # Verify
-        self.assertTrue(found is None)
+        self.assertTrue(not found)
 
     def test_find_multiple_criteria(self):
         # Setup
@@ -234,7 +234,7 @@ class FIFOQueueTester(QueueTester):
         found = self.queue.find(id=task1.id, state=task_waiting)
 
         # Verify
-        self.assertTrue(found is task1)
+        self.assertTrue(found[0] is task1)
 
     def test_find_multiple_matching(self):
         # Setup
@@ -248,14 +248,14 @@ class FIFOQueueTester(QueueTester):
         found = self.queue.find(state=task_waiting)
 
         # Verify
-        self.assertTrue(found is task2)
+        self.assertTrue(found[0] is task2)
 
     def test_task_status(self):
         task = Task(noop)
         self.queue.enqueue(task)
         self._wait_for_task(task)
         status = self.queue.find(id=task.id)
-        self.assertTrue(status.state == task.state)
+        self.assertTrue(status[0].state == task.state)
 
     def test_exists_matching_criteria(self):
         # Setup
