@@ -18,18 +18,32 @@ from pulp.server.tasking.task import Task
 
 # async execution queue -------------------------------------------------------
 
-queue = FIFOTaskQueue()
+_queue = FIFOTaskQueue()
 
 # async api -------------------------------------------------------------------
 
+find_async = _queue.find
+
+cancel_async = _queue.cancel
+
+
 def run_async(method, args, kwargs, timeout=None, unique=True):
     """
+    Make a python call asynchronously.
+    @type method: callable
+    @param method: method to call asynchronously
+    @type args: list or tuple
+    @param args: list of positional arguments for method
+    @type kwargs: dict
+    @param kwargs: key word arguements for method
+    @type timeout: datetime.timedelta instance
+    @param timeout: maximum length of time to let method run before interrupting it
+    @type unique: bool
+    @param unique: whether or not to make sure the task isn't already being run
+    @rtype: L{Task} instance or None
+    @return: L{Task} instance on success, None otherwise
     """
     task = Task(method, args, kwargs, timeout)
-    if queue.enqueue(task, unique):
+    if _queue.enqueue(task, unique):
         return task
     return None
-
-cancel_async = queue.cancel
-
-find_async = queue.find
