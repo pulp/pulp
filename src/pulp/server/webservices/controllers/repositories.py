@@ -226,6 +226,7 @@ class RepositoryActions(AsyncController):
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
         'sync',
+        '_sync',
         'upload',
         'add_package',
         'get_package',
@@ -257,6 +258,9 @@ class RepositoryActions(AsyncController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
+
+    # XXX hack to make the web services unit tests work
+    _sync = sync
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
