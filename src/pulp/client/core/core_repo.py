@@ -144,11 +144,11 @@ class repo(BaseCore):
             self.options.arch = "noarch"
 
         symlinks = self.options.symlinks or False
-            
+
         relative_path = self.options.relativepath or None
-            
+
         groupid = self.options.groupid or None
-        
+
         cert_data = None
         if self.options.cacert and self.options.cert and self.options.key:
             cert_data = {"ca" : utils.readFile(self.options.cacert),
@@ -176,10 +176,9 @@ class repo(BaseCore):
                 sys.exit(0)
             print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
             for repo in repos:
-                #repo["packages"] = repo["packages"]
-                print constants.AVAILABLE_REPOS_LIST % (repo["id"], repo["name"],
-                                                        repo["source"], repo["arch"],
-                                                        repo["sync_schedule"], repo["packages"])
+                print constants.AVAILABLE_REPOS_LIST % (
+                    repo["id"], repo["name"], repo["source"], repo["arch"],
+                    repo["sync_schedule"], repo['package_count'])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

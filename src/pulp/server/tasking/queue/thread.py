@@ -111,7 +111,7 @@ def get_descendants(thread):
         raise RuntimeError('Cannot find descendants of an untracked thread')
     descendants = _thread_tree.get(thread, [])
     for d in descendants:
-        descendants.extend(_thread_tree.get(d, []))
+        descendants.extend(_thread_tree.get(d(), []))
     return [d() for d in descendants if d() is not None]
 
 # thread interruption api -----------------------------------------------------

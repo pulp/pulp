@@ -65,12 +65,11 @@ class TaskQueue(object):
 
     def find(self, **kwargs):
         """
-        Find a task in this task queue. Only the oldest task in the queue will be
-        returned.
+        Find tasks in this task queue.
         @type kwargs: dict
         @param kwargs: task attributes and values as search criteria
         @type include_finished: bool
-        @return: Task instance on success, None otherwise
+        @return: list of L{Task} instances, empty if no tasks match
         """
         raise NotImplementedError()
 
@@ -105,8 +104,12 @@ class TaskQueue(object):
             find_criteria[attr_name] = getattr(task, attr_name)
 
         # Use the find functionality to determine if a task matches
-        task = self.find(**find_criteria)
-        if task is None or (not include_finished and
-                            task.state in _task_complete_states):
+        tasks = self.find(**find_criteria)
+        if not tasks:
             return False
-        return True
+        if include_finished:
+            return True
+        for t in tasks:
+            if t.state not in _task_complete_states:
+                return True
+        return False

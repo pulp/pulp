@@ -14,13 +14,20 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
+import sys
 import threading
+import traceback
 from datetime import datetime, timedelta
 
 from pulp.server.tasking.queue.base import TaskQueue
 from pulp.server.tasking.queue.thread import  DRLock, TaskThread
 from pulp.server.tasking.queue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states
+
+# log file --------------------------------------------------------------------
+
+_log = logging.getLogger('pulp')
 
 # fifo task queue -------------------------------------------------------------
 
@@ -72,6 +79,10 @@ class FIFOTaskQueue(TaskQueue):
                 self._cancel_tasks()
                 self._timeout_tasks()
                 self._cull_tasks()
+        except Exception:
+            _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
+                          ''.join(traceback.format_exception(*sys.exc_info())))
+            raise
         finally:
             self.__lock.release()
 
@@ -169,6 +180,6 @@ class FIFOTaskQueue(TaskQueue):
     def find(self, **kwargs):
         self.__lock.acquire()
         try:
-            return self.__storage.find_task(kwargs)
+            return self.__storage.find_tasks(kwargs)
         finally:
             self.__lock.release()

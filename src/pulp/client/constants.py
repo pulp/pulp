@@ -25,14 +25,14 @@ Sync Schedule      \t%-25s
 Packages           \t%-25s
 """
 
-AVAILABLE_CONSUMER_GROUP_INFO="""
+AVAILABLE_CONSUMER_GROUP_INFO = """
 Id                 \t%-25s
 Description        \t%-25s
 Consumer ids       \t%-25s
 """
 
 
-AVAILABLE_CONSUMER_INFO="""
+AVAILABLE_CONSUMER_INFO = """
 Id                 \t%-25s
 Description        \t%-25s
 Subscribed Repos   \t%-25s
@@ -59,7 +59,7 @@ Login :               \t%-25s
 Name  :               \t%-25s
 """
 
-ERRATA_INFO="""
+ERRATA_INFO = """
 Id                    \t%-25s
 Title                 \t%-25s
 Description           \t%-25s 

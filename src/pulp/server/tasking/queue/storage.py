@@ -17,7 +17,7 @@
 import itertools
 
 # storage class for in-memory task queues -------------------------------------
-   
+
 class VolatileStorage(object):
     """
     In memory queue storage class.
@@ -26,9 +26,9 @@ class VolatileStorage(object):
         self.__waiting_tasks = []
         self.__running_tasks = []
         self.__complete_tasks = []
-    
+
     # iterable methods
-            
+
     def all_tasks(self):
         """
         Return an iterator over all tasks currently in the queue in descending
@@ -54,7 +54,7 @@ class VolatileStorage(object):
         @return: iterator
         """
         return self.__waiting_tasks[:]
-    
+
     def running_tasks(self):
         """
         Return an iterator over all running tasks in the queue, in descending
@@ -62,7 +62,7 @@ class VolatileStorage(object):
         @return: iterator
         """
         return self.__running_tasks[:]
-        
+
     def complete_tasks(self):
         """
         Return an iterator over all complete tasks in the queue, in descending
@@ -70,9 +70,9 @@ class VolatileStorage(object):
         @return: iterator
         """
         return self.__complete_tasks[:]
-    
+
     # add/remove tasks methods
-                
+
     def add_waiting_task(self, task):
         """
         Add a task to the wait queue.
@@ -80,7 +80,7 @@ class VolatileStorage(object):
         @param task: task to add
         """
         self.__waiting_tasks.append(task)
-        
+
     def add_running_task(self, task):
         """
         Remove a task from the wait queue and add it to the running queue.
@@ -89,7 +89,7 @@ class VolatileStorage(object):
         """
         self.__waiting_tasks.remove(task)
         self.__running_tasks.append(task)
-        
+
     def add_complete_task(self, task):
         """
         Remove a task from the running queue and add it to the complete queue.
@@ -98,7 +98,7 @@ class VolatileStorage(object):
         """
         self.__running_tasks.remove(task)
         self.__complete_tasks.append(task)
-    
+
     def remove_task(self, task):
         """
         Remove a task from storage.
@@ -113,22 +113,20 @@ class VolatileStorage(object):
             return
         if task in self.__complete_tasks:
             self.__complete_tasks.remove(task)
-            
+
     # query methods
-    
-    def find_task(self, criteria):
+
+    def find_tasks(self, criteria):
         """
-        Find a task in the storage based on the given criteria.
+        Find tasks in the storage based on the given criteria.
         @type criteria: dict
         @param criteria: dict of task attr -> value to match against
         @type include_finished: bool
-        @return: the last (newest) task in the queue that matches on success,
-                 None otherwise
+        @return: list of tasks matching the criteria, empty if none match
         """
         num_criteria = len(criteria)
-        # In order to get the newest task and punch out early in the search algorithm,
-        # reverse the tasks before starting the search (reversed returns a list, so
-        # this call isn't destructive).
+        tasks = []
+        # reverse the order of all the tasks in order to list the newest first
         for task in reversed(list(self.all_tasks())):
             matches = 0
             for attr, value in criteria.items():
@@ -138,5 +136,5 @@ class VolatileStorage(object):
                     break;
                 matches += 1
             if matches == num_criteria:
-                return task
-        return None
+                tasks.append(task)
+        return tasks
