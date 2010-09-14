@@ -22,7 +22,6 @@ Name               \t%-25s
 Feed               \t%-25s
 Arch               \t%-25s
 Sync Schedule      \t%-25s
-Package Count      \t%-25s
 Packages           \t%-25s
 """
 
