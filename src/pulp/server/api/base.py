@@ -13,11 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import logging
-
-# logging and db connection
-
-log = logging.getLogger(__name__)
+from pulp.server import async
 
 # base api class --------------------------------------------------------------
 
@@ -26,6 +22,8 @@ class BaseApi(object):
     def __init__(self):
         self.objectdb = self._getcollection()
 
+    # db indexes
+
     @property
     def _unique_indexes(self):
         return ["id"]
@@ -33,6 +31,8 @@ class BaseApi(object):
     @property
     def _indexes(self):
         return []
+
+    # db methods
 
     def clean(self):
         """
@@ -61,4 +61,18 @@ class BaseApi(object):
         self.objectdb.remove(kwargs, safe=True)
 
     def _getcollection(self):
+        """
+        Protected method to get the db collection corresponding to this api.
+        """
         raise NotImplementedError()
+
+    # async methods
+
+    def run_async(self, method, args, kwargs, timeout=None):
+        return async.run_async(method, args, kwargs, timeout)
+
+    def find_async(self, **kwargs):
+        return async.find_async(**kwargs)
+
+    def cancel_async(self, task):
+        return async.cancel_async(task)

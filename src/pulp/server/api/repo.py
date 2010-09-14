@@ -624,8 +624,7 @@ class RepoApi(BaseApi):
             log.debug("Traceback: %s" % (traceback.format_exc()))
             return False
 
-    @audit()
-    def sync(self, id, progress_callback=None):
+    def _sync(self, id, progress_callback=None):
         """
         Sync a repo from the URL contained in the feed
         """
@@ -661,6 +660,25 @@ class RepoApi(BaseApi):
         for eid in sync_errataids:
             self._add_erratum(repo, eid)
         self.update(repo)
+
+    @audit()
+    def sync(self, id, progress_callback=None, timeout=None):
+        """
+        Run a repo sync asynchronously.
+        """
+        return self.run_async(self._sync,
+                              [id],
+                              {'progress_callback': progress_callback},
+                              timeout=timeout)
+
+    def list_syncs(self, id):
+        """
+        List all the syncs for a given repository.
+        """
+        return [task
+                for task in self.find_async(method='_sync')
+                if id in task.args]
+
 
     @audit(params=['id', 'pkginfo'])
     def upload(self, id, pkginfo, pkgstream):
