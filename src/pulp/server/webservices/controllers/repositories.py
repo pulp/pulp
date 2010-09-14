@@ -35,12 +35,12 @@ log = logging.getLogger('pulp')
 default_fields = [
     'id',
     'source',
-    'name', 
-    'arch', 
-    'sync_schedule', 
-    'use_symlinks', 
+    'name',
+    'arch',
+    'sync_schedule',
+    'use_symlinks',
     'groupid',
-    'relative_path',]
+    'relative_path', ]
 
 # restful controllers ---------------------------------------------------------
 
@@ -62,6 +62,7 @@ class Repositories(JSONController):
 
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
+            repo['package_count'] = api.package_count(repo['id'])
             for field in RepositoryDeferredFields.exposed_fields:
                 repo[field] = http.extend_uri_path('/'.join((repo['id'], field)))
 
@@ -87,8 +88,8 @@ class Repositories(JSONController):
                           symlinks=repo_data.get('use_symlinks', False),
                           sync_schedule=repo_data.get('sync_schedule', None),
                           cert_data=repo_data.get('cert_data', None),
-                          relative_path = repo_data.get('relative_path', None),
-                          groupid = repo_data.get('groupid', None),)
+                          relative_path=repo_data.get('relative_path', None),
+                          groupid=repo_data.get('groupid', None),)
 
         path = http.extend_uri_path(repo.id)
         repo['uri_ref'] = path
@@ -120,6 +121,7 @@ class Repository(JSONController):
         for field in RepositoryDeferredFields.exposed_fields:
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
+        repo['package_count'] = api.package_count(id)
         return self.ok(repo)
 
     @JSONController.error_handler
