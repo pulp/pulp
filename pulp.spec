@@ -33,6 +33,9 @@ Requires: mongo
 Requires: mongo-server
 Requires: m2crypto
 Requires: openssl
+Requires: qpidd
+Requires: qpidd-ssl
+Requires: qpid-cpp-server-store
 Requires: %{name}-client
 
 %if 0%{?rhel} > 5
