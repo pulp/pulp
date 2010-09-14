@@ -126,8 +126,13 @@ class Consumer(Endpoint):
         """
         try:
             self.thread.stop()
+            self.thread.join(90)
         except:
             pass
+
+    def close(self):
+        self.stop()
+        self.receiver.close()
 
     def join(self):
         """
