@@ -131,6 +131,9 @@ class Consumer(Endpoint):
             pass
 
     def close(self):
+        """
+        Stop the worker thread and clean up resources.
+        """
         self.stop()
         self.receiver.close()
 
