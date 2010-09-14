@@ -88,7 +88,7 @@ class RepoApi(BaseApi):
 
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None, 
+    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
                cert_data=None, groupid=None, relative_path=None):
         """
         Create a new Repository object and return it
@@ -107,11 +107,11 @@ class RepoApi(BaseApi):
                 r[key] = value
         if groupid:
             r['groupid'].append(groupid)
-            
-        if relative_path is None and r['source'] is not None : 
+
+        if relative_path is None and r['source'] is not None :
             # For none product repos, default to repoid
             url_parse = urlparse(str(r['source']["url"]))
-            r['relative_path'] = url_parse.path 
+            r['relative_path'] = url_parse.path
         else:
             r['relative_path'] = relative_path
         self.insert(r)
@@ -120,7 +120,7 @@ class RepoApi(BaseApi):
             repo_sync.update_schedule(r)
 
         return r
-    
+
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
         cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)
@@ -139,7 +139,7 @@ class RepoApi(BaseApi):
             except:
                 raise PulpException("Error storing certificate file %s " % key)
         return cert_files
-    
+
     @audit(params=['groupid', 'content_set'])
     def create_product_repo(self, content_set, cert_data, groupid=None):
         """
@@ -151,31 +151,31 @@ class RepoApi(BaseApi):
          @type content_set: dict(<label> : <relative_url>,)
          @param cert_data: a dictionary of ca_cert, cert and key for this product
          @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
-        """ 
+        """
         if not cert_data:
             # Nothing further can be done, exit
             return
         cert_files = self._write_certs_to_disk(groupid, cert_data)
-        CDN_URL= config.config.get("repos", "content_url")
+        CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
-        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'], 
+        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_urls(content_set)
-        
+
         for label, uri in repo_info.items():
             try:
-                repo = self.create(label, label, arch=label.split("-")[-1], 
-                                   feed="yum:" + CDN_URL + '/' + uri, 
+                repo = self.create(label, label, arch=label.split("-")[-1],
+                                   feed="yum:" + CDN_URL + '/' + uri,
                                    cert_data=cert_data, groupid=groupid,
                                    relative_path=uri)
                 self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
                 continue
-                
+
         serv.disconnect()
-        
+
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
@@ -227,6 +227,16 @@ class RepoApi(BaseApi):
             return packages
         return [p for p in packages.values() if p['name'].find(name) >= 0]
 
+    def package_count(self, id):
+        """
+        Return the number of packages in a repository.
+        @type id: str
+        @param id: repository id
+        @rtype: int
+        @return: the number of package in the repository corresponding to id
+        """
+        packages = self.packages(id)
+        return len(packages)
 
     def get_package(self, id, name):
         """
