@@ -40,7 +40,8 @@ default_fields = [
     'sync_schedule',
     'use_symlinks',
     'groupid',
-    'relative_path', ]
+    'relative_path',
+    'files',]
 
 # restful controllers ---------------------------------------------------------
 
@@ -63,6 +64,7 @@ class Repositories(JSONController):
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
             repo['package_count'] = api.package_count(repo['id'])
+            repo['files_count'] = len(repo['files'])
             for field in RepositoryDeferredFields.exposed_fields:
                 repo[field] = http.extend_uri_path('/'.join((repo['id'], field)))
 
@@ -122,6 +124,7 @@ class Repository(JSONController):
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
         repo['package_count'] = api.package_count(id)
+        repo['files_count'] = len(repo['files']) 
         return self.ok(repo)
 
     @JSONController.error_handler
@@ -226,6 +229,7 @@ class RepositoryActions(AsyncController):
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
         'sync',
+        '_sync',
         'upload',
         'add_package',
         'get_package',
@@ -247,7 +251,8 @@ class RepositoryActions(AsyncController):
         @return: True on successful sync of repository from feed
         """
         timeout = self.timeout(self.params())
-        task = self.start_task(api.sync, [id], timeout=timeout, unique=True)
+        #task = self.start_task(api.sync, [id], timeout=timeout, unique=True)
+        task = api.sync(id, timeout=timeout)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
@@ -256,6 +261,9 @@ class RepositoryActions(AsyncController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
+
+    # XXX hack to make the web services unit tests work
+    _sync = sync
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

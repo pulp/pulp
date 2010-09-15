@@ -178,7 +178,7 @@ class repo(BaseCore):
             for repo in repos:
                 print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], repo["source"], repo["arch"],
-                    repo["sync_schedule"], repo['package_count'])
+                    repo["sync_schedule"], repo['package_count'], repo['files_count'])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

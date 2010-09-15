@@ -255,6 +255,7 @@ class AsyncController(JSONController):
                    unique=False):
         """
         Execute the function and its arguments as an asynchronous task.
+        @deprecated: the async execution is being pushed down into the api
         @param func: python callable
         @param args: positional arguments for func
         @param kwargs: key word arguments for func
@@ -265,6 +266,7 @@ class AsyncController(JSONController):
     def cancel_task(self, task):
         """
         Cancel the passed in task
+        @deprecated: the async execution is being pushed down into the api
         @type task: Task instance
         @param task: task to cancel
         @return: True if the task was successfully canceled, False otherwise
@@ -277,6 +279,7 @@ class AsyncController(JSONController):
     def task_status(self, id):
         """
         Get the current status of an asynchronous task.
+        @deprecated: the async execution is being pushed down into the api
         @param id: task id
         @return: TaskModel instance
         """
@@ -290,6 +293,7 @@ class AsyncController(JSONController):
     def find_task(self, id):
         """
         Find and return a task with the given id
+        @deprecated: the async execution is being pushed down into the api
         @type id: str
         @param id: id of task to find
         @return: Task instance if a task with the id exists, None otherwise

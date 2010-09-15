@@ -126,8 +126,16 @@ class Consumer(Endpoint):
         """
         try:
             self.thread.stop()
+            self.thread.join(90)
         except:
             pass
+
+    def close(self):
+        """
+        Stop the worker thread and clean up resources.
+        """
+        self.stop()
+        self.receiver.close()
 
     def join(self):
         """

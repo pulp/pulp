@@ -519,8 +519,8 @@ class TestApi(unittest.TestCase):
                                   'local:file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b, 'some name', 'x86_64',
                                 'local:file://%s' % datadir_b)
-        self.rapi.sync(repo_a["id"])
-        self.rapi.sync(repo_b["id"])
+        self.rapi._sync(repo_a["id"])
+        self.rapi._sync(repo_b["id"])
         # This will get fixed when we move the async nature of sync down into 
         # the API layer
         import time
@@ -571,8 +571,8 @@ class TestApi(unittest.TestCase):
                                 'local:file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b, 'some name', 'x86_64',
                                 'local:file://%s' % datadir_b)
-        self.rapi.sync(repo_a['id'])
-        self.rapi.sync(repo_b['id'])
+        self.rapi._sync(repo_a['id'])
+        self.rapi._sync(repo_b['id'])
         # Look up each repo from API
         found_a = self.rapi.repository(repo_a['id'])
         found_b = self.rapi.repository(repo_b['id'])
@@ -602,12 +602,12 @@ class TestApi(unittest.TestCase):
                                 'yum:http://mmccune.fedorapeople.org/pulp/')
         failed = False
         try:
-            self.rapi.sync('invalid-id-not-found')
+            self.rapi._sync('invalid-id-not-found')
         except Exception:
             failed = True
         assert(failed)
 
-        self.rapi.sync(repo['id'])
+        self.rapi._sync(repo['id'])
 
         # Check that local storage has dir and rpms
         dirList = os.listdir(self.config.get('paths', 'local_storage') + '/repos/' + repo['id'])
@@ -625,7 +625,7 @@ class TestApi(unittest.TestCase):
         r = self.rapi.create('test_resync_removes_deleted_package',
                 'test_name', 'x86_64', 'local:file://%s' % (repo_path))
         self.assertTrue(r != None)
-        self.rapi.sync(r["id"])
+        self.rapi._sync(r["id"])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         self.assertTrue(len(r["packages"]) == 3)
@@ -643,7 +643,7 @@ class TestApi(unittest.TestCase):
         r = self.rapi.repository(r["id"])
         r["source"] = RepoSource("local:file://%s" % (repo_path))
         self.rapi.update(r)
-        self.rapi.sync(r["id"])
+        self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
         self.assertTrue(len(r["packages"]) == 2)
@@ -664,7 +664,7 @@ class TestApi(unittest.TestCase):
         # verify repo without feed is not syncable
         failed = False
         try:
-            self.rapi.sync(repo['id'])
+            self.rapi._sync(repo['id'])
         except Exception:
             # raises a PulpException
             # 'This repo is not setup for sync. Please add packages using upload.'
@@ -678,7 +678,7 @@ class TestApi(unittest.TestCase):
                                 'local:file://%s' % datadir)
         print "Repo: %s" % repo
 
-        self.rapi.sync(repo['id'])
+        self.rapi._sync(repo['id'])
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         assert(packages is not None)

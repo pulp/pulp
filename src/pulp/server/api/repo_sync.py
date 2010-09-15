@@ -149,6 +149,13 @@ class BaseSynchronizer(object):
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" %
                 (repo['id'], len(added_packages), endTime - startTime))
+        log.debug("Begin to add files from %s into %s" % (dir, repo['id']))
+        images_dir = os.path.join(dir, "images")
+        if not os.path.exists(images_dir):
+            log.info("No image files to import to repo..")
+        else:
+            repo['files'] = pulp.server.util.listdir(images_dir)
+            log.debug("Added %s potential image files to repo %s" % (len(repo['files']), repo['id']))
         # Import groups metadata if present
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):

@@ -368,7 +368,7 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_repo_sync", "test_name", "x86_64",
                 "local:file://%s" % datadir)
-        self.rapi.sync(r['id'])
+        self.rapi._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         enhancement = [u'RHEA-2009:1270', u'RHEA-2007:0637', u'RHEA-2007:0636',
@@ -412,7 +412,7 @@ class TestErrata(unittest.TestCase):
                 'test_errata_repo_resync_name', 'i386',
                 'local:file://%s' % (repo_path))
         self.assertTrue(r != None)
-        self.rapi.sync(r["id"])
+        self.rapi._sync(r["id"])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         #LOOK UP ERRATA AND VERIFY
@@ -461,7 +461,7 @@ class TestErrata(unittest.TestCase):
         r = self.rapi.repository(r["id"])
         r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
         self.rapi.update(r)
-        self.rapi.sync(r["id"])
+        self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
         self.assertTrue(len(r['errata']['enhancement']) == len(enhancement))
@@ -487,7 +487,7 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_query_by_cve", "test_name", "x86_64",
                 "local:file://%s" % datadir)
-        self.rapi.sync(r['id'])
+        self.rapi._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         found = self.eapi.query_by_cve("CVE-2007-3919")
@@ -498,7 +498,7 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_query_bz", "test_name", "x86_64",
                 "local:file://%s" % datadir)
-        self.rapi.sync(r['id'])
+        self.rapi._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         found = self.eapi.query_by_bz("433560")

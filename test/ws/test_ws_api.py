@@ -83,13 +83,13 @@ class RemoteTestApi(TestApi):
     def test_sync_feedless(self):
         pass
 
-
     # Package group syncing is currently disabled,
     # it will be fixed later portion of Sprint 14
     # after that change below two package group
     # tests should be enabled
     def test_repo_package_groups(self):
         pass
+
     def test_repo_package_group_categories(self):
         pass
 

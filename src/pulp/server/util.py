@@ -181,25 +181,23 @@ def get_repomd_filetype_path(path, filetype):
         return data.location[1]
     return None
 
-
 def listdir(directory):
     """
-    List the packages in the given directory.
+    List the files in the given directory and subdirectory.
     @type directory: str
     @param directory: name of the directory
-    @return: list of 'directory/package name'
+    @return: list of 'directory/file'
     """
     directory = os.path.abspath(os.path.normpath(directory))
     if not os.access(directory, os.R_OK | os.X_OK):
         raise Exception("Cannot read from directory %s" % directory)
     if not os.path.isdir(directory):
         raise Exception("%s not a directory" % directory)
-    # Build the package list
-    packagesList = []
-    for f in os.listdir(directory):
-        packagesList.append("%s/%s" % (directory, f))
-    return packagesList
-
+    filelist = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            filelist.append("%s/%s" % (root, file))
+    return filelist
 
 def compare_packages(pkgA, pkgB):
     """

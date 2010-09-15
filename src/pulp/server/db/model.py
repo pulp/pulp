@@ -57,6 +57,7 @@ class Repo(Base):
         self.errata = {}
         self.groupid = [] # this is productid in kalpana terms
         self.relative_path = None
+        self.files = []
         
     def get_repo_source(self):
         if not self.source:
