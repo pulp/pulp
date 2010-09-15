@@ -237,7 +237,7 @@ class RepoApi(BaseApi):
         """
         packages = self.packages(id)
         return len(packages)
-
+    
     def get_package(self, id, name):
         """
         Return matching Package object in this Repo

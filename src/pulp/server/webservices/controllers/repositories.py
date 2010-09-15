@@ -40,7 +40,8 @@ default_fields = [
     'sync_schedule',
     'use_symlinks',
     'groupid',
-    'relative_path', ]
+    'relative_path',
+    'files',]
 
 # restful controllers ---------------------------------------------------------
 
@@ -63,6 +64,7 @@ class Repositories(JSONController):
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
             repo['package_count'] = api.package_count(repo['id'])
+            repo['files_count'] = len(repo['files'])
             for field in RepositoryDeferredFields.exposed_fields:
                 repo[field] = http.extend_uri_path('/'.join((repo['id'], field)))
 
@@ -122,6 +124,7 @@ class Repository(JSONController):
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
         repo['package_count'] = api.package_count(id)
+        repo['files_count'] = len(repo['files']) 
         return self.ok(repo)
 
     @JSONController.error_handler
