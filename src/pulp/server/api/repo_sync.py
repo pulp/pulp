@@ -359,8 +359,20 @@ class LocalSynchronizer(BaseSynchronizer):
                 else:
                     imlist = pulp.server.util.listdir(src_images_dir)
                     dst_images_dir = os.path.join(dst_repo_dir, "images")
-                    shutil.copytree(src_images_dir, dst_images_dir)
-                    log.info("Imported %s files to %s" % (len(imlist), dst_images_dir))
+                    for imfile in imlist:
+                        rel_file_path = imfile.split('/images/')[-1]
+                        dst_file_path = os.path.join(dst_images_dir, rel_file_path)
+                        if os.path.exists(dst_file_path):
+                            dst_file_checksum  = pulp.server.util.get_file_checksum(filename=dst_file_path)
+                            src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
+                            if src_file_checksum == dst_file_checksum:
+                                log.info("file %s already exists with same checksum. skip import" % rel_file_path)
+                                continue
+                        file_dir = os.path.dirname(dst_file_path)
+                        if not os.path.exists(file_dir):
+                            os.makedirs(file_dir)
+                        shutil.copy(imfile, dst_file_path)
+                        log.info("Imported file %s " % dst_file_path)
 
 ##TODO: Need to revist the removal case
 #                # Remove rpms which are no longer in source
