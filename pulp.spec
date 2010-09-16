@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.61
+Version:        0.0.62
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -173,6 +173,33 @@ fi
 
 
 %changelog
+* Thu Sep 16 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.62-1
+- Including files as a sub document in repo collection and send down file count
+  per repo on repo list (pkilambi@redhat.com)
+- Increase the buffsersize to 2G so we can upload larger files to pulp server
+  (pkilambi@redhat.com)
+- add close() to Consumer. (jortel@redhat.com)
+- removed async sync calls from comps as well (jconnor@redhat.com)
+- pushed async support for repo.sync down into api later added list_syncs
+  methods for a given repo (jconnor@redhat.com)
+- changed the display to replace the packages url with the package count
+  instead of a new field (jconnor@redhat.com)
+- added package count to client repo list output (jconnor@redhat.com)
+- added package_count field to repository information returned by web services
+  (jconnor@redhat.com)
+- added package_count method to repository api (jconnor@redhat.com)
+- fixed a bug where I was creating a weak reference to a weak reference
+  (jconnor@redhat.com)
+- converted async controllers to use new async api and handle lists of tasks
+  being returned by the find call (jconnor@redhat.com)
+- changed queue find to return a list of tasks instead of just the first,
+  newest one found (jconnor@redhat.com)
+- moved canonical server-side queue async module and implemented simple api for
+  it (jconnor@redhat.com)
+- changed _thread_dict to use weak references so that it no longer needs
+  exlicit cleanup (jconnor@redhat.com)
+- replaced deprecated call into task thread (jconnor@redhat.com)
+
 * Fri Sep 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.61-1
 - Added errata install and package profile entries to consumer history.
   (jason.dobies@redhat.com)
