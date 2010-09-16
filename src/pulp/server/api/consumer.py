@@ -75,7 +75,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
-        self.objectdb.remove(consumer, safe=True)
+        self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
     
     @audit()

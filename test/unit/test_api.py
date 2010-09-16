@@ -406,6 +406,18 @@ class TestApi(unittest.TestCase):
         self.assertTrue(len(consumers) == 1)
         self.assertTrue(c['id'] == consumers[0]['id'])
 
+    def test_consumer_delete(self):
+        # Setup
+        id = 'delete-me'
+        self.capi.create(id, '')
+        self.assertTrue(self.capi.consumer(id) is not None)
+
+        # Test
+        self.capi.delete(id)
+
+        # Verify
+        self.assertTrue(self.capi.consumer(id) is None)
+        
     def test_consumer_certificate(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         (pk, pem) = self.capi.certificate(c['id'])
@@ -415,7 +427,6 @@ class TestApi(unittest.TestCase):
         subject = cert.subject()
         consumer_cert_uid = subject.get('CN', None)
         self.assertEqual(c['id'], consumer_cert_uid)
-
 
     def test_consumer_bind(self):
         cid = 'bindconsumerid'
