@@ -9,6 +9,7 @@ from unittest import TestCase
 from pulp.messaging.decorators import *
 from pulp.messaging.base import Agent
 from pulp.messaging.base import Container
+from pulp.messaging.store import PendingQueue
 from pulp.messaging.consumer import RequestConsumer, EventConsumer
 from pulp.messaging.async import ReplyConsumer, Listener
 from pulp.messaging.producer import Producer
@@ -17,6 +18,9 @@ from time import sleep
 import logging
 
 logging.root.setLevel(logging.ERROR)
+
+
+PendingQueue.ROOT = '/tmp/pulp/messaging'
 
 
 @remote
