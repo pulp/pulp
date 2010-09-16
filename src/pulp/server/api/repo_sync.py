@@ -315,21 +315,21 @@ class LocalSynchronizer(BaseSynchronizer):
     Sync class to synchronize a directory of rpms from a local filer
     """
     def sync(self, repo, repo_source, progress_callback=None):
-        pkg_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
-        log.debug("sync of %s for repo %s" % (pkg_dir, repo['id']))
+        src_repo_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
+        log.debug("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         try:
-            repo_dir = "%s/%s" % (repos_location(), repo['id'])
-            if not os.path.exists(pkg_dir):
-                raise InvalidPathError("Path %s is invalid" % pkg_dir)
+            dst_repo_dir = "%s/%s" % (repos_location(), repo['id'])
+            if not os.path.exists(src_repo_dir):
+                raise InvalidPathError("Path %s is invalid" % src_repo_dir)
             if repo['use_symlinks']:
-                log.info("create a symlink to src directory %s %s" % (pkg_dir, repo_dir))
-                os.symlink(pkg_dir, repo_dir)
+                log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
+                os.symlink(src_repo_dir, dst_repo_dir)
             else:
-                if not os.path.exists(repo_dir):
-                    os.makedirs(repo_dir)
-
-                pkglist = pulp.server.util.listdir(pkg_dir)
-                log.debug("Found %s packages in %s" % (len(pkglist), pkg_dir))
+                if not os.path.exists(dst_repo_dir):
+                    os.makedirs(dst_repo_dir)
+                # Compute and import packages
+                pkglist = pulp.server.util.listdir(src_repo_dir)
+                log.debug("Found %s packages in %s" % (len(pkglist), src_repo_dir))
                 for count, pkg in enumerate(pkglist):
                     if pkg.endswith(".rpm"):
                         if count % 500 == 0:
@@ -349,9 +349,18 @@ class LocalSynchronizer(BaseSynchronizer):
                         else:
                             log.error("package Already exists. continue")
 
-                        repo_pkg_path = os.path.join(repo_dir, os.path.basename(pkg))
+                        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                         if not os.path.islink(repo_pkg_path):
-                            os.symlink(pkg_location, repo_pkg_path)
+                            os.symlink(pkg_location, repo_pkg_path)  
+                # compute and import repo image files            
+                src_images_dir = os.path.join(src_repo_dir, "images")
+                if not os.path.exists(src_images_dir):
+                    log.info("No image files to import")
+                else:
+                    imlist = pulp.server.util.listdir(src_images_dir)
+                    dst_images_dir = os.path.join(dst_repo_dir, "images")
+                    shutil.copytree(src_images_dir, dst_images_dir)
+                    log.info("Imported %s files to %s" % (len(imlist), dst_images_dir))
 
 ##TODO: Need to revist the removal case
 #                # Remove rpms which are no longer in source
@@ -366,22 +375,22 @@ class LocalSynchronizer(BaseSynchronizer):
 #                        os.remove(os.path.join(repo_dir, epkg))
                 groups_xml_path = None
                 updateinfo_path = None
-                src_repomd_xml = os.path.join(pkg_dir, "repodata/repomd.xml")
+                src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
                 if os.path.isfile(src_repomd_xml):
                     ftypes = pulp.server.util.get_repomd_filetypes(src_repomd_xml)
                     log.debug("repodata has filetypes of %s" % (ftypes))
                     if "group" in ftypes:
                         g = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "group")
-                        src_groups = os.path.join(pkg_dir, g)
+                        src_groups = os.path.join(src_repo_dir, g)
                         if os.path.isfile(src_groups):
                             shutil.copy(src_groups,
-                                os.path.join(repo_dir, os.path.basename(src_groups)))
-                            log.debug("Copied groups over to %s" % (repo_dir))
-                        groups_xml_path = os.path.join(repo_dir,
+                                os.path.join(dst_repo_dir, os.path.basename(src_groups)))
+                            log.debug("Copied groups over to %s" % (dst_repo_dir))
+                        groups_xml_path = os.path.join(dst_repo_dir,
                             os.path.basename(src_groups))
                     if "updateinfo" in ftypes:
                         f = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
-                        src_updateinfo_path = os.path.join(pkg_dir, f)
+                        src_updateinfo_path = os.path.join(src_repo_dir, f)
                         if os.path.isfile(src_updateinfo_path):
                             # Copy the updateinfo metadata to 'updateinfo.xml'
                             # We want to ensure modifyrepo is run with updateinfo
@@ -395,25 +404,25 @@ class LocalSynchronizer(BaseSynchronizer):
                             f = src_updateinfo_path.endswith('.gz') and gzip.open(src_updateinfo_path) \
                                     or open(src_updateinfo_path, 'rt')
                             shutil.copyfileobj(f, open(
-                                os.path.join(repo_dir, "updateinfo.xml"), "wt"))
-                            log.debug("Copied %s to %s" % (src_updateinfo_path, repo_dir))
-                            updateinfo_path = os.path.join(repo_dir, "updateinfo.xml")
+                                os.path.join(dst_repo_dir, "updateinfo.xml"), "wt"))
+                            log.debug("Copied %s to %s" % (src_updateinfo_path, dst_repo_dir))
+                            updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
-                pulp.server.upload.create_repo(repo_dir, groups=groups_xml_path)
+                pulp.server.upload.create_repo(dst_repo_dir, groups=groups_xml_path)
                 end = time.time()
                 log.info("Createrepo finished in %s seconds" % (end - start))
                 if updateinfo_path:
                     log.debug("Modifying repo for updateinfo")
-                    pulp.server.upload.modify_repo(os.path.join(repo_dir, "repodata"),
+                    pulp.server.upload.modify_repo(os.path.join(dst_repo_dir, "repodata"),
                             updateinfo_path)
         except InvalidPathError:
-            log.error("Sync aborted due to invalid source path %s" % (pkg_dir))
+            log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))
             raise
         except IOError:
-            log.error("Unable to create repo directory %s" % repo_dir)
+            log.error("Unable to create repo directory %s" % dst_repo_dir)
             raise
-        return repo_dir
+        return dst_repo_dir
 
 class RHNSynchronizer(BaseSynchronizer):
 
