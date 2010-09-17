@@ -35,7 +35,13 @@ Requires: m2crypto
 Requires: openssl
 Requires: qpidd
 Requires: qpidd-ssl
-Requires: msgstore.so
+%ifarch i386
+Requires: msgstore.so()(32bit)  
+%endarch
+%ifarch x86_64
+Requires: msgstore.so()(64bit)
+%endarch
+
 Requires: %{name}-client
 
 %if 0%{?rhel} > 5
