@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.62
+Version:        0.0.63
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -176,6 +176,18 @@ fi
 
 
 %changelog
+* Fri Sep 17 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.63-1
+- Changing the product.created to match envelope on the bus
+  (pkilambi@redhat.com)
+- add a groupid filter to only display repos by groups (pkilambi@redhat.com)
+- Set PendingQueue.ROOT to accessible location for unit tests.
+  (jortel@redhat.com)
+- Validate file imports if they exist before importing (pkilambi@redhat.com)
+- 623900 - Fixed consumer delete call to pymongo to use the correct parameter
+  (jason.dobies@redhat.com)
+- Adding file/image sync support for local syncs (pkilambi@redhat.com)
+- adding qpidd requires since we actually do require these (mmccune@gmail.com)
+
 * Thu Sep 16 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.62-1
 - Including files as a sub document in repo collection and send down file count
   per repo on repo list (pkilambi@redhat.com)
