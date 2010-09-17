@@ -54,7 +54,9 @@ class CDNConnection:
     
     def fetch_urls(self, content_sets):
         version_arch_urls = {}
-        for label, uri in content_sets.items():
+        for content_set in content_sets:
+            label = content_set['content_set_label']
+            uri   = content_set['content_rel_url']
             try:
                 versions = self._request_get(uri[:uri.find("$releasever")] + "/listing").split('\n')
                 for version in versions:
