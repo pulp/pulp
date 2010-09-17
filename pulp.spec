@@ -35,13 +35,11 @@ Requires: m2crypto
 Requires: openssl
 Requires: qpidd
 Requires: qpidd-ssl
-%ifarch i386
-Requires: msgstore.so()(32bit)  
-%endarch
-%ifarch x86_64
-Requires: msgstore.so()(64bit)
-%endarch
-
+%if 0%{?fedora} < 13
+Requires: rhm-cpp-server-store
+else:
+Requires: qpid-cpp-server-store
+%endif
 Requires: %{name}-client
 
 %if 0%{?rhel} > 5
