@@ -37,7 +37,7 @@ Requires: qpidd
 Requires: qpidd-ssl
 %if 0%{?fedora} < 13
 Requires: rhm-cpp-server-store
-else:
+%else:
 Requires: qpid-cpp-server-store
 %endif
 Requires: %{name}-client
