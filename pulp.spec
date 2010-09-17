@@ -35,7 +35,7 @@ Requires: m2crypto
 Requires: openssl
 Requires: qpidd
 Requires: qpidd-ssl
-Requires: qpid-cpp-server-store
+Requires: msgstore.so
 Requires: %{name}-client
 
 %if 0%{?rhel} > 5
