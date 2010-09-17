@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.63
+Version:        0.0.64
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -180,6 +180,9 @@ fi
 
 
 %changelog
+* Fri Sep 17 2010 Mike McCune <mmccune@gmail.com> 0.0.64-1
+- fedora conditional install of qpid libs (mmccune@gmail.com)
+
 * Fri Sep 17 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.63-1
 - Changing the product.created to match envelope on the bus
   (pkilambi@redhat.com)
