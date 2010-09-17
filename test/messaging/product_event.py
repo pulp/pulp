@@ -34,15 +34,20 @@ def product_driver():
     ed = EventDispatcher()
     ed.start()
     p = EventProducer()
-    content_set = {
-            "rhel-server" : "/content/dist/rhel/server/$releasever/$basearch/os"}
+    content_set = [{
+            'content_set_label' : "rhel-server" ,
+            'content_rel_url' : "/content/dist/rhel/server/$releasever/$basearch/os"},]
     cert_data = {'ca' : open(CA_CERT, "rb").read(),
                  'cert' : open(CERT_FILE, "rb").read(),
                  'key' : open(CERT_KEY, 'rb').read()}
     d = dict(
-        id='rhel-server',
-        content_set=content_set,
-        cert_data = cert_data)
+        id='1',
+        name = 'rhel-server',
+        content_sets=content_set,
+        ca_cert = open(CA_CERT, "rb").read(),
+        entitlement_cert =  open(CERT_FILE, "rb").read(),
+        cert_public_key  = open(CERT_KEY, 'rb').read()
+        )
     p.send('product.created', d)
     ed.stop()
 

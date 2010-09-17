@@ -86,10 +86,14 @@ class ProductEvent(EventHandler):
         """
         log.error("Repo event create processing %s" % event)
         productid   = event['id']
-        content_set = event['content_set']
-        cert_data   = event['cert_data']
-        log.error("Repo event data %s %s %s" % (productid, content_set, cert_data))
-        self.rapi.create_product_repo(content_set, cert_data, groupid=productid)
+        product_name = event['name']
+        content_sets = event['content_sets']
+        cert_data   = {'ca'   : event['ca_cert'],
+                       'cert' : event['entitlement_cert'],
+                       'key'  : event['cert_public_key'],
+                       }
+        log.error("Repo event data %s %s %s" % (product_name, content_sets, cert_data))
+        self.rapi.create_product_repo(content_sets, cert_data, groupid=product_name)
 
     @inbound(action='updated')
     def updated(self, event):
