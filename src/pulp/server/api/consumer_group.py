@@ -59,12 +59,11 @@ class ConsumerGroupApi(BaseApi):
         return c
 
 
-    def consumergroups(self):
+    def consumergroups(self, spec=None, fields=None):
         """
-        List all consumergroups.
+        List all consumer groups.
         """
-        consumergroups = list(self.objectdb.find())
-        return consumergroups
+        return list(self.objectdb.find(spec=spec, fields=fields))   
 
     def consumergroup(self, id):
         """

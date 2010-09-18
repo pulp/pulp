@@ -48,6 +48,19 @@ class ConsumerApi(BaseApi):
         return get_object_db('consumers',
                              self._unique_indexes,
                              self._indexes)
+        
+    def _get_consumergroup_collection(self):
+        '''
+        The circular dependency of requiring the consumergroup API causes issues, so
+        this method returns a hook to that collection.
+
+        @return: pymongo database connection to the consumergroup connection
+        @rtype:  ?
+        '''
+        return get_object_db('consumergroups',
+                             ['id'],
+                             [])
+    
 
     @property
     def _unique_indexes(self):
@@ -75,6 +88,15 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
+        
+        consumergroup_db = self._get_consumergroup_collection()
+        consumergroups = list(consumergroup_db.find({'consumerids' : consumer['id']}))
+        for consumergroup in consumergroups:
+            consumerids = consumergroup['consumerids']
+            consumerids.remove(consumer['id'])
+            consumergroup['consumerids'] = consumerids
+            consumergroup_db.save(consumergroup, safe=True)
+                
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
     
