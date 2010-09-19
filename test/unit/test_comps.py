@@ -91,7 +91,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(repo["group_gz_xml_path"] == "")
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
-        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["test_package_name"])
+        self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["pulp-test-package"])
         # Update repo object so we can test that group_xml_path was set
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["group_xml_path"] != "")
@@ -101,8 +101,8 @@ class TestComps(unittest.TestCase):
         self.assertTrue(len(groups) == 1)
         self.assertTrue(groups[0].groupid == pkg_group["id"])
         self.assertTrue(groups[0].name == pkg_group["name"])
-        self.assertTrue("test_package_name" in groups[0].default_packages)
-        self.assertTrue("test_package_name" not in groups[0].mandatory_packages)
+        self.assertTrue("pulp-test-package" in groups[0].default_packages)
+        self.assertTrue("pulp-test-package" not in groups[0].mandatory_packages)
 
     def test_basic_comps(self):
         repo = self.rapi.create('test_comps_id', 'test_comps_name',
