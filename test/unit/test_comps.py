@@ -91,6 +91,16 @@ class TestComps(unittest.TestCase):
         self.assertTrue(repo["group_gz_xml_path"] == "")
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
+        
+        # Verify that non-existent package in a repo cannot be added
+        caught = False
+        try:
+            self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["random_non_existent_package"])
+            self.assertTrue(False)
+        except PulpException, e:
+            caught = True
+        self.assertTrue(caught)
+        
         self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["pulp-test-package"])
         # Update repo object so we can test that group_xml_path was set
         repo = self.rapi.repository(repo["id"])
@@ -362,7 +372,7 @@ class TestComps(unittest.TestCase):
         caught = False
         try:
             self.rapi.delete_package_from_group(repo["id"], found["id"],
-                "system-config-boot", gtype="default")
+                "pulp-test-package", gtype="default")
         except PulpException, e:
             caught = True
         self.assertTrue(caught)
@@ -370,7 +380,7 @@ class TestComps(unittest.TestCase):
         caught = False
         try:
             self.rapi.add_packages_to_group(repo["id"], "admin-tools",
-                ["newPackage"], gtype="default")
+                ["pulp-test-package"], gtype="default")
         except PulpException, e:
             caught = True
         self.assertTrue(caught)
@@ -384,19 +394,20 @@ class TestComps(unittest.TestCase):
         except PulpException, e:
             caught = True
         self.assertTrue(caught)
+        
         # Verify if we create a new package group, we can add/delete packages
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
         self.rapi.add_packages_to_group(repo["id"], pkg_group["id"],
-                ["test_package_name"], gtype="default")
+                ["pulp-test-package"], gtype="default")
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
-        self.assertTrue("test_package_name" in found["default_package_names"])
+        self.assertTrue("pulp-test-package" in found["default_package_names"])
         self.rapi.delete_package_from_group(repo["id"], pkg_group["id"],
-                "test_package_name", gtype="default")
+                "pulp-test-package", gtype="default")
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
         self.assertTrue(found is not None)
-        self.assertTrue("test_package_name" not in found["default_package_names"])
+        self.assertTrue("pulp-test-package" not in found["default_package_names"])
         # Verify we can remove package group
         self.rapi.delete_packagegroup(repo["id"], pkg_group["id"])
         found = self.rapi.packagegroup(repo['id'], pkg_group["id"])
