@@ -150,7 +150,7 @@ class repo(BaseCore):
 
     def _create(self):
         if not self.options.id:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         if not self.options.name:
             self.options.name = self.options.id
@@ -174,7 +174,7 @@ class repo(BaseCore):
                                      self.options.arch, self.options.feed,
                                      symlinks, self.options.schedule, cert_data=cert_data,
                                      relative_path=relative_path, groupid=groupid)
-            print _(" Successfully created Repo [ %s ]" % repo['id'])
+            print _(" Successfully created Repo [ %s ]") % repo['id']
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -205,12 +205,12 @@ class repo(BaseCore):
 
     def _sync(self):
         if not self.options.id:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             task_object = self.pconn.sync(self.options.id, self.options.timeout)
             state = "waiting"
-            print "Task created with ID::", task_object['id']
+            print _("Task created with ID::"), task_object['id']
             while state not in ["finished", "error", 'timed out', 'canceled']:
                 time.sleep(5)
                 status = self.pconn.sync_status(task_object['status_path'])
@@ -218,7 +218,7 @@ class repo(BaseCore):
                     raise SyncError(_('No sync for repository [%s] found')
                                     % self.options.id)
                 state = status['state']
-                print "Sync Status::", state
+                print _("Sync Status::"), state
             packages = self.pconn.packages(self.options.id)
             pkg_count = 0
             if packages:
@@ -226,8 +226,8 @@ class repo(BaseCore):
             if state == "error":
                 raise SyncError(status['traceback'][-1])
             else:
-                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" %
-                        (self.options.id, pkg_count))
+                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages") % \
+                    (self.options.id, pkg_count)
         except RestlibException, re:
             log.info("REST Error.", exc_info=True)
             systemExit(re.code, re.msg)
@@ -240,14 +240,14 @@ class repo(BaseCore):
 
     def _cancel_sync(self):
         if not self.options.id:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         if not self.options.taskid:
-            print("task id required. Try --help")
+            print _("task id required. Try --help")
             sys.exit(0)
         try:
             repos = self.pconn.cancel_sync(self.options.id, self.options.taskid)
-            print _(" Sync task %s cancelled") % self.options.taskid
+            print _(" Sync task %s canceled") % self.options.taskid
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -257,19 +257,17 @@ class repo(BaseCore):
 
     def _delete(self):
         if not self.options.id:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             self.pconn.delete(id=self.options.id)
-            print _(" Successful deleted Repo [ %s ] " % self.options.id)
+            print _(" Successful deleted Repo [ %s ]") % self.options.id
         except RestlibException, re:
-            print _(" Deleted operation failed on Repo [ %s ] " %
-                    self.options.id)
+            print _(" Deleted operation failed on Repo [ %s ]") % self.options.id
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
-            print _(" Deleted operation failed on Repo [ %s ]. " %
-                    self.options.id)
+            print _(" Deleted operation failed on Repo [ %s ].") % self.options.id
             log.error("Error: %s" % e)
             sys.exit(-1)
 
@@ -278,12 +276,12 @@ class repo(BaseCore):
         # ignore the command and pick the files
         files = files[2:]
         if not self.options.id:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         if self.options.dir:
             files += utils.processDirectory(self.options.dir, "rpm")
         if not files:
-            print("Need to provide atleast one file to perform upload")
+            print _("Need to provide at least one file to perform upload")
             sys.exit(0)
         uploadinfo = {}
         uploadinfo['repo'] = self.options.id
@@ -291,20 +289,19 @@ class repo(BaseCore):
             try:
                 pkginfo = utils.processRPM(frpm)
             except FileError, e:
-                print('Error: %s' % e)
+                print _('Error: %s') % e
                 continue
             if not pkginfo.has_key('nvrea'):
-                print("Package %s is Not an RPM Skipping" % frpm)
+                print _("Package %s is Not an RPM Skipping") % frpm
                 continue
             pkgstream = base64.b64encode(open(frpm).read())
             try:
                 status = self.pconn.upload(self.options.id, pkginfo, pkgstream)
                 if status:
-                    print _(" Successful uploaded [%s] to  Repo [ %s ]" %
-                            (pkginfo['pkgname'], self.options.id))
+                    print _(" Successful uploaded [%s] to  Repo [ %s ]") % \
+                        (pkginfo['pkgname'], self.options.id)
                 else:
-                    print _(" Failed to Upload %s to Repo [ %s ]" %
-                            self.options.id)
+                    print _(" Failed to Upload %s to Repo [ %s ]") % self.options.id
             except RestlibException, re:
                 log.error("Error: %s" % re)
                 raise #continue
