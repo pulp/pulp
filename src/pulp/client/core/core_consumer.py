@@ -73,6 +73,8 @@ class consumer(BaseCore):
                            help="consumer description eg: foo's web server")
             self.parser.add_option("--server", dest="server",
                            help="The fully qualified hostname of the Pulp server you wish to create this consumer on")
+            self.parser.add_option("--location", dest="location",
+                           help="Location or datacenter of the consumer")
 
         if self.action == "update":
             usage = "usage: %prog consumer update [OPTIONS]"
@@ -149,13 +151,17 @@ class consumer(BaseCore):
             sys.exit(0)
         if not self.options.description:
             self.options.description = self.options.id
+        if self.options.location:
+            key_value_pairs = {'location': self.options.location}
+        else:
+            self.options.description = {}
         if self.options.server:
             CFG.server.host = self.options.server
             CFG.write()
             self.load_server()
         try:
             try:
-                consumer = self.cconn.create(self.options.id, self.options.description)
+                consumer = self.cconn.create(self.options.id, self.options.description, key_value_pairs)
             except SSL.Checker.WrongHost, wh:
                 print "ERROR: The server hostname you have configured in /etc/pulp/ does not match the"
                 print "hostname returned from the Pulp server you are connecting to.  "
@@ -223,7 +229,8 @@ class consumer(BaseCore):
             print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
             for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
-                        (con["id"], con["description"], con["repoids"], con["package_profile"])
+                        (con["id"], con["description"], con["repoids"], con["package_profile"],
+                         con["key_value_pairs"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

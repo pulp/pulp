@@ -71,14 +71,14 @@ class ConsumerApi(BaseApi):
         return ["package_profile.name", "repoids"]
 
     @audit(params=['id'])
-    def create(self, id, description):
+    def create(self, id, description, key_value_pairs):
         """
         Create a new Consumer object and return it
         """
         consumer = self.consumer(id)
         if(consumer):
             raise PulpException("Consumer [%s] already exists" % id)
-        c = model.Consumer(id, description)
+        c = model.Consumer(id, description, key_value_pairs)
         self.insert(c)
         self.consumer_history_api.consumer_created(c.id)
         return c
@@ -99,6 +99,17 @@ class ConsumerApi(BaseApi):
                 
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
+    
+    
+    @audit()
+    def add_key_value_pair(self, key, value):
+        consumer = self.consumer(id)    
+        if not consumer:
+            raise PulpException('Consumer [%s] does not exist', id)
+        key_value_pairs = consumer['key_value_pairs']
+        key_value_pairs[key] = value
+        self.update(consumer)
+        
     
     @audit()
     def certificate(self, id):

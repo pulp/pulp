@@ -293,8 +293,9 @@ class ConsumerConnection(PulpConnection):
     """
     Connection class to access repo specific calls
     """
-    def create(self, id, description):
-        consumerdata = {"id"   : id, "description" : description}
+    def create(self, id, description, key_value_pairs={}):
+        consumerdata = {"id"   : id, "description" : description, 
+                        "key_value_pairs" : key_value_pairs}
         method = "/consumers/"
         return self.conn.request_put(method, params=consumerdata)
 
@@ -338,6 +339,10 @@ class ConsumerConnection(PulpConnection):
         method = '/consumers/?package_name=%s' % name
         return self.conn.request_get(method)
 
+    def key_value_pairs(self, id, key_value_pairs):
+        method = "/consumers/%s/key_value_pairs/" % id
+        return self.conn.request_get(method)
+
     def bind(self, id, repoid):
         method = "/consumers/%s/bind/" % id
         return self.conn.request_post(method, params=repoid)
@@ -349,7 +354,8 @@ class ConsumerConnection(PulpConnection):
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
-
+    
+   
     def installpackages(self, id, packagenames):
         method = "/consumers/%s/installpackages/" % id
         body = dict(packagenames=packagenames)

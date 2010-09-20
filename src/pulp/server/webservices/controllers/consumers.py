@@ -75,7 +75,8 @@ class Consumers(JSONController):
         consumer = consumer_api.consumer(id)
         if consumer is not None:
             return self.conflict('Consumer with id: %s, already exists' % id)
-        consumer = consumer_api.create(id, consumer_data['description'])
+        consumer = consumer_api.create(id, consumer_data['description'], 
+                                       consumer_data['key_value_pairs'])
         path = http.extend_uri_path(consumer.id)
         return self.created(path, consumer)
 
@@ -154,6 +155,7 @@ class ConsumerDeferredFields(JSONController):
     exposed_fields = (
         'package_profile',
         'repoids',
+        'key_value_pairs',
         'certificate'
     )
     @RoleCheck(consumer_id=True, admin=True)
@@ -183,6 +185,20 @@ class ConsumerDeferredFields(JSONController):
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
+    
+    @RoleCheck(consumer_id=True, admin=True)
+    def key_value_pairs(self, id):
+        """
+        Get key-value attributes of the consumer
+        @type id: str
+        @param id: consumer id
+        @return: dict of key-value attributes
+        """
+        valid_filters = ('id')
+        filters = self.filters(valid_filters)
+        consumer = consumer_api.consumer(id, fields=['key_value_pairs'])
+        key_value_pairs = self.filter_results(consumer['key_value_pairs'], filters)
+        return self.ok(key_value_pairs)
     
     @RoleCheck(admin=True)
     def certificate(self, id):

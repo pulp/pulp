@@ -144,12 +144,13 @@ class PackageGroupCategory(Base):
         self.repo_defined = repo_defined
 
 class Consumer(Base):
-    def __init__(self, id, description):
+    def __init__(self, id, description, key_value_pairs):
         self._id = id
         self.id = id
         self.description = description
         self.package_profile = []
         self.repoids = []
+        self.key_value_pairs = key_value_pairs
 
 class ConsumerGroup(Base):
     def __init__(self, id, description, consumerids = []):
