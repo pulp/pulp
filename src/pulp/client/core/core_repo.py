@@ -16,14 +16,13 @@
 # in this software or its documentation.
 #
 
-import os
+import base64
 import sys
 import time
-import base64
 
 import pulp.client.utils as utils
 import pulp.client.constants as constants
-from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.core.basecore import print_header, BaseCore, systemExit
 from pulp.client.connection import RepoConnection, RestlibException
 from pulp.client.logutil import getLogger
 from pulp.client.config import Config
@@ -33,20 +32,33 @@ import gettext
 _ = gettext.gettext
 log = getLogger(__name__)
 
+# repo command errors ---------------------------------------------------------
+
+class FileError(Exception):
+    pass
+
+class SyncError(Exception):
+    pass
+
+# core repos class ------------------------------------------------------------
+
 class repo(BaseCore):
+
+    _default_actions = {"create": "Create a repo",
+                        "update": "Update a repo",
+                        "list": "List available repos",
+                        "delete": "Delete a repo",
+                        "sync": "Sync data to this repo from the feed",
+                        "cancel_sync": "Cancel a running sync",
+                        "upload": "Upload package(s) to this repo",
+                        "schedules": "List all repo schedules", }
+
     def __init__(self, actions=None):
         usage = "repo [OPTIONS]"
         shortdesc = "repository specifc actions to pulp server."
         desc = ""
         self.name = "repo"
-        self.actions = actions or {"create"     : "Create a repo",
-                                   "update"     : "Update a repo",
-                                   "list"       : "List available repos",
-                                   "delete"     : "Delete a repo",
-                                   "sync"       : "Sync data to this repo from the feed",
-                                   "cancel_sync": "Cancel a running sync",
-                                   "upload"     : "Upload package(s) to this repo",
-                                   "schedules"  : "List all repo schedules", }
+        self.actions = actions or self._default_actions
         BaseCore.__init__(self, "repo", usage, shortdesc, desc)
 
     def load_server(self):
@@ -58,64 +70,64 @@ class repo(BaseCore):
                                     key_file=self.key_filename)
     def generate_options(self):
         self.action = self._get_action()
+
         if self.action == "create":
             usage = "repo create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
+            self.parser.add_option("--id", dest="id", help="Repository Id")
             self.parser.add_option("--name", dest="name",
-                           help="Common repository name")
+                                   help="Common repository name")
             self.parser.add_option("--arch", dest="arch",
-                           help="Package arch the repo should support.")
+                                   help="Package arch the repo should support.")
             self.parser.add_option("--feed", dest="feed",
-                           help="Url feed to populate the repo")
+                                   help="Url feed to populate the repo")
             self.parser.add_option("--cacert", dest="cacert",
-                           help="Path location to CA Certificate.")
+                                   help="Path location to CA Certificate.")
             self.parser.add_option("--cert", dest="cert",
-                           help="Path location to Entitlement Certificate.")
+                                   help="Path location to Entitlement Certificate.")
             self.parser.add_option("--key", dest="key",
-                           help="Path location to Entitlement Cert Key.")
+                                   help="Path location to Entitlement Cert Key.")
             self.parser.add_option("--schedule", dest="schedule",
-                           help="Schedule for automatically synchronizing the repository")
+                                   help="Schedule for automatically synchronizing the repository")
             self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
-                           help="Use symlinks instead of copying bits locally. \
-                            Applicable for local syncs")
+                                   help="Use symlinks instead of copying bits locally.\
+                                   Applicable for local syncs")
             self.parser.add_option("--relativepath", dest="relativepath",
-                           help="Relative path where the repo is stored and exposed to clients.\
-                                 This defaults to feed path if not specified.")
+                                   help="Relative path where the repo is stored and exposed to clients.\
+                                   This defaults to feed path if not specified.")
             self.parser.add_option("--groupid", dest="groupid",
-                           help="A group to which the repo belongs.This is just a string identifier.")
+                                   help="A group to which the repo belongs.This is just a string identifier.")
+
         if self.action == "sync":
             usage = "repo sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
-            self.parser.add_option("--timeout", dest="timeout",
-                           help="Sync Timeout")
+            self.parser.add_option("--id", dest="id", help="Repository Id")
+            self.parser.add_option("--timeout", dest="timeout", help="Sync Timeout")
+
         if self.action == "cancel_sync":
             usage = "repo cancel_sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
-            self.parser.add_option("--taskid", dest="taskid",
-                           help="Task ID")
+            self.parser.add_option("--id", dest="id", help="Repository Id")
+            self.parser.add_option("--taskid", dest="taskid", help="Task ID")
+
         if self.action == "delete":
             usage = "repo delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
+            self.parser.add_option("--id", dest="id", help="Repository Id")
+
         if self.action == "list":
             usage = "repo list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--groupid", dest="groupid",
-                           help="Filter repos by group id")
+                                  help="Filter repos by group id")
+
         if self.action == "upload":
             usage = "repo upload [OPTIONS] <package>"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
+            self.parser.add_option("--id", dest="id", help="Repository Id")
             self.parser.add_option("--dir", dest="dir",
-                           help="Process packages from this directory")
+                                  help="Process packages from this directory")
+
         if self.action == "schedules":
             usage = "repo schedules"
             self.setup_option_parser(usage, "", True)
@@ -153,14 +165,14 @@ class repo(BaseCore):
 
         cert_data = None
         if self.options.cacert and self.options.cert and self.options.key:
-            cert_data = {"ca" : utils.readFile(self.options.cacert),
-                         "cert"    : utils.readFile(self.options.cert),
-                         "key"     : utils.readFile(self.options.key)}
+            cert_data = {"ca": utils.readFile(self.options.cacert),
+                         "cert": utils.readFile(self.options.cert),
+                         "key": utils.readFile(self.options.key)}
 
         try:
-            repo = self.pconn.create(self.options.id, self.options.name, \
-                                     self.options.arch, self.options.feed, \
-                                     symlinks, self.options.schedule, cert_data=cert_data, \
+            repo = self.pconn.create(self.options.id, self.options.name,
+                                     self.options.arch, self.options.feed,
+                                     symlinks, self.options.schedule, cert_data=cert_data,
                                      relative_path=relative_path, groupid=groupid)
             print _(" Successfully created Repo [ %s ]" % repo['id'])
         except RestlibException, re:
@@ -176,7 +188,7 @@ class repo(BaseCore):
             if not len(repos):
                 print _("No repos available to list")
                 sys.exit(0)
-            print """+-------------------------------------------+\n    List of Available Repositories \n+-------------------------------------------+"""
+            print_header('List of Available Repositories')
             for repo in repos:
                 if self.options.groupid and \
                     self.options.groupid not in repo['groupid']:
@@ -203,7 +215,8 @@ class repo(BaseCore):
                 time.sleep(5)
                 status = self.pconn.sync_status(task_object['status_path'])
                 if status is None:
-                    raise SyncError(_('No sync for repository [%s] found') % self.options.id)
+                    raise SyncError(_('No sync for repository [%s] found')
+                                    % self.options.id)
                 state = status['state']
                 print "Sync Status::", state
             packages = self.pconn.packages(self.options.id)
@@ -213,7 +226,8 @@ class repo(BaseCore):
             if state == "error":
                 raise SyncError(status['traceback'][-1])
             else:
-                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" % (self.options.id, pkg_count))
+                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages" %
+                        (self.options.id, pkg_count))
         except RestlibException, re:
             log.info("REST Error.", exc_info=True)
             systemExit(re.code, re.msg)
@@ -249,13 +263,13 @@ class repo(BaseCore):
             self.pconn.delete(id=self.options.id)
             print _(" Successful deleted Repo [ %s ] " % self.options.id)
         except RestlibException, re:
-            print _(" Deleted operation failed on Repo [ %s ] " % \
-                  self.options.id)
+            print _(" Deleted operation failed on Repo [ %s ] " %
+                    self.options.id)
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
-            print _(" Deleted operation failed on Repo [ %s ]. " % \
-                  self.options.id)
+            print _(" Deleted operation failed on Repo [ %s ]. " %
+                    self.options.id)
             log.error("Error: %s" % e)
             sys.exit(-1)
 
@@ -286,9 +300,11 @@ class repo(BaseCore):
             try:
                 status = self.pconn.upload(self.options.id, pkginfo, pkgstream)
                 if status:
-                    print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.id))
+                    print _(" Successful uploaded [%s] to  Repo [ %s ]" %
+                            (pkginfo['pkgname'], self.options.id))
                 else:
-                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.id)
+                    print _(" Failed to Upload %s to Repo [ %s ]" %
+                            self.options.id)
             except RestlibException, re:
                 log.error("Error: %s" % re)
                 raise #continue
@@ -297,15 +313,7 @@ class repo(BaseCore):
                 raise #continue
 
     def _schedules(self):
-        print("""+-------------------------------------+\n    Available Repository Schedules \n+-------------------------------------+""")
-
+        print_header('Available Repository Schedules')
         schedules = self.pconn.all_schedules()
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
-
-
-class FileError(Exception):
-    pass
-
-class SyncError(Exception):
-    pass
