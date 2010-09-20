@@ -71,7 +71,7 @@ class ConsumerApi(BaseApi):
         return ["package_profile.name", "repoids"]
 
     @audit(params=['id'])
-    def create(self, id, description, key_value_pairs):
+    def create(self, id, description, key_value_pairs = {}):
         """
         Create a new Consumer object and return it
         """

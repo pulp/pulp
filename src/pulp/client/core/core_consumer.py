@@ -154,7 +154,7 @@ class consumer(BaseCore):
         if self.options.location:
             key_value_pairs = {'location': self.options.location}
         else:
-            self.options.description = {}
+            key_value_pairs = {}
         if self.options.server:
             CFG.server.host = self.options.server
             CFG.write()
