@@ -103,6 +103,9 @@ class repo(BaseCore):
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id", help="Repository Id")
             self.parser.add_option("--timeout", dest="timeout", help="Sync Timeout")
+            self.parser.add_option('-F', '--foreground', dest='foreground',
+                                   action='store_true', default=False,
+                                   help='Sync repo in the foreground')
 
         if self.action == "cancel_sync":
             usage = "repo cancel_sync [OPTIONS]"
@@ -203,31 +206,64 @@ class repo(BaseCore):
             log.error("Error: %s" % e)
             raise
 
+    def _status(self):
+        pass
+
+    def _print_sync_progress(self, progress):
+        # erase the previous progress
+        if hasattr(self, '_previous_progress'):
+            print '\b' * (len(self._previous_progress) + 2),
+            delattr(self, '_previous_progress')
+        # handle the initial None case
+        if progress is None:
+            self._previous_progress = '[' + ' ' * 53 + '] 0%'
+            print self._previous_progress,
+            return
+        # calculate the progress
+        done = float(progress['size_total']) - float(progress['size_left'])
+        total = float(progress['size_total'])
+        portion = done / total
+        percent = str(int(100 * portion))
+        pkgs_done = str(progress['items_total'] - progress['items_left'])
+        pkgs_total = str(progress['items_total'])
+        # create the progress bar
+        bar_width = 53
+        bar_ticks = '=' * int(bar_width * portion)
+        bar_spaces = ' ' * (bar_width - len(bar_ticks))
+        bar = '[' + bar_ticks + bar_spaces + ']'
+        # set the previous progress and print
+        self._previous_progress = '%s %s%% (%s of %s pkgs)' % \
+            (bar, percent, pkgs_done, pkgs_total)
+        print self._previous_progress,
+
+    def _print_sync_finsih(self, state, progress):
+        self._print_sync_progress(progress)
+        print ''
+        print _('Sync: %s') % state.title()
+
+    def _sync_foreground(self, task):
+        print _('you can safely CTRL+C this current command and it will continue')
+        try:
+            while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
+                self._print_sync_progress(task['progress'])
+                task = self.pconn.sync_status(task['status_path'])
+        except KeyboardInterrupt:
+            return
+        self._print_sync_finish(self, task['state'], task['progress'])
+        if task['state'] == 'error':
+            raise SyncError(task['traceback'][-1])
+
     def _sync(self):
         if not self.options.id:
             print _("repo id required. Try --help")
             sys.exit(0)
         try:
-            task_object = self.pconn.sync(self.options.id, self.options.timeout)
-            state = "waiting"
-            print _("Task created with ID::"), task_object['id']
-            while state not in ["finished", "error", 'timed out', 'canceled']:
-                time.sleep(5)
-                status = self.pconn.sync_status(task_object['status_path'])
-                if status is None:
-                    raise SyncError(_('No sync for repository [%s] found')
-                                    % self.options.id)
-                state = status['state']
-                print _("Sync Status::"), state
-            packages = self.pconn.packages(self.options.id)
-            pkg_count = 0
-            if packages:
-                pkg_count = len(packages)
-            if state == "error":
-                raise SyncError(status['traceback'][-1])
+            task = self.pconn.sync(self.options.id, self.options.timeout)
+            print _('Sync for repo %s started') % self.options.id
+            if self.options.foreground:
+                self._sync_foreground(task)
             else:
-                print _(" Sync Successful. Repo [ %s ] now has a total of [ %s ] packages") % \
-                    (self.options.id, pkg_count)
+                print _('Use "repo status" to check on the progress')
         except RestlibException, re:
             log.info("REST Error.", exc_info=True)
             systemExit(re.code, re.msg)
