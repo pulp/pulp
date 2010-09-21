@@ -215,12 +215,14 @@ class repo(BaseCore):
     def _print_sync_progress(self, progress):
         # erase the previous progress
         if hasattr(self, '_previous_progress'):
-            print '\b' * (len(self._previous_progress) + 2),
+            sys.stdout.write('\b' * (len(self._previous_progress)))
+            sys.stdout.flush()
             delattr(self, '_previous_progress')
         # handle the initial None case
         if progress is None:
             self._previous_progress = '[' + ' ' * 53 + '] 0%'
-            print self._previous_progress,
+            sys.stdout.write(self._previous_progress)
+            sys.stdout.flush()
             return
         # calculate the progress
         done = float(progress['size_total']) - float(progress['size_left'])
@@ -230,14 +232,15 @@ class repo(BaseCore):
         pkgs_done = str(progress['items_total'] - progress['items_left'])
         pkgs_total = str(progress['items_total'])
         # create the progress bar
-        bar_width = 53
+        bar_width = 50
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
         # set the previous progress and print
         self._previous_progress = '%s %s%% (%s of %s pkgs)' % \
             (bar, percent, pkgs_done, pkgs_total)
-        print self._previous_progress,
+        sys.stdout.write(self._previous_progress)
+        sys.stdout.flush()
 
     def _print_sync_finsih(self, state, progress):
         self._print_sync_progress(progress)
@@ -249,9 +252,10 @@ class repo(BaseCore):
         try:
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self._print_sync_progress(task['progress'])
-                time.sleep(0.5)
+                time.sleep(0.25)
                 task = self.pconn.sync_status(task['status_path'])
         except KeyboardInterrupt:
+            print ''
             return
         self._print_sync_finish(self, task['state'], task['progress'])
         if task['state'] == 'error':
