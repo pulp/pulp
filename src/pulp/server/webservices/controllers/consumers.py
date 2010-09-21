@@ -34,7 +34,7 @@ history_api = ConsumerHistoryApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
-default_fields = ['id', 'description']
+default_fields = ['id', 'description', 'key_value_pairs']
              
 # controllers -----------------------------------------------------------------
     
