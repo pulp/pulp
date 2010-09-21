@@ -51,6 +51,7 @@ class repo(BaseCore):
                         "update": "Update a repo",
                         "list": "List available repos",
                         "delete": "Delete a repo",
+                        'status': 'Show the status of a repo',
                         "sync": "Sync data to this repo from the feed",
                         "cancel_sync": "Cancel a running sync",
                         "upload": "Upload package(s) to this repo",
@@ -110,6 +111,10 @@ class repo(BaseCore):
                                    action='store_true', default=False,
                                    help='Sync repo in the foreground')
 
+        if self.action == 'status':
+            usage = 'repo status [OPTIONS]'
+            self.parser.add_option("--id", dest="id", help="Repository Id")
+
         if self.action == "cancel_sync":
             usage = "repo cancel_sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -143,6 +148,8 @@ class repo(BaseCore):
             self._create()
         if self.action == "list":
             self._list()
+        if self.action == 'status':
+            self._status()
         if self.action == "sync":
             self._sync()
         if self.action == "cancel_sync":
@@ -210,7 +217,37 @@ class repo(BaseCore):
             raise
 
     def _status(self):
-        pass
+        if not self.options.id:
+            print _("repo id required. Try --help")
+            sys.exit(0)
+        try:
+            repo = self.pconn.repository(self.options.id)
+            syncs = self.pconn.sync_list(self.options.id)
+            print _('Repository: %s') % repo['id']
+            print _('Number of Packages: %d') % repo['package_count']
+            if not syncs:
+                print _('Last Sync: never')
+            elif syncs[0]['state'] in ('waiting', 'running'):
+                print _('Last Sync: running')
+                print _('Currently Syncing:'),
+                if syncs[0]['progress'] is None:
+                    print _('starting')
+                else:
+                    pkgs_left = syncs[0]['progress']['items_left']
+                    pkgs_total = syncs[0]['progress']['items_total']
+                    bytes_left = float(syncs[0]['progress']['size_left'])
+                    bytes_total = float(syncs[0]['progress']['size_total'])
+                    percent = (bytes_total - bytes_left) / bytes_total
+                    print '%d%% done (%d of %d packages downloaded)' % \
+                        (int(percent), (pkgs_total - pkgs_left), pkgs_total)
+            else:
+                print _('Last Sync: %s') % str(syncs[0]['finished_time'])
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+
 
     def _print_sync_progress(self, progress):
         # erase the previous progress
