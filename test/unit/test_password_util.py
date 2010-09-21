@@ -27,6 +27,11 @@ from pulp.server.auth.password_util import hash_password, check_password
 
 class TestUtil(unittest.TestCase):
 
+    def test_unicode_password(self):
+        password = u"some password"
+        hashed = hash_password(password)
+        self.assertNotEqual(hashed, password)
+
     def test_hash_password(self):
         password = "some password"
         hashed = hash_password(password)
