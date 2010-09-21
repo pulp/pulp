@@ -38,6 +38,7 @@ default_fields = [
     'name',
     'arch',
     'sync_schedule',
+    'last_sync',
     'use_symlinks',
     'groupid',
     'relative_path',

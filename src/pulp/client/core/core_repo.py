@@ -225,10 +225,9 @@ class repo(BaseCore):
             syncs = self.pconn.sync_list(self.options.id)
             print _('Repository: %s') % repo['id']
             print _('Number of Packages: %d') % repo['package_count']
-            if not syncs:
-                print _('Last Sync: never')
-            elif syncs[0]['state'] in ('waiting', 'running'):
-                print _('Last Sync: running')
+            last_sync = 'never' if repo['last_sync'] is None else str(repo['last_sync'])
+            print _('Last Sync: %s') % last_sync
+            if syncs and syncs[0]['state'] in ('waiting', 'running'):
                 print _('Currently Syncing:'),
                 if syncs[0]['progress'] is None:
                     print _('starting')
@@ -240,8 +239,6 @@ class repo(BaseCore):
                     percent = (bytes_total - bytes_left) / bytes_total
                     print '%d%% done (%d of %d packages downloaded)' % \
                         (int(percent), (pkgs_total - pkgs_left), pkgs_total)
-            else:
-                print _('Last Sync: %s') % str(syncs[0]['finished_time'])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
