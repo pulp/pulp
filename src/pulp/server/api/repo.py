@@ -135,7 +135,7 @@ class RepoApi(BaseApi):
                 f = open(fname, 'w')
                 f.write(value)
                 f.close()
-                cert_files[key] = fname
+                cert_files[key] = str(fname)
             except:
                 raise PulpException("Error storing certificate file %s " % key)
         return cert_files
