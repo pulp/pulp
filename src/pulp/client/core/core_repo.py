@@ -288,7 +288,7 @@ class repo(BaseCore):
                 if status:
                     print _(" Successful uploaded [%s] to  Repo [ %s ] " % (pkginfo['pkgname'], self.options.id))
                 else:
-                    print _(" Failed to Upload %s to Repo [ %s ] " % self.options.id)
+                    print _(" Failed to Upload [%s] to Repo [ %s ] " % (pkginfo['pkgname'], self.options.id))
             except RestlibException, re:
                 log.error("Error: %s" % re)
                 raise #continue
