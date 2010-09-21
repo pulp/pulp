@@ -107,7 +107,7 @@ class ConsumerApi(BaseApi):
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
-        if key_value_pairs[key] is None:
+        if key not in key_value_pairs.keys():
             key_value_pairs[key] = value
         else: 
             raise PulpException('Given key [%s] already exists', key)    
@@ -121,7 +121,7 @@ class ConsumerApi(BaseApi):
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
-        if key_value_pairs[key] is not None:
+        if key in key_value_pairs.keys():
             del key_value_pairs[key] 
         else: 
             raise PulpException('Given key [%s] does not exist', key)
