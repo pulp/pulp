@@ -19,6 +19,7 @@ import logging
 import gzip
 import os
 import traceback
+from datetime import datetime
 from itertools import chain
 from urlparse import urlparse
 
@@ -237,7 +238,7 @@ class RepoApi(BaseApi):
         """
         packages = self.packages(id)
         return len(packages)
-    
+
     def get_package(self, id, name):
         """
         Return matching Package object in this Repo
@@ -701,6 +702,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id) #repo object must be refreshed
         for eid in sync_errataids:
             self._add_erratum(repo, eid)
+        repo['last_sync'] = datetime.now()
         self.update(repo)
 
     @audit()

@@ -15,19 +15,22 @@
 # in this software or its documentation.
 #
 
+import gettext
 import sys
-import os.path
-from pulp.client.core.basecore import BaseCore, systemExit
-from pulp.client.connection import RepoConnection, ConsumerConnection, RestlibException
-from pulp.client.connection import ConsumerGroupConnection
-from pulp.client.logutil import getLogger
+
 from pulp.client.config import Config
+from pulp.client.connection import (
+    RepoConnection, ConsumerConnection, RestlibException,
+    ConsumerGroupConnection)
+from pulp.client.core.basecore import BaseCore, systemExit, print_header
+from pulp.client.logutil import getLogger
+
 log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
 CONSUMERID = "/etc/pulp/consumer"
-import gettext
 _ = gettext.gettext
+
 
 class package(BaseCore):
     def __init__(self):
@@ -35,25 +38,25 @@ class package(BaseCore):
         shortdesc = "package specific actions to pulp server."
         desc = ""
         self.name = "package"
-        self.actions = {"info"          : "lookup information for a package", 
+        self.actions = {"info"          : "lookup information for a package",
                         "install"       : "Schedule a package Install", }
         BaseCore.__init__(self, "package", usage, shortdesc, desc)
         self.pconn = None
         self.cconn = None
-        
+
     def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
-                                    port=443,  username=self.username, 
+        self.pconn = RepoConnection(host=CFG.server.host or "localhost",
+                                    port=443, username=self.username,
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
-                                        port=443, username=self.username, 
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
+                                        port=443, username=self.username,
                                         password=self.password,
                                         cert_file=self.cert_filename,
                                         key_file=self.key_filename)
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
-                                              port=443, username=self.username, 
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost",
+                                              port=443, username=self.username,
                                               password=self.password,
                                               cert_file=self.cert_filename,
                                               key_file=self.key_filename)
@@ -66,7 +69,7 @@ class package(BaseCore):
             self.parser.add_option("-n", "--name", dest="name",
                            help="package name to lookup")
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label") 
+                           help="Repository Label")
         if self.action == "install":
             usage = "package install [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -86,17 +89,18 @@ class package(BaseCore):
 
     def _info(self):
         if not self.options.name:
-            print("package name required. Try --help")
+            print _("package name required. Try --help")
             sys.exit(0)
         if not self.options.repoid:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             pkg = self.pconn.get_package(self.options.repoid, self.options.name)
             if not pkg:
-                print("Package [%s] not found in repo [%s]" % (self.options.name, self.options.repoid))
+                print _("Package [%s] not found in repo [%s]") % \
+                    (self.options.name, self.options.repoid)
                 sys.exit(-1)
-            print """+-------------------------------------------+\n    Package Information \n+-------------------------------------------+"""
+            print_header("Package Information")
             for key, value in pkg.items():
                 print """%s:                \t%-25s""" % (key, value)
         except RestlibException, re:
@@ -105,25 +109,27 @@ class package(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-    
+
     def _install(self):
         if not self.options.consumerid and not self.options.consumergroupid:
-            print("consumer or consumer group id required. Try --help")
+            print _("consumer or consumer group id required. Try --help")
             sys.exit(0)
         if not self.options.pnames:
-            print("Nothing to Upload.")
+            print _("Nothing to Upload.")
             sys.exit(0)
         try:
             if self.options.consumergroupid:
                 pkgs = self.cgconn.installpackages(self.options.consumergroupid, self.options.pnames)
-                print("Successfully Installed Packages %s on consumergroup [%s]" % (pkgs, self.options.consumergroupid))
-            else:     
+                print _("Successfully Installed Packages %s on consumergroup [%s]") % \
+                    (pkgs, self.options.consumergroupid)
+            else:
                 pkgs = self.cconn.installpackages(self.options.consumerid, self.options.pnames)
-                print("Successfully Installed Packages %s on consumer [%s]" % (pkgs, self.options.consumerid))
+                print _("Successfully Installed Packages %s on consumer [%s]") % \
+                    (pkgs, self.options.consumerid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise    
-        
+            raise
+

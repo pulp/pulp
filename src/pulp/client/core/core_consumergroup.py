@@ -16,20 +16,22 @@
 # in this software or its documentation.
 #
 
-import os
+import gettext
 import sys
 
 import pulp.client.constants as constants
-from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.config import Config
 from pulp.client.connection import ConsumerGroupConnection, RestlibException
+from pulp.client.core.basecore import BaseCore, systemExit, print_header
 from pulp.client.logutil import getLogger
 from pulp.client.repolib import RepoLib
-from pulp.client.config import Config
-CFG = Config()
 
-import gettext
-_ = gettext.gettext
+
+CFG = Config()
 log = getLogger(__name__)
+
+_ = gettext.gettext
+
 
 class consumergroup(BaseCore):
     def __init__(self):
@@ -43,14 +45,14 @@ class consumergroup(BaseCore):
                         "list"   : "List available consumer groups",
                         "delete" : "Delete the consumer group",
                         "bind"   : "Bind the consumer group to listed repos",
-                        "unbind" : "Unbind the consumer group from repos",}
+                        "unbind" : "Unbind the consumer group from repos", }
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.repolib = RepoLib()
 
     def load_server(self):
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost",
                                               port=CFG.server.port or 443,
-                                              username=self.username, 
+                                              username=self.username,
                                               password=self.password,
                                               cert_file=self.cert_filename,
                                               key_file=self.key_filename)
@@ -121,20 +123,20 @@ class consumergroup(BaseCore):
 
     def _create(self):
         if not self.options.id:
-            print("consumer group id required. Try --help")
+            print _("consumer group id required. Try --help")
             sys.exit(0)
         if not self.options.description:
             self.options.description = ""
         if not self.options.consumerids:
-            print("Creating empty consumer group")
+            print _("Creating empty consumer group")
             self.options.consumerids = []
         else:
             self.options.consumerids = self.options.consumerids.split(",")
         try:
             consumergroup = self.cgconn.create(self.options.id, self.options.description,
                                     self.options.consumerids)
-            print _(" Successfully created Consumer group [ %s ] with description [ %s ]" % \
-                                     (consumergroup['id'], consumergroup["description"]))
+            print _(" Successfully created Consumer group [ %s ] with description [ %s ]") % \
+                (consumergroup['id'], consumergroup["description"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -148,9 +150,10 @@ class consumergroup(BaseCore):
             if not len(groups):
                 print _("No consumer groups available to list")
                 sys.exit(0)
-            print """+-------------------------------------------+\n    List of Available Consumer Groups \n+-------------------------------------------+"""
+            print_header("List of Available Consumer Groups")
             for group in groups:
-                    print constants.AVAILABLE_CONSUMER_GROUP_INFO % (group["id"], group["description"], group["consumerids"] )
+                    print constants.AVAILABLE_CONSUMER_GROUP_INFO % (
+                        group["id"], group["description"], group["consumerids"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -161,7 +164,7 @@ class consumergroup(BaseCore):
 
     def _delete(self):
         if not self.options.id:
-            print("Group id required. Try --help")
+            print _("Group id required. Try --help")
             sys.exit(0)
         group = self.cgconn.consumergroup(id=self.options.id)
         if not group:
@@ -185,14 +188,15 @@ class consumergroup(BaseCore):
 
     def _add_consumer(self):
         if not self.options.consumerid:
-            print("consumer id required. Try --help")
+            print _("consumer id required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("group id required. Try --help")
+            print _("group id required. Try --help")
             sys.exit(0)
         try:
             self.cgconn.add_consumer(self.options.groupid, self.options.consumerid)
-            print _(" Successfully added Consumer [%s] to Group [%s]" % (self.options.consumerid, self.options.groupid))
+            print _(" Successfully added Consumer [%s] to Group [%s]") % \
+                (self.options.consumerid, self.options.groupid)
         except RestlibException, re:
             print _(" Adding consumer failed ")
             log.error("Error: %s" % re)
@@ -203,14 +207,15 @@ class consumergroup(BaseCore):
 
     def _delete_consumer(self):
         if not self.options.consumerid:
-            print("consumer id required. Try --help")
+            print _("consumer id required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("group id required. Try --help")
+            print _("group id required. Try --help")
             sys.exit(0)
         try:
             self.cgconn.delete_consumer(self.options.groupid, self.options.consumerid)
-            print _(" Successfully deleted Consumer [%s] from Group [%s]" % (self.options.consumerid, self.options.groupid))
+            print _(" Successfully deleted Consumer [%s] from Group [%s]") % \
+                (self.options.consumerid, self.options.groupid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -220,15 +225,16 @@ class consumergroup(BaseCore):
 
     def _bind(self):
         if not self.options.groupid:
-            print("consumer group id required. Try --help")
+            print _("consumer group id required. Try --help")
             sys.exit(0)
         if not self.options.repoid:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             self.cgconn.bind(self.options.groupid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully subscribed Consumer Group [%s] to Repo [%s]" % (self.options.groupid, self.options.repoid))
+            print _(" Successfully subscribed Consumer Group [%s] to Repo [%s]") % \
+                (self.options.groupid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -238,15 +244,16 @@ class consumergroup(BaseCore):
 
     def _unbind(self):
         if not self.options.groupid:
-            print("consumer group id required. Try --help")
+            print _("consumer group id required. Try --help")
             sys.exit(0)
         if not self.options.repoid:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             self.cgconn.unbind(self.options.groupid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully unsubscribed Consumer  Group [%s] from Repo [%s]" % (self.options.groupid, self.options.repoid))
+            print _(" Successfully unsubscribed Consumer  Group [%s] from Repo [%s]") % \
+                (self.options.groupid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

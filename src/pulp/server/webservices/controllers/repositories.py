@@ -38,10 +38,11 @@ default_fields = [
     'name',
     'arch',
     'sync_schedule',
+    'last_sync',
     'use_symlinks',
     'groupid',
     'relative_path',
-    'files',]
+    'files', ]
 
 # restful controllers ---------------------------------------------------------
 
@@ -84,14 +85,14 @@ class Repositories(JSONController):
             return self.conflict('A repository with the id, %s, already exists' % id)
 
         repo = api.create(id,
-                          repo_data['name'],
-                          repo_data['arch'],
-                          feed=repo_data.get('feed', None),
-                          symlinks=repo_data.get('use_symlinks', False),
-                          sync_schedule=repo_data.get('sync_schedule', None),
-                          cert_data=repo_data.get('cert_data', None),
-                          relative_path=repo_data.get('relative_path', None),
-                          groupid=repo_data.get('groupid', None),)
+                         repo_data['name'],
+                         repo_data['arch'],
+                         feed=repo_data.get('feed', None),
+                         symlinks=repo_data.get('use_symlinks', False),
+                         sync_schedule=repo_data.get('sync_schedule', None),
+                         cert_data=repo_data.get('cert_data', None),
+                         relative_path=repo_data.get('relative_path', None),
+                         groupid=repo_data.get('groupid', None),)
 
         path = http.extend_uri_path(repo.id)
         repo['uri_ref'] = path
@@ -124,7 +125,7 @@ class Repository(JSONController):
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
         repo['package_count'] = api.package_count(id)
-        repo['files_count'] = len(repo['files']) 
+        repo['files_count'] = len(repo['files'])
         return self.ok(repo)
 
     @JSONController.error_handler
@@ -429,6 +430,26 @@ class RepositoryActions(AsyncController):
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
         return action(id)
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def GET(self, id, action_name):
+        """
+        Get information on a given action and repository.
+        """
+        action_methods = {
+            'sync': '_sync',
+            '_sync': '_sync',
+        }
+        if action_name not in action_methods:
+            return self.not_found('No information for %s on repository %s' %
+                                 (action_name, id))
+        tasks = [] # FIXME
+        if not tasks:
+            return self.not_found('No recent %s on repository %s found' %
+                                 (action_name, id))
+        self.ok([self._task_to_dict(task) for task in tasks])
+
 
 
 class RepositoryActionStatus(AsyncController):

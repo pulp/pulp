@@ -30,8 +30,8 @@ class Base(dict):
 
     def __getattr__(self, attr):
         return self.get(attr, None)
-    __setattr__= dict.__setitem__
-    __delattr__= dict.__delitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 class Repo(Base):
     def __init__(self, id, name, arch, source=None):
@@ -50,43 +50,44 @@ class Repo(Base):
         self.group_xml_path = ""
         self.group_gz_xml_path = ""
         self.sync_schedule = None
+        self.last_sync = None
         self.use_symlinks = None
         self.ca = None
         self.cert = None
-        self.key  = None
+        self.key = None
         self.errata = {}
         self.groupid = [] # this is productid in kalpana terms
         self.relative_path = None
         self.files = []
-        
+
     def get_repo_source(self):
         if not self.source:
             return None
         return RepoSource(self.source)
 
-        
+
 class RepoSource(Base):
     # yum:http://blah.bloop.com
-    
+
     def __init__(self, url):
         self.supported_types = ['yum', 'local', 'rhn']
         self.type = None
         self.url = None
         self.parse_feed(url)
-        
+
     def parse_feed(self, source):
         parts = source.split(':')
         if (len(parts) < 2):
             msg = "Invalid feed url.  Must be <type>:<path> where types are: %s"
             raise PulpException(msg % self.supported_types)
         if (self.supported_types.count(parts[0]) < 1):
-            raise PulpException("Invalid type.  valid types are %s" 
+            raise PulpException("Invalid type.  valid types are %s"
                                 % self.supported_types)
         self.type = parts[0]
         self.url = source.replace((self.type + ":"), "")
 
 class Package(Base):
-    def __init__(self, name, epoch, version, release, arch, description, 
+    def __init__(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, vendor=None):
         Base.__init__(self)
         # ID is initialized in Base.__init__()
@@ -96,7 +97,7 @@ class Package(Base):
         self.release = release
         self.arch = arch
         self.description = description
-        self.vendor  = vendor
+        self.vendor = vendor
         self.filename = filename
         self.checksum = {checksum_type: checksum}
         self.download_url = None
@@ -108,8 +109,8 @@ class PackageGroup(Base):
     """
     Class represents a yum.comps.Group
     """
-    def __init__(self, id, name, description, user_visible=True, 
-            display_order=1024, default=True, langonly=None, 
+    def __init__(self, id, name, description, user_visible=True,
+            display_order=1024, default=True, langonly=None,
             immutable=False, repo_defined=False):
         self._id = id
         self.id = id
@@ -130,7 +131,7 @@ class PackageGroup(Base):
 
 class PackageGroupCategory(Base):
 
-    def __init__(self, id, name, description, display_order=99, 
+    def __init__(self, id, name, description, display_order=99,
             immutable=False, repo_defined=False):
         self._id = id
         self.id = id
@@ -153,7 +154,7 @@ class Consumer(Base):
         self.key_value_pairs = key_value_pairs
 
 class ConsumerGroup(Base):
-    def __init__(self, id, description, consumerids = []):
+    def __init__(self, id, description, consumerids=[]):
         self._id = id
         self.id = id
         self.description = description
@@ -175,7 +176,7 @@ class User(Base):
         self.login = login
         self.password = password
         self.name = name
-        
+
     def __unicode__(self):
         return unicode(self.name)
 
