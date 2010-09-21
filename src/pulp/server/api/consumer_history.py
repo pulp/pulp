@@ -87,7 +87,7 @@ class ConsumerHistoryApi(BaseApi):
         '''
         return get_object_db('consumers',
                              ['id'],
-                             [])
+                             ['consumer_id', 'type_name', 'timestamp'])
 
     # -- public api ----------------------------------------
 
