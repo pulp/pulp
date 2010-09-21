@@ -155,7 +155,6 @@ class ConsumerDeferredFields(JSONController):
     exposed_fields = (
         'package_profile',
         'repoids',
-        'key_value_pairs',
         'certificate'
     )
     @RoleCheck(consumer_id=True, admin=True)
@@ -184,22 +183,8 @@ class ConsumerDeferredFields(JSONController):
         consumer = consumer_api.consumer(id, fields=['repoids'])
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
-        return self.ok(repo_data)
-    
-    @RoleCheck(consumer_id=True, admin=True)
-    def key_value_pairs(self, id):
-        """
-        Get key-value attributes of the consumer
-        @type id: str
-        @param id: consumer id
-        @return: dict of key-value attributes
-        """
-        valid_filters = ('id')
-        filters = self.filters(valid_filters)
-        consumer = consumer_api.consumer(id, fields=['key_value_pairs'])
-        key_value_pairs = self.filter_results(consumer['key_value_pairs'], filters)
-        return self.ok(key_value_pairs)
-    
+        return self.ok(repo_data)   
+   
     @RoleCheck(admin=True)
     def certificate(self, id):
         """
