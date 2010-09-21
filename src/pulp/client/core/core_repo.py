@@ -20,12 +20,15 @@ import base64
 import sys
 import time
 
-import pulp.client.utils as utils
 import pulp.client.constants as constants
-from pulp.client.core.basecore import print_header, BaseCore, systemExit
-from pulp.client.connection import RepoConnection, RestlibException
-from pulp.client.logutil import getLogger
+import pulp.client.utils as utils
 from pulp.client.config import Config
+from pulp.client.connection import RepoConnection, RestlibException
+from pulp.client.core.basecore import print_header, BaseCore, systemExit
+from pulp.client.logutil import getLogger
+
+# -----------------------------------------------------------------------------
+
 CFG = Config()
 
 import gettext
@@ -246,6 +249,7 @@ class repo(BaseCore):
         try:
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self._print_sync_progress(task['progress'])
+                time.sleep(0.5)
                 task = self.pconn.sync_status(task['status_path'])
         except KeyboardInterrupt:
             return
