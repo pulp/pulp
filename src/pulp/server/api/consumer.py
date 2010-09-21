@@ -102,15 +102,15 @@ class ConsumerApi(BaseApi):
     
     
     @audit()
-    def add_key_value_pair(self, data):
+    def add_key_value_pair(self, key, value):
         consumer = self.consumer(id)    
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
-        if key_value_pairs[data['key']] is None:
-            key_value_pairs[data['key']] = data['value']
+        if key_value_pairs[key] is None:
+            key_value_pairs[key] = value
         else: 
-            raise PulpException('Given key [%s] already exists', data['key'])    
+            raise PulpException('Given key [%s] already exists', key)    
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
         
