@@ -42,14 +42,14 @@ class consumer(BaseCore):
         shortdesc = "consumer specific actions to pulp server."
         desc = ""
         self.name = "consumer"
-        self.actions = actions or {"delete"               : "Delete the consumer",
-                                   "update"               : "Update consumer profile",
-                                   "list"                 : "List of accessible consumer info",
-                                   "bind"                 : "Bind the consumer to listed repos",
-                                   "unbind"               : "Unbind the consumer from repos",
-                                   "add_key_value_pair"   : "Add key-value information to consumer",
-                                   "delete_key_value_pair": "Delete key-value information to consumer",
-                                   "history"              : "View the consumer history",
+        self.actions = actions or {"delete"           : "Delete the consumer",
+                                   "update"           : "Update consumer profile",
+                                   "list"             : "List of accessible consumer info",
+                                   "bind"             : "Bind the consumer to listed repos",
+                                   "unbind"           : "Unbind the consumer from repos",
+                                   "add_keyvalue"     : "Add key-value information to consumer",
+                                   "delete_keyvalue"  : "Delete key-value information to consumer",
+                                   "history"          : "View the consumer history",
         }
         self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
@@ -102,8 +102,8 @@ class consumer(BaseCore):
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
                 
-        if self.action == "add_key_value_pair":
-            usage = "usage: %prog consumer add_key_value_pair [OPTIONS]"
+        if self.action == "add_keyvalue":
+            usage = "usage: %prog consumer add_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
@@ -113,8 +113,8 @@ class consumer(BaseCore):
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
                 
-        if self.action == "delete_key_value_pair":
-            usage = "usage: %prog consumer delete_key_value_pair [OPTIONS]"
+        if self.action == "delete_keyvalue":
+            usage = "usage: %prog consumer delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
@@ -160,9 +160,9 @@ class consumer(BaseCore):
             self._bind()
         if self.action == "unbind":
             self._unbind()
-        if self.action == "add_key_value_pair":
+        if self.action == "add_keyvalue":
             self._add_key_value_pair()
-        if self.action == "delete_key_value_pair":
+        if self.action == "delete_keyvalue":
             self._delete_key_value_pair()
         if self.action == "history":
             self._history()
@@ -320,15 +320,14 @@ class consumer(BaseCore):
             print("Key is required. Try --help")
             sys.exit(0)
         try:
-            self.cconn.delete_key_value_pair(consumerid, self.options.key, self.options.value)
-            print _(" Successfully added key-value pair %s:%s" % (self.options.key, self.options.value))
+            self.cconn.delete_key_value_pair(consumerid, self.options.key)
+            print _(" Successfully deleted key: %s" % self.options.key)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise    
-        
+            raise           
 
 
     def _delete(self):
