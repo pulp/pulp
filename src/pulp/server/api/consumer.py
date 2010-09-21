@@ -102,7 +102,7 @@ class ConsumerApi(BaseApi):
     
     
     @audit()
-    def add_key_value_pair(self, key, value):
+    def add_key_value_pair(self, id, key, value):
         consumer = self.consumer(id)    
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
@@ -116,7 +116,7 @@ class ConsumerApi(BaseApi):
         
         
     @audit()
-    def delete_key_value_pair(self, key):
+    def delete_key_value_pair(self, id, key):
         consumer = self.consumer(id)    
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
