@@ -59,7 +59,7 @@ class ConsumerApi(BaseApi):
         '''
         return get_object_db('consumergroups',
                              ['id'],
-                             [])
+                             ['consumerids'])
     
 
     @property
@@ -68,7 +68,7 @@ class ConsumerApi(BaseApi):
 
     @property
     def _indexes(self):
-        return ["package_profile.name", "repoids"]
+        return ["package_profile.name", "repoids", "key_value_pairs"]
 
     @audit(params=['id'])
     def create(self, id, description, key_value_pairs = {}):

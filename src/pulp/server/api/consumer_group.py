@@ -33,6 +33,14 @@ class ConsumerGroupApi(BaseApi):
         BaseApi.__init__(self)
         self.consumerApi = ConsumerApi()
         self.repoApi = RepoApi()
+        
+    @property
+    def _unique_indexes(self):
+        return ["id"]
+
+    @property
+    def _indexes(self):
+        return ["consumerids"]    
 
     def _getcollection(self):
         return get_object_db('consumergroups',
