@@ -17,19 +17,22 @@
 # in this software or its documentation.
 #
 
+import gettext
 import sys
-import os.path
-from pulp.client.core.basecore import BaseCore, systemExit
-from pulp.client.connection import ConsumerConnection, RepoConnection, RestlibException
+
 import pulp.client.constants as constants
-from pulp.client.logutil import getLogger
 from pulp.client.config import Config
+from pulp.client.connection import ConsumerConnection, RepoConnection, RestlibException
+from pulp.client.core.basecore import print_header, BaseCore, systemExit
+from pulp.client.logutil import getLogger
+
+
 log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
 CONSUMERID = "/etc/pulp/consumer"
-import gettext
 _ = gettext.gettext
+
 
 class packagegroup(BaseCore):
     def __init__(self):
@@ -50,13 +53,13 @@ class packagegroup(BaseCore):
         self.pconn = None
 
     def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost", 
-                                    port=443, username=self.username, 
+        self.pconn = RepoConnection(host=CFG.server.host or "localhost",
+                                    port=443, username=self.username,
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
         self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
-                                        port=443, username=self.username, 
+                                        port=443, username=self.username,
                                         password=self.password,
                                         cert_file=self.cert_filename,
                                         key_file=self.key_filename)
@@ -145,17 +148,15 @@ class packagegroup(BaseCore):
 
     def _list(self):
         if not self.options.repoid:
-            print("Repo id required. Try --help")
+            print _("Repo id required. Try --help")
             sys.exit(0)
         try:
             groups = self.pconn.packagegroups(self.options.repoid)
             if not groups:
-                print("PackageGroups not found in repo [%s]" % (self.options.repoid))
+                print _("PackageGroups not found in repo [%s]") % (self.options.repoid)
                 sys.exit(-1)
-            print "+-------------------------------------------+"
-            print "Repository: %s" % (self.options.repoid)
-            print "Package Group Information "
-            print "+-------------------------------------------+"
+            print_header("Repository: %s" % (self.options.repoid),
+                         "Package Group Information")
             keys = groups.keys()
             keys.sort()
             for key in keys:
@@ -169,19 +170,18 @@ class packagegroup(BaseCore):
 
     def _info(self):
         if not self.options.groupid:
-            print("package group id required. Try --help")
+            print _("package group id required. Try --help")
             sys.exit(0)
         if not self.options.repoid:
-            print("Repo id required. Try --help")
+            print _("Repo id required. Try --help")
             sys.exit(0)
         try:
             groups = self.pconn.packagegroups(self.options.repoid)
             if self.options.groupid not in groups:
-                print("PackageGroup [%s] not found in repo [%s]" % (self.options.groupid, self.options.repoid))
+                print _("PackageGroup [%s] not found in repo [%s]") % \
+                    (self.options.groupid, self.options.repoid)
                 sys.exit(-1)
-            print "+-------------------------------------------+"
-            print "Package Group Information"
-            print "+-------------------------------------------+"
+            print_header("Package Group Information")
             info = groups[self.options.groupid]
             print constants.PACKAGE_GROUP_INFO % (info["name"], info["id"],
                     info["mandatory_package_names"], info["default_package_names"],
@@ -195,13 +195,13 @@ class packagegroup(BaseCore):
 
     def _install(self):
         if not self.options.consumerid:
-            print("consumer id required. Try --help")
+            print _("consumer id required. Try --help")
             sys.exit(0)
         if not self.options.pkggroupid:
-            print("package group id required. Try --help")
+            print _("package group id required. Try --help")
             sys.exit(0)
         try:
-            print self.cconn.installpackagegroups(self.options.consumerid, 
+            print self.cconn.installpackagegroups(self.options.consumerid,
                                              self.options.pkggroupid)
         except RestlibException, re:
             log.error("Error: %s" % re)
@@ -212,64 +212,61 @@ class packagegroup(BaseCore):
 
     def _create(self):
         if not self.options.repoid:
-            print("Repo id required. Try --help")
+            print _("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print ("package group id required. Try --help")
+            print _("package group id required. Try --help")
             sys.exit(0)
         if not self.options.groupname:
-            print ("package group name required. Try --help")
+            print _("package group name required. Try --help")
             sys.exit(0)
         try:
-            self.pconn.create_packagegroup(self.options.repoid, 
-                    self.options.groupid, self.options.groupname, 
+            self.pconn.create_packagegroup(self.options.repoid,
+                    self.options.groupid, self.options.groupname,
                     self.options.description)
-            print "+-------------------------------------------+"
-            print "Package Group [%s] created in repository [%s]" % \
-                    (self.options.groupid, self.options.repoid)
-            print "+-------------------------------------------+"
+            print_header("Package Group [%s] created in repository [%s]" %
+                         (self.options.groupid, self.options.repoid))
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-    
+
     def _delete(self):
         if not self.options.repoid:
-            print("Repo id required. Try --help")
+            print _("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("package group id required. Try --help")
+            print _("package group id required. Try --help")
             sys.exit(0)
         try:
             self.pconn.delete_packagegroup(self.options.repoid, self.options.groupid)
-            print "PackageGroup [%s] deleted from repository [%s]" % \
-                    (self.options.groupid, self.options.repoid)
+            print _("PackageGroup [%s] deleted from repository [%s]") % \
+                (self.options.groupid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-    
+
     def _add_package(self):
         if not self.options.repoid:
-            print("Repo id required. Try --help")
+            print _("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.pnames:
-            print("package name required. Try --help")
+            print _("package name required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("package group id required. Try --help")
+            print _("package group id required. Try --help")
             sys.exit(0)
         try:
             self.pconn.add_packages_to_group(self.options.repoid,
                     self.options.groupid, self.options.pnames,
                     self.options.grouptype)
-            print "Following packages added to group [%s] in repository [%s]: \n %s" % \
-                    (self.options.groupid, self.options.repoid,
-                        self.options.pnames)
+            print _("Following packages added to group [%s] in repository [%s]: \n %s") % \
+                (self.options.groupid, self.options.repoid, self.options.pnames)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -279,21 +276,20 @@ class packagegroup(BaseCore):
 
     def _delete_package(self):
         if not self.options.repoid:
-            print("Repo id required. Try --help")
+            print _("Repo id required. Try --help")
             sys.exit(0)
         if not self.options.pkgname:
-            print("package name required. Try --help")
+            print _("package name required. Try --help")
             sys.exit(0)
         if not self.options.groupid:
-            print("package group id required. Try --help")
+            print _("package group id required. Try --help")
             sys.exit(0)
         try:
-            self.pconn.delete_package_from_group(self.options.repoid, 
-                    self.options.groupid, self.options.pkgname, 
+            self.pconn.delete_package_from_group(self.options.repoid,
+                    self.options.groupid, self.options.pkgname,
                     self.options.grouptype)
-            print "Package [%s] deleted from group [%s] in repository [%s]" % \
-                    (self.options.pkgname, self.options.groupid, 
-                            self.options.repoid)
+            print _("Package [%s] deleted from group [%s] in repository [%s]") % \
+                (self.options.pkgname, self.options.groupid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

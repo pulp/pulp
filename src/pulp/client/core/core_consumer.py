@@ -15,26 +15,31 @@
 # in this software or its documentation.
 #
 
+import gettext
 import sys
-from M2Crypto import SSL
-import pulp.client.utils as utils
-import pulp.client.constants as constants
-from pulp.client.core.basecore import BaseCore, systemExit
-from pulp.client.connection import ConsumerConnection, RestlibException
-from pulp.client.repolib import RepoLib
-from pulp.client.logutil import getLogger
-from pulp.client.config import Config
-from pulp.client.package_profile import PackageProfile
-from pulp.client import json_utils
 import urlparse
+
+from M2Crypto import SSL
+
+import pulp.client.constants as constants
+import pulp.client.utils as utils
+from pulp.client import json_utils
+from pulp.client.config import Config
+from pulp.client.connection import ConsumerConnection, RestlibException
+from pulp.client.core.basecore import BaseCore, systemExit, print_header
+from pulp.client.logutil import getLogger
+from pulp.client.package_profile import PackageProfile
+from pulp.client.repolib import RepoLib
+
+
+
 log = getLogger(__name__)
 CFG = Config()
 #TODO: move this to config
 CONSUMERID = "/etc/pulp/consumer"
 
-
-import gettext
 _ = gettext.gettext
+
 
 class consumer(BaseCore):
     def __init__(self, is_admin=True, actions=None):
@@ -52,10 +57,10 @@ class consumer(BaseCore):
         self.is_admin = is_admin
         BaseCore.__init__(self, "consumer", usage, shortdesc, desc)
         self.cconn = None
-        
-        
+
+
     def load_server(self):
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
                                         port=443, username=self.username,
                                         password=self.password,
                                         cert_file=self.cert_filename,
@@ -140,12 +145,12 @@ class consumer(BaseCore):
             self._history()
 
     def _create(self):
-        if (not self.options.username and not self.options.password 
+        if (not self.options.username and not self.options.password
                 and (len(self.args) > 0)):
-            print("username and password are required. Try --help")
+            print _("username and password are required. Try --help")
             sys.exit(1)
         if not self.options.id:
-            print("consumer id required. Try --help")
+            print _("consumer id required. Try --help")
             sys.exit(0)
         if not self.options.description:
             self.options.description = self.options.id
@@ -157,13 +162,9 @@ class consumer(BaseCore):
             try:
                 consumer = self.cconn.create(self.options.id, self.options.description)
             except SSL.Checker.WrongHost, wh:
-                print "ERROR: The server hostname you have configured in /etc/pulp/ does not match the"
-                print "hostname returned from the Pulp server you are connecting to.  "
-                print ""
-                print "You have: [%s] configured but received: [%s] from the server." % (wh.expectedHost, wh.actualHost)
-                print ""
-                print "Either correct the host in /etc/pulp/ or specify --server=%s" % wh.actualHost
-                sys.exit(1)   
+                print constants.CONSUMER_WRONG_HOST_ERROR % \
+                    (wh.expectedHost, wh.actualHost, wh.actualHost)
+                sys.exit(1)
 
             cert_dict = self.cconn.certificate(self.options.id)
             certificate = cert_dict['certificate']
@@ -173,21 +174,21 @@ class consumer(BaseCore):
             utils.writeToFile(ConsumerConnection.KEY_PATH, key)
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(self.options.id, pkginfo)
-            print _(" Successfully created consumer [ %s ]" % consumer['id'])
+            print _(" Successfully created consumer [ %s ]") % consumer['id']
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s", exc_info=True)
             raise
-            
+
     def _update(self):
-        
+
         consumer_id = self.getConsumer()
         try:
             pkginfo = PackageProfile().getPackageList()
             self.cconn.profile(consumer_id, pkginfo)
-            print _(" Successfully updated consumer [%s] profile" % consumer_id)
+            print _(" Successfully updated consumer [%s] profile") % consumer_id
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -203,7 +204,7 @@ class consumer(BaseCore):
                 for pkgversion in pkg:
                     pkgs += " " + utils.getRpmName(pkgversion)
             cons['package_profile'] = pkgs
-            print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
+            print_header("Consumer Information")
             for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], con["repoids"], con["package_profile"])
@@ -213,14 +214,14 @@ class consumer(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-        
+
     def _list(self):
         try:
             cons = self.cconn.consumers()
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
-            for con in cons: 
+            for con in cons:
                 con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile'])
-            print """+-------------------------------------------+\n    Consumer Information \n+-------------------------------------------+"""
+            print_header("Consumer Information ")
             for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], con["repoids"], con["package_profile"])
@@ -234,12 +235,13 @@ class consumer(BaseCore):
     def _bind(self):
         consumerid = self.getConsumer()
         if not self.options.repoid:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             self.cconn.bind(consumerid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully subscribed consumer [%s] to repo [%s]" % (consumerid, self.options.repoid))
+            print _(" Successfully subscribed consumer [%s] to repo [%s]") % \
+                (consumerid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -250,12 +252,13 @@ class consumer(BaseCore):
     def _unbind(self):
         consumerid = self.getConsumer()
         if not self.options.repoid:
-            print("repo id required. Try --help")
+            print _("repo id required. Try --help")
             sys.exit(0)
         try:
             self.cconn.unbind(consumerid, self.options.repoid)
             self.repolib.update()
-            print _(" Successfully unsubscribed consumer [%s] from repo [%s]" % (consumerid, self.options.repoid))
+            print _(" Successfully unsubscribed consumer [%s] from repo [%s]") % \
+                (consumerid, self.options.repoid)
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -268,10 +271,9 @@ class consumer(BaseCore):
         consumerid = self.getConsumer()
         try:
             self.cconn.delete(consumerid)
-            print _(" Successfully deleted consumer [%s]" % consumerid)
+            print _(" Successfully deleted consumer [%s]") % consumerid
         except RestlibException, re:
-            print _(" Deleted operation failed on consumer [ %s ] " % \
-                  consumerid)
+            print _(" Deleted operation failed on consumer [ %s ]") % consumerid
             log.error("Error: %s" % re)
             sys.exit(-1)
         except Exception, e:
@@ -292,7 +294,7 @@ class consumer(BaseCore):
 
             results = self.cconn.history(consumerid, query_params)
 
-            print """+-------------------------------------------+\n    Consumer History \n+-------------------------------------------+"""
+            print_header("Consumer History ")
             for entry in results:
 
                 # Attempt to translate the programmatic event type name to a user readable one
@@ -309,22 +311,22 @@ class consumer(BaseCore):
                 # just throw an empty line to account for the blank line that's added
                 # by the details rendering.
                 if entry['type_name'] == 'repo_bound' or entry['type_name'] == 'repo_unbound':
-                    print(constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id']))
+                    print constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id'])
                 if entry['type_name'] == 'package_installed' or entry['type_name'] == 'package_uninstalled':
-                    print(constants.CONSUMER_HISTORY_PACKAGES)
+                    print constants.CONSUMER_HISTORY_PACKAGES
 
                     for package_nvera in entry['details']['package_nveras']:
-                        print('  %s' % package_nvera)
+                        print '  %s' % package_nvera
 
-                print('')
+                print ''
 
         except RestlibException, re:
-            print _(" History retrieval failed for consumer [%s]" % consumerid)
+            print _(" History retrieval failed for consumer [%s]") % consumerid
             sys.exit(-1)
 
     def getConsumer(self):
         if not self.options.id:
-            print("consumer id required. Try --help")
+            print _("consumer id required. Try --help")
             sys.exit(0)
-            
+
         return self.options.id

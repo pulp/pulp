@@ -16,23 +16,23 @@
 # in this software or its documentation.
 #
 
-import os
-import sys
-import time
-import base64
-
-import pulp.client.utils as utils
-import pulp.client.constants as constants
-from pulp.client.core.basecore import BaseCore, systemExit
-from pulp.client.connection import ErrataConnection, RestlibException,\
-    RepoConnection, ConsumerConnection, ConsumerGroupConnection
-from pulp.client.logutil import getLogger
-from pulp.client.config import Config
-CFG = Config()
-
 import gettext
-_ = gettext.gettext
+import sys
+
+import pulp.client.constants as constants
+from pulp.client.config import Config
+from pulp.client.connection import (
+    ErrataConnection, RestlibException, RepoConnection, ConsumerConnection,
+    ConsumerGroupConnection)
+from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.logutil import getLogger
+
+
+CFG = Config()
 log = getLogger(__name__)
+
+_ = gettext.gettext
+
 
 class errata(BaseCore):
     def __init__(self, is_admin=True, actions=None):
@@ -40,37 +40,37 @@ class errata(BaseCore):
         shortdesc = "errata specific actions to pulp server."
         desc = ""
         self.name = "errata"
-        self.actions = actions or {"create" : "Create a custom errata", 
-                                   "update" : "Update an existing errata", 
-                                   "list"   : "List applicable errata", 
-                                   "delete" : "Delete an errata", 
+        self.actions = actions or {"create" : "Create a custom errata",
+                                   "update" : "Update an existing errata",
+                                   "list"   : "List applicable errata",
+                                   "delete" : "Delete an errata",
                                    "info"   : "See details on a specific errata",
-                                   "install" : "Install Errata on a consumer",}
+                                   "install" : "Install Errata on a consumer", }
         self.is_admin = is_admin
         BaseCore.__init__(self, "errata", usage, shortdesc, desc)
 
     def load_server(self):
-        self.econn = ErrataConnection(host=CFG.server.host or "localhost", 
+        self.econn = ErrataConnection(host=CFG.server.host or "localhost",
                                     port=CFG.server.port or 443,
-                                    username=self.username, 
+                                    username=self.username,
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
-        self.rconn = RepoConnection(host=CFG.server.host or "localhost", 
+        self.rconn = RepoConnection(host=CFG.server.host or "localhost",
                                     port=CFG.server.port or 443,
-                                    username=self.username, 
+                                    username=self.username,
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost", 
+        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
                                     port=CFG.server.port or 443,
-                                    username=self.username, 
+                                    username=self.username,
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost", 
+        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost",
                                     port=CFG.server.port or 443,
-                                    username=self.username, 
+                                    username=self.username,
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
@@ -84,13 +84,13 @@ class errata(BaseCore):
             usage = "errata update [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             pass
-                        
+
         if self.action == "delete":
             usage = "errata delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
                            help="errata Id")
-            
+
         if self.action == "list":
             usage = "errata list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -132,7 +132,7 @@ class errata(BaseCore):
     def _create(self):
         print _("Not Implemented")
         sys.exit(0)
-        
+
     def _delete(self):
         print _("Not Implemented")
         sys.exit(0)
@@ -141,7 +141,7 @@ class errata(BaseCore):
         if not (self.getConsumer() or self.options.repoid):
             print _("A consumer or a repo is required to lookup errata")
             sys.exit(0)
-            
+
         try:
             if self.options.repoid:
                 errata = self.rconn.errata(self.options.repoid, self.options.type)
@@ -151,14 +151,14 @@ class errata(BaseCore):
                 print _("No errata available to list")
                 sys.exit(0)
             print errata
-            
+
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-        
+
     def _info(self):
         if not self.options.id:
             print _("An Errata id is required for lookup")
@@ -176,7 +176,7 @@ class errata(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-        
+
     def _install(self):
         (self.options, data) = self.parser.parse_args()
         if not (self.options.consumerid or self.options.consumergroupid):
@@ -198,13 +198,13 @@ class errata(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-        
+
     def getConsumer(self):
         if not self.options.consumerid:
-            print("consumer id required. Try --help")
+            print _("consumer id required. Try --help")
             sys.exit(0)
-            
-        return self.options.consumerid            
+
+        return self.options.consumerid
 
 class FileError(Exception):
     pass

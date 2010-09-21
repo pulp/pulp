@@ -95,3 +95,11 @@ CONSUMER_HISTORY_EVENT_TYPES = {
     'package_installed' : 'Package Installed',
     'package_uninstalled' : 'Package Uninstalled',
 }
+
+CONSUMER_WRONG_HOST_ERROR = \
+"""ERROR: The server hostname you have configured in /etc/pulp/ does not match the
+hostname returned from the Pulp server you are connecting to.
+
+You have: [%s] configured but received: [%s] from the server.
+
+Either correct the host in /etc/pulp/ or specify --server=%s"""

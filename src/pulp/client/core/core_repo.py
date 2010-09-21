@@ -17,6 +17,7 @@
 #
 
 import base64
+import gettext
 import sys
 import time
 
@@ -30,10 +31,9 @@ from pulp.client.logutil import getLogger
 # -----------------------------------------------------------------------------
 
 CFG = Config()
-
-import gettext
-_ = gettext.gettext
 log = getLogger(__name__)
+
+_ = gettext.gettext
 
 # repo command errors ---------------------------------------------------------
 

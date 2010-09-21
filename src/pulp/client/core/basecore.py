@@ -28,12 +28,13 @@ import pulp.client.utils as utils
 header_width = 45
 header_border = '+------------------------------------------+'
 
-def print_header(title):
+def print_header(*lines):
     padding = 0
-    if len(title) < header_width:
-        padding = ((header_width - len(title)) / 2) - 1
     print header_border
-    print ' ' * padding, title
+    for line in lines:
+        if len(line) < header_width:
+            padding = ((header_width - len(line)) / 2) - 1
+        print ' ' * padding, line
     print header_border
 
 # system exit -----------------------------------------------------------------

@@ -15,25 +15,25 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import gettext
 import os
 import sys
 
 import pulp.client.auth_utils as auth_utils
-from pulp.client.logutil import getLogger
 from pulp.client.config import Config
 from pulp.client.connection import UserConnection
 from pulp.client.core.basecore import BaseCore
-
-import gettext
-_ = gettext.gettext
-log = getLogger(__name__)
+from pulp.client.logutil import getLogger
 
 
 CFG = Config()
+log = getLogger(__name__)
+
+_ = gettext.gettext
 
 
 class auth(BaseCore):
-   
+
     def __init__(self):
         usage = 'usage: %prog auth [OPTIONS]'
         shortdesc = 'stores authentication credentials for the user on the machine.'
@@ -41,7 +41,7 @@ class auth(BaseCore):
 
         self.name = 'auth'
         self.actions = {'login' : 'Stores user credentials on this machine',
-                        'logout': 'Removes stored user credentials on this machine',}
+                        'logout': 'Removes stored user credentials on this machine', }
         self.is_admin = True
 
         BaseCore.__init__(self, 'auth', usage, shortdesc, desc)
@@ -88,7 +88,8 @@ class auth(BaseCore):
         f.write(cert_dict['private_key'])
         f.close()
 
-        print('User credentials successfully stored at [%s]' % auth_utils.admin_cert_dir())
+        print _('User credentials successfully stored at [%s]') % \
+            auth_utils.admin_cert_dir()
 
     def _logout(self):
         # Determine the destination and store the cert information there
@@ -101,4 +102,4 @@ class auth(BaseCore):
         if os.path.exists(key_filename):
             os.remove(key_filename)
 
-        print('User credentials removed from [%s]' % auth_utils.admin_cert_dir())
+        print _('User credentials removed from [%s]') % auth_utils.admin_cert_dir()
