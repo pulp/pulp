@@ -162,6 +162,9 @@ class PulpConnection:
         log.info("Using cert_file: %s and key_file: %s" %
                  (self.cert_file, self.key_file))
 
+    def task_status(self, path):
+        return self.conn.request_get(str(path))
+
     def shutDown(self):
         self.conn.close()
         log.info("remote connection closed")

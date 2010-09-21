@@ -14,9 +14,25 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.logs import start_logging
+from pulp.server.event.dispatcher import EventDispatcher
+from pulp.server.async import ReplyHandler
+from pulp.server.config import config
+from pulp.messaging.broker import Broker
 
+# start logging
 start_logging()
+
+# configure AMQP broker
+url = config.get('messaging', 'url')
+broker = Broker.get(url)
+broker.cacert = config.get('messaging', 'cacert')
+broker.clientcert = config.get('messaging', 'clientcert')
+
+# start the event dispatcher
 dispatcher = EventDispatcher()
 dispatcher.start()
+
+# start async task reply handler
+replyHandler = ReplyHandler()
+replyHandler.start()

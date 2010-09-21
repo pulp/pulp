@@ -68,7 +68,7 @@ class BaseApi(object):
 
     # async methods
 
-    def run_async(self, method, args, kwargs, timeout=None):
+    def run_async(self, method, args, kwargs={}, timeout=None):
         return async.run_async(method, args, kwargs, timeout)
 
     def find_async(self, **kwargs):

@@ -13,8 +13,16 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+from pulp.server.agent import Agent
 from pulp.server.tasking.queue.fifo import FIFOTaskQueue
-from pulp.server.tasking.task import Task
+from pulp.server.tasking.task import Task, AsyncTask
+from pulp.messaging import Queue
+from pulp.messaging.async import ReplyConsumer, Listener
+from pulp.server.config import config
+from logging import getLogger
+
+log = getLogger(__name__)
+
 
 # async execution queue -------------------------------------------------------
 
@@ -25,6 +33,18 @@ _queue = FIFOTaskQueue()
 find_async = _queue.find
 
 cancel_async = _queue.cancel
+
+
+def enqueue(task, unique=True):
+    """
+    Enqueue a task.
+    @param task: The task to enqueue.
+    @type task: L{Task}
+    @param unique: whether or not to make sure the task isn't already being run
+    @type unique: bool
+    """
+    if _queue.enqueue(task, unique):
+        return task
 
 
 def run_async(method, args, kwargs, timeout=None, unique=True):
@@ -44,6 +64,172 @@ def run_async(method, args, kwargs, timeout=None, unique=True):
     @return: L{Task} instance on success, None otherwise
     """
     task = Task(method, args, kwargs, timeout)
-    if _queue.enqueue(task, unique):
-        return task
-    return None
+    return enqueue(task, unique)
+
+
+class AsyncAgent:
+    """
+    Represents the I{remote} agent.
+    @ivar __id: The agent (consumer) id.
+    @type __id: str
+    """
+
+    def __init__(self, id):
+        """
+        @param id: The agent ID.
+        @type id: str
+        """
+        self.__id = id
+
+    def __getattr__(self, name):
+        """
+        @param name: the remote class name.
+        @type name: str
+        @return: A wrapper object for the remote class.
+        @rtype: L{AsyncClass}
+        """
+        if name.startswith('__'):
+            return self.__dict__[name]
+        else:
+            return RemoteClass(self.__id, name)
+
+
+class RemoteClass:
+    """
+    Represents a I{remote} class.
+    @ivar __id: The agent (consumer) id.
+    @type __id: str
+    @ivar __name: The remote class name.
+    @type __name: str
+    @ivar __taskid: The correlated taskid.
+    @type __taskid: str
+    """
+
+    def __init__(self, id, name):
+        """
+        @param id: The agent (consumer) id.
+        @type id: str
+        @param name: The remote class name.
+        @type name: str
+        """
+        self.__id = id
+        self.__name = name
+        self.__taskid = 0
+
+    def __call__(self, task):
+        """
+        Mock constructor.
+        @param task: The associated task.
+        @type task: L{Task}
+        @return: self
+        @rtype: L{AsyncClass}
+        """
+        self.taskid = task.id
+        return self
+
+    def __getattr__(self, name):
+        """
+        Get the method.
+        @param name: The remote class method name.
+        @type name: str
+        @return: A remote method wrapper.
+        @rtype: L{RemoteMethod}
+        """
+        if name.startswith('__'):
+            return self.__dict__[name]
+        return RemoteMethod(self.__id, self.__name, name, self.taskid)
+
+
+class RemoteMethod:
+    """
+    Represents a I{remote} method.
+    @cvar CTAG: The RMI correlation tag.
+    @type CTAG: str
+    @ivar id: The consumer id.
+    @type id: str
+    @ivar im_class: The remote class.
+    @type im_class: classobj
+    @ivar name: The method name.
+    @type name: str
+    @ivar cb: The completed callback (module,class).
+    @type cb: tuple
+    @ivar taskid: The associated task ID.
+    @type taskid: str
+    """
+
+    CTAG = 'asynctaskreplyqueue'
+
+    def __init__(self, id, classname, name, taskid):
+        """
+        @param id: The consumer (agent) id.
+        @type id: str
+        @param classname: The remote object class name.
+        @type classname: str
+        @param name: The remote method name.
+        @type name: str
+        @param taskid: The associated task ID.
+        @type taskid: str
+        """
+        self.id = id
+        self.classname = classname
+        self.name = name
+        self.taskid = taskid
+
+    def __call__(self, *args, **kwargs):
+        """
+        On invocation, perform the async RMI to the agent.
+        @param args: Invocation args.
+        @type args: list
+        @param kwargs: keyword invocation args.
+        @type kwargs: dict
+        @return: Whatever is returned by the async RMI.
+        @rtype: object
+        """
+        url = config.get('messaging', 'url')
+        agent = Agent(
+            self.id,
+            url=url,
+            any=self.taskid,
+            ctag=self.CTAG)
+        classobj = getattr(agent, self.classname)
+        method = getattr(classobj, self.name)
+        return method(*args, **kwargs)
+
+
+class ReplyHandler(Listener):
+    """
+    The async RMI reply handler.
+    @ivar consumer: The reply consumer.
+    @type consumer: L{ReplyConsumer}
+    """
+
+    def __init__(self):
+        ctag = RemoteMethod.CTAG
+        url = config.get('messaging', 'url')
+        queue = Queue(ctag)
+        self.consumer = ReplyConsumer(queue, url=url)
+
+    def start(self):
+        self.consumer.start(self)
+        log.info('Task reply handler, started.')
+
+    def succeeded(self, reply):
+        log.info('Task RMI (succeeded)\n%s', reply)
+        taskid = reply.any
+        task = _queue.find(id=taskid)
+        if task:
+            task[0].succeeded(reply.retval)
+        else:
+            log.warn('Task (%s), not found', taskid)
+
+    def failed(self, reply):
+        log.info('Task RMI (failed)\n%s', reply)
+        taskid = reply.any
+        task = _queue.find(id=taskid)
+        if task:
+            task[0].failed(reply.exval, tb=repr(reply.exval))
+        else:
+            log.warn('Task (%s), not found', taskid)
+
+    def status(self, reply):
+        pass

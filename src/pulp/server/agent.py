@@ -20,7 +20,6 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
-from pulp.messaging.broker import Broker
 from pulp.messaging.base import Container
 from pulp.messaging.producer import Producer
 from pulp.server.config import config
@@ -38,9 +37,6 @@ class Agent(Container):
         @param options: Messaging L{pulp.messaging.Options}
         """
         url = config.get('messaging', 'url')
-        broker = Broker.get(url)
-        broker.cacert = config.get('messaging', 'cacert')
-        broker.clientcert = config.get('messaging', 'clientcert')
         self.__producer = Producer(url=url)
         Container.__init__(self, uuid, self.__producer, **options)
 

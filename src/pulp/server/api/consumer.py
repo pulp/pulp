@@ -28,7 +28,7 @@ from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
-
+from pulp.server.async import AsyncAgent, AsyncTask, enqueue
 
 log = logging.getLogger(__name__)
     
@@ -276,7 +276,6 @@ class ConsumerApi(BaseApi):
         @param packagenames: The package names to install.
         @type packagenames: [str,..]
         """
-        agent = Agent(id)
         data = []
         for pkg in packagenames:
             info = pkg.split('.')
@@ -285,9 +284,7 @@ class ConsumerApi(BaseApi):
             else:
                 data.append(pkg)
         log.debug("Packages to Install: %s" % data)
-        installed_packages = agent.packages.install(data)
-        self.consumer_history_api.packages_installed(id, installed_packages)
-        return installed_packages
+        return InstallPackages(id, data)
     
     @audit()
     def installpackagegroups(self, id, packageids=()):
@@ -390,3 +387,42 @@ class ConsumerApi(BaseApi):
                                 applicable_errata[erratumid] = []
                             applicable_errata[erratumid].append(pkg)
         return applicable_errata
+
+
+
+class InstallPackages(AsyncTask):
+    """
+    Install packages task
+    @ivar consumerid: The consumer ID.
+    @type consumerid: str
+    @ivar packages: A list of packages to install.
+    @type packages: [str,..]
+    """
+
+    def __init__(self, consumerid, packages):
+        """
+        @param consumerid: The consumer ID.
+        @type consumerid: str
+        @param packages: A list of packages to install.
+        @type packages: [str,..]
+        """
+        self.consumerid = consumerid
+        self.packages = packages
+        AsyncTask.__init__(self, self.install)
+        enqueue(self)
+
+    def install(self):
+        """
+        Perform the RMI to the agent to install packages.
+        """
+        agent = AsyncAgent(self.consumerid)
+        packages = agent.Packages(self)
+        packages.install(self.packages)
+
+    def succeeded(self, result):
+        """
+        On success, update the consumer history.
+        """
+        history = ConsumerHistoryApi()
+        history.packages_installed(self.consumerid, result)
+        AsyncTask.succeeded(self, result)

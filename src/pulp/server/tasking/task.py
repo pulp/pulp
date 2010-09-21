@@ -35,6 +35,7 @@ task_error = 'error'
 task_timed_out = 'timed out'
 task_canceled = 'canceled'
 task_reset = 'reset'
+task_suspended = 'suspended'
 
 task_states = (
     task_waiting,
@@ -44,6 +45,7 @@ task_states = (
     task_timed_out,
     task_canceled,
     task_reset,
+    task_suspended,
 )
 
 task_ready_states = (
@@ -125,6 +127,7 @@ class Task(object):
         self.start_time = datetime.datetime.now()
         try:
             result = self.callable(*self.args, **self.kwargs)
+            self.invoked(result)
         except TimeoutException:
             self.state = task_timed_out
             self._exception_delivered()
@@ -136,18 +139,7 @@ class Task(object):
             _log.info('Task id:%s, method_name:%s: CANCELLED' %
                       (self.id, self.method_name))
         except Exception, e:
-            self.state = task_error
-            self.exception = repr(e)
-            self.traceback = traceback.format_exception(*sys.exc_info())
-            self._exception_delivered()
-            _log.error('Task id:%s, method_name:%s:\n%s' %
-                       (self.id, self.method_name, ''.join(self.traceback)))
-        else:
-            self.state = task_finished
-            self.result = result
-        self.finish_time = datetime.datetime.now()
-        if self.complete_callback is not None:
-            self.complete_callback(self)
+            self.failed(e)
 
     def progress_callback(self, *args, **kwargs):
         """
@@ -175,3 +167,72 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
+
+    def succeeded(self, result):
+        """
+        Task I{method} invoked and succeeded.
+        The task status is updated and the I{complete_callback}.
+        @param result: The object returned by the I{method}.
+        @type result: object.
+        """
+        self.result = result
+        self.state = task_finished
+        self.finish_time = datetime.datetime.now()
+        if self.complete_callback is None:
+            return
+        try:
+            self.complete_callback(self)
+        except Exception, e:
+            _log.exception(e)
+
+    def failed(self, exception, tb=None):
+        """
+        Task I{method} invoked and raised an exception.
+        @param exception: The I{representation} of the raised exception.
+        @type exception: str
+        @param tb: The formatted traceback.
+        @type tb: str
+        """
+        self.state = task_error
+        self.finish_time = datetime.datetime.now()
+        self.exception = repr(exception)
+        self._exception_delivered()
+        if tb:
+            self.traceback = tb
+        else:
+            self.traceback = \
+                traceback.format_exception(*sys.exc_info())
+        _log.error(
+            'Task id:%s, method_name:%s:\n%s' %
+            (self.id,
+             self.method_name,
+             ''.join(self.traceback)))
+
+    def invoked(self, result):
+        """
+        Post I{method} invoked behavior.
+        For synchronous I{methods}, we sinply call I{succeeded()}
+        @param result: The object returned by the I{method}.
+        @type result: object.
+        """
+        self.succeeded(result)
+
+
+
+class AsyncTask(Task):
+    """
+    Asynchronous Task class
+    Meta data for executing a long-running I{asynchronous} task.
+    The I{method} is also expected to be asynchronous.  The I{method}
+    execution is the first part of running the task and does not result in
+    transition to a finished state.  Rather, the Task state is advanced
+    by external processing.
+    """
+
+    def invoked(self, result):
+        """
+        The I{method} has been successfully invoked.
+        Do __not__ advance the tesk state as this is managed
+        by external processing.
+        """
+        pass

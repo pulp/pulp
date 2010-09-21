@@ -24,7 +24,7 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
@@ -211,7 +211,7 @@ class ConsumerDeferredFields(JSONController):
         return field(id)
     
 
-class ConsumerActions(JSONController):
+class ConsumerActions(AsyncController):
     
     # See pulp.webservices.repositories.RepositoryActions for design
     
@@ -288,7 +288,10 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         names = data.get('packagenames', [])
-        return self.ok(consumer_api.installpackages(id, names))
+        task = consumer_api.installpackages(id, names)
+        taskdict = self._task_to_dict(task)
+        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
     
     @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroups(self, id):
@@ -364,6 +367,25 @@ class ConsumerActions(JSONController):
             return self.internal_server_error('No implementation for %s found' % action_name)
         return action(id)
 
+
+class ConsumerActionStatus(AsyncController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def GET(self, id, action_name, action_id):
+        """
+        Check the status of a package install operation.
+        @param id: repository id
+        @param action_name: name of the action
+        @param action_id: action id
+        @return: action status information
+        """
+        task_info = self.task_status(action_id)
+        if task_info is None:
+            return self.not_found('No %s with id %s found' % (action_name, action_id))
+        return self.ok(task_info)
+
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
@@ -376,6 +398,9 @@ URLS = (
     
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions),
     'ConsumerActions',
+
+    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerActions.exposed_actions),
+    'ConsumerActionStatus',
 )
 
 application = web.application(URLS, globals())

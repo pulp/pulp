@@ -17,7 +17,12 @@
 
 import gettext
 import sys
-
+import time
+import os.path
+from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.connection import RepoConnection, ConsumerConnection, RestlibException
+from pulp.client.connection import ConsumerGroupConnection
+from pulp.client.logutil import getLogger
 from pulp.client.config import Config
 from pulp.client.connection import (
     RepoConnection, ConsumerConnection, RestlibException,
@@ -123,9 +128,21 @@ class package(BaseCore):
                 print _("Successfully Installed Packages %s on consumergroup [%s]") % \
                     (pkgs, self.options.consumergroupid)
             else:
-                pkgs = self.cconn.installpackages(self.options.consumerid, self.options.pnames)
-                print _("Successfully Installed Packages %s on consumer [%s]") % \
-                    (pkgs, self.options.consumerid)
+                task = self.cconn.installpackages(self.options.consumerid, self.options.pnames)
+                print 'Task %s, created' % task['id']
+                state = None
+                spath = task['status_path']
+                while state not in ['finished', 'error']:
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
+                    time.sleep(1)
+                    status = self.cgconn.task_status(spath)
+                    state = status['state']
+                if state == 'finished':
+                    print('\n[%s] installed on %s' % \
+                          (status['result'], self.options.consumerid))
+                else:
+                    print("\nPackage install failed")
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

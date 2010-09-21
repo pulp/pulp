@@ -19,6 +19,7 @@ Defined AMQP broker objects.
 
 from pulp.messaging import *
 from qpid.messaging import Connection
+from threading import RLock
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -40,6 +41,7 @@ class Broker:
     """
 
     domain = {}
+    __lock = RLock()
 
     @classmethod
     def add(cls, broker):
@@ -48,8 +50,12 @@ class Broker:
         @param broker: A broker to add
         @type broker: L{Broker}
         """
-        key = broker.url
-        cls.domain[key] = broker
+        cls.lock()
+        try:
+            key = broker.url
+            cls.domain[key] = broker
+        finally:
+            cls.unlock()
 
     @classmethod
     def get(cls, url):
@@ -61,13 +67,27 @@ class Broker:
         @return: The requested broker.
         @rtype: L{Broker}
         """
-        if not isinstance(url, URL):
-            url = URL(url)
-        b = cls.domain.get(url)
-        if not b:
-            b = Broker(url)
-            cls.add(b)
-        return b
+        cls.lock()
+        try:
+            if not isinstance(url, URL):
+                url = URL(url)
+            b = cls.domain.get(url)
+            if not b:
+                b = Broker(url)
+                cls.add(b)
+            return b
+        finally:
+            cls.unlock()
+
+    @classmethod
+    def lock(cls):
+        """ acquire mutex """
+        cls.__lock.acquire()
+
+    @classmethod
+    def unlock(cls):
+        """ release mutex """
+        cls.__lock.release()
 
     def __init__(self, url):
         """
