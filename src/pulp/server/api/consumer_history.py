@@ -390,4 +390,6 @@ _check_crontab()
 if __name__ == '__main__':
     api = ConsumerHistoryApi()
     lifetime = api._get_lifetime()
-    api.cull_history(lifetime)
+
+    if lifetime != -1:
+        api.cull_history(lifetime)
