@@ -38,7 +38,7 @@ def pbkdf_sha256(password, salt, iterations):
 
 def hash_password(plain_password):
     salt = random_bytes(8) # 64 bits
-    hashed_password = pbkdf_sha256(plain_password, salt, NUM_ITERATIONS)
+    hashed_password = pbkdf_sha256(str(plain_password), salt, NUM_ITERATIONS)
     # return the salt and hashed password, encoded in base64 and split with ","
     return salt.encode("base64").strip() + "," + hashed_password.encode("base64").strip()
 
