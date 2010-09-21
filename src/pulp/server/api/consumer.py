@@ -102,14 +102,32 @@ class ConsumerApi(BaseApi):
     
     
     @audit()
-    def add_key_value_pair(self, key, value):
+    def add_key_value_pair(self, data):
         consumer = self.consumer(id)    
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
-        key_value_pairs[key] = value
+        if key_value_pairs[data['key']] is None:
+            key_value_pairs[data['key']] = data['value']
+        else: 
+            raise PulpException('Given key [%s] already exists', data['key'])    
+        consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
         
+        
+    @audit()
+    def delete_key_value_pair(self, key):
+        consumer = self.consumer(id)    
+        if not consumer:
+            raise PulpException('Consumer [%s] does not exist', id)
+        key_value_pairs = consumer['key_value_pairs']
+        if key_value_pairs[key] is not None:
+            del key_value_pairs[key] 
+        else: 
+            raise PulpException('Given key [%s] does not exist', key)
+        consumer['key_value_pairs'] = key_value_pairs
+        self.update(consumer)
+    
     
     @audit()
     def certificate(self, id):

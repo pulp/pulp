@@ -339,10 +339,6 @@ class ConsumerConnection(PulpConnection):
         method = '/consumers/?package_name=%s' % name
         return self.conn.request_get(method)
 
-    def key_value_pairs(self, id, key_value_pairs):
-        method = "/consumers/%s/key_value_pairs/" % id
-        return self.conn.request_get(method)
-
     def bind(self, id, repoid):
         method = "/consumers/%s/bind/" % id
         return self.conn.request_post(method, params=repoid)
@@ -350,6 +346,15 @@ class ConsumerConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
+    
+    def add_key_value_pair(self, id, key, value):
+        key_value_dict = {'key' : key, 'value' : value}
+        method = "/consumers/%s/add_key_value_pair/" % id
+        return self.conn.request_post(method, params=key_value_dict)
+    
+    def delete_key_value_pair(self, id, key):
+        method = "/consumers/%s/delete_key_value_pair/" % id
+        return self.conn.request_post(method, params=key)
 
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id

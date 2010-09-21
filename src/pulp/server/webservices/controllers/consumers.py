@@ -219,6 +219,8 @@ class ConsumerActions(JSONController):
     exposed_actions = (
         'bind',
         'unbind',
+        'add_key_value_pair',
+        'delete_key_value_pair',
         'profile',
         'installpackages',
         'installpackagegroups',
@@ -246,6 +248,28 @@ class ConsumerActions(JSONController):
         data = self.params()
         consumer_api.unbind(id, data)
         return self.ok(None)
+
+    @RoleCheck(consumer_id=True, admin=True)
+    def add_key_value_pair(self, id):
+        """
+        Add key-value information to consumer.
+        @param id: consumer id
+        
+        """
+        data = self.params()
+        consumer_api.add_key_value_pair(id, data)
+        return self.ok(True)
+    
+    @RoleCheck(consumer_id=True, admin=True)
+    def delete_key_value_pair(self, id):
+        """
+        Delete key-value information from consumer.
+        @param id: consumer id
+        
+        """
+        data = self.params()
+        consumer_api.delete_key_value_pair(id, data)
+        return self.ok(True)
     
     @RoleCheck(consumer_id=True, admin=True)
     def profile(self, id):
