@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.65
+Version:        0.0.66
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -180,6 +180,57 @@ fi
 
 
 %changelog
+* Wed Sep 22 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.66-1
+- Ensure complete_callback invoked in failure cases. (jortel@redhat.com)
+- 619077 - make the feed check handle not being in the dict
+  (mmccune@redhat.com)
+- 619077 - implement repo update from CLI (mmccune@redhat.com)
+- This commit includes: * Support call for product.deleted event handler to
+  look for deleted action on the bus * API call to perform delete action on
+  candidate/synced repos * product driver delete call (pkilambi@redhat.com)
+- Enhance async API plumbing and refit installpackages(). (jortel@redhat.com)
+- 626459 - The temporary yum file should be placed in the /tmp directory.
+  (jason.dobies@redhat.com)
+- Refactored consumer originator event detection to be done in the consumer
+  history API, using the principal to determine if the request is made by an
+  admin or consumer. (jason.dobies@redhat.com)
+- Consumergroup api and cli changes for key-value attributes
+  (skarmark@redhat.com)
+- Adding consumer listing by key_value_pairs (skarmark@redhat.com)
+- Adding indexes for key_value_pairs (skarmark@redhat.com)
+- server-side support for last sync repo field (jconnor@redhat.com)
+- merge of repo status command (jconnor@redhat.com)
+- organized imports and globals addedd/fixed gettext internationalizaion on all
+  print statements used print_header (jconnor@redhat.com)
+- 623969 - add unit test for bug (mmccune@redhat.com)
+- 623969 - make sure we convert the unicode pass to a string before hmac
+  (mmccune@redhat.com)
+- Added ability to disable the consumer history purge (jason.dobies@redhat.com)
+- Added appropriate indices (jason.dobies@redhat.com)
+- changed progress out to use sys.stdout.write instead of print reduced
+  foreground sleep time to 1/4 second reduced progress bar size to accomodate
+  repos w/ 100,000-999,999 packages (jconnor@redhat.com)
+- 636135 - fix string format error (pkilambi@redhat.com)
+- Fix SSL char * error (jesusr@redhat.com)
+- added sleep back into foreground sync (jconnor@redhat.com)
+- adding check for whether key exists before updating it (skarmark@redhat.com)
+- adding consumerid for admin functions (skarmark@redhat.com)
+- delete_keyvalue should pass in only key information (skarmark@redhat.com)
+- Adding cli and api functions for adding and deleting key-value pairs
+  (skarmark@redhat.com)
+- Adding key_value_pairs in consumer default_fields (skarmark@redhat.com)
+- Removing key_value_pairs from ConsumerDeferredFields (skarmark@redhat.com)
+- merge of foreground and background sync methods (jconnor@redhat.com)
+- fixed internationalization gettext calls (jconnor@redhat.com)
+- Adding consumer api and cli changes for adding key-value attributes for
+  consumer (skarmark@redhat.com)
+- Fixing wrong package name in test_comps.py (skarmark@redhat.com)
+- 629987 - Adding a check for existing package in a repo before adding or
+  deleting from package group (skarmark@redhat.com)
+- 629720 - delete consumer now takes care of deleting consumerid from
+  consumergroups as well (skarmark@redhat.com)
+- start of GET method handler for repository actions (jconnor@redhat.com)
+
 * Fri Sep 17 2010 Mike McCune <mmccune@gmail.com> 0.0.65-1
 - fixing conditonal else statement (mmccune@gmail.com)
 
