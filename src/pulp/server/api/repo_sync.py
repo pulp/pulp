@@ -218,7 +218,7 @@ class BaseSynchronizer(object):
             return retval
         except Exception, e:
             log.error("error reading package %s" % (file_name))
-            log.debug("%s" % (traceback.format_exc()))
+            log.error("%s" % (traceback.format_exc()))
 
     def sync_groups_data(self, compsfile, repo):
         """
