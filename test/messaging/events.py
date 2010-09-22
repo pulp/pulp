@@ -44,7 +44,7 @@ def main():
         p.send('repo.created', d)
         #p.send('repo.updated', d)
         #p.send('repo.deleted', d)
-        p.send('product.created', d)
+        #p.send('product.created', d)
         sleep(3)
 
 if __name__ == '__main__':

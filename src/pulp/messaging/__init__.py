@@ -144,7 +144,7 @@ class Topic(Destination):
         s.append(';{')
         s.append('create:always')
         s.append(',node:{type:topic,durable:True}')
-        s.append(',link:{durable:True}')
+        s.append(',link:{durable:True,x-declare:{arguments:{no-local:True}}}')
         s.append('}')
         return ''.join(s)
 
