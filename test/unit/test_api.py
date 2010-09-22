@@ -54,6 +54,8 @@ from pulp.client.utils import generatePakageProfile
 import testutil
 
 logging.root.setLevel(logging.ERROR)
+qpid = logging.getLogger('qpid.messaging')
+qpid.setLevel(logging.ERROR)
 
 class TestApi(unittest.TestCase):
 
@@ -122,7 +124,17 @@ class TestApi(unittest.TestCase):
         assert(repo is not None)
         assert(repo['source']['type'] == 'yum')
 
-
+    def test_repo_update(self):
+        repo = self.rapi.create('some-id', 'some name',
+            'i386', 'yum:http://example.com')
+        assert(repo is not None)
+        assert(repo['source']['type'] == 'yum')
+        repo['feed'] = 'yum:http://example2.com'
+        self.rapi.update(repo)
+        repo = self.rapi.repository(repo['id'])
+        print "Repo source: %s" % repo['source']
+        assert(repo['source']['url'] == 'http://example2.com')
+        
     def test_clean(self):
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com')

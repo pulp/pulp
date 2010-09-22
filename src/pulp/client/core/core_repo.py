@@ -72,13 +72,10 @@ class repo(BaseCore):
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
-    def generate_options(self):
-        self.action = self._get_action()
-
-        if self.action == "create":
-            usage = "repo create [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id", help="Repository Id")
+   
+    def _add_create_update_options(self):
+            self.parser.add_option("--id", dest="id",
+                           help="Repository Id")
             self.parser.add_option("--name", dest="name",
                                    help="Common repository name")
             self.parser.add_option("--arch", dest="arch",
@@ -101,7 +98,17 @@ class repo(BaseCore):
                                    This defaults to feed path if not specified.")
             self.parser.add_option("--groupid", dest="groupid",
                                    help="A group to which the repo belongs.This is just a string identifier.")
-
+        
+    def generate_options(self):
+        self.action = self._get_action()
+        if self.action == "create":
+            usage = "repo create [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            self._add_create_update_options()
+        if self.action == "update":
+            usage = "repo update [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            self._add_create_update_options()
         if self.action == "sync":
             usage = "repo sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -110,7 +117,6 @@ class repo(BaseCore):
             self.parser.add_option('-F', '--foreground', dest='foreground',
                                    action='store_true', default=False,
                                    help='Sync repo in the foreground')
-
         if self.action == 'status':
             usage = 'repo status [OPTIONS]'
             self.parser.add_option("--id", dest="id", help="Repository Id")
@@ -146,6 +152,8 @@ class repo(BaseCore):
     def _do_core(self):
         if self.action == "create":
             self._create()
+        if self.action == "update":
+            self._update()
         if self.action == "list":
             self._list()
         if self.action == 'status':
@@ -161,6 +169,14 @@ class repo(BaseCore):
         if self.action == "schedules":
             self._schedules()
 
+    def _get_cert_options(self):
+        cert_data = None
+        if self.options.cacert and self.options.cert and self.options.key:
+            cert_data = {"ca": utils.readFile(self.options.cacert),
+                         "cert": utils.readFile(self.options.cert),
+                         "key": utils.readFile(self.options.key)}
+        return cert_data
+        
     def _create(self):
         if not self.options.id:
             print _("repo id required. Try --help")
@@ -176,12 +192,7 @@ class repo(BaseCore):
 
         groupid = self.options.groupid or None
 
-        cert_data = None
-        if self.options.cacert and self.options.cert and self.options.key:
-            cert_data = {"ca": utils.readFile(self.options.cacert),
-                         "cert": utils.readFile(self.options.cert),
-                         "key": utils.readFile(self.options.key)}
-
+        cert_data = self._get_cert_options()
         try:
             repo = self.pconn.create(self.options.id, self.options.name,
                                      self.options.arch, self.options.feed,
@@ -194,6 +205,32 @@ class repo(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             systemExit(e.code, e.msg)
+
+    def _update(self):
+        if not self.options.id:
+            print("repo id required. Try --help")
+            sys.exit(1)
+        try:
+            repo = self.pconn.repository(self.options.id)
+            if not repo:
+                print("repo with id: [%s] not found." % self.options.id)
+                sys.exit(1)
+            optdict = vars(self.options)
+            for field in optdict.keys():
+                if (repo.has_key(field) and optdict[field]):
+                    repo[field] = optdict[field]
+            # Have to set this manually since the repo['feed'] is a 
+            # complex sub-object inside the repo
+            if self.options.feed:
+                repo['feed'] = self.options.feed
+            self.pconn.update(repo)
+            print _(" Successfully updated Repo [ %s ]")  % repo['id']
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
 
     def _list(self):
         try:

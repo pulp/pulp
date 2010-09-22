@@ -189,12 +189,12 @@ class RepoConnection(PulpConnection):
                     "groupid"       : groupid}
         return self.conn.request_put(method, params=repodata)
 
-    def repository(self, id, fields=None):
+    def repository(self, id, fields=[]):
         method = "/repositories/%s/" % str(id)
         repo = self.conn.request_get(method)
         if repo is None:
             return None
-        for field in repository_deferred_fields:
+        for field in fields:
             repo[field] = self.conn.request_get('%s%s/' % (method, field))
         return repo
 

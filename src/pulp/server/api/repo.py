@@ -242,6 +242,8 @@ class RepoApi(BaseApi):
         for field in repo_fields:
             #default to the existing value if the field isn't in the data
             repo[field] = repo_data.get(field, repo[field])
+        if repo_data['feed']:
+            repo['source'] = model.RepoSource(repo_data['feed'])
         self._validate_schedule(repo['sync_schedule'])
 
         self.objectdb.save(repo, safe=True)
