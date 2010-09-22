@@ -105,7 +105,16 @@ class ProductEvent(EventHandler):
         @param event: The event payload.
         @type event: dict.
         """
-        pass
+        log.error("Repo event create processing %s" % event)
+        productid   = event['id']
+        product_name = event['name']
+        content_sets = event['content_sets']
+        cert_data   = {'ca'   : event['ca_cert'],
+                       'cert' : event['entitlement_cert'],
+                       'key'  : event['cert_public_key'],
+                       }
+        log.error("Repo event data %s %s %s" % (product_name, content_sets, cert_data))
+        self.rapi.update_product_repo(content_sets, cert_data, groupid=product_name)
 
     @inbound(action='deleted')
     def deleted(self, event):
@@ -117,4 +126,13 @@ class ProductEvent(EventHandler):
         @param event: The event payload.
         @type event: dict.
         """
-        pass
+        log.error("Repo event delete processing %s" % event)
+        productid   = event['id']
+        product_name = event['name']
+        content_sets = event['content_sets']
+        cert_data   = {'ca'   : event['ca_cert'],
+                       'cert' : event['entitlement_cert'],
+                       'key'  : event['cert_public_key'],
+                       }
+        log.error("Repo event data %s %s %s" % (product_name, content_sets, cert_data))
+        self.rapi.delete_product_repo(content_sets, cert_data, groupid=product_name)

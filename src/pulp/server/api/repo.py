@@ -18,6 +18,7 @@
 import logging
 import gzip
 import os
+import shutil
 import traceback
 from datetime import datetime
 from itertools import chain
@@ -153,7 +154,7 @@ class RepoApi(BaseApi):
          @param cert_data: a dictionary of ca_cert, cert and key for this product
          @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
         """
-        if not cert_data:
+        if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
         cert_files = self._write_certs_to_disk(groupid, cert_data)
@@ -176,11 +177,62 @@ class RepoApi(BaseApi):
                 continue
 
         serv.disconnect()
+        
+    def delete_product_repo(self, content_set, cert_data, groupid=None):
+        """
+         delete repos associated to a product. Usually through an event raised
+         from candlepin
+         @param groupid: A product the candidate repo should be associated with.
+         @type groupid: str
+         @param content_set: a dict of content set labels and relative urls
+         @type content_set: dict(<label> : <relative_url>,)
+         @param cert_data: a dictionary of ca_cert, cert and key for this product
+         @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
+        """
+        if not cert_data or not content_set:
+            # Nothing further can be done, exit
+            return
+        cert_files = self._write_certs_to_disk(groupid, cert_data)
+        CDN_URL = config.config.get("repos", "content_url")
+        CDN_HOST = urlparse(CDN_URL).hostname
+        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
+                                     cert=cert_files['cert'], key=cert_files['key'])
+        serv.connect()
+        repo_info = serv.fetch_urls(content_set)
+
+        for label, uri in repo_info.items():
+            try:
+                repo = self.delete(label)
+            except:
+                raise
+                log.error("Error deleting repo %s for product %s" % (label, groupid))
+                continue
+
+        serv.disconnect()
 
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
         repo_sync.delete_schedule(repo)
+        repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
+        #delete any data associated to this repo
+        for field in ['relative_path', 'cert', 'key', 'ca']:
+            if field == 'relative_path' and repo[field]:
+                fpath = os.path.join(repo_location, repo[field])
+            else:
+                fpath =  repo[field]
+            if fpath and os.path.exists(fpath):
+                try:
+                    if os.path.isfile(fpath):
+                        os.remove(fpath)
+                    else: # os.path.isdir(fpath):
+                        shutil.rmtree(fpath)
+                    log.error("removing repo files .... %s" % fpath)
+                except:
+                    #file removal failed
+                    raise
+                    log.error("Unable to cleanup file %s " % fpath)
+                    continue
         self.objectdb.remove(repo, safe=True)
 
     @audit()
