@@ -178,12 +178,7 @@ class Task(object):
         self.result = result
         self.state = task_finished
         self.finish_time = datetime.datetime.now()
-        if self.complete_callback is None:
-            return
-        try:
-            self.complete_callback(self)
-        except Exception, e:
-            _log.exception(e)
+        self.__complete()
 
     def failed(self, exception, tb=None):
         """
@@ -197,6 +192,7 @@ class Task(object):
         self.finish_time = datetime.datetime.now()
         self.exception = repr(exception)
         self._exception_delivered()
+        self.__complete()
         if tb:
             self.traceback = tb
         else:
@@ -217,6 +213,16 @@ class Task(object):
         """
         self.succeeded(result)
 
+    def __complete(self):
+        """
+        Safely call the complete callback
+        """
+        if self.complete_callback is None:
+            return
+        try:
+            self.complete_callback(self)
+        except Exception, e:
+            _log.exception(e)
 
 
 class AsyncTask(Task):

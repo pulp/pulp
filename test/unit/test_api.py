@@ -49,8 +49,6 @@ from pulp.server.db.model import RepoSource
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
-
-
 import testutil
 
 logging.root.setLevel(logging.ERROR)
