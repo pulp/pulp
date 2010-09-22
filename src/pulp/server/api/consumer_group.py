@@ -166,8 +166,45 @@ class ConsumerGroupApi(BaseApi):
         consumerids = consumergroup['consumerids']
         for consumerid in consumerids:
             self.consumerApi.unbind(consumerid, repoid)
+
+    @audit()
+    def add_key_value_pair(self, id, key, value):
+        """
+        Add key-value info to all consumers in a consumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param repoid: key
+        @type repoid: str
+        @param value: value
+        @type: str
+        @raise PulpException: When consumer group is not found.
+        """
+        consumergroup = self.consumergroup(id)    
+        if not consumergroup:
+            raise PulpException('Consumer Group [%s] does not exist', id)
+        
+        for consumerid in consumergroup['consumerids']:
+            self.consumerApi.add_key_value_pair(consumerid, key, value)
             
-            
+                        
+    @audit()
+    def delete_key_value_pair(self, id, key):
+        """
+        delete key-value info from all consumers in a consumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param repoid: key
+        @type repoid: str
+        @raise PulpException: When consumer group is not found.
+        """
+        consumergroup = self.consumergroup(id)    
+        if not consumergroup:
+            raise PulpException('Consumer Group [%s] does not exist', id)
+        
+        for consumerid in consumergroup['consumerids']:
+            self.consumerApi.delete_key_value_pair(consumerid, key)        
+       
+        
     @audit()
     def installpackages(self, id, packagenames=[]):
         """

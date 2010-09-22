@@ -101,6 +101,8 @@ class ConsumerGroupActions(JSONController):
     exposed_actions = (
         'bind',
         'unbind',
+        'add_key_value_pair',
+        'delete_key_value_pair',
         'add_consumer',
         'delete_consumer',
         'installpackages',
@@ -124,8 +126,25 @@ class ConsumerGroupActions(JSONController):
         data = self.params()
         api.unbind(id, data)
         return self.ok(None)
-
-
+    
+    def add_key_value_pair(self, id):
+        """
+        Add key-value information to consumergroup.
+        @param id: consumergroup id
+        """
+        data = self.params()
+        api.add_key_value_pair(id, data['key'], data['value'])
+        return self.ok(True)
+    
+    def delete_key_value_pair(self, id):
+        """
+        Delete key-value information from consumergroup.
+        @param id: consumergroup id
+        """
+        data = self.params()
+        api.delete_key_value_pair(id, data)
+        return self.ok(True) 
+   
     def add_consumer(self, id):
         """
         Add a consumer to the group.

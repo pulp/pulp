@@ -45,7 +45,9 @@ class consumergroup(BaseCore):
                         "list"   : "List available consumer groups",
                         "delete" : "Delete the consumer group",
                         "bind"   : "Bind the consumer group to listed repos",
-                        "unbind" : "Unbind the consumer group from repos", }
+                        "unbind" : "Unbind the consumer group from repos",
+                        "add_keyvalue"     : "Add key-value information to consumergroup",
+                        "delete_keyvalue"  : "Delete key-value information to consumergroup", }
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.repolib = RepoLib()
 
@@ -104,6 +106,26 @@ class consumergroup(BaseCore):
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
+        
+        if self.action == "add_keyvalue":
+            usage = "usage: %prog consumergroup add_keyvalue [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            self.parser.add_option("--id", dest="groupid",
+                           help="Consumer Group Identifier")
+            self.parser.add_option("--key", dest="key",
+                           help="Key Identifier")
+            self.parser.add_option("--value", dest="value",
+                           help="Value corresponding to the key")      
+                        
+        if self.action == "delete_keyvalue":
+            usage = "usage: %prog consumergroup delete_keyvalue [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            self.parser.add_option("--id", dest="groupid",
+                           help="Consumer Group Identifier")
+            self.parser.add_option("--key", dest="key",
+                           help="Key Identifier")
+           
+            
 
     def _do_core(self):
         if self.action == "create":
@@ -120,6 +142,10 @@ class consumergroup(BaseCore):
             self._bind()
         if self.action == "unbind":
             self._unbind()
+        if self.action == "add_keyvalue":
+            self._add_keyvalue()
+        if self.action == "delete_keyvalue":
+            self._delete_keyvalue()    
 
     def _create(self):
         if not self.options.id:
@@ -260,3 +286,41 @@ class consumergroup(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
+
+    def _add_keyvalue(self):    
+        if not self.options.groupid:
+            print _("consumer group id required. Try --help")
+            sys.exit(0)
+        if not self.options.key:
+            print("Key is required. Try --help")
+            sys.exit(0)
+        if not self.options.value:
+            print("Value is required. Try --help")
+            sys.exit(0)            
+        try:
+            self.cgconn.add_key_value_pair(self.options.groupid, self.options.key, self.options.value)
+            print _(" Successfully added key-value pair %s:%s" % (self.options.key, self.options.value))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
+        
+    def _delete_keyvalue(self):    
+        if not self.options.groupid:
+            print _("consumer group id required. Try --help")
+            sys.exit(0)
+        if not self.options.key:
+            print("Key is required. Try --help")
+            sys.exit(0)
+        try:
+            self.cgconn.delete_key_value_pair(self.options.groupid, self.options.key)
+            print _(" Successfully deleted key: %s" % self.options.key)
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise           
+

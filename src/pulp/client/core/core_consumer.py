@@ -170,9 +170,9 @@ class consumer(BaseCore):
         if self.action == "unbind":
             self._unbind()
         if self.action == "add_keyvalue":
-            self._add_key_value_pair()
+            self._add_keyvalue()
         if self.action == "delete_keyvalue":
-            self._delete_key_value_pair()
+            self._delete_keyvalue()
         if self.action == "history":
             self._history()
 
@@ -317,7 +317,7 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-    def _add_key_value_pair(self):    
+    def _add_keyvalue(self):    
         consumerid = self.getConsumer()
         if not self.options.key:
             print("Key is required. Try --help")
@@ -335,7 +335,7 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
             raise
         
-    def _delete_key_value_pair(self):    
+    def _delete_keyvalue(self):    
         consumerid = self.getConsumer()
         if not self.options.key:
             print("Key is required. Try --help")

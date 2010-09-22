@@ -440,6 +440,15 @@ class ConsumerGroupConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumergroups/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
+    
+    def add_key_value_pair(self, id, key, value):
+        key_value_dict = {'key' : key, 'value' : value}
+        method = "/consumergroups/%s/add_key_value_pair/" % id
+        return self.conn.request_post(method, params=key_value_dict)
+    
+    def delete_key_value_pair(self, id, key):
+        method = "/consumergroups/%s/delete_key_value_pair/" % id
+        return self.conn.request_post(method, params=key)
 
     def installpackages(self, id, packagenames):
         method = "/consumergroups/%s/installpackages/" % id
