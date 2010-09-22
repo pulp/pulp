@@ -532,9 +532,10 @@ class TestApi(unittest.TestCase):
                                 'local:file://%s' % datadir_b)
         self.rapi._sync(repo_a["id"])
         self.rapi._sync(repo_b["id"])
-        # This will get fixed when we move the async nature of sync down into 
+
+        # This will get fixed when we move the async nature of sync down into
         # the API layer
-        import time
+
         time.sleep(5)
 
         # Look up each repo from API
