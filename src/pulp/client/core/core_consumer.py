@@ -130,6 +130,10 @@ class consumer(BaseCore):
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
+            self.parser.add_option("--key", dest="key",
+                           help="Key Identifier")
+            self.parser.add_option("--value", dest="value",
+                           help="Value corresponding to the key") 
 
         if self.action == "delete":
             usage = "usage: %prog consumer delete [OPTIONS]"
@@ -248,16 +252,30 @@ class consumer(BaseCore):
             raise
 
     def _list(self):
+        if self.options.key and not self.options.value:
+            print _("key-value required. Try --help")
+            sys.exit(0) 
         try:
             cons = self.cconn.consumers()
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
             for con in cons:
                 con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile'])
-            print_header("Consumer Information ")
-            for con in cons:
-                print constants.AVAILABLE_CONSUMER_INFO % \
-                        (con["id"], con["description"], con["repoids"], con["package_profile"],
-                         con["key_value_pairs"])
+            if not self.options.key:
+                print_header("Consumer Information ")
+                for con in cons:
+                    print constants.AVAILABLE_CONSUMER_INFO % \
+                            (con["id"], con["description"], con["repoids"], con["package_profile"],
+                             con["key_value_pairs"])
+            else:
+                consumers_with_keyvalues = []
+                for con in cons:
+                    key_value_pairs = con['key_value_pairs']
+                    if (self.options.key in key_value_pairs.keys()) and (key_value_pairs[self.options.key] == self.options.value):
+                        consumers_with_keyvalues.append(con)
+                for con in consumers_with_keyvalues:
+                    print constants.AVAILABLE_CONSUMER_INFO % \
+                            (con["id"], con["description"], con["repoids"], con["package_profile"],
+                             con["key_value_pairs"])                          
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

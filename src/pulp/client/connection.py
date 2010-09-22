@@ -362,7 +362,7 @@ class ConsumerConnection(PulpConnection):
     def delete_key_value_pair(self, id, key):
         method = "/consumers/%s/delete_key_value_pair/" % id
         return self.conn.request_post(method, params=key)
-
+    
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)

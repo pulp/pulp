@@ -269,7 +269,7 @@ class ConsumerActions(JSONController):
         """
         data = self.params()
         consumer_api.delete_key_value_pair(id, data)
-        return self.ok(True)
+        return self.ok(True) 
     
     @RoleCheck(consumer_id=True, admin=True)
     def profile(self, id):
