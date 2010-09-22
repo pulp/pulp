@@ -32,6 +32,7 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
+import pulp.server.auth.auth as auth
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.certificate import Certificate
 from pulp.server.webservices.role_check import RoleCheck
@@ -43,6 +44,9 @@ class TestRoleCheck(unittest.TestCase):
         self.config = testutil.load_test_config()
         self.uapi = UserApi()
         self.capi = ConsumerApi()
+
+        # Make sure to reset the principal between tests
+        auth.set_principal(auth.SystemPrincipal())
 
     def tearDown(self):
         self.uapi.clean()
@@ -145,7 +149,6 @@ class TestRoleCheck(unittest.TestCase):
         # Test
         self.admin_only('somevalue')
         self.assertTrue(web.ctx.status.startswith('401'))
-
 
     def test_username_pass(self):
         # Setup

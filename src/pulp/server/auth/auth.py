@@ -62,3 +62,9 @@ def clear_principal():
     This resets the principal to a "system" default.
     """
     _storage.principal = SystemPrincipal()
+
+def is_system_principal():
+    '''
+    Returns True if the current principal is the system principal; False otherwise.
+    '''
+    return get_principal() is SystemPrincipal()

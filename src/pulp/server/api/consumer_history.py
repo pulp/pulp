@@ -28,6 +28,7 @@ import pymongo
 # Pulp
 from pulp.server import config
 from pulp.server.api.base import BaseApi
+from pulp.server.auth.auth import get_principal, is_system_principal
 from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
@@ -184,37 +185,40 @@ class ConsumerHistoryApi(BaseApi):
 
     # -- internal ----------------------------------------
 
-    def consumer_created(self, consumer_id, originator=ORIGINATOR_CONSUMER):
+    def _originator(self):
+        '''
+        Returns the value to use as the originator of the consumer event (either the
+        consumer itself or an admin user).
+
+        @return: name of the originator value to use in the event
+        @rtype:  string
+        '''
+        if is_system_principal():
+            return ORIGINATOR_CONSUMER
+        else:
+            return get_principal()['login']
+
+    def consumer_created(self, consumer_id):
         '''
         Creates a new event to represent a consumer being created.
 
         @param consumer_id: identifies the newly created consumer
         @type  consumer_id: string or number
-
-        @param originator: if specified, should be the username of the admin who created
-                           the consumer through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
         '''
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_CONSUMER_CREATED, None)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_CONSUMER_CREATED, None)
         self.insert(event)
 
-    def consumer_deleted(self, consumer_id, originator=ORIGINATOR_CONSUMER):
+    def consumer_deleted(self, consumer_id):
         '''
         Creates a new event to represent a consumer being deleted.
 
         @param consumer_id: identifies the deleted consumer
         @type  consumer_id: string or number
-
-        @param originator: if specified, should be the username of the admin who deleted
-                           the consumer through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
         '''
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_CONSUMER_DELETED, None)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_CONSUMER_DELETED, None)
         self.insert(event)
 
-    def repo_bound(self, consumer_id, repo_id, originator=ORIGINATOR_CONSUMER):
+    def repo_bound(self, consumer_id, repo_id):
         '''
         Creates a new event to represent a consumer binding to a repo.
 
@@ -223,17 +227,12 @@ class ConsumerHistoryApi(BaseApi):
 
         @param repo_id: identifies the repo being bound to the consumer
         @type  repo_id: string or number
-
-        @param originator: if specified, should be the username of the admin who bound
-                           the repo through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
         '''
         details = {'repo_id' : repo_id}
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_REPO_BOUND, details)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_REPO_BOUND, details)
         self.insert(event)
 
-    def repo_unbound(self, consumer_id, repo_id, originator=ORIGINATOR_CONSUMER):
+    def repo_unbound(self, consumer_id, repo_id):
         '''
         Creates a new event to represent removing a binding from a repo.
 
@@ -242,17 +241,12 @@ class ConsumerHistoryApi(BaseApi):
 
         @param repo_id: identifies the repo being unbound from the consumer
         @type  repo_id: string or number
-
-        @param originator: if specified, should be the username of the admin who unbound
-                           the repo through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
         '''
         details = {'repo_id' : repo_id}
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_REPO_UNBOUND, details)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_REPO_UNBOUND, details)
         self.insert(event)
 
-    def packages_installed(self, consumer_id, package_nveras, errata_titles=None, originator=ORIGINATOR_CONSUMER):
+    def packages_installed(self, consumer_id, package_nveras, errata_titles=None):
         '''
         Creates a new event to represent packages that were installed on a consumer.
 
@@ -266,11 +260,6 @@ class ConsumerHistoryApi(BaseApi):
         @param errata_titles: if the package installs are the result of applying errata,
                               this is the list of errata titles that were requested
         @type  errata_titles: list of strings
-
-        @param originator: if specified, should be the username of the admin who installed
-                           packages through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
         '''
         if type(package_nveras) != list:
             package_nveras = [package_nveras]
@@ -285,10 +274,10 @@ class ConsumerHistoryApi(BaseApi):
         else:
             event_type = TYPE_PACKAGE_INSTALLED
 
-        event = ConsumerHistoryEvent(consumer_id, originator, event_type, details)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), event_type, details)
         self.insert(event)
 
-    def packages_removed(self, consumer_id, package_nveras, originator=ORIGINATOR_CONSUMER):
+    def packages_removed(self, consumer_id, package_nveras):
         '''
         Creates a new event to represent packages that were removed from a consumer.
 
@@ -298,20 +287,15 @@ class ConsumerHistoryApi(BaseApi):
         @param package_nveras: identifies the packages that were removed from the consumer
         @type  package_nveras: list or string; a single string will automatically be wrapped
                                in a list
-
-        @param originator: if specified, should be the username of the admin who removed
-                           packages through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
         '''
         if type(package_nveras) != list:
             package_nveras = [package_nveras]
 
         details = {'package_nveras' : package_nveras}
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PACKAGE_UNINSTALLED, details)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_PACKAGE_UNINSTALLED, details)
         self.insert(event)
 
-    def profile_updated(self, consumer_id, package_profile, originator=ORIGINATOR_CONSUMER):
+    def profile_updated(self, consumer_id, package_profile):
         '''
         Creates a new event to represent a consumer's package profile has been updated. The
         entire profile will be snapshotted in this event, whereas the consumer will only
@@ -321,15 +305,10 @@ class ConsumerHistoryApi(BaseApi):
         @type  consumer_id: string or number
 
         @param package_profile: consumer's full package profile that was sent to the server
-        @type  package_profile: ?
-
-        @param originator: if specified, should be the username of the admin who removed
-                           packages through the admin API; defaults to indicate the
-                           create was triggered by the consumer itself
-        @type  originator: string
+        @type  package_profile: dict
         '''
         details = {'package_profile' : package_profile}
-        event = ConsumerHistoryEvent(consumer_id, originator, TYPE_PROFILE_CHANGED, details)
+        event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_PROFILE_CHANGED, details)
         self.insert(event)
 
     def cull_history(self, lifetime):

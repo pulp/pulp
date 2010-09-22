@@ -154,7 +154,11 @@ class consumer(BaseCore):
             self.parser.add_option('--start_date', dest='start_date',
                                    help='Only return entries that occur after the given date (format: mm-dd-yyyy)')
             self.parser.add_option('--end_date', dest='end_date',
-                                   help='Only return entries that occur before the given date (format: mm-dd-yyyy)')
+                                   help='Only return entries that occur before the given date (format: mm-dd-yyyy)')            
+            if self.is_admin:
+                self.parser.add_option("--id", dest="id",
+                                       help="Consumer Identifier")
+
 
     def _do_core(self):
         if self.action == "create":
@@ -405,9 +409,11 @@ class consumer(BaseCore):
                 print ''
 
         except RestlibException, re:
-            print _(" History retrieval failed for consumer [%s]") % consumerid
-            sys.exit(-1)
-
+            if re.code != 401:
+                print _(" History retrieval failed for consumer [%s]" % consumerid)
+            else:
+                systemExit(re.code, re.msg)
+            
     def getConsumer(self):
         if not self.options.id:
             print _("consumer id required. Try --help")

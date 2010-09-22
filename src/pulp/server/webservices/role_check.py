@@ -78,8 +78,8 @@ class RoleCheck(object):
                 # If not using cert check uname and password
                 try:
                     user = self.check_admin(*fargs)
+                    principal.set_principal(user)                    
                 except PulpException, pe:
-                    # TODO: Figure out how to re-use the same return function in base.py
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
                     return json.dumps(pe.value, default=pymongo.json_util.default)
@@ -94,10 +94,6 @@ class RoleCheck(object):
                 http.header('Content-Type', 'application/json')
                 return json.dumps("Authorization failed. Check your username and password or your certificate", 
                                   default=pymongo.json_util.default)
-
-            # If we get this far, access has been granted (in access failed the method
-            # would have returned by now)
-            principal.set_principal(user)
 
             # If it wraps a class instance, call the function on the instance;
             # otherwise just call it directly

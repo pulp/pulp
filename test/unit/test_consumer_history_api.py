@@ -32,7 +32,8 @@ sys.path.insert(0, commondir)
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 import pulp.server.api.consumer_history as consumer_history
-from pulp.server.db.model import ConsumerHistoryEvent
+import pulp.server.auth.auth as auth
+from pulp.server.db.model import ConsumerHistoryEvent, User
 from pulp.server.pexceptions import PulpException
 import testutil
 
@@ -48,14 +49,18 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.consumer_api = ConsumerApi()
         self.clean()
 
+        self.user = User('admin', '12345', 'admin', 'Admin')
+        auth.set_principal(self.user)
+
     def tearDown(self):
         self.clean()
         testutil.common_cleanup()
 
     def test_consumer_created(self):
         # Test
-        self.consumer_history_api.consumer_created(123, 'admin')
+        self.consumer_history_api.consumer_created(123)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.consumer_created(123)
 
         # Verify
@@ -76,8 +81,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
     def test_consumer_deleted(self):
         # Test
-        self.consumer_history_api.consumer_deleted(123, 'admin')
+        self.consumer_history_api.consumer_deleted(123)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.consumer_deleted(123)
 
         # Verify
@@ -98,8 +104,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
     def test_repo_bound(self):
         # Test
-        self.consumer_history_api.repo_bound(123, 456, 'admin')
+        self.consumer_history_api.repo_bound(123, 456)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.repo_bound(123, 789)
 
         # Verify
@@ -122,8 +129,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
     def test_repo_unbound(self):
         # Test
-        self.consumer_history_api.repo_unbound(123, 456, 'admin')
+        self.consumer_history_api.repo_unbound(123, 456)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.repo_unbound(123, 789)
 
         # Verify
@@ -147,8 +155,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_packages_installed(self):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
-        self.consumer_history_api.packages_installed(123, packages, originator='admin')
+        self.consumer_history_api.packages_installed(123, packages)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.packages_installed(123, 'zombie-1.0')
 
         # Verify
@@ -175,8 +184,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
         errata_titles = ['err123', 'err456']
-        self.consumer_history_api.packages_installed(123, packages, errata_titles=errata_titles, originator='admin')
+        self.consumer_history_api.packages_installed(123, packages, errata_titles=errata_titles)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.packages_installed(123, 'zombie-1.0', errata_titles=errata_titles)
 
         # Verify
@@ -204,8 +214,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_packages_removed(self):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
-        self.consumer_history_api.packages_removed(123, packages, originator='admin')
+        self.consumer_history_api.packages_removed(123, packages)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.packages_removed(123, 'zombie-1.0')
 
         # Verify
@@ -249,8 +260,9 @@ class TestConsumerHistoryApi(unittest.TestCase):
                         ,
                         'version': '2.4'}}
 
-        self.consumer_history_api.profile_updated(123, profile, originator='admin')
+        self.consumer_history_api.profile_updated(123, profile)
         time.sleep(.1)
+        auth.set_principal(auth.SystemPrincipal())
         self.consumer_history_api.profile_updated(123, profile)
 
         # Verify

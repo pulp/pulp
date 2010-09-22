@@ -16,7 +16,6 @@
 import logging
 
 # Pulp
-import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
@@ -24,6 +23,7 @@ from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
+import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
