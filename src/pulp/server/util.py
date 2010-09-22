@@ -132,7 +132,7 @@ def _get_yum_repomd(path):
     @param path: path to repo
     @return yum.yumRepo.YumRepository object initialized for querying repodata
     """
-    r = yum.yumRepo.YumRepository("temp_repo-%s" % (time.time()))
+    r = yum.yumRepo.YumRepository("/tmp/temp_repo-%s" % (time.time()))
     r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
     r.basecachedir = path.encode("ascii", "ignore")
     r.baseurlSetup()
