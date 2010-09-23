@@ -328,7 +328,7 @@ class repo(BaseCore):
         except KeyboardInterrupt:
             print ''
             return
-        self._print_sync_finish(self, task['state'], task['progress'])
+        self._print_sync_finish(task['state'], task['progress'])
         if task['state'] == 'error':
             raise SyncError(task['traceback'][-1])
 
