@@ -110,10 +110,13 @@ class RepoApi(BaseApi):
         if groupid:
             r['groupid'].append(groupid)
 
-        if relative_path is None and r['source'] is not None :
-            # For none product repos, default to repoid
-            url_parse = urlparse(str(r['source']["url"]))
-            r['relative_path'] = url_parse.path
+        if relative_path is None:
+            if r['source'] is not None :
+                # For none product repos, default to repoid
+                url_parse = urlparse(str(r['source']["url"]))
+                r['relative_path'] = url_parse.path
+            else:
+                r['relative_path'] = r['id']
         else:
             r['relative_path'] = relative_path
         self.insert(r)
@@ -214,6 +217,7 @@ class RepoApi(BaseApi):
     def delete(self, id):
         repo = self._get_existing_repo(id)
         repo_sync.delete_schedule(repo)
+        log.error("Delete API call invoked %s" % repo)
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
@@ -233,7 +237,7 @@ class RepoApi(BaseApi):
                     raise
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
-        self.objectdb.remove(repo, safe=True)
+        self.objectdb.remove({'id' : id}, safe=True)
 
     @audit()
     def update(self, repo_data):
