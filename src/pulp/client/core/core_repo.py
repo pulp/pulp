@@ -72,7 +72,7 @@ class repo(BaseCore):
                                     password=self.password,
                                     cert_file=self.cert_filename,
                                     key_file=self.key_filename)
-   
+
     def _add_create_update_options(self):
             self.parser.add_option("--id", dest="id",
                            help="Repository Id")
@@ -98,7 +98,7 @@ class repo(BaseCore):
                                    This defaults to feed path if not specified.")
             self.parser.add_option("--groupid", dest="groupid",
                                    help="A group to which the repo belongs.This is just a string identifier.")
-        
+
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
@@ -176,7 +176,7 @@ class repo(BaseCore):
                          "cert": utils.readFile(self.options.cert),
                          "key": utils.readFile(self.options.key)}
         return cert_data
-        
+
     def _create(self):
         if not self.options.id:
             print _("repo id required. Try --help")
@@ -224,7 +224,7 @@ class repo(BaseCore):
             if self.options.feed:
                 repo['feed'] = self.options.feed
             self.pconn.update(repo)
-            print _(" Successfully updated Repo [ %s ]")  % repo['id']
+            print _(" Successfully updated Repo [ %s ]") % repo['id']
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -313,7 +313,7 @@ class repo(BaseCore):
         sys.stdout.write(self._previous_progress)
         sys.stdout.flush()
 
-    def _print_sync_finsih(self, state, progress):
+    def _print_sync_finish(self, state, progress):
         self._print_sync_progress(progress)
         print ''
         print _('Sync: %s') % state.title()
