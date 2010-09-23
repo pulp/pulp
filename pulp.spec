@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.66
+Version:        0.0.67
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -180,6 +180,9 @@ fi
 
 
 %changelog
+* Wed Sep 22 2010 Mike McCune <mmccune@redhat.com> 0.0.67-1
+- 634705 - suppress receiving locally published events. (jortel@redhat.com)
+
 * Wed Sep 22 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.66-1
 - Ensure complete_callback invoked in failure cases. (jortel@redhat.com)
 - 619077 - make the feed check handle not being in the dict
