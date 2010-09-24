@@ -179,7 +179,6 @@ def audit(params=None, record_result=False):
             api = inspector.api_name(args)
             param_values = inspector.param_values(args, kwargs)
             param_values_str = ', '.join('%s: %s' % (p, v) for p, v in param_values)
-            #param_values_str = param_values_str.decode("utf-8", "replace")
             action = '%s.%s: %s' % (api,
                                     inspector.method,
                                     param_values_str)
