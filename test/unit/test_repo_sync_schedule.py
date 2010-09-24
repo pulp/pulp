@@ -27,7 +27,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import pulp.server.api.repo
-import pulp.server.api.repo_sync
+import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
 import testutil
 
@@ -41,7 +41,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.repo_api.clean()
         tab = pulp.server.crontab.CronTab()
 
-        for entry in tab.find_command('pulp repo sync'):
+        for entry in tab.find_command(repo_sync._cron_command_script()):
             tab.remove(entry)
         tab.write()
         testutil.common_cleanup()
@@ -67,7 +67,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Verify
         tab = pulp.server.crontab.CronTab()
-        items = tab.find_command('pulp repo sync %s' % repo_id)
+        expected_command = repo_sync._cron_command(repo)
+        items = tab.find_command(expected_command)
         self.assertEqual(1, len(items))
 
         print('Update #1 [%s]' % items[0].render())
@@ -79,7 +80,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Verify
         tab = pulp.server.crontab.CronTab()
-        items = tab.find_command('pulp repo sync %s' % repo_id)
+        items = tab.find_command(repo_sync._cron_command(repo))
         self.assertEqual(1, len(items))
 
         print('Update #2 [%s]' % items[0].render())
@@ -91,7 +92,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Verify
         tab = pulp.server.crontab.CronTab()
-        items = tab.find_command('pulp repo sync %s' % repo_id)
+        items = tab.find_command(repo_sync._cron_command(repo))
         self.assertEqual(0, len(items))
 
         # -- Delete #2 ----------
@@ -101,7 +102,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Verify
         tab = pulp.server.crontab.CronTab()
-        items = tab.find_command('pulp repo sync %s' % repo_id)
+        items = tab.find_command(repo_sync._cron_command(repo))
         self.assertEqual(0, len(items))
 
     def test_create_invalid_schedule_syntax(self):

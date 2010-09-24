@@ -19,6 +19,7 @@ import os
 import time
 import traceback
 import shutil
+import sys
 from urlparse import urlparse
 
 import yum
@@ -113,8 +114,17 @@ def delete_schedule(repo):
     else:
         log.debug('No existing cron entry for repo [%s]' % repo['id'])
 
+def _cron_command_script():
+    '''
+    Returns the full python command for invoking the repo sync script. This is missing
+    any specific repo information and is provided largely to simplify unit test cleanup
+    (sync cron commands match this script regardless of repo ID)
+    '''
+    script = os.path.join(os.path.dirname(__file__), 'repo.py')
+    return str('python %s' % script)
+
 def _cron_command(repo):
-    return 'pulp repo sync %s' % repo['id']
+    return str('%s --repoid=%s' % (_cron_command_script(), repo['id']))
 
 def repos_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
@@ -474,3 +484,4 @@ type_classes = {
     'local': LocalSynchronizer,
     'rhn': RHNSynchronizer,
 }
+    

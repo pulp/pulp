@@ -17,6 +17,7 @@
 # Python
 import logging
 import gzip
+from optparse import OptionParser
 import os
 import shutil
 import traceback
@@ -804,3 +805,20 @@ class RepoApi(BaseApi):
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
 
+
+# The crontab entry will call this module, so the following is used to trigger the
+# repo sync
+if __name__ == '__main__':
+
+    # Currently this option parser is configured to automatically assume repo sync. If
+    # further repo-related operations are ever added this will need to be refined, along
+    # with the call in repo_sync.py that creates the cron entry that calls this script.
+    parser = OptionParser()
+    parser.add_option('--repoid', dest='repo_id', action='store')
+
+    options, args = parser.parse_args()
+
+    if options.repo_id:
+        log.info('Running scheduled sync for repo [%s]' % options.repo_id)
+        repo_api = RepoApi()
+        repo_api._sync(options.repo_id)
