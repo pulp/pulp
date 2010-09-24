@@ -40,7 +40,8 @@ Requires: rhm-cpp-server-store
 %else:
 Requires: qpid-cpp-server-store
 %endif
-Requires: %{name}-client
+# newer pulp builds should require same client version
+Requires: %{name}-client >= 0.0.68
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
