@@ -19,7 +19,7 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 
-Requires: pulp-common
+Requires: pulp-common = %{version}
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
@@ -67,7 +67,7 @@ Contains modules common to the Pulp server and client.
 Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires: pulp-common
+Requires: pulp-common = %{version}
 Requires: python-simplejson
 Requires: m2crypto
 
