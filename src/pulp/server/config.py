@@ -23,13 +23,6 @@ config = None # ConfigParser.SafeConfigParser instance
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
-    'logs': {
-        'level': 'info',
-        'max_size': '1048576',
-        'backups': '4',
-        'pulp_file': '/var/log/pulp/pulp.log',
-        'grinder_file': '/var/log/pulp/grinder.log',
-    },
     'auditing': {
         'events_file': '/var/log/pulp/events.log',
         'lifetime': '90',
@@ -38,9 +31,45 @@ _default_values = {
     'consumer_history': {
         'lifetime': '180', # in days
     },
+    'logs': {
+        'level': 'info',
+        'max_size': '1048576',
+        'backups': '4',
+        'pulp_file': '/var/log/pulp/pulp.log',
+        'grinder_file': '/var/log/pulp/grinder.log',
+    },
+    'messaging': {
+        'url': 'tcp://localhost:5672',
+        'cacert': '/etc/pki/qpid/ca/ca.crt',
+        'clientcert': '/etc/pki/qpid/client/client.pem',
+    },
+    'paths': {
+        'local_storage': '/var/lib/pulp',
+    },
+    'repos': {
+        'content_url': 'https://cdn.redhat.com/',
+        'content_cert_location': '/etc/pki/content',
+        'use_entitlement_certs': 'false',
+    },
+    'rhn': {
+        'threads': '10',
+        'fetch_all_packages': 'false',
+        'remove_old_packages': 'false',
+        'cert_file': '/etc/sysconfig/rhn/entitlement-cert.xml',
+        'systemid_file': '/etc/sysconfig/rhn/systemid',
+    },
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
+    },
+    'server': {
+        'base_url': 'http://localhost',
+        'relative_url': '/pub',
+        'default_login': 'admin',
+        'default_password': 'admin',
+    },
+    'yum': {
+        'threads': '10',
     },
 }
 
@@ -76,7 +105,7 @@ def load_configuration():
             config.set(section, option, value)
     # read the config files
     return config.read(_config_files)
-        
+
 
 def add_config_file(file_path):
     """
@@ -91,7 +120,7 @@ def add_config_file(file_path):
         raise RuntimeError('File, %s, already in configuration files' % file_path)
     _config_files.append(file_path)
     load_configuration()
-    
+
 
 def remove_config_file(file_path):
     """
@@ -106,7 +135,7 @@ def remove_config_file(file_path):
         raise RuntimeError('File, %s, not in configuration files' % file_path)
     _config_files.remove(file_path)
     load_configuration()
-    
+
 # initialize on import --------------------------------------------------------
 
 load_configuration()

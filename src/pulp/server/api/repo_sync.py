@@ -131,7 +131,7 @@ def repos_location():
 
 def package_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
-   
+
 # synchronization classes -----------------------------------------------------
 
 class InvalidPathError(Exception):
@@ -307,8 +307,9 @@ class YumSynchronizer(BaseSynchronizer):
             clicert = repo['cert'].encode('utf8')
             clikey = repo['key'].encode('utf8')
 
+        num_threads = config.config.getint('yum', 'threads')
         yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
-                                1, cacert=cacert, clicert=clicert, 
+                                num_threads, cacert=cacert, clicert=clicert,
                                 clikey=clikey, packages_location=package_location())
         relative_path = repo['relative_path']
         if relative_path:
@@ -346,9 +347,9 @@ class LocalSynchronizer(BaseSynchronizer):
                             log.debug("Working on %s/%s" % (count, len(pkglist)))
                         pkg_info = pulp.server.util.get_rpm_information(pkg)
                         pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
-                        pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (package_location(), pkg_checksum[:3], pkg_info.name, pkg_info.version, 
+                        pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (package_location(), pkg_checksum[:3], pkg_info.name, pkg_info.version,
                                                                 pkg_info.release, pkg_info.arch, os.path.basename(pkg))
-                        log.error('Expected Package Location: %s' % pkg_location) 
+                        log.error('Expected Package Location: %s' % pkg_location)
                         if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
                             log.error("package doesn't exist. \
                                         Write the package to packages location: %s" % pkg_location)
@@ -361,7 +362,7 @@ class LocalSynchronizer(BaseSynchronizer):
 
                         repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                         if not os.path.islink(repo_pkg_path):
-                            os.symlink(pkg_location, repo_pkg_path)  
+                            os.symlink(pkg_location, repo_pkg_path)
                 # compute and import repo image files            
                 src_images_dir = os.path.join(src_repo_dir, "images")
                 if not os.path.exists(src_images_dir):
@@ -373,7 +374,7 @@ class LocalSynchronizer(BaseSynchronizer):
                         rel_file_path = imfile.split('/images/')[-1]
                         dst_file_path = os.path.join(dst_images_dir, rel_file_path)
                         if os.path.exists(dst_file_path):
-                            dst_file_checksum  = pulp.server.util.get_file_checksum(filename=dst_file_path)
+                            dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
                             src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
                             if src_file_checksum == dst_file_checksum:
                                 log.info("file %s already exists with same checksum. skip import" % rel_file_path)
@@ -464,7 +465,11 @@ class RHNSynchronizer(BaseSynchronizer):
         # Create and configure the grinder hook to RHN
         s = RHNSync()
         s.setURL(host)
-        s.setParallel(config.config.get('rhn', 'threads'))
+        s.setParallel(config.config.getint('rhn', 'threads'))
+        s.setFetchAllPackages(config.config.getboolean('rhn', 'fetch_all_packages'))
+        s.setRemoveOldPackages(config.config.getboolean('rhn', 'remove_all_packages'))
+        s.certFile = config.config.get('rhn', 'cert_file')
+        s.systemidFile = config.config.get('rhn', 'systemid_file')
 
         # Perform the sync
         dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
@@ -484,4 +489,3 @@ type_classes = {
     'local': LocalSynchronizer,
     'rhn': RHNSynchronizer,
 }
-    
