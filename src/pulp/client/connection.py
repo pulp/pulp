@@ -201,7 +201,13 @@ class RepoConnection(PulpConnection):
     def repositories(self):
         method = "/repositories/"
         return self.conn.request_get(method)
-
+    
+    def repositories_by_groupid(self, groups=[]):
+        method = "/repositories/?"
+        for group in groups:
+            method += "groupid=%s&" % group
+        return self.conn.request_get(method)
+    
     def update(self, repo):
         method = "/repositories/%s/" % repo['id']
         return self.conn.request_put(method, params=repo)

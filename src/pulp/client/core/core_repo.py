@@ -135,7 +135,7 @@ class repo(BaseCore):
         if self.action == "list":
             usage = "repo list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--groupid", dest="groupid",
+            self.parser.add_option("--groupid", action="append", dest="groupid",
                                   help="Filter repos by group id")
 
         if self.action == "upload":
@@ -234,15 +234,15 @@ class repo(BaseCore):
 
     def _list(self):
         try:
-            repos = self.pconn.repositories()
+            if self.options.groupid:
+                repos = self.pconn.repositories_by_groupid(groups=self.options.groupid)
+            else:
+                repos = self.pconn.repositories()
             if not len(repos):
                 print _("No repos available to list")
                 sys.exit(0)
             print_header('List of Available Repositories')
             for repo in repos:
-                if self.options.groupid and \
-                    self.options.groupid not in repo['groupid']:
-                    continue
                 print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], repo["source"], repo["arch"],
                     repo["sync_schedule"], repo['package_count'], repo['files_count'])
