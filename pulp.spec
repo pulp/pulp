@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.67
+Version:        0.0.68
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -180,6 +180,11 @@ fi
 
 
 %changelog
+* Fri Sep 24 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.68-1
+- 635803 - Fixed repo sync schedule to use the existing model (for auditing and
+  consumer history reapers) for the cron entries. (jason.dobies@redhat.com)
+- fixing delete repos to nuke the repo from DB as well as filesystem
+  (pkilambi@redhat.com)
 * Wed Sep 22 2010 Mike McCune <mmccune@redhat.com> 0.0.67-1
 - 634705 - suppress receiving locally published events. (jortel@redhat.com)
 
