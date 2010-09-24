@@ -53,7 +53,7 @@ def audit_repr(value):
     @return: string representing the value
     """
     if isinstance(value, basestring):
-        return value
+        return value.decode("utf-8", "replace")
     if not isinstance(value, (dict, BSON, SON)):
         return repr(value)
     if 'id' in value:
@@ -179,6 +179,7 @@ def audit(params=None, record_result=False):
             api = inspector.api_name(args)
             param_values = inspector.param_values(args, kwargs)
             param_values_str = ', '.join('%s: %s' % (p, v) for p, v in param_values)
+            #param_values_str = param_values_str.decode("utf-8", "replace")
             action = '%s.%s: %s' % (api,
                                     inspector.method,
                                     param_values_str)
