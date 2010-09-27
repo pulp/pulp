@@ -16,13 +16,13 @@ import re
 import sys
 
 
-_ignored_modules = ['__init__', '_base', 'base']
+_ignored_modules = ('__init__', 'base')
 _core_files_regex = re.compile('(?!(%s)\.py$' % '|'.join(_ignored_modules))
 
 
 def _load_module(name):
     """
-    (Re)Load a module from disk, given the module name.
+    Dynamically (re)load a module from disk, given the module name.
     @type name: str
     @param name: name of the module to load
     @rtype: module instance
@@ -31,7 +31,7 @@ def _load_module(name):
     # if the module has already been loaded, reload it
     if name in sys.modules:
         del sys.modules[name]
-    module = __import__(name, globals(), locals())
+    module = __import__(name)
     for component in name.split('.')[1:]:
         module = getattr(module, component)
     return module
@@ -39,19 +39,19 @@ def _load_module(name):
 
 def load_core_modules(module_list=None):
     """
-    Load modules from the core package, filtering by the passed in list.
-    @type module_list: list or tuple of str's
-    @param module_list: list of core module names to load
-    @rtype: list of module instances
-    @return: list of the loaded core modules
+    Load the given modules from the core package.
+    @type module_list: list or tuple of str's or None
+    @param module_list: list of core module names to load, None means load all
+    @rtype: dict of str -> module instances
+    @return: dictionary of the loaded core modules, keyed by name
     """
     assert isinstance(module_list, (list, tuple))
-    modules = []
+    modules = {}
     files = os.listdir(os.path.dirname(__file__))
     for file in filter(_core_files_regex.match, files):
         name = file.split('.', 1)[0]
         if module_list is not None and name not in module_list:
             continue
         module = _load_module('pulp.client.core.' + name)
-        modules.append(module)
+        modules[name] = module
     return modules
