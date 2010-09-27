@@ -188,9 +188,25 @@ class errata(BaseCore):
 
         try:
             if self.options.consumerid:
-                print self.cconn.installerrata(self.options.consumerid, errataids)
+                task = self.cconn.installerrata(self.options.consumerid, errataids)
             elif self.options.consumergroupid:
-                print self.cgconn.installerrata(self.options.consumergroupid, errataids)
+                task = self.cgconn.installerrata(self.options.consumergroupid, errataids)
+            print _('Created task ID: %s') % task['id']
+            state = None
+            spath = task['status_path']
+            while state not in ['finished', 'error']:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(2)
+                status = self.cconn.task_status(spath)
+                state = status['state']
+            if state == 'finished':
+                print _('\n[%s] installed on %s') % \
+                      (status['result'],
+                       (self.options.consumerid or
+                       (self.options.consumergroupid)))
+            else:
+                print("\nErrata install failed")
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

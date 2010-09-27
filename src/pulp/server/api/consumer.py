@@ -28,7 +28,7 @@ from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
-from pulp.server.async import AsyncAgent, AsyncTask, enqueue
+from pulp.server.async import AsyncAgent, AgentTask
 
 log = logging.getLogger(__name__)
     
@@ -284,20 +284,20 @@ class ConsumerApi(BaseApi):
             else:
                 data.append(pkg)
         log.debug("Packages to Install: %s" % data)
-        return InstallPackages(id, data)
+        task = InstallPackages(id, data)
+        return task
     
     @audit()
-    def installpackagegroups(self, id, packageids=()):
+    def installpackagegroups(self, id, groupnames=()):
         """
         Install package groups on the consumer.
         @param id: A consumer id.
         @type id: str
-        @param packageids: The package ids to install.
-        @type packageids: [str,..]
+        @param groupnames: The package group names to install.
+        @type groupnames: [str,..]
         """
-        agent = Agent(id)
-        agent.packagegroups.install(packageids)
-        return packageids
+        task = InstallPackageGroups(id, groupnames)
+        return task
     
     def installerrata(self, id, errataids=(), types=()):
         """
@@ -309,7 +309,6 @@ class ConsumerApi(BaseApi):
         @param types: Errata type filter
         @type types: str
         """
-        agent = Agent(id)
         consumer = self.consumer(id)
         pkgs = []
         errata_titles = []
@@ -327,9 +326,8 @@ class ConsumerApi(BaseApi):
                 if pobj["arch"] != "src":
                     pkgs.append(pobj["name"])
         log.error("Packages to install [%s]" % pkgs)
-        installed_packages = agent.packages.install(pkgs)
-        self.consumer_history_api.packages_installed(id, installed_packages, errata_titles=errata_titles)
-        return pkgs
+        task = InstallErrata(id, pkgs, errata_titles)
+        return task
         
     def listerrata(self, id, types=()):
         """
@@ -390,7 +388,7 @@ class ConsumerApi(BaseApi):
 
 
 
-class InstallPackages(AsyncTask):
+class InstallPackages(AgentTask):
     """
     Install packages task
     @ivar consumerid: The consumer ID.
@@ -399,17 +397,20 @@ class InstallPackages(AsyncTask):
     @type packages: [str,..]
     """
 
-    def __init__(self, consumerid, packages):
+    def __init__(self, consumerid, packages, errata=()):
         """
         @param consumerid: The consumer ID.
         @type consumerid: str
         @param packages: A list of packages to install.
         @type packages: [str,..]
+        @param errata: A list of errata titles.
+        @type errata: list
         """
         self.consumerid = consumerid
         self.packages = packages
-        AsyncTask.__init__(self, self.install)
-        enqueue(self)
+        self.errata = errata
+        AgentTask.__init__(self, self.install)
+        self.enqueue()
 
     def install(self):
         """
@@ -419,10 +420,62 @@ class InstallPackages(AsyncTask):
         packages = agent.Packages(self)
         packages.install(self.packages)
 
-    def succeeded(self, result):
+    def succeeded(self, sn, result):
         """
         On success, update the consumer history.
+        @param sn: The RMI serial #.
+        @type sn: uuid
+        @param result: The object returned by the RMI call.
+        @type result: object
         """
+        AgentTask.succeeded(self, sn, result)
         history = ConsumerHistoryApi()
-        history.packages_installed(self.consumerid, result)
-        AsyncTask.succeeded(self, result)
+        history.packages_installed(
+            self.consumerid,
+            result,
+            errata_titles=self.errata)
+
+
+class InstallErrata(InstallPackages):
+    pass
+
+
+class InstallPackageGroups(AgentTask):
+    """
+    Install package group task
+    @ivar consumerid: The consumer ID.
+    @type consumerid: str
+    @ivar groups: A list of package groups to install.
+    @type groups: [str,..]
+    """
+
+    def __init__(self, consumerid, groups):
+        """
+        @param consumerid: The consumer ID.
+        @type consumerid: str
+        @param groups: A list of package groups to install.
+        @type groups: [str,..]
+        """
+        self.consumerid = consumerid
+        self.groups = groups
+        AgentTask.__init__(self, self.install)
+        self.enqueue()
+
+    def install(self):
+        """
+        Perform the RMI to the agent to install package groups.
+        """
+        agent = AsyncAgent(self.consumerid)
+        pg = agent.PackageGroups(self)
+        pg.install(self.groups)
+
+    def succeeded(self, sn, result):
+        """
+        On success, update the consumer history.
+        @param sn: The RMI serial #.
+        @type sn: uuid
+        @param result: The object returned by the RMI call.
+        @type result: object
+        """
+        AgentTask.succeeded(self, sn, result)
+        # TODO: update consumer history

@@ -301,7 +301,10 @@ class ConsumerActions(AsyncController):
         """
         data = self.params()
         ids = data.get('packageids', [])
-        return self.ok(consumer_api.installpackagegroups(id, ids))
+        task = consumer_api.installpackagegroups(id, ids)
+        taskdict = self._task_to_dict(task)
+        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
 
     @RoleCheck(consumer_id=True, admin=True)
     def installerrata(self, id):
@@ -312,7 +315,10 @@ class ConsumerActions(AsyncController):
         data = self.params()
         eids = data.get('errataids', [])
         types = data.get('types', [])
-        return self.ok(consumer_api.installerrata(id, eids, types))
+        task = consumer_api.installerrata(id, eids, types)
+        taskdict = self._task_to_dict(task)
+        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
 
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)

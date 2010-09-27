@@ -19,6 +19,7 @@
 
 import gettext
 import sys
+import time
 
 import pulp.client.constants as constants
 from pulp.client.config import Config
@@ -199,8 +200,23 @@ class packagegroup(BaseCore):
             print _("package group id required. Try --help")
             sys.exit(0)
         try:
-            print self.cconn.installpackagegroups(self.options.consumerid,
-                                             self.options.pkggroupid)
+            task = self.cconn.installpackagegroups(
+                        self.options.consumerid,
+                        self.options.pkggroupid)
+            print _('Created task ID: %s') % task['id']
+            state = None
+            spath = task['status_path']
+            while state not in ['finished', 'error']:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(2)
+                status = self.cconn.task_status(spath)
+                state = status['state']
+            if state == 'finished':
+                print _('\n[%s] installed on %s') % \
+                      (status['result'], self.options.consumerid)
+            else:
+                print("\nPackage group install failed")
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

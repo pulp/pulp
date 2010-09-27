@@ -18,11 +18,13 @@ import logging
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
+from pulp.server.async import AsyncAgent, AgentTask
 
 log = logging.getLogger(__name__)
 
@@ -217,11 +219,10 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if consumergroup is None:   
             raise PulpException("No Consumer Group with id: %s found" % id)
-        consumerids = consumergroup['consumerids']
-        for consumerid in consumerids:
-            agent = Agent(consumerid)
-            agent.packages.install(packagenames)
-        return packagenames
+        items = []
+        for consumerid in consumergroup['consumerids']:
+            items.append((consumerid, packagenames))
+        task = InstallPackages(items)
     
     def installerrata(self, id, errataids=[], types=[]):
         """
@@ -237,10 +238,9 @@ class ConsumerGroupApi(BaseApi):
         if consumergroup is None:   
             raise PulpException("No Consumer Group with id: %s found" % id)
         consumerids = consumergroup['consumerids']
-        consumer_pkg = {}
+        items = []
         for consumerid in consumerids:
             consumer = self.consumerApi.consumer(consumerid)
-            agent = Agent(consumerid)
             pkgs = []
             if errataids:
                 applicable_errata = self.consumerApi._applicable_errata(consumer, types)
@@ -255,6 +255,110 @@ class ConsumerGroupApi(BaseApi):
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
             log.error("Foe consumer id %s Packages to install %s" % (consumerid, pkgs))
-            agent.packages.install(pkgs)
-            consumer_pkg[consumerid] = pkgs
-        return consumer_pkg
+            items.append((consumerid, pkgs))
+        task = InstallErrata(items)
+        return task
+
+
+class InstallPackages(AgentTask):
+    """
+    Install packages task
+    @ivar items: The list of tuples (consumerid, [package,..]).
+    @type items: list]
+    @ivar serials: A dict of RMI serial # to consumer ids.
+    @type serials: dict.
+    @ivar __succeeded: A list of succeeded RMI.
+    @type __succeeded: tuple (consumerid, result)
+    @ivar __failed: A list of failed RMI.
+    @type __failed: tuple (consumerid, exception)
+    """
+
+    def __init__(self, items, errata=()):
+        """
+        @param items: The list of tuples (consumerid, [package,..]).
+        @type items: list
+        @param errata: A list of errata titles.
+        @type errata: list
+        """
+        self.items = items
+        self.errata = errata
+        self.serials = {}
+        self.__succeeded = []
+        self.__failed = []
+        AgentTask.__init__(self, self.install)
+        self.enqueue()
+
+    def install(self):
+        """
+        Perform the RMI to the agent to install packages.
+        """
+        for id, pkglist in self.items:
+            agent = AsyncAgent(id)
+            packages = agent.Packages(self)
+            sn = packages.install(pkglist)
+            self.serials[sn] = id
+
+    def succeeded(self, sn, result):
+        """
+        The agent RMI Succeeded.
+        Find the consumer id using the serial number.  Then, append the
+        result to the succeeded list and check to see if we have all
+        of the replies (finished).
+        @param sn: The RMI serial #.
+        @type sn: uuid
+        @param result: The object returned by the RMI call.
+        @type result: object
+        """
+        id = self.serials.get(sn)
+        if not id:
+            log.error('serial %s, not found', sn)
+            return
+        self.__succeeded.append((id, result))
+        self.__finished()
+
+    def failed(self, sn, exception, tb=None):
+        """
+        The agent RMI Failed.
+        Find the consumer id using the serial number.  Then, append the
+        exception and traceback to the failed list and check to see if
+        we have all of the replies (finished).
+        @param sn: The RMI serial #.
+        @type sn: uuid
+        @param exception: The I{representation} of the raised exception.
+        @type exception: str
+        @param tb: The formatted traceback.
+        @type tb: str
+        """
+        id = self.serials.get(sn)
+        if not id:
+            log.error('serial %s, not found', sn)
+            return
+        self.__failed.append((id, exception, tb))
+        self.__finished()
+
+    def __finished(self):
+        """
+        See if were finished.
+        @param reply: An RMI reply object.
+        @type reply: Reply
+        """
+        total = len(self.serials)
+        total -= len(self.__succeeded)
+        total -= len(self.__failed)
+        if total: # still have outstanding replies
+            return
+        result = (self.__succeeded, self.__failed)
+        AgentTask.succeeded(self, None, result)
+        chapi = ConsumerHistoryApi()
+        for id, result in self.__succeeded:
+            chapi.packages_installed(
+                    id,
+                    result,
+                    errata_titles=self.errata)
+
+
+class InstallErrata(InstallPackages):
+    """
+    Install errata task.
+    """
+    pass

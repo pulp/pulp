@@ -21,7 +21,7 @@ import web
 from pulp.server.api.errata import ErrataApi
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
