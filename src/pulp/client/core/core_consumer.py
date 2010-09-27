@@ -75,25 +75,25 @@ class consumer(BaseCore):
             usage = "consumer create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
-                           help="Consumer Identifier eg: foo.example.com")
+                           help="consumer identifier eg: foo.example.com")
             self.parser.add_option("--description", dest="description",
                            help="consumer description eg: foo's web server")
             self.parser.add_option("--server", dest="server",
-                           help="The fully qualified hostname of the Pulp server you wish to create this consumer on")
+                           help="the fully qualified hostname of the pulp server you wish to create this consumer on")
             self.parser.add_option("--location", dest="location",
-                           help="Location or datacenter of the consumer")
+                           help="location or datacenter of the consumer")
 
         if self.action == "update":
             usage = "usage: %prog consumer update [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
-                           help="Consumer Identifier eg: foo.example.com")
+                           help="consumer identifier eg: foo.example.com")
 
         if self.action == "bind":
             usage = "usage: %prog consumer bind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repo Identifier")
+                           help="repo identifier")
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
@@ -102,62 +102,62 @@ class consumer(BaseCore):
             usage = "usage: %prog consumer unbind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repo Identifier")
+                           help="repo identifier")
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
-                                       help="Consumer Identifier")
+                                       help="consumer identifier")
                 
         if self.action == "add_keyvalue":
             usage = "usage: %prog consumer add_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
-                           help="Key Identifier")
+                           help="key identifier")
             self.parser.add_option("--value", dest="value",
-                           help="Value corresponding to the key")      
+                           help="value corresponding to the key")      
             if self.is_admin:   
                 self.parser.add_option("--id", dest="id",
-                                       help="Consumer Identifier")
+                                       help="consumer identifier")
                 
         if self.action == "delete_keyvalue":
             usage = "usage: %prog consumer delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
-                           help="Key Identifier")
+                           help="key identifier")
             if self.is_admin:   
                 self.parser.add_option("--id", dest="id",
-                                       help="Consumer Identifier")       
+                                       help="consumer identifier")       
                 
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
-                           help="Key Identifier")
+                           help="key identifier")
             self.parser.add_option("--value", dest="value",
-                           help="Value corresponding to the key") 
+                           help="value corresponding to the key") 
 
         if self.action == "delete":
             usage = "usage: %prog consumer delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
-                                       help="Consumer Identifier")
+                                       help="consumer identifier")
 
         if self.action == "history":
             usage = "usage: %prog consumer history [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option('--event_type', dest='event_type',
-                                   help='Limits displayed history entries to the given type')
+                                   help='limits displayed history entries to the given type')
             self.parser.add_option('--limit', dest='limit',
-                                   help='Limits displayed history entries to the given amount (must be greater than zero)')
+                                   help='limits displayed history entries to the given amount (must be greater than zero)')
             self.parser.add_option('--sort', dest='sort',
-                                   help='Indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp')
+                                   help='indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp')
             self.parser.add_option('--start_date', dest='start_date',
-                                   help='Only return entries that occur after the given date (format: mm-dd-yyyy)')
+                                   help='only return entries that occur after the given date (format: mm-dd-yyyy)')
             self.parser.add_option('--end_date', dest='end_date',
-                                   help='Only return entries that occur before the given date (format: mm-dd-yyyy)')            
+                                   help='only return entries that occur before the given date (format: mm-dd-yyyy)')            
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
-                                       help="Consumer Identifier")
+                                       help="consumer identifier")
 
 
     def _do_core(self):

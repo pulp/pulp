@@ -96,26 +96,25 @@ class errata(BaseCore):
             self.setup_option_parser(usage, "", True)
             if self.is_admin:
                 self.parser.add_option("--consumerid", dest="consumerid",
-                                       help="Consumer Id")
+                                       help="consumer id")
             self.parser.add_option("--repoid", dest="repoid",
-                            help="Repository Id")
+                            help="repository id")
             self.parser.add_option("--type", dest="type", action="append",
-                            help="Type of Errata to lookup \
-                                    supported types: security, bugfix, enhancement")
+                            help="type of errata to lookup; supported types: security, bugfix, enhancement")
 
         if self.action == "info":
             usage = "errata info [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
-                           help="Errata Id")
+                           help="errata id")
 
         if self.action == "install":
             usage = "errata install [OPTIONS] <errata>"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Id")
+                           help="consumer id")
             self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                           help="Consumer group Id")
+                           help="consumer group id")
 
     def _do_core(self):
         if self.action == "create":
