@@ -75,29 +75,25 @@ class repo(BaseCore):
 
     def _add_create_update_options(self):
             self.parser.add_option("--id", dest="id",
-                           help="Repository Id")
+                           help="repository id")
             self.parser.add_option("--name", dest="name",
-                                   help="Common repository name")
+                                   help="common repository name")
             self.parser.add_option("--arch", dest="arch",
-                                   help="Package arch the repo should support.")
+                                   help="package arch the repository should support")
             self.parser.add_option("--feed", dest="feed",
-                                   help="Url feed to populate the repo")
+                                   help="url feed to populate the repository")
             self.parser.add_option("--cacert", dest="cacert",
-                                   help="Path location to CA Certificate.")
+                                   help="path location to ca certificate")
             self.parser.add_option("--cert", dest="cert",
-                                   help="Path location to Entitlement Certificate.")
-            self.parser.add_option("--key", dest="key",
-                                   help="Path location to Entitlement Cert Key.")
+                                   help="path location to entitlement certificate key")
             self.parser.add_option("--schedule", dest="schedule",
-                                   help="Schedule for automatically synchronizing the repository")
+                                   help="schedule for automatically synchronizing the repository")
             self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
-                                   help="Use symlinks instead of copying bits locally.\
-                                   Applicable for local syncs")
+                                   help="use symlinks instead of copying bits locally; applicable for local syncs")
             self.parser.add_option("--relativepath", dest="relativepath",
-                                   help="Relative path where the repo is stored and exposed to clients.\
-                                   This defaults to feed path if not specified.")
+                                   help="relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified")
             self.parser.add_option("--groupid", dest="groupid",
-                                   help="A group to which the repo belongs.This is just a string identifier.")
+                                   help="a group to which the repository belongs; this is just a string identifier")
 
     def generate_options(self):
         self.action = self._get_action()
@@ -112,38 +108,38 @@ class repo(BaseCore):
         if self.action == "sync":
             usage = "repo sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id", help="Repository Id")
-            self.parser.add_option("--timeout", dest="timeout", help="Sync Timeout")
+            self.parser.add_option("--id", dest="id", help="repository id")
+            self.parser.add_option("--timeout", dest="timeout", help="synchronization timeout")
             self.parser.add_option('-F', '--foreground', dest='foreground',
                                    action='store_true', default=False,
-                                   help='Sync repo in the foreground')
+                                   help='synchronize repository in the foreground')
         if self.action == 'status':
             usage = 'repo status [OPTIONS]'
-            self.parser.add_option("--id", dest="id", help="Repository Id")
+            self.parser.add_option("--id", dest="id", help="repository id")
 
         if self.action == "cancel_sync":
             usage = "repo cancel_sync [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id", help="Repository Id")
-            self.parser.add_option("--taskid", dest="taskid", help="Task ID")
+            self.parser.add_option("--id", dest="id", help="repository id")
+            self.parser.add_option("--taskid", dest="taskid", help="task id")
 
         if self.action == "delete":
             usage = "repo delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id", help="Repository Id")
+            self.parser.add_option("--id", dest="id", help="repository id")
 
         if self.action == "list":
             usage = "repo list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--groupid", action="append", dest="groupid",
-                                  help="Filter repos by group id")
+                                  help="filter repositories by group id")
 
         if self.action == "upload":
             usage = "repo upload [OPTIONS] <package>"
             self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id", help="Repository Id")
+            self.parser.add_option("--id", dest="id", help="repository id")
             self.parser.add_option("--dir", dest="dir",
-                                  help="Process packages from this directory")
+                                  help="process packages from this directory")
 
         if self.action == "schedules":
             usage = "repo schedules"
