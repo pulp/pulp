@@ -56,7 +56,7 @@ class PulpCore:
             submod = getattr(mod, name)
         except AttributeError:
             return None
-        return getattr(submod, core)
+        return getattr(submod, name)
 
     def _load_all_cores(self):
         pkgpth = os.path.dirname(core.__file__)
