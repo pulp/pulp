@@ -319,7 +319,7 @@ class RepoApi(BaseApi):
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
         self._add_package(repo, package)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
 
     def _add_package(self, repo, p):
         """
@@ -336,7 +336,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         # this won't fail even if the package is not in the repo's packages
         repo['packages'].pop(p['id'], None)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
 
     def errata(self, id, types=()):
         """
@@ -361,7 +361,7 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(repoid)
         self._add_erratum(repo, erratumid)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
 
     def add_errata(self, repoid, errataids=()):
         """
@@ -370,7 +370,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         for erratumid in errataids:
             self._add_erratum(repo, erratumid)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
 
     def _add_erratum(self, repo, erratumid):
         """
@@ -397,7 +397,7 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(repoid)
         self._delete_erratum(repo, erratumid)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
 
     def delete_errata(self, repoid, errataids):
         """
@@ -406,7 +406,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         for erratumid in errataids:
             self._delete_erratum(repo, erratumid)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
 
     def _delete_erratum(self, repo, erratumid):
         """
@@ -440,7 +440,7 @@ class RepoApi(BaseApi):
                                 (group_id, repoid))
         group = model.PackageGroup(group_id, group_name, description)
         repo["packagegroups"][group_id] = group
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
         return group
 
@@ -457,7 +457,7 @@ class RepoApi(BaseApi):
         if repo['packagegroups'][groupid]["immutable"]:
             raise PulpException("Changes to immutable groups are not supported: %s" % (groupid))
         del repo['packagegroups'][groupid]
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -473,7 +473,7 @@ class RepoApi(BaseApi):
             if repo["packagegroups"][pg_id]["immutable"]:
                 raise PulpException("Changes to immutable groups are not supported: %s" % (pg["id"]))
         repo['packagegroups'][pg_id] = pg
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -489,7 +489,7 @@ class RepoApi(BaseApi):
                 if repo['packagegroups'][item["id"]]["immutable"]:
                     raise PulpException("Changes to immutable groups are not supported: %s" % (item["id"]))
             repo['packagegroups'][item['id']] = item
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     def packagegroups(self, id):
@@ -613,7 +613,7 @@ class RepoApi(BaseApi):
                 else:
                     if pkg_name in group["default_package_names"]:
                         group["default_package_names"].remove(pkg_name)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit(params=['repoid', 'cat_id', 'cat_name'])
@@ -632,7 +632,7 @@ class RepoApi(BaseApi):
                                 (cat_id, repoid))
         cat = model.PackageGroupCategory(cat_id, cat_name, description)
         repo["packagegroupcategories"][cat_id] = cat
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
         return cat
 
@@ -647,7 +647,7 @@ class RepoApi(BaseApi):
         if repo['packagegroupcategories'][categoryid]["immutable"]:
             raise PulpException("Changes to immutable categories are not supported: %s" % (categoryid))
         del repo['packagegroupcategories'][categoryid]
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -660,7 +660,7 @@ class RepoApi(BaseApi):
             if repo["packagegroupcategories"][pgc["id"]]["immutable"]:
                 raise PulpException("Changes to immutable categories are not supported: %s" % (pgc["id"]))
         repo['packagegroupcategories'][pgc['id']] = pgc
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -674,7 +674,7 @@ class RepoApi(BaseApi):
                 if repo["packagegroupcategories"][item["id"]]["immutable"]:
                     raise PulpException("Changes to immutable categories are not supported: %s" % item["id"])
             repo['packagegroupcategories'][item['id']] = item
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     def packagegroupcategories(self, id):
@@ -792,7 +792,7 @@ class RepoApi(BaseApi):
         pkg_upload = upload.PackageUpload(repo, pkginfo, pkgstream)
         pkg, repo = pkg_upload.upload()
         self._add_package(repo, pkg)
-        self.update(repo)
+        self.objectdb.save(repo, safe=True)
         log.info("Upload success %s %s" % (pkg['id'], repo['id']))
         return True
 

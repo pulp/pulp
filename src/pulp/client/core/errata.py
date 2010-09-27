@@ -96,26 +96,25 @@ class errata(BaseCore):
             self.setup_option_parser(usage, "", True)
             if self.is_admin:
                 self.parser.add_option("--consumerid", dest="consumerid",
-                                       help="Consumer Id")
+                                       help="consumer id")
             self.parser.add_option("--repoid", dest="repoid",
-                            help="Repository Id")
+                            help="repository id")
             self.parser.add_option("--type", dest="type", action="append",
-                            help="Type of Errata to lookup \
-                                    supported types: security, bugfix, enhancement")
+                            help="type of errata to lookup; supported types: security, bugfix, enhancement")
 
         if self.action == "info":
             usage = "errata info [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
-                           help="Errata Id")
+                           help="errata id")
 
         if self.action == "install":
             usage = "errata install [OPTIONS] <errata>"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Id")
+                           help="consumer id")
             self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                           help="Consumer group Id")
+                           help="consumer group id")
 
     def _do_core(self):
         if self.action == "create":
@@ -189,9 +188,25 @@ class errata(BaseCore):
 
         try:
             if self.options.consumerid:
-                print self.cconn.installerrata(self.options.consumerid, errataids)
+                task = self.cconn.installerrata(self.options.consumerid, errataids)
             elif self.options.consumergroupid:
-                print self.cgconn.installerrata(self.options.consumergroupid, errataids)
+                task = self.cgconn.installerrata(self.options.consumergroupid, errataids)
+            print _('Created task ID: %s') % task['id']
+            state = None
+            spath = task['status_path']
+            while state not in ['finished', 'error']:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(2)
+                status = self.cconn.task_status(spath)
+                state = status['state']
+            if state == 'finished':
+                print _('\n[%s] installed on %s') % \
+                      (status['result'],
+                       (self.options.consumerid or
+                       (self.options.consumergroupid)))
+            else:
+                print("\nErrata install failed")
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

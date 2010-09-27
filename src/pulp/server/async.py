@@ -70,14 +70,14 @@ def run_async(method, args, kwargs, timeout=None, unique=True):
 class AsyncAgent:
     """
     Represents the I{remote} agent.
-    @ivar __id: The agent (consumer) id.
-    @type __id: str
+    @ivar __id: The agent (consumer) id.  Or, list of IDs.
+    @type __id: (str|[str,..])
     """
 
     def __init__(self, id):
         """
-        @param id: The agent ID.
-        @type id: str
+        @param id: The agent ID.  Or, list of IDs.
+        @type id: (str|[str,..])
         """
         self.__id = id
 
@@ -218,7 +218,9 @@ class ReplyHandler(Listener):
         taskid = reply.any
         task = _queue.find(id=taskid)
         if task:
-            task[0].succeeded(reply.retval)
+            sn = reply.sn
+            result = reply.retval
+            task[0].succeeded(sn, result)
         else:
             log.warn('Task (%s), not found', taskid)
 
@@ -227,9 +229,49 @@ class ReplyHandler(Listener):
         taskid = reply.any
         task = _queue.find(id=taskid)
         if task:
-            task[0].failed(reply.exval, tb=repr(reply.exval))
+            sn = reply.sn
+            exception = reply.exval,
+            tb = repr(exception)
+            task[0].failed(sn, exception, tb)
         else:
             log.warn('Task (%s), not found', taskid)
 
     def status(self, reply):
         pass
+
+
+
+class AgentTask(AsyncTask):
+    """
+    Task represents an async task involving an RMI to the agent.
+    """
+
+    def succeeded(self, sn, result):
+        """
+        The RMI succeeded.
+        @param sn: The RMI serial #.
+        @type sn: uuid
+        @param result: The RMI returned value.
+        @type result: object
+        """
+        AsyncTask.succeeded(self, result)
+
+    def failed(self, sn, exception, tb=None):
+        """
+        @param sn: The RMI serial #.
+        @type sn: uuid
+        @param exception: The RMI raised exception.
+        @type exception: Exception
+        @param tb: The exception traceback.
+        @type tb: list
+        """
+        AsyncTask.failed(self, exception, tb=tb)
+
+    def enqueue(self, unique=False):
+        """
+        Enqueue the task.
+        @param unique: The unique flag.
+        @type unique: bool
+        """
+        if _queue.enqueue(self, unique):
+            return self

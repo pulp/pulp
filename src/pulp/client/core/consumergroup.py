@@ -74,7 +74,7 @@ class consumergroup(BaseCore):
             usage = "consumergroup delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="id",
-                           help="Consumer group id")
+                           help="consumer group id")
         if self.action == "list":
             usage = "consumergroup list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -82,49 +82,48 @@ class consumergroup(BaseCore):
             usage = "consumergroup add_consumer [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Identifier")
+                           help="consumer identifier")
             self.parser.add_option("--id", dest="groupid",
-                           help="Consumer Group Identifier")
+                           help="consumer group identifier")
         if self.action == "delete_consumer":
             usage = "consumergroup delete_consumer [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Identifier")
+                           help="consumer identifier")
             self.parser.add_option("--id", dest="groupid",
-                           help="Consumer Group Identifier")
+                           help="consumer group identifier")
         if self.action == "bind":
             usage = "consumergroup bind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repo Identifier")
+                           help="repository identifier")
             self.parser.add_option("--id", dest="groupid",
-                           help="Consumer Group Identifier")
+                           help="consumer group identifier")
         if self.action == "unbind":
             usage = "consumergroup unbind [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repo Identifier")
+                           help="repository identifier")
             self.parser.add_option("--id", dest="groupid",
-                           help="Consumer Group Identifier")
+                           help="consumer group identifier")
 
         if self.action == "add_keyvalue":
             usage = "usage: %prog consumergroup add_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="groupid",
-                           help="Consumer Group Identifier")
+                           help="consumer group identifier")
             self.parser.add_option("--key", dest="key",
-                           help="Key Identifier")
+                           help="key identifier")
             self.parser.add_option("--value", dest="value",
-                           help="Value corresponding to the key")
+                           help="value corresponding to the key")
 
         if self.action == "delete_keyvalue":
             usage = "usage: %prog consumergroup delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--id", dest="groupid",
-                           help="Consumer Group Identifier")
+                           help="consumer group identifier")
             self.parser.add_option("--key", dest="key",
-                           help="Key Identifier")
-
+                           help="key identifier")
 
 
     def _do_core(self):

@@ -19,6 +19,7 @@
 
 import gettext
 import sys
+import time
 
 import pulp.client.constants as constants
 from pulp.client.config import Config
@@ -77,57 +78,55 @@ class packagegroup(BaseCore):
             usage = "packagegroup install [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("-g", "--pkggroupid", action="append", dest="pkggroupid",
-                           help="PackageGroup to install on a given consumer. \
-                           To specify multiple package groups use multiple -g")
+                           help="packagegroup to install on a given consumer; to specify multiple package groups use multiple -g")
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Id")
+                           help="consumer id")
         if self.action == "list":
             usage = "packagegroup list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label")
+                           help="repository label")
         if self.action == "create":
             usage = "packagegroup create [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label")
+                           help="repository label")
             self.parser.add_option("--id", dest="groupid",
-                            help="Group id")
+                            help="group id")
             self.parser.add_option("--name", dest="groupname",
-                            help="Group name")
+                            help="group name")
             self.parser.add_option("--description", dest="description",
-                            help="Group description, default is ''", default="")
+                            help="group description, default is ''", default="")
         if self.action == "delete":
             usage = "packagegroup delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label")
+                           help="repository label")
             self.parser.add_option("--id", dest="groupid",
-                            help="Group id")
+                            help="group id")
         if self.action == "add_package":
             usage = "packagegroup add_package [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                            help="Repository Label")
+                            help="repository label")
             self.parser.add_option("--id", dest="groupid",
-                            help="Group id")
+                            help="group id")
             self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                            help="Packages to be added. \
-                                To specify multiple packages use multiple -n")
+                            help="packages to be added; to specify multiple packages use multiple -n")
             self.parser.add_option("--type", dest="grouptype",
-                            help="Type of list to add package to, example 'mandatory', 'optional', 'default'",
+                            help="type of list to add package to, example 'mandatory', 'optional', 'default'",
                             default="default")
         if self.action == "delete_package":
             usage = "packagegroup delete_package [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--repoid", dest="repoid",
-                            help="Repository Label")
+                            help="repository label")
             self.parser.add_option("--id", dest="groupid",
-                            help="Group id")
+                            help="group id")
             self.parser.add_option("--pkgname", dest="pkgname",
-                            help="Package name")
+                            help="package name")
             self.parser.add_option("--type", dest="grouptype",
-                            help="Type of list to delete package from, example 'mandatory', 'optional', 'default'",
+                            help="type of list to delete package from, example 'mandatory', 'optional', 'default'",
                             default="default")
 
     def _do_core(self):
@@ -201,8 +200,23 @@ class packagegroup(BaseCore):
             print _("package group id required. Try --help")
             sys.exit(0)
         try:
-            print self.cconn.installpackagegroups(self.options.consumerid,
-                                             self.options.pkggroupid)
+            task = self.cconn.installpackagegroups(
+                        self.options.consumerid,
+                        self.options.pkggroupid)
+            print _('Created task ID: %s') % task['id']
+            state = None
+            spath = task['status_path']
+            while state not in ['finished', 'error']:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(2)
+                status = self.cconn.task_status(spath)
+                state = status['state']
+            if state == 'finished':
+                print _('\n[%s] installed on %s') % \
+                      (status['result'], self.options.consumerid)
+            else:
+                print("\nPackage group install failed")
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)

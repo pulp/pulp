@@ -17,7 +17,7 @@
 import web
 
 from pulp.server.api.consumer_group import ConsumerGroupApi
-from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.role_check import RoleCheck
 
 # consumers api ---------------------------------------------------------------
@@ -94,7 +94,7 @@ class ConsumerGroup(JSONController):
         api.delete(id=id)
         return self.ok(True)
 
-class ConsumerGroupActions(JSONController):
+class ConsumerGroupActions(AsyncController):
 
     # See pulp.webservices.repositories.RepositoryActions for design
 
@@ -199,6 +199,24 @@ class ConsumerGroupActions(JSONController):
         return action(id)
 
 
+class ConsumerGroupActionStatus(AsyncController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def GET(self, id, action_name, action_id):
+        """
+        Check the status of a package group install operation.
+        @param id: repository id
+        @param action_name: name of the action
+        @param action_id: action id
+        @return: action status information
+        """
+        task_info = self.task_status(action_id)
+        if task_info is None:
+            return self.not_found('No %s with id %s found' % (action_name, action_id))
+        return self.ok(task_info)
+
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
@@ -206,6 +224,9 @@ URLS = (
     '/([^/]+)/$', 'ConsumerGroup',
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
     'ConsumerGroupActions',
+
+    '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(ConsumerGroupActions.exposed_actions),
+    'ConsumerGroupActionStatus',
 )
 
 application = web.application(URLS, globals())

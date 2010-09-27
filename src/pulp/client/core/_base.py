@@ -88,10 +88,10 @@ class BaseCore(object):
         """
         Common options to all modules.
         """
-        help = "username for access to Pulp."
-        help = help + "  Default user admin is included with base install."
+        help = "username for access to pulp."
+        help = help + "  Default user admin is included with base install"
         self.parser.add_option("-u", "--username", dest="username", help=help)
-        help = "password for access to Pulp."
+        help = "password for access to pulp."
         self.parser.add_option("-p", "--password", dest="password", help=help)
 
 

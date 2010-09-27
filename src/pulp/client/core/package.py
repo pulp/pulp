@@ -75,12 +75,11 @@ class package(BaseCore):
             usage = "package install [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                           help="Packages to be installed. \
-                           To specify multiple packages use multiple -n")
+                           help="packages to be installed; to specify multiple packages use multiple -n")
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Id")
+                           help="consumer id")
             self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                           help="Consumer Group Id")
+                           help="consumer group id")
 
     def _do_core(self):
         if self.action == "info":
@@ -120,25 +119,29 @@ class package(BaseCore):
             sys.exit(0)
         try:
             if self.options.consumergroupid:
-                pkgs = self.cgconn.installpackages(self.options.consumergroupid, self.options.pnames)
-                print _("Successfully Installed Packages %s on consumergroup [%s]") % \
-                    (pkgs, self.options.consumergroupid)
+                task = self.cgconn.installpackages(
+                            self.options.consumergroupid,
+                            self.options.pnames)
             else:
-                task = self.cconn.installpackages(self.options.consumerid, self.options.pnames)
-                print 'Task %s, created' % task['id']
-                state = None
-                spath = task['status_path']
-                while state not in ['finished', 'error']:
-                    sys.stdout.write('.')
-                    sys.stdout.flush()
-                    time.sleep(1)
-                    status = self.cgconn.task_status(spath)
-                    state = status['state']
-                if state == 'finished':
-                    print('\n[%s] installed on %s' % \
-                          (status['result'], self.options.consumerid))
-                else:
-                    print("\nPackage install failed")
+                task = self.cconn.installpackages(
+                            self.options.consumerid,
+                            self.options.pnames)
+            print _('Created task ID: %s') % task['id']
+            state = None
+            spath = task['status_path']
+            while state not in ['finished', 'error']:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                time.sleep(2)
+                status = self.cconn.task_status(spath)
+                state = status['state']
+            if state == 'finished':
+                print _('\n[%s] installed on %s') % \
+                      (status['result'],
+                       (self.options.consumerid or
+                       self.options.consumergroupid))
+            else:
+                print("\nPackage install failed")
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
