@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -17,7 +19,7 @@ import sys
 
 
 _ignored_modules = ('__init__', 'base')
-_core_files_regex = re.compile('(?!(%s)\.py$' % '|'.join(_ignored_modules))
+_core_files_regex = re.compile('(?!(%s)).*\.py$' % '|'.join(_ignored_modules))
 
 
 def _load_module(name):
@@ -31,13 +33,13 @@ def _load_module(name):
     # if the module has already been loaded, reload it
     if name in sys.modules:
         del sys.modules[name]
-    module = __import__(name)
+    module = __import__(name, globals(), locals())
     for component in name.split('.')[1:]:
         module = getattr(module, component)
     return module
 
 
-def load_core_modules(module_list=None):
+def _load_core_modules(module_list=None):
     """
     Load the given modules from the core package.
     @type module_list: list or tuple of str's or None
@@ -45,7 +47,6 @@ def load_core_modules(module_list=None):
     @rtype: dict of str -> module instances
     @return: dictionary of the loaded core modules, keyed by name
     """
-    assert isinstance(module_list, (list, tuple))
     modules = {}
     files = os.listdir(os.path.dirname(__file__))
     for file in filter(_core_files_regex.match, files):
@@ -55,3 +56,24 @@ def load_core_modules(module_list=None):
         module = _load_module('pulp.client.core.' + name)
         modules[name] = module
     return modules
+
+
+def load_core_commands(command_list=None):
+    """
+    Load the given commands from the core package modules.
+    @type command_list: list or tuple of str's or None
+    @param command_list: list of core module names to load, None means load all
+    @rtype: dict of str -> module instances
+    @return: dictionary of the loaded core modules, keyed by name
+    """
+    assert command_list is None or isinstance(command_list, (list, tuple))
+    commands = {}
+    # this relies on the commands and modules having the same name
+    modules = _load_core_modules(command_list)
+    for command, module in modules.items():
+        # this relies on the command and the command class having the same name
+        if not hasattr(module, command):
+            # TODO: log the failure
+            continue
+        commands[command] = getattr(module, command)()
+    return commands
