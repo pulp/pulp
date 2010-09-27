@@ -67,7 +67,7 @@ class user(BaseCore):
             usage = "user delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--deleteusername", dest="deleteusername",
-                           help="Username of user you wish to delete")
+                           help="username of user you wish to delete")
         if self.action == "list":
             usage = "user list [OPTIONS]"
             self.setup_option_parser(usage, "", True)

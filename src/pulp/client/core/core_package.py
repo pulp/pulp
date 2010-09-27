@@ -79,12 +79,11 @@ class package(BaseCore):
             usage = "package install [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                           help="Packages to be installed. \
-                           To specify multiple packages use multiple -n")
+                           help="packages to be installed; to specify multiple packages use multiple -n")
             self.parser.add_option("--consumerid", dest="consumerid",
-                           help="Consumer Id")
+                           help="consumer id")
             self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                           help="Consumer Group Id")
+                           help="consumer group id")
 
     def _do_core(self):
         if self.action == "info":
