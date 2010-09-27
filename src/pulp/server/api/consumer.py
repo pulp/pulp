@@ -233,6 +233,8 @@ class ConsumerApi(BaseApi):
             return
         repoids.append(repoid)
         self.update(consumer)
+        agent = Agent(id, async=True)
+        agent.repolib.update()
         self.consumer_history_api.repo_bound(id, repoid)
 
     @audit()
@@ -254,6 +256,8 @@ class ConsumerApi(BaseApi):
             return
         repoids.remove(repoid)
         self.update(consumer)
+        agent = Agent(id, async=True)
+        agent.repolib.update()
         self.consumer_history_api.repo_unbound(id, repoid)
         
     @audit(params=['id'])
