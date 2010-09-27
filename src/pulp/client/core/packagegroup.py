@@ -24,7 +24,7 @@ import time
 import pulp.client.constants as constants
 from pulp.client.config import Config
 from pulp.client.connection import ConsumerConnection, RepoConnection, RestlibException
-from pulp.client.core._base import print_header, BaseCore, systemExit
+from pulp.client.core.base import print_header, BaseCore, systemExit
 from pulp.client.logutil import getLogger
 
 

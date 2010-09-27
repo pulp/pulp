@@ -22,7 +22,7 @@ import sys
 import pulp.client.auth_utils as auth_utils
 from pulp.client.config import Config
 from pulp.client.connection import UserConnection
-from pulp.client.core._base import BaseCore
+from pulp.client.core.base import BaseCore
 from pulp.client.logutil import getLogger
 
 

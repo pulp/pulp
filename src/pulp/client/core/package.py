@@ -24,7 +24,7 @@ from pulp.client.config import Config
 from pulp.client.connection import (
     RepoConnection, ConsumerConnection, RestlibException,
     ConsumerGroupConnection)
-from pulp.client.core._base import BaseCore, systemExit, print_header
+from pulp.client.core.base import BaseCore, systemExit, print_header
 
 log = getLogger(__name__)
 CFG = Config()

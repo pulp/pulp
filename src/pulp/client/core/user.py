@@ -19,7 +19,7 @@
 import sys
 
 import pulp.client.constants as constants
-from pulp.client.core._base import BaseCore, systemExit
+from pulp.client.core.base import BaseCore, systemExit
 from pulp.client.connection import UserConnection, RestlibException
 from pulp.client.logutil import getLogger
 from pulp.client.repolib import RepoLib
