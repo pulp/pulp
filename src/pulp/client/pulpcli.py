@@ -35,7 +35,7 @@ class PulpCore:
         self.cli_cores = {}
         self.args = utils.findSysvArgs(sys.argv)
         if len(self.args) > 1:
-            cls  = self._load_core(self.args[1])
+            cls = self._load_core(self.args[1])
             if cls not in self._load_all_cores():
                 print ("Invalid Command. Please see --help for valid modules")
                 sys.exit(0)
@@ -45,29 +45,32 @@ class PulpCore:
                 cmd = cls()
                 if cmd.name != "cli":
                     self.cli_cores[cmd.name] = cmd
-    
-    
+
+
     def _add_core(self, cmd):
         self.cli_cores[cmd.name] = cmd
-        
+
     def _load_core(self, core):
-        name = "core_" + core
+        #name = "core_" + core
+        name = core
         mod = __import__('pulp.client.core.', globals(), locals(), [name])
         try:
             submod = getattr(mod, name)
         except AttributeError:
             return None
         return getattr(submod, core)
-    
+
     def _load_all_cores(self):
         pkgpth = os.path.dirname(core.__file__)
         modules = [name for _, name, _ in pkgutil.iter_modules([pkgpth])
-                   if name.startswith("core_")]
+                   if not name.startswith("_")]
+                   #if name.startswith("core_")]
         cls = []
         for name in modules:
             mod = __import__('pulp.client.core.', globals(), locals(), [name])
             submod = getattr(mod, name)
-            cls.append(getattr(submod, name.split("_")[-1]))
+            #cls.append(getattr(submod, name.split("_")[-1]))
+            cls.append(getattr(submod, name))
         return cls
 
     def _usage(self):
@@ -99,12 +102,12 @@ class PulpCore:
         return cmd
 
     def main(self):
-        
+
         cmd = self._find_best_match(sys.argv[1:])
         if not cmd:
             self._usage()
             sys.exit(0)
-        
+
         cmd.main()
 
 if __name__ == "__main__":
