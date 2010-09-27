@@ -217,6 +217,9 @@ class RepoApi(BaseApi):
                 repo['relative_path'] = uri
                 repo['groupid'] = groupid
                 self.update(repo)
+            except PulpException, pe:
+                log.error(pe)
+                continue
             except:
                 log.error("Error updating repo %s for product %s" % (label, groupid))
                 continue
