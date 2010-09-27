@@ -24,7 +24,7 @@ from pulp.client.config import Config
 from pulp.client.connection import (
     ErrataConnection, RestlibException, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
-from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.core._base import BaseCore, systemExit
 from pulp.client.logutil import getLogger
 
 

@@ -23,7 +23,7 @@ import sys
 import pulp.client.constants as constants
 from pulp.client.config import Config
 from pulp.client.connection import ConsumerConnection, RepoConnection, RestlibException
-from pulp.client.core.basecore import print_header, BaseCore, systemExit
+from pulp.client.core._base import print_header, BaseCore, systemExit
 from pulp.client.logutil import getLogger
 
 

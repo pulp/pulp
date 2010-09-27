@@ -22,7 +22,7 @@ import sys
 import pulp.client.constants as constants
 from pulp.client.config import Config
 from pulp.client.connection import ConsumerGroupConnection, RestlibException
-from pulp.client.core.basecore import BaseCore, systemExit, print_header
+from pulp.client.core._base import BaseCore, systemExit, print_header
 from pulp.client.logutil import getLogger
 from pulp.client.repolib import RepoLib
 
@@ -106,7 +106,7 @@ class consumergroup(BaseCore):
                            help="Repo Identifier")
             self.parser.add_option("--id", dest="groupid",
                            help="Consumer Group Identifier")
-        
+
         if self.action == "add_keyvalue":
             usage = "usage: %prog consumergroup add_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -115,8 +115,8 @@ class consumergroup(BaseCore):
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
             self.parser.add_option("--value", dest="value",
-                           help="Value corresponding to the key")      
-                        
+                           help="Value corresponding to the key")
+
         if self.action == "delete_keyvalue":
             usage = "usage: %prog consumergroup delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -124,8 +124,8 @@ class consumergroup(BaseCore):
                            help="Consumer Group Identifier")
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
-           
-            
+
+
 
     def _do_core(self):
         if self.action == "create":
@@ -145,7 +145,7 @@ class consumergroup(BaseCore):
         if self.action == "add_keyvalue":
             self._add_keyvalue()
         if self.action == "delete_keyvalue":
-            self._delete_keyvalue()    
+            self._delete_keyvalue()
 
     def _create(self):
         if not self.options.id:
@@ -287,7 +287,7 @@ class consumergroup(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-    def _add_keyvalue(self):    
+    def _add_keyvalue(self):
         if not self.options.groupid:
             print _("consumer group id required. Try --help")
             sys.exit(0)
@@ -296,7 +296,7 @@ class consumergroup(BaseCore):
             sys.exit(0)
         if not self.options.value:
             print("Value is required. Try --help")
-            sys.exit(0)            
+            sys.exit(0)
         try:
             self.cgconn.add_key_value_pair(self.options.groupid, self.options.key, self.options.value)
             print _(" Successfully added key-value pair %s:%s" % (self.options.key, self.options.value))
@@ -306,8 +306,8 @@ class consumergroup(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-        
-    def _delete_keyvalue(self):    
+
+    def _delete_keyvalue(self):
         if not self.options.groupid:
             print _("consumer group id required. Try --help")
             sys.exit(0)
@@ -322,5 +322,5 @@ class consumergroup(BaseCore):
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise           
+            raise
 

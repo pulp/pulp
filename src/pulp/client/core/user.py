@@ -16,11 +16,10 @@
 # in this software or its documentation.
 #
 
-import os
 import sys
 
 import pulp.client.constants as constants
-from pulp.client.core.basecore import BaseCore, systemExit
+from pulp.client.core._base import BaseCore, systemExit
 from pulp.client.connection import UserConnection, RestlibException
 from pulp.client.logutil import getLogger
 from pulp.client.repolib import RepoLib
@@ -39,19 +38,19 @@ class user(BaseCore):
         self.name = "user"
         self.actions = {"create" : "Create a user",
                         "list"   : "List available users",
-                        "delete" : "Delete a user",}
+                        "delete" : "Delete a user", }
 
         BaseCore.__init__(self, "user", usage, shortdesc, desc)
         self.repolib = RepoLib()
 
     def load_server(self):
-        self.userconn = UserConnection(host=CFG.server.host or "localhost", 
+        self.userconn = UserConnection(host=CFG.server.host or "localhost",
                                               port=CFG.server.port or 443,
-                                              username=self.username, 
+                                              username=self.username,
                                               password=self.password,
                                               cert_file=self.cert_filename,
                                               key_file=self.key_filename)
-        
+
     def generate_options(self):
         self.action = self._get_action()
         if self.action == "create":
@@ -90,8 +89,8 @@ class user(BaseCore):
         if not self.options.newpassword:
             self.options.newpassword = ""
         try:
-            user = self.userconn.create(self.options.newusername, 
-                                        self.options.newpassword, 
+            user = self.userconn.create(self.options.newusername,
+                                        self.options.newpassword,
                                         self.options.name)
             print _(" Successfully created User [ %s ] with name [ %s ]" % \
                                      (user['login'], user["name"]))
@@ -109,7 +108,7 @@ class user(BaseCore):
                 print _("No users available to list")
                 sys.exit(0)
             print "+-------------------------------------------+"
-            print "             Available Users                 "  
+            print "             Available Users                 "
             print "+-------------------------------------------+"
             for user in users:
                 print constants.AVAILABLE_USERS_LIST % (user["login"], user["name"])

@@ -26,7 +26,7 @@ import pulp.client.utils as utils
 from pulp.client import json_utils
 from pulp.client.config import Config
 from pulp.client.connection import ConsumerConnection, RestlibException
-from pulp.client.core.basecore import BaseCore, systemExit, print_header
+from pulp.client.core._base import BaseCore, systemExit, print_header
 from pulp.client.logutil import getLogger
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
@@ -106,34 +106,34 @@ class consumer(BaseCore):
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
-                
+
         if self.action == "add_keyvalue":
             usage = "usage: %prog consumer add_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
             self.parser.add_option("--value", dest="value",
-                           help="Value corresponding to the key")      
-            if self.is_admin:   
+                           help="Value corresponding to the key")
+            if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
-                
+
         if self.action == "delete_keyvalue":
             usage = "usage: %prog consumer delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
-            if self.is_admin:   
+            if self.is_admin:
                 self.parser.add_option("--id", dest="id",
-                                       help="Consumer Identifier")       
-                
+                                       help="Consumer Identifier")
+
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
             self.setup_option_parser(usage, "", True)
             self.parser.add_option("--key", dest="key",
                            help="Key Identifier")
             self.parser.add_option("--value", dest="value",
-                           help="Value corresponding to the key") 
+                           help="Value corresponding to the key")
 
         if self.action == "delete":
             usage = "usage: %prog consumer delete [OPTIONS]"
@@ -154,7 +154,7 @@ class consumer(BaseCore):
             self.parser.add_option('--start_date', dest='start_date',
                                    help='Only return entries that occur after the given date (format: mm-dd-yyyy)')
             self.parser.add_option('--end_date', dest='end_date',
-                                   help='Only return entries that occur before the given date (format: mm-dd-yyyy)')            
+                                   help='Only return entries that occur before the given date (format: mm-dd-yyyy)')
             if self.is_admin:
                 self.parser.add_option("--id", dest="id",
                                        help="Consumer Identifier")
@@ -258,7 +258,7 @@ class consumer(BaseCore):
     def _list(self):
         if self.options.key and not self.options.value:
             print _("key-value required. Try --help")
-            sys.exit(0) 
+            sys.exit(0)
         try:
             cons = self.cconn.consumers()
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
@@ -279,7 +279,7 @@ class consumer(BaseCore):
                 for con in consumers_with_keyvalues:
                     print constants.AVAILABLE_CONSUMER_INFO % \
                             (con["id"], con["description"], con["repoids"], con["package_profile"],
-                             con["key_value_pairs"])                          
+                             con["key_value_pairs"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -321,14 +321,14 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
             raise
 
-    def _add_keyvalue(self):    
+    def _add_keyvalue(self):
         consumerid = self.getConsumer()
         if not self.options.key:
             print("Key is required. Try --help")
             sys.exit(0)
         if not self.options.value:
             print("Value is required. Try --help")
-            sys.exit(0)            
+            sys.exit(0)
         try:
             self.cconn.add_key_value_pair(consumerid, self.options.key, self.options.value)
             print _(" Successfully added key-value pair %s:%s" % (self.options.key, self.options.value))
@@ -338,8 +338,8 @@ class consumer(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
-        
-    def _delete_keyvalue(self):    
+
+    def _delete_keyvalue(self):
         consumerid = self.getConsumer()
         if not self.options.key:
             print("Key is required. Try --help")
@@ -352,7 +352,7 @@ class consumer(BaseCore):
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise           
+            raise
 
 
     def _delete(self):
@@ -413,7 +413,7 @@ class consumer(BaseCore):
                 print _(" History retrieval failed for consumer [%s]" % consumerid)
             else:
                 systemExit(re.code, re.msg)
-            
+
     def getConsumer(self):
         if not self.options.id:
             print _("consumer id required. Try --help")

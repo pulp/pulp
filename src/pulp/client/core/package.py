@@ -18,17 +18,13 @@
 import gettext
 import sys
 import time
-import os.path
-from pulp.client.core.basecore import BaseCore, systemExit
-from pulp.client.connection import RepoConnection, ConsumerConnection, RestlibException
-from pulp.client.connection import ConsumerGroupConnection
+
 from pulp.client.logutil import getLogger
 from pulp.client.config import Config
 from pulp.client.connection import (
     RepoConnection, ConsumerConnection, RestlibException,
     ConsumerGroupConnection)
-from pulp.client.core.basecore import BaseCore, systemExit, print_header
-from pulp.client.logutil import getLogger
+from pulp.client.core._base import BaseCore, systemExit, print_header
 
 log = getLogger(__name__)
 CFG = Config()
