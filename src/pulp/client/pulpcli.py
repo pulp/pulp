@@ -50,9 +50,7 @@ class PulpCore:
     def _add_core(self, cmd):
         self.cli_cores[cmd.name] = cmd
 
-    def _load_core(self, core):
-        #name = "core_" + core
-        name = core
+    def _load_core(self, name):
         mod = __import__('pulp.client.core.', globals(), locals(), [name])
         try:
             submod = getattr(mod, name)
@@ -64,12 +62,10 @@ class PulpCore:
         pkgpth = os.path.dirname(core.__file__)
         modules = [name for _, name, _ in pkgutil.iter_modules([pkgpth])
                    if not name.startswith("_")]
-                   #if name.startswith("core_")]
         cls = []
         for name in modules:
             mod = __import__('pulp.client.core.', globals(), locals(), [name])
             submod = getattr(mod, name)
-            #cls.append(getattr(submod, name.split("_")[-1]))
             cls.append(getattr(submod, name))
         return cls
 
