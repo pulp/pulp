@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright © 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -11,6 +13,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+from pulp.client.cli.base import PulpBase
 
-class PulpAdmin(object):
+
+class PulpAdmin(PulpBase):
     pass
