@@ -142,8 +142,3 @@ class ErrataApi(BaseApi):
                     continue
         return matches
 
-    def search_by_repo(self, errata_id):
-        """
-        Goal is to return the repoid's of repos that contain this errata
-        """
-        pass

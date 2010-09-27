@@ -464,8 +464,26 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
+            repos = self.find_repos_by_errata(erratum['id'])
+            if repo["id"] in repos and len(repos) == 1:
+                self.errataapi.delete(erratum['id'])
+            else:
+                log.debug("Not deleting %s since it is referenced by these repos: %s" % (erratum["id"], repos))
         except Exception, e:
             raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
+
+    def find_repos_by_errata(self, errata_id):
+        """
+        Return repos that contain passed in errata_id
+        """
+        ret_val = []
+        repos = self.repositories(fields=["id", "errata"])
+        for r in repos:
+            for e_type in r["errata"]:
+                if errata_id in r["errata"][e_type]:
+                    ret_val.append(r["id"])
+                    break
+        return ret_val
 
     @audit(params=['repoid', 'group_id', 'group_name'])
     def create_packagegroup(self, repoid, group_id, group_name, description):
