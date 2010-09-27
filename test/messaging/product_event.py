@@ -52,6 +52,24 @@ class ProductDriver:
                  )
         p.send('product.created', d)
         #ed.stop()
+        
+    def update(self):
+        p = EventProducer()
+        content_set = [{
+            'content_set_label' : "rhel-server" ,
+            'content_rel_url' : "/content/dist/rhel/server/$releasever/$basearch/os"},]
+        cert_data = {'ca' : open(CA_CERT, "rb").read(),
+                     'cert' : open(CERT_FILE, "rb").read(),
+                     'key' : open(CERT_KEY, 'rb').read()}
+        d = dict(
+                 id='1',
+                 name = 'rhel-server',
+                 content_sets=content_set,
+                 ca_cert = open(CA_CERT, "rb").read(),
+                 entitlement_cert =  open(CERT_FILE, "rb").read(),
+                 cert_public_key  = open(CERT_KEY, 'rb').read()
+                 )
+        p.send('product.updated', d)
     
     def delete(self):
         p = EventProducer()
@@ -75,4 +93,5 @@ class ProductDriver:
 if __name__ == '__main__':
     pd = ProductDriver()
     pd.create()
+    pd.update()
     pd.delete()

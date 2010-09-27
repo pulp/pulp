@@ -182,6 +182,47 @@ class RepoApi(BaseApi):
 
         serv.disconnect()
         
+    @audit(params=['groupid', 'content_set'])
+    def update_product_repo(self, content_set, cert_data, groupid=None):
+        """
+         Creates a repo associated to a product. Usually through an event raised
+         from candlepin
+         @param groupid: A product the candidate repo should be associated with.
+         @type groupid: str
+         @param content_set: a dict of content set labels and relative urls
+         @type content_set: dict(<label> : <relative_url>,)
+         @param cert_data: a dictionary of ca_cert, cert and key for this product
+         @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
+        """
+        if not cert_data or not content_set:
+            # Nothing further can be done, exit
+            return
+        cert_files = self._write_certs_to_disk(groupid, cert_data)
+        CDN_URL = config.config.get("repos", "content_url")
+        CDN_HOST = urlparse(CDN_URL).hostname
+        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
+                                     cert=cert_files['cert'], key=cert_files['key'])
+        serv.connect()
+        repo_info = serv.fetch_urls(content_set)
+
+        for label, uri in repo_info.items():
+            try:
+                repo = self._get_existing_repo(label)
+                repo['feed'] = "yum:" + CDN_URL + '/' + uri
+                if cert_data:
+                    cert_files = self._write_certs_to_disk(label, cert_data)
+                    for key, value in cert_files.items():
+                        repo[key] = value
+                repo['arch'] = label.split("-")[-1]
+                repo['relative_path'] = uri
+                repo['groupid'] = groupid
+                self.update(repo)
+            except:
+                log.error("Error updating repo %s for product %s" % (label, groupid))
+                continue
+
+        serv.disconnect()
+        
     def delete_product_repo(self, content_set, cert_data, groupid=None):
         """
          delete repos associated to a product. Usually through an event raised
@@ -206,9 +247,8 @@ class RepoApi(BaseApi):
 
         for label, uri in repo_info.items():
             try:
-                repo = self.delete(label)
+                self.delete(label)
             except:
-                raise
                 log.error("Error deleting repo %s for product %s" % (label, groupid))
                 continue
 
