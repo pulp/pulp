@@ -17,4 +17,6 @@ from pulp.client.cli.base import PulpBase
 
 
 class PulpAdmin(PulpBase):
-    pass
+
+    def __init__(self):
+        super(PulpAdmin, self).__init__()

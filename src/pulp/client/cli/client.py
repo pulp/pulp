@@ -17,4 +17,8 @@ from pulp.client.cli.base import PulpBase
 
 
 class PulpClient(PulpBase):
+
     _modules = ['consumer', 'errata', 'repo']
+
+    def __init__(self):
+        super(PulpClient, self).__init__()
