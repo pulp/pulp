@@ -226,37 +226,26 @@ class RepoApi(BaseApi):
 
         serv.disconnect()
         
-    def delete_product_repo(self, content_set, cert_data, groupid=None):
+    def delete_product_repo(self, groupid=None):
         """
          delete repos associated to a product. Usually through an event raised
          from candlepin
          @param groupid: A product the candidate repo should be associated with.
          @type groupid: str
-         @param content_set: a dict of content set labels and relative urls
-         @type content_set: dict(<label> : <relative_url>,)
-         @param cert_data: a dictionary of ca_cert, cert and key for this product
-         @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
         """
-        if not cert_data or not content_set:
+        if not groupid:
             # Nothing further can be done, exit
             return
-        cert_files = self._write_certs_to_disk(groupid, cert_data)
-        CDN_URL = config.config.get("repos", "content_url")
-        CDN_HOST = urlparse(CDN_URL).hostname
-        serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
-                                     cert=cert_files['cert'], key=cert_files['key'])
-        serv.connect()
-        repo_info = serv.fetch_urls(content_set)
-
-        for label, uri in repo_info.items():
+        
+        repos = self.repositories(spec={"groupid" : groupid})
+        for repo in repos:
             try:
-                self.delete(label)
+                self.delete(repo['id'])
             except:
-                log.error("Error deleting repo %s for product %s" % (label, groupid))
+                log.error("Error deleting repo %s for product %s" % (repo['id'], groupid))
                 continue
-
-        serv.disconnect()
-
+    
+    @event(subject='repo.deleted')
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
