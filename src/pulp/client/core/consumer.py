@@ -90,7 +90,6 @@ class Info(ConsumerAction):
 class List(ConsumerAction):
 
     def setup_parser(self):
-        super(List, self).setup_parser()
         self.parser.add_option("--key", dest="key",
                        help="key identifier")
         self.parser.add_option("--value", dest="value",
