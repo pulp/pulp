@@ -42,19 +42,18 @@ CONSUMERID = "/etc/pulp/consumer"
 
 class ConsumerAction(Action):
 
+    def __init__(self):
+        super(ConsumerAction, self).__init__()
+        self.repolib = RepoLib()
+
+    def connections(self):
+        return {'cconn': ConsumerConnection}
+
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                        help="consumer identifier eg: foo.example.com")
         if hasattr(self, id):
             self.parser.set_defaults(id=self.id)
-
-    def setup_server(self):
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
-                                        port=443, username=self.username,
-                                        password=self.password,
-                                        cert_file=self.cert_filename,
-                                        key_file=self.key_filename)
-        self.repolib = RepoLib()
 
     def get_consumer(self):
         if not hasattr(self.opts, 'id'):

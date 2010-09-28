@@ -19,6 +19,10 @@ from gettext import gettext as _
 from optparse import OptionParser, SUPPRESS_USAGE
 
 from pulp.client import auth_utils
+from pulp.client.config import Config
+
+
+_cfg = Config()
 
 # output formatting -----------------------------------------------------------
 
@@ -54,9 +58,9 @@ def system_exit(code, msgs=None):
 
 systemExit = system_exit
 
-# core module base class -----------------------------------------------------
+# base command class ---------------------------------------------------------
 
-class BaseCore(object):
+class Command(object):
 
     _default_actions = {}
 
@@ -109,29 +113,44 @@ class BaseCore(object):
             return None
         return getattr(self, name)
 
+    def setup_action_connections(self, action):
+        connections = action.connections()
+        for name, cls in connections.items():
+            connection = cls(host=_cfg.server.host or 'localhost',
+                             port=_cfg.server.port or 443,
+                             username=self.username,
+                             password=self.password,
+                             cert_file=self.cert_file,
+                             key_file=self.key_file)
+            setattr(action, name, connection)
+
     def main(self, args):
         if not args:
             self.parser.error(_('no action given: please see --help'))
         self.parser.parse_args(args)
         action = self.get_action(args[0])
-        action.set_state(username=self.username, password=self.password,
-                         cert_file=self.cert_file, key_file=self.key_file)
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
+        self.setup_action_connections(action)
         action.main(args[1:])
+
+
+BaseCore = Command
 
 # base action class -------------------------------------------------
 
 class Action(object):
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
         self.parser = OptionParser(usage=SUPPRESS_USAGE)
         self.opts = None
         self.args = None
 
     def set_state(self, **kwargs):
         self.__dict__.update(kwargs)
+
+    def connections(self):
+        return {}
 
     def setup_parser(self):
         pass

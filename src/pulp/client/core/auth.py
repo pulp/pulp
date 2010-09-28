@@ -20,25 +20,14 @@ import sys
 from gettext import gettext as _
 
 from pulp.client import auth_utils
-from pulp.client.config import Config
 from pulp.client.connection import UserConnection
 from pulp.client.core.base import BaseCore, Action
-from pulp.client.logutil import getLogger
-
-
-_cfg = Config()
-_log = getLogger(__name__)
 
 
 class AuthAction(Action):
 
-    def setup_server(self):
-        self.authconn = UserConnection(host=_cfg.server.host or "localhost",
-                                       port=_cfg.server.port or 443,
-                                       username=self.username,
-                                       password=self.password,
-                                       cert_file=self.cert_file,
-                                       key_file=self.key_file)
+    def connections(self):
+        return {'authconn': UserConnection}
 
 
 class Login(AuthAction):
