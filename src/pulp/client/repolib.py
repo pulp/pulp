@@ -18,7 +18,6 @@ Contains repo management (backend) classes.
 """
 
 import os
-from urllib import basejoin
 from iniparse import ConfigParser as Parser
 from pulp.client import ConsumerId
 from pulp.client.connection import ConsumerConnection, RepoConnection
@@ -193,8 +192,11 @@ class UpdateAction(Action):
         """
         if '://' in url:
             return url
-        else:
-            return basejoin(base, url)
+        if base.endswith('/'):
+            base = base[:-1]
+        if url.startswith('/'):
+            url = url[1:]
+        return '/'.join((base, url))
 
 
 class Repo(dict):
