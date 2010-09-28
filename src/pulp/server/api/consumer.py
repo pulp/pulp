@@ -319,7 +319,7 @@ class ConsumerApi(BaseApi):
         if errataids:
             applicable_errata = self._applicable_errata(consumer, types)
             for eid in errataids:
-                errata_titles.append(applicable_errata[eid]['title'])
+                errata_titles.append(eid)
                 for pobj in applicable_errata[eid]:
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"])

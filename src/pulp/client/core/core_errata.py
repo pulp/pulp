@@ -18,6 +18,7 @@
 
 import gettext
 import sys
+import time
 
 import pulp.client.constants as constants
 from pulp.client.config import Config
