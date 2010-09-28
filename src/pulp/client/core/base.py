@@ -66,8 +66,6 @@ class BaseCore(object):
         # options and arguments
         self.parser = OptionParser(usage=self.usage())
         self.parser.disable_interspersed_args()
-        self.opts = None
-        self.args = None
         # credentials
         self.username = None
         self.password = None
@@ -114,13 +112,12 @@ class BaseCore(object):
     def main(self, args):
         if not args:
             self.parser.error(_('no action given: please see --help'))
-        self.args = args
         self.parser.parse_args(args)
         action = self.get_action(args[0])
         action.set_state(username=self.username, password=self.password,
                          cert_file=self.cert_file, key_file=self.key_file)
         if action is None:
-            self.parser.error('invalid action: please see --help')
+            self.parser.error(_('invalid action: please see --help'))
         action.main(args[1:])
 
 # base action class -------------------------------------------------
