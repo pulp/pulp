@@ -294,7 +294,8 @@ class consumer(BaseCore):
             sys.exit(0)
         try:
             self.cconn.bind(consumerid, self.options.repoid)
-            self.repolib.update()
+            if not self.is_admin:
+                self.repolib.update()
             print _(" Successfully subscribed consumer [%s] to repo [%s]") % \
                 (consumerid, self.options.repoid)
         except RestlibException, re:
@@ -311,7 +312,8 @@ class consumer(BaseCore):
             sys.exit(0)
         try:
             self.cconn.unbind(consumerid, self.options.repoid)
-            self.repolib.update()
+            if not self.is_admin:
+                self.repolib.update()
             print _(" Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, self.options.repoid)
         except RestlibException, re:
