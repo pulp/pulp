@@ -169,9 +169,7 @@ class ConsumerApi(BaseApi):
                 
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
-        
-
-    
+            
 
     def consumers_with_key_value(self, key, value, fields=None):
         """
@@ -179,7 +177,7 @@ class ConsumerApi(BaseApi):
         """
         consumer_key = 'key_value_pairs.' + key
         return self.consumers({consumer_key: value}, fields)       
-
+    
     
     @audit()
     def certificate(self, id):

@@ -189,7 +189,8 @@ class consumergroup(BaseCore):
             print_header("List of Available Consumer Groups")
             for group in groups:
                     print constants.AVAILABLE_CONSUMER_GROUP_INFO % (
-                        group["id"], group["description"], group["consumerids"])
+                        group["id"], group["description"], group["consumerids"], 
+                        group["key_value_pairs"])
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
