@@ -15,137 +15,102 @@
 # in this software or its documentation.
 #
 
-import gettext
 import sys
 import time
+from gettext import gettext as _
 
-from pulp.client.logutil import getLogger
-from pulp.client.config import Config
 from pulp.client.connection import (
-    RepoConnection, ConsumerConnection, RestlibException,
-    ConsumerGroupConnection)
-from pulp.client.core.base import BaseCore, systemExit, print_header
+    RepoConnection, ConsumerConnection, ConsumerGroupConnection)
+from pulp.client.core.base import Action, BaseCore, system_exit, print_header
 
-log = getLogger(__name__)
-CFG = Config()
-#TODO: move this to config
-CONSUMERID = "/etc/pulp/consumer"
-_ = gettext.gettext
+# package action base class ---------------------------------------------------
+
+class PackageAction(Action):
+
+    def connections(self):
+        conns = {
+            'pconn': RepoConnection,
+            'cconn': ConsumerConnection,
+            'cgconn': ConsumerGroupConnection,
+        }
+        return conns
+
+# package actions -------------------------------------------------------------
+
+class Info(PackageAction):
+
+    name = 'info'
+    plug = 'lookup information for a package'
+
+    def setup_parser(self):
+        self.parser.add_option("-n", "--name", dest="name",
+                               help="package name to lookup")
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
+
+    def run(self):
+        name = self.get_required_option('name')
+        repoid = self.get_required_option('repoid')
+        pkg = self.pconn.get_package(repoid, name)
+        if not pkg:
+            system_exit(-1, _("package [%s] not found in repo [%s]") %
+                        (name, repoid))
+        print_header("Package Information")
+        for key, value in pkg.items():
+            print """%s:                \t%-25s""" % (key, value)
 
 
-class package(BaseCore):
-    def __init__(self):
-        usage = "package [OPTIONS]"
-        shortdesc = "package specific actions to pulp server."
-        desc = ""
-        self.name = "package"
-        self.actions = {"info"          : "lookup information for a package",
-                        "install"       : "Schedule a package Install", }
-        BaseCore.__init__(self, "package", usage, shortdesc, desc)
-        self.pconn = None
-        self.cconn = None
+class Install(PackageAction):
 
-    def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost",
-                                    port=443, username=self.username,
-                                    password=self.password,
-                                    cert_file=self.cert_filename,
-                                    key_file=self.key_filename)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
-                                        port=443, username=self.username,
-                                        password=self.password,
-                                        cert_file=self.cert_filename,
-                                        key_file=self.key_filename)
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost",
-                                              port=443, username=self.username,
-                                              password=self.password,
-                                              cert_file=self.cert_filename,
-                                              key_file=self.key_filename)
+    name = 'install'
+    plug = 'schedule a package install'
 
-    def generate_options(self):
-        self.action = self._get_action()
-        if self.action == "info":
-            usage = "package info [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("-n", "--name", dest="name",
-                           help="package name to lookup")
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label")
-        if self.action == "install":
-            usage = "package install [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                           help="packages to be installed; to specify multiple packages use multiple -n")
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="consumer id")
-            self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                           help="consumer group id")
+    def setup_parser(self):
+        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                               help="packages to be installed; to specify multiple packages use multiple -n")
+        self.parser.add_option("--consumerid", dest="consumerid",
+                               help="consumer id")
+        self.parser.add_option("--consumergroupid", dest="consumergroupid",
+                               help="consumer group id")
 
-    def _do_core(self):
-        if self.action == "info":
-            self._info()
-        if self.action == "install":
-            self._install()
+    def run(self):
+        consumerid = self.opts.consumerid
+        consumergroupid = self.opts.consumergroupid
+        if not (consumerid or consumergroupid):
+            system_exit(0, _("consumer or consumer group id required. Try --help"))
+        pnames = self.opts.pnames
+        if not pnames:
+            system_exit(0, _("nothing to Upload."))
+        if consumergroupid:
+            task = self.cgconn.installpackages(consumergroupid, pnames)
+        else:
+            task = self.cconn.installpackages(consumerid, pnames)
+        print _('created task id: %s') % task['id']
+        state = None
+        spath = task['status_path']
+        while state not in ('finished', 'error', 'canceled', 'timed_out'):
+            sys.stdout.write('.')
+            sys.stdout.flush()
+            time.sleep(2)
+            status = self.cconn.task_status(spath)
+            state = status['state']
+        if state == 'finished':
+            print _('\n[%s] installed on %s') % \
+                  (status['result'], (consumerid or consumergroupid))
+        else:
+            print _("\npackage install failed")
 
-    def _info(self):
-        if not self.options.name:
-            print _("package name required. Try --help")
-            sys.exit(0)
-        if not self.options.repoid:
-            print _("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            pkg = self.pconn.get_package(self.options.repoid, self.options.name)
-            if not pkg:
-                print _("Package [%s] not found in repo [%s]") % \
-                    (self.options.name, self.options.repoid)
-                sys.exit(-1)
-            print_header("Package Information")
-            for key, value in pkg.items():
-                print """%s:                \t%-25s""" % (key, value)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+# package command -------------------------------------------------------------
 
-    def _install(self):
-        if not self.options.consumerid and not self.options.consumergroupid:
-            print _("consumer or consumer group id required. Try --help")
-            sys.exit(0)
-        if not self.options.pnames:
-            print _("Nothing to Upload.")
-            sys.exit(0)
-        try:
-            if self.options.consumergroupid:
-                task = self.cgconn.installpackages(
-                            self.options.consumergroupid,
-                            self.options.pnames)
-            else:
-                task = self.cconn.installpackages(
-                            self.options.consumerid,
-                            self.options.pnames)
-            print _('Created task ID: %s') % task['id']
-            state = None
-            spath = task['status_path']
-            while state not in ['finished', 'error']:
-                sys.stdout.write('.')
-                sys.stdout.flush()
-                time.sleep(2)
-                status = self.cconn.task_status(spath)
-                state = status['state']
-            if state == 'finished':
-                print _('\n[%s] installed on %s') % \
-                      (status['result'],
-                       (self.options.consumerid or
-                       self.options.consumergroupid))
-            else:
-                print("\nPackage install failed")
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+class Package(BaseCore):
 
+    name = 'package'
+    _default_actions = ('info', 'install')
+
+    def __init__(self, actions=_default_actions):
+        super(Package, self).__init__(actions)
+        self.info = Info()
+        self.install = Install()
+
+
+command_class = package = Package
