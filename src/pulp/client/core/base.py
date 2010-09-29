@@ -20,9 +20,12 @@ from optparse import OptionParser, SUPPRESS_USAGE
 
 from pulp.client import auth_utils
 from pulp.client.config import Config
+from pulp.client.connection import RestlibException
+from pulp.client.logutil import getLogger
 
 
 _cfg = Config()
+_log = getLogger(__name__)
 
 # output formatting -----------------------------------------------------------
 
@@ -164,8 +167,20 @@ class Action(object):
     def run(self):
         raise NotImplementedError('Base class method called')
 
+    def get_required_option(self, opt):
+        if not hasattr(self.opts, opt):
+            self.parser.error(_('option %s is required; please see --help') % opt)
+        return getattr(self.opts, opt)
+
     def main(self, args):
         self.setup_parser()
         self.opts, self.args = self.parse_args(args)
-        self.setup_server()
-        self.run()
+        try:
+            self.setup_server()
+            self.run()
+        except RestlibException, re:
+            _log.error("error: %s" % re)
+            system_exit(re.code, _('error: operation failed') + re.msg)
+        except Exception, e:
+            _log.error("error: %s" % e)
+            raise
