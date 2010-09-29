@@ -154,11 +154,12 @@ class Consumer(Base):
         self.key_value_pairs = key_value_pairs
 
 class ConsumerGroup(Base):
-    def __init__(self, id, description, consumerids=[]):
+    def __init__(self, id, description, consumerids=[], key_value_pairs = {}):
         self._id = id
         self.id = id
         self.description = description
         self.consumerids = consumerids
+        self.key_value_pairs = key_value_pairs
 
 class ConsumerHistoryEvent(Base):
     def __init__(self, consumer_id, originator, type_name, details):

@@ -172,7 +172,7 @@ class ConsumerGroupApi(BaseApi):
     @audit()
     def add_key_value_pair(self, id, key, value):
         """
-        Add key-value info to all consumers in a consumer group.
+        Add key-value info to a consumer group.
         @param id: A consumer group id.
         @type id: str
         @param repoid: key
@@ -185,14 +185,19 @@ class ConsumerGroupApi(BaseApi):
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
         
-        for consumerid in consumergroup['consumerids']:
-            self.consumerApi.add_key_value_pair(consumerid, key, value)
+        key_value_pairs = consumergroup['key_value_pairs']
+        if key not in key_value_pairs.keys():
+            key_value_pairs[key] = value
+        else: 
+            raise PulpException('Given key [%s] already exists', key)    
+        consumergroup['key_value_pairs'] = key_value_pairs
+        self.update(consumergroup)   
             
                         
     @audit()
     def delete_key_value_pair(self, id, key):
         """
-        delete key-value info from all consumers in a consumer group.
+        delete key-value info from a consumer group.
         @param id: A consumer group id.
         @type id: str
         @param repoid: key
@@ -203,9 +208,38 @@ class ConsumerGroupApi(BaseApi):
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
         
-        for consumerid in consumergroup['consumerids']:
-            self.consumerApi.delete_key_value_pair(consumerid, key)        
-       
+        key_value_pairs = consumergroup['key_value_pairs']
+        if key in key_value_pairs.keys():
+            del key_value_pairs[key] 
+        else: 
+            raise PulpException('Given key [%s] does not exist', key)
+        consumergroup['key_value_pairs'] = key_value_pairs
+        self.update(consumergroup)
+
+    @audit()
+    def update_key_value_pair(self, id, key, value):
+        """
+        Update key-value info of a consumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param repoid: key
+        @type repoid: str
+        @param value: value
+        @type: str
+        @raise PulpException: When consumer group is not found.
+        """
+        consumergroup = self.consumergroup(id)    
+        if not consumergroup:
+            raise PulpException('Consumer Group [%s] does not exist', id)
+        
+        key_value_pairs = consumergroup['key_value_pairs']
+        if key not in key_value_pairs.keys():
+            raise PulpException('Given key [%s] does not exist', key)    
+        else: 
+            key_value_pairs[key] = value
+        consumergroup['key_value_pairs'] = key_value_pairs
+        self.update(consumergroup)
+                
         
     @audit()
     def installpackages(self, id, packagenames=[]):

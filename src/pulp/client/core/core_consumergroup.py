@@ -47,7 +47,8 @@ class consumergroup(BaseCore):
                         "bind"   : "Bind the consumer group to listed repos",
                         "unbind" : "Unbind the consumer group from repos",
                         "add_keyvalue"     : "Add key-value information to consumergroup",
-                        "delete_keyvalue"  : "Delete key-value information to consumergroup", }
+                        "delete_keyvalue"  : "Delete key-value information to consumergroup",
+                        "update_keyvalue"  : "Update key-value information of a consumergroup" }
         BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
         self.repolib = RepoLib()
 
@@ -105,8 +106,7 @@ class consumergroup(BaseCore):
             self.parser.add_option("--repoid", dest="repoid",
                            help="repository identifier")
             self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
-        
+                           help="consumer group identifier")        
         if self.action == "add_keyvalue":
             usage = "usage: %prog consumergroup add_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -115,8 +115,7 @@ class consumergroup(BaseCore):
             self.parser.add_option("--key", dest="key",
                            help="key identifier")
             self.parser.add_option("--value", dest="value",
-                           help="value corresponding to the key")      
-                        
+                           help="value corresponding to the key")                        
         if self.action == "delete_keyvalue":
             usage = "usage: %prog consumergroup delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -124,7 +123,15 @@ class consumergroup(BaseCore):
                            help="consumer group identifier")
             self.parser.add_option("--key", dest="key",
                            help="key identifier")
-           
+        if self.action == "update_keyvalue":
+            usage = "usage: %prog consumergroup update_keyvalue [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            self.parser.add_option("--id", dest="groupid",
+                           help="consumer group identifier")
+            self.parser.add_option("--key", dest="key",
+                           help="key identifier")
+            self.parser.add_option("--value", dest="value",
+                           help="value corresponding to the key")     
             
 
     def _do_core(self):
@@ -145,7 +152,10 @@ class consumergroup(BaseCore):
         if self.action == "add_keyvalue":
             self._add_keyvalue()
         if self.action == "delete_keyvalue":
-            self._delete_keyvalue()    
+            self._delete_keyvalue()
+        if self.action == "update_keyvalue":
+            self._update_keyvalue()
+                
 
     def _create(self):
         if not self.options.id:
@@ -322,5 +332,25 @@ class consumergroup(BaseCore):
             systemExit(re.code, re.msg)
         except Exception, e:
             log.error("Error: %s" % e)
-            raise           
+            raise   
 
+
+    def _update_keyvalue(self):    
+        if not self.options.groupid:
+            print _("consumer group id required. Try --help")
+            sys.exit(0)
+        if not self.options.key:
+            print("Key is required. Try --help")
+            sys.exit(0)
+        if not self.options.value:
+            print("Value is required. Try --help")
+            sys.exit(0)            
+        try:
+            self.cgconn.update_key_value_pair(self.options.groupid, self.options.key, self.options.value)
+            print _(" Successfully updated key-value pair %s:%s" % (self.options.key, self.options.value))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise

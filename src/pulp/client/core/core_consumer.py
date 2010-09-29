@@ -54,6 +54,7 @@ class consumer(BaseCore):
                                    "unbind"           : "Unbind the consumer from repos",
                                    "add_keyvalue"     : "Add key-value information to consumer",
                                    "delete_keyvalue"  : "Delete key-value information to consumer",
+                                   "update_keyvalue"  : "Update key-value information of a consumer",
                                    "history"          : "View the consumer history",
         }
         self.is_admin = is_admin
@@ -125,7 +126,18 @@ class consumer(BaseCore):
                            help="key identifier")
             if self.is_admin:   
                 self.parser.add_option("--id", dest="id",
-                                       help="consumer identifier")       
+                                       help="consumer identifier")
+                
+        if self.action == "update_keyvalue":
+            usage = "usage: %prog consumer update_keyvalue [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            self.parser.add_option("--key", dest="key",
+                           help="key identifier")
+            self.parser.add_option("--value", dest="value",
+                           help="value corresponding to the key")      
+            if self.is_admin:   
+                self.parser.add_option("--id", dest="id",
+                                       help="consumer identifier")               
                 
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
@@ -177,6 +189,8 @@ class consumer(BaseCore):
             self._add_keyvalue()
         if self.action == "delete_keyvalue":
             self._delete_keyvalue()
+        if self.action == "update_keyvalue":
+            self._update_keyvalue()
         if self.action == "history":
             self._history()
 
@@ -356,6 +370,23 @@ class consumer(BaseCore):
             log.error("Error: %s" % e)
             raise           
 
+    def _update_keyvalue(self):    
+        consumerid = self.getConsumer()
+        if not self.options.key:
+            print("Key is required. Try --help")
+            sys.exit(0)
+        if not self.options.value:
+            print("Value is required. Try --help")
+            sys.exit(0)            
+        try:
+            self.cconn.update_key_value_pair(consumerid, self.options.key, self.options.value)
+            print _(" Successfully updated key-value pair %s:%s" % (self.options.key, self.options.value))
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise
 
     def _delete(self):
         consumerid = self.getConsumer()

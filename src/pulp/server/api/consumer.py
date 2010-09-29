@@ -104,7 +104,7 @@ class ConsumerApi(BaseApi):
     @audit()
     def add_key_value_pair(self, id, key, value):
         """
-        Add key-value info to a consumers.
+        Add key-value info to a consumer.
         @param id: consumer id.
         @type id: str
         @param repoid: key
@@ -145,6 +145,32 @@ class ConsumerApi(BaseApi):
             raise PulpException('Given key [%s] does not exist', key)
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
+
+    @audit()
+    def update_key_value_pair(self, id, key, value):
+        """
+        Update key-value info of a consumer.
+        @param id: consumer id.
+        @type id: str
+        @param repoid: key
+        @type repoid: str
+        @param value: value
+        @type: str
+        @raise PulpException: When consumer is not found or given key exists.
+        """       
+        consumer = self.consumer(id)    
+        if not consumer:
+            raise PulpException('Consumer [%s] does not exist', id)
+        key_value_pairs = consumer['key_value_pairs']
+        if key not in key_value_pairs.keys():
+            raise PulpException('Given key [%s] does not exist', key)
+        else:
+            key_value_pairs[key] = value 
+                
+        consumer['key_value_pairs'] = key_value_pairs
+        self.update(consumer)
+        
+
     
 
     def consumers_with_key_value(self, key, value, fields=None):

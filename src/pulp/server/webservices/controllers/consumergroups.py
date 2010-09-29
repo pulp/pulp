@@ -103,6 +103,7 @@ class ConsumerGroupActions(AsyncController):
         'unbind',
         'add_key_value_pair',
         'delete_key_value_pair',
+        'update_key_value_pair',
         'add_consumer',
         'delete_consumer',
         'installpackages',
@@ -144,6 +145,15 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         api.delete_key_value_pair(id, data)
         return self.ok(True) 
+   
+    def update_key_value_pair(self, id):
+        """
+        Update key-value information of a consumergroup.
+        @param id: consumergroup id
+        """
+        data = self.params()
+        api.update_key_value_pair(id, data['key'], data['value'])
+        return self.ok(True)
    
     def add_consumer(self, id):
         """

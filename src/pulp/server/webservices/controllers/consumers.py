@@ -221,6 +221,7 @@ class ConsumerActions(AsyncController):
         'unbind',
         'add_key_value_pair',
         'delete_key_value_pair',
+        'update_key_value_pair',
         'profile',
         'installpackages',
         'installpackagegroups',
@@ -270,6 +271,17 @@ class ConsumerActions(AsyncController):
         data = self.params()
         consumer_api.delete_key_value_pair(id, data)
         return self.ok(True) 
+    
+    @RoleCheck(consumer_id=True, admin=True)
+    def update_key_value_pair(self, id):
+        """
+        Update key-value information of a consumer.
+        @param id: consumer id
+        
+        """
+        data = self.params()
+        consumer_api.update_key_value_pair(id, data['key'], data['value'])
+        return self.ok(True)
     
     @RoleCheck(consumer_id=True, admin=True)
     def profile(self, id):
