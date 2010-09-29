@@ -54,26 +54,6 @@ class ConsumerAction(Action):
 
 # consumer actions ------------------------------------------------------------
 
-class Info(ConsumerAction):
-
-    name = 'info'
-    plug = 'list of accessible consumer info'
-
-    def run(self):
-        id = self.get_required_option('id')
-        cons = self.cconn.consumer(id)
-        pkgs = ""
-        for pkg in cons['package_profile'].values():
-            for pkgversion in pkg:
-                pkgs += " " + utils.getRpmName(pkgversion)
-        cons['package_profile'] = pkgs
-        print_header("Consumer Information")
-        for con in cons:
-            print constants.AVAILABLE_CONSUMER_INFO % \
-                    (con["id"], con["description"], con["repoids"],
-                     con["package_profile"])
-
-
 class List(ConsumerAction):
 
     name = 'list'
@@ -113,6 +93,26 @@ class List(ConsumerAction):
             print constants.AVAILABLE_CONSUMER_INFO % \
                     (con["id"], con["description"], con["repoids"],
                      con["package_profile"], con["key_value_pairs"])
+
+
+class Info(ConsumerAction):
+
+    name = 'info'
+    plug = 'list of accessible consumer info'
+
+    def run(self):
+        id = self.get_required_option('id')
+        cons = self.cconn.consumer(id)
+        pkgs = ""
+        for pkg in cons['package_profile'].values():
+            for pkgversion in pkg:
+                pkgs += " " + utils.getRpmName(pkgversion)
+        cons['package_profile'] = pkgs
+        print_header("Consumer Information")
+        for con in cons:
+            print constants.AVAILABLE_CONSUMER_INFO % \
+                    (con["id"], con["description"], con["repoids"],
+                     con["package_profile"])
 
 
 class Create(ConsumerAction):
@@ -294,7 +294,7 @@ class History(ConsumerAction):
 
 class Consumer(BaseCore):
 
-    _default_actions = ('info', 'list', 'create', 'delete', 'update',
+    _default_actions = ('list', 'info', 'create', 'delete', 'update',
                         'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
                         'history')
 
