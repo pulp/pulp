@@ -26,7 +26,7 @@ from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
 from pulp.client.connection import ConsumerConnection, RestlibException
-from pulp.client.core.base import Action, BaseCore, systemExit, print_header
+from pulp.client.core.base import Action, BaseCore, print_header, system_exit
 from pulp.client.logutil import getLogger
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
@@ -51,80 +51,65 @@ class ConsumerAction(Action):
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
-                       help="consumer identifier eg: foo.example.com")
+                               help=_("consumer identifier eg: foo.example.com"))
         if hasattr(self, id):
             self.parser.set_defaults(id=self.id)
-
-    def get_consumer(self):
-        if not hasattr(self.opts, 'id'):
-            self.parser.error(_("consumer id required; try --help"))
-        return self.opts.id
-
-    getConsumer = get_consumer
 
 # consumer actions ------------------------------------------------------------
 
 class Info(ConsumerAction):
 
     def run(self):
-        try:
-            cons = self.cconn.consumer(self.getConsumer())
-            pkgs = " "
-            for pkg in cons['package_profile'].values():
-                for pkgversion in pkg:
-                    pkgs += " " + utils.getRpmName(pkgversion)
-            cons['package_profile'] = pkgs
-            print_header("Consumer Information")
-            for con in cons:
-                print constants.AVAILABLE_CONSUMER_INFO % \
-                        (con["id"], con["description"], con["repoids"], con["package_profile"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        id = self.get_required_option('id')
+        cons = self.cconn.consumer(id)
+        pkgs = ""
+        for pkg in cons['package_profile'].values():
+            for pkgversion in pkg:
+                pkgs += " " + utils.getRpmName(pkgversion)
+        cons['package_profile'] = pkgs
+        print_header("Consumer Information")
+        for con in cons:
+            print constants.AVAILABLE_CONSUMER_INFO % \
+                    (con["id"], con["description"], con["repoids"],
+                     con["package_profile"])
 
 
 class List(ConsumerAction):
 
     def setup_parser(self):
-        self.parser.add_option("--key", dest="key",
-                       help="key identifier")
+        self.parser.add_option("--key", dest="key", help="key identifier")
         self.parser.add_option("--value", dest="value",
-                       help="value corresponding to the key")
+                               help="value corresponding to the key")
 
     def run(self):
-        if self.opts.key and not self.opts.value:
-            print _("key-value required. Try --help")
-            sys.exit(0)
-        try:
-            cons = self.cconn.consumers()
-            baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
+        key = getattr(self.opts, 'key', None)
+        value = None
+        if key is not None:
+            value = self.get_required_option('value')
+        cons = self.cconn.consumers()
+        baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host,
+                                  CFG.server.port)
+        for con in cons:
+            con['package_profile'] = urlparse.urljoin(baseurl,
+                                                      con['package_profile'])
+        if key is None:
+            print_header("Consumer Information ")
             for con in cons:
-                con['package_profile'] = urlparse.urljoin(baseurl, con['package_profile'])
-            if not self.opts.key:
-                print_header("Consumer Information ")
-                for con in cons:
-                    print constants.AVAILABLE_CONSUMER_INFO % \
-                            (con["id"], con["description"], con["repoids"], con["package_profile"],
-                             con["key_value_pairs"])
-            else:
-                consumers_with_keyvalues = []
-                for con in cons:
-                    key_value_pairs = con['key_value_pairs']
-                    if (self.opts.key in key_value_pairs.keys()) and (key_value_pairs[self.opts.key] == self.opts.value):
-                        consumers_with_keyvalues.append(con)
-                for con in consumers_with_keyvalues:
-                    print constants.AVAILABLE_CONSUMER_INFO % \
-                            (con["id"], con["description"], con["repoids"], con["package_profile"],
-                             con["key_value_pairs"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+                print constants.AVAILABLE_CONSUMER_INFO % \
+                        (con["id"], con["description"], con["repoids"],
+                         con["package_profile"], con["key_value_pairs"])
+            system_exit(0)
+
+        consumers_with_keyvalues = []
+        for con in cons:
+            key_value_pairs = con['key_value_pairs']
+            if (key in key_value_pairs.keys()) and \
+                (key_value_pairs[key] == value):
+                consumers_with_keyvalues.append(con)
+        for con in consumers_with_keyvalues:
+            print constants.AVAILABLE_CONSUMER_INFO % \
+                    (con["id"], con["description"], con["repoids"],
+                     con["package_profile"], con["key_value_pairs"])
 
 
 class Create(ConsumerAction):
@@ -132,85 +117,42 @@ class Create(ConsumerAction):
     def setup_parser(self):
         super(Create, self).setup_parser()
         self.parser.add_option("--description", dest="description",
-                       help="consumer description eg: foo's web server")
-        self.parser.add_option("--server", dest="server",
-                       help="the fully qualified hostname of the pulp server you wish to create this consumer on")
+                               help="consumer description eg: foo's web server")
         self.parser.add_option("--location", dest="location",
-                       help="location or datacenter of the consumer")
+                               help="location or datacenter of the consumer")
 
     def run(self):
-        if (not self.opts.username and not self.opts.password
-                and (len(self.args) > 0)):
-            print _("username and password are required. Try --help")
-            sys.exit(1)
-        if not self.opts.id:
-            print _("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.opts.description:
-            self.opts.description = self.opts.id
-        if self.opts.location:
-            key_value_pairs = {'location': self.opts.location}
-        else:
-            key_value_pairs = {}
-        if self.opts.server:
-            CFG.server.host = self.opts.server
-            CFG.write()
-            self.load_server()
-        try:
-            try:
-                consumer = self.cconn.create(self.opts.id, self.opts.description, key_value_pairs)
-            except SSL.Checker.WrongHost, wh:
-                print constants.CONSUMER_WRONG_HOST_ERROR % \
-                    (wh.expectedHost, wh.actualHost, wh.actualHost)
-                sys.exit(1)
-
-            cert_dict = self.cconn.certificate(self.opts.id)
-            certificate = cert_dict['certificate']
-            key = cert_dict['private_key']
-            utils.writeToFile(CONSUMERID, consumer['id'])
-            utils.writeToFile(ConsumerConnection.CERT_PATH, certificate)
-            utils.writeToFile(ConsumerConnection.KEY_PATH, key)
-            pkginfo = PackageProfile().getPackageList()
-            self.cconn.profile(self.opts.id, pkginfo)
-            print _(" Successfully created consumer [ %s ]") % consumer['id']
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s", exc_info=True)
-            raise
+        id = self.get_required_option('id')
+        description = getattr(self.opts, 'description', id)
+        location = getattr(self.opts, 'location', None)
+        key_value_pairs = {} if location is None else {'location': location}
+        consumer = self.cconn.create(id, description, key_value_pairs)
+        cert_dict = self.cconn.certificate(id)
+        certificate = cert_dict['certificate']
+        key = cert_dict['private_key']
+        utils.writeToFile(CONSUMERID, consumer['id'])
+        utils.writeToFile(ConsumerConnection.CERT_PATH, certificate)
+        utils.writeToFile(ConsumerConnection.KEY_PATH, key)
+        pkginfo = PackageProfile().getPackageList()
+        self.cconn.profile(id, pkginfo)
+        print _(" successfully created consumer [ %s ]") % consumer['id']
 
 
 class Delete(ConsumerAction):
 
     def run(self):
-        consumerid = self.getConsumer()
-        try:
-            self.cconn.delete(consumerid)
-            print _(" Successfully deleted consumer [%s]") % consumerid
-        except RestlibException, re:
-            print _(" Deleted operation failed on consumer [ %s ]") % consumerid
-            log.error("Error: %s" % re)
-            sys.exit(-1)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        consumerid = self.get_required_option('id')
+        self.cconn.delete(consumerid)
+        print _(" successfully deleted consumer [%s]") % consumerid
 
 
 class Update(ConsumerAction):
 
     def run(self):
-        consumer_id = self.getConsumer()
-        try:
-            pkginfo = PackageProfile().getPackageList()
-            self.cconn.profile(consumer_id, pkginfo)
-            print _(" Successfully updated consumer [%s] profile") % consumer_id
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        consumer_id = self.get_required_option('id')
+        pkginfo = PackageProfile().getPackageList()
+        self.cconn.profile(consumer_id, pkginfo)
+        print _(" successfully updated consumer [%s] profile") % consumer_id
 
 
 class Bind(ConsumerAction):
@@ -221,21 +163,12 @@ class Bind(ConsumerAction):
                        help="repo identifier")
 
     def run(self):
-        consumerid = self.getConsumer()
-        if not self.opts.repoid:
-            print _("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cconn.bind(consumerid, self.opts.repoid)
-            self.repolib.update()
-            print _(" Successfully subscribed consumer [%s] to repo [%s]") % \
-                (consumerid, self.opts.repoid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        consumerid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        self.cconn.bind(consumerid, repoid)
+        self.repolib.update()
+        print _(" successfully subscribed consumer [%s] to repo [%s]") % \
+                (consumerid, repoid)
 
 
 class Unbind(ConsumerAction):
@@ -246,21 +179,12 @@ class Unbind(ConsumerAction):
                        help="repo identifier")
 
     def run(self):
-        consumerid = self.getConsumer()
-        if not self.opts.repoid:
-            print _("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cconn.unbind(consumerid, self.opts.repoid)
-            self.repolib.update()
-            print _(" Successfully unsubscribed consumer [%s] from repo [%s]") % \
-                (consumerid, self.opts.repoid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        consumerid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        self.cconn.unbind(consumerid, repoid)
+        self.repolib.update()
+        print _(" successfully unsubscribed consumer [%s] from repo [%s]") % \
+                (consumerid, repoid)
 
 
 class AddKeyValue(ConsumerAction):
@@ -273,22 +197,11 @@ class AddKeyValue(ConsumerAction):
                        help="value corresponding to the key")
 
     def run(self):
-        consumerid = self.getConsumer()
-        if not self.opts.key:
-            print("Key is required. Try --help")
-            sys.exit(0)
-        if not self.opts.value:
-            print("Value is required. Try --help")
-            sys.exit(0)
-        try:
-            self.cconn.add_key_value_pair(consumerid, self.opts.key, self.opts.value)
-            print _(" Successfully added key-value pair %s:%s" % (self.opts.key, self.opts.value))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        consumerid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        value = self.get_required_option('value')
+        self.cconn.add_key_value_pair(consumerid, key, value)
+        print _(" successfully added key-value pair %s:%s") % (key, value)
 
 
 class DeleteKeyValue(ConsumerAction):
@@ -299,19 +212,10 @@ class DeleteKeyValue(ConsumerAction):
                        help="key identifier")
 
     def run(self):
-        consumerid = self.getConsumer()
-        if not self.opts.key:
-            print("Key is required. Try --help")
-            sys.exit(0)
-        try:
-            self.cconn.delete_key_value_pair(consumerid, self.opts.key)
-            print _(" Successfully deleted key: %s" % self.opts.key)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+        consumerid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        self.cconn.delete_key_value_pair(consumerid, key)
+        print _(" successfully deleted key: %s") % key
 
 
 class History(ConsumerAction):
@@ -330,51 +234,34 @@ class History(ConsumerAction):
                                help='only return entries that occur before the given date (format: mm-dd-yyyy)')
 
     def run(self):
-        consumerid = self.getConsumer()
-        try:
-            # Assemble the query parameters
-            query_params = {
-                'event_type' : self.opts.event_type,
-                'limit' : self.opts.limit,
-                'sort' : self.opts.sort,
-                'start_date' : self.opts.start_date,
-                'end_date' : self.opts.end_date,
-            }
-
-            results = self.cconn.history(consumerid, query_params)
-
-            print_header("Consumer History ")
-            for entry in results:
-
-                # Attempt to translate the programmatic event type name to a user readable one
-                if constants.CONSUMER_HISTORY_EVENT_TYPES.has_key(entry['type_name']):
-                    event_type = constants.CONSUMER_HISTORY_EVENT_TYPES[entry['type_name']]
-                else:
-                    event_type = entry['type_name']
-
-                # Common event details
-                print constants.CONSUMER_HISTORY_ENTRY % \
-                      (event_type, json_utils.parse_date(entry['timestamp']), entry['originator'])
-
-                # Based on the type of event, add on the event specific details. Otherwise,
-                # just throw an empty line to account for the blank line that's added
-                # by the details rendering.
-                if entry['type_name'] == 'repo_bound' or entry['type_name'] == 'repo_unbound':
-                    print constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id'])
-                if entry['type_name'] == 'package_installed' or entry['type_name'] == 'package_uninstalled':
-                    print constants.CONSUMER_HISTORY_PACKAGES
-
-                    for package_nvera in entry['details']['package_nveras']:
-                        print '  %s' % package_nvera
-
-                print ''
-
-        except RestlibException, re:
-            if re.code != 401:
-                print _(" History retrieval failed for consumer [%s]" % consumerid)
-            else:
-                systemExit(re.code, re.msg)
-
+        consumerid = self.get_required_option('id')
+        # Assemble the query parameters
+        query_params = {
+            'event_type' : self.opts.event_type,
+            'limit' : self.opts.limit,
+            'sort' : self.opts.sort,
+            'start_date' : self.opts.start_date,
+            'end_date' : self.opts.end_date,
+        }
+        results = self.cconn.history(consumerid, query_params)
+        print_header("Consumer History ")
+        for entry in results:
+            # Attempt to translate the programmatic event type name to a user readable one
+            type_name = entry['type_name']
+            event_type = constants.CONSUMER_HISTORY_EVENT_TYPES.get(type_name, type_name)
+            # Common event details
+            print constants.CONSUMER_HISTORY_ENTRY % \
+                  (event_type, json_utils.parse_date(entry['timestamp']), entry['originator'])
+            # Based on the type of event, add on the event specific details. Otherwise,
+            # just throw an empty line to account for the blank line that's added
+            # by the details rendering.
+            if type_name == 'repo_bound' or type_name == 'repo_unbound':
+                print constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id'])
+            if type_name == 'package_installed' or type_name == 'package_uninstalled':
+                print constants.CONSUMER_HISTORY_PACKAGES
+                for package_nvera in entry['details']['package_nveras']:
+                    print '  %s' % package_nvera
+            print ''
 
 # consumer command ------------------------------------------------------------
 

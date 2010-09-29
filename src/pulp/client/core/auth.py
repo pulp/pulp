@@ -16,7 +16,6 @@
 # in this software or its documentation.
 
 import os
-import sys
 from gettext import gettext as _
 
 from pulp.client import auth_utils
@@ -29,13 +28,18 @@ class AuthAction(Action):
     def connections(self):
         return {'authconn': UserConnection}
 
+    def setup_parser(self):
+        self.parser.add_option('--username', dest='username',
+                               help=_('pulp account username'))
+        self.parser.add_option('--password', dest='password',
+                               help=_('pulp account password'))
+
 
 class Login(AuthAction):
 
     def run(self):
-        if not self.command_opts.username and not self.command_opts.password:
-            print _("username and password are required; try --help")
-            sys.exit(1)
+        #username = self.get_required_option('username')
+        #password = self.get_required_option('password')
         # Retrieve the certificate information from the server
         cert_dict = self.authconn.admin_certificate()
         # Determine the destination and store the cert information there
@@ -50,7 +54,7 @@ class Login(AuthAction):
         f.write(cert_dict['private_key'])
         f.close()
         print _('user credentials successfully stored at [%s]') % \
-            auth_utils.admin_cert_dir()
+                auth_utils.admin_cert_dir()
 
 
 class Logout(AuthAction):
