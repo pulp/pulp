@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.68
+Version:        0.0.69
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,57 @@ fi
 
 
 %changelog
+* Wed Sep 29 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.69-1
+- adding missing key option to repo create (pkilambi@redhat.com)
+- adding fields required to allow cert based access to authenticated repos on
+  pulp server (pkilambi@redhat.com)
+- Displaying consumergroup key-value attributes in consumergroup list
+  (skarmark@redhat.com)
+- Addition of update_keyvalue api and cli to consumer and consumergroup
+  (skarmark@redhat.com)
+- 638182 - user create api now checks for duplicate login names and throws
+  error (skarmark@redhat.com)
+- Correct (2) RepoLib to properly handle repo URL with leading '/'.
+  (jortel@redhat.com)
+- Correct RepoLib to properly handle repo URL with leading '/'.
+  (jortel@redhat.com)
+- fixing some issues while performing errata installs. (pkilambi@redhat.com)
+- updating logic for event based product deletes and unit tests
+  (pkilambi@redhat.com)
+- 634000 - Fixed.update repo on bind/unbind in the API. And, only run
+  RepoLib.update() within the CLI only when (not is_admin). (jortel@redhat.com)
+- Errata re-sync changes and adding search for repos by errata id If an errata
+  is deleted from a repo, we look to see if any other repos contain that
+  errata.  If no repos contain it, the errata is deleted, otherwise it is only
+  removed from the repo mapping. (jmatthew@redhat.com)
+- Adding some exception handling around update product repos
+  (pkilambi@redhat.com)
+- Adding event based product.update support. This commit includes, driver
+  changes to support (pkilambi@redhat.com)
+- save the repo objects directly in mongo instead of calling update logic
+  (pkilambi@redhat.com)
+- Add async RMI to agent to update pulp.repo. (jortel@redhat.com)
+- Refit remaining APIs to dispatch to task subsystem for agent actions.
+  (jortel@redhat.com)
+- make pulp and pulp-client dep on the same version of pulp-common.
+  (jortel@redhat.com)
+- Updated --help to conform to updated standard. (tsanders@redhat.com)
+- Updated --help to conform to updated standard.
+  (tsanders@tsanders-x201.(none))
+- Updated --help to conform to updated standards. (tsanders@redhat.com)
+- Filter out repos by groups using server filters and adding new repo group
+  lookup call to append groups dynamically to the query (pkilambi@redhat.com)
+- Merge branch 'grinder-opts' (jconnor@redhat.com)
+- when newer pulp is installed, it should pull in matching client versions to
+  maintain compatibility on servers. (pkilambi@redhat.com)
+- when newer pulp is installed, it should pull in matching client versions to
+  maintain compatibility on servers. (pkilambi@redhat.com)
+- forgot to cleanup commented out line (jmatthew@redhat.com)
+- Fix @audit problem when a value contained a non-ascii value Package imports
+  were failing on packages that had the registered trademark in their
+  description. (jmatthew@redhat.com)
+- exposure of more grinder options via config (jconnor@redhat.com)
+
 * Fri Sep 24 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.68-1
 - 635803 - Fixed repo sync schedule to use the existing model (for auditing and
   consumer history reapers) for the cron entries. (jason.dobies@redhat.com)
