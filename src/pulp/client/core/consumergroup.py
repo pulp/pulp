@@ -1,9 +1,5 @@
-#!/usr/bin/python
-#
-# Pulp Repo management module
-#
 # Copyright (c) 2010 Red Hat, Inc.
-
+#
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
 # implied, including the implied warranties of MERCHANTABILITY or FITNESS
@@ -14,312 +10,197 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
 
-import gettext
-import sys
+from gettext import gettext as _
 
 import pulp.client.constants as constants
-from pulp.client.config import Config
-from pulp.client.connection import ConsumerGroupConnection, RestlibException
-from pulp.client.core.base import BaseCore, systemExit, print_header
-from pulp.client.logutil import getLogger
+from pulp.client.connection import ConsumerGroupConnection
+from pulp.client.core.base import Action, BaseCore, system_exit, print_header
 from pulp.client.repolib import RepoLib
 
+# consumer group base action --------------------------------------------------
 
-CFG = Config()
-log = getLogger(__name__)
+class ConsumerGroupAction(Action):
 
-_ = gettext.gettext
-
-
-class consumergroup(BaseCore):
     def __init__(self):
-        usage = "consumergroup [OPTIONS]"
-        shortdesc = "consumer group specific actions to pulp server."
-        desc = ""
-        self.name = "consumergroup"
-        self.actions = {"create" : "Create a consumer group",
-                        "add_consumer" : "Add a consumer to the group",
-                        "delete_consumer" : "Delete a consumer from the group",
-                        "list"   : "List available consumer groups",
-                        "delete" : "Delete the consumer group",
-                        "bind"   : "Bind the consumer group to listed repos",
-                        "unbind" : "Unbind the consumer group from repos",
-                        "add_keyvalue"     : "Add key-value information to consumergroup",
-                        "delete_keyvalue"  : "Delete key-value information to consumergroup", }
-        BaseCore.__init__(self, "consumergroup", usage, shortdesc, desc)
+        super(ConsumerGroupAction, self).__init__()
         self.repolib = RepoLib()
 
-    def load_server(self):
-        self.cgconn = ConsumerGroupConnection(host=CFG.server.host or "localhost",
-                                              port=CFG.server.port or 443,
-                                              username=self.username,
-                                              password=self.password,
-                                              cert_file=self.cert_filename,
-                                              key_file=self.key_filename)
+    def connections(self):
+        return {'cgconn': ConsumerGroupConnection}
 
-    def generate_options(self):
-        self.action = self._get_action()
-        if self.action == "create":
-            usage = "consumergroup create [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="consumer group id"),
-            self.parser.add_option("--description", dest="description",
-                           help="description of consumer group")
-            self.parser.add_option("--consumerids", dest="consumerids",
-                           help="consumer id list to be included in this group")
-        if self.action == "delete":
-            usage = "consumergroup delete [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="id",
-                           help="consumer group id")
-        if self.action == "list":
-            usage = "consumergroup list [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-        if self.action == "add_consumer":
-            usage = "consumergroup add_consumer [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="consumer identifier")
-            self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
-        if self.action == "delete_consumer":
-            usage = "consumergroup delete_consumer [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="consumer identifier")
-            self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
-        if self.action == "bind":
-            usage = "consumergroup bind [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="repository identifier")
-            self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
-        if self.action == "unbind":
-            usage = "consumergroup unbind [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="repository identifier")
-            self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id", help="consumer group id")
 
-        if self.action == "add_keyvalue":
-            usage = "usage: %prog consumergroup add_keyvalue [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
-            self.parser.add_option("--key", dest="key",
-                           help="key identifier")
-            self.parser.add_option("--value", dest="value",
-                           help="value corresponding to the key")
+# consumer group actions ------------------------------------------------------
 
-        if self.action == "delete_keyvalue":
-            usage = "usage: %prog consumergroup delete_keyvalue [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="groupid",
-                           help="consumer group identifier")
-            self.parser.add_option("--key", dest="key",
-                           help="key identifier")
+class List(ConsumerGroupAction):
+
+    def setup_parser(self):
+        pass
+
+    def run(self):
+        groups = self.cgconn.consumergroups()
+        if not len(groups):
+            print _("no consumer groups available to list")
+            system_exit(0)
+        print_header("List of Available Consumer Groups")
+        for group in groups:
+            print constants.AVAILABLE_CONSUMER_GROUP_INFO % \
+                    (group["id"], group["description"], group["consumerids"])
 
 
-    def _do_core(self):
-        if self.action == "create":
-            self._create()
-        if self.action == "list":
-            self._list()
-        if self.action == "delete":
-            self._delete()
-        if self.action == "add_consumer":
-            self._add_consumer()
-        if self.action == "delete_consumer":
-            self._delete_consumer()
-        if self.action == "bind":
-            self._bind()
-        if self.action == "unbind":
-            self._unbind()
-        if self.action == "add_keyvalue":
-            self._add_keyvalue()
-        if self.action == "delete_keyvalue":
-            self._delete_keyvalue()
+class Create(ConsumerGroupAction):
 
-    def _create(self):
-        if not self.options.id:
-            print _("consumer group id required. Try --help")
-            sys.exit(0)
-        if not self.options.description:
-            self.options.description = ""
-        if not self.options.consumerids:
-            print _("Creating empty consumer group")
-            self.options.consumerids = []
+    def setup_parser(self):
+        super(Create, self).setup_parser()
+        self.parser.add_option("--description", dest="description",
+                       help="description of consumer group")
+        self.parser.add_option("--consumerids", dest="consumerids",
+                       help="consumer id list to be included in this group")
+
+    def run(self):
+        id = self.get_required_option('id')
+        description = getattr(self.opts, 'description', '')
+        consumerids = getattr(self.opts, 'consumerids', [])
+        if not consumerids:
+            print _("creating empty consumer group")
         else:
-            self.options.consumerids = self.options.consumerids.split(",")
-        try:
-            consumergroup = self.cgconn.create(self.options.id, self.options.description,
-                                    self.options.consumerids)
-            print _(" Successfully created Consumer group [ %s ] with description [ %s ]") % \
+            consumerids = consumerids.split(",")
+        consumergroup = self.cgconn.create(id, description, consumerids)
+        print _(" successfully created Consumer group [ %s ] with description [ %s ]") % \
                 (consumergroup['id'], consumergroup["description"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _list(self):
-        try:
-            groups = self.cgconn.consumergroups()
-            if not len(groups):
-                print _("No consumer groups available to list")
-                sys.exit(0)
-            print_header("List of Available Consumer Groups")
-            for group in groups:
-                    print constants.AVAILABLE_CONSUMER_GROUP_INFO % (
-                        group["id"], group["description"], group["consumerids"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
 
 
-    def _delete(self):
-        if not self.options.id:
-            print _("Group id required. Try --help")
-            sys.exit(0)
+class Delete(ConsumerGroupAction):
+
+    def setup_parser(self):
+        super(Delete, self).setup_parser()
+
+    def run(self):
+        id = self.get_required_option('id')
         group = self.cgconn.consumergroup(id=self.options.id)
         if not group:
-            print _(" Consumer Group [ %s ] does not exist" % \
-                  self.options.id)
-            sys.exit(-1)
-        try:
-            self.cgconn.delete(id=self.options.id)
-            print _(" Successfully deleted Consumer Group [ %s ] " % self.options.id)
-        except RestlibException, re:
-            print _(" Delete operation failed Consumer Group [ %s ] " % \
-                  self.options.id)
-            log.error("Error: %s" % re)
-            sys.exit(-1)
-        except Exception, e:
-            print _(" Delete operation failed on Consumer Group [ %s ]. " % \
-                  self.options.id)
-            log.error("Error: %s" % e)
-            sys.exit(-1)
+            print _(" consumer group [ %s ] does not exist") % id
+            system_exit(-1)
+        self.cgconn.delete(id=id)
+        print _(" successfully deleted consumer group [ %s ]") % id
 
 
-    def _add_consumer(self):
-        if not self.options.consumerid:
-            print _("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.options.groupid:
-            print _("group id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cgconn.add_consumer(self.options.groupid, self.options.consumerid)
-            print _(" Successfully added Consumer [%s] to Group [%s]") % \
-                (self.options.consumerid, self.options.groupid)
-        except RestlibException, re:
-            print _(" Adding consumer failed ")
-            log.error("Error: %s" % re)
-            sys.exit(-1)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+class AddConsumer(ConsumerGroupAction):
 
-    def _delete_consumer(self):
-        if not self.options.consumerid:
-            print _("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.options.groupid:
-            print _("group id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cgconn.delete_consumer(self.options.groupid, self.options.consumerid)
-            print _(" Successfully deleted Consumer [%s] from Group [%s]") % \
-                (self.options.consumerid, self.options.groupid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    def setup_parser(self):
+        super(AddConsumer, self).setup_parser()
+        self.parser.add_option("--consumerid", dest="consumerid",
+                       help="consumer identifier")
 
-    def _bind(self):
-        if not self.options.groupid:
-            print _("consumer group id required. Try --help")
-            sys.exit(0)
-        if not self.options.repoid:
-            print _("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cgconn.bind(self.options.groupid, self.options.repoid)
-            self.repolib.update()
-            print _(" Successfully subscribed Consumer Group [%s] to Repo [%s]") % \
-                (self.options.groupid, self.options.repoid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    def run(self):
+        consumerid = self.get_required_option('consumerid')
+        groupid = self.get_required_option('id')
+        self.cgconn.add_consumer(groupid, consumerid)
+        print _(" Successfully added Consumer [%s] to Group [%s]") % \
+                (consumerid, groupid)
 
-    def _unbind(self):
-        if not self.options.groupid:
-            print _("consumer group id required. Try --help")
-            sys.exit(0)
-        if not self.options.repoid:
-            print _("repo id required. Try --help")
-            sys.exit(0)
-        try:
-            self.cgconn.unbind(self.options.groupid, self.options.repoid)
-            self.repolib.update()
-            print _(" Successfully unsubscribed Consumer  Group [%s] from Repo [%s]") % \
-                (self.options.groupid, self.options.repoid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
 
-    def _add_keyvalue(self):
-        if not self.options.groupid:
-            print _("consumer group id required. Try --help")
-            sys.exit(0)
-        if not self.options.key:
-            print("Key is required. Try --help")
-            sys.exit(0)
-        if not self.options.value:
-            print("Value is required. Try --help")
-            sys.exit(0)
-        try:
-            self.cgconn.add_key_value_pair(self.options.groupid, self.options.key, self.options.value)
-            print _(" Successfully added key-value pair %s:%s" % (self.options.key, self.options.value))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+class DeleteConsumer(ConsumerGroupAction):
 
-    def _delete_keyvalue(self):
-        if not self.options.groupid:
-            print _("consumer group id required. Try --help")
-            sys.exit(0)
-        if not self.options.key:
-            print("Key is required. Try --help")
-            sys.exit(0)
-        try:
-            self.cgconn.delete_key_value_pair(self.options.groupid, self.options.key)
-            print _(" Successfully deleted key: %s" % self.options.key)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    def setup_parser(self):
+        super(DeleteConsumer, self).setup_parser()
+        self.parser.add_option("--consumerid", dest="consumerid",
+                               help="consumer identifier")
 
+    def run(self):
+        groupid = self.get_required_option('id')
+        consumerid = self.get_required_option('consumerid')
+        self.cgconn.delete_consumer(groupid, self.options.consumerid)
+        print _(" successfully deleted consumer [%s] from group [%s]") % \
+                (consumerid, groupid)
+
+
+class Bind(ConsumerGroupAction):
+
+    def setup_parser(self):
+        super(Bind, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository identifier")
+
+    def run(self):
+        groupid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        self.cgconn.bind(groupid, self.options.repoid)
+        self.repolib.update()
+        print _(" successfully subscribed consumer group [%s] to repo [%s]") % \
+                (groupid, repoid)
+
+
+class Unbind(ConsumerGroupAction):
+
+    def setup_parser(self):
+        super(Unbind, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository identifier")
+
+    def run(self):
+        groupid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        self.cgconn.unbind(groupid, self.options.repoid)
+        self.repolib.update()
+        print _(" successfully unsubscribed consumer group [%s] from repo [%s]") % \
+                (groupid, repoid)
+
+
+class AddKeyValue(ConsumerGroupAction):
+
+    def setup_parser(self):
+        super(AddKeyValue, self).setup_parser()
+        self.parser.add_option("--key", dest="key", help="key identifier")
+        self.parser.add_option("--value", dest="value",
+                               help="value corresponding to the key")
+
+    def run(self):
+        groupid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        value = self.get_required_option('value')
+        self.cgconn.add_key_value_pair(groupid, key, value)
+        print _(" successfully added key-value pair %s:%s") % (key, value)
+
+
+class DeleteKeyValue(ConsumerGroupAction):
+
+    def setup_parser(self):
+        super(DeleteKeyValue, self).setup_parser()
+        self.parser.add_option("--key", dest="key", help="key identifier")
+
+    def run(self):
+        groupid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        self.cgconn.delete_key_value_pair(groupid, key)
+        print _(" successfully deleted key: %s") % key
+
+# consumer group command ------------------------------------------------------
+
+class ConsumerGroup(BaseCore):
+
+    _default_actions = {
+        "list": "List available consumer groups",
+        "create": "Create a consumer group",
+        "delete": "Delete the consumer group",
+        "add_consumer" : "Add a consumer to the group",
+        "delete_consumer": "Delete a consumer from the group",
+        "bind": "Bind the consumer group to listed repos",
+        "unbind": "Unbind the consumer group from repos",
+        "add_keyvalue": "Add key-value information to consumergroup",
+        "delete_keyvalue": "Delete key-value information to consumergroup",
+    }
+
+    def __init__(self, name='consumer', actions=_default_actions):
+        super(ConsumerGroup, self).__init__(name, actions)
+        self.list = List()
+        self.create = Create()
+        self.delete = Delete()
+        self.add_consumer = AddConsumer()
+        self.delete_consumer = DeleteConsumer()
+        self.bind = Bind()
+        self.unbind = Unbind()
+        self.add_keyvalue = AddKeyValue()
+        self.delete_keyvalue = DeleteKeyValue()
