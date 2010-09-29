@@ -16,126 +16,88 @@
 # in this software or its documentation.
 #
 
-import sys
+from gettext import gettext as _
 
-import pulp.client.constants as constants
-from pulp.client.core.base import BaseCore, systemExit
-from pulp.client.connection import UserConnection, RestlibException
-from pulp.client.logutil import getLogger
+from pulp.client import constants
+from pulp.client.connection import UserConnection
+from pulp.client.core.base import Action, BaseCore, print_header, system_exit
 from pulp.client.repolib import RepoLib
-from pulp.client.config import Config
-CFG = Config()
 
-import gettext
-_ = gettext.gettext
-log = getLogger(__name__)
+# base user action class ------------------------------------------------------
 
-class user(BaseCore):
-    def __init__(self):
-        usage = "user [OPTIONS]"
-        shortdesc = "user specific actions to pulp server."
-        desc = ""
-        self.name = "user"
-        self.actions = {"create" : "Create a user",
-                        "list"   : "List available users",
-                        "delete" : "Delete a user", }
+class UserAction(Action):
 
-        BaseCore.__init__(self, "user", usage, shortdesc, desc)
+    def connections(self):
+        return {'userconn': UserConnection}
+
+# user actions ----------------------------------------------------------------
+
+class List(UserAction):
+
+    name = 'list'
+    plug = 'list available users'
+
+    def run(self):
+        users = self.userconn.users()
+        if not len(users):
+            system_exit(0, _("no users available to list"))
+        print_header(_('Available Users'))
+        for user in users:
+            print constants.AVAILABLE_USERS_LIST % (user["login"], user["name"])
+
+
+class Create(UserAction):
+
+    name = 'create'
+    plug = 'create a user'
+
+    def setup_parser(self):
+        self.parser.add_option("--username", dest="username",
+                               help="new username to create")
+        self.parser.add_option("--password", dest="password", default='',
+                               help="password for authentication")
+        self.parser.add_option("--name", dest="name", default='',
+                               help="name of user for display purposes")
+
+    def run(self):
+        newusername = self.get_required_option('username')
+        newpassword = self.opts.password
+        name = self.opts.name
+        user = self.userconn.create(newusername, newpassword, name)
+        print _(" successfully created user [ %s ] with name [ %s ]") % \
+                (user['login'], user["name"])
+
+
+class Delete(UserAction):
+
+    name = 'delete'
+    plug = 'delete a user'
+
+    def setup_parser(self):
+        self.parser.add_option("--username", dest="username",
+                               help="username of user you wish to delete")
+
+    def run(self):
+        deleteusername = self.get_required_option('username')
+        user = self.userconn.user(login=deleteusername)
+        if not user:
+            system_exit(-1, _(" user [ %s ] does not exist") % deleteusername)
+        self.userconn.delete(login=deleteusername)
+        print _(" successfully deleted User [ %s ]") % deleteusername
+
+# user command ----------------------------------------------------------------
+
+class User(BaseCore):
+
+    name = 'user'
+    _default_actions = ('list', 'create', 'delete')
+
+    def __init__(self, actions=_default_actions):
+        super(User, self).__init__(actions)
+        self.list = List()
+        self.create = Create()
+        self.delete = Delete()
         self.repolib = RepoLib()
 
-    def load_server(self):
-        self.userconn = UserConnection(host=CFG.server.host or "localhost",
-                                              port=CFG.server.port or 443,
-                                              username=self.username,
-                                              password=self.password,
-                                              cert_file=self.cert_filename,
-                                              key_file=self.key_filename)
 
-    def generate_options(self):
-        self.action = self._get_action()
-        if self.action == "create":
-            usage = "user create [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--newusername", dest="newusername",
-                           help="new username to create")
-            self.parser.add_option("--newpassword", dest="newpassword",
-                           help="password for authentication")
-            self.parser.add_option("--name", dest="name",
-                           help="name of user for display purposes")
-        if self.action == "delete":
-            usage = "user delete [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--deleteusername", dest="deleteusername",
-                           help="username of user you wish to delete")
-        if self.action == "list":
-            usage = "user list [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-
-
-    def _do_core(self):
-        if self.action == "create":
-            self._create()
-        if self.action == "list":
-            self._list()
-        if self.action == "delete":
-            self._delete()
-
-    def _create(self):
-        if not self.options.newusername:
-            print("newusername required. Try --help")
-            sys.exit(0)
-        if not self.options.name:
-            self.options.name = ""
-        if not self.options.newpassword:
-            self.options.newpassword = ""
-        try:
-            user = self.userconn.create(self.options.newusername,
-                                        self.options.newpassword,
-                                        self.options.name)
-            print _(" Successfully created User [ %s ] with name [ %s ]" % \
-                                     (user['login'], user["name"]))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-    def _list(self):
-        try:
-            users = self.userconn.users()
-            if not len(users):
-                print _("No users available to list")
-                sys.exit(0)
-            print "+-------------------------------------------+"
-            print "             Available Users                 "
-            print "+-------------------------------------------+"
-            for user in users:
-                print constants.AVAILABLE_USERS_LIST % (user["login"], user["name"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
-
-
-    def _delete(self):
-        if not self.options.deleteusername:
-            print("User's login required. Try --help")
-            sys.exit(0)
-        user = self.userconn.user(login=self.options.deleteusername)
-        if not user:
-            print _(" User [ %s ] does not exist" % \
-                  self.options.deleteusername)
-            sys.exit(-1)
-        try:
-            self.userconn.delete(login=self.options.deleteusername)
-            print _(" Successfully deleted User [ %s ] " % self.options.deleteusername)
-        except Exception, e:
-            print _(" Delete operation failed on User [ %s ]. " % \
-                  self.options.login)
-            log.error("Error: %s" % e)
-            sys.exit(-1)
-
-
+command_class = user = User
