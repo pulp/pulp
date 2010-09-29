@@ -15,28 +15,23 @@
 # in this software or its documentation.
 #
 
-import sys
 import urlparse
 from gettext import gettext as _
-
-from M2Crypto import SSL
+from optparse import SUPPRESS_HELP
 
 from pulp.client import constants
 from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
-from pulp.client.connection import ConsumerConnection, RestlibException
+from pulp.client.connection import ConsumerConnection
 from pulp.client.core.base import Action, BaseCore, print_header, system_exit
-from pulp.client.logutil import getLogger
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
 
 
-
-log = getLogger(__name__)
-CFG = Config()
+_cfg = Config()
 #TODO: move this to config
-CONSUMERID = "/etc/pulp/consumer"
+_consumer_file = "/etc/pulp/consumer"
 
 # base consumer action --------------------------------------------------------
 
@@ -50,14 +45,19 @@ class ConsumerAction(Action):
         return {'cconn': ConsumerConnection}
 
     def setup_parser(self):
-        self.parser.add_option("--id", dest="id",
-                               help=_("consumer identifier eg: foo.example.com"))
+        help = _("consumer identifier eg: foo.example.com")
+        default = None
         if hasattr(self, id):
-            self.parser.set_defaults(id=self.id)
+            help = SUPPRESS_HELP
+            default = self.id
+        self.parser.add_option("--id", dest="id", default=default, help=help)
 
 # consumer actions ------------------------------------------------------------
 
 class Info(ConsumerAction):
+
+    name = 'info'
+    plug = 'list of accessible consumer info'
 
     def run(self):
         id = self.get_required_option('id')
@@ -76,19 +76,22 @@ class Info(ConsumerAction):
 
 class List(ConsumerAction):
 
+    name = 'list'
+    plug = 'list all known consumers'
+
     def setup_parser(self):
         self.parser.add_option("--key", dest="key", help="key identifier")
         self.parser.add_option("--value", dest="value",
                                help="value corresponding to the key")
 
     def run(self):
-        key = getattr(self.opts, 'key', None)
+        key = self.opts.key
         value = None
         if key is not None:
             value = self.get_required_option('value')
         cons = self.cconn.consumers()
-        baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host,
-                                  CFG.server.port)
+        baseurl = "%s://%s:%s" % (_cfg.server.scheme, _cfg.server.host,
+                                  _cfg.server.port)
         for con in cons:
             con['package_profile'] = urlparse.urljoin(baseurl,
                                                       con['package_profile'])
@@ -114,6 +117,9 @@ class List(ConsumerAction):
 
 class Create(ConsumerAction):
 
+    name = 'create'
+    plug = 'create a consumer'
+
     def setup_parser(self):
         super(Create, self).setup_parser()
         self.parser.add_option("--description", dest="description",
@@ -130,7 +136,7 @@ class Create(ConsumerAction):
         cert_dict = self.cconn.certificate(id)
         certificate = cert_dict['certificate']
         key = cert_dict['private_key']
-        utils.writeToFile(CONSUMERID, consumer['id'])
+        utils.writeToFile(_consumer_file, consumer['id'])
         utils.writeToFile(ConsumerConnection.CERT_PATH, certificate)
         utils.writeToFile(ConsumerConnection.KEY_PATH, key)
         pkginfo = PackageProfile().getPackageList()
@@ -140,6 +146,9 @@ class Create(ConsumerAction):
 
 class Delete(ConsumerAction):
 
+    name = 'delete'
+    plug = 'delete the consumer'
+
     def run(self):
         consumerid = self.get_required_option('id')
         self.cconn.delete(consumerid)
@@ -147,6 +156,9 @@ class Delete(ConsumerAction):
 
 
 class Update(ConsumerAction):
+
+    name = 'update'
+    plug = 'update consumer profile'
 
     def run(self):
         consumer_id = self.get_required_option('id')
@@ -156,6 +168,9 @@ class Update(ConsumerAction):
 
 
 class Bind(ConsumerAction):
+
+    name = 'bind'
+    plug = 'bind the consumer to listed repos'
 
     def setup_parser(self):
         super(Bind, self).setup_parser()
@@ -173,6 +188,9 @@ class Bind(ConsumerAction):
 
 class Unbind(ConsumerAction):
 
+    name = 'unbind'
+    plug = 'unbind the consumer from repos'
+
     def setup_parser(self):
         super(Unbind, self).setup_parser()
         self.parser.add_option("--repoid", dest="repoid",
@@ -188,6 +206,9 @@ class Unbind(ConsumerAction):
 
 
 class AddKeyValue(ConsumerAction):
+
+    name = 'add_keyvalue'
+    plug = 'add key-value information to consumer'
 
     def setup_parser(self):
         super(AddKeyValue, self).setup_parser()
@@ -206,6 +227,9 @@ class AddKeyValue(ConsumerAction):
 
 class DeleteKeyValue(ConsumerAction):
 
+    name = 'delete_keyvalue'
+    plug = 'delete key-value information from consumer'
+
     def setup_parser(self):
         super(DeleteKeyValue, self).setup_parser()
         self.parser.add_option("--key", dest="key",
@@ -219,6 +243,9 @@ class DeleteKeyValue(ConsumerAction):
 
 
 class History(ConsumerAction):
+
+    name = 'history'
+    plug = 'view the consumer history'
 
     def setup_parser(self):
         super(History, self).setup_parser()
@@ -267,16 +294,9 @@ class History(ConsumerAction):
 
 class Consumer(BaseCore):
 
-    _default_actions = {
-        "list": "List of accessible consumer info",
-        "delete": "Delete the consumer",
-        "update": "Update consumer profile",
-        "bind": "Bind the consumer to listed repos",
-        "unbind": "Unbind the consumer from repos",
-        "add_keyvalue": "Add key-value information to consumer",
-        "delete_keyvalue": "Delete key-value information to consumer",
-        "history": "View the consumer history",
-    }
+    _default_actions = ('info', 'list', 'create', 'delete', 'update',
+                        'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
+                        'history')
 
     def __init__(self, name='consumer', actions=_default_actions):
         super(Consumer, self).__init__(name, actions)

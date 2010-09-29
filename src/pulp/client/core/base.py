@@ -65,10 +65,10 @@ systemExit = system_exit
 
 class Command(object):
 
-    _default_actions = {}
+    name = None
+    _default_actions = ()
 
-    def __init__(self, name, actions=_default_actions):
-        self.name = name
+    def __init__(self, actions=_default_actions):
         self.actions = actions
         # options and arguments
         self.parser = OptionParser(usage=self.usage())
@@ -84,8 +84,10 @@ class Command(object):
     def usage(self):
         lines = ['Usage: %s <action> <options>' % self.name,
                  'Supported Actions:']
-        for name, description in sorted(list(self.actions.items())):
-            lines.append('\t%-14s %-25s' % (name, description))
+        for name in self.actions:
+            action = getattr(self, name, None)
+            plug = action.plug if action is not None else 'no description'
+            lines.append('\t%-14s %-25s' % (name, plug))
         return '\n'.join(lines)
 
     def short_description(self):
@@ -112,7 +114,7 @@ class Command(object):
     # main
 
     def get_action(self, name):
-        if name not in self.actions and not hasattr(self, name):
+        if name not in self.actions or not hasattr(self, name):
             return None
         return getattr(self, name)
 
@@ -144,6 +146,10 @@ BaseCore = Command
 
 class Action(object):
 
+    name = None
+    plug = None
+    description = None
+
     def __init__(self):
         self.parser = OptionParser(usage=SUPPRESS_USAGE)
         self.opts = None
@@ -168,9 +174,10 @@ class Action(object):
         raise NotImplementedError('Base class method called')
 
     def get_required_option(self, opt):
-        if not hasattr(self.opts, opt):
+        value = getattr(self.opts, opt)
+        if value is None:
             self.parser.error(_('option %s is required; please see --help') % opt)
-        return getattr(self.opts, opt)
+        return value
 
     def main(self, args):
         self.setup_parser()
@@ -180,7 +187,7 @@ class Action(object):
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)
-            system_exit(re.code, _('error: operation failed') + re.msg)
+            system_exit(re.code, _('error: operation failed: ') + re.msg)
         except Exception, e:
             _log.error("error: %s" % e)
             raise

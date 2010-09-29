@@ -13,7 +13,7 @@
 
 from gettext import gettext as _
 
-import pulp.client.constants as constants
+from pulp.client import constants
 from pulp.client.connection import ConsumerGroupConnection
 from pulp.client.core.base import Action, BaseCore, system_exit, print_header
 from pulp.client.repolib import RepoLib
@@ -36,6 +36,9 @@ class ConsumerGroupAction(Action):
 
 class List(ConsumerGroupAction):
 
+    name = 'list'
+    plug = 'list available consumer groups'
+
     def setup_parser(self):
         pass
 
@@ -51,6 +54,9 @@ class List(ConsumerGroupAction):
 
 
 class Create(ConsumerGroupAction):
+
+    name = 'create'
+    plug = 'create a consumer group'
 
     def setup_parser(self):
         super(Create, self).setup_parser()
@@ -74,6 +80,9 @@ class Create(ConsumerGroupAction):
 
 class Delete(ConsumerGroupAction):
 
+    name = 'delete'
+    plug = 'delete the consumer group'
+
     def setup_parser(self):
         super(Delete, self).setup_parser()
 
@@ -88,6 +97,9 @@ class Delete(ConsumerGroupAction):
 
 
 class AddConsumer(ConsumerGroupAction):
+
+    name = 'add_consumer'
+    plug = 'add a consumer to the group'
 
     def setup_parser(self):
         super(AddConsumer, self).setup_parser()
@@ -104,6 +116,9 @@ class AddConsumer(ConsumerGroupAction):
 
 class DeleteConsumer(ConsumerGroupAction):
 
+    name = 'delete_consumer'
+    plug = 'delete a consumer from the group'
+
     def setup_parser(self):
         super(DeleteConsumer, self).setup_parser()
         self.parser.add_option("--consumerid", dest="consumerid",
@@ -118,6 +133,9 @@ class DeleteConsumer(ConsumerGroupAction):
 
 
 class Bind(ConsumerGroupAction):
+
+    name = 'bind'
+    plug = 'bind the consumer group to listed repos'
 
     def setup_parser(self):
         super(Bind, self).setup_parser()
@@ -135,6 +153,9 @@ class Bind(ConsumerGroupAction):
 
 class Unbind(ConsumerGroupAction):
 
+    name = 'unbind'
+    plug = 'unbind the consumer group from repos'
+
     def setup_parser(self):
         super(Unbind, self).setup_parser()
         self.parser.add_option("--repoid", dest="repoid",
@@ -150,6 +171,9 @@ class Unbind(ConsumerGroupAction):
 
 
 class AddKeyValue(ConsumerGroupAction):
+
+    name = 'add_keyvalue'
+    plug = 'add key-value information to consumergroup'
 
     def setup_parser(self):
         super(AddKeyValue, self).setup_parser()
@@ -167,6 +191,9 @@ class AddKeyValue(ConsumerGroupAction):
 
 class DeleteKeyValue(ConsumerGroupAction):
 
+    name = 'delete_keyvalue'
+    plug = 'delete key-value information to consumergroup'
+
     def setup_parser(self):
         super(DeleteKeyValue, self).setup_parser()
         self.parser.add_option("--key", dest="key", help="key identifier")
@@ -181,20 +208,13 @@ class DeleteKeyValue(ConsumerGroupAction):
 
 class ConsumerGroup(BaseCore):
 
-    _default_actions = {
-        "list": "List available consumer groups",
-        "create": "Create a consumer group",
-        "delete": "Delete the consumer group",
-        "add_consumer" : "Add a consumer to the group",
-        "delete_consumer": "Delete a consumer from the group",
-        "bind": "Bind the consumer group to listed repos",
-        "unbind": "Unbind the consumer group from repos",
-        "add_keyvalue": "Add key-value information to consumergroup",
-        "delete_keyvalue": "Delete key-value information to consumergroup",
-    }
+    name = 'consumergroup'
+    _default_actions = ('list', 'create', 'delete',
+                        'add_consumer', 'delete_consumer', 'bind', 'unbind',
+                        'add_keyvalue', 'delete_keyvalue')
 
-    def __init__(self, name='consumer', actions=_default_actions):
-        super(ConsumerGroup, self).__init__(name, actions)
+    def __init__(self, actions=_default_actions):
+        super(ConsumerGroup, self).__init__(actions)
         self.list = List()
         self.create = Create()
         self.delete = Delete()
@@ -204,3 +224,6 @@ class ConsumerGroup(BaseCore):
         self.unbind = Unbind()
         self.add_keyvalue = AddKeyValue()
         self.delete_keyvalue = DeleteKeyValue()
+
+
+command_class = consumergroup = ConsumerGroup

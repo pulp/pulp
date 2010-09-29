@@ -22,6 +22,7 @@ from pulp.client import auth_utils
 from pulp.client.connection import UserConnection
 from pulp.client.core.base import BaseCore, Action
 
+# base auth action class ------------------------------------------------------
 
 class AuthAction(Action):
 
@@ -34,8 +35,12 @@ class AuthAction(Action):
         self.parser.add_option('--password', dest='password',
                                help=_('pulp account password'))
 
+# auth actions ----------------------------------------------------------------
 
 class Login(AuthAction):
+
+    name = 'login'
+    plug = 'stores user credentials on this machine'
 
     def run(self):
         #username = self.get_required_option('username')
@@ -59,6 +64,9 @@ class Login(AuthAction):
 
 class Logout(AuthAction):
 
+    name = 'logout'
+    plug = 'removes stored user credentials on this machine'
+
     def run(self):
         # Determine the destination and store the cert information there
         cert_filename, key_filename = auth_utils.admin_cert_paths()
@@ -69,16 +77,15 @@ class Logout(AuthAction):
             os.remove(key_filename)
         print _('user credentials removed from [%s]') % auth_utils.admin_cert_dir()
 
+# auth command ----------------------------------------------------------------
 
 class Auth(BaseCore):
 
-    _default_actions = {
-        'login': 'stores user credentials on this machine',
-        'logout': 'removes stored user credentials on this machine',
-    }
+    name = 'auth'
+    _default_actions = ('login', 'logout')
 
-    def __init__(self, name='auth', actions=_default_actions):
-        super(Auth, self).__init__(name, actions)
+    def __init__(self, actions=_default_actions):
+        super(Auth, self).__init__(actions)
         self.login = Login()
         self.logout = Logout()
 
