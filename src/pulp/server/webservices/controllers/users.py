@@ -48,6 +48,11 @@ class Users(JSONController):
         @return: user that was created
         """
         user_data = self.params()
+        
+        login = user_data['login']
+        if api.user(login) is not None:
+            return self.conflict('A user with the login, %s, already exists' % login)
+        
         user = api.create(user_data['login'], user_data['password'],
                                    user_data['name'])
         return self.created(user['id'], user)
