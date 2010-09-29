@@ -106,7 +106,7 @@ class Info(ErrataAction):
 class Install(ErrataAction):
 
     name = 'install'
-    plug = 'install Errata on a consumer'
+    plug = 'install errata on a consumer'
 
     def setup_parser(self):
         self.parser.add_option("--consumerid", dest="consumerid",
@@ -119,15 +119,15 @@ class Install(ErrataAction):
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
-            system_exit(0, _("A consumerid or a consumergroupid is required to perform an install"))
+            system_exit(0, _("a consumerid or a consumergroupid is required to perform an install"))
         errataids = data[2:]
         if not errataids:
-            system_exit(0, _("specify an errata Id to install"))
+            system_exit(0, _("specify an errata id to install"))
         if self.options.consumerid:
-            task = self.cconn.installerrata(self.options.consumerid, errataids)
+            task = self.cconn.installerrata(consumerid, errataids)
         elif self.options.consumergroupid:
-            task = self.cgconn.installerrata(self.options.consumergroupid, errataids)
-        print _('Created task ID: %s') % task['id']
+            task = self.cgconn.installerrata(consumergroupid, errataids)
+        print _('created task id: %s') % task['id']
         state = None
         spath = task['status_path']
         while state not in ['finished', 'error']:
@@ -138,11 +138,9 @@ class Install(ErrataAction):
             state = status['state']
         if state == 'finished':
             print _('\n[%s] installed on %s') % \
-                  (status['result'],
-                   (self.options.consumerid or
-                   (self.options.consumergroupid)))
+                  (status['result'], (consumerid or (consumergroupid)))
         else:
-            print("\nErrata install failed")
+            print("\nerrata install failed")
 
 # errata command --------------------------------------------------------------
 
