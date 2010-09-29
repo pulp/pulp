@@ -17,297 +17,217 @@
 # in this software or its documentation.
 #
 
-import gettext
 import sys
 import time
+from gettext import gettext as _
 
 import pulp.client.constants as constants
-from pulp.client.config import Config
-from pulp.client.connection import ConsumerConnection, RepoConnection, RestlibException
-from pulp.client.core.base import print_header, BaseCore, systemExit
-from pulp.client.logutil import getLogger
+from pulp.client.connection import ConsumerConnection, RepoConnection
+from pulp.client.core.base import print_header, BaseCore, system_exit, Action
+
+# base package group action class ---------------------------------------------
+
+class PackageGroupAction(Action):
+
+    def connections(self):
+        conns = {
+            'pconn': RepoConnection,
+            'cconn': ConsumerConnection,
+        }
+        return conns
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id", help="packagegroup id")
 
 
-log = getLogger(__name__)
-CFG = Config()
-#TODO: move this to config
-CONSUMERID = "/etc/pulp/consumer"
-_ = gettext.gettext
+# package group actions -------------------------------------------------------
+
+class List(PackageGroupAction):
+
+    name = 'list'
+    plug = 'list available packagegroups'
+
+    def setup_parser(self):
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        groups = self.pconn.packagegroups(repoid)
+        if not groups:
+            system_exit(-1, _("no packagegroups found in repo [%s]") % (repoid))
+        print_header("Repository: %s" % (repoid), "Package Group Information")
+        for key in sorted(groups.keys()):
+            print "\t %s" % (key)
 
 
-class packagegroup(BaseCore):
-    def __init__(self):
-        usage = "packagegroup [OPTIONS]"
-        shortdesc = "packagegroup specific actions to pulp server."
-        desc = ""
-        self.name = "packagegroup"
-        self.actions = {
-                        "list"          : "list available packagegroups",
-                        "info"          : "lookup information for a packagegroup",
-                        "create"        : "create a packagegroup",
-                        "delete"        : "delete a packagegroup",
-                        "add_package"   : "add package to an existing packagegroup",
-                        "delete_package": "delete package from an existing packagegroup",
-                        "install"       : "Schedule a packagegroup install",
-                        }
-        BaseCore.__init__(self, "packagegroup", usage, shortdesc, desc)
-        self.pconn = None
 
-    def load_server(self):
-        self.pconn = RepoConnection(host=CFG.server.host or "localhost",
-                                    port=443, username=self.username,
-                                    password=self.password,
-                                    cert_file=self.cert_filename,
-                                    key_file=self.key_filename)
-        self.cconn = ConsumerConnection(host=CFG.server.host or "localhost",
-                                        port=443, username=self.username,
-                                        password=self.password,
-                                        cert_file=self.cert_filename,
-                                        key_file=self.key_filename)
+class Info(PackageGroupAction):
 
-    def generate_options(self):
-        self.action = self._get_action()
-        if self.action == "info":
-            usage = "packagegroup info [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--id", dest="groupid",
-                           help="Packagegroup id to lookup")
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="Repository Label")
-        if self.action == "install":
-            usage = "packagegroup install [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("-g", "--pkggroupid", action="append", dest="pkggroupid",
-                           help="packagegroup to install on a given consumer; to specify multiple package groups use multiple -g")
-            self.parser.add_option("--consumerid", dest="consumerid",
-                           help="consumer id")
-        if self.action == "list":
-            usage = "packagegroup list [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="repository label")
-        if self.action == "create":
-            usage = "packagegroup create [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="repository label")
-            self.parser.add_option("--id", dest="groupid",
-                            help="group id")
-            self.parser.add_option("--name", dest="groupname",
-                            help="group name")
-            self.parser.add_option("--description", dest="description",
-                            help="group description, default is ''", default="")
-        if self.action == "delete":
-            usage = "packagegroup delete [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                           help="repository label")
-            self.parser.add_option("--id", dest="groupid",
-                            help="group id")
-        if self.action == "add_package":
-            usage = "packagegroup add_package [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                            help="repository label")
-            self.parser.add_option("--id", dest="groupid",
-                            help="group id")
-            self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                            help="packages to be added; to specify multiple packages use multiple -n")
-            self.parser.add_option("--type", dest="grouptype",
-                            help="type of list to add package to, example 'mandatory', 'optional', 'default'",
-                            default="default")
-        if self.action == "delete_package":
-            usage = "packagegroup delete_package [OPTIONS]"
-            self.setup_option_parser(usage, "", True)
-            self.parser.add_option("--repoid", dest="repoid",
-                            help="repository label")
-            self.parser.add_option("--id", dest="groupid",
-                            help="group id")
-            self.parser.add_option("--pkgname", dest="pkgname",
-                            help="package name")
-            self.parser.add_option("--type", dest="grouptype",
-                            help="type of list to delete package from, example 'mandatory', 'optional', 'default'",
-                            default="default")
+    name = 'info'
+    plug = 'lookup information for a packagegroup'
 
-    def _do_core(self):
-        if self.action == "info":
-            self._info()
-        if self.action == "install":
-            self._install()
-        if self.action == "list":
-            self._list()
-        if self.action == "create":
-            self._create()
-        if self.action == "delete":
-            self._delete()
-        if self.action == "add_package":
-            self._add_package()
-        if self.action == "delete_package":
-            self._delete_package()
+    def setup_parser(self):
+        super(Info, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
 
-    def _list(self):
-        if not self.options.repoid:
-            print _("Repo id required. Try --help")
-            sys.exit(0)
-        try:
-            groups = self.pconn.packagegroups(self.options.repoid)
-            if not groups:
-                print _("PackageGroups not found in repo [%s]") % (self.options.repoid)
-                sys.exit(-1)
-            print_header("Repository: %s" % (self.options.repoid),
-                         "Package Group Information")
-            keys = groups.keys()
-            keys.sort()
-            for key in keys:
-                print "\t %s" % (key)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    def run(self):
+        groupid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        groups = self.pconn.packagegroups(repoid)
+        if groupid not in groups:
+            system_exit(-1, _("packagegroup [%s] not found in repo [%s]") %
+                        (groupid, repoid))
+        print_header("Package Group Information")
+        info = groups[self.options.groupid]
+        print constants.PACKAGE_GROUP_INFO % (
+                info["name"], info["id"], info["mandatory_package_names"],
+                info["default_package_names"], info["optional_package_names"],
+                info["conditional_package_names"])
 
-    def _info(self):
-        if not self.options.groupid:
-            print _("package group id required. Try --help")
-            sys.exit(0)
-        if not self.options.repoid:
-            print _("Repo id required. Try --help")
-            sys.exit(0)
-        try:
-            groups = self.pconn.packagegroups(self.options.repoid)
-            if self.options.groupid not in groups:
-                print _("PackageGroup [%s] not found in repo [%s]") % \
-                    (self.options.groupid, self.options.repoid)
-                sys.exit(-1)
-            print_header("Package Group Information")
-            info = groups[self.options.groupid]
-            print constants.PACKAGE_GROUP_INFO % (info["name"], info["id"],
-                    info["mandatory_package_names"], info["default_package_names"],
-                    info["optional_package_names"], info["conditional_package_names"])
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
 
-    def _install(self):
-        if not self.options.consumerid:
-            print _("consumer id required. Try --help")
-            sys.exit(0)
-        if not self.options.pkggroupid:
-            print _("package group id required. Try --help")
-            sys.exit(0)
-        try:
-            task = self.cconn.installpackagegroups(
-                        self.options.consumerid,
-                        self.options.pkggroupid)
-            print _('Created task ID: %s') % task['id']
-            state = None
-            spath = task['status_path']
-            while state not in ['finished', 'error']:
-                sys.stdout.write('.')
-                sys.stdout.flush()
-                time.sleep(2)
-                status = self.cconn.task_status(spath)
-                state = status['state']
-            if state == 'finished':
-                print _('\n[%s] installed on %s') % \
-                      (status['result'], self.options.consumerid)
-            else:
-                print("\nPackage group install failed")
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
 
-    def _create(self):
-        if not self.options.repoid:
-            print _("Repo id required. Try --help")
-            sys.exit(0)
-        if not self.options.groupid:
-            print _("package group id required. Try --help")
-            sys.exit(0)
-        if not self.options.groupname:
-            print _("package group name required. Try --help")
-            sys.exit(0)
-        try:
-            self.pconn.create_packagegroup(self.options.repoid,
-                    self.options.groupid, self.options.groupname,
-                    self.options.description)
-            print_header("Package Group [%s] created in repository [%s]" %
-                         (self.options.groupid, self.options.repoid))
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+class Create(PackageGroupAction):
 
-    def _delete(self):
-        if not self.options.repoid:
-            print _("Repo id required. Try --help")
-            sys.exit(0)
-        if not self.options.groupid:
-            print _("package group id required. Try --help")
-            sys.exit(0)
-        try:
-            self.pconn.delete_packagegroup(self.options.repoid, self.options.groupid)
-            print _("PackageGroup [%s] deleted from repository [%s]") % \
-                (self.options.groupid, self.options.repoid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    name = 'create'
+    plug = 'create a packagegroup'
 
-    def _add_package(self):
-        if not self.options.repoid:
-            print _("Repo id required. Try --help")
-            sys.exit(0)
-        if not self.options.pnames:
-            print _("package name required. Try --help")
-            sys.exit(0)
-        if not self.options.groupid:
-            print _("package group id required. Try --help")
-            sys.exit(0)
-        try:
-            self.pconn.add_packages_to_group(self.options.repoid,
-                    self.options.groupid, self.options.pnames,
-                    self.options.grouptype)
-            print _("Following packages added to group [%s] in repository [%s]: \n %s") % \
-                (self.options.groupid, self.options.repoid, self.options.pnames)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    def setup_parser(self):
+        super(Create, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
+        self.parser.add_option("--name", dest="groupname", help="group name")
+        self.parser.add_option("--description", dest="description",
+                               help="group description, default is ''", default="")
 
-    def _delete_package(self):
-        if not self.options.repoid:
-            print _("Repo id required. Try --help")
-            sys.exit(0)
-        if not self.options.pkgname:
-            print _("package name required. Try --help")
-            sys.exit(0)
-        if not self.options.groupid:
-            print _("package group id required. Try --help")
-            sys.exit(0)
-        try:
-            self.pconn.delete_package_from_group(self.options.repoid,
-                    self.options.groupid, self.options.pkgname,
-                    self.options.grouptype)
-            print _("Package [%s] deleted from group [%s] in repository [%s]") % \
-                (self.options.pkgname, self.options.groupid, self.options.repoid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
-            systemExit(re.code, re.msg)
-        except Exception, e:
-            log.error("Error: %s" % e)
-            raise
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        groupid = self.get_required_option('id')
+        groupname = self.get_required_option('groupname')
+        description = self.opts.description
+        self.pconn.create_packagegroup(repoid, groupid, groupname, description)
+        print_header("package group [%s] created in repository [%s]" %
+                     (self.options.groupid, self.options.repoid))
 
+
+
+class Delete(PackageGroupAction):
+
+    name = 'delete'
+    plug = 'delete a packagegroup'
+
+    def setup_parser(self):
+        super(Delete, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        groupid = self.get_required_option('id')
+        self.pconn.delete_packagegroup(repoid, groupid)
+        print _("packagegroup [%s] deleted from repository [%s]") % \
+                (groupid, repoid)
+
+
+
+class AddPackage(PackageGroupAction):
+
+    name = 'add_package'
+    plug = 'add package to an existing packagegroup'
+
+    def setup_parser(self):
+        super(AddPackage, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
+        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                               help="packages to be added; to specify multiple packages use multiple -n")
+        self.parser.add_option("--type", dest="grouptype", default="default",
+                               help="type of list to add package to, example 'mandatory', 'optional', 'default'")
+
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        pnames = self.get_required_option('pnames')
+        groupid = self.get_required_option('id')
+        grouptype = self.opts.grouptype
+        self.pconn.add_packages_to_group(repoid, groupid, pnames, grouptype)
+        print _("following packages added to group [%s] in repository [%s]: \n %s") % \
+                (groupid, repoid, pnames)
+
+
+
+class DeletePackage(PackageGroupAction):
+
+    name = 'delete'
+    plug = 'delete package from an existing packagegroup'
+
+    def setup_parser(self):
+        super(DeletePackage, self).setup_parser()
+        self.parser.add_option("--repoid", dest="repoid",
+                               help="repository label")
+        self.parser.add_option("--pkgname", dest="pkgname", help="package name")
+        self.parser.add_option("--type", dest="grouptype", default='default',
+                               help="type of list to delete package from, example 'mandatory', 'optional', 'default'")
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        pkgname = self.get_required_option('pkgname')
+        groupid = self.get_required_option('id')
+        grouptype = self.opts.grouptype
+        self.pconn.delete_package_from_group(repoid, groupid, pkgname, grouptype)
+        print _("package [%s] deleted from group [%s] in repository [%s]") % \
+                (pkgname, groupid, repoid)
+
+
+
+class Install(PackageGroupAction):
+
+    name = 'install'
+    plug = 'schedule a packagegroup install'
+
+    def setup_parser(self):
+        self.parser.add_option("-g", "--pkggroupid", action="append", dest="pkggroupid",
+                               help="packagegroup to install on a given consumer; to specify multiple package groups use multiple -g")
+        self.parser.add_option("--consumerid", dest="consumerid",
+                               help="consumer id")
+
+    def run(self):
+        consumerid = self.get_required_option('consumerid')
+        pkggroupid = self.get_required_option('pkggroupid')
+        task = self.cconn.installpackagegroups(consumerid, pkggroupid)
+        print _('created task ID: %s') % task['id']
+        state = None
+        spath = task['status_path']
+        while state not in ('finished', 'error', 'canceled', 'timed_out'):
+            sys.stdout.write('.')
+            sys.stdout.flush()
+            time.sleep(2)
+            status = self.cconn.task_status(spath)
+            state = status['state']
+        if state == 'finished':
+            print _('\n[%s] installed on %s') % (status['result'], consumerid)
+        else:
+            print("\npackage group install failed")
+
+
+# package group command -------------------------------------------------------
+
+class PackageGroup(BaseCore):
+
+    name = 'packagegroup'
+    _default_actions = ('list', 'info', 'create', 'delete',
+                        'add_package', 'delete_package', 'install')
+
+    def __init__(self, actions=_default_actions):
+        super(PackageGroup, self).__init__(actions)
+        self.list = List()
+        self.info = Info()
+        self.create = Create()
+        self.delete = Delete()
+        self.add_package = AddPackage()
+        self.delete_package = DeletePackage()
+        self.install = Install()
+
+
+command_class = packagegroup = PackageGroup
