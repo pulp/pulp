@@ -156,7 +156,7 @@ class Errata(BaseCore):
         self.install = Install()
 
     def short_description(self):
-        return ''
+        return _('errata specific actions to pulp server')
 
 
 command_class = errata = Errata

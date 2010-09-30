@@ -313,7 +313,7 @@ class Consumer(BaseCore):
         self.history = History()
 
     def short_description(self):
-        return ''
+        return _('consumer specific actions to pulp server')
 
 
 command_class = consumer = Consumer

@@ -368,7 +368,7 @@ class Repo(BaseCore):
         self.schedules = Schedules()
 
     def short_description(self):
-        return ''
+        return _('repository specific actions to pulp server')
 
 
 command_class = repo = Repo

@@ -100,7 +100,7 @@ class User(BaseCore):
         self.repolib = RepoLib()
 
     def short_description(self):
-        return ''
+        return _('user specific actions to pulp server')
 
 
 command_class = user = User

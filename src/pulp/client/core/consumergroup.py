@@ -226,7 +226,7 @@ class ConsumerGroup(BaseCore):
         self.delete_keyvalue = DeleteKeyValue()
 
     def short_description(self):
-        return ''
+        return _('consumer group specific actions to pulp server')
 
 
 command_class = consumergroup = ConsumerGroup

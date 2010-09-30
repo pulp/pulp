@@ -230,7 +230,7 @@ class PackageGroup(BaseCore):
         self.install = Install()
 
     def short_description(self):
-        return ''
+        return _('packagegroup specific actions to pulp server')
 
 
 command_class = packagegroup = PackageGroup

@@ -90,7 +90,7 @@ class Auth(BaseCore):
         self.logout = Logout()
 
     def short_description(self):
-        return 'stores authentication credentials for the user on the machine'
+        return _('stores authentication credentials for the user on the machine')
 
 
 command_class = auth = Auth

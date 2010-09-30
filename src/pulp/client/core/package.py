@@ -113,7 +113,7 @@ class Package(BaseCore):
         self.install = Install()
 
     def short_description(self):
-        return ''
+        return _('package specific actions to pulp server')
 
 
 command_class = package = Package
