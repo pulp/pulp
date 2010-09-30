@@ -20,4 +20,5 @@ from pulp.client.cli.client import PulpClient
 
 
 if __name__ == "__main__":
+    root_check()
     client = PulpClient().main()
