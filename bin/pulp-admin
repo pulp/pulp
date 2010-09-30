@@ -15,17 +15,10 @@
 # in this software or its documentation.
 #
 
-import sys
-import os
-
-# quick check to see if you are a super-user.
-if os.getuid() != 0:
-    sys.stderr.write('ERROR: must be root to execute\n')
-    sys.exit(8)
-
-from pulp.client import pulpcli
+from pulp.client.cli.admin import PulpAdmin
+from pulp.client.cli.base import root_check
 
 
 if __name__ == "__main__":
-    pulpcli.PulpCore().main()
-
+    root_check()
+    PulpAdmin().main()

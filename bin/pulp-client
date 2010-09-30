@@ -15,89 +15,9 @@
 # in this software or its documentation.
 #
 
-import sys
-import os
-# quick check to see if you are a super-user.
-if os.getuid() != 0:
-    sys.stderr.write('ERROR: must be root to execute\n')
-    sys.exit(8)
-
-from pulp.client.core import core_consumer
-from pulp.client.core import core_repo
-from pulp.client.core import core_errata
-from pulp.client import pulpcli
-import pulp.client.utils as utils
-CONSUMERID = "/etc/pulp/consumer"
-
-class consumer(core_consumer.consumer):
-    """
-     This class is directly called from pulp-register and only handles
-     consumer operations for local consumer.
-     """
-    def __init__(self):
-        
-        actions = {"create"        : "Register this system as a consumer",
-                   "delete"        : "Delete a consumer",
-                   "update"        : "Update consumer profile",
-                   "bind"          : "Bind the consumer to listed repos",
-                   "unbind"        : "Unbind the consumer from repos",
-                   "history"       : "Displays the consumer history",
-                   }
-        core_consumer.consumer.__init__(self, is_admin=False, actions=actions)
-    
-    def getConsumer(self):
-        return get_consumer()
-
-class repo(core_repo.repo):
-    """
-     This class is directly called from pulp-register and only handles
-     repo operations for local consumer.
-    """
-    def __init__(self):
-    	actions = {"list"   : "List available repos",}
-        core_repo.repo.__init__(self, actions=actions)
-
-class errata(core_errata.errata):
-    """
-     This class is directly called from pulp-register and only handles
-     errata operations for local consumer.
-    """
-    def __init__(self):
-        actions = {"list"   : "List applicable errata",}
-        core_errata.errata.__init__(self, is_admin=False, actions=actions)
-
-    def getConsumer(self):
-        return get_consumer()
-
-class PulpRegister(pulpcli.PulpCore):
-    def __init__(self):
-        self.cli_cores = {}
-        self.args = utils.findSysvArgs(sys.argv)
-        if len(self.args) > 1:
-            if self.args[1] not in ['consumer', 'repo', 'errata']:
-                print ("Invalid command. Please see --help")
-                sys.exit(0) 
-            self.cli_cores[self.args[1]] =  eval(self.args[1])()
-        else:
-            for cls in [consumer, repo, errata]:
-                cmd = cls()
-                if cmd.name != "cli":
-                    self.cli_cores[cmd.name] = cmd
-
-def get_consumer():
-    ##TODO: this will eventually be a x509 cert, 
-    ##extract consumer id from cert oid schema
-    if not os.path.exists(CONSUMERID):
-        print("Error: This client is currently not registered. Please register to continue")
-        sys.exit(0)
-    try:
-        consumerid = open(CONSUMERID).read()
-    except Exception, e:
-        print("Error reading consumer." + e)
-        sys.exit(-1)
-    return consumerid
+from pulp.client.cli.base import root_check
+from pulp.client.cli.client import PulpClient
 
 
 if __name__ == "__main__":
-    PulpRegister().main()
-
+    client = PulpClient().main()
