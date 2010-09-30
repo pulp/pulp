@@ -367,5 +367,8 @@ class Repo(BaseCore):
         self.upload = Upload()
         self.schedules = Schedules()
 
+    def short_description(self):
+        return ''
+
 
 command_class = repo = Repo

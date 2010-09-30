@@ -229,5 +229,8 @@ class PackageGroup(BaseCore):
         self.delete_package = DeletePackage()
         self.install = Install()
 
+    def short_description(self):
+        return ''
+
 
 command_class = packagegroup = PackageGroup

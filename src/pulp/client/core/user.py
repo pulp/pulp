@@ -99,5 +99,8 @@ class User(BaseCore):
         self.delete = Delete()
         self.repolib = RepoLib()
 
+    def short_description(self):
+        return ''
+
 
 command_class = user = User

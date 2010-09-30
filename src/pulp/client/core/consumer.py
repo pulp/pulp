@@ -312,5 +312,8 @@ class Consumer(BaseCore):
         self.delete_keyvalue = DeleteKeyValue()
         self.history = History()
 
+    def short_description(self):
+        return ''
+
 
 command_class = consumer = Consumer

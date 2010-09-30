@@ -170,9 +170,6 @@ class Action(object):
     def parse_args(self):
         return self.parser.parse_args(self.args)
 
-    def setup_server(self):
-        raise NotImplementedError('Base class method called')
-
     def run(self):
         raise NotImplementedError('Base class method called')
 

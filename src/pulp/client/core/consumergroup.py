@@ -225,5 +225,8 @@ class ConsumerGroup(BaseCore):
         self.add_keyvalue = AddKeyValue()
         self.delete_keyvalue = DeleteKeyValue()
 
+    def short_description(self):
+        return ''
+
 
 command_class = consumergroup = ConsumerGroup

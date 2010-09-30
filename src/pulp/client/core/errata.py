@@ -155,5 +155,8 @@ class Errata(BaseCore):
         self.info = Info()
         self.install = Install()
 
+    def short_description(self):
+        return ''
+
 
 command_class = errata = Errata
