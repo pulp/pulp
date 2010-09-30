@@ -84,8 +84,8 @@ class Auth(BaseCore):
     name = 'auth'
     _default_actions = ('login', 'logout')
 
-    def __init__(self, actions=_default_actions):
-        super(Auth, self).__init__(actions)
+    def __init__(self, actions=_default_actions, action_state={}):
+        super(Auth, self).__init__(actions, action_state)
         self.login = Login()
         self.logout = Logout()
 

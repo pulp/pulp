@@ -92,8 +92,8 @@ class User(BaseCore):
     name = 'user'
     _default_actions = ('list', 'create', 'delete')
 
-    def __init__(self, actions=_default_actions):
-        super(User, self).__init__(actions)
+    def __init__(self, actions=_default_actions, action_state={}):
+        super(User, self).__init__(actions, action_state)
         self.list = List()
         self.create = Create()
         self.delete = Delete()

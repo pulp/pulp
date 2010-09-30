@@ -13,12 +13,40 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import os
+from gettext import gettext as _
+
 from pulp.client.cli.base import PulpBase
+from pulp.client.core.base import system_exit
+
+
+# TODO make this configurable
+_consumer_id_file = '/etc/pulp/consumer'
+
+
+def get_consumer():
+    if not os.path.exists(_consumer_id_file):
+        system_exit(0, _("error: this client is currently not registered; please register to continue"))
+    try:
+        consumerid = file(_consumer_id_file).read()
+    except Exception, e:
+        system_exit(-1, ("error reading consumer:" + e))
+    return consumerid
 
 
 class PulpClient(PulpBase):
 
-    _modules = ['consumer', 'errata', 'repo']
+    _id = get_consumer()
+    _commands = ('consumer', 'repo', 'errata')
+    _actions = {
+        'consumer': ('create', 'delete', 'update', 'bind', 'unbind', 'history'),
+        'repo': ('list',),
+        'errata': ('list',),
+    }
+    _actions_states = {
+        'consumer': {'id': _id},
+        'errata': {'id': _id}
+    }
 
     def __init__(self):
         super(PulpClient, self).__init__()

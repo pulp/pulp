@@ -355,8 +355,8 @@ class Repo(BaseCore):
     _default_actions = ('list', 'status', 'create', 'delete', 'update',
                         'sync', 'cancel_sync', 'upload', 'schedules')
 
-    def __init__(self, actions=_default_actions):
-        super(repo, self).__init__(actions)
+    def __init__(self, actions=_default_actions, action_state={}):
+        super(repo, self).__init__(actions, action_state)
         self.list = List()
         self.status = Status()
         self.create = Create()

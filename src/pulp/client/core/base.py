@@ -68,8 +68,9 @@ class Command(object):
     name = None
     _default_actions = ()
 
-    def __init__(self, actions=_default_actions):
+    def __init__(self, actions=_default_actions, action_state={}):
         self.actions = actions
+        self.action_state = action_state
         # options and arguments
         self.parser = OptionParser(usage=self.usage())
         self.parser.disable_interspersed_args()
@@ -136,6 +137,8 @@ class Command(object):
         action = self.get_action(args[0])
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
+        if self.action_state:
+            action.set_state(**self.action_state)
         self.setup_action_connections(action)
         action.main(args[1:])
 

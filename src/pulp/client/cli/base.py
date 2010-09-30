@@ -34,13 +34,17 @@ def root_check():
 class PulpBase(object):
     """
     Base pulp command line tool class.
-    @cvar _modules: list of command modules to load
+    @cvar _commands: list of command modules to load
     """
 
-    _modules = None
+    _commands = None
+    _actions = {}
+    _actions_states = {}
 
     def __init__(self):
-        self.commands = load_core_commands(self._modules)
+        self.commands = load_core_commands(self._commands,
+                                           self._actions,
+                                           self._actions_states)
         self.parser = OptionParser(usage=self.usage())
         self.parser.disable_interspersed_args()
         self.parser.add_option('--debug', dest='debug', action='store_true',

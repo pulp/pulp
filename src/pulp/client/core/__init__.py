@@ -58,15 +58,20 @@ def _load_core_modules(module_list=None):
     return modules
 
 
-def load_core_commands(command_list=None):
+def load_core_commands(command_list=None, actions_dict={}, actions_states={}):
     """
     Load the given commands from the core package modules.
     @type command_list: list or tuple of str's or None
     @param command_list: list of core module names to load, None means load all
+    @type actions_dict: dict
+    @param actions_dict: white list of actions to allow, keyed by command
+    @type actions_states: dict
+    @param actions_states: attributes to push to actions, keyed by command
     @rtype: dict of str -> module instances
     @return: dictionary of the loaded core modules, keyed by name
     """
     assert command_list is None or isinstance(command_list, (list, tuple))
+    assert isinstance(actions_dict, dict)
     commands = {}
     # this relies on the commands and modules having the same name
     modules = _load_core_modules(command_list)
@@ -75,5 +80,10 @@ def load_core_commands(command_list=None):
         if not hasattr(module, command):
             # TODO: log the failure
             continue
-        commands[command] = getattr(module, command)()
+        actions = actions_dict.get(command, None)
+        action_state = actions_states.get(command, {})
+        if actions is not None:
+            commands[command] = getattr(module, command)(actions, action_state)
+        else:
+            commands[command] = getattr(module, command)(action_state)
     return commands

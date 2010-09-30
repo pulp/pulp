@@ -149,8 +149,8 @@ class Errata(BaseCore):
     name = 'errata'
     _default_actions = ('list', 'info', 'install')
 
-    def __init__(self, actions=_default_actions):
-        super(Errata, self).__init__(actions)
+    def __init__(self, actions=_default_actions, action_state={}):
+        super(Errata, self).__init__(actions, action_state)
         self.list = List()
         self.info = Info()
         self.install = Install()
