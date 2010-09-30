@@ -92,20 +92,16 @@ class Command(object):
             lines.append('\t%-14s %-25s' % (name, description))
         return '\n'.join(lines)
 
-    def setup_credentials(self, username, password, cert_file, key_file):
+    def setup_credentials(self, username=None, password=None,
+                          cert_file=None, key_file=None):
         self.username = username
         self.password = password
+        # passed in username and password override on-disk credentials
+        if username and password:
+            return
         files = auth_utils.admin_cert_paths()
-        cert_file = cert_file or files[0]
-        key_file = key_file or files[1]
-        if os.access(cert_file, os.F_OK | os.R_OK):
-            self.cert_file = cert_file
-        else:
-            self.parser.error(_('cannot read cert file: %s') % cert_file)
-        if os.access(key_file, os.F_OK | os.R_OK):
-            self.key_file = key_file
-        else:
-            self.parser.error(_('cannot read key file: %s') % key_file)
+        self.cert_file = cert_file or files[0]
+        self.key_file = key_file or files[1]
 
     # main
 
@@ -116,13 +112,19 @@ class Command(object):
 
     def setup_action_connections(self, action):
         connections = action.connections()
+        cert_file = self.cert_file
+        key_file = self.key_file
+        if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
+            system_exit(os.EX_CONFIG, _('cannot read cert file: %s') % cert_file)
+        if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
+            system_exit(os.EX_CONFIG, _('cannot read key file: %s') % cert_file)
         for name, cls in connections.items():
             connection = cls(host=_cfg.server.host or 'localhost',
                              port=_cfg.server.port or 443,
                              username=self.username,
                              password=self.password,
-                             cert_file=self.cert_file,
-                             key_file=self.key_file)
+                             cert_file=cert_file,
+                             key_file=key_file)
             setattr(action, name, connection)
 
     def main(self, args):
