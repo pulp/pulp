@@ -168,14 +168,12 @@ class RepoApi(BaseApi):
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_urls(content_set)
-
         for label, uri in repo_info.items():
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
                                    feed="yum:" + CDN_URL + '/' + uri,
                                    cert_data=cert_data, groupid=groupid,
                                    relative_path=uri)
-                self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
                 continue
