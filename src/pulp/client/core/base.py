@@ -45,7 +45,7 @@ def print_header(*lines):
 
 def system_exit(code, msgs=None):
     """
-    Exit with a code and optional message(s). Saved a few lines of code.
+    Exit with a code and optional message(s). Saves a few lines of code.
     @type code: int
     @param code: code to return
     @type msgs: str or list or tuple of str's
@@ -170,7 +170,7 @@ class Action(object):
         raise NotImplementedError('Base class method called')
 
     def get_required_option(self, opt):
-        value = getattr(self.opts, opt)
+        value = getattr(self.opts, opt, None)
         if value is None:
             self.parser.error(_('option %s is required; please see --help') % opt)
         return value
