@@ -14,10 +14,10 @@
 # in this software or its documentation.
 
 import os
+import sys
 from gettext import gettext as _
 
 from pulp.client.cli.base import PulpBase
-from pulp.client.core.base import system_exit
 
 
 # TODO make this configurable
@@ -26,11 +26,13 @@ _consumer_id_file = '/etc/pulp/consumer'
 
 def get_consumer():
     if not os.path.exists(_consumer_id_file):
-        system_exit(0, _("error: this client is currently not registered; please register to continue"))
+        print >> sys.stderr, _("this client is currently not registered; please register to continue")
+        sys.exit(os.EX_USAGE)
     try:
         consumerid = file(_consumer_id_file).read()
     except Exception, e:
-        system_exit(-1, ("error reading consumer:" + e))
+        print >> sys.stderr, _("cannor read consumer:") + str(e)
+        sys.exit(os.EX_NOINPUT)
     return consumerid
 
 
