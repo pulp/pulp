@@ -37,7 +37,7 @@ class ConsumerGroupAction(Action):
 class List(ConsumerGroupAction):
 
     name = 'list'
-    plug = 'list available consumer groups'
+    description = 'list available consumer groups'
 
     def setup_parser(self):
         pass
@@ -56,7 +56,7 @@ class List(ConsumerGroupAction):
 class Create(ConsumerGroupAction):
 
     name = 'create'
-    plug = 'create a consumer group'
+    description = 'create a consumer group'
 
     def setup_parser(self):
         super(Create, self).setup_parser()
@@ -81,7 +81,7 @@ class Create(ConsumerGroupAction):
 class Delete(ConsumerGroupAction):
 
     name = 'delete'
-    plug = 'delete the consumer group'
+    description = 'delete the consumer group'
 
     def setup_parser(self):
         super(Delete, self).setup_parser()
@@ -99,7 +99,7 @@ class Delete(ConsumerGroupAction):
 class AddConsumer(ConsumerGroupAction):
 
     name = 'add_consumer'
-    plug = 'add a consumer to the group'
+    description = 'add a consumer to the group'
 
     def setup_parser(self):
         super(AddConsumer, self).setup_parser()
@@ -117,7 +117,7 @@ class AddConsumer(ConsumerGroupAction):
 class DeleteConsumer(ConsumerGroupAction):
 
     name = 'delete_consumer'
-    plug = 'delete a consumer from the group'
+    description = 'delete a consumer from the group'
 
     def setup_parser(self):
         super(DeleteConsumer, self).setup_parser()
@@ -135,7 +135,7 @@ class DeleteConsumer(ConsumerGroupAction):
 class Bind(ConsumerGroupAction):
 
     name = 'bind'
-    plug = 'bind the consumer group to listed repos'
+    description = 'bind the consumer group to listed repos'
 
     def setup_parser(self):
         super(Bind, self).setup_parser()
@@ -154,7 +154,7 @@ class Bind(ConsumerGroupAction):
 class Unbind(ConsumerGroupAction):
 
     name = 'unbind'
-    plug = 'unbind the consumer group from repos'
+    description = 'unbind the consumer group from repos'
 
     def setup_parser(self):
         super(Unbind, self).setup_parser()
@@ -173,7 +173,7 @@ class Unbind(ConsumerGroupAction):
 class AddKeyValue(ConsumerGroupAction):
 
     name = 'add_keyvalue'
-    plug = 'add key-value information to consumergroup'
+    description = 'add key-value information to consumergroup'
 
     def setup_parser(self):
         super(AddKeyValue, self).setup_parser()
@@ -192,7 +192,7 @@ class AddKeyValue(ConsumerGroupAction):
 class DeleteKeyValue(ConsumerGroupAction):
 
     name = 'delete_keyvalue'
-    plug = 'delete key-value information to consumergroup'
+    description = 'delete key-value information to consumergroup'
 
     def setup_parser(self):
         super(DeleteKeyValue, self).setup_parser()
@@ -209,6 +209,7 @@ class DeleteKeyValue(ConsumerGroupAction):
 class ConsumerGroup(BaseCore):
 
     name = 'consumergroup'
+    description = _('consumer group specific actions to pulp server')
     _default_actions = ('list', 'create', 'delete',
                         'add_consumer', 'delete_consumer', 'bind', 'unbind',
                         'add_keyvalue', 'delete_keyvalue')
@@ -224,9 +225,6 @@ class ConsumerGroup(BaseCore):
         self.unbind = Unbind()
         self.add_keyvalue = AddKeyValue()
         self.delete_keyvalue = DeleteKeyValue()
-
-    def short_description(self):
-        return _('consumer group specific actions to pulp server')
 
 
 command_class = consumergroup = ConsumerGroup

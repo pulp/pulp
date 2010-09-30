@@ -49,7 +49,7 @@ class RepoAction(Action):
 class List(RepoAction):
 
     name = 'list'
-    plug = 'list available repos'
+    description = 'list available repos'
 
     def setup_parser(self):
         self.parser.add_option("--groupid", action="append", dest="groupid",
@@ -74,7 +74,7 @@ class List(RepoAction):
 class Status(RepoAction):
 
     name = 'status'
-    plug = 'show the status of a repo'
+    description = 'show the status of a repo'
 
     def run(self):
         id = self.get_required_option('id')
@@ -101,7 +101,7 @@ class Status(RepoAction):
 class Create(RepoAction):
 
     name = 'create'
-    plug = 'create a repo'
+    description = 'create a repo'
 
     def setup_parser(self):
         super(Create, self).setup_parser()
@@ -153,7 +153,7 @@ class Create(RepoAction):
 class Delete(RepoAction):
 
     name = 'delete'
-    plug = 'delete a repo'
+    description = 'delete a repo'
 
     def run(self):
         id = self.get_required_option('id')
@@ -164,7 +164,7 @@ class Delete(RepoAction):
 class Update(RepoAction):
 
     name = 'update'
-    plug = 'update a repo'
+    description = 'update a repo'
 
     def setup_parser(self):
         super(Update, self).setup_parser()
@@ -207,7 +207,7 @@ class Update(RepoAction):
 class Sync(RepoAction):
 
     name = 'sync'
-    plug = 'sync data to this repo from the feed'
+    description = 'sync data to this repo from the feed'
 
     def setup_parser(self):
         super(Sync, self).setup_parser()
@@ -281,7 +281,7 @@ class Sync(RepoAction):
 class CancelSync(RepoAction):
 
     name = 'cancel_sync'
-    plug = 'cancel a running sync'
+    description = 'cancel a running sync'
 
     def setup_parser(self):
         super(CancelSync, self).setup_parser()
@@ -297,7 +297,7 @@ class CancelSync(RepoAction):
 class Upload(RepoAction):
 
     name = 'upload'
-    plug = 'upload package(s) to this repo'
+    description = 'upload package(s) to this repo'
 
     def setup_parser(self):
         super(Upload, self).setup_parser()
@@ -336,7 +336,7 @@ class Upload(RepoAction):
 class Schedules(RepoAction):
 
     name = 'schedules'
-    plug = 'list all repo schedules'
+    description = 'list all repo schedules'
 
     def setup_parser(self):
         pass
@@ -352,6 +352,7 @@ class Schedules(RepoAction):
 class Repo(BaseCore):
 
     name = 'repo'
+    description = _('repository specific actions to pulp server')
     _default_actions = ('list', 'status', 'create', 'delete', 'update',
                         'sync', 'cancel_sync', 'upload', 'schedules')
 
@@ -366,9 +367,6 @@ class Repo(BaseCore):
         self.cancel_sync = CancelSync()
         self.upload = Upload()
         self.schedules = Schedules()
-
-    def short_description(self):
-        return _('repository specific actions to pulp server')
 
 
 command_class = repo = Repo

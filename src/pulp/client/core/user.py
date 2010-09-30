@@ -35,7 +35,7 @@ class UserAction(Action):
 class List(UserAction):
 
     name = 'list'
-    plug = 'list available users'
+    description = 'list available users'
 
     def run(self):
         users = self.userconn.users()
@@ -49,7 +49,7 @@ class List(UserAction):
 class Create(UserAction):
 
     name = 'create'
-    plug = 'create a user'
+    description = 'create a user'
 
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
@@ -71,7 +71,7 @@ class Create(UserAction):
 class Delete(UserAction):
 
     name = 'delete'
-    plug = 'delete a user'
+    description = 'delete a user'
 
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
@@ -90,6 +90,7 @@ class Delete(UserAction):
 class User(BaseCore):
 
     name = 'user'
+    description = _('user specific actions to pulp server')
     _default_actions = ('list', 'create', 'delete')
 
     def __init__(self, actions=_default_actions, action_state={}):
@@ -98,9 +99,6 @@ class User(BaseCore):
         self.create = Create()
         self.delete = Delete()
         self.repolib = RepoLib()
-
-    def short_description(self):
-        return _('user specific actions to pulp server')
 
 
 command_class = user = User

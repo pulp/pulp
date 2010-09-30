@@ -40,7 +40,7 @@ class AuthAction(Action):
 class Login(AuthAction):
 
     name = 'login'
-    plug = 'stores user credentials on this machine'
+    description = 'stores user credentials on this machine'
 
     def run(self):
         #username = self.get_required_option('username')
@@ -65,7 +65,7 @@ class Login(AuthAction):
 class Logout(AuthAction):
 
     name = 'logout'
-    plug = 'removes stored user credentials on this machine'
+    description = 'removes stored user credentials on this machine'
 
     def run(self):
         # Determine the destination and store the cert information there
@@ -82,15 +82,13 @@ class Logout(AuthAction):
 class Auth(BaseCore):
 
     name = 'auth'
+    description = _('stores authentication credentials for the user on the machine')
     _default_actions = ('login', 'logout')
 
     def __init__(self, actions=_default_actions, action_state={}):
         super(Auth, self).__init__(actions, action_state)
         self.login = Login()
         self.logout = Logout()
-
-    def short_description(self):
-        return _('stores authentication credentials for the user on the machine')
 
 
 command_class = auth = Auth

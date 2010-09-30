@@ -66,6 +66,7 @@ systemExit = system_exit
 class Command(object):
 
     name = None
+    description = None
     _default_actions = ()
 
     def __init__(self, actions=_default_actions, action_state={}):
@@ -87,15 +88,9 @@ class Command(object):
                  'Supported Actions:']
         for name in self.actions:
             action = getattr(self, name, None)
-            plug = action.plug if action is not None else 'no description'
-            lines.append('\t%-14s %-25s' % (name, plug))
+            description = 'no description' if action is None else action.description
+            lines.append('\t%-14s %-25s' % (name, description))
         return '\n'.join(lines)
-
-    def short_description(self):
-        raise NotImplementedError('Base class method called')
-
-    def long_description(self):
-        raise NotImplementedError('Base class method called')
 
     def setup_credentials(self, username, password, cert_file, key_file):
         self.username = username
@@ -106,11 +101,11 @@ class Command(object):
         if os.access(cert_file, os.F_OK | os.R_OK):
             self.cert_file = cert_file
         else:
-            self.parser.error(_('error: cannot read cert file: %s') % cert_file)
+            self.parser.error(_('cannot read cert file: %s') % cert_file)
         if os.access(key_file, os.F_OK | os.R_OK):
             self.key_file = key_file
         else:
-            self.parser.error(_('error: cannot read key file: %s') % key_file)
+            self.parser.error(_('cannot read key file: %s') % key_file)
 
     # main
 
@@ -150,7 +145,6 @@ BaseCore = Command
 class Action(object):
 
     name = None
-    plug = None
     description = None
 
     def __init__(self):

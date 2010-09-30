@@ -51,7 +51,7 @@ class ErrataAction(Action):
 class List(ErrataAction):
 
     name = 'list'
-    plug = 'list applicable errata'
+    description = 'list applicable errata'
 
     def setup_parser(self):
         default = None
@@ -84,7 +84,7 @@ class List(ErrataAction):
 class Info(ErrataAction):
 
     name = 'info'
-    plug = 'see details on a specific errata'
+    description = 'see details on a specific errata'
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id", help="errata id")
@@ -106,7 +106,7 @@ class Info(ErrataAction):
 class Install(ErrataAction):
 
     name = 'install'
-    plug = 'install errata on a consumer'
+    description = 'install errata on a consumer'
 
     def setup_parser(self):
         self.parser.add_option("--consumerid", dest="consumerid",
@@ -147,6 +147,7 @@ class Install(ErrataAction):
 class Errata(BaseCore):
 
     name = 'errata'
+    description = _('errata specific actions to pulp server')
     _default_actions = ('list', 'info', 'install')
 
     def __init__(self, actions=_default_actions, action_state={}):
@@ -154,9 +155,6 @@ class Errata(BaseCore):
         self.list = List()
         self.info = Info()
         self.install = Install()
-
-    def short_description(self):
-        return _('errata specific actions to pulp server')
 
 
 command_class = errata = Errata

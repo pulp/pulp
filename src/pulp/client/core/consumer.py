@@ -57,7 +57,7 @@ class ConsumerAction(Action):
 class List(ConsumerAction):
 
     name = 'list'
-    plug = 'list all known consumers'
+    description = 'list all known consumers'
 
     def setup_parser(self):
         self.parser.add_option("--key", dest="key", help="key identifier")
@@ -98,7 +98,7 @@ class List(ConsumerAction):
 class Info(ConsumerAction):
 
     name = 'info'
-    plug = 'list of accessible consumer info'
+    description = 'list of accessible consumer info'
 
     def run(self):
         id = self.get_required_option('id')
@@ -118,7 +118,7 @@ class Info(ConsumerAction):
 class Create(ConsumerAction):
 
     name = 'create'
-    plug = 'create a consumer'
+    description = 'create a consumer'
 
     def setup_parser(self):
         super(Create, self).setup_parser()
@@ -147,7 +147,7 @@ class Create(ConsumerAction):
 class Delete(ConsumerAction):
 
     name = 'delete'
-    plug = 'delete the consumer'
+    description = 'delete the consumer'
 
     def run(self):
         consumerid = self.get_required_option('id')
@@ -158,7 +158,7 @@ class Delete(ConsumerAction):
 class Update(ConsumerAction):
 
     name = 'update'
-    plug = 'update consumer profile'
+    description = 'update consumer profile'
 
     def run(self):
         consumer_id = self.get_required_option('id')
@@ -170,7 +170,7 @@ class Update(ConsumerAction):
 class Bind(ConsumerAction):
 
     name = 'bind'
-    plug = 'bind the consumer to listed repos'
+    description = 'bind the consumer to listed repos'
 
     def setup_parser(self):
         super(Bind, self).setup_parser()
@@ -189,7 +189,7 @@ class Bind(ConsumerAction):
 class Unbind(ConsumerAction):
 
     name = 'unbind'
-    plug = 'unbind the consumer from repos'
+    description = 'unbind the consumer from repos'
 
     def setup_parser(self):
         super(Unbind, self).setup_parser()
@@ -208,7 +208,7 @@ class Unbind(ConsumerAction):
 class AddKeyValue(ConsumerAction):
 
     name = 'add_keyvalue'
-    plug = 'add key-value information to consumer'
+    description = 'add key-value information to consumer'
 
     def setup_parser(self):
         super(AddKeyValue, self).setup_parser()
@@ -228,7 +228,7 @@ class AddKeyValue(ConsumerAction):
 class DeleteKeyValue(ConsumerAction):
 
     name = 'delete_keyvalue'
-    plug = 'delete key-value information from consumer'
+    description = 'delete key-value information from consumer'
 
     def setup_parser(self):
         super(DeleteKeyValue, self).setup_parser()
@@ -245,7 +245,7 @@ class DeleteKeyValue(ConsumerAction):
 class History(ConsumerAction):
 
     name = 'history'
-    plug = 'view the consumer history'
+    description = 'view the consumer history'
 
     def setup_parser(self):
         super(History, self).setup_parser()
@@ -295,6 +295,7 @@ class History(ConsumerAction):
 class Consumer(BaseCore):
 
     name = 'consumer'
+    description = _('consumer specific actions to pulp server')
     _default_actions = ('list', 'info', 'create', 'delete', 'update',
                         'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
                         'history')
@@ -311,9 +312,6 @@ class Consumer(BaseCore):
         self.add_keyvalue = AddKeyValue()
         self.delete_keyvalue = DeleteKeyValue()
         self.history = History()
-
-    def short_description(self):
-        return _('consumer specific actions to pulp server')
 
 
 command_class = consumer = Consumer

@@ -40,7 +40,7 @@ class PackageAction(Action):
 class Info(PackageAction):
 
     name = 'info'
-    plug = 'lookup information for a package'
+    description = 'lookup information for a package'
 
     def setup_parser(self):
         self.parser.add_option("-n", "--name", dest="name",
@@ -63,7 +63,7 @@ class Info(PackageAction):
 class Install(PackageAction):
 
     name = 'install'
-    plug = 'schedule a package install'
+    description = 'schedule a package install'
 
     def setup_parser(self):
         self.parser.add_option("-n", "--name", action="append", dest="pnames",
@@ -105,15 +105,13 @@ class Install(PackageAction):
 class Package(BaseCore):
 
     name = 'package'
+    description = _('package specific actions to pulp server')
     _default_actions = ('info', 'install')
 
     def __init__(self, actions=_default_actions, action_state={}):
         super(Package, self).__init__(actions, action_state)
         self.info = Info()
         self.install = Install()
-
-    def short_description(self):
-        return _('package specific actions to pulp server')
 
 
 command_class = package = Package

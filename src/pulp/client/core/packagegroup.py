@@ -45,7 +45,7 @@ class PackageGroupAction(Action):
 class List(PackageGroupAction):
 
     name = 'list'
-    plug = 'list available packagegroups'
+    description = 'list available packagegroups'
 
     def setup_parser(self):
         self.parser.add_option("--repoid", dest="repoid",
@@ -65,7 +65,7 @@ class List(PackageGroupAction):
 class Info(PackageGroupAction):
 
     name = 'info'
-    plug = 'lookup information for a packagegroup'
+    description = 'lookup information for a packagegroup'
 
     def setup_parser(self):
         super(Info, self).setup_parser()
@@ -91,7 +91,7 @@ class Info(PackageGroupAction):
 class Create(PackageGroupAction):
 
     name = 'create'
-    plug = 'create a packagegroup'
+    description = 'create a packagegroup'
 
     def setup_parser(self):
         super(Create, self).setup_parser()
@@ -115,7 +115,7 @@ class Create(PackageGroupAction):
 class Delete(PackageGroupAction):
 
     name = 'delete'
-    plug = 'delete a packagegroup'
+    description = 'delete a packagegroup'
 
     def setup_parser(self):
         super(Delete, self).setup_parser()
@@ -134,7 +134,7 @@ class Delete(PackageGroupAction):
 class AddPackage(PackageGroupAction):
 
     name = 'add_package'
-    plug = 'add package to an existing packagegroup'
+    description = 'add package to an existing packagegroup'
 
     def setup_parser(self):
         super(AddPackage, self).setup_parser()
@@ -160,7 +160,7 @@ class AddPackage(PackageGroupAction):
 class DeletePackage(PackageGroupAction):
 
     name = 'delete'
-    plug = 'delete package from an existing packagegroup'
+    description = 'delete package from an existing packagegroup'
 
     def setup_parser(self):
         super(DeletePackage, self).setup_parser()
@@ -184,7 +184,7 @@ class DeletePackage(PackageGroupAction):
 class Install(PackageGroupAction):
 
     name = 'install'
-    plug = 'schedule a packagegroup install'
+    description = 'schedule a packagegroup install'
 
     def setup_parser(self):
         self.parser.add_option("-g", "--pkggroupid", action="append", dest="pkggroupid",
@@ -216,6 +216,7 @@ class Install(PackageGroupAction):
 class PackageGroup(BaseCore):
 
     name = 'packagegroup'
+    description = _('packagegroup specific actions to pulp server')
     _default_actions = ('list', 'info', 'create', 'delete',
                         'add_package', 'delete_package', 'install')
 
@@ -228,9 +229,6 @@ class PackageGroup(BaseCore):
         self.add_package = AddPackage()
         self.delete_package = DeletePackage()
         self.install = Install()
-
-    def short_description(self):
-        return _('packagegroup specific actions to pulp server')
 
 
 command_class = packagegroup = PackageGroup
