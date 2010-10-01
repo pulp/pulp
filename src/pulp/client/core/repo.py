@@ -62,8 +62,7 @@ class List(RepoAction):
         else:
             repos = self.pconn.repositories()
         if not len(repos):
-            print _("no repos available to list")
-            sys.exit(0)
+            system_exit(os.EX_OK, _("no repos available to list"))
         print_header('List of Available Repositories')
         for repo in repos:
             print constants.AVAILABLE_REPOS_LIST % (
@@ -81,14 +80,14 @@ class Status(RepoAction):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         syncs = self.pconn.sync_list(id)
-        print _('Repository: %s') % repo['id']
-        print _('Number of Packages: %d') % repo['package_count']
+        print _('repository: %s') % repo['id']
+        print _('number of packages: %d') % repo['package_count']
         last_sync = 'never' if repo['last_sync'] is None else str(repo['last_sync'])
-        print _('Last Sync: %s') % last_sync
+        print _('last sync: %s') % last_sync
         if syncs and syncs[0]['state'] in ('waiting', 'running'):
-            print _('Currently Syncing:'),
+            print _('currently syncing:'),
             if syncs[0]['progress'] is None:
-                print _('starting')
+                print _('progress unknown')
             else:
                 pkgs_left = syncs[0]['progress']['items_left']
                 pkgs_total = syncs[0]['progress']['items_total']
@@ -97,6 +96,23 @@ class Status(RepoAction):
                 percent = (bytes_total - bytes_left) / bytes_total
                 print _('%d%% done (%d of %d packages downloaded)') % \
                         (int(percent), (pkgs_total - pkgs_left), pkgs_total)
+
+
+class Content(RepoAction):
+
+    name = 'content'
+    description = _('list the contents of a repository')
+
+    def run(self):
+        id = self.get_required_option('id')
+        repo = self.pconn.repository(id)
+        print _('files in %s') % id
+        for f in sorted(repo['files']):
+            print ' ' + f
+        packages = self.pconn.packages(id)
+        print _('packages in %s') % id
+        for p in sorted(packages):
+            print ' ' + p
 
 
 class Create(RepoAction):
@@ -357,13 +373,15 @@ class Repo(Command):
 
     name = 'repo'
     description = _('repository specific actions to pulp server')
-    _default_actions = ('list', 'status', 'create', 'delete', 'update',
+    _default_actions = ('list', 'status', 'content',
+                        'create', 'delete', 'update',
                         'sync', 'cancel_sync', 'upload', 'schedules')
 
     def __init__(self, actions=None, action_state={}):
         super(Repo, self).__init__(actions, action_state)
         self.list = List()
         self.status = Status()
+        self.content = Content()
         self.create = Create()
         self.delete = Delete()
         self.update = Update()
