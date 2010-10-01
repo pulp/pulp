@@ -129,9 +129,9 @@ class Command(object):
             setattr(action, name, connection)
 
     def main(self, args):
+        self.parser.set_usage(self.usage())
         if not args:
             self.parser.error(_('no action given: please see --help'))
-        self.parser.set_usage(self.usage())
         self.parser.parse_args(args)
         action = self.get_action(args[0])
         if action is None:
