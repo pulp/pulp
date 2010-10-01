@@ -125,8 +125,8 @@ class Content(RepoAction):
         if not packages:
             print _(' none')
         else:
-            for p in sorted(packages):
-                print ' ' + p
+            for p in sorted(packages, key=lambda p: p['filename']):
+                print ' ' + p['filename']
 
 
 class Create(RepoAction):
