@@ -203,12 +203,12 @@ class ConsumerGroupApi(BaseApi):
         key_value_pairs = consumergroup['key_value_pairs']
         if key not in key_value_pairs.keys():
             conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
-            if conflicting_consumers is []:
+            if len(conflicting_consumers) == 0:
                 key_value_pairs[key] = value
             else:    
-                raise PulpException('Given key [%s] has different values for consumers [%s] '
+                raise PulpException('Given key [%s] has different value for consumers %s '
                                     'belonging to this group. You can use --force to '
-                                    'delete consumers\' original values.', key, conflicting_consumers)             
+                                    'delete consumer\'s original value.', key, conflicting_consumers)             
         else: 
             raise PulpException('Given key [%s] already exists', key)    
         consumergroup['key_value_pairs'] = key_value_pairs
@@ -258,12 +258,12 @@ class ConsumerGroupApi(BaseApi):
             raise PulpException('Given key [%s] does not exist', key)    
         else: 
             conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
-            if conflicting_consumers is []:
+            if len(conflicting_consumers) == 0:
                 key_value_pairs[key] = value
             else:    
-                raise PulpException('Given key [%s] has different values for consumers [%s] '
+                raise PulpException('Given key [%s] has different value for consumers %s '
                                     'belonging to this group. You can use --force to '
-                                    'delete consumers\' original values.', key, conflicting_consumers)             
+                                    'delete consumer\'s original value.', key, conflicting_consumers)             
 
         consumergroup['key_value_pairs'] = key_value_pairs
         self.update(consumergroup)
