@@ -81,8 +81,6 @@ class consumer(BaseCore):
                            help="consumer description eg: foo's web server")
             self.parser.add_option("--server", dest="server",
                            help="the fully qualified hostname of the pulp server you wish to create this consumer on")
-            self.parser.add_option("--location", dest="location",
-                           help="location or datacenter of the consumer")
 
         if self.action == "update":
             usage = "usage: %prog consumer update [OPTIONS]"
@@ -204,17 +202,13 @@ class consumer(BaseCore):
             sys.exit(0)
         if not self.options.description:
             self.options.description = self.options.id
-        if self.options.location:
-            key_value_pairs = {'location': self.options.location}
-        else:
-            key_value_pairs = {}
         if self.options.server:
             CFG.server.host = self.options.server
             CFG.write()
             self.load_server()
         try:
             try:
-                consumer = self.cconn.create(self.options.id, self.options.description, key_value_pairs)
+                consumer = self.cconn.create(self.options.id, self.options.description)
             except SSL.Checker.WrongHost, wh:
                 print constants.CONSUMER_WRONG_HOST_ERROR % \
                     (wh.expectedHost, wh.actualHost, wh.actualHost)

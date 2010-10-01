@@ -69,8 +69,6 @@ class consumergroup(BaseCore):
                            help="consumer group id"),
             self.parser.add_option("--description", dest="description",
                            help="description of consumer group")
-            self.parser.add_option("--consumerids", dest="consumerids",
-                           help="consumer id list to be included in this group")
         if self.action == "delete":
             usage = "consumergroup delete [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -163,14 +161,8 @@ class consumergroup(BaseCore):
             sys.exit(0)
         if not self.options.description:
             self.options.description = ""
-        if not self.options.consumerids:
-            print _("Creating empty consumer group")
-            self.options.consumerids = []
-        else:
-            self.options.consumerids = self.options.consumerids.split(",")
         try:
-            consumergroup = self.cgconn.create(self.options.id, self.options.description,
-                                    self.options.consumerids)
+            consumergroup = self.cgconn.create(self.options.id, self.options.description)
             print _(" Successfully created Consumer group [ %s ] with description [ %s ]") % \
                 (consumergroup['id'], consumergroup["description"])
         except RestlibException, re:
