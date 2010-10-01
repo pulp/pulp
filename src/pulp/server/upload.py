@@ -36,7 +36,7 @@ class PackageUpload:
         self.pkginfo = pkginfo
         self.stream = payload
         self.pkgname = pkginfo['pkgname']
-        self.repo_dir = "%s/%s/" % (REPOS_LOCATION, repo['id'])
+        self.repo_dir = "%s/%s/" % (REPOS_LOCATION, repo['relative_path'] or repo['id'])
         self.repo = repo
 
     def upload(self):
