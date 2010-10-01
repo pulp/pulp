@@ -99,7 +99,7 @@ class ConsumerApi(BaseApi):
                 
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
-    
+            
     
     @audit()
     def add_key_value_pair(self, id, key, value):
@@ -118,9 +118,15 @@ class ConsumerApi(BaseApi):
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
         if key not in key_value_pairs.keys():
-            key_value_pairs[key] = value
+            conflicting_group = self.find_conflicting_keyvalues(id, key, value)
+            if conflicting_group is None:
+                key_value_pairs[key] = value
+            else:    
+                raise PulpException('Given key [%s] has different value for this consumer '
+                                    'because of its membership in group [%s]. You can delete consumer '
+                                    'from that group and try again.', key, conflicting_group) 
         else: 
-            raise PulpException('Given key [%s] already exists', key)    
+            raise PulpException('Given key [%s] already exists with a different value.', key)    
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
         
@@ -165,7 +171,13 @@ class ConsumerApi(BaseApi):
         if key not in key_value_pairs.keys():
             raise PulpException('Given key [%s] does not exist', key)
         else:
-            key_value_pairs[key] = value 
+            conflicting_group = self.find_conflicting_keyvalues(id, key, value)
+            if conflicting_group is None:
+                key_value_pairs[key] = value
+            else:    
+                raise PulpException('Given key [%s] has different value for this consumer '
+                                    'because of its membership in group [%s]. You can delete consumer '
+                                    'from that group and try again.', key, conflicting_group)
                 
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
@@ -327,6 +339,20 @@ class ConsumerApi(BaseApi):
         task = InstallPackageGroups(id, groupnames)
         return task
     
+    def find_conflicting_keyvalues(self, id, key, value):
+        """
+        Find conflicting key-values for consumer groups that this consumer belongs to.
+        """
+        conflicting_keyvalue = {}
+        consumergroup_db = self._get_consumergroup_collection()
+        consumergroups = list(consumergroup_db.find({'consumerids' : id}))
+        for consumergroup in consumergroups:
+            group_keyvalues = consumergroup['key_value_pairs']
+            if key in group_keyvalues.keys() and group_keyvalues[key]!=value:
+                return consumergroup['id']
+        return None
+        
+        
     def installerrata(self, id, errataids=(), types=()):
         """
         Install errata on the consumer.
