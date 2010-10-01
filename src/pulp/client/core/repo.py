@@ -26,6 +26,7 @@ from pulp.client import constants
 from pulp.client import utils
 from pulp.client.connection import RepoConnection
 from pulp.client.core.base import Action, Command, print_header, system_exit
+from pulp.client.json_utils import parse_date
 
 # repo command errors ---------------------------------------------------------
 
@@ -80,10 +81,14 @@ class Status(RepoAction):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         syncs = self.pconn.sync_list(id)
-        print _('repository: %s') % repo['id']
-        print _('number of packages: %d') % repo['package_count']
-        last_sync = 'never' if repo['last_sync'] is None else str(repo['last_sync'])
-        print _('last sync: %s') % last_sync
+        print _(' repository: %s') % repo['id']
+        print _(' number of packages: %d') % repo['package_count']
+        last_sync = repo['last_sync']
+        if last_sync is None:
+            last_sync = 'never'
+        else:
+            last_sync = str(parse_date(last_sync))
+        print _(' last sync: %s') % last_sync
         if syncs and syncs[0]['state'] in ('waiting', 'running'):
             print _('currently syncing:'),
             if syncs[0]['progress'] is None:
