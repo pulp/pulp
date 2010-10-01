@@ -53,8 +53,9 @@ class TestProductRepo(unittest.TestCase):
         self.clean()
 
     def test_create_product_repo(self):
-        content_set = {
-            "rhel-server" : "/content/dist/rhel/server/$releasever/$basearch/os"}
+        content_set = [{
+            'content_set_label' : "rhel-server" ,
+            'content_rel_url' : "/content/dist/rhel/server/$releasever/$basearch/os"},]
         try:
             cert_data = {'ca' : open(CA_CERT, "rb").read(),
                          'cert' : open(CERT_FILE, "rb").read(),
@@ -64,6 +65,12 @@ class TestProductRepo(unittest.TestCase):
             self.assertTrue(len(repos) > 0)
         except IOError, ie:
             print("IOError:: Make sure the certificates paths are readable %s" % ie)
+            
+    def test_delete_product_repo(self):
+        product_name = "test_product"
+        self.rapi.delete_product_repo(product_name)
+        repos = self.rapi.repositories(spec={"groupid" : "test-product"})
+        self.assertTrue(len(repos) == 0)
 
 
 if __name__ == '__main__':

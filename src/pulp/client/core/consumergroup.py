@@ -204,6 +204,25 @@ class DeleteKeyValue(ConsumerGroupAction):
         self.cgconn.delete_key_value_pair(groupid, key)
         print _(" successfully deleted key: %s") % key
 
+
+class UpdateKeyValue(ConsumerGroupAction):
+
+    name = 'update_keyvalue'
+    description = ''
+
+    def setup_parser(self):
+        super(AddKeyValue, self).setup_parser()
+        self.parser.add_option("--key", dest="key", help="key identifier")
+        self.parser.add_option("--value", dest="value",
+                               help="value corresponding to the key")
+
+    def run(self):
+        groupid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        value = self.get_required_option('value')
+        self.cgconn.update_key_value_pair(groupid, key, value)
+        print _(" successfully updated key-value pair %s:%s") % (key, value)
+
 # consumer group command ------------------------------------------------------
 
 class ConsumerGroup(BaseCore):
@@ -212,7 +231,7 @@ class ConsumerGroup(BaseCore):
     description = _('consumer group specific actions to pulp server')
     _default_actions = ('list', 'create', 'delete',
                         'add_consumer', 'delete_consumer', 'bind', 'unbind',
-                        'add_keyvalue', 'delete_keyvalue')
+                        'add_keyvalue', 'delete_keyvalue', 'update_keyvalue')
 
     def __init__(self, actions=None, action_state={}):
         super(ConsumerGroup, self).__init__(actions, action_state)
@@ -225,6 +244,7 @@ class ConsumerGroup(BaseCore):
         self.unbind = Unbind()
         self.add_keyvalue = AddKeyValue()
         self.delete_keyvalue = DeleteKeyValue()
+        self.update_keyvalue = UpdateKeyValue()
 
 
 command_class = consumergroup = ConsumerGroup

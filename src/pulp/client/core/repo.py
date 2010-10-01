@@ -114,6 +114,8 @@ class Create(RepoAction):
         self.parser.add_option("--cacert", dest="cacert",
                                help="path location to ca certificate")
         self.parser.add_option("--cert", dest="cert",
+                               help="path location to entitlement certificate")
+        self.parser.add_option("--key", dest="key",
                                help="path location to entitlement certificate key")
         self.parser.add_option("--schedule", dest="schedule",
                                help="schedule for automatically synchronizing the repository")
@@ -127,8 +129,7 @@ class Create(RepoAction):
     def _get_cert_options(self):
         cacert = self.opts.cacert
         cert = self.opts.cert
-        # XXX this looks like a bug from the original code
-        key = getattr(self.opts, 'key', None)
+        key = self.opts.key
         if not (cacert and cert and key):
             return None
         return {"ca": utils.readFile(cacert),

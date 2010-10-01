@@ -169,10 +169,25 @@ class ConsumerGroupApi(BaseApi):
         for consumerid in consumerids:
             self.consumerApi.unbind(consumerid, repoid)
 
+    def find_consumers_with_conflicting_keyvalues(self, id, key, value):
+        """
+        Find consumers belonging to this consumer group with conflicting key-values.
+        """
+        conflicting_consumers = []
+        consumergroup = self.consumergroup(id)
+        consumerids = consumergroup['consumerids']
+        for consumerid in consumerids:
+            consumer = self.consumerApi.consumer(consumerid)
+            consumer_keyvalues = consumer['key_value_pairs']
+            if key in consumer_keyvalues.keys() and consumer_keyvalues[key]!=value:
+                conflicting_consumers.append(consumerid) 
+        return conflicting_consumers
+
+
     @audit()
     def add_key_value_pair(self, id, key, value):
         """
-        Add key-value info to all consumers in a consumer group.
+        Add key-value info to a consumer group.
         @param id: A consumer group id.
         @type id: str
         @param repoid: key
@@ -185,14 +200,25 @@ class ConsumerGroupApi(BaseApi):
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
         
-        for consumerid in consumergroup['consumerids']:
-            self.consumerApi.add_key_value_pair(consumerid, key, value)
+        key_value_pairs = consumergroup['key_value_pairs']
+        if key not in key_value_pairs.keys():
+            conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
+            if len(conflicting_consumers) == 0:
+                key_value_pairs[key] = value
+            else:    
+                raise PulpException('Given key [%s] has different value for consumers %s '
+                                    'belonging to this group. You can use --force to '
+                                    'delete consumer\'s original value.', key, conflicting_consumers)             
+        else: 
+            raise PulpException('Given key [%s] already exists', key)    
+        consumergroup['key_value_pairs'] = key_value_pairs
+        self.update(consumergroup)   
             
                         
     @audit()
     def delete_key_value_pair(self, id, key):
         """
-        delete key-value info from all consumers in a consumer group.
+        delete key-value info from a consumer group.
         @param id: A consumer group id.
         @type id: str
         @param repoid: key
@@ -203,9 +229,45 @@ class ConsumerGroupApi(BaseApi):
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
         
-        for consumerid in consumergroup['consumerids']:
-            self.consumerApi.delete_key_value_pair(consumerid, key)        
-       
+        key_value_pairs = consumergroup['key_value_pairs']
+        if key in key_value_pairs.keys():
+            del key_value_pairs[key] 
+        else: 
+            raise PulpException('Given key [%s] does not exist', key)
+        consumergroup['key_value_pairs'] = key_value_pairs
+        self.update(consumergroup)
+
+    @audit()
+    def update_key_value_pair(self, id, key, value):
+        """
+        Update key-value info of a consumer group.
+        @param id: A consumer group id.
+        @type id: str
+        @param repoid: key
+        @type repoid: str
+        @param value: value
+        @type: str
+        @raise PulpException: When consumer group is not found.
+        """
+        consumergroup = self.consumergroup(id)    
+        if not consumergroup:
+            raise PulpException('Consumer Group [%s] does not exist', id)
+        
+        key_value_pairs = consumergroup['key_value_pairs']
+        if key not in key_value_pairs.keys():
+            raise PulpException('Given key [%s] does not exist', key)    
+        else: 
+            conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
+            if len(conflicting_consumers) == 0:
+                key_value_pairs[key] = value
+            else:    
+                raise PulpException('Given key [%s] has different value for consumers %s '
+                                    'belonging to this group. You can use --force to '
+                                    'delete consumer\'s original value.', key, conflicting_consumers)             
+
+        consumergroup['key_value_pairs'] = key_value_pairs
+        self.update(consumergroup)
+                
         
     @audit()
     def installpackages(self, id, packagenames=[]):

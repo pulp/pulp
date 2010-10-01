@@ -402,6 +402,45 @@ class TestErrata(unittest.TestCase):
             self.assertTrue(erratum in r['errata']['bugfix'])
             self.assertTrue(self.eapi.erratum(erratum) is not None)
 
+    def test_errata_repo_resync_dont_delete_referenced_errata(self):
+        # We will test that if a repo no longer has a reference to an errata
+        # that errata is deleted from pulp, only if no other repos are referencing it
+        repo_path = os.path.join(self.data_path, "repo_resync_a")
+        r = self.rapi.create('test_errata_repo_resync',
+                'test_errata_repo_resync_name', 'i386',
+                'local:file://%s' % (repo_path))
+        self.assertTrue(r != None)
+        self.rapi._sync(r["id"])
+        # 'stable_repo' will be synced once and not changed
+        # it is used to verify that when we delete an errata
+        # we make sure to not delete one which is referenced by another repo
+        stable_repo = self.rapi.create('test_errata_repo_resync_stable_repo',
+                'test_errata_repo_resync_name_stable_repo', 'i386',
+                'local:file://%s' % (repo_path))
+        self.assertTrue(stable_repo != None)
+        self.rapi._sync(stable_repo["id"])
+        # Refresh repo now it has been sync'd
+        stable_repo = self.rapi.repository(stable_repo['id'])
+        r = self.rapi.repository(r['id'])
+        initial_num_bugfix_errata = len(r['errata']['bugfix'])
+
+        # Simulate to change repo 'r'
+        repo_path = os.path.join(self.data_path, "repo_resync_b")
+        r = self.rapi.repository(r["id"])
+        r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
+        self.rapi.update(r)
+        self.rapi._sync(r["id"])
+        #Refresh Repo Object and Verify Changes
+        r = self.rapi.repository(r["id"])
+        # One bugfix errata was deleted, so make sure this is reflected
+        self.assertTrue(len(r['errata']['bugfix']) == initial_num_bugfix_errata - 1)
+        self.assertTrue("RHBA-2009:1092" not in r['errata']['bugfix'])
+        self.assertTrue("RHBA-2009:1092" in stable_repo['errata']['bugfix'])
+        # Verify deleted errata is not used by any repos and it has been deleted
+        found = self.eapi.erratum(id="RHBA-2009:1092")
+        self.assertTrue(found is not None)
+
+
     def test_errata_repo_resync(self):
         # We shall sync a repo
         # Simulate an errata is deleted and another errata is updated
@@ -413,7 +452,7 @@ class TestErrata(unittest.TestCase):
                 'local:file://%s' % (repo_path))
         self.assertTrue(r != None)
         self.rapi._sync(r["id"])
-        # Refresh object now it's been sync'd
+        # Refresh repos now they have been sync'd
         r = self.rapi.repository(r['id'])
         #LOOK UP ERRATA AND VERIFY
         enhancement = [u'RHEA-2009:1270', u'RHEA-2007:0637', u'RHEA-2007:0636',
@@ -469,6 +508,11 @@ class TestErrata(unittest.TestCase):
         # One bugfix errata was deleted, so make sure this is reflected
         self.assertTrue(len(r['errata']['bugfix']) == (len(bugfix) - 1))
         self.assertTrue("RHBA-2009:1092" not in r['errata']['bugfix'])
+        # Errata is not used by any repos therefore it should be deleted from pulp
+        # Verify errata has been deleted
+        found = self.eapi.erratum(id="RHBA-2009:1092")
+        self.assertTrue(found is None)
+
         # Verify updated errata info
         self.assertTrue("RHSA-2008:0194" in r['errata']['security'])
         not_found_777777 = True
@@ -504,3 +548,29 @@ class TestErrata(unittest.TestCase):
         found = self.eapi.query_by_bz("433560")
         self.assertTrue(len(found) == 1)
         self.assertTrue(found[0] == 'RHSA-2008:0194')
+
+    def test_find_repos_by_errata(self):
+        # Goal is to search by errata id and discover the repos
+        # which contain the errata.
+        #
+        # Sync 2 repos with same content local feed
+        datadir = os.path.join(self.data_path, "repo_rhel_sample")
+        r = self.rapi.create("test_find_repos_by_errata", "test_name", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi._sync(r['id'])
+        r2 = self.rapi.create("test_find_repos_by_errata_2", "test_name_2", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi._sync(r2['id'])
+        # Refresh object now it's been sync'd
+        r = self.rapi.repository(r['id'])
+        r2 = self.rapi.repository(r2['id'])
+        # Test for known errata which should be present
+        eid = 'RHSA-2008:0194'
+        found = self.rapi.find_repos_by_errata(eid)
+        self.assertTrue(len(found) == 2)
+        self.assertTrue(r['id'] in found)
+        self.assertTrue(r2['id'] in found)
+        # Test for bad value, should NOT be present
+        eid = "BAD-VALUE"
+        found = self.rapi.find_repos_by_errata(eid)
+        self.assertTrue(len(found) == 0)

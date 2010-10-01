@@ -30,6 +30,7 @@ AVAILABLE_CONSUMER_GROUP_INFO = """
 Id                 \t%-25s
 Description        \t%-25s
 Consumer ids       \t%-25s
+Additional info    \t%-25s
 """
 
 

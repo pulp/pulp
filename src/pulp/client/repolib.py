@@ -192,8 +192,11 @@ class UpdateAction(Action):
         """
         if '://' in url:
             return url
-        else:
-            return os.path.join(base, url)
+        if base.endswith('/'):
+            base = base[:-1]
+        if url.startswith('/'):
+            url = url[1:]
+        return '/'.join((base, url))
 
 
 class Repo(dict):

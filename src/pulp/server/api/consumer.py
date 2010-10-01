@@ -99,12 +99,25 @@ class ConsumerApi(BaseApi):
                 
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
-    
+
+
+    def find_consumergroup_with_conflicting_keyvalues(self, id, key, value):
+        """
+        Find consumer group that this consumer belongs to with conflicting key-values.
+        """
+        consumergroup_db = self._get_consumergroup_collection()
+        consumergroups = list(consumergroup_db.find({'consumerids' : id}))
+        for consumergroup in consumergroups:
+            group_keyvalues = consumergroup['key_value_pairs']
+            if key in group_keyvalues.keys() and group_keyvalues[key]!=value:
+                return consumergroup['id']
+        return None
+            
     
     @audit()
     def add_key_value_pair(self, id, key, value):
         """
-        Add key-value info to a consumers.
+        Add key-value info to a consumer.
         @param id: consumer id.
         @type id: str
         @param repoid: key
@@ -118,7 +131,13 @@ class ConsumerApi(BaseApi):
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
         if key not in key_value_pairs.keys():
-            key_value_pairs[key] = value
+            conflicting_group = self.find_consumergroup_with_conflicting_keyvalues(id, key, value)
+            if conflicting_group is None:
+                key_value_pairs[key] = value
+            else:    
+                raise PulpException('Given key [%s] has different value for this consumer '
+                                    'because of its membership in group [%s]. You can delete consumer '
+                                    'from that group and try again.', key, conflicting_group) 
         else: 
             raise PulpException('Given key [%s] already exists', key)    
         consumer['key_value_pairs'] = key_value_pairs
@@ -145,7 +164,37 @@ class ConsumerApi(BaseApi):
             raise PulpException('Given key [%s] does not exist', key)
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
-    
+
+    @audit()
+    def update_key_value_pair(self, id, key, value):
+        """
+        Update key-value info of a consumer.
+        @param id: consumer id.
+        @type id: str
+        @param repoid: key
+        @type repoid: str
+        @param value: value
+        @type: str
+        @raise PulpException: When consumer is not found or given key exists.
+        """       
+        consumer = self.consumer(id)    
+        if not consumer:
+            raise PulpException('Consumer [%s] does not exist', id)
+        key_value_pairs = consumer['key_value_pairs']
+        if key not in key_value_pairs.keys():
+            raise PulpException('Given key [%s] does not exist', key)
+        else:
+            conflicting_group = self.find_consumergroup_with_conflicting_keyvalues(id, key, value)
+            if conflicting_group is None:
+                key_value_pairs[key] = value
+            else:    
+                raise PulpException('Given key [%s] has different value for this consumer '
+                                    'because of its membership in group [%s]. You can delete consumer '
+                                    'from that group and try again.', key, conflicting_group)
+                
+        consumer['key_value_pairs'] = key_value_pairs
+        self.update(consumer)
+            
 
     def consumers_with_key_value(self, key, value, fields=None):
         """
@@ -153,7 +202,7 @@ class ConsumerApi(BaseApi):
         """
         consumer_key = 'key_value_pairs.' + key
         return self.consumers({consumer_key: value}, fields)       
-
+    
     
     @audit()
     def certificate(self, id):
@@ -303,6 +352,8 @@ class ConsumerApi(BaseApi):
         task = InstallPackageGroups(id, groupnames)
         return task
     
+      
+        
     def installerrata(self, id, errataids=(), types=()):
         """
         Install errata on the consumer.
@@ -319,7 +370,7 @@ class ConsumerApi(BaseApi):
         if errataids:
             applicable_errata = self._applicable_errata(consumer, types)
             for eid in errataids:
-                errata_titles.append(applicable_errata[eid]['title'])
+                errata_titles.append(eid)
                 for pobj in applicable_errata[eid]:
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"])

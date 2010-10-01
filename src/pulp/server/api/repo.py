@@ -168,23 +168,22 @@ class RepoApi(BaseApi):
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_urls(content_set)
-
         for label, uri in repo_info.items():
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
                                    feed="yum:" + CDN_URL + '/' + uri,
                                    cert_data=cert_data, groupid=groupid,
                                    relative_path=uri)
-                self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
                 continue
 
         serv.disconnect()
         
-    def delete_product_repo(self, content_set, cert_data, groupid=None):
+    @audit(params=['groupid', 'content_set'])
+    def update_product_repo(self, content_set, cert_data, groupid=None):
         """
-         delete repos associated to a product. Usually through an event raised
+         Creates a repo associated to a product. Usually through an event raised
          from candlepin
          @param groupid: A product the candidate repo should be associated with.
          @type groupid: str
@@ -206,14 +205,45 @@ class RepoApi(BaseApi):
 
         for label, uri in repo_info.items():
             try:
-                repo = self.delete(label)
+                repo = self._get_existing_repo(label)
+                repo['feed'] = "yum:" + CDN_URL + '/' + uri
+                if cert_data:
+                    cert_files = self._write_certs_to_disk(label, cert_data)
+                    for key, value in cert_files.items():
+                        repo[key] = value
+                repo['arch'] = label.split("-")[-1]
+                repo['relative_path'] = uri
+                repo['groupid'] = groupid
+                self.update(repo)
+            except PulpException, pe:
+                log.error(pe)
+                continue
             except:
-                raise
-                log.error("Error deleting repo %s for product %s" % (label, groupid))
+                log.error("Error updating repo %s for product %s" % (label, groupid))
                 continue
 
         serv.disconnect()
-
+        
+    def delete_product_repo(self, groupid=None):
+        """
+         delete repos associated to a product. Usually through an event raised
+         from candlepin
+         @param groupid: A product the candidate repo should be associated with.
+         @type groupid: str
+        """
+        if not groupid:
+            # Nothing further can be done, exit
+            return
+        
+        repos = self.repositories(spec={"groupid" : groupid})
+        for repo in repos:
+            try:
+                self.delete(repo['id'])
+            except:
+                log.error("Error deleting repo %s for product %s" % (repo['id'], groupid))
+                continue
+    
+    @event(subject='repo.deleted')
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
@@ -421,8 +451,26 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
+            repos = self.find_repos_by_errata(erratum['id'])
+            if repo["id"] in repos and len(repos) == 1:
+                self.errataapi.delete(erratum['id'])
+            else:
+                log.debug("Not deleting %s since it is referenced by these repos: %s" % (erratum["id"], repos))
         except Exception, e:
             raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
+
+    def find_repos_by_errata(self, errata_id):
+        """
+        Return repos that contain passed in errata_id
+        """
+        ret_val = []
+        repos = self.repositories(fields=["id", "errata"])
+        for r in repos:
+            for e_type in r["errata"]:
+                if errata_id in r["errata"][e_type]:
+                    ret_val.append(r["id"])
+                    break
+        return ret_val
 
     @audit(params=['repoid', 'group_id', 'group_name'])
     def create_packagegroup(self, repoid, group_id, group_name, description):

@@ -124,15 +124,11 @@ class Create(ConsumerAction):
         super(Create, self).setup_parser()
         self.parser.add_option("--description", dest="description",
                                help="consumer description eg: foo's web server")
-        self.parser.add_option("--location", dest="location",
-                               help="location or datacenter of the consumer")
 
     def run(self):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', id)
-        location = getattr(self.opts, 'location', None)
-        key_value_pairs = {} if location is None else {'location': location}
-        consumer = self.cconn.create(id, description, key_value_pairs)
+        consumer = self.cconn.create(id, description)
         cert_dict = self.cconn.certificate(id)
         certificate = cert_dict['certificate']
         key = cert_dict['private_key']
@@ -242,6 +238,25 @@ class DeleteKeyValue(ConsumerAction):
         print _(" successfully deleted key: %s") % key
 
 
+class UpdateKeyValue(ConsumerAction):
+
+    name = 'update_keyvalue'
+    description = 'update key-value information of a consumer'
+
+    def setup_parser(self):
+        super(AddKeyValue, self).setup_parser()
+        self.parser.add_option("--key", dest="key",
+                       help="key identifier")
+        self.parser.add_option("--value", dest="value",
+                       help="value corresponding to the key")
+
+    def run(self):
+        consumerid = self.get_required_option('id')
+        key = self.get_required_option('key')
+        value = self.get_required_option('value')
+        self.cconn.update_key_value_pair(consumerid, key, value)
+        print _(" successfully updated key-value pair %s:%s") % (key, value)
+
 class History(ConsumerAction):
 
     name = 'history'
@@ -298,7 +313,7 @@ class Consumer(BaseCore):
     description = _('consumer specific actions to pulp server')
     _default_actions = ('list', 'info', 'create', 'delete', 'update',
                         'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
-                        'history')
+                        'update_keyvalue', 'history')
 
     def __init__(self, actions=None, action_state={}):
         super(Consumer, self).__init__(actions, action_state)
@@ -311,6 +326,7 @@ class Consumer(BaseCore):
         self.unbind = Unbind()
         self.add_keyvalue = AddKeyValue()
         self.delete_keyvalue = DeleteKeyValue()
+        self.update_keyvalue = UpdateKeyValue()
         self.history = History()
 
 
