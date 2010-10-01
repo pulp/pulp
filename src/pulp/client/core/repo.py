@@ -316,13 +316,15 @@ class CancelSync(RepoAction):
     name = 'cancel_sync'
     description = 'cancel a running sync'
 
-    def setup_parser(self):
-        super(CancelSync, self).setup_parser()
-        self.parser.add_option("--taskid", dest="taskid", help="task id")
-
     def run(self):
         id = self.get_required_option('id')
-        taskid = self.get_required_option('taskid')
+        syncs = self.pconn.sync_list(id)
+        if not syncs:
+            system_exit(os.EX_OK, _('no sync to cancel'))
+        task = syncs[0]
+        if task['state'] not in ('waiting', 'running'):
+            system_exit(os.EX_OK, _('sync has completed'))
+        taskid = task['id']
         self.pconn.cancel_sync(id, taskid)
         print _(" sync task %s canceled") % taskid
 
