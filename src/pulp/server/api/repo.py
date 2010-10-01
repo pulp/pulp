@@ -26,6 +26,7 @@ from itertools import chain
 from urlparse import urlparse
 
 # Pulp
+import pulp.server.util
 from pulp.server import comps_util
 from pulp.server import crontab
 from pulp.server import upload
@@ -52,7 +53,7 @@ class RepoApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.packageApi = PackageApi()
+        self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
 
@@ -248,7 +249,7 @@ class RepoApi(BaseApi):
     def delete(self, id):
         repo = self._get_existing_repo(id)
         repo_sync.delete_schedule(repo)
-        log.error("Delete API call invoked %s" % repo)
+        log.info("Delete API call invoked %s" % repo)
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
@@ -262,7 +263,7 @@ class RepoApi(BaseApi):
                         os.remove(fpath)
                     else: # os.path.isdir(fpath):
                         shutil.rmtree(fpath)
-                    log.error("removing repo files .... %s" % fpath)
+                    log.info("removing repo files .... %s" % fpath)
                 except:
                     #file removal failed
                     raise
@@ -343,7 +344,7 @@ class RepoApi(BaseApi):
         Adds the passed in package to this repo
         """
         repo = self._get_existing_repo(repoid)
-        package = self.packageApi.package(packageid)
+        package = self.packageapi.package(packageid)
         if package is None:
             raise PulpException("No Package with id: %s found" % packageid)
         # TODO:  We might want to restrict Packages we add to only
@@ -363,10 +364,42 @@ class RepoApi(BaseApi):
 
     @audit()
     def remove_package(self, repoid, p):
+        """Note: This method does not update repo metadata.
+        It is assumed metadata has already been updated.
+        """
         repo = self._get_existing_repo(repoid)
         # this won't fail even if the package is not in the repo's packages
         repo['packages'].pop(p['id'], None)
         self.objectdb.save(repo, safe=True)
+        # Remove package from repo location on file system
+        pkg_repo_path = pulp.server.util.get_repo_package_path(
+                repoid, p["filename"])
+        if os.path.exists(pkg_repo_path):
+            log.debug("Delete package %s at %s" % (p, pkg_repo_path))
+            os.remove(pkg_repo_path)
+
+        repos_with_pkg = self.find_repos_by_package(p["id"])
+        if len(repos_with_pkg) == 0:
+            self.packageapi.delete(p["id"])
+            pkg_packages_path = pulp.server.util.get_shared_package_path(
+                    p["name"], p["version"], p["release"], p["arch"],
+                    p["filename"], p["checksum"])
+            if os.path.exists(pkg_packages_path):
+                log.debug("Delete package %s at %s" % (p, pkg_packages_path))
+                os.remove(pkg_packages_path)
+
+
+    def find_repos_by_package(self, pkgid):
+        """
+        Return repos that contain passed in package id
+        @param pkgid: package id
+        """
+        ret_val = []
+        repos = self.repositories(fields=["id", "packages"])
+        for r in repos:
+            if pkgid in r["packages"]:
+                ret_val.append(r["id"])
+        return ret_val
 
     def errata(self, id, types=()):
         """
@@ -585,7 +618,7 @@ class RepoApi(BaseApi):
         '''
         non_existing_pkgs = []
         for pkg_name in pkg_names:
-            pkgs = self.packageApi.packages(name=pkg_name)
+            pkgs = self.packageapi.packages(name=pkg_name)
             if len(pkgs) == 0:
                 non_existing_pkgs.append(pkg_name)
             else:    
@@ -638,7 +671,7 @@ class RepoApi(BaseApi):
         exists in the given repo.                                                                    
         '''
 
-        pkgs = self.packageApi.packages(name=pkg_name)
+        pkgs = self.packageapi.packages(name=pkg_name)
         if len(pkgs) == 0:
             raise PulpException("Package %s not present in this repo" % pkg_name)
         else:
