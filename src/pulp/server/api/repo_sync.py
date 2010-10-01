@@ -462,7 +462,7 @@ class RHNSynchronizer(BaseSynchronizer):
         s.setURL(host)
         s.setParallel(config.config.getint('rhn', 'threads'))
         s.setFetchAllPackages(config.config.getboolean('rhn', 'fetch_all_packages'))
-        s.setRemoveOldPackages(config.config.getboolean('rhn', 'remove_all_packages'))
+        s.setRemoveOldPackages(config.config.getboolean('rhn', 'remove_old_packages'))
         s.certFile = config.config.get('rhn', 'cert_file')
         s.systemidFile = config.config.get('rhn', 'systemid_file')
 

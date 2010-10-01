@@ -262,10 +262,6 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
             #unknown checksum type, grab first checksum type
             hash = checksum[hash.keys()[0]]
 
-    log.error("hash = %s" % (hash))
-    log.error("hash[:3] = %s" % (hash[:3]))
-    log.error("name = %s, version = %s" % (name, version))
-    log.error("arch = %s, filename = %s" % (arch, filename))
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
         hash[:3], name, version, release, arch, filename)
     return pkg_location
