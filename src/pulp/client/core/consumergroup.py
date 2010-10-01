@@ -214,7 +214,7 @@ class ConsumerGroup(BaseCore):
                         'add_consumer', 'delete_consumer', 'bind', 'unbind',
                         'add_keyvalue', 'delete_keyvalue')
 
-    def __init__(self, actions=_default_actions, action_state={}):
+    def __init__(self, actions=None, action_state={}):
         super(ConsumerGroup, self).__init__(actions, action_state)
         self.list = List()
         self.create = Create()

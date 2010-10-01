@@ -17,7 +17,10 @@ import os
 import re
 import sys
 
+from pulp.client.logutil import getLogger
 
+
+_log = getLogger(__name__)
 _ignored_modules = ('__init__', 'base')
 _core_files_regex = re.compile('(?!(%s)).*\.py$' % '|'.join(_ignored_modules))
 
@@ -77,13 +80,11 @@ def load_core_commands(command_list=None, actions_dict={}, actions_states={}):
     modules = _load_core_modules(command_list)
     for command, module in modules.items():
         # this relies on the command and the command class having the same name
-        if not hasattr(module, command):
-            # TODO: log the failure
+        if not hasattr(module, 'command_class'):
+            _log.error('failed to load command: %s' % command)
             continue
         actions = actions_dict.get(command, None)
         action_state = actions_states.get(command, {})
-        if actions is not None:
-            commands[command] = getattr(module, command)(actions, action_state)
-        else:
-            commands[command] = getattr(module, command)(action_state)
+        command_class = getattr(module, 'command_class')
+        commands[command] = command_class(actions, action_state)
     return commands

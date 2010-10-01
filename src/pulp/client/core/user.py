@@ -93,7 +93,7 @@ class User(BaseCore):
     description = _('user specific actions to pulp server')
     _default_actions = ('list', 'create', 'delete')
 
-    def __init__(self, actions=_default_actions, action_state={}):
+    def __init__(self, actions=None, action_state={}):
         super(User, self).__init__(actions, action_state)
         self.list = List()
         self.create = Create()

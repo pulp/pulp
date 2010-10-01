@@ -300,7 +300,7 @@ class Consumer(BaseCore):
                         'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
                         'history')
 
-    def __init__(self, actions=_default_actions, action_state={}):
+    def __init__(self, actions=None, action_state={}):
         super(Consumer, self).__init__(actions, action_state)
         self.info = Info()
         self.list = List()

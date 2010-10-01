@@ -55,8 +55,9 @@ def system_exit(code, msgs=None):
     if msgs:
         if isinstance(msgs, basestring):
             msgs = (msgs,)
+        out = sys.stdout if code == os.EX_OK else sys.stderr
         for msg in msgs:
-            print >> sys.stderr, msg
+            print >> out, msg
     sys.exit(code)
 
 systemExit = system_exit
@@ -69,11 +70,11 @@ class Command(object):
     description = None
     _default_actions = ()
 
-    def __init__(self, actions=_default_actions, action_state={}):
-        self.actions = actions
+    def __init__(self, actions=None, action_state={}):
+        self.actions = actions if actions is not None else self._default_actions
         self.action_state = action_state
         # options and arguments
-        self.parser = OptionParser(usage=self.usage())
+        self.parser = OptionParser()
         self.parser.disable_interspersed_args()
         # credentials
         self.username = None
@@ -130,14 +131,14 @@ class Command(object):
     def main(self, args):
         if not args:
             self.parser.error(_('no action given: please see --help'))
+        self.parser.set_usage(self.usage())
         self.parser.parse_args(args)
         action = self.get_action(args[0])
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
         if self.action_state:
             action.set_state(**self.action_state)
-        self.setup_action_connections(action)
-        action.main(args[1:])
+        action.main(args[1:], self.setup_action_connections)
 
 
 BaseCore = Command
@@ -150,24 +151,15 @@ class Action(object):
     description = None
 
     def __init__(self):
-        self.parser = OptionParser(usage=SUPPRESS_USAGE)
+        self.parser = OptionParser(usage=self.usage())
         self.opts = None
         self.args = None
 
     def set_state(self, **kwargs):
         self.__dict__.update(kwargs)
 
-    def connections(self):
-        return {}
-
-    def setup_parser(self):
-        pass
-
-    def parse_args(self):
-        return self.parser.parse_args(self.args)
-
-    def run(self):
-        raise NotImplementedError('Base class method called')
+    def usage(self):
+        return 'Usage: %s <options>' % self.name
 
     def get_required_option(self, opt):
         value = getattr(self.opts, opt, None)
@@ -175,11 +167,23 @@ class Action(object):
             self.parser.error(_('option %s is required; please see --help') % opt)
         return value
 
-    def main(self, args):
+    def connections(self):
+        return {}
+
+    def setup_parser(self):
+        pass
+
+    def parse_args(self, args):
+        return self.parser.parse_args(args)
+
+    def run(self):
+        raise NotImplementedError('Base class method called')
+
+    def main(self, args, setup_connections_callback):
         self.setup_parser()
         self.opts, self.args = self.parse_args(args)
         try:
-            self.setup_server()
+            setup_connections_callback(self)
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)

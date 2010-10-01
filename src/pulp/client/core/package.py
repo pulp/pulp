@@ -108,7 +108,7 @@ class Package(BaseCore):
     description = _('package specific actions to pulp server')
     _default_actions = ('info', 'install')
 
-    def __init__(self, actions=_default_actions, action_state={}):
+    def __init__(self, actions=None, action_state={}):
         super(Package, self).__init__(actions, action_state)
         self.info = Info()
         self.install = Install()
