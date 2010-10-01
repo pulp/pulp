@@ -22,7 +22,6 @@ from gettext import gettext as _
 from pulp.client import constants
 from pulp.client.connection import UserConnection
 from pulp.client.core.base import Action, Command, print_header, system_exit
-from pulp.client.repolib import RepoLib
 
 # base user action class ------------------------------------------------------
 
@@ -100,7 +99,6 @@ class User(Command):
         self.list = List()
         self.create = Create()
         self.delete = Delete()
-        self.repolib = RepoLib()
 
 
 command_class = User
