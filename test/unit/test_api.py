@@ -640,7 +640,7 @@ class TestApi(unittest.TestCase):
         assert(len(packages) > 0)
 
     # Sprint 15 will revist package removal during re-syncs
-    def disabled_resync_removes_deleted_package(self):
+    def resync_removes_deleted_package(self):
         # Since a repo with 3 packages, simulate the repo source deleted 1 package
         # Re-sync ensure we delete the removed package
         repo_path = os.path.join(self.data_path, "repo_resync_a")
@@ -680,6 +680,15 @@ class TestApi(unittest.TestCase):
             self.assertTrue(found)
         for p in r["packages"].values():
             self.assertTrue(p["filename"] != removed_package)
+
+    def disabled_resync_removes_deleted_package_with_two_pkgs_same_nevra(self):
+        # Assume we have 2 packages in pulp with same NEVRA
+        # 1 of those packages is in a repo
+        # the repo is re-synced and that package is not present
+        # We need to ensure the package previously associated to the repo
+        # is removed and verify the other pkg with same NEVRA info but never
+        # part of this repo still exists in pulp
+        self.assertTrue(False)
 
     def test_sync_feedless(self):
         repo = self.rapi.create('some-id-no-feed', 'some name', 'i386')
@@ -810,33 +819,48 @@ class TestApi(unittest.TestCase):
         self.assertTrue(len(pkgs) == 1)
         self.assertTrue(pkgs[0]['filename'] == test_filename)
 
-        # Remove package version from repo
+        # Remove package from repo
         self.rapi.remove_package(repo['id'], p)
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(not repo["packages"].has_key(test_pkg_name))
-        # Verify package version from repo
-        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch,
-                version=test_version, release=test_release, arch=test_arch,
-                filename=test_filename, checksum_type=test_checksum_type,
-                checksum=test_checksum)
-        self.assertTrue(len(found) == 1)
-        # Check returned in search with no params
-        all = self.papi.packages()
-        self.assertTrue(len(all) > 0)
-
-        # Remove from Package collection
-        self.papi.delete(found[0]["_id"])
-        # Verify it's deleted
+        # Verify package has been removed from repo and since
+        # no other repos were referencing it, the package has been removed
+        # from the package collection as well
         found = self.papi.packages(name=test_pkg_name, epoch=test_epoch,
                 version=test_version, release=test_release, arch=test_arch,
                 filename=test_filename, checksum_type=test_checksum_type,
                 checksum=test_checksum)
         self.assertTrue(len(found) == 0)
-        # Check nothing returned in search with no params
-        all = self.papi.packages()
-        self.assertTrue(len(all) == 0)
 
+    def test_find_repos_by_package(self):
+        # Goal is to search by errata id and discover the repos
+        # which contain the errata.
+        #
+        # Sync 2 repos with same content local feed
+        datadir = os.path.join(self.data_path, "sameNEVRA_differentChecksums/A/repo")
+        r = self.rapi.create("test_find_repos_by_package", "test_name", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi._sync(r['id'])
+        datadir = os.path.join(self.data_path, "sameNEVRA_differentChecksums/B/repo")
+        r2 = self.rapi.create("test_find_repos_by_package_2", "test_name_2", "x86_64",
+                "local:file://%s" % datadir)
+        self.rapi._sync(r2['id'])
+        # Refresh object now it's been sync'd
+        r = self.rapi.repository(r['id'])
+        r2 = self.rapi.repository(r2['id'])
 
+        # Test for known pkgid
+        self.assertTrue(len(r["packages"]) == 1)
+        self.assertTrue(len(r2["packages"]) == 1)
+        pkgid1 = r["packages"].keys()[0]
+        pkgid2 = r2["packages"].keys()[0]
+
+        found = self.rapi.find_repos_by_package(pkgid1)
+        self.assertTrue(len(found) == 1)
+        self.assertTrue(found[0] == r["id"])
+        found = self.rapi.find_repos_by_package(pkgid2)
+        self.assertTrue(len(found) == 1)
+        self.assertTrue(found[0] == r2["id"])
 
 if __name__ == '__main__':
     unittest.main()

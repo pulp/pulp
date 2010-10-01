@@ -126,12 +126,6 @@ def _cron_command_script():
 def _cron_command(repo):
     return str('%s --repoid=%s' % (_cron_command_script(), repo['id']))
 
-def repos_location():
-    return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-
-def package_location():
-    return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
-
 # synchronization classes -----------------------------------------------------
 
 class InvalidPathError(Exception):
@@ -310,12 +304,13 @@ class YumSynchronizer(BaseSynchronizer):
         num_threads = config.config.getint('yum', 'threads')
         yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert,
-                                clikey=clikey, packages_location=package_location())
+                                clikey=clikey,
+                                packages_location=pulp.server.util.top_package_location())
         relative_path = repo['relative_path']
         if relative_path:
-            store_path = "%s/%s" % (repos_location(), relative_path)
+            store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
         else:
-            store_path = "%s/%s" % (repos_location(), repo['id'])
+            store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
         yfetch.fetchYumRepo(store_path, callback=progress_callback)
 
         return store_path
@@ -325,11 +320,47 @@ class LocalSynchronizer(BaseSynchronizer):
     """
     Sync class to synchronize a directory of rpms from a local filer
     """
+    def _sync_rpms(self, dst_repo_dir, src_repo_dir):
+        # Compute and import packages
+        pkglist = pulp.server.util.listdir(src_repo_dir)
+        pkglist = filter(lambda x: x.endswith(".rpm"), pkglist)
+        log.info("Found %s packages in %s" % (len(pkglist), src_repo_dir))
+        for count, pkg in enumerate(pkglist):
+            if count % 500 == 0:
+                log.debug("Working on %s/%s" % (count, len(pkglist)))
+            pkg_info = pulp.server.util.get_rpm_information(pkg)
+            pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+            pkg_location = pulp.server.util.get_shared_package_path(pkg_info.name,
+                    pkg_info.version, pkg_info.release, pkg_info.arch,
+                    os.path.basename(pkg), pkg_checksum)
+            log.debug('Expected Package Location: %s' % pkg_location)
+            if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
+                log.debug("package doesn't exist. Write the package to packages location: %s" % pkg_location)
+                pkg_dirname = os.path.dirname(pkg_location)
+                if not os.path.exists(pkg_dirname):
+                    os.makedirs(pkg_dirname)
+                shutil.copy(pkg, pkg_location)
+            else:
+                log.debug("package Already exists in packages location, create symlink under repo")
+                repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+                if not os.path.islink(repo_pkg_path):
+                    os.symlink(pkg_location, repo_pkg_path)
+        # Remove rpms which are no longer in source
+        existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
+        existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
+        existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
+        log.debug("existing_pkgs = %s" % (existing_pkgs))
+        source_pkgs = [os.path.basename(p) for p in pkglist]
+        for epkg in existing_pkgs:
+            if epkg not in source_pkgs:
+                log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
+                os.remove(os.path.join(dst_repo_dir, epkg))
+
     def sync(self, repo, repo_source, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         try:
-            dst_repo_dir = "%s/%s" % (repos_location(), repo['id'])
+            dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
             if repo['use_symlinks']:
@@ -338,31 +369,7 @@ class LocalSynchronizer(BaseSynchronizer):
             else:
                 if not os.path.exists(dst_repo_dir):
                     os.makedirs(dst_repo_dir)
-                # Compute and import packages
-                pkglist = pulp.server.util.listdir(src_repo_dir)
-                log.debug("Found %s packages in %s" % (len(pkglist), src_repo_dir))
-                for count, pkg in enumerate(pkglist):
-                    if pkg.endswith(".rpm"):
-                        if count % 500 == 0:
-                            log.debug("Working on %s/%s" % (count, len(pkglist)))
-                        pkg_info = pulp.server.util.get_rpm_information(pkg)
-                        pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
-                        pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (package_location(), pkg_checksum[:3], pkg_info.name, pkg_info.version,
-                                                                pkg_info.release, pkg_info.arch, os.path.basename(pkg))
-                        log.error('Expected Package Location: %s' % pkg_location)
-                        if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
-                            log.error("package doesn't exist. \
-                                        Write the package to packages location: %s" % pkg_location)
-                            pkg_dirname = os.path.dirname(pkg_location)
-                            if not os.path.exists(pkg_dirname):
-                                os.makedirs(pkg_dirname)
-                            shutil.copy(pkg, pkg_location)
-                        else:
-                            log.error("package Already exists. continue")
-
-                        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
-                        if not os.path.islink(repo_pkg_path):
-                            os.symlink(pkg_location, repo_pkg_path)
+                self._sync_rpms(dst_repo_dir, src_repo_dir)
                 # compute and import repo image files            
                 src_images_dir = os.path.join(src_repo_dir, "images")
                 if not os.path.exists(src_images_dir):
@@ -384,18 +391,6 @@ class LocalSynchronizer(BaseSynchronizer):
                             os.makedirs(file_dir)
                         shutil.copy(imfile, dst_file_path)
                         log.info("Imported file %s " % dst_file_path)
-
-##TODO: Need to revist the removal case
-#                # Remove rpms which are no longer in source
-#                existing_pkgs = []
-#                for pkg in pulp.server.util.listdir(repo_dir):
-#                    if pkg.endswith(".rpm"):
-#                        existing_pkgs.append(os.path.basename(pkg))
-#                source_pkgs = [os.path.basename(p) for p in pkglist]
-#                for epkg in existing_pkgs:
-#                    if epkg not in source_pkgs:
-#                        log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, repo["id"]))
-#                        os.remove(os.path.join(repo_dir, epkg))
                 groups_xml_path = None
                 updateinfo_path = None
                 src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")

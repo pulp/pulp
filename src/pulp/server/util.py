@@ -25,11 +25,17 @@ import time
 import rpm
 import yum
 
+from pulp.server import config
 from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
 
+def top_repos_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
+
+def top_package_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
 
 def get_rpm_information(rpm_path):
     """
@@ -225,6 +231,44 @@ def check_package_exists(pkg_path, hashsum, hashtype="sha", force=0):
     if force:
         return False
     return False
+
+def get_repo_package_path(repoid, pkg_filename):
+    """
+    Return the filepath to the package stored in the repos directory.
+    This is most likely a symbolic link only, pointing to the shared package
+    location.
+    @param repoid:  repository id
+    @param pkg_filename: filename of the package
+    """
+    f = os.path.join(top_repos_location(), repoid)
+    return os.path.join(f, pkg_filename)
+
+def get_shared_package_path(name, version, release, arch, filename, checksum):
+    """
+    Return the location in the package store for this particular package
+    @param name: name string
+    @param version: version string
+    @param release: release string
+    @param arch: arch string
+    @param filename: filename string
+    @param checksum: checksum can be string or dictionary
+    """
+    if isinstance(checksum, basestring):
+        hash = checksum
+    else:
+        if checksum.has_key("sha256"):
+            hash = checksum["sha256"]
+        else:
+            #unknown checksum type, grab first checksum type
+            hash = checksum[hash.keys()[0]]
+
+    log.error("hash = %s" % (hash))
+    log.error("hash[:3] = %s" % (hash[:3]))
+    log.error("name = %s, version = %s" % (name, version))
+    log.error("arch = %s, filename = %s" % (arch, filename))
+    pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
+        hash[:3], name, version, release, arch, filename)
+    return pkg_location
 
 class Singleton(type):
     """
