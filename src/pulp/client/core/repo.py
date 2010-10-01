@@ -112,13 +112,21 @@ class Content(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
-        print _('files in %s') % id
-        for f in sorted(repo['files']):
-            print ' ' + f
+        files = repo['files']
         packages = self.pconn.packages(id)
-        print _('packages in %s') % id
-        for p in sorted(packages):
-            print ' ' + p
+        print_header(_('Contents of %s') % id)
+        print _('files in %s:') % id
+        if not files:
+            print _(' none')
+        else:
+            for f in sorted(repo['files']):
+                print ' ' + f
+        print _('packages in %s:') % id
+        if not packages:
+            print _(' none')
+        else:
+            for p in sorted(packages):
+                print ' ' + p
 
 
 class Create(RepoAction):
