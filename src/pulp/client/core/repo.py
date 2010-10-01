@@ -127,7 +127,8 @@ class Create(RepoAction):
     def _get_cert_options(self):
         cacert = self.opts.cacert
         cert = self.opts.cert
-        key = self.opts.key
+        # XXX this looks like a bug from the original code
+        key = getattr(self.opts, 'key', None)
         if not (cacert and cert and key):
             return None
         return {"ca": utils.readFile(cacert),
