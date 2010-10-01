@@ -58,7 +58,7 @@ class PulpBase(object):
         """
         lines = ['Usage: %s <options> <command>' % os.path.basename(sys.argv[0]),
                  'Supported Commands:']
-        for name, command in self.commands.items():
+        for name, command in sorted(self.commands.items()):
             lines.append('\t%-14s %-25s' % (name, command.description))
         return '\n'.join(lines)
 
