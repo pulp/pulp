@@ -202,7 +202,7 @@ class ConsumerGroupApi(BaseApi):
         
         key_value_pairs = consumergroup['key_value_pairs']
         if key not in key_value_pairs.keys():
-            conflicting_consumers = self.find_conflicting_keyvalues(id, key, value)
+            conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
             if conflicting_consumers is []:
                 key_value_pairs[key] = value
             else:    
@@ -257,7 +257,7 @@ class ConsumerGroupApi(BaseApi):
         if key not in key_value_pairs.keys():
             raise PulpException('Given key [%s] does not exist', key)    
         else: 
-            conflicting_consumers = self.find_conflicting_keyvalues(id, key, value)
+            conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
             if conflicting_consumers is []:
                 key_value_pairs[key] = value
             else:    
