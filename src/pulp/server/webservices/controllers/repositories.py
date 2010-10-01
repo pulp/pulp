@@ -19,6 +19,7 @@ import logging
 
 import web
 
+from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import yum_rhn_progress_callback
 from pulp.server.webservices import http
@@ -29,6 +30,7 @@ from pulp.server.webservices.role_check import RoleCheck
 # globals ---------------------------------------------------------------------
 
 api = RepoApi()
+pkg_api = PackageApi()
 log = logging.getLogger('pulp')
 
 # default fields for repositories being sent to the client
@@ -175,9 +177,10 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
         repo = api.repository(id, ['id', 'packages'])
+        packages = [pkg_api.package(p) for p in repo['packages']]
         if repo is None:
             return self.not_found('No repository %s' % id)
-        filtered_packages = self.filter_results(repo.get('packages', []), filters)
+        filtered_packages = self.filter_results(packages, filters)
         return self.ok(filtered_packages)
 
     @JSONController.error_handler
