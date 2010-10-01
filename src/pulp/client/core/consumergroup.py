@@ -11,11 +11,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import os
 from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client.connection import ConsumerGroupConnection
-from pulp.client.core.base import Action, BaseCore, system_exit, print_header
+from pulp.client.core.base import Action, Command, print_header, system_exit
 from pulp.client.repolib import RepoLib
 
 # consumer group base action --------------------------------------------------
@@ -46,7 +47,7 @@ class List(ConsumerGroupAction):
         groups = self.cgconn.consumergroups()
         if not len(groups):
             print _("no consumer groups available to list")
-            system_exit(0)
+            system_exit(os.EX_OK)
         print_header("List of Available Consumer Groups")
         for group in groups:
             print constants.AVAILABLE_CONSUMER_GROUP_INFO % \
@@ -91,7 +92,7 @@ class Delete(ConsumerGroupAction):
         group = self.cgconn.consumergroup(id=self.options.id)
         if not group:
             print _(" consumer group [ %s ] does not exist") % id
-            system_exit(-1)
+            system_exit(os.EX_DATAERR)
         self.cgconn.delete(id=id)
         print _(" successfully deleted consumer group [ %s ]") % id
 
@@ -225,7 +226,7 @@ class UpdateKeyValue(ConsumerGroupAction):
 
 # consumer group command ------------------------------------------------------
 
-class ConsumerGroup(BaseCore):
+class ConsumerGroup(Command):
 
     name = 'consumergroup'
     description = _('consumer group specific actions to pulp server')
@@ -247,4 +248,4 @@ class ConsumerGroup(BaseCore):
         self.update_keyvalue = UpdateKeyValue()
 
 
-command_class = consumergroup = ConsumerGroup
+command_class = ConsumerGroup

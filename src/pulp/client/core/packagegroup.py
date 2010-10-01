@@ -17,13 +17,14 @@
 # in this software or its documentation.
 #
 
+import os
 import sys
 import time
 from gettext import gettext as _
 
 import pulp.client.constants as constants
 from pulp.client.connection import ConsumerConnection, RepoConnection
-from pulp.client.core.base import print_header, BaseCore, system_exit, Action
+from pulp.client.core.base import Action, Command, print_header, system_exit
 
 # base package group action class ---------------------------------------------
 
@@ -55,7 +56,8 @@ class List(PackageGroupAction):
         repoid = self.get_required_option('repoid')
         groups = self.pconn.packagegroups(repoid)
         if not groups:
-            system_exit(-1, _("no packagegroups found in repo [%s]") % (repoid))
+            system_exit(os.EX_DATAERR,
+                        _("no packagegroups found in repo [%s]") % (repoid))
         print_header("Repository: %s" % (repoid), "Package Group Information")
         for key in sorted(groups.keys()):
             print "\t %s" % (key)
@@ -77,7 +79,8 @@ class Info(PackageGroupAction):
         repoid = self.get_required_option('repoid')
         groups = self.pconn.packagegroups(repoid)
         if groupid not in groups:
-            system_exit(-1, _("packagegroup [%s] not found in repo [%s]") %
+            system_exit(os.EX_DATAERR,
+                        _("packagegroup [%s] not found in repo [%s]") %
                         (groupid, repoid))
         print_header("Package Group Information")
         info = groups[self.options.groupid]
@@ -213,7 +216,7 @@ class Install(PackageGroupAction):
 
 # package group command -------------------------------------------------------
 
-class PackageGroup(BaseCore):
+class PackageGroup(Command):
 
     name = 'packagegroup'
     description = _('packagegroup specific actions to pulp server')
@@ -231,4 +234,4 @@ class PackageGroup(BaseCore):
         self.install = Install()
 
 
-command_class = packagegroup = PackageGroup
+command_class = PackageGroup

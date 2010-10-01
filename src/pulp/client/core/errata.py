@@ -16,6 +16,7 @@
 # in this software or its documentation.
 #
 
+import os
 import sys
 import time
 from gettext import gettext as _
@@ -26,7 +27,7 @@ from pulp.client.config import Config
 from pulp.client.connection import (
     ErrataConnection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
-from pulp.client.core.base import Action, BaseCore, system_exit
+from pulp.client.core.base import Action, Command, system_exit
 from pulp.client.logutil import getLogger
 
 
@@ -70,14 +71,14 @@ class List(ErrataAction):
         consumerid = self.opts.consumerid
         repoid = self.opts.repoid
         if not (consumerid or repoid):
-            system_exit(0, _("a consumer or a repo is required to lookup errata"))
+            system_exit(os.EX_USAGE, _("a consumer or a repo is required to lookup errata"))
         if repoid:
             errata = self.rconn.errata(repoid, self.options.type)
         elif consumerid:
             errata = self.cconn.errata(consumerid, self.options.type)
         if not errata:
             print _("no errata available to list")
-            system_exit(0)
+            system_exit(os.EX_OK)
         print errata
 
 
@@ -119,10 +120,10 @@ class Install(ErrataAction):
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
-            system_exit(0, _("a consumerid or a consumergroupid is required to perform an install"))
+            system_exit(os.EX_USAGE, _("a consumerid or a consumergroupid is required to perform an install"))
         errataids = data[2:]
         if not errataids:
-            system_exit(0, _("specify an errata id to install"))
+            system_exit(os.EX_USAGE, _("specify an errata id to install"))
         if self.options.consumerid:
             task = self.cconn.installerrata(consumerid, errataids)
         elif self.options.consumergroupid:
@@ -144,7 +145,7 @@ class Install(ErrataAction):
 
 # errata command --------------------------------------------------------------
 
-class Errata(BaseCore):
+class Errata(Command):
 
     name = 'errata'
     description = _('errata specific actions to pulp server')
@@ -157,4 +158,4 @@ class Errata(BaseCore):
         self.install = Install()
 
 
-command_class = errata = Errata
+command_class = Errata

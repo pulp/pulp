@@ -20,7 +20,7 @@ from gettext import gettext as _
 
 from pulp.client import auth_utils
 from pulp.client.connection import UserConnection
-from pulp.client.core.base import BaseCore, Action
+from pulp.client.core.base import Action, Command
 
 # base auth action class ------------------------------------------------------
 
@@ -79,7 +79,7 @@ class Logout(AuthAction):
 
 # auth command ----------------------------------------------------------------
 
-class Auth(BaseCore):
+class Auth(Command):
 
     name = 'auth'
     description = _('stores authentication credentials for the user on the machine')

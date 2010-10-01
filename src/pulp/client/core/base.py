@@ -16,7 +16,7 @@
 import os
 import sys
 from gettext import gettext as _
-from optparse import OptionParser, SUPPRESS_USAGE
+from optparse import OptionParser
 
 from pulp.client import auth_utils
 from pulp.client.config import Config
@@ -62,7 +62,7 @@ def system_exit(code, msgs=None):
 
 systemExit = system_exit
 
-# base command class ---------------------------------------------------------
+# base command class ----------------------------------------------------------
 
 class Command(object):
 
@@ -85,7 +85,7 @@ class Command(object):
     # attributes
 
     def usage(self):
-        lines = ['Usage: %s <action> <options>' % self.name,
+        lines = ['Usage: ... %s <action> <options>' % self.name,
                  'Supported Actions:']
         for name in self.actions:
             action = getattr(self, name, None)
@@ -140,10 +140,7 @@ class Command(object):
             action.set_state(**self.action_state)
         action.main(args[1:], self.setup_action_connections)
 
-
-BaseCore = Command
-
-# base action class -------------------------------------------------
+# base action class -----------------------------------------------------------
 
 class Action(object):
 
@@ -159,12 +156,13 @@ class Action(object):
         self.__dict__.update(kwargs)
 
     def usage(self):
-        return 'Usage: %s <options>' % self.name
+        return 'Usage: ... %s <options>' % self.name
 
-    def get_required_option(self, opt):
+    def get_required_option(self, opt, arg=None):
+        arg = arg or '--' + opt
         value = getattr(self.opts, opt, None)
         if value is None:
-            self.parser.error(_('option %s is required; please see --help') % opt)
+            self.parser.error(_('option %s is required; please see --help') % arg)
         return value
 
     def connections(self):
@@ -179,11 +177,11 @@ class Action(object):
     def run(self):
         raise NotImplementedError('Base class method called')
 
-    def main(self, args, setup_connections_callback):
+    def main(self, args, setup_connections):
         self.setup_parser()
         self.opts, self.args = self.parse_args(args)
         try:
-            setup_connections_callback(self)
+            setup_connections(self)
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)

@@ -17,6 +17,7 @@
 #
 
 import base64
+import os
 import sys
 import time
 from gettext import gettext as _
@@ -24,7 +25,7 @@ from gettext import gettext as _
 from pulp.client import constants
 from pulp.client import utils
 from pulp.client.connection import RepoConnection
-from pulp.client.core.base import Action, print_header, BaseCore, system_exit
+from pulp.client.core.base import Action, Command, print_header, system_exit
 
 # repo command errors ---------------------------------------------------------
 
@@ -193,7 +194,7 @@ class Update(RepoAction):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         if not repo:
-            system_exit(1, _("repo with id: [%s] not found") % id)
+            system_exit(os.EX_DATAERR, _("repo with id: [%s] not found") % id)
         optdict = vars(self.opts)
         for field in optdict.keys():
             if (repo.has_key(field) and optdict[field]):
@@ -275,7 +276,7 @@ class Sync(RepoAction):
         task = self.pconn.sync(id, timeout)
         print _('sync for repo %s started') % id
         if not foreground:
-            system_exit(0, _('use "repo status" to check on the progress'))
+            system_exit(os.EX_OK, _('use "repo status" to check on the progress'))
         self.sync_foreground(task)
 
 
@@ -310,7 +311,8 @@ class Upload(RepoAction):
         id = self.get_required_option('id')
         files = self.args
         if not files:
-            system_exit(0, _("need to provide at least one file to perform upload"))
+            system_exit(os.EX_USAGE,
+                        _("need to provide at least one file to perform upload"))
         dir = self.opts.dir
         if dir:
             files += utils.processDirectory(dir, "rpm")
@@ -351,7 +353,7 @@ class Schedules(RepoAction):
 
 # repo command ----------------------------------------------------------------
 
-class Repo(BaseCore):
+class Repo(Command):
 
     name = 'repo'
     description = _('repository specific actions to pulp server')

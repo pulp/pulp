@@ -15,6 +15,7 @@
 # in this software or its documentation.
 #
 
+import os
 import urlparse
 from gettext import gettext as _
 from optparse import SUPPRESS_HELP
@@ -24,7 +25,7 @@ from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
 from pulp.client.connection import ConsumerConnection
-from pulp.client.core.base import Action, BaseCore, print_header, system_exit
+from pulp.client.core.base import Action, Command, print_header, system_exit
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
 
@@ -81,7 +82,7 @@ class List(ConsumerAction):
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], con["repoids"],
                          con["package_profile"], con["key_value_pairs"])
-            system_exit(0)
+            system_exit(os.EX_OK)
 
         consumers_with_keyvalues = []
         for con in cons:
@@ -307,7 +308,7 @@ class History(ConsumerAction):
 
 # consumer command ------------------------------------------------------------
 
-class Consumer(BaseCore):
+class Consumer(Command):
 
     name = 'consumer'
     description = _('consumer specific actions to pulp server')
@@ -330,4 +331,4 @@ class Consumer(BaseCore):
         self.history = History()
 
 
-command_class = consumer = Consumer
+command_class = Consumer

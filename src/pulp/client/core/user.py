@@ -16,11 +16,12 @@
 # in this software or its documentation.
 #
 
+import os
 from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client.connection import UserConnection
-from pulp.client.core.base import Action, BaseCore, print_header, system_exit
+from pulp.client.core.base import Action, Command, print_header, system_exit
 from pulp.client.repolib import RepoLib
 
 # base user action class ------------------------------------------------------
@@ -40,7 +41,7 @@ class List(UserAction):
     def run(self):
         users = self.userconn.users()
         if not len(users):
-            system_exit(0, _("no users available to list"))
+            system_exit(os.EX_OK, _("no users available to list"))
         print_header(_('Available Users'))
         for user in users:
             print constants.AVAILABLE_USERS_LIST % (user["login"], user["name"])
@@ -81,13 +82,14 @@ class Delete(UserAction):
         deleteusername = self.get_required_option('username')
         user = self.userconn.user(login=deleteusername)
         if not user:
-            system_exit(-1, _(" user [ %s ] does not exist") % deleteusername)
+            system_exit(os.EX_DATAERR,
+                        _(" user [ %s ] does not exist") % deleteusername)
         self.userconn.delete(login=deleteusername)
         print _(" successfully deleted User [ %s ]") % deleteusername
 
 # user command ----------------------------------------------------------------
 
-class User(BaseCore):
+class User(Command):
 
     name = 'user'
     description = _('user specific actions to pulp server')
@@ -101,4 +103,4 @@ class User(BaseCore):
         self.repolib = RepoLib()
 
 
-command_class = user = User
+command_class = User

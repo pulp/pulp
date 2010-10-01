@@ -15,13 +15,14 @@
 # in this software or its documentation.
 #
 
+import os
 import sys
 import time
 from gettext import gettext as _
 
 from pulp.client.connection import (
     RepoConnection, ConsumerConnection, ConsumerGroupConnection)
-from pulp.client.core.base import Action, BaseCore, system_exit, print_header
+from pulp.client.core.base import Action, Command, print_header, system_exit
 
 # package action base class ---------------------------------------------------
 
@@ -53,7 +54,8 @@ class Info(PackageAction):
         repoid = self.get_required_option('repoid')
         pkg = self.pconn.get_package(repoid, name)
         if not pkg:
-            system_exit(-1, _("package [%s] not found in repo [%s]") %
+            system_exit(os.EX_DATAERR,
+                        _("package [%s] not found in repo [%s]") %
                         (name, repoid))
         print_header("Package Information")
         for key, value in pkg.items():
@@ -77,10 +79,11 @@ class Install(PackageAction):
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
-            system_exit(0, _("consumer or consumer group id required. Try --help"))
+            system_exit(os.EX_USAGE,
+                        _("consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            system_exit(0, _("nothing to Upload."))
+            system_exit(os.EX_DATAERR, _("nothing to upload."))
         if consumergroupid:
             task = self.cgconn.installpackages(consumergroupid, pnames)
         else:
@@ -102,7 +105,7 @@ class Install(PackageAction):
 
 # package command -------------------------------------------------------------
 
-class Package(BaseCore):
+class Package(Command):
 
     name = 'package'
     description = _('package specific actions to pulp server')
@@ -114,4 +117,4 @@ class Package(BaseCore):
         self.install = Install()
 
 
-command_class = package = Package
+command_class = Package
