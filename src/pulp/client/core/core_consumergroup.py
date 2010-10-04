@@ -114,6 +114,8 @@ class consumergroup(BaseCore):
                            help="key identifier")
             self.parser.add_option("--value", dest="value",
                            help="value corresponding to the key")                        
+            self.parser.add_option("--force", action="store_false", dest="force", default=True,
+                           help="Force changes to consumer keys if required")
         if self.action == "delete_keyvalue":
             usage = "usage: %prog consumergroup delete_keyvalue [OPTIONS]"
             self.setup_option_parser(usage, "", True)
@@ -301,7 +303,12 @@ class consumergroup(BaseCore):
             print("Value is required. Try --help")
             sys.exit(0)            
         try:
-            self.cgconn.add_key_value_pair(self.options.groupid, self.options.key, self.options.value)
+            if self.options.force:
+                force_value = 'false'
+            else:
+                force_value = 'true'
+            self.cgconn.add_key_value_pair(self.options.groupid, self.options.key, self.options.value, 
+                                           force_value)
             print _(" Successfully added key-value pair %s:%s" % (self.options.key, self.options.value))
         except RestlibException, re:
             log.error("Error: %s" % re)

@@ -55,6 +55,7 @@ class consumer(BaseCore):
                                    "add_keyvalue"     : "Add key-value information to consumer",
                                    "delete_keyvalue"  : "Delete key-value information to consumer",
                                    "update_keyvalue"  : "Update key-value information of a consumer",
+                                   "get_keyvalues"     : "Get key-value attributes for given consumer",
                                    "history"          : "View the consumer history",
         }
         self.is_admin = is_admin
@@ -136,6 +137,14 @@ class consumer(BaseCore):
             if self.is_admin:   
                 self.parser.add_option("--id", dest="id",
                                        help="consumer identifier")               
+
+        if self.action == "get_keyvalues":
+            usage = "usage: %prog consumer get_keyvalues [OPTIONS]"
+            self.setup_option_parser(usage, "", True)
+            if self.is_admin:   
+                self.parser.add_option("--id", dest="id",
+                                       help="consumer identifier")                          
+
                 
         if self.action == "list":
             usage = "usage: %prog consumer list [OPTIONS]"
@@ -189,6 +198,8 @@ class consumer(BaseCore):
             self._delete_keyvalue()
         if self.action == "update_keyvalue":
             self._update_keyvalue()
+        if self.action == "get_keyvalues":
+            self._get_keyvalues()            
         if self.action == "history":
             self._history()
 
@@ -264,9 +275,6 @@ class consumer(BaseCore):
             raise
 
     def _list(self):
-        if self.options.key and not self.options.value:
-            print _("key-value required. Try --help")
-            sys.exit(0) 
         try:
             cons = self.cconn.consumers()
             baseurl = "%s://%s:%s" % (CFG.server.scheme, CFG.server.host, CFG.server.port)
@@ -278,16 +286,18 @@ class consumer(BaseCore):
                     print constants.AVAILABLE_CONSUMER_INFO % \
                             (con["id"], con["description"], con["repoids"], con["package_profile"],
                              con["key_value_pairs"])
-            else:
-                consumers_with_keyvalues = []
+            elif not self.options.value:
+                print _("Consumers with key : %s" % self.options.key)
                 for con in cons:
-                    key_value_pairs = con['key_value_pairs']
+                    key_value_pairs = self.cconn.get_keyvalues(con["id"])
+                    if (self.options.key in key_value_pairs.keys()):
+                        print _("%s  -  %s : %s" % (con["id"], self.options.key, key_value_pairs[self.options.key]))                              
+            else:
+                print _("Consumers with %s : %s" % (self.options.key, self.options.value))
+                for con in cons:
+                    key_value_pairs = self.cconn.get_keyvalues(con["id"])
                     if (self.options.key in key_value_pairs.keys()) and (key_value_pairs[self.options.key] == self.options.value):
-                        consumers_with_keyvalues.append(con)
-                for con in consumers_with_keyvalues:
-                    print constants.AVAILABLE_CONSUMER_INFO % \
-                            (con["id"], con["description"], con["repoids"], con["package_profile"],
-                             con["key_value_pairs"])                          
+                        print con["id"]
         except RestlibException, re:
             log.error("Error: %s" % re)
             systemExit(re.code, re.msg)
@@ -381,6 +391,19 @@ class consumer(BaseCore):
         except Exception, e:
             log.error("Error: %s" % e)
             raise
+
+    def _get_keyvalues(self):    
+        consumerid = self.getConsumer()
+        try:
+            keyvalues  = self.cconn.get_keyvalues(consumerid)
+            print _("%s" % keyvalues)
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+            systemExit(re.code, re.msg)
+        except Exception, e:
+            log.error("Error: %s" % e)
+            raise           
+
 
     def _delete(self):
         consumerid = self.getConsumer()

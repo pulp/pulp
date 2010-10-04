@@ -377,6 +377,10 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/update_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
     
+    def get_keyvalues(self, id):
+        method = "/consumers/%s/keyvalues/" % str(id)
+        return self.conn.request_get(method)
+
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
@@ -455,8 +459,8 @@ class ConsumerGroupConnection(PulpConnection):
         method = "/consumergroups/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
     
-    def add_key_value_pair(self, id, key, value):
-        key_value_dict = {'key' : key, 'value' : value}
+    def add_key_value_pair(self, id, key, value, force):
+        key_value_dict = {'key' : key, 'value' : value, 'force'  : force}
         method = "/consumergroups/%s/add_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
     
