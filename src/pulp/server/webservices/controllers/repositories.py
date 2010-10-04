@@ -448,12 +448,14 @@ class RepositoryActions(AsyncController):
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %
                                  (action_name, id))
-        tasks = [t for t in find_async(method_name=action_methods[action_name])
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+        #tasks = [t for t in find_async(method_name=action_methods[action_name])
+        #         if (t.args and id in t.args) or
+        #         (t.kwargs and id in t.kwargs.values())]
+        tasks = []
         if not tasks:
             return self.not_found('No recent %s on repository %s found' %
                                  (action_name, id))
+        # XXX JSON serialization of this list is broken!
         self.ok([self._task_to_dict(t) for t in tasks])
 
 
