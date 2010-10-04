@@ -22,6 +22,7 @@ import web
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import yum_rhn_progress_callback
+from pulp.server.async import find_async
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -31,7 +32,7 @@ from pulp.server.webservices.role_check import RoleCheck
 
 api = RepoApi()
 pkg_api = PackageApi()
-log = logging.getLogger('pulp')
+_log = logging.getLogger('pulp')
 
 # default fields for repositories being sent to the client
 default_fields = [
@@ -447,12 +448,13 @@ class RepositoryActions(AsyncController):
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %
                                  (action_name, id))
-        tasks = [] # FIXME
+        tasks = [t for t in find_async(method_name=action_methods[action_name])
+                 if (t.args and id in t.args) or
+                 (t.kwargs and id in t.kwargs.values())]
         if not tasks:
             return self.not_found('No recent %s on repository %s found' %
                                  (action_name, id))
-        self.ok([self._task_to_dict(task) for task in tasks])
-
+        self.ok([self._task_to_dict(t) for t in tasks])
 
 
 class RepositoryActionStatus(AsyncController):
