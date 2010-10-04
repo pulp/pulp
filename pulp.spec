@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.70
+Version:        0.0.71
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,10 @@ fi
 
 
 %changelog
+* Mon Oct 04 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.71-1
+- API and cli changes for consumer get_keyvalues and --force option for
+  consumergroup add_key_values (skarmark@redhat.com)
+
 * Mon Oct 04 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.70-1
 - changed packages deferred field to actually return the packages, not just the
   ids (jconnor@redhat.com)
