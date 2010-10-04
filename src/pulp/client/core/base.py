@@ -33,6 +33,11 @@ _header_width = 45
 _header_border = '+------------------------------------------+'
 
 def print_header(*lines):
+    """
+    Print a fancy header to stdout.
+    @type lines: list str's
+    @param lines: headers, passed in as positional arguments, to be displayed
+    """
     padding = 0
     print _header_border
     for line in lines:
@@ -65,12 +70,31 @@ systemExit = system_exit
 # base command class ----------------------------------------------------------
 
 class Command(object):
+    """
+    Command class representing a pulp cli command
+    @cvar name: command's name
+    @cvar description: command's description
+    @cvar _default_actions: tuple of action names to expose by default
+    @ivar actions: list of actions to expose
+    @ivar action_state: dict of action attributes to add to all actions
+    @ivar parse: optparse.OptionParser instance
+    @ivar username: username credential
+    @ivar password: password credential
+    @ivar cert_file: certificate file credential
+    @ivar key_file: private key file credential
+    """
 
     name = None
     description = None
     _default_actions = ()
 
     def __init__(self, actions=None, action_state={}):
+        """
+        @type actions: None or tuple/list of str's
+        @param actoins: list of actions to expose, uses _default_actions if None
+        @type action_state: dict, keyed by str's
+        @param action_state: dict of action attributes
+        """
         self.actions = actions if actions is not None else self._default_actions
         self.action_state = action_state
         # options and arguments
@@ -85,6 +109,9 @@ class Command(object):
     # attributes
 
     def usage(self):
+        """
+        Return a string showing the command's usage
+        """
         lines = ['Usage: ... %s <action> <options>' % self.name,
                  'Supported Actions:']
         for name in self.actions:
@@ -95,6 +122,17 @@ class Command(object):
 
     def setup_credentials(self, username=None, password=None,
                           cert_file=None, key_file=None):
+        """
+        Add credentials to this command and/or load credentials from disk
+        @type username: str
+        @param username: username credential
+        @type password: str
+        @param password: password credential
+        @type cert_file: str
+        @param username: path to a certificate file
+        @type key_file: str
+        @param username: path to a private key file
+        """
         self.username = username
         self.password = password
         # passed in username and password override on-disk credentials
@@ -107,11 +145,26 @@ class Command(object):
     # main
 
     def get_action(self, name):
+        """
+        Get an action class instance, given the name
+        @type name: str
+        @param name: action name
+        @rtype: L{Action} instance or None
+        @return: L{Action} instance corresponding to the action name on success,
+                 None on failure
+        """
         if name not in self.actions or not hasattr(self, name):
             return None
         return getattr(self, name)
 
     def setup_action_connections(self, action):
+        """
+        Callback used to setup connections for an action using the command's
+        credentials
+        @warning: this method should only be overridden with care
+        @type action: L{Action} instance
+        @param action: L{Action} instance to setup connections for
+        """
         connections = action.connections()
         cert_file = self.cert_file
         key_file = self.key_file
@@ -129,6 +182,15 @@ class Command(object):
             setattr(action, name, connection)
 
     def main(self, args):
+        """
+        Main execution of a pulp cli command
+        This method parses options sent to the command itself,
+        looks up the corresponding action,
+        and calls that action's main()
+        @warning: this method should only be overridden with care
+        @type args: list of str's
+        @param args: command line arguments to parse
+        """
         self.parser.set_usage(self.usage())
         if not args:
             self.parser.error(_('no action given: please see --help'))
@@ -143,6 +205,14 @@ class Command(object):
 # base action class -----------------------------------------------------------
 
 class Action(object):
+    """
+    Action class representing a single action for a cli command
+    @cvar name: action's name
+    @cvar description: action's description
+    @ivar parser: optparse.OptionParser instance
+    @ivar opts: options returned from parsing command line
+    @ivar args: arguments returned from parsing command line
+    """
 
     name = None
     description = None
@@ -153,33 +223,68 @@ class Action(object):
         self.args = None
 
     def set_state(self, **kwargs):
+        """
+        Set arbitrary attributes on this action using key word arguments
+        @type kwargs: dict
+        @param kwargs: attribute values, keyed by attribute name
+        """
         self.__dict__.update(kwargs)
 
     def usage(self):
+        """
+        Return a string for this action's usage
+        """
         return 'Usage: ... %s <options>' % self.name
 
-    def get_required_option(self, opt, arg=None):
-        arg = arg or '--' + opt
+    def get_required_option(self, opt, flag=None):
+        """
+        Get an option from opts that is required, else exit in a consistent way
+        @type opt: str
+        @param opt: name of option to get
+        @type flag: None or str
+        @param flag: option flag as it appears on the command, defaults to
+                     '--' + opt is set to None
+        @return: value of the option on success
+        """
+        flag = flag or '--' + opt
         value = getattr(self.opts, opt, None)
         if value is None:
-            self.parser.error(_('option %s is required; please see --help') % arg)
+            self.parser.error(_('option %s is required; please see --help') % flag)
         return value
 
     def connections(self):
+        """
+        Get the connection classes required by this action, keyed by attribute
+        @rtype: dict of str: Connection class
+        @return: dictionary of Connection classes, keyed by the name of the
+                 attribute they will be set to
+        """
         return {}
 
     def setup_parser(self):
+        """
+        Add custom options to the parser
+        @note: this method should be overridden to add per-action options
+        """
         pass
 
-    def parse_args(self, args):
-        return self.parser.parse_args(args)
-
     def run(self):
+        """
+        Action's functionality
+        @note: override this method to implement the actoin's functionality
+        @raise NotImplementedError: if this method is not overridden
+        """
         raise NotImplementedError('Base class method called')
 
     def main(self, args, setup_connections):
+        """
+        Main execution of the action
+        This method setups up the parser, parses the arguments, and calls run()
+        in a try/except block, handling RestlibExceptions and general errors
+        @warning: this method should only be overridden with care
+        """
         self.setup_parser()
-        self.opts, self.args = self.parse_args(args)
+        self.opts, self.args = self.parser.parse_args(args)
         try:
             setup_connections(self)
             self.run()
@@ -189,3 +294,5 @@ class Action(object):
         except Exception, e:
             _log.error("error: %s" % e)
             raise
+        finally:
+            print ''
