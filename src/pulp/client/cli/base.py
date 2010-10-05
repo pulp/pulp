@@ -78,18 +78,6 @@ class PulpBase(object):
                                default=None, help=SUPPRESS_HELP)
         self.parser.add_option_group(credentials)
 
-
-    def parse_args(self, args):
-        """
-        Parse the command line arguments.
-        @note: this method may be overridden to validate option values
-        @type args: list of str's
-        @param args: command line arguments
-        @rtype: optparse options object and list of str's
-        @return: options and list of any remaining (unparsed) arguments
-        """
-        return self.parser.parse_args(args)
-
     def find_command(self, command):
         """
         Look up a command by name.
@@ -108,7 +96,7 @@ class PulpBase(object):
         @param args: command line arguments
         """
         self.setup_parser()
-        opts, args = self.parse_args(args)
+        opts, args = self.parser.parse_args(args)
         if not args:
             self.parser.error(_('no command given: please see --help'))
         command = self.find_command(args[0])
