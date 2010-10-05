@@ -48,7 +48,7 @@ class ConsumerAction(Action):
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com")
         default = None
-        if hasattr(self, id):
+        if hasattr(self, 'id'):
             help = SUPPRESS_HELP
             default = self.id
         self.parser.add_option("--id", dest="id", default=default, help=help)
