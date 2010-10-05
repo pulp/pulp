@@ -134,7 +134,7 @@ class ConsumerGroupActions(AsyncController):
         @param id: consumergroup id
         """
         data = self.params()
-        api.add_key_value_pair(id, data['key'], data['value'])
+        api.add_key_value_pair(id, data['key'], data['value'], data['force'])
         return self.ok(True)
     
     def delete_key_value_pair(self, id):

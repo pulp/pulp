@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.69
+Version:        0.0.71
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,32 @@ fi
 
 
 %changelog
+* Mon Oct 04 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.71-1
+- API and cli changes for consumer get_keyvalues and --force option for
+  consumergroup add_key_values (skarmark@redhat.com)
+
+* Mon Oct 04 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.70-1
+- changed packages deferred field to actually return the packages, not just the
+  ids (jconnor@redhat.com)
+- if relativepath is set of the repo, save the uploaded files to that location
+  (pkilambi@redhat.com)
+- fix config values for RHN sync, remove debug statements (jmatthew@redhat.com)
+- repo resync changes, if a package is deleted from source, delete from pulp
+  fix for local syncs, still working on yum repo fetch syncs
+  (jmatthew@redhat.com)
+- Removing --location from consumer create and --consumerids from consumergroup
+  create (non-standard and not really required) (skarmark@redhat.com)
+- Minor changes in error messages (skarmark@redhat.com)
+- Fixing function name error (skarmark@redhat.com)
+- Error handling for adding and updating key-value pair for a consumer group
+  when there is conflicting key-value of a consumer belonging to this group
+  (skarmark@redhat.com)
+- Error handling for adding and updating key value pair for a consumer when
+  there is conflicting key-value of a consumergroup that it belongs to
+  (skarmark@redhat.com)
+- Adding command line options to invoke create,update and delete events
+  (pkilambi@redhat.com)
+
 * Wed Sep 29 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.69-1
 - adding missing key option to repo create (pkilambi@redhat.com)
 - adding fields required to allow cert based access to authenticated repos on

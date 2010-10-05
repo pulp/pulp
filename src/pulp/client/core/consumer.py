@@ -67,9 +67,7 @@ class List(ConsumerAction):
 
     def run(self):
         key = self.opts.key
-        value = None
-        if key is not None:
-            value = self.get_required_option('value')
+        value = self.opts.value
         cons = self.cconn.consumers()
         baseurl = "%s://%s:%s" % (_cfg.server.scheme, _cfg.server.host,
                                   _cfg.server.port)
@@ -84,16 +82,21 @@ class List(ConsumerAction):
                          con["package_profile"], con["key_value_pairs"])
             system_exit(os.EX_OK)
 
-        consumers_with_keyvalues = []
+        if value is None:
+            print _("consumers with key : %s") % key
+            for con in cons:
+                key_value_pairs = self.cconn.get_keyvalues(con["id"])
+                if key not in key_value_pairs.keys():
+                    continue
+                print "%s  -  %s : %s" % (con["id"], key, key_value_pairs[key])
+            system_exit(os.EX_OK)
+
+        print _("consumers with %s : %s") % (key, value)
         for con in cons:
-            key_value_pairs = con['key_value_pairs']
+            key_value_pairs = self.cconn.get_keyvalues(con["id"])
             if (key in key_value_pairs.keys()) and \
-                (key_value_pairs[key] == value):
-                consumers_with_keyvalues.append(con)
-        for con in consumers_with_keyvalues:
-            print constants.AVAILABLE_CONSUMER_INFO % \
-                    (con["id"], con["description"], con["repoids"],
-                     con["package_profile"], con["key_value_pairs"])
+                    (key_value_pairs[key] == value):
+                print con["id"]
 
 
 class Info(ConsumerAction):
@@ -209,16 +212,19 @@ class AddKeyValue(ConsumerAction):
 
     def setup_parser(self):
         super(AddKeyValue, self).setup_parser()
-        self.parser.add_option("--key", dest="key",
-                       help="key identifier")
+        self.parser.add_option("--key", dest="key", help="key identifier")
         self.parser.add_option("--value", dest="value",
-                       help="value corresponding to the key")
+                               help="value corresponding to the key")
+        self.parser.add_option("--force", action="store_false", dest="force",
+                               default=True,
+                               help="Force changes to consumer keys if required")
 
     def run(self):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
-        self.cconn.add_key_value_pair(consumerid, key, value)
+        force = self.opts.force
+        self.cconn.add_key_value_pair(consumerid, key, value, force)
         print _(" successfully added key-value pair %s:%s") % (key, value)
 
 
@@ -257,6 +263,19 @@ class UpdateKeyValue(ConsumerAction):
         value = self.get_required_option('value')
         self.cconn.update_key_value_pair(consumerid, key, value)
         print _(" successfully updated key-value pair %s:%s") % (key, value)
+
+
+class GetKeyValues(ConsumerAction):
+
+    name = 'get_keyvalues'
+    description = _('get key-value attributes for given consumer')
+
+    def run(self):
+        consumerid = self.get_required_option('id')
+        keyvalues = self.cconn.get_keyvalues(consumerid)
+        print "%s" % keyvalues
+
+
 
 class History(ConsumerAction):
 
@@ -314,7 +333,7 @@ class Consumer(Command):
     description = _('consumer specific actions to pulp server')
     _default_actions = ('list', 'info', 'create', 'delete', 'update',
                         'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
-                        'update_keyvalue', 'history')
+                        'update_keyvalue', 'get_keyvalues', 'history')
 
     def __init__(self, actions=None, action_state={}):
         super(Consumer, self).__init__(actions, action_state)

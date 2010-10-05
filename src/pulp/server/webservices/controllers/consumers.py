@@ -155,7 +155,8 @@ class ConsumerDeferredFields(JSONController):
     exposed_fields = (
         'package_profile',
         'repoids',
-        'certificate'
+        'certificate',
+        'keyvalues'
     )
     @RoleCheck(consumer_id=True, admin=True)
     def package_profile(self, id):
@@ -199,6 +200,19 @@ class ConsumerDeferredFields(JSONController):
         private_key, certificate = consumer_api.certificate(id)
         certificate = {'certificate': certificate, 'private_key': private_key}
         return self.ok(certificate)
+
+    @RoleCheck(admin=True)
+    def keyvalues(self, id):
+        """
+        Get key-value pairs for this consumer. This also includes attributes
+        inherited from consumergroup.
+        @type id: str ID of the Consumer
+        @param id: consumer id
+        @return: Key-value attributes  
+        """
+        keyvalues = consumer_api.get_keyvalues(id)
+        return self.ok(keyvalues)
+
 
     @JSONController.error_handler
     def GET(self, id, field_name):
@@ -282,7 +296,7 @@ class ConsumerActions(AsyncController):
         data = self.params()
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def profile(self, id):
         """

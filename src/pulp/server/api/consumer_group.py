@@ -185,7 +185,7 @@ class ConsumerGroupApi(BaseApi):
 
 
     @audit()
-    def add_key_value_pair(self, id, key, value):
+    def add_key_value_pair(self, id, key, value, force):
         """
         Add key-value info to a consumer group.
         @param id: A consumer group id.
@@ -205,10 +205,16 @@ class ConsumerGroupApi(BaseApi):
             conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
             if len(conflicting_consumers) == 0:
                 key_value_pairs[key] = value
-            else:    
-                raise PulpException('Given key [%s] has different value for consumers %s '
-                                    'belonging to this group. You can use --force to '
-                                    'delete consumer\'s original value.', key, conflicting_consumers)             
+            else:  
+                if force == 'false':  
+                    raise PulpException('Given key [%s] has different value for consumers %s '
+                                        'belonging to this group. You can use --force to '
+                                        'delete consumer\'s original value.', key, conflicting_consumers)             
+                else:
+                    for consumerid in conflicting_consumers:
+                        self.consumerApi.delete_key_value_pair(consumerid, key)
+                    key_value_pairs[key] = value  
+            
         else: 
             raise PulpException('Given key [%s] already exists', key)    
         consumergroup['key_value_pairs'] = key_value_pairs

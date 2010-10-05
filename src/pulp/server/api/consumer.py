@@ -196,6 +196,29 @@ class ConsumerApi(BaseApi):
         self.update(consumer)
             
 
+    def get_keyvalues (self, id):
+        """
+        Get all key-values corresponding to consumer. This also includes key-values inherited from
+        consumergroups that this consumer belongs.
+        @param id: consumer id
+        @type id: str
+        @raise PulpException: When consumer does not exist
+        """
+        consumer = self.consumer(id)    
+        if not consumer:
+            raise PulpException('Consumer [%s] does not exist', id)
+        key_value_pairs = consumer.get('key_value_pairs', {} )
+        
+        consumergroup_db = self._get_consumergroup_collection()
+        consumergroups = list(consumergroup_db.find({'consumerids' : consumer['id']}))
+        for consumergroup in consumergroups:
+            group_key_value_pairs = consumergroup['key_value_pairs']
+            key_value_pairs.update(group_key_value_pairs)
+            
+        return key_value_pairs
+
+
+
     def consumers_with_key_value(self, key, value, fields=None):
         """
         List consumers with given key-values
