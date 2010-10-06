@@ -142,7 +142,7 @@ class Command(object):
         action = self.get_action(args[0])
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
-        action.main(args[1:], self.setup_action_connections)
+        action.main(args[1:])
 
 # base action class -----------------------------------------------------------
 
