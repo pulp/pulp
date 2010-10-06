@@ -21,6 +21,7 @@ from gettext import gettext as _
 from optparse import SUPPRESS_HELP
 
 from pulp.client import constants
+from pulp.client import credentials
 from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
@@ -48,9 +49,10 @@ class ConsumerAction(Action):
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com")
         default = None
-        if hasattr(self, 'id'):
+        id = credentials.get_consumer_id()
+        if id is not None:
             help = SUPPRESS_HELP
-            default = self.id
+            default = id
         self.parser.add_option("--id", dest="id", default=default, help=help)
 
 # consumer actions ------------------------------------------------------------

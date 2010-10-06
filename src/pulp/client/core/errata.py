@@ -22,7 +22,8 @@ import time
 from gettext import gettext as _
 from optparse import SUPPRESS_HELP
 
-import pulp.client.constants as constants
+from pulp.client import constants
+from pulp.client import credentials
 from pulp.client.config import Config
 from pulp.client.connection import (
     ErrataConnection, RepoConnection, ConsumerConnection,
@@ -57,8 +58,9 @@ class List(ErrataAction):
     def setup_parser(self):
         default = None
         help = 'consumer id'
-        if hasattr(self, 'id'):
-            default = self.id
+        consumerid = credentials.get_consumer_id()
+        if consumerid is not None:
+            default = consumerid
             help = SUPPRESS_HELP
         self.parser.add_option("--consumerid", dest="consumerid",
                                default=default, help=help)
