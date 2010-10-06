@@ -90,18 +90,19 @@ class Status(RepoAction):
         else:
             last_sync = str(parse_date(last_sync))
         print _('last sync: %s') % last_sync
-        if syncs and syncs[0]['state'] in ('waiting', 'running'):
-            print _('currently syncing:'),
-            if syncs[0]['progress'] is None:
-                print _('progress unknown')
-            else:
-                pkgs_left = syncs[0]['progress']['items_left']
-                pkgs_total = syncs[0]['progress']['items_total']
-                bytes_left = float(syncs[0]['progress']['size_left'])
-                bytes_total = float(syncs[0]['progress']['size_total'])
-                percent = (bytes_total - bytes_left) / bytes_total
-                print _('%d%% done (%d of %d packages downloaded)') % \
-                        (int(percent), (pkgs_total - pkgs_left), pkgs_total)
+        if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
+            return
+        print _('currently syncing:'),
+        if syncs[0]['progress'] is None:
+            print _('progress unknown')
+        else:
+            pkgs_left = syncs[0]['progress']['items_left']
+            pkgs_total = syncs[0]['progress']['items_total']
+            bytes_left = float(syncs[0]['progress']['size_left'])
+            bytes_total = float(syncs[0]['progress']['size_total'])
+            percent = (bytes_total - bytes_left) / bytes_total
+            print _('%d%% done (%d of %d packages downloaded)') % \
+                    (int(percent), (pkgs_total - pkgs_left), pkgs_total)
 
 
 class Content(RepoAction):
