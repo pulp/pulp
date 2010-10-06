@@ -129,50 +129,6 @@ class Command(object):
             return None
         return getattr(self, name)
 
-    def get_credentials(self):
-        """
-        Get and verify pulp credentials
-        @rtype: tuple of None(s) and str's
-        @return: username, password, cert file path, key file path
-        """
-        # a provided username and password will override cert and key files
-        username, password = credentials.get_username_password()
-        cert_file = key_file = None
-        if None in (username, password):
-            username = password = None
-            if None in credentials.get_cert_key_files():
-                credentials.set_local_cert_key_files()
-            cert_file, key_file = credentials.get_cert_key_files()
-        # make sure there is one valid set of credentials
-        if None in (username, password) and None in (cert_file, key_file):
-            system_exit(os.EX_USAGE, _('no pulp credentials found'))
-        # check to see if we can access the cert and key files
-        if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
-            system_exit(os.EX_CONFIG, _('cannot read cert file: %s') % cert_file)
-        if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
-            system_exit(os.EX_CONFIG, _('cannot read key file: %s') % cert_file)
-        return (username, password, cert_file, key_file)
-
-
-    def setup_action_connections(self, action):
-        """
-        Callback used to setup connections for an action using the command's
-        credentials
-        @warning: this method should only be overridden with care
-        @type action: L{Action} instance
-        @param action: L{Action} instance to setup connections for
-        """
-        username, password, cert_file, key_file = self.get_credentials()
-        connections = action.connections()
-        for name, cls in connections.items():
-            connection = cls(host=_cfg.server.host or 'localhost',
-                             port=_cfg.server.port or 443,
-                             username=username,
-                             password=password,
-                             cert_file=cert_file,
-                             key_file=key_file)
-            setattr(action, name, connection)
-
     def main(self, args):
         """
         Main execution of a pulp cli command
@@ -260,6 +216,46 @@ class Action(object):
         """
         pass
 
+    def _get_credentials(self):
+        """
+        Get and verify pulp credentials
+        @rtype: tuple of None(s) and str's
+        @return: username, password, cert file path, key file path
+        """
+        # a provided username and password will override cert and key files
+        username, password = credentials.get_username_password()
+        cert_file = key_file = None
+        if None in (username, password):
+            username = password = None
+            if None in credentials.get_cert_key_files():
+                credentials.set_local_cert_key_files()
+            cert_file, key_file = credentials.get_cert_key_files()
+        # make sure there is one valid set of credentials
+        if None in (username, password) and None in (cert_file, key_file):
+            system_exit(os.EX_USAGE, _('no pulp credentials found'))
+        # check to see if we can access the cert and key files
+        if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
+            system_exit(os.EX_CONFIG, _('cannot read cert file: %s') % cert_file)
+        if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
+            system_exit(os.EX_CONFIG, _('cannot read key file: %s') % cert_file)
+        return (username, password, cert_file, key_file)
+
+    def _setup_connections(self):
+        """
+        Setup connections for the action
+        @warning: this method should only be overridden with care
+        """
+        username, password, cert_file, key_file = self._get_credentials()
+        connections = self.connections()
+        for name, cls in connections.items():
+            connection = cls(host=_cfg.server.host or 'localhost',
+                             port=_cfg.server.port or 443,
+                             username=username,
+                             password=password,
+                             cert_file=cert_file,
+                             key_file=key_file)
+            setattr(self, name, connection)
+
     def run(self):
         """
         Action's functionality
@@ -268,7 +264,7 @@ class Action(object):
         """
         raise NotImplementedError('Base class method called')
 
-    def main(self, args, setup_connections):
+    def main(self, args):
         """
         Main execution of the action
         This method setups up the parser, parses the arguments, and calls run()
@@ -278,7 +274,7 @@ class Action(object):
         self.setup_parser()
         self.opts, self.args = self.parser.parse_args(args)
         try:
-            setup_connections(self)
+            self._setup_connections()
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)
