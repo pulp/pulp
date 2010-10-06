@@ -13,10 +13,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import os
 import sys
 from gettext import gettext as _
 
+from pulp.client import credentials
 from pulp.client.cli.base import PulpBase
 
 
@@ -32,25 +32,9 @@ class PulpClient(PulpBase):
         'repo': ('list',),
         'errata': ('list',),
     }
-    _actions_states = {}
 
     def __init__(self):
         super(PulpClient, self).__init__()
-
-    def get_consumer_id(self):
-        if not os.path.exists(_consumer_id_file):
-            print >> sys.stderr, _("this client is currently not registered; please register to continue")
-            return None
-        try:
-            id = file(_consumer_id_file).read()
-        except Exception, e:
-            self.parser.error(_("cannot read consumer:") + str(e))
-        return id
-
-    def find_command(self, command):
-        # get the registered consumer id and push it down to the commands
-        id = self.get_consumer_id()
-        if id is not None:
-            for action in ('consumer', 'errata'):
-                self._actions_states[action] = {'id': id}
-        return super(PulpClient, self).find_command(command)
+        if not credentials.set_local_consumer_id():
+            print >> sys.stderr, \
+                    _("warning: this client is currently not registered; please register to continue")
