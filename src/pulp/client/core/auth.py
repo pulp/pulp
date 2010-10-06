@@ -19,6 +19,7 @@ import os
 from gettext import gettext as _
 
 from pulp.client import auth_utils
+from pulp.client import credentials
 from pulp.client.connection import UserConnection, RestlibException
 from pulp.client.core.base import Action, Command, system_exit, _log
 
@@ -37,7 +38,7 @@ class AuthAction(Action):
 
 # auth actions ----------------------------------------------------------------
 
-class Login(AuthAction, Command):
+class Login(AuthAction):
 
     name = 'login'
     description = 'stores user credentials on this machine'
@@ -61,22 +62,16 @@ class Login(AuthAction, Command):
         print _('user credentials successfully stored at [%s]') % \
                 auth_utils.admin_cert_dir()
 
-    def setup_connections(self, callback):
-            username = self.opts.username
-            password = self.opts.password
-            if not (username and password):
-                return callback(self)
-            self.username = username
-            self.password = password
-            self.cert_file = None
-            self.key_file = None
-            super(Login, self).setup_action_connections(self)
-
-    def main(self, args, setup_connections):
+    def main(self, args):
+        # have to override main in order to set new credentials, if provided
         self.setup_parser()
         self.opts, self.args = self.parser.parse_args(args)
+        username = self.opts.username
+        password = self.opts.password
+        if None not in (username, password):
+            credentials.set_username_password(username, password)
         try:
-            self.setup_connections(setup_connections)
+            self._setup_connections()
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)
