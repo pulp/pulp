@@ -55,7 +55,7 @@ def get_cert_key_files():
 
 
 def set_cert_key_files(cert_file, key_file):
-    global _cert_file, key_file
+    global _cert_file, _key_file
     assert None not in (cert_file, key_file)
     _cert_file = cert_file
     _key_file = key_file
