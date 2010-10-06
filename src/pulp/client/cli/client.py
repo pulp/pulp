@@ -20,10 +20,6 @@ from pulp.client import credentials
 from pulp.client.cli.base import PulpBase
 
 
-# TODO make this configurable
-_consumer_id_file = '/etc/pulp/consumer'
-
-
 class PulpClient(PulpBase):
 
     _commands = ('consumer', 'repo', 'errata')
