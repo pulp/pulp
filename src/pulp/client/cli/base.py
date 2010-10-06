@@ -18,6 +18,7 @@ import sys
 from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
+from pulp.client import credentials
 from pulp.client.core import load_core_commands
 
 
@@ -29,12 +30,9 @@ class PulpBase(object):
 
     _commands = None
     _actions = {}
-    _actions_states = {}
 
     def __init__(self):
-        self.commands = load_core_commands(self._commands,
-                                           self._actions,
-                                           self._actions_states)
+        self.commands = load_core_commands(self._commands, self._actions, {})
         self.parser = OptionParser(usage=self.usage())
         self.parser.disable_interspersed_args()
         self.parser.add_option('--debug', dest='debug', action='store_true',
@@ -92,7 +90,13 @@ class PulpBase(object):
         command = self.find_command(args[0])
         if command is None:
             self.parser.error(_('invalid command: please see --help'))
-        command.setup_credentials(opts.username, opts.password,
-                                  opts.cert_file, opts.key_file)
+        username = opts.username
+        password = opts.password
+        if None not in (username, password):
+            credentials.set_username_password(username, password)
+        cert_file = opts.cert_file
+        key_file = opts.key_file
+        if None not in (cert_file, key_file):
+            credentials.set_cert_key_files(cert_file, key_file)
         command.main(args[1:])
 
