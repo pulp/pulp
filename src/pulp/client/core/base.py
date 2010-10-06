@@ -18,7 +18,7 @@ import sys
 from gettext import gettext as _
 from optparse import OptionParser
 
-from pulp.client import auth_utils
+from pulp.client import credentials
 from pulp.client.config import Config
 from pulp.client.connection import RestlibException
 from pulp.client.logutil import getLogger
@@ -97,14 +97,8 @@ class Command(object):
         """
         self.actions = actions if actions is not None else self._default_actions
         self.action_state = action_state
-        # options and arguments
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
-        # credentials
-        self.username = None
-        self.password = None
-        self.cert_file = None
-        self.key_file = None
 
     # attributes
 
@@ -119,28 +113,6 @@ class Command(object):
             description = 'no description' if action is None else action.description
             lines.append('\t%-14s %-25s' % (name, description))
         return '\n'.join(lines)
-
-    def setup_credentials(self, username=None, password=None,
-                          cert_file=None, key_file=None):
-        """
-        Add credentials to this command and/or load credentials from disk
-        @type username: str
-        @param username: username credential
-        @type password: str
-        @param password: password credential
-        @type cert_file: str
-        @param username: path to a certificate file
-        @type key_file: str
-        @param username: path to a private key file
-        """
-        self.username = username
-        self.password = password
-        # passed in username and password override on-disk credentials
-        if username and password:
-            return
-        files = auth_utils.admin_cert_paths()
-        self.cert_file = cert_file or files[0]
-        self.key_file = key_file or files[1]
 
     # main
 
@@ -157,6 +129,31 @@ class Command(object):
             return None
         return getattr(self, name)
 
+    def get_credentials(self):
+        """
+        Get and verify pulp credentials
+        @rtype: tuple of None(s) and str's
+        @return: username, password, cert file path, key file path
+        """
+        # a provided username and password will override cert and key files
+        username, password = credentials.get_username_password()
+        cert_file = key_file = None
+        if None in (username, password):
+            username = password = None
+            if None in credentials.get_cert_key_files():
+                credentials.set_local_cert_key_files()
+            cert_file, key_file = credentials.get_cert_key_files()
+        # make sure there is one valid set of credentials
+        if None in (username, password) and None in (cert_file, key_file):
+            system_exit(os.EX_USAGE, _('no pulp credentials found'))
+        # check to see if we can access the cert and key files
+        if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
+            system_exit(os.EX_CONFIG, _('cannot read cert file: %s') % cert_file)
+        if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
+            system_exit(os.EX_CONFIG, _('cannot read key file: %s') % cert_file)
+        return (username, password, cert_file, key_file)
+
+
     def setup_action_connections(self, action):
         """
         Callback used to setup connections for an action using the command's
@@ -165,18 +162,13 @@ class Command(object):
         @type action: L{Action} instance
         @param action: L{Action} instance to setup connections for
         """
+        username, password, cert_file, key_file = self.get_credentials()
         connections = action.connections()
-        cert_file = self.cert_file
-        key_file = self.key_file
-        if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
-            system_exit(os.EX_CONFIG, _('cannot read cert file: %s') % cert_file)
-        if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
-            system_exit(os.EX_CONFIG, _('cannot read key file: %s') % cert_file)
         for name, cls in connections.items():
             connection = cls(host=_cfg.server.host or 'localhost',
                              port=_cfg.server.port or 443,
-                             username=self.username,
-                             password=self.password,
+                             username=username,
+                             password=password,
                              cert_file=cert_file,
                              key_file=key_file)
             setattr(action, name, connection)
