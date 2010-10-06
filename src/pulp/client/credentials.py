@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import os
+import sys
 
 from pulp.client import auth_utils
 
@@ -26,6 +27,16 @@ _password = None
 _cert_file = None
 _key_file = None
 _local_consumer_id = None
+
+
+def root_check():
+    """
+    Simple function to assure execution by root.
+    """
+    if os.getuid() == 0:
+        return
+    print >> sys.stderr, _('error: must be root to execute')
+    sys.exit(os.EX_NOUSER)
 
 
 def get_username_password():
@@ -62,9 +73,11 @@ def get_consumer_id():
 def set_local_consumer_id():
     global _local_consumer_id
     if not os.access(_consumer_id_file, os.F_OK | os.R_OK):
-        return
+        return False
     try:
         _local_consumer_id = file(_consumer_id_file, 'r').read()
     except IOError, e:
         # TODO log the error
         raise
+    else:
+        return True

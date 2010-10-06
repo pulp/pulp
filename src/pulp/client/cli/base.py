@@ -21,16 +21,6 @@ from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 from pulp.client.core import load_core_commands
 
 
-def root_check():
-    """
-    Simple function to assure execution by root.
-    """
-    if os.getuid() == 0:
-        return
-    print >> sys.stderr, _('error: must be root to execute')
-    sys.exit(os.EX_NOUSER)
-
-
 class PulpBase(object):
     """
     Base pulp command line tool class.
