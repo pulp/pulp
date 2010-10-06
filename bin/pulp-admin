@@ -16,7 +16,7 @@
 #
 
 from pulp.client.cli.admin import PulpAdmin
-from pulp.client.cli.base import root_check
+from pulp.client.credentials import root_check
 
 
 if __name__ == "__main__":
