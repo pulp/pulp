@@ -111,8 +111,8 @@ class Auth(Command):
     description = _('stores authentication credentials for the user on the machine')
     _default_actions = ('login', 'logout')
 
-    def __init__(self, actions=None, action_state={}):
-        super(Auth, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(Auth, self).__init__(actions)
         self.login = Login()
         self.logout = Logout()
 

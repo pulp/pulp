@@ -76,7 +76,6 @@ class Command(object):
     @cvar description: command's description
     @cvar _default_actions: tuple of action names to expose by default
     @ivar actions: list of actions to expose
-    @ivar action_state: dict of action attributes to add to all actions
     @ivar parse: optparse.OptionParser instance
     @ivar username: username credential
     @ivar password: password credential
@@ -88,15 +87,12 @@ class Command(object):
     description = None
     _default_actions = ()
 
-    def __init__(self, actions=None, action_state={}):
+    def __init__(self, actions=None):
         """
         @type actions: None or tuple/list of str's
         @param actoins: list of actions to expose, uses _default_actions if None
-        @type action_state: dict, keyed by str's
-        @param action_state: dict of action attributes
         """
         self.actions = actions if actions is not None else self._default_actions
-        self.action_state = action_state
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
 
@@ -146,8 +142,6 @@ class Command(object):
         action = self.get_action(args[0])
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
-        if self.action_state:
-            action.set_state(**self.action_state)
         action.main(args[1:], self.setup_action_connections)
 
 # base action class -----------------------------------------------------------
@@ -169,14 +163,6 @@ class Action(object):
         self.parser = OptionParser(usage=self.usage())
         self.opts = None
         self.args = None
-
-    def set_state(self, **kwargs):
-        """
-        Set arbitrary attributes on this action using key word arguments
-        @type kwargs: dict
-        @param kwargs: attribute values, keyed by attribute name
-        """
-        self.__dict__.update(kwargs)
 
     def usage(self):
         """

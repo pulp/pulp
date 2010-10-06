@@ -151,8 +151,8 @@ class Errata(Command):
     description = _('errata specific actions to pulp server')
     _default_actions = ('list', 'info', 'install')
 
-    def __init__(self, actions=None, action_state={}):
-        super(Errata, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(Errata, self).__init__(actions)
         self.list = List()
         self.info = Info()
         self.install = Install()

@@ -61,15 +61,13 @@ def _load_core_modules(module_list=None):
     return modules
 
 
-def load_core_commands(command_list=None, actions_dict={}, actions_states={}):
+def load_core_commands(command_list=None, actions_dict={}):
     """
     Load the given commands from the core package modules.
     @type command_list: list or tuple of str's or None
     @param command_list: list of core module names to load, None means load all
     @type actions_dict: dict
     @param actions_dict: white list of actions to allow, keyed by command
-    @type actions_states: dict
-    @param actions_states: attributes to push to actions, keyed by command
     @rtype: dict of str -> module instances
     @return: dictionary of the loaded core modules, keyed by name
     """
@@ -84,7 +82,6 @@ def load_core_commands(command_list=None, actions_dict={}, actions_states={}):
             _log.error('failed to load command: %s' % command)
             continue
         actions = actions_dict.get(command, None)
-        action_state = actions_states.get(command, {})
         command_class = getattr(module, 'command_class')
-        commands[command] = command_class(actions, action_state)
+        commands[command] = command_class(actions)
     return commands

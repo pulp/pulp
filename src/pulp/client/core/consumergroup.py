@@ -234,8 +234,8 @@ class ConsumerGroup(Command):
                         'add_consumer', 'delete_consumer', 'bind', 'unbind',
                         'add_keyvalue', 'delete_keyvalue', 'update_keyvalue')
 
-    def __init__(self, actions=None, action_state={}):
-        super(ConsumerGroup, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(ConsumerGroup, self).__init__(actions)
         self.list = List()
         self.create = Create()
         self.delete = Delete()

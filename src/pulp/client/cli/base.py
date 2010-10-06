@@ -32,7 +32,7 @@ class PulpBase(object):
     _actions = {}
 
     def __init__(self):
-        self.commands = load_core_commands(self._commands, self._actions, {})
+        self.commands = load_core_commands(self._commands, self._actions)
         self.parser = OptionParser(usage=self.usage())
         self.parser.disable_interspersed_args()
         self.parser.add_option('--debug', dest='debug', action='store_true',

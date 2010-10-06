@@ -94,8 +94,8 @@ class User(Command):
     description = _('user specific actions to pulp server')
     _default_actions = ('list', 'create', 'delete')
 
-    def __init__(self, actions=None, action_state={}):
-        super(User, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(User, self).__init__(actions)
         self.list = List()
         self.create = Create()
         self.delete = Delete()

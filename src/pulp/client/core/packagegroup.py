@@ -223,8 +223,8 @@ class PackageGroup(Command):
     _default_actions = ('list', 'info', 'create', 'delete',
                         'add_package', 'delete_package', 'install')
 
-    def __init__(self, actions=None, action_state={}):
-        super(PackageGroup, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(PackageGroup, self).__init__(actions)
         self.list = List()
         self.info = Info()
         self.create = Create()

@@ -335,8 +335,8 @@ class Consumer(Command):
                         'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
                         'update_keyvalue', 'get_keyvalues', 'history')
 
-    def __init__(self, actions=None, action_state={}):
-        super(Consumer, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(Consumer, self).__init__(actions)
         self.info = Info()
         self.list = List()
         self.create = Create()

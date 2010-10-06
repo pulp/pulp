@@ -394,8 +394,8 @@ class Repo(Command):
                         'create', 'delete', 'update',
                         'sync', 'cancel_sync', 'upload', 'schedules')
 
-    def __init__(self, actions=None, action_state={}):
-        super(Repo, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(Repo, self).__init__(actions)
         self.list = List()
         self.status = Status()
         self.content = Content()

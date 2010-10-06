@@ -111,8 +111,8 @@ class Package(Command):
     description = _('package specific actions to pulp server')
     _default_actions = ('info', 'install')
 
-    def __init__(self, actions=None, action_state={}):
-        super(Package, self).__init__(actions, action_state)
+    def __init__(self, actions=None):
+        super(Package, self).__init__(actions)
         self.info = Info()
         self.install = Install()
 
