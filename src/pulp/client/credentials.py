@@ -19,6 +19,7 @@ Module for holding and manipulating pulp and end-user credentials
 
 import os
 import sys
+from gettext import gettext as _
 
 from pulp.client import auth_utils
 
