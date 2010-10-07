@@ -122,7 +122,7 @@ class DeleteConsumer(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         consumerid = self.get_required_option('consumerid')
-        self.cgconn.delete_consumer(groupid, self.options.consumerid)
+        self.cgconn.delete_consumer(groupid, consumerid)
         print _(" successfully deleted consumer [%s] from group [%s]") % \
                 (consumerid, groupid)
 

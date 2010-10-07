@@ -448,7 +448,7 @@ class ConsumerGroupConnection(PulpConnection):
         return self.conn.request_post(method, params=consumerid)
 
     def delete_consumer(self, id, consumerid):
-        method = "/consumers/%s/delete_consumer/" % id
+        method = "/consumergroups/%s/delete_consumer/" % id
         return self.conn.request_post(method, params=consumerid)
 
     def bind(self, id, repoid):
