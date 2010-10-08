@@ -51,7 +51,7 @@ class ConsumerGroupApi(BaseApi):
 
 
     @audit(params=['id', 'consumerids'])
-    def create(self, id, description, consumerids=()):
+    def create(self, id, description, consumerids=[]):
         """
         Create a new ConsumerGroup object and return it
         """

@@ -51,7 +51,8 @@ class List(ConsumerGroupAction):
         print_header("List of Available Consumer Groups")
         for group in groups:
             print constants.AVAILABLE_CONSUMER_GROUP_INFO % \
-                    (group["id"], group["description"], group["consumerids"])
+                    (group["id"], group["description"], group["consumerids"],
+                     group["key_value_pairs"])
 
 
 class Create(ConsumerGroupAction):
@@ -63,18 +64,11 @@ class Create(ConsumerGroupAction):
         super(Create, self).setup_parser()
         self.parser.add_option("--description", dest="description",
                        help="description of consumer group")
-        self.parser.add_option("--consumerids", dest="consumerids",
-                       help="consumer id list to be included in this group")
-
+        
     def run(self):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', '')
-        consumerids = getattr(self.opts, 'consumerids', [])
-        if not consumerids:
-            print _("creating empty consumer group")
-        else:
-            consumerids = consumerids.split(",")
-        consumergroup = self.cgconn.create(id, description, consumerids)
+        consumergroup = self.cgconn.create(id, description)
         print _(" successfully created Consumer group [ %s ] with description [ %s ]") % \
                 (consumergroup['id'], consumergroup["description"])
 
@@ -89,7 +83,7 @@ class Delete(ConsumerGroupAction):
 
     def run(self):
         id = self.get_required_option('id')
-        group = self.cgconn.consumergroup(id=self.options.id)
+        group = self.cgconn.consumergroup(id=id)
         if not group:
             print _(" consumer group [ %s ] does not exist") % id
             system_exit(os.EX_DATAERR)
