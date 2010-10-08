@@ -217,16 +217,12 @@ class AddKeyValue(ConsumerAction):
         self.parser.add_option("--key", dest="key", help="key identifier")
         self.parser.add_option("--value", dest="value",
                                help="value corresponding to the key")
-        self.parser.add_option("--force", action="store_false", dest="force",
-                               default=True,
-                               help="Force changes to consumer keys if required")
 
     def run(self):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
-        force = self.opts.force
-        self.cconn.add_key_value_pair(consumerid, key, value, force)
+        self.cconn.add_key_value_pair(consumerid, key, value)
         print _(" successfully added key-value pair %s:%s") % (key, value)
 
 
