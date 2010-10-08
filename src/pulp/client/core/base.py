@@ -56,7 +56,7 @@ class Command(object):
         Return a string showing the command's usage
         """
         lines = ['Usage: %s <options> %s <action> <options>' %
-                 (self.cmd.name, self.name),
+                 (self.cli.name, self.name),
                  'Supported Actions:']
         for name in self._action_order:
             action = self._actions[name]
@@ -68,7 +68,7 @@ class Command(object):
         """
         Return a string showing the command's description
         """
-        raise NotImplementedError('Base class method called')
+        return - ('no description available')
 
     def add_action(self, name, action):
         """
@@ -117,7 +117,7 @@ class Action(object):
     def __init__(self):
         self.cmd = None
         self.name = None
-        self.parser = OptionParser(usage=self.usage)
+        self.parser = OptionParser()
         self.opts = None
         self.args = None
 
@@ -133,8 +133,8 @@ class Action(object):
     def description(self):
         """
         Return a string for this action's description
+        return _('no description available')
         """
-        raise NotImplementedError('Base class method called')
 
     def get_required_option(self, opt, flag=None):
         """
@@ -180,6 +180,7 @@ class Action(object):
         in a try/except block, handling RestlibExceptions and general errors
         @warning: this method should only be overridden with care
         """
+        self.parser.set_usage(self.usage)
         self.setup_parser()
         self.opts, self.args = self.parser.parse_args(args)
         try:

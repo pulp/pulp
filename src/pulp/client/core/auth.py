@@ -65,6 +65,7 @@ class Login(AuthAction):
 
     def main(self, args):
         # have to override main in order to set new credentials, if provided
+        self.parser.set_usage(self.usage)
         self.setup_parser()
         self.opts, self.args = self.parser.parse_args(args)
         username = self.opts.username

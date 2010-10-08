@@ -28,7 +28,7 @@ class PulpCLI(object):
 
     def __init__(self):
         self.name = os.path.basename(sys.argv[0])
-        self.parser = OptionParser(usage=self.usage)
+        self.parser = OptionParser()
         self.parser.disable_interspersed_args()
         self._commands = {}
 
@@ -79,6 +79,7 @@ class PulpCLI(object):
         @type args: list of str's
         @param args: command line arguments
         """
+        self.parser.set_usage(self.usage)
         self.setup_parser()
         opts, args = self.parser.parse_args(args)
         if not args:
