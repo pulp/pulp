@@ -43,6 +43,7 @@ class Command(object):
         @type actions: None or tuple/list of str's
         @param actoins: list of actions to expose, uses _default_actions if None
         """
+        self.cli = None
         self.name = None
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
@@ -54,7 +55,8 @@ class Command(object):
         """
         Return a string showing the command's usage
         """
-        lines = ['Usage: ... %s <action> <options>' % self.name,
+        lines = ['Usage: %s <options> %s <action> <options>' %
+                 (self.cmd.name, self.name),
                  'Supported Actions:']
         for name in self._action_order:
             action = self._actions[name]
@@ -77,6 +79,8 @@ class Command(object):
         @type action: L{Action} instance
         @param action: action to add
         """
+        action.cmd = self
+        action.name = name
         self._action_order.append(name)
         self._actions[name] = action
 
@@ -111,6 +115,7 @@ class Action(object):
     """
 
     def __init__(self):
+        self.cmd = None
         self.name = None
         self.parser = OptionParser(usage=self.usage)
         self.opts = None
@@ -121,7 +126,8 @@ class Action(object):
         """
         Return a string for this action's usage
         """
-        return 'Usage: ... %s <options>' % self.name
+        return 'Usage: %s <options> %s %s <options>' % \
+                (self.cmd.cli.name, self.cmd.name, self.name)
 
     @property
     def description(self):

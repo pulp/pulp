@@ -21,24 +21,25 @@ from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 from pulp.client import credentials
 
 
-class PulpBase(object):
+class PulpCLI(object):
     """
-    Base pulp command line tool class.
-    @cvar _commands: list of command modules to load
+    Pulp command line tool class.
     """
 
     def __init__(self):
-        self.parser = OptionParser(usage=self.usage())
+        self.name = os.path.basename(sys.argv[0])
+        self.parser = OptionParser(usage=self.usage)
         self.parser.disable_interspersed_args()
         self._commands = {}
 
+    @property
     def usage(self):
         """
         Usage string.
         @rtype: str
         @return: command's usage string
         """
-        lines = ['Usage: %s <options> <command>' % os.path.basename(sys.argv[0]),
+        lines = ['Usage: %s <options> <command>' % self.name,
                  'Supported Commands:']
         for name, command in sorted(self._commands.items()):
             lines.append('\t%-14s %-25s' % (name, command.description))
@@ -52,6 +53,8 @@ class PulpBase(object):
         @type command: L{pulp.client.core.base.Command} instance
         @param command: command to add
         """
+        command.cli = self
+        command.name = name
         self._commands[name] = command
 
     def setup_parser(self):

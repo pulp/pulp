@@ -15,7 +15,11 @@
 # in this software or its documentation.
 #
 
-from pulp.client.cli.client import PulpClient
+import sys
+from gettext import gettext as _
+
+from pulp.client import credentials
+from pulp.client.cli import PulpCLI
 from pulp.client.core import consumer, errata, repo
 from pulp.client.credentials import root_check
 
@@ -38,8 +42,10 @@ def setup_client(client):
     client.add_command('repo', repo_cmd)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     root_check()
-    client = PulpClient()
+    client = PulpCLI()
     setup_client(client)
+    if not credentials.set_local_consumer_id():
+        print >> sys.stderr, _("warning: this client is not registered; please register to continue")
     client.main()
