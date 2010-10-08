@@ -25,7 +25,8 @@ from gettext import gettext as _
 import pulp.client.constants as constants
 from pulp.client.connection import (
     setup_connection, ConsumerConnection, RepoConnection)
-from pulp.client.core.base import Action, Command, print_header, system_exit
+from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header, system_exit
 
 # base package group action class ---------------------------------------------
 

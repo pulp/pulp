@@ -21,7 +21,7 @@ from pulp.client.logutil import getLogger
 
 
 _log = getLogger(__name__)
-_ignored_modules = ('__init__', 'base')
+_ignored_modules = ('__init__', 'base', 'utils')
 _core_files_regex = re.compile('(?!(%s)).*\.py$' % '|'.join(_ignored_modules))
 
 

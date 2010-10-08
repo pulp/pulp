@@ -25,7 +25,8 @@ from gettext import gettext as _
 from pulp.client import constants
 from pulp.client import utils
 from pulp.client.connection import setup_connection, RepoConnection
-from pulp.client.core.base import Action, Command, print_header, system_exit
+from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
 
 # repo command errors ---------------------------------------------------------

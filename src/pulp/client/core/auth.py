@@ -22,7 +22,8 @@ from pulp.client import auth_utils
 from pulp.client import credentials
 from pulp.client.connection import (
     setup_connection, UserConnection, RestlibException)
-from pulp.client.core.base import Action, Command, system_exit, _log
+from pulp.client.core.base import Action, Command, _log
+from pulp.client.core.utils import system_exit
 
 # base auth action class ------------------------------------------------------
 

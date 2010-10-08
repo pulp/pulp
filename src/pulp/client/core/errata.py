@@ -28,7 +28,8 @@ from pulp.client.config import Config
 from pulp.client.connection import (
     setup_connection, ErrataConnection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
-from pulp.client.core.base import Action, Command, system_exit
+from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import system_exit
 from pulp.client.logutil import getLogger
 
 

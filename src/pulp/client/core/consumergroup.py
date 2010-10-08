@@ -16,7 +16,8 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client.connection import setup_connection, ConsumerGroupConnection
-from pulp.client.core.base import Action, Command, print_header, system_exit
+from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header, system_exit
 from pulp.client.repolib import RepoLib
 
 # consumer group base action --------------------------------------------------
@@ -64,7 +65,7 @@ class Create(ConsumerGroupAction):
         super(Create, self).setup_parser()
         self.parser.add_option("--description", dest="description",
                        help="description of consumer group")
-        
+
     def run(self):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', '')
@@ -175,7 +176,7 @@ class AddKeyValue(ConsumerGroupAction):
         self.parser.add_option("--key", dest="key", help="key identifier")
         self.parser.add_option("--value", dest="value",
                                help="value corresponding to the key")
-        self.parser.add_option("--force", action="store_false", dest="force", default=True, 
+        self.parser.add_option("--force", action="store_false", dest="force", default=True,
                                help="Force changes to consumer keys if required")
 
     def run(self):
@@ -187,7 +188,7 @@ class AddKeyValue(ConsumerGroupAction):
             force_value = 'false'
         else:
             force_value = 'true'
-        self.cgconn.add_key_value_pair(groupid, key, value, force_value)        
+        self.cgconn.add_key_value_pair(groupid, key, value, force_value)
         print _(" successfully added key-value pair %s:%s") % (key, value)
 
 

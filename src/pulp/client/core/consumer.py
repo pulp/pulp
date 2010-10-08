@@ -26,7 +26,8 @@ from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
 from pulp.client.connection import setup_connection, ConsumerConnection
-from pulp.client.core.base import Action, Command, print_header, system_exit
+from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header, system_exit
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
 

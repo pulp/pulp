@@ -23,7 +23,8 @@ from gettext import gettext as _
 from pulp.client.connection import (
     setup_connection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
-from pulp.client.core.base import Action, Command, print_header, system_exit
+from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header, system_exit
 
 # package action base class ---------------------------------------------------
 
