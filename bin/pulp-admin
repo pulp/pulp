@@ -15,7 +15,7 @@
 # in this software or its documentation.
 #
 
-from pulp.client.cli import PulpCLI
+from pulp.client.cli.base import PulpCLI
 from pulp.client.core import (
     auth, consumer, consumergroup, errata, package, packagegroup, repo, user)
 from pulp.client.credentials import root_check
@@ -96,7 +96,7 @@ def setup_admin(admin):
     admin.add_command('user', user_cmd)
 
 if __name__ == "__main__":
-    root_check()
+    root_check() # XXX should be removed for pulp-admin command
     admin = PulpCLI()
     setup_admin(admin)
     admin.main()

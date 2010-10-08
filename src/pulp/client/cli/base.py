@@ -62,7 +62,7 @@ class PulpCLI(object):
         Add options to the command line parser.
         @note: this method may be overridden to define new options
         """
-        credentials = OptionGroup(self.parser, _('pulp user account credentials'))
+        credentials = OptionGroup(self.parser, _('Pulp User Account Credentials'))
         credentials.add_option('-u', '--username', dest='username',
                                default=None, help=_('account username'))
         credentials.add_option('-p', '--password', dest='password',

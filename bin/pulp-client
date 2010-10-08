@@ -19,7 +19,7 @@ import sys
 from gettext import gettext as _
 
 from pulp.client import credentials
-from pulp.client.cli import PulpCLI
+from pulp.client.cli.base import PulpCLI
 from pulp.client.core import consumer, errata, repo
 from pulp.client.credentials import root_check
 
