@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.71
+Version:        0.0.72
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,16 @@ fi
 
 
 %changelog
+* Fri Oct 08 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.72-1
+- --force flag had got misplaced in consumer cli instead of consumergroup
+  during refactoring. Moving it to its right place. (skarmark@redhat.com)
+- Adding test_keyvalue_attributes.py for testing CRUD key-value-operations on
+  consumers and consumergroups (skarmark@redhat.com)
+- 629720 - link for delete_consumer was pointing to consumers instead of
+  consumergroups (skarmark@redhat.com)
+- Somehow some of my changes were lost after consumer-cli branch merging
+  resulting in consumergroup cli errors. Fixing it. (skarmark@redhat.com)
+- Major refactoring of how the CLI handles commands and actions
 * Mon Oct 04 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.71-1
 - API and cli changes for consumer get_keyvalues and --force option for
   consumergroup add_key_values (skarmark@redhat.com)
