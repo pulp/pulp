@@ -50,7 +50,6 @@ class ErrataAction(Action):
 
 class List(ErrataAction):
 
-    name = 'list'
     description = 'list applicable errata'
 
     def setup_parser(self):
@@ -84,7 +83,6 @@ class List(ErrataAction):
 
 class Info(ErrataAction):
 
-    name = 'info'
     description = 'see details on a specific errata'
 
     def setup_parser(self):
@@ -106,7 +104,6 @@ class Info(ErrataAction):
 
 class Install(ErrataAction):
 
-    name = 'install'
     description = 'install errata on a consumer'
 
     def setup_parser(self):
@@ -147,15 +144,4 @@ class Install(ErrataAction):
 
 class Errata(Command):
 
-    name = 'errata'
     description = _('errata specific actions to pulp server')
-    _default_actions = ('list', 'info', 'install')
-
-    def __init__(self, actions=None):
-        super(Errata, self).__init__(actions)
-        self.list = List()
-        self.info = Info()
-        self.install = Install()
-
-
-command_class = Errata

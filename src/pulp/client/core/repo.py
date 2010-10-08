@@ -51,7 +51,6 @@ class RepoAction(Action):
 
 class List(RepoAction):
 
-    name = 'list'
     description = 'list available repos'
 
     def setup_parser(self):
@@ -75,7 +74,6 @@ class List(RepoAction):
 
 class Status(RepoAction):
 
-    name = 'status'
     description = 'show the status of a repo'
 
     def run(self):
@@ -108,7 +106,6 @@ class Status(RepoAction):
 
 class Content(RepoAction):
 
-    name = 'content'
     description = _('list the contents of a repository')
 
     def run(self):
@@ -133,7 +130,6 @@ class Content(RepoAction):
 
 class Create(RepoAction):
 
-    name = 'create'
     description = 'create a repo'
 
     def setup_parser(self):
@@ -187,7 +183,6 @@ class Create(RepoAction):
 
 class Delete(RepoAction):
 
-    name = 'delete'
     description = 'delete a repo'
 
     def run(self):
@@ -198,7 +193,6 @@ class Delete(RepoAction):
 
 class Update(RepoAction):
 
-    name = 'update'
     description = 'update a repo'
 
     def setup_parser(self):
@@ -241,7 +235,6 @@ class Update(RepoAction):
 
 class Sync(RepoAction):
 
-    name = 'sync'
     description = 'sync data to this repo from the feed'
 
     def setup_parser(self):
@@ -315,7 +308,6 @@ class Sync(RepoAction):
 
 class CancelSync(RepoAction):
 
-    name = 'cancel_sync'
     description = 'cancel a running sync'
 
     def run(self):
@@ -333,7 +325,6 @@ class CancelSync(RepoAction):
 
 class Upload(RepoAction):
 
-    name = 'upload'
     description = 'upload package(s) to this repo'
 
     def setup_parser(self):
@@ -373,7 +364,6 @@ class Upload(RepoAction):
 
 class Schedules(RepoAction):
 
-    name = 'schedules'
     description = 'list all repo schedules'
 
     def setup_parser(self):
@@ -389,24 +379,4 @@ class Schedules(RepoAction):
 
 class Repo(Command):
 
-    name = 'repo'
     description = _('repository specific actions to pulp server')
-    _default_actions = ('list', 'status', 'content',
-                        'create', 'delete', 'update',
-                        'sync', 'cancel_sync', 'upload', 'schedules')
-
-    def __init__(self, actions=None):
-        super(Repo, self).__init__(actions)
-        self.list = List()
-        self.status = Status()
-        self.content = Content()
-        self.create = Create()
-        self.delete = Delete()
-        self.update = Update()
-        self.sync = Sync()
-        self.cancel_sync = CancelSync()
-        self.upload = Upload()
-        self.schedules = Schedules()
-
-
-command_class = Repo

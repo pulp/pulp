@@ -16,9 +16,87 @@
 #
 
 from pulp.client.cli.admin import PulpAdmin
+from pulp.client.core import (
+    auth, consumer, consumergroup, errata, package, packagegroup, repo, user)
 from pulp.client.credentials import root_check
 
 
+def setup_admin(admin):
+    auth_cmd = auth.Auth()
+    auth_cmd.add_action('login', auth.Login())
+    auth_cmd.add_action('logout', auth.Logout())
+    admin.add_command('auth', auth_cmd)
+
+    consumer_cmd = consumer.Consumer()
+    consumer_cmd.add_action('list', consumer.List())
+    consumer_cmd.add_action('info', consumer.Info())
+    consumer_cmd.add_action('create', consumer.Create())
+    consumer_cmd.add_action('delete', consumer.Delete())
+    consumer_cmd.add_action('update', consumer.Update())
+    consumer_cmd.add_action('bind', consumer.Bind())
+    consumer_cmd.add_action('unbind', consumer.Unbind())
+    consumer_cmd.add_action('add_keyvalue', consumer.AddKeyValue())
+    consumer_cmd.add_action('delete_keyvalu', consumer.DeleteKeyValue())
+    consumer_cmd.add_action('update_keyvalue', consumer.UpdateKeyValue())
+    consumer_cmd.add_action('get_keyvalues', consumer.GetKeyValues())
+    consumer_cmd.add_action('history', consumer.History())
+    admin.add_command('consumer', consumer_cmd)
+
+    consumergroup_cmd = consumergroup.ConsumerGroup()
+    consumergroup_cmd.add_action('list', consumergroup.List())
+    consumergroup_cmd.add_action('create', consumergroup.Create())
+    consumergroup_cmd.add_action('delete', consumergroup.Delete())
+    consumergroup_cmd.add_action('add_consumer', consumergroup.AddConsumer())
+    consumergroup_cmd.add_action('delete_consumer', consumergroup.DeleteConsumer())
+    consumergroup_cmd.add_action('bind', consumergroup.Bind())
+    consumergroup_cmd.add_action('unbind', consumergroup.Unbind())
+    consumergroup_cmd.add_action('add_keyvalue', consumergroup.AddKeyValue())
+    consumergroup_cmd.add_action('delete_keyvalue', consumergroup.DeleteKeyValue())
+    consumergroup_cmd.add_action('update_keyvalue', consumergroup.UpdateKeyValue())
+    admin.add_command('consumergroup', consumergroup_cmd)
+
+    errata_cmd = errata.Errata()
+    errata_cmd.add_action('list', errata.List())
+    errata_cmd.add_action('info', errata.Info())
+    errata_cmd.add_action('install', errata.Install())
+    admin.add_command('errata', errata_cmd)
+
+    package_cmd = package.Package()
+    package_cmd.add_action('info', package.Info())
+    package_cmd.add_action('install', package.Install())
+    admin.add_command('package', package_cmd)
+
+    packagegroup_cmd = packagegroup.PackageGroup()
+    packagegroup_cmd.add_action('list', packagegroup.List())
+    packagegroup_cmd.add_action('info', packagegroup.Info())
+    packagegroup_cmd.add_action('create', packagegroup.Create())
+    packagegroup_cmd.add_action('delete', packagegroup.Delete())
+    packagegroup_cmd.add_action('add_package', packagegroup.AddPackage())
+    packagegroup_cmd.add_action('delete_package', packagegroup.DeletePackage())
+    packagegroup_cmd.add_action('install', packagegroup.Install())
+    admin.add_command('packagegroup', packagegroup_cmd)
+
+    repo_cmd = repo.Repo()
+    repo_cmd.add_action('list', repo.List())
+    repo_cmd.add_action('status', repo.Status())
+    repo_cmd.add_action('content', repo.Content())
+    repo_cmd.add_action('create', repo.Create())
+    repo_cmd.add_action('delete', repo.Delete())
+    repo_cmd.add_action('update', repo.Update())
+    repo_cmd.add_action('sync', repo.Sync())
+    repo_cmd.add_action('cancel_sync', repo.CancelSync())
+    repo_cmd.add_action('upload', repo.Upload())
+    repo_cmd.add_action('schedules', repo.Schedules())
+    admin.add_command('repo', repo_cmd)
+
+    user_cmd = user.User()
+    user_cmd.add_action('list', user.List())
+    user_cmd.add_action('create', user.Create())
+    user_cmd.add_action('delete', user.Delete())
+    admin.add_command('user', user_cmd)
+
 if __name__ == "__main__":
     root_check()
-    PulpAdmin().main()
+    admin = PulpAdmin()
+    setup_admin(admin)
+    admin.main()

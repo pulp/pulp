@@ -16,9 +16,30 @@
 #
 
 from pulp.client.cli.client import PulpClient
+from pulp.client.core import consumer, errata, repo
 from pulp.client.credentials import root_check
+
+
+def setup_client(client):
+    consumer_cmd = consumer.Consumer()
+    consumer_cmd.add_action('create', consumer.Create())
+    consumer_cmd.add_action('delete', consumer.Delete())
+    consumer_cmd.add_action('bind', consumer.Bind())
+    consumer_cmd.add_action('unbind', consumer.Unbind())
+    consumer_cmd.add_action('history', consumer.History())
+    client.add_command('consumer', consumer_cmd)
+
+    errata_cmd = errata.Errata()
+    errata_cmd.add_action('list', errata.List())
+    client.add_command('errata', errata_cmd)
+
+    repo_cmd = repo.Repo()
+    repo_cmd.add_action('list', repo.List())
+    client.add_command('repo', repo_cmd)
 
 
 if __name__ == "__main__":
     root_check()
-    client = PulpClient().main()
+    client = PulpClient()
+    setup_client(client)
+    client.main()

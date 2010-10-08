@@ -18,6 +18,7 @@ from optparse import OptionParser
 
 from pulp.client.config import Config
 from pulp.client.connection import RestlibException
+from pulp.client.core.utils import system_exit
 from pulp.client.logutil import getLogger
 
 
@@ -29,58 +30,55 @@ _log = getLogger(__name__)
 class Command(object):
     """
     Command class representing a pulp cli command
-    @cvar name: command's name
-    @cvar description: command's description
-    @cvar _default_actions: tuple of action names to expose by default
-    @ivar actions: list of actions to expose
-    @ivar parse: optparse.OptionParser instance
+    @ivar name: command's name
+    @ivar parser: optparse.OptionParser instance
     @ivar username: username credential
     @ivar password: password credential
     @ivar cert_file: certificate file credential
     @ivar key_file: private key file credential
     """
 
-    name = None
-    description = None
-    _default_actions = ()
-
-    def __init__(self, actions=None):
+    def __init__(self):
         """
         @type actions: None or tuple/list of str's
         @param actoins: list of actions to expose, uses _default_actions if None
         """
-        self.actions = actions if actions is not None else self._default_actions
+        self.name = None
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
+        self._actions = {}
+        self._action_order = []
 
-    # attributes
-
+    @property
     def usage(self):
         """
         Return a string showing the command's usage
         """
         lines = ['Usage: ... %s <action> <options>' % self.name,
                  'Supported Actions:']
-        for name in self.actions:
-            action = getattr(self, name, None)
-            description = 'no description' if action is None else action.description
-            lines.append('\t%-14s %-25s' % (name, description))
+        for name in self._action_order:
+            action = self._actions[name]
+            lines.append('\t%-14s %-25s' % (name, action.description))
         return '\n'.join(lines)
 
-    # main
+    @property
+    def description(self):
+        """
+        Return a string showing the command's description
+        """
+        raise NotImplementedError('Base class method called')
 
-    def get_action(self, name):
+    def add_action(self, name, action):
         """
-        Get an action class instance, given the name
+        Add an action to this command
+        @note: actions are displayed in the order they are added
         @type name: str
-        @param name: action name
-        @rtype: L{Action} instance or None
-        @return: L{Action} instance corresponding to the action name on success,
-                 None on failure
+        @param name: name to associate with the action
+        @type action: L{Action} instance
+        @param action: action to add
         """
-        if name not in self.actions or not hasattr(self, name):
-            return None
-        return getattr(self, name)
+        self._action_order.append(name)
+        self._actions[name] = action
 
     def main(self, args):
         """
@@ -92,11 +90,11 @@ class Command(object):
         @type args: list of str's
         @param args: command line arguments to parse
         """
-        self.parser.set_usage(self.usage())
+        self.parser.set_usage(self.usage)
         if not args:
             self.parser.error(_('no action given: please see --help'))
         self.parser.parse_args(args)
-        action = self.get_action(args[0])
+        action = self._actions.get(args[0], None)
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
         action.main(args[1:])
@@ -106,26 +104,31 @@ class Command(object):
 class Action(object):
     """
     Action class representing a single action for a cli command
-    @cvar name: action's name
-    @cvar description: action's description
+    @ivar name: action's name
     @ivar parser: optparse.OptionParser instance
     @ivar opts: options returned from parsing command line
     @ivar args: arguments returned from parsing command line
     """
 
-    name = None
-    description = None
-
     def __init__(self):
-        self.parser = OptionParser(usage=self.usage())
+        self.name = None
+        self.parser = OptionParser(usage=self.usage)
         self.opts = None
         self.args = None
 
+    @property
     def usage(self):
         """
         Return a string for this action's usage
         """
         return 'Usage: ... %s <options>' % self.name
+
+    @property
+    def description(self):
+        """
+        Return a string for this action's description
+        """
+        raise NotImplementedError('Base class method called')
 
     def get_required_option(self, opt, flag=None):
         """

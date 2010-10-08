@@ -19,7 +19,6 @@ from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
 from pulp.client import credentials
-from pulp.client.core import load_core_commands
 
 
 class PulpBase(object):
@@ -28,15 +27,10 @@ class PulpBase(object):
     @cvar _commands: list of command modules to load
     """
 
-    _commands = None
-    _actions = {}
-
     def __init__(self):
-        self.commands = load_core_commands(self._commands, self._actions)
         self.parser = OptionParser(usage=self.usage())
         self.parser.disable_interspersed_args()
-        self.parser.add_option('--debug', dest='debug', action='store_true',
-                               default=False, help=SUPPRESS_HELP)
+        self._commands = {}
 
     def usage(self):
         """
@@ -46,9 +40,19 @@ class PulpBase(object):
         """
         lines = ['Usage: %s <options> <command>' % os.path.basename(sys.argv[0]),
                  'Supported Commands:']
-        for name, command in sorted(self.commands.items()):
+        for name, command in sorted(self._commands.items()):
             lines.append('\t%-14s %-25s' % (name, command.description))
         return '\n'.join(lines)
+
+    def add_command(self, name, command):
+        """
+        Add a command to this command line tool
+        @type name: str
+        @param name: name to associate with the command
+        @type command: L{pulp.client.core.base.Command} instance
+        @param command: command to add
+        """
+        self._commands[name] = command
 
     def setup_parser(self):
         """
@@ -66,17 +70,6 @@ class PulpBase(object):
                                default=None, help=SUPPRESS_HELP)
         self.parser.add_option_group(credentials)
 
-    def find_command(self, command):
-        """
-        Look up a command by name.
-        @type command: str
-        @rtype: pulp.client.core.base.BaseCore instance or None
-        @return: object corresponding to command on success, None on failure
-        """
-        if command not in self.commands:
-            return None
-        return self.commands[command]
-
     def main(self, args=sys.argv[1:]):
         """
         Run this command.
@@ -87,7 +80,7 @@ class PulpBase(object):
         opts, args = self.parser.parse_args(args)
         if not args:
             self.parser.error(_('no command given: please see --help'))
-        command = self.find_command(args[0])
+        command = self._commands.get(args[0], None)
         if command is None:
             self.parser.error(_('invalid command: please see --help'))
         username = opts.username

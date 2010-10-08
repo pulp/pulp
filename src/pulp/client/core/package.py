@@ -39,7 +39,6 @@ class PackageAction(Action):
 
 class Info(PackageAction):
 
-    name = 'info'
     description = 'lookup information for a package'
 
     def setup_parser(self):
@@ -63,7 +62,6 @@ class Info(PackageAction):
 
 class Install(PackageAction):
 
-    name = 'install'
     description = 'schedule a package install'
 
     def setup_parser(self):
@@ -106,14 +104,4 @@ class Install(PackageAction):
 
 class Package(Command):
 
-    name = 'package'
     description = _('package specific actions to pulp server')
-    _default_actions = ('info', 'install')
-
-    def __init__(self, actions=None):
-        super(Package, self).__init__(actions)
-        self.info = Info()
-        self.install = Install()
-
-
-command_class = Package

@@ -60,7 +60,6 @@ class ConsumerAction(Action):
 
 class List(ConsumerAction):
 
-    name = 'list'
     description = 'list all known consumers'
 
     def setup_parser(self):
@@ -104,7 +103,6 @@ class List(ConsumerAction):
 
 class Info(ConsumerAction):
 
-    name = 'info'
     description = 'list of accessible consumer info'
 
     def run(self):
@@ -124,7 +122,6 @@ class Info(ConsumerAction):
 
 class Create(ConsumerAction):
 
-    name = 'create'
     description = 'create a consumer'
 
     def setup_parser(self):
@@ -149,7 +146,6 @@ class Create(ConsumerAction):
 
 class Delete(ConsumerAction):
 
-    name = 'delete'
     description = 'delete the consumer'
 
     def run(self):
@@ -160,7 +156,6 @@ class Delete(ConsumerAction):
 
 class Update(ConsumerAction):
 
-    name = 'update'
     description = 'update consumer profile'
 
     def run(self):
@@ -172,7 +167,6 @@ class Update(ConsumerAction):
 
 class Bind(ConsumerAction):
 
-    name = 'bind'
     description = 'bind the consumer to listed repos'
 
     def setup_parser(self):
@@ -191,7 +185,6 @@ class Bind(ConsumerAction):
 
 class Unbind(ConsumerAction):
 
-    name = 'unbind'
     description = 'unbind the consumer from repos'
 
     def setup_parser(self):
@@ -210,7 +203,6 @@ class Unbind(ConsumerAction):
 
 class AddKeyValue(ConsumerAction):
 
-    name = 'add_keyvalue'
     description = 'add key-value information to consumer'
 
     def setup_parser(self):
@@ -229,7 +221,6 @@ class AddKeyValue(ConsumerAction):
 
 class DeleteKeyValue(ConsumerAction):
 
-    name = 'delete_keyvalue'
     description = 'delete key-value information from consumer'
 
     def setup_parser(self):
@@ -246,7 +237,6 @@ class DeleteKeyValue(ConsumerAction):
 
 class UpdateKeyValue(ConsumerAction):
 
-    name = 'update_keyvalue'
     description = 'update key-value information of a consumer'
 
     def setup_parser(self):
@@ -266,7 +256,6 @@ class UpdateKeyValue(ConsumerAction):
 
 class GetKeyValues(ConsumerAction):
 
-    name = 'get_keyvalues'
     description = _('get key-value attributes for given consumer')
 
     def run(self):
@@ -278,7 +267,6 @@ class GetKeyValues(ConsumerAction):
 
 class History(ConsumerAction):
 
-    name = 'history'
     description = 'view the consumer history'
 
     def setup_parser(self):
@@ -328,25 +316,4 @@ class History(ConsumerAction):
 
 class Consumer(Command):
 
-    name = 'consumer'
     description = _('consumer specific actions to pulp server')
-    _default_actions = ('list', 'info', 'create', 'delete', 'update',
-                        'bind', 'unbind', 'add_keyvalue', 'delete_keyvalue',
-                        'update_keyvalue', 'get_keyvalues', 'history')
-
-    def __init__(self, actions=None):
-        super(Consumer, self).__init__(actions)
-        self.info = Info()
-        self.list = List()
-        self.create = Create()
-        self.delete = Delete()
-        self.update = Update()
-        self.bind = Bind()
-        self.unbind = Unbind()
-        self.add_keyvalue = AddKeyValue()
-        self.delete_keyvalue = DeleteKeyValue()
-        self.update_keyvalue = UpdateKeyValue()
-        self.history = History()
-
-
-command_class = Consumer

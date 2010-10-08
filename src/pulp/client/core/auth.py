@@ -42,7 +42,6 @@ class AuthAction(Action):
 
 class Login(AuthAction):
 
-    name = 'login'
     description = 'stores user credentials on this machine'
 
     def run(self):
@@ -87,7 +86,6 @@ class Login(AuthAction):
 
 class Logout(AuthAction):
 
-    name = 'logout'
     description = 'removes stored user credentials on this machine'
 
     def run(self):
@@ -104,14 +102,4 @@ class Logout(AuthAction):
 
 class Auth(Command):
 
-    name = 'auth'
     description = _('stores authentication credentials for the user on the machine')
-    _default_actions = ('login', 'logout')
-
-    def __init__(self, actions=None):
-        super(Auth, self).__init__(actions)
-        self.login = Login()
-        self.logout = Logout()
-
-
-command_class = Auth

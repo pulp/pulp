@@ -44,7 +44,6 @@ class PackageGroupAction(Action):
 
 class List(PackageGroupAction):
 
-    name = 'list'
     description = 'list available packagegroups'
 
     def setup_parser(self):
@@ -65,7 +64,6 @@ class List(PackageGroupAction):
 
 class Info(PackageGroupAction):
 
-    name = 'info'
     description = 'lookup information for a packagegroup'
 
     def setup_parser(self):
@@ -92,7 +90,6 @@ class Info(PackageGroupAction):
 
 class Create(PackageGroupAction):
 
-    name = 'create'
     description = 'create a packagegroup'
 
     def setup_parser(self):
@@ -116,7 +113,6 @@ class Create(PackageGroupAction):
 
 class Delete(PackageGroupAction):
 
-    name = 'delete'
     description = 'delete a packagegroup'
 
     def setup_parser(self):
@@ -135,7 +131,6 @@ class Delete(PackageGroupAction):
 
 class AddPackage(PackageGroupAction):
 
-    name = 'add_package'
     description = 'add package to an existing packagegroup'
 
     def setup_parser(self):
@@ -161,7 +156,6 @@ class AddPackage(PackageGroupAction):
 
 class DeletePackage(PackageGroupAction):
 
-    name = 'delete'
     description = 'delete package from an existing packagegroup'
 
     def setup_parser(self):
@@ -185,7 +179,6 @@ class DeletePackage(PackageGroupAction):
 
 class Install(PackageGroupAction):
 
-    name = 'install'
     description = 'schedule a packagegroup install'
 
     def setup_parser(self):
@@ -217,20 +210,4 @@ class Install(PackageGroupAction):
 
 class PackageGroup(Command):
 
-    name = 'packagegroup'
     description = _('packagegroup specific actions to pulp server')
-    _default_actions = ('list', 'info', 'create', 'delete',
-                        'add_package', 'delete_package', 'install')
-
-    def __init__(self, actions=None):
-        super(PackageGroup, self).__init__(actions)
-        self.list = List()
-        self.info = Info()
-        self.create = Create()
-        self.delete = Delete()
-        self.add_package = AddPackage()
-        self.delete_package = DeletePackage()
-        self.install = Install()
-
-
-command_class = PackageGroup

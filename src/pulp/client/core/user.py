@@ -35,7 +35,6 @@ class UserAction(Action):
 
 class List(UserAction):
 
-    name = 'list'
     description = 'list available users'
 
     def run(self):
@@ -49,7 +48,6 @@ class List(UserAction):
 
 class Create(UserAction):
 
-    name = 'create'
     description = 'create a user'
 
     def setup_parser(self):
@@ -71,7 +69,6 @@ class Create(UserAction):
 
 class Delete(UserAction):
 
-    name = 'delete'
     description = 'delete a user'
 
     def setup_parser(self):
@@ -91,15 +88,4 @@ class Delete(UserAction):
 
 class User(Command):
 
-    name = 'user'
     description = _('user specific actions to pulp server')
-    _default_actions = ('list', 'create', 'delete')
-
-    def __init__(self, actions=None):
-        super(User, self).__init__(actions)
-        self.list = List()
-        self.create = Create()
-        self.delete = Delete()
-
-
-command_class = User
