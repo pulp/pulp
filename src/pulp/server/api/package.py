@@ -56,12 +56,12 @@ class PackageApi(BaseApi):
         
     @audit()
     def create(self, name, epoch, version, release, arch, description, 
-            checksum_type, checksum, filename):
+            checksum_type, checksum, filename, repo_defined=False):
         """
         Create a new Package object and return it
         """
         p = model.Package(name, epoch, version, release, arch, description,
-                checksum_type, checksum, filename)
+                checksum_type, checksum, filename, repo_defined=repo_defined)
         self.insert(p)
         return p
 

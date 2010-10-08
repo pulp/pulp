@@ -88,7 +88,7 @@ class RepoSource(Base):
 
 class Package(Base):
     def __init__(self, name, epoch, version, release, arch, description,
-            checksum_type, checksum, filename, vendor=None):
+            checksum_type, checksum, filename, vendor=None, repo_defined=False):
         Base.__init__(self)
         # ID is initialized in Base.__init__()
         self.name = name
@@ -101,6 +101,7 @@ class Package(Base):
         self.filename = filename
         self.checksum = {checksum_type: checksum}
         self.download_url = None
+        self.repo_defined = repo_defined
         # Add gpg keys
         self.requires = []
         self.provides = []

@@ -147,7 +147,7 @@ class BaseSynchronizer(object):
         added_errataids = []
         log.debug("Processing %s potential packages" % (len(package_list)))
         for package in package_list:
-            package = self.import_package(package, repo)
+            package = self.import_package(package, repo, repo_defined=True)
             if (package is not None):
                 added_packages[package["id"]] = package
         endTime = time.time()
@@ -194,7 +194,14 @@ class BaseSynchronizer(object):
                         (updateinfo_xml_path, repo["id"]))
         return added_packages, added_errataids
 
-    def import_package(self, package, repo):
+    def import_package(self, package, repo, repo_defined=False):
+        """
+        @param package - package to add to repo
+        @param repo - repo to hold package
+        @param repo_defined -  flag to mark if this package is part of the
+                        repo source definition, or if it's
+                        something manually added later
+        """
         try:
             retval = None
             file_name = package.relativepath
@@ -210,7 +217,7 @@ class BaseSynchronizer(object):
             else:
                 retval = self.package_api.create(package.name, package.epoch,
                     package.version, package.release, package.arch, package.description,
-                    hashtype, checksum, file_name)
+                    hashtype, checksum, file_name, repo_defined=repo_defined)
                 for dep in package.requires:
                     retval.requires.append(dep[0])
                 for prov in package.provides:

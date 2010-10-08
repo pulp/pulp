@@ -823,7 +823,10 @@ class RepoApi(BaseApi):
         self.update(repo)
         # Remove packages that are no longer in source repo
         for pid in repo["packages"]:
-            if pid not in sync_packages:
+            if pid not in sync_packages and \
+                repo["packages"][pid]["repo_defined"]:
+                # Only remove packages that are defined by the repo
+                # Example: don't delete uploaded packages
                 log.info("Removing package <%s> from repo <%s>" % (repo["packages"][pid], repo["id"]))
                 self.remove_package(repo["id"], repo["packages"][pid])
         # Refresh repo object since we may have deleted some packages
