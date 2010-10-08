@@ -26,7 +26,7 @@ from pulp.client import constants
 from pulp.client import credentials
 from pulp.client.config import Config
 from pulp.client.connection import (
-    ErrataConnection, RepoConnection, ConsumerConnection,
+    setup_connection, ErrataConnection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command, system_exit
 from pulp.client.logutil import getLogger
@@ -39,14 +39,11 @@ log = getLogger(__name__)
 
 class ErrataAction(Action):
 
-    def connections(self):
-        conns = {
-            'econn': ErrataConnection,
-            'rconn': RepoConnection,
-            'cconn': ConsumerConnection,
-            'cgconn': ConsumerGroupConnection,
-        }
-        return conns
+    def setup_connections(self):
+        self.econn = setup_connection(ErrataConnection)
+        self.rconn = setup_connection(RepoConnection)
+        self.cconn = setup_connection(ConsumerConnection)
+        self.cgconn = setup_connection(ConsumerGroupConnection)
 
 # errata actions --------------------------------------------------------------
 

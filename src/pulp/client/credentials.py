@@ -34,6 +34,13 @@ _key_file = None
 _local_consumer_id = None
 
 
+class CredentialError(Exception):
+    """
+    Error raise when credentials fail to validate
+    """
+    pass
+
+
 def root_check():
     """
     Simple function to assure execution by root
@@ -96,6 +103,28 @@ def set_local_cert_key_files():
     """
     global _cert_file, _key_file
     _cert_file, _key_file = auth_utils.admin_cert_paths()
+
+
+def get_credentials():
+    """
+    """
+    # a provided username and password will override cert and key files
+    username, password = get_username_password()
+    cert_file = key_file = None
+    if None in (username, password):
+        username = password = None
+        if None in get_cert_key_files():
+            set_local_cert_key_files()
+        cert_file, key_file = get_cert_key_files()
+    # make sure there is one valid set of credentials
+    if None in (username, password) and None in (cert_file, key_file):
+        raise CredentialError(_('no pulp credentials found'))
+    # check to see if we can access the cert and key files
+    if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
+        raise CredentialError(_('cannot read cert file: %s') % cert_file)
+    if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
+        raise CredentialError(_('cannot read key file: %s') % cert_file)
+    return (username, password, cert_file, key_file)
 
 
 def get_consumer_id():

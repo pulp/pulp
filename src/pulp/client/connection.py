@@ -30,14 +30,35 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
+from pulp.client import credentials
+from pulp.client.config import Config
 from pulp.client.logutil import getLogger
 
 
+_cfg = Config()
 log = getLogger(__name__)
 
 consumer_deferred_fields = ['package_profile', 'repoids']
 package_deferred_fields = []
 repository_deferred_fields = ['packages', 'packagegroups', 'packagegroupcategories']
+
+
+def setup_connection(connection_class):
+    """
+    Factory method that instantiates the connection class with the credentials
+    from the credentials module
+    @type connections_class: PulpConnection class
+    @param connection_class: pulp connection class to instantiate
+    @rtype: PulpConnection instance
+    @return: instance of the pulp connection class
+    """
+    username, password, cert_file, key_file = credentials.get_credentials()
+    return connection_class(host=_cfg.server.host or 'localhost',
+                            port=_cfg.server.port or 443,
+                            username=username,
+                            password=password,
+                            cert_file=cert_file,
+                            key_file=key_file)
 
 
 def realpath(path):
@@ -201,13 +222,13 @@ class RepoConnection(PulpConnection):
     def repositories(self):
         method = "/repositories/"
         return self.conn.request_get(method)
-    
+
     def repositories_by_groupid(self, groups=[]):
         method = "/repositories/?"
         for group in groups:
             method += "groupid=%s&" % group
         return self.conn.request_get(method)
-    
+
     def update(self, repo):
         method = "/repositories/%s/" % repo['id']
         return self.conn.request_put(method, params=repo)
@@ -310,7 +331,7 @@ class ConsumerConnection(PulpConnection):
     Connection class to access repo specific calls
     """
     def create(self, id, description, key_value_pairs={}):
-        consumerdata = {"id"   : id, "description" : description, 
+        consumerdata = {"id"   : id, "description" : description,
                         "key_value_pairs" : key_value_pairs}
         method = "/consumers/"
         return self.conn.request_put(method, params=consumerdata)
@@ -362,21 +383,21 @@ class ConsumerConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumers/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
-    
+
     def add_key_value_pair(self, id, key, value):
         key_value_dict = {'key' : key, 'value' : value}
         method = "/consumers/%s/add_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
-    
+
     def delete_key_value_pair(self, id, key):
         method = "/consumers/%s/delete_key_value_pair/" % id
         return self.conn.request_post(method, params=key)
-    
+
     def update_key_value_pair(self, id, key, value):
         key_value_dict = {'key' : key, 'value' : value}
         method = "/consumers/%s/update_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
-    
+
     def get_keyvalues(self, id):
         method = "/consumers/%s/keyvalues/" % str(id)
         return self.conn.request_get(method)
@@ -384,8 +405,8 @@ class ConsumerConnection(PulpConnection):
     def profile(self, id, profile):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
-    
-   
+
+
     def installpackages(self, id, packagenames):
         method = "/consumers/%s/installpackages/" % id
         body = dict(packagenames=packagenames)
@@ -458,12 +479,12 @@ class ConsumerGroupConnection(PulpConnection):
     def unbind(self, id, repoid):
         method = "/consumergroups/%s/unbind/" % id
         return self.conn.request_post(method, params=repoid)
-    
+
     def add_key_value_pair(self, id, key, value, force):
         key_value_dict = {'key' : key, 'value' : value, 'force'  : force}
         method = "/consumergroups/%s/add_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
-    
+
     def delete_key_value_pair(self, id, key):
         method = "/consumergroups/%s/delete_key_value_pair/" % id
         return self.conn.request_post(method, params=key)
@@ -472,7 +493,7 @@ class ConsumerGroupConnection(PulpConnection):
         key_value_dict = {'key' : key, 'value' : value}
         method = "/consumergroups/%s/update_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
-    
+
     def installpackages(self, id, packagenames):
         method = "/consumergroups/%s/installpackages/" % id
         body = dict(packagenames=packagenames)

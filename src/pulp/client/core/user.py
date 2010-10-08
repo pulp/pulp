@@ -20,15 +20,15 @@ import os
 from gettext import gettext as _
 
 from pulp.client import constants
-from pulp.client.connection import UserConnection
+from pulp.client.connection import setup_connection, UserConnection
 from pulp.client.core.base import Action, Command, print_header, system_exit
 
 # base user action class ------------------------------------------------------
 
 class UserAction(Action):
 
-    def connections(self):
-        return {'userconn': UserConnection}
+    def setup_connections(self):
+        self.userconn = setup_connection(UserConnection)
 
 # user actions ----------------------------------------------------------------
 

@@ -25,7 +25,7 @@ from pulp.client import credentials
 from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
-from pulp.client.connection import ConsumerConnection
+from pulp.client.connection import setup_connection, ConsumerConnection
 from pulp.client.core.base import Action, Command, print_header, system_exit
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
@@ -43,8 +43,8 @@ class ConsumerAction(Action):
         super(ConsumerAction, self).__init__()
         self.repolib = RepoLib()
 
-    def connections(self):
-        return {'cconn': ConsumerConnection}
+    def setup_connections(self):
+        self.cconn = setup_connection(ConsumerConnection)
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com")

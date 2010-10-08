@@ -18,7 +18,6 @@ import sys
 from gettext import gettext as _
 from optparse import OptionParser
 
-from pulp.client import credentials
 from pulp.client.config import Config
 from pulp.client.connection import RestlibException
 from pulp.client.logutil import getLogger
@@ -186,15 +185,6 @@ class Action(object):
             self.parser.error(_('option %s is required; please see --help') % flag)
         return value
 
-    def connections(self):
-        """
-        Get the connection classes required by this action, keyed by attribute
-        @rtype: dict of str: Connection class
-        @return: dictionary of Connection classes, keyed by the name of the
-                 attribute they will be set to
-        """
-        return {}
-
     def setup_parser(self):
         """
         Add custom options to the parser
@@ -202,45 +192,11 @@ class Action(object):
         """
         pass
 
-    def _get_credentials(self):
+    def setup_connections(self):
         """
-        Get and verify pulp credentials
-        @rtype: tuple of None(s) and str's
-        @return: username, password, cert file path, key file path
+        Setup the connections required by this action
         """
-        # a provided username and password will override cert and key files
-        username, password = credentials.get_username_password()
-        cert_file = key_file = None
-        if None in (username, password):
-            username = password = None
-            if None in credentials.get_cert_key_files():
-                credentials.set_local_cert_key_files()
-            cert_file, key_file = credentials.get_cert_key_files()
-        # make sure there is one valid set of credentials
-        if None in (username, password) and None in (cert_file, key_file):
-            system_exit(os.EX_USAGE, _('no pulp credentials found'))
-        # check to see if we can access the cert and key files
-        if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
-            system_exit(os.EX_CONFIG, _('cannot read cert file: %s') % cert_file)
-        if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
-            system_exit(os.EX_CONFIG, _('cannot read key file: %s') % cert_file)
-        return (username, password, cert_file, key_file)
-
-    def _setup_connections(self):
-        """
-        Setup connections for the action
-        @warning: this method should only be overridden with care
-        """
-        username, password, cert_file, key_file = self._get_credentials()
-        connections = self.connections()
-        for name, cls in connections.items():
-            connection = cls(host=_cfg.server.host or 'localhost',
-                             port=_cfg.server.port or 443,
-                             username=username,
-                             password=password,
-                             cert_file=cert_file,
-                             key_file=key_file)
-            setattr(self, name, connection)
+        pass
 
     def run(self):
         """
@@ -260,7 +216,7 @@ class Action(object):
         self.setup_parser()
         self.opts, self.args = self.parser.parse_args(args)
         try:
-            self._setup_connections()
+            self.setup_connections()
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)

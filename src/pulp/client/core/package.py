@@ -21,20 +21,18 @@ import time
 from gettext import gettext as _
 
 from pulp.client.connection import (
-    RepoConnection, ConsumerConnection, ConsumerGroupConnection)
+    setup_connection, RepoConnection, ConsumerConnection,
+    ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command, print_header, system_exit
 
 # package action base class ---------------------------------------------------
 
 class PackageAction(Action):
 
-    def connections(self):
-        conns = {
-            'pconn': RepoConnection,
-            'cconn': ConsumerConnection,
-            'cgconn': ConsumerGroupConnection,
-        }
-        return conns
+    def setup_connections(self):
+        self.pconn = setup_connection(RepoConnection)
+        self.cconn = setup_connection(ConsumerConnection)
+        self.cgconn = setup_connection(ConsumerGroupConnection)
 
 # package actions -------------------------------------------------------------
 

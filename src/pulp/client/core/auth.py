@@ -20,15 +20,16 @@ from gettext import gettext as _
 
 from pulp.client import auth_utils
 from pulp.client import credentials
-from pulp.client.connection import UserConnection, RestlibException
+from pulp.client.connection import (
+    setup_connection, UserConnection, RestlibException)
 from pulp.client.core.base import Action, Command, system_exit, _log
 
 # base auth action class ------------------------------------------------------
 
 class AuthAction(Action):
 
-    def connections(self):
-        return {'authconn': UserConnection}
+    def setup_connections(self):
+        self.authconn = setup_connection(UserConnection)
 
     def setup_parser(self):
         self.parser.add_option('--username', dest='username',
@@ -71,7 +72,7 @@ class Login(AuthAction):
         if None not in (username, password):
             credentials.set_username_password(username, password)
         try:
-            self._setup_connections()
+            self.setup_connections()
             self.run()
         except RestlibException, re:
             _log.error("error: %s" % re)

@@ -24,7 +24,7 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import RepoConnection
+from pulp.client.connection import setup_connection, RepoConnection
 from pulp.client.core.base import Action, Command, print_header, system_exit
 from pulp.client.json_utils import parse_date
 
@@ -40,8 +40,8 @@ class SyncError(Exception):
 
 class RepoAction(Action):
 
-    def connections(self):
-        return {'pconn': RepoConnection}
+    def setup_connections(self):
+        self.pconn = setup_connection(RepoConnection)
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id", help="repository id")
