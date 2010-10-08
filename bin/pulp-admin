@@ -36,7 +36,7 @@ def setup_admin(admin):
     consumer_cmd.add_action('bind', consumer.Bind())
     consumer_cmd.add_action('unbind', consumer.Unbind())
     consumer_cmd.add_action('add_keyvalue', consumer.AddKeyValue())
-    consumer_cmd.add_action('delete_keyvalu', consumer.DeleteKeyValue())
+    consumer_cmd.add_action('delete_keyvalue', consumer.DeleteKeyValue())
     consumer_cmd.add_action('update_keyvalue', consumer.UpdateKeyValue())
     consumer_cmd.add_action('get_keyvalues', consumer.GetKeyValues())
     consumer_cmd.add_action('history', consumer.History())
