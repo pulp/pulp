@@ -343,12 +343,12 @@ class Upload(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         files = self.args
-        if not files:
-            system_exit(os.EX_USAGE,
-                        _("need to provide at least one file to perform upload"))
         dir = self.opts.dir
         if dir:
             files += utils.processDirectory(dir, "rpm")
+        if not files:
+            system_exit(os.EX_USAGE,
+                        _("need to provide at least one file to perform upload"))
         uploadinfo = {}
         uploadinfo['repo'] = id
         for frpm in files:
