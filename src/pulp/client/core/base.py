@@ -68,7 +68,7 @@ class Command(object):
         """
         Return a string showing the command's description
         """
-        return - ('no description available')
+        return _('no description available')
 
     def add_action(self, name, action):
         """
@@ -133,8 +133,8 @@ class Action(object):
     def description(self):
         """
         Return a string for this action's description
-        return _('no description available')
         """
+        return _('no description available')
 
     def get_required_option(self, opt, flag=None):
         """
