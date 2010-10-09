@@ -20,17 +20,14 @@ from gettext import gettext as _
 
 from pulp.client import auth_utils
 from pulp.client import credentials
-from pulp.client.connection import (
-    setup_connection, UserConnection, RestlibException)
-from pulp.client.core.base import Action, Command, _log
-from pulp.client.core.utils import system_exit
+from pulp.client.connection import setup_connection, UserConnection
+from pulp.client.core.base import Action, Command
 
-# base auth action class ------------------------------------------------------
+# auth actions ----------------------------------------------------------------
 
-class AuthAction(Action):
+class Login(Action):
 
-    def setup_connections(self):
-        self.authconn = setup_connection(UserConnection)
+    description = 'stores user credentials on this machine'
 
     def setup_parser(self):
         self.parser.add_option('--username', dest='username',
@@ -38,15 +35,15 @@ class AuthAction(Action):
         self.parser.add_option('--password', dest='password',
                                help=_('pulp account password'))
 
-# auth actions ----------------------------------------------------------------
-
-class Login(AuthAction):
-
-    description = 'stores user credentials on this machine'
+    def setup_connections(self):
+        # first take into account the new credentials
+        username = self.opts.username
+        password = self.opts.password
+        if None not in (username, password):
+            credentials.set_username_password(username, password)
+        self.authconn = setup_connection(UserConnection)
 
     def run(self):
-        #username = self.get_required_option('username')
-        #password = self.get_required_option('password')
         # Retrieve the certificate information from the server
         cert_dict = self.authconn.admin_certificate()
         # Determine the destination and store the cert information there
@@ -63,29 +60,8 @@ class Login(AuthAction):
         print _('user credentials successfully stored at [%s]') % \
                 auth_utils.admin_cert_dir()
 
-    def main(self, args):
-        # have to override main in order to set new credentials, if provided
-        self.parser.set_usage(self.usage)
-        self.setup_parser()
-        self.opts, self.args = self.parser.parse_args(args)
-        username = self.opts.username
-        password = self.opts.password
-        if None not in (username, password):
-            credentials.set_username_password(username, password)
-        try:
-            self.setup_connections()
-            self.run()
-        except RestlibException, re:
-            _log.error("error: %s" % re)
-            system_exit(re.code, _('error: operation failed: ') + re.msg)
-        except Exception, e:
-            _log.error("error: %s" % e)
-            raise
-        finally:
-            print ''
 
-
-class Logout(AuthAction):
+class Logout(Action):
 
     description = 'removes stored user credentials on this machine'
 
