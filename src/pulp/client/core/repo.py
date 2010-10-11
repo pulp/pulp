@@ -217,7 +217,7 @@ class Update(RepoAction):
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--gpgkeys", dest="gpgkeys",
-                               help=_("a directory or list of files contining GPG keys"))
+                               help=_("a ',' separated list of directories and/or files contining GPG keys"))
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
