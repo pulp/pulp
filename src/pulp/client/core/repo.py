@@ -216,15 +216,17 @@ class Update(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
-
+        self.parser.add_option("--gpgkeys", dest="gpgkeys",
+                               help=_("a directory or list of files contining GPG keys"))
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         if not repo:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         optdict = vars(self.opts)
+        self.expand(optdict)
         for field in optdict.keys():
-            if (repo.has_key(field) and optdict[field]):
+            if field in repo:
                 repo[field] = optdict[field]
         # Have to set this manually since the repo['feed'] is a 
         # complex sub-object inside the repo
@@ -232,6 +234,34 @@ class Update(RepoAction):
             repo['feed'] = self.opts.feed
         self.pconn.update(repo)
         print _("Successfully updated repository [ %s ]") % repo['id']
+
+    def expand(self, opts):
+        OPT = 'gpgkeys'
+        keylist = opts.get(OPT)
+        if keylist:
+            keylist = keylist.split(',')
+        else:
+            return
+        try:
+            paths = []
+            for key in keylist:
+                if os.path.isdir(key):
+                    for fn in os.listdir(key):
+                        paths.append(os.path.join(key, fn))
+                    continue
+                if os.path.isfile(key):
+                    paths.append(key)
+                    continue
+                raise Exception, _('%s must be file/directory') % key
+            keylist = []
+            for path in paths:
+                print _('uploading %s') % path
+                f = open(path)
+                keylist.append(f.read())
+                f.close()
+            opts[OPT] = keylist
+        except Exception, e:
+            system_exit(os.EX_DATAERR, _(str(e)))
 
 
 class Sync(RepoAction):
