@@ -83,10 +83,10 @@ class PulpCLI(object):
         self.setup_parser()
         opts, args = self.parser.parse_args(args)
         if not args:
-            self.parser.error(_('No command given: please see --help'))
+            self.parser.error(_('No command given; please see --help'))
         command = self._commands.get(args[0], None)
         if command is None:
-            self.parser.error(_('Invalid command: please see --help'))
+            self.parser.error(_('Invalid command; please see --help'))
         username = opts.username
         password = opts.password
         if None not in (username, password):
