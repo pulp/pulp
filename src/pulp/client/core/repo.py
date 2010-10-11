@@ -45,17 +45,18 @@ class RepoAction(Action):
         self.pconn = setup_connection(RepoConnection)
 
     def setup_parser(self):
-        self.parser.add_option("--id", dest="id", help="repository id")
+        self.parser.add_option("--id", dest="id",
+                               help=_("repository id (required)"))
 
 # repo actions ----------------------------------------------------------------
 
 class List(RepoAction):
 
-    description = 'list available repos'
+    description = _('list available repositories')
 
     def setup_parser(self):
         self.parser.add_option("--groupid", action="append", dest="groupid",
-                               help="filter repositories by group id")
+                               help=_("filter repositories by group id"))
 
     def run(self):
         if self.opts.groupid:
@@ -63,8 +64,8 @@ class List(RepoAction):
         else:
             repos = self.pconn.repositories()
         if not len(repos):
-            system_exit(os.EX_OK, _("no repos available to list"))
-        print_header('List of Available Repositories')
+            system_exit(os.EX_OK, _("No repositories available to list"))
+        print_header(_('List of Available Repositories'))
         for repo in repos:
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], repo["source"], repo["arch"],
@@ -74,21 +75,21 @@ class List(RepoAction):
 
 class Status(RepoAction):
 
-    description = 'show the status of a repo'
+    description = _('show the status of a repository')
 
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         syncs = self.pconn.sync_list(id)
         print_header(_('Status for %s') % id)
-        print _('repository: %s') % repo['id']
-        print _('number of packages: %d') % repo['package_count']
+        print _('Repository: %s') % repo['id']
+        print _('Number of Packages: %d') % repo['package_count']
         last_sync = repo['last_sync']
         if last_sync is None:
             last_sync = 'never'
         else:
             last_sync = str(parse_date(last_sync))
-        print _('last sync: %s') % last_sync
+        print _('Last Sync: %s') % last_sync
         if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
             return
         print _('currently syncing:'),
@@ -130,30 +131,30 @@ class Content(RepoAction):
 
 class Create(RepoAction):
 
-    description = 'create a repo'
+    description = _('create a repository')
 
     def setup_parser(self):
         super(Create, self).setup_parser()
         self.parser.add_option("--name", dest="name",
-                               help="common repository name")
+                               help=_("common repository name"))
         self.parser.add_option("--arch", dest="arch",
-                               help="package arch the repository should support")
+                               help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
-                               help="url feed to populate the repository")
+                               help=_("url feed to populate the repository"))
         self.parser.add_option("--cacert", dest="cacert",
-                               help="path location to ca certificate")
+                               help=_("path location to ca certificate"))
         self.parser.add_option("--cert", dest="cert",
-                               help="path location to entitlement certificate")
+                               help=_("path location to entitlement certificate"))
         self.parser.add_option("--key", dest="key",
-                               help="path location to entitlement certificate key")
+                               help=_("path location to entitlement certificate key"))
         self.parser.add_option("--schedule", dest="schedule",
-                               help="schedule for automatically synchronizing the repository")
+                               help=_("schedule for automatically synchronizing the repository"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
-                               help="use symlinks instead of copying bits locally; applicable for local syncs")
+                               help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
-                               help="relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified")
+                               help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", dest="groupid",
-                               help="a group to which the repository belongs; this is just a string identifier")
+                               help=_("a group to which the repository belongs; this is just a string identifier"))
 
     def _get_cert_options(self):
         cacert = self.opts.cacert
@@ -178,49 +179,49 @@ class Create(RepoAction):
         repo = self.pconn.create(id, name, arch, feed, symlinks, schedule,
                                  cert_data=cert_data,
                                  relative_path=relative_path, groupid=groupid)
-        print _(" successfully created repo [ %s ]") % repo['id']
+        print _("Successfully created repository [ %s ]") % repo['id']
 
 
 class Delete(RepoAction):
 
-    description = 'delete a repo'
+    description = _('delete a repository')
 
     def run(self):
         id = self.get_required_option('id')
         self.pconn.delete(id=id)
-        print _(" successful deleted repo [ %s ]") % id
+        print _("Successful deleted repository [ %s ]") % id
 
 
 class Update(RepoAction):
 
-    description = 'update a repo'
+    description = _('update a repository')
 
     def setup_parser(self):
         super(Update, self).setup_parser()
         self.parser.add_option("--name", dest="name",
-                               help="common repository name")
+                               help=_("common repository name"))
         self.parser.add_option("--arch", dest="arch",
-                               help="package arch the repository should support")
+                               help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
-                               help="url feed to populate the repository")
+                               help=_("url feed to populate the repository"))
         self.parser.add_option("--cacert", dest="cacert",
-                               help="path location to ca certificate")
+                               help=_("path location to ca certificate"))
         self.parser.add_option("--cert", dest="cert",
-                               help="path location to entitlement certificate key")
+                               help=_("path location to entitlement certificate key"))
         self.parser.add_option("--schedule", dest="schedule",
-                               help="schedule for automatically synchronizing the repository")
+                               help=_("schedule for automatically synchronizing the repository"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
-                               help="use symlinks instead of copying bits locally; applicable for local syncs")
+                               help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
-                               help="relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified")
+                               help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", dest="groupid",
-                               help="a group to which the repository belongs; this is just a string identifier")
+                               help=_("a group to which the repository belongs; this is just a string identifier"))
 
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         if not repo:
-            system_exit(os.EX_DATAERR, _("repo with id: [%s] not found") % id)
+            system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         optdict = vars(self.opts)
         for field in optdict.keys():
             if (repo.has_key(field) and optdict[field]):
@@ -230,20 +231,20 @@ class Update(RepoAction):
         if self.opts.feed:
             repo['feed'] = self.opts.feed
         self.pconn.update(repo)
-        print _(" successfully updated repo [ %s ]") % repo['id']
+        print _("Successfully updated repository [ %s ]") % repo['id']
 
 
 class Sync(RepoAction):
 
-    description = 'sync data to this repo from the feed'
+    description = _('synchronize data to a repository from its feed')
 
     def setup_parser(self):
         super(Sync, self).setup_parser()
         self.parser.add_option("--timeout", dest="timeout",
-                               help="synchronization timeout")
+                               help=_("synchronization timeout"))
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
-                               help='synchronize repository in the foreground')
+                               help=_('synchronize repository in the foreground'))
 
     def print_sync_progress(self, progress):
         # erase the previous progress
@@ -281,7 +282,7 @@ class Sync(RepoAction):
         print _('Sync: %s') % state.title()
 
     def sync_foreground(self, task):
-        print _('you can safely CTRL+C this current command and it will continue')
+        print _('You can safely CTRL+C this current command and it will continue')
         try:
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self.print_sync_progress(task['progress'])
@@ -299,38 +300,38 @@ class Sync(RepoAction):
         timeout = self.opts.timeout
         foreground = self.opts.foreground
         task = self.pconn.sync(id, timeout)
-        print _('sync for repo %s started') % id
+        print _('Sync for repository %s started') % id
         if not foreground:
-            system_exit(os.EX_OK, _('use "repo status" to check on the progress'))
+            system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
         self.sync_foreground(task)
 
 
 
 class CancelSync(RepoAction):
 
-    description = 'cancel a running sync'
+    description = _('cancel a running sync')
 
     def run(self):
         id = self.get_required_option('id')
         syncs = self.pconn.sync_list(id)
         if not syncs:
-            system_exit(os.EX_OK, _('no sync to cancel'))
+            system_exit(os.EX_OK, _('No sync to cancel'))
         task = syncs[0]
         if task['state'] not in ('waiting', 'running'):
-            system_exit(os.EX_OK, _('sync has completed'))
+            system_exit(os.EX_OK, _('Sync has completed'))
         taskid = task['id']
         self.pconn.cancel_sync(id, taskid)
-        print _(" sync task %s canceled") % taskid
+        print _("Sync for repository %s canceled") % id
 
 
 class Upload(RepoAction):
 
-    description = 'upload package(s) to this repo'
+    description = _('upload package(s) to a repository')
 
     def setup_parser(self):
         super(Upload, self).setup_parser()
         self.parser.add_option("--dir", dest="dir",
-                               help="process packages from this directory")
+                               help=_("process packages from this directory"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -340,7 +341,7 @@ class Upload(RepoAction):
             files += utils.processDirectory(dir, "rpm")
         if not files:
             system_exit(os.EX_USAGE,
-                        _("need to provide at least one file to perform upload"))
+                        _("Need to provide at least one file to perform upload"))
         uploadinfo = {}
         uploadinfo['repo'] = id
         for frpm in files:
@@ -355,22 +356,22 @@ class Upload(RepoAction):
             pkgstream = base64.b64encode(open(frpm).read())
             status = self.pconn.upload(id, pkginfo, pkgstream)
             if status:
-                print _(" successful uploaded [%s] to repo [ %s ]") % \
+                print _("Successful uploaded [%s] to repo [ %s ]") % \
                         (pkginfo['pkgname'], id)
             else:
-                print _(" failed to upload [%s] to repo [ %s ]") % \
+                print _("Failed to upload [%s] to repo [ %s ]") % \
                         (pkginfo['pkgname'], id)
 
 
 class Schedules(RepoAction):
 
-    description = 'list all repo schedules'
+    description = _('list all repository schedules')
 
     def setup_parser(self):
         pass
 
     def run(self):
-        print_header('Available Repository Schedules')
+        print_header(_('Available Repository Schedules'))
         schedules = self.pconn.all_schedules()
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))

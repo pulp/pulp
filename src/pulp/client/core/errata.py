@@ -20,21 +20,15 @@ import os
 import sys
 import time
 from gettext import gettext as _
-from optparse import SUPPRESS_HELP
+from optparse import OptionGroup, SUPPRESS_HELP
 
 from pulp.client import constants
 from pulp.client import credentials
-from pulp.client.config import Config
 from pulp.client.connection import (
     setup_connection, ErrataConnection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit
-from pulp.client.logutil import getLogger
-
-
-CFG = Config()
-log = getLogger(__name__)
 
 # errata action base class ----------------------------------------------------
 
@@ -50,11 +44,11 @@ class ErrataAction(Action):
 
 class List(ErrataAction):
 
-    description = 'list applicable errata'
+    description = _('list applicable errata')
 
     def setup_parser(self):
         default = None
-        help = 'consumer id'
+        help = _('consumer id (required)')
         consumerid = credentials.get_consumer_id()
         if consumerid is not None:
             default = consumerid
@@ -62,31 +56,30 @@ class List(ErrataAction):
         self.parser.add_option("--consumerid", dest="consumerid",
                                default=default, help=help)
         self.parser.add_option("--repoid", dest="repoid",
-                               help="repository id")
+                               help=_("repository id"))
         self.parser.add_option("--type", dest="type", action="append",
-                               help="type of errata to lookup; supported types: security, bugfix, enhancement")
+                               help=_("type of errata to lookup; supported types: security, bugfix, enhancement"))
 
     def run(self):
         consumerid = self.opts.consumerid
         repoid = self.opts.repoid
         if not (consumerid or repoid):
-            system_exit(os.EX_USAGE, _("a consumer or a repo is required to lookup errata"))
+            system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
         if repoid:
             errata = self.rconn.errata(repoid, self.options.type)
         elif consumerid:
             errata = self.cconn.errata(consumerid, self.options.type)
         if not errata:
-            print _("no errata available to list")
-            system_exit(os.EX_OK)
+            system_exit(os.EX_OK, _("No errata available to list"))
         print errata
 
 
 class Info(ErrataAction):
 
-    description = 'see details on a specific errata'
+    description = _('see details on a specific errata')
 
     def setup_parser(self):
-        self.parser.add_option("--id", dest="id", help="errata id")
+        self.parser.add_option("--id", dest="id", help=_("errata id (required)"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -104,28 +97,30 @@ class Info(ErrataAction):
 
 class Install(ErrataAction):
 
-    description = 'install errata on a consumer'
+    description = _('install errata on a consumer')
 
     def setup_parser(self):
-        self.parser.add_option("--consumerid", dest="consumerid",
-                               help="consumer id")
-        self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                               help="consumer group id")
+        id_group = OptionGroup(self.parser, _('Consumer or Consumer Group id (one is required)'))
+        id_group.add_option("--consumerid", dest="consumerid",
+                            help=_("consumer id"))
+        id_group.add_option("--consumergroupid", dest="consumergroupid",
+                            help=_("consumer group id"))
+        self.parser.add_option_group(id_group)
 
     def run(self):
         data = self.args
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
-            system_exit(os.EX_USAGE, _("a consumerid or a consumergroupid is required to perform an install"))
+            self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
         errataids = data[2:]
         if not errataids:
-            system_exit(os.EX_USAGE, _("specify an errata id to install"))
+            system_exit(os.EX_USAGE, _("Specify an errata id to install"))
         if self.options.consumerid:
             task = self.cconn.installerrata(consumerid, errataids)
         elif self.options.consumergroupid:
             task = self.cgconn.installerrata(consumergroupid, errataids)
-        print _('created task id: %s') % task['id']
+        print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']
         while state not in ['finished', 'error']:
@@ -138,7 +133,7 @@ class Install(ErrataAction):
             print _('\n[%s] installed on %s') % \
                   (status['result'], (consumerid or (consumergroupid)))
         else:
-            print("\nerrata install failed")
+            print("\nErrata install failed")
 
 # errata command --------------------------------------------------------------
 

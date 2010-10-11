@@ -48,7 +48,7 @@ class ConsumerAction(Action):
         self.cconn = setup_connection(ConsumerConnection)
 
     def setup_parser(self):
-        help = _("consumer identifier eg: foo.example.com")
+        help = _("consumer identifier eg: foo.example.com (required)")
         default = None
         id = credentials.get_consumer_id()
         if id is not None:
@@ -60,12 +60,12 @@ class ConsumerAction(Action):
 
 class List(ConsumerAction):
 
-    description = 'list all known consumers'
+    description = _('list all known consumers')
 
     def setup_parser(self):
-        self.parser.add_option("--key", dest="key", help="key identifier")
+        self.parser.add_option("--key", dest="key", help=_("key identifier"))
         self.parser.add_option("--value", dest="value",
-                               help="value corresponding to the key")
+                               help=_("value corresponding to the key"))
 
     def run(self):
         key = self.opts.key
@@ -77,7 +77,7 @@ class List(ConsumerAction):
             con['package_profile'] = urlparse.urljoin(baseurl,
                                                       con['package_profile'])
         if key is None:
-            print_header("Consumer Information ")
+            print_header(_("Consumer Information"))
             for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], con["repoids"],
@@ -85,7 +85,7 @@ class List(ConsumerAction):
             system_exit(os.EX_OK)
 
         if value is None:
-            print _("consumers with key : %s") % key
+            print _("Consumers with key : %s") % key
             for con in cons:
                 key_value_pairs = self.cconn.get_keyvalues(con["id"])
                 if key not in key_value_pairs.keys():
@@ -93,7 +93,7 @@ class List(ConsumerAction):
                 print "%s  -  %s : %s" % (con["id"], key, key_value_pairs[key])
             system_exit(os.EX_OK)
 
-        print _("consumers with %s : %s") % (key, value)
+        print _("Consumers with %s : %s") % (key, value)
         for con in cons:
             key_value_pairs = self.cconn.get_keyvalues(con["id"])
             if (key in key_value_pairs.keys()) and \
@@ -103,7 +103,7 @@ class List(ConsumerAction):
 
 class Info(ConsumerAction):
 
-    description = 'list of accessible consumer info'
+    description = _('list of accessible consumer info')
 
     def run(self):
         id = self.get_required_option('id')
@@ -113,7 +113,7 @@ class Info(ConsumerAction):
             for pkgversion in pkg:
                 pkgs += " " + utils.getRpmName(pkgversion)
         cons['package_profile'] = pkgs
-        print_header("Consumer Information")
+        print_header(_("Consumer Information"))
         for con in cons:
             print constants.AVAILABLE_CONSUMER_INFO % \
                     (con["id"], con["description"], con["repoids"],
@@ -122,12 +122,12 @@ class Info(ConsumerAction):
 
 class Create(ConsumerAction):
 
-    description = 'create a consumer'
+    description = _('create a consumer')
 
     def setup_parser(self):
         super(Create, self).setup_parser()
         self.parser.add_option("--description", dest="description",
-                               help="consumer description eg: foo's web server")
+                               help=_("consumer description eg: foo's web server"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -141,117 +141,118 @@ class Create(ConsumerAction):
         utils.writeToFile(ConsumerConnection.KEY_PATH, key)
         pkginfo = PackageProfile().getPackageList()
         self.cconn.profile(id, pkginfo)
-        print _(" successfully created consumer [ %s ]") % consumer['id']
+        print _("Successfully created consumer [ %s ]") % consumer['id']
 
 
 class Delete(ConsumerAction):
 
-    description = 'delete the consumer'
+    description = _('delete the consumer')
 
     def run(self):
         consumerid = self.get_required_option('id')
         self.cconn.delete(consumerid)
-        print _(" successfully deleted consumer [%s]") % consumerid
+        print _("Successfully deleted consumer [%s]") % consumerid
 
 
 class Update(ConsumerAction):
 
-    description = 'update consumer profile'
+    description = _('update consumer profile')
 
     def run(self):
         consumer_id = self.get_required_option('id')
         pkginfo = PackageProfile().getPackageList()
         self.cconn.profile(consumer_id, pkginfo)
-        print _(" successfully updated consumer [%s] profile") % consumer_id
+        print _("Successfully updated consumer [%s] profile") % consumer_id
 
 
 class Bind(ConsumerAction):
 
-    description = 'bind the consumer to listed repos'
+    description = _('bind the consumer to listed repos')
 
     def setup_parser(self):
         super(Bind, self).setup_parser()
         self.parser.add_option("--repoid", dest="repoid",
-                       help="repo identifier")
+                       help=_("repo identifier (required)"))
 
     def run(self):
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.bind(consumerid, repoid)
         self.repolib.update()
-        print _(" successfully subscribed consumer [%s] to repo [%s]") % \
+        print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                 (consumerid, repoid)
 
 
 class Unbind(ConsumerAction):
 
-    description = 'unbind the consumer from repos'
+    description = _('unbind the consumer from repos')
 
     def setup_parser(self):
         super(Unbind, self).setup_parser()
         self.parser.add_option("--repoid", dest="repoid",
-                       help="repo identifier")
+                       help=_("repo identifier (required)"))
 
     def run(self):
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.unbind(consumerid, repoid)
         self.repolib.update()
-        print _(" successfully unsubscribed consumer [%s] from repo [%s]") % \
+        print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 
 
 class AddKeyValue(ConsumerAction):
 
-    description = 'add key-value information to consumer'
+    description = _('add key-value information to consumer')
 
     def setup_parser(self):
         super(AddKeyValue, self).setup_parser()
-        self.parser.add_option("--key", dest="key", help="key identifier")
+        self.parser.add_option("--key", dest="key",
+                               help=_("key identifier (required)"))
         self.parser.add_option("--value", dest="value",
-                               help="value corresponding to the key")
+                               help=_("value corresponding to the key (required)"))
 
     def run(self):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
         self.cconn.add_key_value_pair(consumerid, key, value)
-        print _(" successfully added key-value pair %s:%s") % (key, value)
+        print _("Successfully added key-value pair %s:%s") % (key, value)
 
 
 class DeleteKeyValue(ConsumerAction):
 
-    description = 'delete key-value information from consumer'
+    description = _('delete key-value information from consumer')
 
     def setup_parser(self):
         super(DeleteKeyValue, self).setup_parser()
         self.parser.add_option("--key", dest="key",
-                       help="key identifier")
+                       help=_("key identifier (required)"))
 
     def run(self):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         self.cconn.delete_key_value_pair(consumerid, key)
-        print _(" successfully deleted key: %s") % key
+        print _("Successfully deleted key: %s") % key
 
 
 class UpdateKeyValue(ConsumerAction):
 
-    description = 'update key-value information of a consumer'
+    description = _('update key-value information of a consumer')
 
     def setup_parser(self):
-        super(AddKeyValue, self).setup_parser()
+        super(UpdateKeyValue, self).setup_parser()
         self.parser.add_option("--key", dest="key",
-                       help="key identifier")
+                       help=_("key identifier (required)"))
         self.parser.add_option("--value", dest="value",
-                       help="value corresponding to the key")
+                       help=_("value corresponding to the key (required)"))
 
     def run(self):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
         self.cconn.update_key_value_pair(consumerid, key, value)
-        print _(" successfully updated key-value pair %s:%s") % (key, value)
+        print _("Successfully updated key-value pair %s:%s") % (key, value)
 
 
 class GetKeyValues(ConsumerAction):
@@ -267,20 +268,20 @@ class GetKeyValues(ConsumerAction):
 
 class History(ConsumerAction):
 
-    description = 'view the consumer history'
+    description = _('view the consumer history')
 
     def setup_parser(self):
         super(History, self).setup_parser()
         self.parser.add_option('--event_type', dest='event_type',
-                               help='limits displayed history entries to the given type')
+                               help=_('limits displayed history entries to the given type'))
         self.parser.add_option('--limit', dest='limit',
-                               help='limits displayed history entries to the given amount (must be greater than zero)')
+                               help=_('limits displayed history entries to the given amount (must be greater than zero)'))
         self.parser.add_option('--sort', dest='sort',
-                               help='indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp')
+                               help=_('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'))
         self.parser.add_option('--start_date', dest='start_date',
-                               help='only return entries that occur after the given date (format: mm-dd-yyyy)')
+                               help=_('only return entries that occur after the given date (format: mm-dd-yyyy)'))
         self.parser.add_option('--end_date', dest='end_date',
-                               help='only return entries that occur before the given date (format: mm-dd-yyyy)')
+                               help=_('only return entries that occur before the given date (format: mm-dd-yyyy)'))
 
     def run(self):
         consumerid = self.get_required_option('id')
@@ -293,7 +294,7 @@ class History(ConsumerAction):
             'end_date' : self.opts.end_date,
         }
         results = self.cconn.history(consumerid, query_params)
-        print_header("Consumer History ")
+        print_header(_("Consumer History"))
         for entry in results:
             # Attempt to translate the programmatic event type name to a user readable one
             type_name = entry['type_name']
@@ -310,7 +311,6 @@ class History(ConsumerAction):
                 print constants.CONSUMER_HISTORY_PACKAGES
                 for package_nvera in entry['details']['package_nveras']:
                     print '  %s' % package_nvera
-            print ''
 
 # consumer command ------------------------------------------------------------
 

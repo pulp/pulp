@@ -149,7 +149,7 @@ class Action(object):
         flag = flag or '--' + opt
         value = getattr(self.opts, opt, None)
         if value is None:
-            self.parser.error(_('option %s is required; please see --help') % flag)
+            self.parser.error(_('Option %s is required; please see --help') % flag)
         return value
 
     def setup_parser(self):

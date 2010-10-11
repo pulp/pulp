@@ -19,6 +19,7 @@ import os
 import sys
 import time
 from gettext import gettext as _
+from optparse import OptionGroup
 
 from pulp.client.connection import (
     setup_connection, RepoConnection, ConsumerConnection,
@@ -39,13 +40,13 @@ class PackageAction(Action):
 
 class Info(PackageAction):
 
-    description = 'lookup information for a package'
+    description = _('lookup information for a package')
 
     def setup_parser(self):
         self.parser.add_option("-n", "--name", dest="name",
-                               help="package name to lookup")
+                               help=_("package name to lookup (required)"))
         self.parser.add_option("--repoid", dest="repoid",
-                               help="repository label")
+                               help=_("repository label (required)"))
 
     def run(self):
         name = self.get_required_option('name')
@@ -53,39 +54,42 @@ class Info(PackageAction):
         pkg = self.pconn.get_package(repoid, name)
         if not pkg:
             system_exit(os.EX_DATAERR,
-                        _("package [%s] not found in repo [%s]") %
+                        _("Package [%s] not found in repo [%s]") %
                         (name, repoid))
-        print_header("Package Information")
+        print_header(_("Package Information"))
         for key, value in pkg.items():
             print """%s:                \t%-25s""" % (key, value)
 
 
 class Install(PackageAction):
 
-    description = 'schedule a package install'
+    description = _('schedule a package install')
 
     def setup_parser(self):
         self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                               help="packages to be installed; to specify multiple packages use multiple -n")
-        self.parser.add_option("--consumerid", dest="consumerid",
-                               help="consumer id")
-        self.parser.add_option("--consumergroupid", dest="consumergroupid",
-                               help="consumer group id")
+                               help=_("packages to be installed; to specify multiple packages use multiple -n"))
+        id_group = OptionGroup(self.parser,
+                               _('Consumer or Consumer Group id (one is required'))
+        id_group.add_option("--consumerid", dest="consumerid",
+                            help=_("consumer id"))
+        id_group.add_option("--consumergroupid", dest="consumergroupid",
+                            help=_("consumer group id"))
+        self.parser.add_option_group(id_group)
 
     def run(self):
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
             system_exit(os.EX_USAGE,
-                        _("consumer or consumer group id required. try --help"))
+                        _("Consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            system_exit(os.EX_DATAERR, _("nothing to upload."))
+            system_exit(os.EX_DATAERR, _("Nothing to upload."))
         if consumergroupid:
             task = self.cgconn.installpackages(consumergroupid, pnames)
         else:
             task = self.cconn.installpackages(consumerid, pnames)
-        print _('created task id: %s') % task['id']
+        print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
@@ -98,7 +102,7 @@ class Install(PackageAction):
             print _('\n[%s] installed on %s') % \
                   (status['result'], (consumerid or consumergroupid))
         else:
-            print _("\npackage install failed")
+            print _("\nPackage install failed")
 
 # package command -------------------------------------------------------------
 

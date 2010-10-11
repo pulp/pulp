@@ -35,12 +35,12 @@ class UserAction(Action):
 
 class List(UserAction):
 
-    description = 'list available users'
+    description = _('list available users')
 
     def run(self):
         users = self.userconn.users()
         if not len(users):
-            system_exit(os.EX_OK, _("no users available to list"))
+            system_exit(os.EX_OK, _("No users available to list"))
         print_header(_('Available Users'))
         for user in users:
             print constants.AVAILABLE_USERS_LIST % (user["login"], user["name"])
@@ -48,41 +48,41 @@ class List(UserAction):
 
 class Create(UserAction):
 
-    description = 'create a user'
+    description = _('create a user')
 
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
-                               help="new username to create")
+                               help=_("new username to create (required)"))
         self.parser.add_option("--password", dest="password", default='',
-                               help="password for authentication")
+                               help=_("password for authentication"))
         self.parser.add_option("--name", dest="name", default='',
-                               help="name of user for display purposes")
+                               help=_("name of user for display purposes"))
 
     def run(self):
         newusername = self.get_required_option('username')
         newpassword = self.opts.password
         name = self.opts.name
         user = self.userconn.create(newusername, newpassword, name)
-        print _(" successfully created user [ %s ] with name [ %s ]") % \
+        print _("Successfully created user [ %s ] with name [ %s ]") % \
                 (user['login'], user["name"])
 
 
 class Delete(UserAction):
 
-    description = 'delete a user'
+    description = _('delete a user')
 
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
-                               help="username of user you wish to delete")
+                               help=_("username of user you wish to delete (required)"))
 
     def run(self):
         deleteusername = self.get_required_option('username')
         user = self.userconn.user(login=deleteusername)
         if not user:
             system_exit(os.EX_DATAERR,
-                        _(" user [ %s ] does not exist") % deleteusername)
+                        _("User [ %s ] does not exist") % deleteusername)
         self.userconn.delete(login=deleteusername)
-        print _(" successfully deleted User [ %s ]") % deleteusername
+        print _("Successfully deleted User [ %s ]") % deleteusername
 
 # user command ----------------------------------------------------------------
 

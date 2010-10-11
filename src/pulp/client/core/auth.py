@@ -27,7 +27,7 @@ from pulp.client.core.base import Action, Command
 
 class Login(Action):
 
-    description = 'stores user credentials on this machine'
+    description = _('stores user credentials on this machine')
 
     def setup_parser(self):
         self.parser.add_option('--username', dest='username',
@@ -57,13 +57,13 @@ class Login(Action):
         f = open(key_filename, 'w')
         f.write(cert_dict['private_key'])
         f.close()
-        print _('user credentials successfully stored at [%s]') % \
+        print _('User credentials successfully stored at [%s]') % \
                 auth_utils.admin_cert_dir()
 
 
 class Logout(Action):
 
-    description = 'removes stored user credentials on this machine'
+    description = _('removes stored user credentials on this machine')
 
     def run(self):
         # Determine the destination and store the cert information there
@@ -73,10 +73,10 @@ class Logout(Action):
             os.remove(cert_filename)
         if os.path.exists(key_filename):
             os.remove(key_filename)
-        print _('user credentials removed from [%s]') % auth_utils.admin_cert_dir()
+        print _('User credentials removed from [%s]') % auth_utils.admin_cert_dir()
 
 # auth command ----------------------------------------------------------------
 
 class Auth(Command):
 
-    description = _('stores authentication credentials for the user on the machine')
+    description = _('stores pulp authentication credentials')
