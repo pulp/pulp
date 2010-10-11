@@ -452,6 +452,11 @@ class Reader:
 
 
 class KeyLib:
+    """
+    Provides GPG key management.
+    @cvar ROOT: The root GPG keys directory.
+    @type ROOT: str
+    """
 
     ROOT = '/etc/pki/rpm-gpg/pulp'
 
@@ -460,6 +465,16 @@ class KeyLib:
         return os.path.join(cls.ROOT, repoid)
 
     def update(self, repoid, keys):
+        """
+        Update the GPG keys.
+        @param repoid: A repo id.
+        @type repoid: str
+        @param keys: A list of GPG keys.
+        @type keys: [str,..]
+        @return: A list of URLs to local files containing
+            the GPG keys for the repo.
+        @rtype: list
+        """
         n = 0
         files = []
         self.mkdir(repoid)
@@ -478,6 +493,13 @@ class KeyLib:
         return files
 
     def clean(self, repoid, rmdir=False):
+        """
+        Remove all GPG keys for the specified repoid.
+        @param repoid: A repo id.
+        @type repoid: str
+        @param rmdir: Flag to remove the directory.
+        @type rmdir: bool
+        """
         d = self.path(repoid)
         if not os.path.exists(d):
             return
@@ -488,6 +510,11 @@ class KeyLib:
             os.rmdir(d)
 
     def mkdir(self, repoid):
+        """
+        Create a directory for a repo's GPG keys.
+        @param repoid: A repo id.
+        @type repoid: str
+        """
         path = self.path(repoid)
         if not os.path.exists(path):
             os.makedirs(path)
