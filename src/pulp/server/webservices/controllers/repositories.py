@@ -45,7 +45,8 @@ default_fields = [
     'use_symlinks',
     'groupid',
     'relative_path',
-    'files', ]
+    'files',
+    'gpgkeys', ]
 
 # restful controllers ---------------------------------------------------------
 

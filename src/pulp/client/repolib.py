@@ -136,10 +136,12 @@ class UpdateAction(Action):
                 continue
             updates += existing.update(cont)
             repod.update(existing)
+        keylib = KeyLib()
         for section in repod.sections():
             if section not in valid:
                 updates += 1
                 repod.delete(section)
+                keylib.clean(section, True)
         repod.write()
         return updates
 
@@ -168,17 +170,32 @@ class UpdateAction(Action):
         @rtype: [L{Repo},...]
         """
         lst = []
+        keylib = KeyLib()
         for cont in product['content']:
             if not cont:
                 continue
             id = cont['id']
             path = cont['relative_path']
+            keys = keylib.update(id, cont.get('gpgkeys', []))
             repo = Repo(id)
             repo['name'] = cont['name']
             repo['baseurl'] = self.join(baseurl, path)
             repo['enabled'] = cont.get('enabled', '1')
+            repo['gpgkey'] = self.fmt(keys)
             lst.append(repo)
         return lst
+
+    def fmt(self, v):
+        """
+        Format the value.
+        @param v: The property value to format.
+        @type v: object
+        @return: The formatted key, value item.
+        @rtype: tuple
+        """
+        if isinstance(v, (list,tuple)):
+            v = '\n'.join(v)
+        return v
 
     def join(self, base, url):
         """
@@ -215,6 +232,7 @@ class Repo(dict):
         ('name', 0, None),
         ('baseurl', 0, None),
         ('enabled', 1, '1'),
+        ('gpgkey', 0, None),
         ('sslverify', 0, '0'),
     )
 
@@ -235,7 +253,7 @@ class Repo(dict):
         """
         lst = []
         for k,m,d in self.PROPERTIES:
-            v = self[k]
+            v = self.get(k)
             lst.append((k,v))
         return tuple(lst)
 
@@ -250,23 +268,30 @@ class Repo(dict):
         count = 0
         for k,m,d in self.PROPERTIES:
             v = other.get(k)
-            if not m:
-                if self[k] == v:
-                    continue
-                self[k] = v
-                count += 1
+            if m:
+                continue
+            if self.__eq(self[k], v):
+                continue
+            self[k] = v
+            count += 1
         return count
+
+    def __eq(self, a, b):
+        if a and b:
+            return ( a == b )
+        if (not a) and (not b):
+            return True
+        return False
 
     def __str__(self):
         s = []
         s.append('[%s]' % self.id)
-        for k in self.PROPERTIES:
-            v = self.get(k)
-            if v is None:
-                continue
-            s.append('%s=%s' % (k, v))
-
+        for k,v in self.items():
+            s.append('%s = %s' % (k,v))
         return '\n'.join(s)
+
+    def __repr__(self):
+        return str(self)
 
     def __eq__(self, other):
         return ( self.id == other.id )
@@ -287,7 +312,7 @@ class RepoFile(Parser):
 
     def __init__(self, name='pulp.repo'):
         """
-        @param name: The absolute path to a .repo file.
+        @param name: The .repo file name.
         @type name: str
         """
         Parser.__init__(self)
@@ -333,7 +358,23 @@ class RepoFile(Parser):
         @type repo: L{Repo}
         """
         for k,v in repo.items():
-            Parser.set(self, repo.id, k, v)
+            if v:
+                Parser.set(self, repo.id, k, v)
+            else:
+                self.clear(repo, k)
+
+    def clear(self, repo, option):
+        """
+        Remove the specified option.
+        @param repo: A repo used to update.
+        @type repo: L{Repo}
+        @param option: A option name.
+        @type option: str
+        """
+        try:
+            self.remove_option(repo.id, option)
+        except:
+            pass
 
     def section(self, section):
         """
@@ -408,6 +449,48 @@ class Reader:
             ln = '\n'
         self.idx = i
         return ln
+
+
+class KeyLib:
+
+    ROOT = '/etc/pki/rpm-gpg/pulp'
+
+    @classmethod
+    def path(cls, repoid):
+        return os.path.join(cls.ROOT, repoid)
+
+    def update(self, repoid, keys):
+        n = 0
+        files = []
+        self.mkdir(repoid)
+        self.clean(repoid)
+        for key in keys:
+            if not n:
+                fn = 'primary'
+            else:
+                fn = 'alt-%d' % n
+            path = os.path.join(self.path(repoid), fn)
+            f = open(path, 'w')
+            f.write(key)
+            f.close()
+            files.append('file://%s' % path)
+            n += 1
+        return files
+
+    def clean(self, repoid, rmdir=False):
+        d = self.path(repoid)
+        if not os.path.exists(d):
+            return
+        for fn in os.listdir(d):
+            path = os.path.join(d, fn)
+            os.unlink(path)
+        if rmdir:
+            os.rmdir(d)
+
+    def mkdir(self, repoid):
+        path = self.path(repoid)
+        if not os.path.exists(path):
+            os.makedirs(path)
 
 
 def main():
