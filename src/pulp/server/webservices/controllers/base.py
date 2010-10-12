@@ -147,8 +147,11 @@ class JSONController(object):
 
     def no_content(self):
         """
+        Return a no content response
+        @return: JSON encoded response
         """
-        return
+        http.status_no_content()
+        return self._output(None)
 
     def bad_request(self, msg=None):
         """
@@ -162,6 +165,10 @@ class JSONController(object):
 
     def unauthorized(self, msg=None):
         """
+        Return an unauthorized error.
+        @type msg: str
+        @param msg: optional error message
+        @return: JSON encoded response
         """
         http.status_unauthorized()
         return self._output(msg)
