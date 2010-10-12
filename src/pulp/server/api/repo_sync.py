@@ -49,7 +49,7 @@ def yum_rhn_progress_callback(info):
               'size_left',
               'size_total')
     values = tuple(getattr(info, f) for f in fields)
-    log.info("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
+    log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
 
 
