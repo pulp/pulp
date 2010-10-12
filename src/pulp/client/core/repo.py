@@ -24,7 +24,8 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import setup_connection, RepoConnection
+from pulp.client.connection import setup_connection, RepoConnection, \
+    RestlibException
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
@@ -92,7 +93,7 @@ class Status(RepoAction):
         print _('Last Sync: %s') % last_sync
         if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
             return
-        print _('currently syncing:'),
+        print _('Currently syncing:'),
         if syncs[0]['progress'] is None:
             print _('progress unknown')
         else:
@@ -325,12 +326,20 @@ class Sync(RepoAction):
         if task['state'] == 'error':
             raise SyncError(task['traceback'][-1])
 
-    def run(self):
+    def get_task(self):
         id = self.get_required_option('id')
+        tasks = self.pconn.sync_list(id)
+        if tasks and tasks[0]['state'] in ('waiting', 'running'):
+            print _('Sync for repository %s already in progress') % id
+            return tasks[0]
         timeout = self.opts.timeout
-        foreground = self.opts.foreground
         task = self.pconn.sync(id, timeout)
         print _('Sync for repository %s started') % id
+        return task
+
+    def run(self):
+        foreground = self.opts.foreground
+        task = self.get_task()
         if not foreground:
             system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
         self.sync_foreground(task)
