@@ -246,14 +246,14 @@ class RepoConnection(PulpConnection):
         return self.conn.request_post(method, params={"timeout":timeout})
 
     def sync_list(self, repoid):
-        method = '/repositories/%s/sync' % repoid
+        method = '/repositories/%s/sync/' % repoid
         try:
             return self.conn.request_get(method)
         except RestlibException:
             return []
 
     def cancel_sync(self, repoid, taskid):
-        method = "/repositories/%s/sync/%s" % (repoid, taskid)
+        method = "/repositories/%s/sync/%s/" % (repoid, taskid)
         return self.conn.request_delete(method)
 
     def add_package(self, repoid, packageid):
