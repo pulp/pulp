@@ -125,7 +125,9 @@ class Create(ConsumerAction):
     description = _('create a consumer')
 
     def setup_parser(self):
-        super(Create, self).setup_parser()
+        # always provide --id option for create, even on registered clients
+        self.parser.add_option('--id', dest='id',
+                               help=_("consumer identifier eg: foo.example.com (required)"))
         self.parser.add_option("--description", dest="description",
                                help=_("consumer description eg: foo's web server"))
 
