@@ -455,7 +455,12 @@ class RepositoryActions(AsyncController):
         if not tasks:
             return self.not_found('No recent %s on repository %s found' %
                                  (action_name, id))
-        return self.ok([self._task_to_dict(t) for t in tasks])
+        task_infos = []
+        for task in tasks:
+            info = self._task_to_dict(task)
+            info['status_path'] = self._status_path(task.id)
+            task_infos.append(info)
+        return self.ok(task_infos)
 
 
 class RepositoryActionStatus(AsyncController):
