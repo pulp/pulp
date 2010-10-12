@@ -175,6 +175,8 @@ class RepoApi(BaseApi):
                                    feed="yum:" + CDN_URL + '/' + uri,
                                    cert_data=cert_data, groupid=groupid,
                                    relative_path=uri)
+                repo['release'] = label.split("-")[-2]
+                self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
                 continue

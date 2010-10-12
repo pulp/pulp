@@ -43,6 +43,7 @@ class Repo(Base):
             self.source = None
         self.name = name
         self.arch = arch
+        self.release = None
         self.packages = dict()
         self.packagegroups = dict()
         self.packagegroupcategories = dict()
