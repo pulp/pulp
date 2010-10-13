@@ -199,8 +199,9 @@ class Update(RepoAction):
 
     # (opt, method, exclusive)
     OPTIONS = (
-        ('feed', 'updatefeed', False),
-        ('gpgkeys', 'updatekeys', True),
+        ('feed', 'updatefeed'),
+        ('setkeys', 'setkeys'),
+        ('clearkeys', 'clearkeys'),
     )
 
     def setup_parser(self):
@@ -223,65 +224,52 @@ class Update(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
-        self.parser.add_option("--gpgkeys", dest="gpgkeys",
+        self.parser.add_option("--setkeys", dest="setkeys",
                                help=_("a ',' separated list of directories and/or files contining GPG keys"))
+        self.parser.add_option("--clearkeys", dest="clearkeys", action='store_true', default=False,
+                               help=_("clear the GPG keys"))
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
         if not repo:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         optdict = vars(self.opts)
-        self.validate(optdict)
         for k,v in optdict.items():
             if not v:
                 continue
-            fn,ex = self.find(k)
-            if fn: # special method
-                fn(repo, v)
+            method = self.find(k)
+            if method: # special method
+                stale = method(repo, v)
+                if stale:
+                    repo = self.pconn.repository(id)
                 continue
             if k in repo:
                 repo[k] = v
-        #self.pconn.update(repo)
+        self.pconn.update(repo)
         print _("Successfully updated repository [ %s ]") % repo['id']
-
-    def validate(self, options):
-        """ validate options """
-        required = ('id',)
-        regular = []
-        exclusive = []
-        for k,v in options.items():
-            if (not v) or k in required:
-                continue
-            fn,ex = self.find(k)
-            if ex:
-                exclusive.append(k)
-            else:
-                regular.append(k)
-        invalid = exclusive[1:]+regular
-        if exclusive and invalid:
-            msg = _('Exclusive option "%s" may not be used with %s')\
-                % (exclusive[0], invalid)
-            system_exit(os.EX_DATAERR, msg)
 
     def find(self, option):
         """ find option specification """
-        for opt,fn,ex in self.OPTIONS:
+        for opt,fn in self.OPTIONS:
             if opt == option:
-                method = getattr(self, fn)
-                return (method, ex)
-        return (None, False)
+                return getattr(self, fn)
 
     def updatefeed(self, repo, feed):
         """ update the feed """
         repo['feed'] = feed
 
-    def updatekeys(self, repo, keys):
+    def setkeys(self, repo, keys):
         """ update the GPG keys """
         id = str(repo['id'])
-        if keys == '[]':
-            keys = None
         expanded = self.expand(keys)
         self.pconn.updatekeys(id, expanded)
+        return True
+
+    def clearkeys(self, repo, flag):
+        """ clear the GPG keys """
+        if flag:
+            self.pconn.updatekeys(id, [])
+            return True
 
     def expand(self, keylist):
         """ expand the list of directories/files and read content """
