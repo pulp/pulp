@@ -981,7 +981,9 @@ class KeyStore:
         @rtype: [str,..]
         """
         deleted = []
-        pattern = '%s/' % self.path
+        pattern = self.path
+        if not pattern.endswith('/'):
+            pattern += '/'
         for entry in prev:
             if pattern not in entry:
                 continue
