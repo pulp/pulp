@@ -20,6 +20,7 @@ Action classes for pulp agent.
 
 from pulp.client import ConsumerId
 from pulp.client.agent.action import *
+from pulp.messaging.decorators import remote, remotemethod
 from pulp.client.connection import ConsumerConnection, RestlibException
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
@@ -35,14 +36,14 @@ class TestAction(Action):
     def perform(self):
         log.info('Hello')
 
-
+@remote
 @action(minutes=cfg.server.interval)
 class ProfileUpdateAction(Action):
     """
     Package Profile Update Action to update installed package info for a
     registered consumer
     """
-
+    @remotemethod
     def perform(self):
         """
         Looks up the consumer id and latest pkg profile info and cals

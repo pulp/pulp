@@ -29,6 +29,7 @@ from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
 from pulp.server.async import AsyncAgent, AgentTask
+from pulp.server.event.dispatcher import event
 
 log = logging.getLogger(__name__)
     
@@ -69,7 +70,8 @@ class ConsumerApi(BaseApi):
     @property
     def _indexes(self):
         return ["package_profile.name", "repoids", "key_value_pairs"]
-
+    
+    @event(subject='consumer.created')
     @audit(params=['id'])
     def create(self, id, description, key_value_pairs = {}):
         """
@@ -83,6 +85,7 @@ class ConsumerApi(BaseApi):
         self.consumer_history_api.consumer_created(c.id)
         return c
     
+    @event(subject='consumer.deleted')
     @audit()
     def delete(self, id):
         consumer = self.consumer(id)
@@ -286,7 +289,6 @@ class ConsumerApi(BaseApi):
             consumers.extend(self.consumers({'package_profile.name': name}, fields))
         return consumers
 
-
     @audit()
     def bind(self, id, repoid):
         """
@@ -308,7 +310,7 @@ class ConsumerApi(BaseApi):
         agent = Agent(id, async=True)
         agent.repolib.update()
         self.consumer_history_api.repo_bound(id, repoid)
-
+    
     @audit()
     def unbind(self, id, repoid):
         """
