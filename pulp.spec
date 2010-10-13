@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.72
+Version:        0.0.73
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,34 @@ fi
 
 
 %changelog
+* Wed Oct 13 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.73-1
+- repo GPG key functionality
+- help and output standardization internationalization of all command/action
+  descriptions, help messages, and headers separation of concatenated words in
+  help output capitolization of output (not help) marked required options as
+  required (jconnor@redhat.com)
+- implemented auth login w/out overriding main (jconnor@redhat.com)
+- 639402 - Fix repository re-sync so it does not delete uploaded packages Added
+  a 'repo_defined' attribute to package objects. If the package was created by
+  the repo source, then repo_defined=True if a package is an 'uploaded' package
+  or anything else, repo_defined=False During a resync we will only remove
+  'repo_defined=True' packages (jmatthew@redhat.com)
+- restored *posibility of cli spcialization by re-instating the cli package
+  (jconnor@redhat.com)
+- had to modify when the usage gets set to guarantee the commands and actions
+  were already set (jconnor@redhat.com)
+- de-specialized the cli class and added mechanism for setting up more
+  informative usage messages (jconnor@redhat.com)
+- removed command and action autoloading mechanism (magic) pulp scripts now
+  explicitly setup their commands and actions converted all scripts, commands,
+  and actions to use new paradigm (jconnor@redhat.com)
+- converted connection setup to a factory method moved get_credentials to
+  credentials module moved setup_connection to connection module changed
+  actions to use overridable(?) method setup_connections converted all existing
+  actions to use new factory (jconnor@redhat.com)
+- 641372 - Upload w/ --dir option returns an error (fix from David Gao)
+  (jmatthew@redhat.com)
+
 * Fri Oct 08 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.72-1
 - --force flag had got misplaced in consumer cli instead of consumergroup
   during refactoring. Moving it to its right place. (skarmark@redhat.com)
