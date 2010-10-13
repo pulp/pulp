@@ -197,7 +197,8 @@ class RepoConnection(PulpConnection):
     """
     def create(self, id, name, arch, feed=None, symlinks=False,
                sync_schedule=None, cert_data=None, relative_path=None,
-               groupid=None):
+               groupid=None,
+               gpgkeys=None):
         method = "/repositories/"
         repodata = {"id"   : id,
                     "name" : name,
@@ -207,7 +208,8 @@ class RepoConnection(PulpConnection):
                     "sync_schedule" : sync_schedule,
                     "cert_data"     : cert_data,
                     "relative_path" : relative_path,
-                    "groupid"       : groupid}
+                    "groupid"       : groupid,
+                    "gpgkeys"       : gpgkeys}
         return self.conn.request_put(method, params=repodata)
 
     def repository(self, id, fields=[]):

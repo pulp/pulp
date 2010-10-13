@@ -96,7 +96,8 @@ class Repositories(JSONController):
                          sync_schedule=repo_data.get('sync_schedule', None),
                          cert_data=repo_data.get('cert_data', None),
                          relative_path=repo_data.get('relative_path', None),
-                         groupid=repo_data.get('groupid', None),)
+                         groupid=repo_data.get('groupid', None),
+                         gpgkeys=repo_data.get('gpgkeys', None),)
 
         path = http.extend_uri_path(repo.id)
         repo['uri_ref'] = path
@@ -171,7 +172,7 @@ class RepositoryDeferredFields(JSONController):
         'packages',
         'packagegroups',
         'packagegroupcategories',
-        'errata'
+        'errata',
     )
 
     @JSONController.error_handler

@@ -93,7 +93,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               cert_data=None, groupid=None, relative_path=None):
+               cert_data=None, groupid=None, relative_path=None, gpgkeys=[]):
         """
         Create a new Repository object and return it
         """
@@ -121,11 +121,15 @@ class RepoApi(BaseApi):
                 r['relative_path'] = r['id']
         else:
             r['relative_path'] = relative_path
+        if gpgkeys:
+            root = pulp.server.util.top_repos_location()
+            path = r['relative_path']
+            keystore = KeyStore(root, path)
+            added = keystore.add(gpgkeys)
+            r['gpgkeys'] = added
         self.insert(r)
-
         if sync_schedule:
             repo_sync.update_schedule(r)
-
         return r
 
     def _write_certs_to_disk(self, repoid, cert_data):
@@ -914,6 +918,7 @@ class KeyStore:
         self.root = root
         self.path = path
         self.abspath = os.path.join(root, path)
+        self.mkdir()
 
     def update(self, prev, keylist):
         """
@@ -927,7 +932,6 @@ class KeyStore:
             relative paths to GPG key files.
         @rtype: [str,..]
         """
-        self.mkdir()
         deleted = self.delete(prev)
         added = self.add(keylist)
         merged = prev

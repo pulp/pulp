@@ -156,6 +156,8 @@ class Create(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
+        self.parser.add_option("--gpgkeys", dest="gpgkeys",
+                               help=_("a ',' separated list of directories and/or files contining GPG keys"))
 
     def _get_cert_options(self):
         cacert = self.opts.cacert
@@ -177,9 +179,15 @@ class Create(RepoAction):
         relative_path = self.opts.relativepath
         groupid = self.opts.groupid
         cert_data = self._get_cert_options()
+        keys = self.opts.gpgkeys
+        if keys:
+            reader = KeyReader()
+            keys = reader.expand(keys)
         repo = self.pconn.create(id, name, arch, feed, symlinks, schedule,
                                  cert_data=cert_data,
-                                 relative_path=relative_path, groupid=groupid)
+                                 relative_path=relative_path,
+                                 groupid=groupid,
+                                 gpgkeys=keys)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 
@@ -197,7 +205,9 @@ class Update(RepoAction):
 
     description = _('update a repository')
 
-    # (opt, method, exclusive)
+    # special options that are handled by the
+    # specified methods.
+    # format (option, method)
     OPTIONS = (
         ('feed', 'updatefeed'),
         ('setkeys', 'setkeys'),
@@ -261,44 +271,17 @@ class Update(RepoAction):
     def setkeys(self, repo, keys):
         """ update the GPG keys """
         id = str(repo['id'])
-        expanded = self.expand(keys)
+        reader = KeyReader()
+        expanded = reader.expand(keys)
         self.pconn.updatekeys(id, expanded)
         return True
 
     def clearkeys(self, repo, flag):
         """ clear the GPG keys """
         if flag:
+            id = str(repo['id'])
             self.pconn.updatekeys(id, [])
             return True
-
-    def expand(self, keylist):
-        """ expand the list of directories/files and read content """
-        if keylist:
-            keylist = keylist.split(',')
-        else:
-            return []
-        try:
-            paths = []
-            for key in keylist:
-                if os.path.isdir(key):
-                    for fn in os.listdir(key):
-                        paths.append(os.path.join(key, fn))
-                    continue
-                if os.path.isfile(key):
-                    paths.append(key)
-                    continue
-                raise Exception, _('%s must be file/directory') % key
-            keylist = []
-            for path in paths:
-                print _('uploading %s') % path
-                f = open(path)
-                fn = os.path.basename(path)
-                content = f.read()
-                keylist.append((fn, content))
-                f.close()
-            return keylist
-        except Exception, e:
-            system_exit(os.EX_DATAERR, _(str(e)))
 
 
 class Sync(RepoAction):
@@ -451,8 +434,39 @@ class Schedules(RepoAction):
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
 
-# repo command ----------------------------------------------------------------
 
 class Repo(Command):
 
     description = _('repository specific actions to pulp server')
+
+
+class KeyReader:
+
+    def expand(self, keylist):
+        """ expand the list of directories/files and read content """
+        if keylist:
+            keylist = keylist.split(',')
+        else:
+            return []
+        try:
+            paths = []
+            for key in keylist:
+                if os.path.isdir(key):
+                    for fn in os.listdir(key):
+                        paths.append(os.path.join(key, fn))
+                    continue
+                if os.path.isfile(key):
+                    paths.append(key)
+                    continue
+                raise Exception, _('%s must be file/directory') % key
+            keylist = []
+            for path in paths:
+                print _('uploading %s') % path
+                f = open(path)
+                fn = os.path.basename(path)
+                content = f.read()
+                keylist.append((fn, content))
+                f.close()
+            return keylist
+        except Exception, e:
+            system_exit(os.EX_DATAERR, _(str(e)))
