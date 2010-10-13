@@ -92,15 +92,6 @@ class TestComps(unittest.TestCase):
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
         
-        # Verify that non-existent package in a repo cannot be added
-        caught = False
-        try:
-            self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["random_non_existent_package"])
-            self.assertTrue(False)
-        except PulpException, e:
-            caught = True
-        self.assertTrue(caught)
-        
         self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["pulp-test-package"])
         # Update repo object so we can test that group_xml_path was set
         repo = self.rapi.repository(repo["id"])

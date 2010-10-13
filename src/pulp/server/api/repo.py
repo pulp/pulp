@@ -596,14 +596,23 @@ class RepoApi(BaseApi):
 
 
     @audit()
-    def add_packages_to_group(self, repoid, groupid, pkg_names=[], gtype="default"):
+    def add_packages_to_group(self, repoid, groupid, pkg_names=[], 
+            gtype="default", requires=None):
         """
         @param repoid: repository id
         @param groupid: group id
         @param pkg_names: package names
         @param gtype: OPTIONAL type of package group,
-            example "mandatory", "default", "optional"
+            example "mandatory", "default", "optional", "conditional"
+        @param requires: represents the 'requires' field for a 
+            conditonal package group entry only needed when 
+            gtype is 'conditional'
+        We are not restricting package names to packages in the repo.  
+        It is possible and acceptable for a package group to refer to packages which
+        are not known to the repo or pulp.  The package group will be used on 
+        the client and will have access to all repos the client can see.
         """
+
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
             raise PulpException("No PackageGroup with id: %s exists in repo %s"
@@ -612,52 +621,35 @@ class RepoApi(BaseApi):
         if group["immutable"]:
             raise PulpException("Changes to immutable groups are not supported: %s" % (group["id"]))
 
-        '''
-        Find packages non existent in this repo.
-        Repo does not have direct references to package names. The way we find this is 
-        to get all package-ids with this pkg name and verify whether at least one of them
-        exists in the given repo
-        '''
-        non_existing_pkgs = []
         for pkg_name in pkg_names:
-            pkgs = self.packageapi.packages(name=pkg_name)
-            if len(pkgs) == 0:
-                non_existing_pkgs.append(pkg_name)
-            else:    
-                package_present_in_repo = 0    
-                for pkg in pkgs:
-                    if pkg['id'] in repo['packages']:
-                        package_present_in_repo = 1
-                        break
-                if package_present_in_repo == 0:
-                    non_existing_pkgs.append(pkg_name)
-                else:
-                    if gtype == "mandatory":
-                        if pkg_name not in group["mandatory_package_names"]:
-                            group["mandatory_package_names"].append(pkg_name)
-                    elif gtype == "conditional":
-                        raise NotImplementedError("No support for creating conditional groups")
-                    elif gtype == "optional":
-                        if pkg_name not in group["optional_package_names"]:
-                            group["optional_package_names"].append(pkg_name)
-                    else:
-                        if pkg_name not in group["default_package_names"]:
-                            group["default_package_names"].append(pkg_name)
+            if gtype == "mandatory":
+                if pkg_name not in group["mandatory_package_names"]:
+                    group["mandatory_package_names"].append(pkg_name)
+            elif gtype == "conditional":
+                if not requires:
+                    raise PulpException("Parameter 'requires' has not been set, it is required by conditional group types")
+                if not group["conditional_package_names"].has_key(requires):
+                    group["conditional_package_names"][requires] = []
+                group["conditional_package_names"][requires].append(pkg_name)
+            elif gtype == "optional":
+                if pkg_name not in group["optional_package_names"]:
+                    group["optional_package_names"].append(pkg_name)
+            else:
+                if pkg_name not in group["default_package_names"]:
+                    group["default_package_names"].append(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
-        if len(non_existing_pkgs) > 0:
-            raise PulpException("Packages added to the group except for following packages \
- which don't exist in this repo: %s" % non_existing_pkgs)
-
 
     @audit()
-    def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
+    def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default", requires=None):
         """
         @param repoid: repository id
         @param groupid: group id
         @param pkg_name: package name
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional"
+        @param requires: Only used by 'conditional' group type
+            name of package for 'requires' of conditional 
         """
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
@@ -667,35 +659,29 @@ class RepoApi(BaseApi):
         if group["immutable"]:
             raise PulpException("Changes to immutable groups are not supported: %s" % (group["id"]))
 
-        '''
-        Repo does not have direct references to package names. The way we find whether package exists 
-        in this repo is to get all package-ids with this pkg name and verify whether at least one of them 
-        exists in the given repo.                                                                    
-        '''
-
-        pkgs = self.packageapi.packages(name=pkg_name)
-        if len(pkgs) == 0:
-            raise PulpException("Package %s not present in this repo" % pkg_name)
-        else:
-            present = 0
-            for pkg in pkgs:
-                if pkg['id'] in repo['packages']:
-                    present = 1
-                    break
-            if present == 0:
-                raise PulpException("Package %s not present in this repo" % pkg_name)
+        if gtype == "mandatory":
+            if pkg_name in group["mandatory_package_names"]:
+                group["mandatory_package_names"].remove(pkg_name)
             else:
-                if gtype == "mandatory":
-                    if pkg_name in group["mandatory_package_names"]:
-                        group["mandatory_package_names"].remove(pkg_name)
-                elif gtype == "conditional":
-                    raise NotImplementedError("No support for creating conditional groups")
-                elif gtype == "optional":
-                    if pkg_name in group["optional_package_names"]:
-                        group["optional_package_names"].remove(pkg_name)
-                else:
-                    if pkg_name in group["default_package_names"]:
-                        group["default_package_names"].remove(pkg_name)
+                raise PulpException("Package %s not present in package group" % (pkg_name))
+        elif gtype == "conditional":
+            if not group["conditional_package_names"].has_key(requires):
+                raise PulpException("No conditional package names are stored under %s" % (requires))
+            if pkg_name in group["conditional_package_names"][requires]:
+                group["conditional_package_names"][requires].remove(pkg_name)
+            else:
+                raise PulpException("Package %s not present in conditional package group for %s" % (pkg_name, requires))
+        elif gtype == "optional":
+            if pkg_name in group["optional_package_names"]:
+                group["optional_package_names"].remove(pkg_name)
+            else:
+                raise PulpException("Package %s not present in package group" % (pkg_name))
+        else:
+            if pkg_name in group["default_package_names"]:
+                group["default_package_names"].remove(pkg_name)
+            else:
+                raise PulpException("Package %s not present in package group" % (pkg_name))
+
         self.objectdb.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 

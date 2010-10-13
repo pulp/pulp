@@ -27,8 +27,11 @@ from pulp.client.connection import (
     setup_connection, ConsumerConnection, RepoConnection)
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
+from pulp.client.logutil import getLogger
 
 # base package group action class ---------------------------------------------
+
+_log = getLogger(__name__)
 
 class PackageGroupAction(Action):
 
@@ -38,7 +41,7 @@ class PackageGroupAction(Action):
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
-                               help=_("package group id (requried)"))
+                               help=_("package group id (required)"))
 
 # package group actions -------------------------------------------------------
 
@@ -47,7 +50,7 @@ class List(PackageGroupAction):
     description = _('list available package groups')
 
     def setup_parser(self):
-        self.parser.add_option("--repoid", dest="repoid",
+        self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
 
     def run(self):
@@ -67,7 +70,7 @@ class Info(PackageGroupAction):
 
     def setup_parser(self):
         super(Info, self).setup_parser()
-        self.parser.add_option("--repoid", dest="repoid",
+        self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
 
     def run(self):
@@ -79,7 +82,7 @@ class Info(PackageGroupAction):
                         _("Package group [%s] not found in repo [%s]") %
                         (groupid, repoid))
         print_header(_("Package Group Information"))
-        info = groups[self.options.groupid]
+        info = groups[groupid]
         print constants.PACKAGE_GROUP_INFO % (
                 info["name"], info["id"], info["mandatory_package_names"],
                 info["default_package_names"], info["optional_package_names"],
@@ -92,17 +95,17 @@ class Create(PackageGroupAction):
 
     def setup_parser(self):
         super(Create, self).setup_parser()
-        self.parser.add_option("--repoid", dest="repoid",
+        self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
-        self.parser.add_option("--name", dest="groupname",
+        self.parser.add_option("-n", "--name", dest="name",
                                help=_("group name (required)"))
-        self.parser.add_option("--description", dest="description", default="",
+        self.parser.add_option("-d", "--description", dest="description", default="",
                                help=_("group description, default is ''"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
         groupid = self.get_required_option('id')
-        groupname = self.get_required_option('groupname')
+        groupname = self.get_required_option('name')
         description = self.opts.description
         self.pconn.create_packagegroup(repoid, groupid, groupname, description)
         print _("Package group [%s] created in repository [%s]") % \
@@ -115,14 +118,20 @@ class Delete(PackageGroupAction):
 
     def setup_parser(self):
         super(Delete, self).setup_parser()
-        self.parser.add_option("--repoid", dest="repoid",
+        self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
         groupid = self.get_required_option('id')
-        self.pconn.delete_packagegroup(repoid, groupid)
-        print _("Packagegroup [%s] deleted from repository [%s]") % \
+        try:
+            self.pconn.delete_packagegroup(repoid, groupid)
+        except Exception, e:
+            _log.error(e)
+            print _("Unable to delete Packagegroup [%s] from repository [%s]") % \
+                (groupid, repoid)
+        else:
+            print _("Packagegroup [%s] deleted from repository [%s]") % \
                 (groupid, repoid)
 
 
@@ -132,21 +141,35 @@ class AddPackage(PackageGroupAction):
 
     def setup_parser(self):
         super(AddPackage, self).setup_parser()
-        self.parser.add_option("--repoid", dest="repoid",
+        self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
-        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+        self.parser.add_option("-n", "--name", action="append", dest="name",
                                help=_("packages to be added; to specify multiple packages use multiple -n (required)"))
-        self.parser.add_option("--type", dest="grouptype", default="default",
-                               help=_("type of list to add package to, example 'mandatory', 'optional', 'default'"))
-
+        self.parser.add_option("-t", "--type", dest="grouptype", default="default",
+                               help=_("type of list to add package to, example 'mandatory', 'optional', 'default', 'conditional'"))
+        self.parser.add_option("--requires", dest="requires", default=None,
+                               help=_("required package name, only used by 'conditional' package group type"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        pnames = self.get_required_option('pnames')
+        pnames = self.get_required_option('name')
         groupid = self.get_required_option('id')
         grouptype = self.opts.grouptype
-        self.pconn.add_packages_to_group(repoid, groupid, pnames, grouptype)
-        print _("Following packages added to group [%s] in repository [%s]: \n %s") % \
+        requires = None # Only used by conditional group type
+        supported_types = ["mandatory", "optional", "default", "conditional"]
+        if grouptype not in supported_types:
+            system_exit(1, 
+                    _("Bad package group type [%s].  Supported types are: %s" % \
+                        (grouptype, supported_types)))
+        if grouptype == "conditional":
+            requires = self.get_required_option("requires")
+
+        self.pconn.add_packages_to_group(repoid, groupid, pnames, grouptype, requires)
+        if grouptype == "conditional":
+            print _("Following packages added to group [%s] in repository [%s] for required package [%s]: \n %s") % \
+                (groupid, repoid, requires, pnames)
+        else:
+            print _("Following packages added to group [%s] in repository [%s]: \n %s") % \
                 (groupid, repoid, pnames)
 
 
@@ -156,21 +179,32 @@ class DeletePackage(PackageGroupAction):
 
     def setup_parser(self):
         super(DeletePackage, self).setup_parser()
-        self.parser.add_option("--repoid", dest="repoid",
+        self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
-        self.parser.add_option("--pkgname", dest="pkgname",
+        self.parser.add_option("-n", "--name", dest="name",
                                help=_("package name (required)"))
-        self.parser.add_option("--type", dest="grouptype", default='default',
+        self.parser.add_option("-t", "--type", dest="grouptype", default='default',
                                help=_("type of list to delete package from, example 'mandatory', 'optional', 'default'"))
+        self.parser.add_option("--requires", dest="requires", default=None,
+                               help=_("required package name, only used by 'conditional' package group type"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        pkgname = self.get_required_option('pkgname')
+        pkgname = self.get_required_option('name')
         groupid = self.get_required_option('id')
         grouptype = self.opts.grouptype
-        self.pconn.delete_package_from_group(repoid, groupid, pkgname, grouptype)
-        print _("Package [%s] deleted from group [%s] in repository [%s]") % \
-                (pkgname, groupid, repoid)
+        requires = None # Only used by conditional group type
+        if grouptype == "conditional":
+            requires = self.get_required_option("requires")
+        try:
+            self.pconn.delete_package_from_group(repoid, groupid, pkgname, grouptype, requires)
+        except Exception, e:
+            _log.error(e)
+            print _("Unable to delete [%s] from group [%s] in repository [%s]") % \
+                    (pkgname, groupid, repoid)
+        else:
+            print _("Package [%s] deleted from group [%s] in repository [%s]") % \
+                    (pkgname, groupid, repoid)
 
 
 class Install(PackageGroupAction):
@@ -185,7 +219,7 @@ class Install(PackageGroupAction):
 
     def run(self):
         consumerid = self.get_required_option('consumerid')
-        pkggroupid = self.get_required_option('pkggroupid')
+        pkggroupid = self.get_required_option('id')
         task = self.cconn.installpackagegroups(consumerid, pkggroupid)
         print _('Created task id: %s') % task['id']
         state = None

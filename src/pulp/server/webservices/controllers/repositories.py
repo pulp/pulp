@@ -325,9 +325,12 @@ class RepositoryActions(AsyncController):
         groupid = p["groupid"]
         pkg_names = p.get('packagenames', [])
         gtype = "default"
+        requires = None
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(api.add_packages_to_group(id, groupid, pkg_names, gtype))
+        if p.has_key("requires"):
+            requires = p["requires"]
+        return self.ok(api.add_packages_to_group(id, groupid, pkg_names, gtype, requires))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -347,7 +350,10 @@ class RepositoryActions(AsyncController):
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype))
+        requires = None
+        if p.has_key("requires"):
+            requires = p["requires"]
+        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype, requires))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

@@ -283,15 +283,15 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/delete_packagegroup/" % repoid
         return self.conn.request_post(method, params={"groupid":groupid})
 
-    def add_packages_to_group(self, repoid, groupid, packagenames, gtype):
+    def add_packages_to_group(self, repoid, groupid, packagenames, gtype, requires=None):
         method = "/repositories/%s/add_packages_to_group/" % repoid
         return self.conn.request_post(method,
-                params={"groupid":groupid, "packagenames":packagenames, "type":gtype})
+                params={"groupid":groupid, "packagenames":packagenames, "type":gtype, "requires":requires})
 
-    def delete_package_from_group(self, repoid, groupid, pkgname, gtype):
+    def delete_package_from_group(self, repoid, groupid, pkgname, gtype, requires=None):
         method = "/repositories/%s/delete_package_from_group/" % repoid
         return self.conn.request_post(method,
-                params={"groupid":groupid, "name":pkgname, "type":gtype})
+                params={"groupid":groupid, "name":pkgname, "type":gtype, "requires":requires})
 
     def upload(self, id, pkginfo, pkgstream):
         uploadinfo = {'repo' : id,
