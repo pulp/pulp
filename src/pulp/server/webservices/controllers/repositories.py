@@ -416,6 +416,8 @@ class RepositoryActions(AsyncController):
         data = self.params()
         return self.ok(api.errata(id, data['types']))
 
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
     def updatekeys(self, id):
         data = self.params()
         api.updatekeys(id, data['keys'])

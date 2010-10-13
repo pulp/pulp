@@ -882,6 +882,7 @@ class RepoApi(BaseApi):
         log.info("Upload success %s %s" % (pkg['id'], repo['id']))
         return True
 
+    @audit(params=['id', 'keys'])
     def updatekeys(self, id, keys):
         GPGKEYS = 'gpgkeys'
         repo = self._get_existing_repo(id)
