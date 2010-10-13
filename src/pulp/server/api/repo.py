@@ -882,6 +882,18 @@ class RepoApi(BaseApi):
         log.info("Upload success %s %s" % (pkg['id'], repo['id']))
         return True
 
+    def updatekeys(self, id, keys):
+        GPGKEYS = 'gpgkeys'
+        repo = self._get_existing_repo(id)
+        root = self.localStoragePath
+        base = repo['relative_path']
+        current = repo[GPGKEYS]
+        keystore = KeyStore(root)
+        merged = keystore.update(base, current, keys)
+        repo[GPGKEYS] = merged
+        log.info('repository (%s), GPG keys updated as: %s', id, merged)
+        self.update(repo)
+
     def all_schedules(self):
         '''
         For all repositories, returns a mapping of repository name to sync schedule.
@@ -890,6 +902,132 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
+
+
+class KeyStore:
+    """
+    The GPG key store.
+    @cvar REPODIR: The repos subdirectory.
+    @type REPODIR: str
+    @ivar root: The keystore root directory.
+    @type root: str
+    """
+
+    REPODIR = 'repos'
+
+    def __init__(self, root):
+        """
+        @param root: The keystore root directory.
+        @type root: str
+        """
+        self.root = root
+
+    def update(self, repoid, prev, keylist):
+        """
+        Update the GPG keys for the specified repo.
+        @param repoid: The repo ID.
+        @type repoid: str
+        @param prev: The current list of keys.  Each entry
+            is the relateive path to a GPG file.
+        @type prev: [str,..]
+        @param keylist: A list of (entry) tuples (<key-name>, <key-content>)
+        @type keylist: [<entry>,..]
+        @return: The result of the merge.  This is a list of
+            relative paths to GPG key files.
+        @rtype: [str,..]
+        """
+        path = self.path(repoid)
+        self.mkdir(path)
+        deleted = self.delete(path, prev)
+        added = self.add(path, keylist)
+        merged = prev
+        for entry in deleted:
+            merged.remove(entry)
+        for entry in added:
+            merged.append(entry)
+        return merged
+
+    def add(self, path, keylist):
+        """
+        Add entries specified in the keylist.
+        @param path: The directory path to store the keys.
+        @type path: str
+        @param keylist: A list of (entry) tuples (<key-name>, <key-content>)
+        @type keylist: [<entry>,..]
+        @return: A list of added (relateive paths) files.
+        @rtype: [str,..]
+        """
+        added = []
+        repodir = os.path.basename(path)
+        for fn,content in keylist:
+            fpath = os.path.join(path, fn)
+            log.info('writing @: %s', fpath)
+            f = open(fpath, 'w')
+            f.write(content)
+            f.close()
+            entry = self.rpath(path, fn)
+            added.append(entry)
+        return added
+
+    def delete(self, path, prev):
+        """
+        Delete for this repository.  Pattern matching used to be
+        sure that only keys stored for this repository are deleted.
+        A cloned repo may have it's parent's keys in the keylist.
+        @param path: The directory path to store the keys.
+        @type path: str
+        @param prev: The current list of (relateive paths) keys.
+        @type prev: [str,..]
+        @return: A list of deleted (relateive paths) keys.
+        @rtype: [str,..]
+        """
+        deleted = []
+        repodir = os.path.basename(path)
+        pattern = '%s/' % repodir
+        for entry in prev:
+            if pattern not in entry:
+                continue
+            deleted.append(entry)
+            fn = os.path.basename(entry)
+            abspath = os.path.join(path, fn)
+            try:
+                log.info('deleting: %s', abspath)
+                os.unlink(abspath)
+            except:
+                pass
+        return deleted
+
+    def rpath(self, path, fn):
+        """
+        Construct the relateive path for the specified key file name.
+        @param path: The repository directory absolute path.
+        @type path: str
+        @param fn: The key file name.
+        @type fn: str
+        @return: The relative path for the file.
+        @rtype: str
+        """
+        repodir = os.path.basename(path)
+        return os.path.join(repodir, fn)
+
+    def path(self, repoid):
+        """
+        Construct the absolute path for specified repoistory.
+        @param repoid: The repository ID.
+        @type repoid: strr
+        @return: The absolute path.
+        @rtype: str
+        """
+        return os.path.join(self.root, self.REPODIR, repoid)
+
+    def mkdir(self, path):
+        """
+        Ensure the directory at I{path} exists.
+        @param path: An absolute (directory) path.
+        @type path: str
+        """
+        if not os.path.exists(path):
+            os.makedirs(path)
 
 
 # The crontab entry will call this module, so the following is used to trigger the

@@ -325,6 +325,11 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list_errata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
+    def updatekeys(self, id, keys):
+        params = dict(keys=keys)
+        method = "/repositories/%s/updatekeys/" % id
+        return self.conn.request_post(method, params=params)
+
 
 class ConsumerConnection(PulpConnection):
     """

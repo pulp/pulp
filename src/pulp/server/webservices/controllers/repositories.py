@@ -246,6 +246,7 @@ class RepositoryActions(AsyncController):
         'add_errata',
         'list_errata',
         'delete_errata',
+        'updatekeys',
     )
 
     @JSONController.error_handler
@@ -414,6 +415,11 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         return self.ok(api.errata(id, data['types']))
+
+    def updatekeys(self, id):
+        data = self.params()
+        api.updatekeys(id, data['keys'])
+        return self.ok(True)
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

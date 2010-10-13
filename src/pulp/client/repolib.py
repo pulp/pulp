@@ -136,12 +136,10 @@ class UpdateAction(Action):
                 continue
             updates += existing.update(cont)
             repod.update(existing)
-        keylib = KeyLib()
         for section in repod.sections():
             if section not in valid:
                 updates += 1
                 repod.delete(section)
-                keylib.clean(section, True)
         repod.write()
         return updates
 
@@ -170,22 +168,21 @@ class UpdateAction(Action):
         @rtype: [L{Repo},...]
         """
         lst = []
-        keylib = KeyLib()
         for cont in product['content']:
             if not cont:
                 continue
             id = cont['id']
             path = cont['relative_path']
-            keys = keylib.update(id, cont.get('gpgkeys', []))
+            keys = cont.get('gpgkeys', [])
             repo = Repo(id)
             repo['name'] = cont['name']
             repo['baseurl'] = self.join(baseurl, path)
             repo['enabled'] = cont.get('enabled', '1')
-            repo['gpgkey'] = self.fmt(keys)
+            repo['gpgkey'] = self.fmt(baseurl, keys)
             lst.append(repo)
         return lst
 
-    def fmt(self, v):
+    def fmt(self, baseurl, v):
         """
         Format the value.
         @param v: The property value to format.
@@ -194,7 +191,12 @@ class UpdateAction(Action):
         @rtype: tuple
         """
         if isinstance(v, (list,tuple)):
-            v = '\n'.join(v)
+            paths = []
+            for p in v:
+                paths.append(self.join(baseurl, p))
+            v = '\n'.join(paths)
+        else:
+            v = self.join(baseurl, v)
         return v
 
     def join(self, base, url):
@@ -449,75 +451,6 @@ class Reader:
             ln = '\n'
         self.idx = i
         return ln
-
-
-class KeyLib:
-    """
-    Provides GPG key management.
-    @cvar ROOT: The root GPG keys directory.
-    @type ROOT: str
-    """
-
-    ROOT = '/etc/pki/rpm-gpg/pulp'
-
-    @classmethod
-    def path(cls, repoid):
-        return os.path.join(cls.ROOT, repoid)
-
-    def update(self, repoid, keys):
-        """
-        Update the GPG keys.
-        @param repoid: A repo id.
-        @type repoid: str
-        @param keys: A list of GPG keys.
-        @type keys: [str,..]
-        @return: A list of URLs to local files containing
-            the GPG keys for the repo.
-        @rtype: list
-        """
-        n = 0
-        files = []
-        self.mkdir(repoid)
-        self.clean(repoid)
-        for key in keys:
-            if not n:
-                fn = 'primary'
-            else:
-                fn = 'alt-%d' % n
-            path = os.path.join(self.path(repoid), fn)
-            f = open(path, 'w')
-            f.write(key)
-            f.close()
-            files.append('file://%s' % path)
-            n += 1
-        return files
-
-    def clean(self, repoid, rmdir=False):
-        """
-        Remove all GPG keys for the specified repoid.
-        @param repoid: A repo id.
-        @type repoid: str
-        @param rmdir: Flag to remove the directory.
-        @type rmdir: bool
-        """
-        d = self.path(repoid)
-        if not os.path.exists(d):
-            return
-        for fn in os.listdir(d):
-            path = os.path.join(d, fn)
-            os.unlink(path)
-        if rmdir:
-            os.rmdir(d)
-
-    def mkdir(self, repoid):
-        """
-        Create a directory for a repo's GPG keys.
-        @param repoid: A repo id.
-        @type repoid: str
-        """
-        path = self.path(repoid)
-        if not os.path.exists(path):
-            os.makedirs(path)
 
 
 def main():

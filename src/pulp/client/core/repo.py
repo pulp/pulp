@@ -197,6 +197,12 @@ class Update(RepoAction):
 
     description = _('update a repository')
 
+    # (opt, method, exclusive)
+    OPTIONS = (
+        ('feed', 'updatefeed', False),
+        ('gpgkeys', 'updatekeys', True),
+    )
+
     def setup_parser(self):
         super(Update, self).setup_parser()
         self.parser.add_option("--name", dest="name",
@@ -225,24 +231,64 @@ class Update(RepoAction):
         if not repo:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         optdict = vars(self.opts)
-        self.expand(optdict)
-        for field in optdict.keys():
-            if field in repo:
-                repo[field] = optdict[field]
-        # Have to set this manually since the repo['feed'] is a 
-        # complex sub-object inside the repo
-        if self.opts.feed:
-            repo['feed'] = self.opts.feed
-        self.pconn.update(repo)
+        self.validate(optdict)
+        for k,v in optdict.items():
+            if not v:
+                continue
+            fn,ex = self.find(k)
+            if fn: # special method
+                fn(repo, v)
+                continue
+            if k in repo:
+                repo[k] = v
+        #self.pconn.update(repo)
         print _("Successfully updated repository [ %s ]") % repo['id']
 
-    def expand(self, opts):
-        OPT = 'gpgkeys'
-        keylist = opts.get(OPT)
+    def validate(self, options):
+        """ validate options """
+        required = ('id',)
+        regular = []
+        exclusive = []
+        for k,v in options.items():
+            if (not v) or k in required:
+                continue
+            fn,ex = self.find(k)
+            if ex:
+                exclusive.append(k)
+            else:
+                regular.append(k)
+        invalid = exclusive[1:]+regular
+        if exclusive and invalid:
+            msg = _('Exclusive option "%s" may not be used with %s')\
+                % (exclusive[0], invalid)
+            system_exit(os.EX_DATAERR, msg)
+
+    def find(self, option):
+        """ find option specification """
+        for opt,fn,ex in self.OPTIONS:
+            if opt == option:
+                method = getattr(self, fn)
+                return (method, ex)
+        return (None, False)
+
+    def updatefeed(self, repo, feed):
+        """ update the feed """
+        repo['feed'] = feed
+
+    def updatekeys(self, repo, keys):
+        """ update the GPG keys """
+        id = str(repo['id'])
+        if keys == '[]':
+            keys = None
+        expanded = self.expand(keys)
+        self.pconn.updatekeys(id, expanded)
+
+    def expand(self, keylist):
+        """ expand the list of directories/files and read content """
         if keylist:
             keylist = keylist.split(',')
         else:
-            return
+            return []
         try:
             paths = []
             for key in keylist:
@@ -258,9 +304,11 @@ class Update(RepoAction):
             for path in paths:
                 print _('uploading %s') % path
                 f = open(path)
-                keylist.append(f.read())
+                fn = os.path.basename(path)
+                content = f.read()
+                keylist.append((fn, content))
                 f.close()
-            opts[OPT] = keylist
+            return keylist
         except Exception, e:
             system_exit(os.EX_DATAERR, _(str(e)))
 
