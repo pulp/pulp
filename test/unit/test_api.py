@@ -253,6 +253,35 @@ class TestApi(unittest.TestCase):
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
 
+    def test_repo_updatekeys(self):
+        KEYS = 'gpgkeys'
+        id = 'fedora'
+        relativepath = 'f11/i386'
+        feed = 'yum:http://abc.com/%s' % relativepath
+        repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
+        keyA = ('keyA', 'MY KEY (A) CONTENT')
+        keyB = ('keyB', 'MY KEY (B) CONTENT')
+        keylist = [keyA, keyB]
+        # multiple (2) keys
+        self.rapi.updatekeys(id, keylist)
+        repo = self.rapi.repository(id)
+        found = repo[KEYS]
+        for i in range(0, len(keylist)):
+            path = os.path.join(relativepath, keylist[i][0])
+            self.assertTrue(path in found[i])
+        # single key
+        self.rapi.updatekeys(id, keylist[1:])
+        repo = self.rapi.repository(id)
+        found = repo[KEYS]
+        path = os.path.join(relativepath, keylist[1][0])
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0], path)
+        # clear keys
+        self.rapi.updatekeys(id, [])
+        repo = self.rapi.repository(id)
+        found = repo[KEYS]
+        self.assertEqual(len(found), 0)
+
     def test_repo_errata(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')

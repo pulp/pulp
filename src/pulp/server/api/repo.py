@@ -885,11 +885,11 @@ class RepoApi(BaseApi):
     def updatekeys(self, id, keys):
         GPGKEYS = 'gpgkeys'
         repo = self._get_existing_repo(id)
-        root = self.localStoragePath
-        base = repo['relative_path']
+        root = pulp.server.util.top_repos_location()
+        path = repo['relative_path']
         current = repo[GPGKEYS]
-        keystore = KeyStore(root)
-        merged = keystore.update(base, current, keys)
+        keystore = KeyStore(root, path)
+        merged = keystore.update(current, keys)
         repo[GPGKEYS] = merged
         log.info('repository (%s), GPG keys updated as: %s', id, merged)
         self.update(repo)
@@ -907,28 +907,32 @@ class RepoApi(BaseApi):
 class KeyStore:
     """
     The GPG key store.
-    @cvar REPODIR: The repos subdirectory.
-    @type REPODIR: str
-    @ivar root: The keystore root directory.
+    @ivar root: The repo storage directory.
     @type root: str
+    @ivar path: The repo relative storage path.
+    @type path: str
+    @ivar abspath: The repo absolute storage path.
+    @type abspath: str
     """
 
-    REPODIR = 'repos'
-
-    def __init__(self, root):
+    def __init__(self, root, path):
         """
-        @param root: The keystore root directory.
+        @param root: The root storage directory.
         @type root: str
+        @param path: The repo relative storage path.
+        @type path: str
         """
+        while path.startswith('/'):
+            path = path[1:]
         self.root = root
+        self.path = path
+        self.abspath = os.path.join(root, path)
 
-    def update(self, repoid, prev, keylist):
+    def update(self, prev, keylist):
         """
         Update the GPG keys for the specified repo.
-        @param repoid: The repo ID.
-        @type repoid: str
         @param prev: The current list of keys.  Each entry
-            is the relateive path to a GPG file.
+            is the relateive path to a key file.
         @type prev: [str,..]
         @param keylist: A list of (entry) tuples (<key-name>, <key-content>)
         @type keylist: [<entry>,..]
@@ -936,10 +940,9 @@ class KeyStore:
             relative paths to GPG key files.
         @rtype: [str,..]
         """
-        path = self.path(repoid)
-        self.mkdir(path)
-        deleted = self.delete(path, prev)
-        added = self.add(path, keylist)
+        self.mkdir()
+        deleted = self.delete(prev)
+        added = self.add(keylist)
         merged = prev
         for entry in deleted:
             merged.remove(entry)
@@ -947,87 +950,58 @@ class KeyStore:
             merged.append(entry)
         return merged
 
-    def add(self, path, keylist):
+    def add(self, keylist):
         """
         Add entries specified in the keylist.
-        @param path: The directory path to store the keys.
-        @type path: str
         @param keylist: A list of (entry) tuples (<key-name>, <key-content>)
         @type keylist: [<entry>,..]
         @return: A list of added (relateive paths) files.
         @rtype: [str,..]
         """
         added = []
-        repodir = os.path.basename(path)
         for fn,content in keylist:
-            fpath = os.path.join(path, fn)
-            log.info('writing @: %s', fpath)
-            f = open(fpath, 'w')
+            path = os.path.join(self.abspath, fn)
+            log.info('writing @: %s', path)
+            f = open(path, 'w')
             f.write(content)
             f.close()
-            entry = self.rpath(path, fn)
+            entry = os.path.join(self.path, fn)
             added.append(entry)
         return added
 
-    def delete(self, path, prev):
+    def delete(self, prev):
         """
         Delete for this repository.  Pattern matching used to be
         sure that only keys stored for this repository are deleted.
         A cloned repo may have it's parent's keys in the keylist.
-        @param path: The directory path to store the keys.
-        @type path: str
         @param prev: The current list of (relateive paths) keys.
         @type prev: [str,..]
         @return: A list of deleted (relateive paths) keys.
         @rtype: [str,..]
         """
         deleted = []
-        repodir = os.path.basename(path)
-        pattern = '%s/' % repodir
+        pattern = '%s/' % self.path
         for entry in prev:
             if pattern not in entry:
                 continue
             deleted.append(entry)
             fn = os.path.basename(entry)
-            abspath = os.path.join(path, fn)
+            path = os.path.join(self.abspath, fn)
             try:
-                log.info('deleting: %s', abspath)
-                os.unlink(abspath)
+                log.info('deleting: %s', path)
+                os.unlink(path)
             except:
                 pass
         return deleted
 
-    def rpath(self, path, fn):
-        """
-        Construct the relateive path for the specified key file name.
-        @param path: The repository directory absolute path.
-        @type path: str
-        @param fn: The key file name.
-        @type fn: str
-        @return: The relative path for the file.
-        @rtype: str
-        """
-        repodir = os.path.basename(path)
-        return os.path.join(repodir, fn)
-
-    def path(self, repoid):
-        """
-        Construct the absolute path for specified repoistory.
-        @param repoid: The repository ID.
-        @type repoid: strr
-        @return: The absolute path.
-        @rtype: str
-        """
-        return os.path.join(self.root, self.REPODIR, repoid)
-
-    def mkdir(self, path):
+    def mkdir(self):
         """
         Ensure the directory at I{path} exists.
         @param path: An absolute (directory) path.
         @type path: str
         """
-        if not os.path.exists(path):
-            os.makedirs(path)
+        if not os.path.exists(self.abspath):
+            os.makedirs(self.abspath)
 
 
 # The crontab entry will call this module, so the following is used to trigger the
