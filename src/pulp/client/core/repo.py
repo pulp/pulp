@@ -244,7 +244,7 @@ class Update(RepoAction):
         if not repo:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         optdict = vars(self.opts)
-        for k,v in optdict.items():
+        for k, v in optdict.items():
             if not v:
                 continue
             method = self.find(k)
@@ -260,7 +260,7 @@ class Update(RepoAction):
 
     def find(self, option):
         """ find option specification """
-        for opt,fn in self.OPTIONS:
+        for opt, fn in self.OPTIONS:
             if opt == option:
                 return getattr(self, fn)
 
@@ -378,7 +378,7 @@ class CancelSync(RepoAction):
         if task['state'] not in ('waiting', 'running'):
             system_exit(os.EX_OK, _('Sync has completed'))
         taskid = task['id']
-        self.pconn.cancel_sync(id, taskid)
+        self.pconn.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s canceled") % id
 
 
