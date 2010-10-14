@@ -52,7 +52,7 @@ _default_values = {
         'use_entitlement_certs': 'false',
     },
     'rhn': {
-        'threads': '10',
+        'threads': '3',
         'fetch_all_packages': 'false',
         'remove_old_packages': 'false',
         'cert_file': '/etc/sysconfig/rhn/entitlement-cert.xml',
@@ -69,7 +69,7 @@ _default_values = {
         'default_password': 'admin',
     },
     'yum': {
-        'threads': '10',
+        'threads': '3',
     },
 }
 
