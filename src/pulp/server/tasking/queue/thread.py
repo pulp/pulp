@@ -30,7 +30,7 @@ _DummyThread = threading._DummyThread
 # tracked thread descendant tree
 _thread_tree = weakref.WeakKeyDictionary()
 
-_log = logging.getLogger(__name__)
+_log = logging.getLogger('pulp')
 
 # debugging re-entrant lock ---------------------------------------------------
 
@@ -202,35 +202,40 @@ class TaskThread(TrackedThread):
         This needs to be called by the task thread and will unblock the thread
         trying to deliver the exception.
         """
+        _log.debug('Exception event deliverd to thread[%s]' % str(self.ident))
         self.__exception_event.set()
 
     def raise_exception(self, exc_type):
         """
-        Raise and exception in this thread.
+        Raise an exception in this thread.
         
         NOTE this is executed in the context of the calling thread and blocks
         until the exception has been delivered to this thread and this thread
         exists.
         """
-        # first, kill off all the descendants
-        for thread in get_descendants(self):
-            while thread.is_alive():
+        # embedded methods to reduce code duplication
+        def test_exception_event():
+            return not self.__exception_event.is_set()
+
+        def deliver_exception(thread, test, wait):
+            _log.debug('Trying to deliver exception %s to thread[%s]' %
+                       (exc_type.__name__, str(thread.ident)))
+            while test():
                 try:
                     _raise_exception_in_thread(_tid(thread), exc_type)
-                    time.sleep(self.__default_timeout)
+                    wait(self.__default_timeout)
                 except _ThreadInterruptionError, e:
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
-                               (exc_type.__name__, str(self.ident), e.message))
-                    break
+                               (exc_type.__name__, str(thread.ident), e.message))
+                    return
+            _log.debug('Succeeded in delivering exception %s to thread[%s]' %
+                       (exc_type.__name__, str(thread.ident)))
+
+        # first, kill off all the descendants
+        for thread in get_descendants(self):
+            deliver_exception(thread, thread.is_alive, time.sleep)
         # then kill and wait for the task thread
-        while not self.__exception_event.is_set():
-            try:
-                _raise_exception_in_thread(_tid(self), exc_type)
-                self.__exception_event.wait(self.__default_timeout)
-            except _ThreadInterruptionError, e:
-                _log.error('Failed to deliver exception %s to thread[%s]: %s' %
-                           (exc_type.__name__, str(self.ident), e.message))
-                break
+        deliver_exception(self, test_exception_event, self.__exception_event.wait)
 
     def timeout(self):
         """
