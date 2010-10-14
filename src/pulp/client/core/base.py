@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import os
 from gettext import gettext as _
 from optparse import OptionParser
 
@@ -189,6 +190,8 @@ class Action(object):
         except RestlibException, re:
             _log.error("error: %s" % re)
             system_exit(re.code, _('error: operation failed: ') + re.msg)
+        except KeyboardInterrupt:
+            system_exit(os.EX_NOUSER)
         except Exception, e:
             _log.error("error: %s" % e)
             raise
