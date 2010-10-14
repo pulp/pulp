@@ -40,6 +40,10 @@ from pulp.server.pexceptions import PulpException
 
 import testutil
 
+logging.root.setLevel(logging.ERROR)
+qpid = logging.getLogger('qpid.messaging')
+qpid.setLevel(logging.ERROR)
+
 log = logging.getLogger('pulp.test.testcomps')
 
 class TestComps(unittest.TestCase):
@@ -48,6 +52,7 @@ class TestComps(unittest.TestCase):
         self.config = testutil.load_test_config()
         self.rapi = RepoApi()
         self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        logging.root.setLevel(logging.ERROR)
 
     def tearDown(self):
         self.rapi.clean()
@@ -114,7 +119,7 @@ class TestComps(unittest.TestCase):
         grp['mandatory_package_names'] = ["mandatory_package_name1"]
         grp['optional_package_names'] = ["optional_package_name1"]
         grp['default_package_names'] = ["default_package_name1"]
-        grp['conditional_package_names'] = {"pkg1":"value pkg1"}
+        grp['conditional_package_names'] = {"requires_pkg":["package_name1", "package_name2"]}
         grp['translated_name'] = {"a":"value"}
         grp['translated_description'] = {"b":"value"}
         self.rapi.update_packagegroup(repo['id'], grp)
@@ -122,6 +127,10 @@ class TestComps(unittest.TestCase):
         self.assertTrue(found is not None)
         self.assertTrue(found['name'] == 'groupname1')
         self.assertTrue("mandatory_package_name1" in found['mandatory_package_names'])
+        self.assertTrue("optional_package_name1" in found['optional_package_names'])
+        self.assertTrue("default_package_name1" in found['default_package_names'])
+        self.assertTrue("package_name1" in found["conditional_package_names"]["requires_pkg"])
+        self.assertTrue("package_name2" in found["conditional_package_names"]["requires_pkg"])
 
         ctg = pulp.server.db.model.PackageGroupCategory("categoryid1",
                     "categoryname", "description", "display_order")
@@ -164,14 +173,21 @@ class TestComps(unittest.TestCase):
         grp['mandatory_package_names'] = ["mandatory_package_name1"]
         grp['optional_package_names'] = ["optional_package_name1"]
         grp['default_package_names'] = ["default_package_name1"]
-        grp['conditional_package_names'] = {"pkg1":"value pkg1"}
+        grp['conditional_package_names'] = {"package_name1":"requires_pkg", \
+                "package_name2":"requires_pkg"}
         grp['translated_name'] = {"a":"value"}
         grp['translated_description'] = {"b":"value"}
         yumGrp = pulp.server.comps_util.model_group_to_yum_group(grp)
         self.assertTrue(yumGrp.groupid == "groupid1")
         self.assertTrue("mandatory_package_name1" in yumGrp.mandatory_packages)
+        self.assertTrue("package_name1" in yumGrp.conditional_packages)
+        self.assertEquals("requires_pkg", yumGrp.conditional_packages["package_name1"])
+        self.assertTrue("package_name2" in yumGrp.conditional_packages)
+        self.assertEquals("requires_pkg", yumGrp.conditional_packages["package_name2"])
+
+
         xml = yumGrp.xml()
-        log.debug("Group XML = %s" % (xml))
+        #log.debug("Group XML = %s" % (xml))
         self.assertTrue(len(xml) > 0)
 
     def test_model_category_to_yum_category(self):
@@ -187,7 +203,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(yumCat.categoryid == "categoryid1")
         self.assertTrue("groupid1" in yumCat._groups)
         xml = yumCat.xml()
-        log.debug("Category XML = %s" % (xml))
+        #log.debug("Category XML = %s" % (xml))
         self.assertTrue(len(xml) > 0)
 
     def test_full_read_parse_write_to_xml(self):
@@ -241,6 +257,10 @@ class TestComps(unittest.TestCase):
         self.assertTrue("mod_auth_mysql" in found['optional_package_names'])
         self.assertTrue("crypto-utils" in found['default_package_names'])
         self.assertTrue("distcache" in found['default_package_names'])
+        found = self.rapi.packagegroup(repo['id'], "afrikaans-support")
+        self.assertTrue(found is not None)
+        self.assertTrue("aspell-af" in found['conditional_package_names'])
+        self.assertEquals("aspell", found['conditional_package_names']['aspell-af'])
 
         # PackageGroupCategory, look up expected values,
         found = self.rapi.packagegroupcategory(repo['id'], "BAD_VALUE_NOT_IN_CATEGORY")
@@ -277,10 +297,10 @@ class TestComps(unittest.TestCase):
         expectedGroups = len(comps.get_groups())
         actualCats = len(parsedComps.get_categories())
         expectedCats = len(parsedComps.get_categories())
-        log.debug("new comps has %s groups we expected %s groups" % \
-                (actualGroups, expectedGroups))
-        log.debug("new comps has %s categoriess we expected %s categoriess" \
-                % (actualCats, expectedCats))
+        #log.debug("new comps has %s groups we expected %s groups" % \
+        #        (actualGroups, expectedGroups))
+        #log.debug("new comps has %s categoriess we expected %s categoriess" \
+        #        % (actualCats, expectedCats))
         self.assertTrue(actualGroups == expectedGroups)
         self.assertTrue(actualCats == expectedCats)
         groups = parsedComps.get_groups()

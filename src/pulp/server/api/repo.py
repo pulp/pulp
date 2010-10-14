@@ -540,7 +540,7 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
-            return
+            raise PulpException("Group [%s] does not exist in repo [%s]" % (groupid, repo["id"]))
         if repo['packagegroups'][groupid]["immutable"]:
             raise PulpException("Changes to immutable groups are not supported: %s" % (groupid))
         del repo['packagegroups'][groupid]
@@ -632,9 +632,7 @@ class RepoApi(BaseApi):
             elif gtype == "conditional":
                 if not requires:
                     raise PulpException("Parameter 'requires' has not been set, it is required by conditional group types")
-                if not group["conditional_package_names"].has_key(requires):
-                    group["conditional_package_names"][requires] = []
-                group["conditional_package_names"][requires].append(pkg_name)
+                group["conditional_package_names"][pkg_name] = requires
             elif gtype == "optional":
                 if pkg_name not in group["optional_package_names"]:
                     group["optional_package_names"].append(pkg_name)

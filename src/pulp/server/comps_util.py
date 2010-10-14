@@ -81,9 +81,9 @@ def model_group_to_yum_group(obj):
         grp.optional_packages[pkgname] = 1
     for pkgname in obj['default_package_names']:
         grp.default_packages[pkgname] = 1
-    for key in obj['conditional_package_names']:
-        for pkgname in obj['conditional_package_names'][key]:
-            grp.conditional_packages[pkgname] = key
+    for pkgname in obj['conditional_package_names']:
+        grp.conditional_packages[pkgname] = \
+                obj['conditional_package_names'][pkgname]
     return grp
 
 def model_category_to_yum_category(obj):
