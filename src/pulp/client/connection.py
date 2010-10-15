@@ -126,6 +126,7 @@ class Restlib(object):
                      headers=self.headers)
         response = conn.getresponse()
         if response.status == 404:
+            log.error("%s %s, %s" % (response.status, handler, response.read()))
             return None
         self.validateResponse(response)
         rinfo = response.read()

@@ -522,6 +522,8 @@ class RepoApi(BaseApi):
         @return packagegroup object
         """
         repo = self._get_existing_repo(repoid)
+        if not repo:
+            raise PulpException("Unable to find repository [%s]" % (repoid))
         if group_id in repo['packagegroups']:
             raise PulpException("Package group %s already exists in repo %s" %
                                 (group_id, repoid))

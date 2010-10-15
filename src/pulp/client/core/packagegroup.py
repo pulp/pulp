@@ -77,7 +77,7 @@ class Info(PackageGroupAction):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         groups = self.pconn.packagegroups(repoid)
-        if groupid not in groups:
+        if not groups or groupid not in groups:
             system_exit(os.EX_DATAERR,
                         _("Package group [%s] not found in repo [%s]") %
                         (groupid, repoid))
@@ -107,8 +107,12 @@ class Create(PackageGroupAction):
         groupid = self.get_required_option('id')
         groupname = self.get_required_option('name')
         description = self.opts.description
-        self.pconn.create_packagegroup(repoid, groupid, groupname, description)
-        print _("Package group [%s] created in repository [%s]") % \
+        status = self.pconn.create_packagegroup(repoid, groupid, groupname, description)
+        if not status:
+            print _("Unable to create package group [%s] in repository [%s]") % \
+                    (groupid, repoid)
+        else:
+            print _("Package group [%s] created in repository [%s]") % \
                 (groupid, repoid)
 
 
