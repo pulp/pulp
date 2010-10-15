@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.73
+Version:        0.0.74
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -183,6 +183,18 @@ fi
 
 
 %changelog
+* Fri Oct 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.74-1
+- 641038 - packagegroup create does not check if the repoid exists or not
+  (jmatthew@redhat.com)
+- added keyboard exception handler to avoid tracebacks when ctrl+c forground
+  syncs (jconnor@redhat.com)
+- changing base number of concurrent downloads to 3 to keep sync cancellation
+  from taking forever (jconnor@redhat.com)
+- moving to mongodb package name for F13+ (mmccune@redhat.com)
+- Handle gpg keys when creating a repo. (jortel@redhat.com)
+- 629987, 623272, 642003, 641945 package group bug fixes (jmatthew@redhat.com)
+- Replace 'repo update' --gpgkeys --setkeys & --clearkeys. (jortel@redhat.com)
+
 * Wed Oct 13 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.73-1
 - repo GPG key functionality
 - help and output standardization internationalization of all command/action
