@@ -107,7 +107,11 @@ class Create(PackageGroupAction):
         groupid = self.get_required_option('id')
         groupname = self.get_required_option('name')
         description = self.opts.description
-        status = self.pconn.create_packagegroup(repoid, groupid, groupname, description)
+        try:
+            status = self.pconn.create_packagegroup(repoid, groupid, groupname, description)
+        except Exception, e:
+            _log.error(_("Failed on group [%s] create:\n%s") % (groupid, e))
+            status = False
         if not status:
             print _("Unable to create package group [%s] in repository [%s]") % \
                     (groupid, repoid)
