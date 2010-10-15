@@ -352,9 +352,7 @@ class RepositoryActions(AsyncController):
         if p.has_key("type"):
             gtype = p["type"]
         requires = None
-        if p.has_key("requires"):
-            requires = p["requires"]
-        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype, requires))
+        return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

@@ -645,15 +645,13 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
 
     @audit()
-    def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default", requires=None):
+    def delete_package_from_group(self, repoid, groupid, pkg_name, gtype="default"):
         """
         @param repoid: repository id
         @param groupid: group id
         @param pkg_name: package name
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional"
-        @param requires: Only used by 'conditional' group type
-            name of package for 'requires' of conditional 
         """
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
@@ -669,12 +667,10 @@ class RepoApi(BaseApi):
             else:
                 raise PulpException("Package %s not present in package group" % (pkg_name))
         elif gtype == "conditional":
-            if not group["conditional_package_names"].has_key(requires):
-                raise PulpException("No conditional package names are stored under %s" % (requires))
-            if pkg_name in group["conditional_package_names"][requires]:
-                group["conditional_package_names"][requires].remove(pkg_name)
+            if pkg_name in group["conditional_package_names"]:
+                del group["conditional_package_names"][pkg_name]
             else:
-                raise PulpException("Package %s not present in conditional package group for %s" % (pkg_name, requires))
+                raise PulpException("Package %s not present in conditional package group" % (pkg_name))
         elif gtype == "optional":
             if pkg_name in group["optional_package_names"]:
                 group["optional_package_names"].remove(pkg_name)

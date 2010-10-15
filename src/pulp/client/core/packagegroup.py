@@ -189,19 +189,14 @@ class DeletePackage(PackageGroupAction):
                                help=_("package name (required)"))
         self.parser.add_option("-t", "--type", dest="grouptype", default='default',
                                help=_("type of list to delete package from, example 'mandatory', 'optional', 'default'"))
-        self.parser.add_option("--requires", dest="requires", default=None,
-                               help=_("required package name, only used by 'conditional' package group type"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
         pkgname = self.get_required_option('name')
         groupid = self.get_required_option('id')
         grouptype = self.opts.grouptype
-        requires = None # Only used by conditional group type
-        if grouptype == "conditional":
-            requires = self.get_required_option("requires")
         try:
-            self.pconn.delete_package_from_group(repoid, groupid, pkgname, grouptype, requires)
+            self.pconn.delete_package_from_group(repoid, groupid, pkgname, grouptype)
         except Exception, e:
             _log.error(e)
             print _("Unable to delete [%s] from group [%s] in repository [%s]") % \
