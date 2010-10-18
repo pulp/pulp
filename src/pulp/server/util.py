@@ -37,6 +37,22 @@ def top_repos_location():
 def top_package_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
 
+def relative_repo_path(path):
+    """
+    Convert the specified I{path} to a relative path
+    within a repo storage directory.
+    @type path: An absolute path to a repo file.
+    @type path: str
+    @return: The relative path.
+    @rtype: str
+    """
+    top = top_repos_location()
+    if path.startswith(top):
+        path = path[len(top):]
+    while path.startswith('/'):
+        path = path[1:]
+    return path 
+
 def get_rpm_information(rpm_path):
     """
     Get metadata about an RPM.
@@ -174,7 +190,6 @@ def get_repo_packages(path):
     r.sack.populate(r, 'metadata', None, 0)
     return r.getPackageSack().returnPackages()
 
-
 def get_repomd_filetype_path(path, filetype):
     """
     @param path: path to repo
@@ -204,6 +219,30 @@ def listdir(directory):
         for file in files:
             filelist.append("%s/%s" % (root, file))
     return filelist
+
+def get_repo_keys(path):
+    """
+    Get a list of GPG key files at the specified I{path}.
+    @param path: An absolute path to a file containing a GPG key.
+    @type path: str
+    @return: A list of tuples: (key-path, key-content)
+    @rtype: list
+    """
+    keys = []
+    pattern = '----BEGIN PGP PUBLIC KEY BLOCK-----'
+    for fp in listdir(path):
+        for ext in ('.rpm','.gz','.xml'):
+            if fp.endswith(ext):
+                continue
+        try:
+            f = open(fp)
+            content = f.read()
+            if pattern in content:
+                keys.append((fp, content))
+            f.close()
+        except:
+            log.error(fp, exec_info=True)
+    return keys
 
 def compare_packages(pkgA, pkgB):
     """
