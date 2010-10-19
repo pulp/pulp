@@ -56,6 +56,7 @@ class RepoApi(BaseApi):
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
+        self.published_path = os.path.join(self.localStoragePath, "published")
 
     @property
     def _indexes(self):
@@ -115,9 +116,12 @@ class RepoApi(BaseApi):
 
         if relative_path is None:
             if r['source'] is not None :
-                # For none product repos, default to repoid
-                url_parse = urlparse(str(r['source']["url"]))
-                r['relative_path'] = url_parse.path
+                if r['source']['type'] == "local":
+                    r['relative_path'] = r['id']
+                else:
+                    # For none product repos, default to repoid
+                    url_parse = urlparse(str(r['source']["url"]))
+                    r['relative_path'] = url_parse.path
             else:
                 r['relative_path'] = r['id']
                 # There is no repo source, allow package uploads
@@ -133,7 +137,44 @@ class RepoApi(BaseApi):
         self.insert(r)
         if sync_schedule:
             repo_sync.update_schedule(r)
+        default_to_publish = config.config.get('repos', 'default_to_published')
+        self.publish(r["id"], default_to_publish)
+        # refresh repo object from mongo
+        repo = self.repository(r["id"])
         return r
+
+    @audit(params=['id', 'state'])
+    def publish(self, id, state):
+        """
+        Controls if we publish this repository through Apache.  True means the
+        repository will be published, False means it will not be.
+        @type id: str
+        @param id: repository id
+        @type state: boolean
+        @param state: True is enable publish, False is disable publish
+        """
+        repo = self._get_existing_repo(id)
+        repo['publish'] = state
+        self.update(repo)
+        if repo['publish']:
+           self._create_published_link(repo)
+        else:
+           self._delete_published_link(repo)
+
+    def _create_published_link(self, repo):
+        if not os.path.isdir(self.published_path):
+            os.mkdir(self.published_path)
+        log.error("repo['relative_path'] = %s" % (repo['relative_path']))
+        source_path = os.path.join(self.localStoragePath, repo["relative_path"])
+        link_path = os.path.join(self.published_path, repo["relative_path"])
+        if not os.path.islink(link_path):
+            log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
+            os.symlink(source_path, link_path)
+
+    def _delete_published_link(self, repo):
+        link_path = os.path.join(self.published_path, repo["relative_path"])
+        if os.path.islink(link_path):
+            os.unlink(link_path)
 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")

@@ -101,7 +101,7 @@ def install(opts):
 
     # Link between pulp and apache
     if not os.path.exists('/var/www/pub'):
-        os.symlink('/var/lib/pulp', '/var/www/pub')
+        os.symlink('/var/lib/pulp/published', '/var/www/pub')
 
     # Grant apache write access to the pulp tools log file and pulp 
     # packages dir
