@@ -87,6 +87,7 @@ def setup_admin(admin):
     repo_cmd.add_action('cancel_sync', repo.CancelSync())
     repo_cmd.add_action('upload', repo.Upload())
     repo_cmd.add_action('schedules', repo.Schedules())
+    repo_cmd.add_action('listkeys', repo.ListKeys())
     admin.add_command('repo', repo_cmd)
 
     user_cmd = user.User()

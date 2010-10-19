@@ -33,6 +33,7 @@ from grinder.RHNSync import RHNSync
 from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
+from pulp.server.api.keystore import KeyStore
 from pulp.server import config
 from pulp.server.pexceptions import PulpException
 
@@ -206,13 +207,9 @@ class BaseSynchronizer(object):
         @return: The updated repo.
         @rtype: dict
         """
-        keylist = repo['gpgkeys']
-        for path,key in pulp.server.util.get_repo_keys(dir):
-            path = pulp.server.util.relative_repo_path(path)
-            if path in keylist:
-                continue
-            keylist.append(path)
-            log.info('key "%s" added to repo: %s', path, repo['id'])
+        path = repo['relative_path']
+        keystore = KeyStore(path)
+        keystore.relink()
         return repo
 
     def import_package(self, package, repo, repo_defined=False):

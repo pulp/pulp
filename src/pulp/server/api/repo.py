@@ -34,6 +34,7 @@ from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.errata import ErrataApi
+from pulp.server.api.keystore import KeyStore
 from pulp.server.auditing import audit
 from pulp.server.event.dispatcher import event
 from pulp.server import config
@@ -127,9 +128,8 @@ class RepoApi(BaseApi):
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
             path = r['relative_path']
-            keystore = KeyStore(root, path)
-            added = keystore.add(gpgkeys)
-            r['gpgkeys'] = added
+            ks = KeyStore(path)
+            added = ks.add(gpgkeys)
         self.insert(r)
         if sync_schedule:
             repo_sync.update_schedule(r)
@@ -889,18 +889,29 @@ class RepoApi(BaseApi):
         log.info("Upload success %s %s" % (pkg['id'], repo['id']))
         return True
 
-    @audit(params=['id', 'keys'])
-    def updatekeys(self, id, keys):
-        GPGKEYS = 'gpgkeys'
+    @audit(params=['id', 'keylist'])
+    def addkeys(self, id, keylist):
         repo = self._get_existing_repo(id)
-        root = pulp.server.util.top_repos_location()
         path = repo['relative_path']
-        current = repo[GPGKEYS]
-        keystore = KeyStore(root, path)
-        merged = keystore.update(current, keys)
-        repo[GPGKEYS] = merged
-        log.info('repository (%s), GPG keys updated as: %s', id, merged)
-        self.update(repo)
+        ks = KeyStore(path)
+        added = ks.add(keylist)
+        log.info('repository (%s), added keys: %s', id, added)
+        return added
+
+    @audit(params=['id', 'keylist'])
+    def rmkeys(self, id, keylist):
+        repo = self._get_existing_repo(id)
+        path = repo['relative_path']
+        ks = KeyStore(path)
+        deleted = ks.delete(keylist)
+        log.info('repository (%s), delete keys: %s', id, deleted)
+        return deleted
+
+    def listkeys(self, id):
+        repo = self._get_existing_repo(id)
+        path = repo['relative_path']
+        ks = KeyStore(path)
+        return ks.list()
 
     def all_schedules(self):
         '''
@@ -910,108 +921,6 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
-
-
-class KeyStore:
-    """
-    The GPG key store.
-    @ivar root: The repo storage directory.
-    @type root: str
-    @ivar path: The repo relative storage path.
-    @type path: str
-    @ivar abspath: The repo absolute storage path.
-    @type abspath: str
-    """
-
-    def __init__(self, root, path):
-        """
-        @param root: The root storage directory.
-        @type root: str
-        @param path: The repo relative storage path.
-        @type path: str
-        """
-        while path.startswith('/'):
-            path = path[1:]
-        self.root = root
-        self.path = path
-        self.abspath = os.path.join(root, path)
-        self.mkdir()
-
-    def update(self, prev, keylist):
-        """
-        Update the GPG keys for the specified repo.
-        @param prev: The current list of keys.  Each entry
-            is the relateive path to a key file.
-        @type prev: [str,..]
-        @param keylist: A list of (entry) tuples (<key-name>, <key-content>)
-        @type keylist: [<entry>,..]
-        @return: The result of the merge.  This is a list of
-            relative paths to GPG key files.
-        @rtype: [str,..]
-        """
-        deleted = self.delete(prev)
-        added = self.add(keylist)
-        merged = prev
-        for entry in deleted:
-            merged.remove(entry)
-        for entry in added:
-            merged.append(entry)
-        return merged
-
-    def add(self, keylist):
-        """
-        Add entries specified in the keylist.
-        @param keylist: A list of (entry) tuples (<key-name>, <key-content>)
-        @type keylist: [<entry>,..]
-        @return: A list of added (relateive paths) files.
-        @rtype: [str,..]
-        """
-        added = []
-        for fn,content in keylist:
-            path = os.path.join(self.abspath, fn)
-            log.info('writing @: %s', path)
-            f = open(path, 'w')
-            f.write(content)
-            f.close()
-            entry = os.path.join(self.path, fn)
-            added.append(entry)
-        return added
-
-    def delete(self, prev):
-        """
-        Delete for this repository.  Pattern matching used to be
-        sure that only keys stored for this repository are deleted.
-        A cloned repo may have it's parent's keys in the keylist.
-        @param prev: The current list of (relateive paths) keys.
-        @type prev: [str,..]
-        @return: A list of deleted (relateive paths) keys.
-        @rtype: [str,..]
-        """
-        deleted = []
-        pattern = self.path
-        if not pattern.endswith('/'):
-            pattern += '/'
-        for entry in prev:
-            if pattern not in entry:
-                continue
-            deleted.append(entry)
-            fn = os.path.basename(entry)
-            path = os.path.join(self.abspath, fn)
-            try:
-                log.info('deleting: %s', path)
-                os.unlink(path)
-            except:
-                pass
-        return deleted
-
-    def mkdir(self):
-        """
-        Ensure the directory at I{path} exists.
-        @param path: An absolute (directory) path.
-        @type path: str
-        """
-        if not os.path.exists(self.abspath):
-            os.makedirs(self.abspath)
 
 
 # The crontab entry will call this module, so the following is used to trigger the

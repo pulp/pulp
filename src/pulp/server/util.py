@@ -34,6 +34,9 @@ log = logging.getLogger(__name__)
 def top_repos_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
 
+def top_gpg_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "gpg")
+
 def top_package_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
 
@@ -219,30 +222,6 @@ def listdir(directory):
         for file in files:
             filelist.append("%s/%s" % (root, file))
     return filelist
-
-def get_repo_keys(path):
-    """
-    Get a list of GPG key files at the specified I{path}.
-    @param path: An absolute path to a file containing a GPG key.
-    @type path: str
-    @return: A list of tuples: (key-path, key-content)
-    @rtype: list
-    """
-    keys = []
-    pattern = '----BEGIN PGP PUBLIC KEY BLOCK-----'
-    for fp in listdir(path):
-        for ext in ('.rpm','.gz','.xml'):
-            if fp.endswith(ext):
-                continue
-        try:
-            f = open(fp)
-            content = f.read()
-            if pattern in content:
-                keys.append((fp, content))
-            f.close()
-        except:
-            log.error(fp, exec_info=True)
-    return keys
 
 def compare_packages(pkgA, pkgB):
     """
