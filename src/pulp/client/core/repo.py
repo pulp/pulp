@@ -416,7 +416,7 @@ class Upload(RepoAction):
             if self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch):
                 system_exit(os.EX_OK, \
                             _("Package [%s] already exists on the server in repo %s") % (pkginfo['pkgname'], id))
-            sys.exit(0)   
+ 
             pkgstream = base64.b64encode(open(frpm).read())
             status = self.pconn.upload(id, pkginfo, pkgstream)
             if status:

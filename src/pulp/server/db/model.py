@@ -61,6 +61,7 @@ class Repo(Base):
         self.relative_path = None
         self.files = []
         self.gpgkeys = []
+        self.allow_upload = 0
 
     def get_repo_source(self):
         if not self.source:

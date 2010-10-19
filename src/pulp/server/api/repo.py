@@ -119,6 +119,8 @@ class RepoApi(BaseApi):
                 r['relative_path'] = url_parse.path
             else:
                 r['relative_path'] = r['id']
+                # There is no repo source, allow package uploads
+                r['allow_upload']  = 1
         else:
             r['relative_path'] = relative_path
         if gpgkeys:
@@ -877,6 +879,8 @@ class RepoApi(BaseApi):
         Store the uploaded package and associate to this repo
         """
         repo = self._get_existing_repo(id)
+        if not repo['allow_upload']:
+            raise PulpException('Package Uploads are not allowed to Repo %s' % repo['id'])
         pkg_upload = upload.PackageUpload(repo, pkginfo, pkgstream)
         pkg, repo = pkg_upload.upload()
         self._add_package(repo, pkg)
