@@ -398,7 +398,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         # Remove package from repo location on file system
         pkg_repo_path = pulp.server.util.get_repo_package_path(
-                repo['relativepath'], p["filename"])
+                repo['relative_path'], p["filename"])
         if os.path.exists(pkg_repo_path):
             log.debug("Delete package %s at %s" % (p, pkg_repo_path))
             os.remove(pkg_repo_path)
