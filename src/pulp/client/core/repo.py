@@ -411,6 +411,12 @@ class Upload(RepoAction):
             if not pkginfo.has_key('nvrea'):
                 print _("Package %s is not an rpm; skipping") % frpm
                 continue
+            name, version, release, epoch, arch = pkginfo['nvrea']
+
+            if self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch):
+                system_exit(os.EX_OK, \
+                            _("Package [%s] already exists on the server in repo %s") % (pkginfo['pkgname'], id))
+            sys.exit(0)   
             pkgstream = base64.b64encode(open(frpm).read())
             status = self.pconn.upload(id, pkginfo, pkgstream)
             if status:

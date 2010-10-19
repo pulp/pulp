@@ -248,6 +248,7 @@ class RepositoryActions(AsyncController):
         'list_errata',
         'delete_errata',
         'updatekeys',
+        'get_package_by_nvrea',
     )
 
     @JSONController.error_handler
@@ -427,6 +428,23 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.updatekeys(id, data['keys'])
         return self.ok(True)
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def get_package_by_nvrea(self, id):
+        """
+        Check the repo to see if package with same nvrea exists
+        in DB and filesystem
+        @param id: repository id
+        @return A package object if exists in repo and filesystem
+        """
+        data = self.params()
+        return self.ok(api.get_package_by_nvrea(id, 
+                                        data['name'], 
+                                        data['version'], 
+                                        data['release'], 
+                                        data['epoch'], 
+                                        data['arch'],))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

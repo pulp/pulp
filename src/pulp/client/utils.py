@@ -186,7 +186,7 @@ def processRPM(filename, relativeDir=None, source=None):
         lh.append(h[k])
     # Fix the epoch
     if lh[3] is None:
-        lh[3] = ""
+        lh[3] = str(0)
     else:
         lh[3] = str(lh[3])
 

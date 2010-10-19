@@ -271,15 +271,15 @@ def check_package_exists(pkg_path, hashsum, hashtype="sha", force=0):
         return False
     return False
 
-def get_repo_package_path(repoid, pkg_filename):
+def get_repo_package_path(repo_relpath, pkg_filename):
     """
     Return the filepath to the package stored in the repos directory.
     This is most likely a symbolic link only, pointing to the shared package
     location.
-    @param repoid:  repository id
+    @param repo_relpath:  repository relative path
     @param pkg_filename: filename of the package
     """
-    f = os.path.join(top_repos_location(), repoid)
+    f = os.path.join(top_repos_location(), repo_relpath)
     return os.path.join(f, pkg_filename)
 
 def get_shared_package_path(name, version, release, arch, filename, checksum):

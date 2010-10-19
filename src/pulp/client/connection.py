@@ -268,7 +268,15 @@ class RepoConnection(PulpConnection):
     def get_package(self, repoid, pkg_name):
         method = "/repositories/%s/get_package/" % repoid
         return self.conn.request_post(method, params=pkg_name)
-
+    
+    def find_package_by_nvrea(self, id, name, version, release, epoch, arch):
+        method = "/repositories/%s/get_package_by_nvrea/" % id
+        return self.conn.request_post(method, params={'name' : name,
+                                                      'version' : version,
+                                                      'release' : release,
+                                                      'epoch'   : epoch,
+                                                      'arch'    : arch})
+    
     def packages(self, repoid):
         method = "/repositories/%s/packages/" % repoid
         return self.conn.request_get(method)

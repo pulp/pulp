@@ -343,6 +343,22 @@ class RepoApi(BaseApi):
         if not packages:
             return None
         return packages[0]
+    
+    def get_package_by_nvrea(self, id, name, version, release, epoch, arch):
+        """
+         CHeck if package exists or not in this repo for given nvrea
+        """
+        log.error('looking up pkg [%s] in repo [%s]' % (name, id))
+        repo = self._get_existing_repo(id)
+        packages = repo['packages']
+        for p in packages.values():
+            if (name, version, release, epoch, arch) == \
+                (p['name'], p['version'], p['release'], p['epoch'], p['arch']):
+                pkg_repo_path = pulp.server.util.get_repo_package_path(
+                repo['relative_path'], p['filename'])
+                if os.path.exists(pkg_repo_path):
+                    return p
+        return {}
 
     @audit()
     def add_package(self, repoid, packageid):
@@ -379,7 +395,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         # Remove package from repo location on file system
         pkg_repo_path = pulp.server.util.get_repo_package_path(
-                repoid, p["filename"])
+                repo['relativepath'], p["filename"])
         if os.path.exists(pkg_repo_path):
             log.debug("Delete package %s at %s" % (p, pkg_repo_path))
             os.remove(pkg_repo_path)
