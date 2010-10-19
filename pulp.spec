@@ -115,8 +115,9 @@ cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 mkdir -p %{buildroot}/etc/pki/content
 
 mkdir -p %{buildroot}/var/lib/pulp
+mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
-ln -s /var/lib/pulp %{buildroot}/var/www/pub
+ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
 # Pulp Agent
 mkdir -p %{buildroot}/usr/bin
