@@ -183,7 +183,7 @@ class TestApi(unittest.TestCase):
 
     def test_repository_with_groupid(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com/mypath', groupid="testgroup")
+            'i386', 'yum:http://example.com/mypath', groupid=["testgroup"])
         found = self.rapi.repository('some-id')
         assert(found is not None)
         assert(found['id'] == 'some-id')
