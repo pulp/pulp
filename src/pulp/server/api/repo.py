@@ -110,7 +110,8 @@ class RepoApi(BaseApi):
             for key, value in cert_files.items():
                 r[key] = value
         if groupid:
-            r['groupid'].append(groupid)
+            for gid in groupid:
+                r['groupid'].append(gid)
 
         if relative_path is None:
             if r['source'] is not None :
