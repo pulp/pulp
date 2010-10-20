@@ -131,7 +131,7 @@ class RepoApi(BaseApi):
             r['relative_path'] = relative_path
         # Remove leading "/", they will interfere with symlink
         # operations for publishing a repository
-        r['relative_path'] = r['relative_path'].lstrip('/')
+        r['relative_path'] = r['relative_path'].strip('/')
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
             path = r['relative_path']
