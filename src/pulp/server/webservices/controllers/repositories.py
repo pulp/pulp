@@ -99,7 +99,7 @@ class Repositories(JSONController):
                          groupid=repo_data.get('groupid', None),
                          gpgkeys=repo_data.get('gpgkeys', None),)
 
-        path = http.extend_uri_path(repo.id)
+        path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
         return self.created(path, repo)
 
