@@ -34,6 +34,9 @@ log = logging.getLogger(__name__)
 def top_repos_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
 
+def top_gpg_location():
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "gpg")
+
 def top_package_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
 
@@ -220,30 +223,6 @@ def listdir(directory):
             filelist.append("%s/%s" % (root, file))
     return filelist
 
-def get_repo_keys(path):
-    """
-    Get a list of GPG key files at the specified I{path}.
-    @param path: An absolute path to a file containing a GPG key.
-    @type path: str
-    @return: A list of tuples: (key-path, key-content)
-    @rtype: list
-    """
-    keys = []
-    pattern = '----BEGIN PGP PUBLIC KEY BLOCK-----'
-    for fp in listdir(path):
-        for ext in ('.rpm','.gz','.xml'):
-            if fp.endswith(ext):
-                continue
-        try:
-            f = open(fp)
-            content = f.read()
-            if pattern in content:
-                keys.append((fp, content))
-            f.close()
-        except:
-            log.error(fp, exec_info=True)
-    return keys
-
 def compare_packages(pkgA, pkgB):
     """
      return 1: pkgA is newer than pkgB
@@ -271,15 +250,15 @@ def check_package_exists(pkg_path, hashsum, hashtype="sha", force=0):
         return False
     return False
 
-def get_repo_package_path(repoid, pkg_filename):
+def get_repo_package_path(repo_relpath, pkg_filename):
     """
     Return the filepath to the package stored in the repos directory.
     This is most likely a symbolic link only, pointing to the shared package
     location.
-    @param repoid:  repository id
+    @param repo_relpath:  repository relative path
     @param pkg_filename: filename of the package
     """
-    f = os.path.join(top_repos_location(), repoid)
+    f = os.path.join(top_repos_location(), repo_relpath)
     return os.path.join(f, pkg_filename)
 
 def get_shared_package_path(name, version, release, arch, filename, checksum):

@@ -46,7 +46,7 @@ default_fields = [
     'groupid',
     'relative_path',
     'files',
-    'gpgkeys', ]
+]
 
 # restful controllers ---------------------------------------------------------
 
@@ -237,6 +237,7 @@ class RepositoryActions(AsyncController):
     exposed_actions = (
         'sync',
         '_sync',
+        'clone',
         'upload',
         'add_package',
         'get_package',
@@ -247,7 +248,10 @@ class RepositoryActions(AsyncController):
         'add_errata',
         'list_errata',
         'delete_errata',
-        'updatekeys',
+        'get_package_by_nvrea',
+        'addkeys',
+        'rmkeys',
+        'listkeys',
     )
 
     @JSONController.error_handler
@@ -272,6 +276,32 @@ class RepositoryActions(AsyncController):
 
     # XXX hack to make the web services unit tests work
     _sync = sync
+
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def clone(self, id):
+        """
+        Clone a repository.
+        @param id: repository id
+        @return: True on successful clone of repository
+        """        
+        repo_data = self.params()
+        if api.repository(id, default_fields) is None:
+            return self.conflict('A repository with the id, %s, does not exist' % id)
+        if api.repository(repo_data['clone_id'], default_fields) is not None:
+            return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
+        
+        api.clone(id,
+                  repo_data['clone_id'],
+                  repo_data['clone_name'],
+                  relative_path=repo_data.get('relative_path', None),
+                  groupid=repo_data.get('groupid', None),
+                  )
+        return self.ok(True)
+ 
+
+
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -423,13 +453,42 @@ class RepositoryActions(AsyncController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def updatekeys(self, id):
+    def addkeys(self, id):
         data = self.params()
-        api.updatekeys(id, data['keys'])
+        api.addkeys(id, data['keylist'])
         return self.ok(True)
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def get_package_by_nvrea(self, id):
+        """
+        Check the repo to see if package with same nvrea exists
+        in DB and filesystem
+        @param id: repository id
+        @return A package object if exists in repo and filesystem
+        """
+        data = self.params()
+        return self.ok(api.get_package_by_nvrea(id, 
+                                        data['name'], 
+                                        data['version'], 
+                                        data['release'], 
+                                        data['epoch'], 
+                                        data['arch'],))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
+    def rmkeys(self, id):
+        data = self.params()
+        api.rmkeys(id, data['keylist'])
+        return self.ok(True)
+
+    @JSONController.error_handler
+    @RoleCheck(consumer=True, admin=True)
+    def listkeys(self, id):
+        keylist = api.listkeys(id)
+        return self.ok(keylist)
+
+    @JSONController.error_handler
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,
@@ -450,7 +509,6 @@ class RepositoryActions(AsyncController):
         return action(id)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
     def GET(self, id, action_name):
         """
         Get information on a given action and repository.

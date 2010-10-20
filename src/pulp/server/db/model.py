@@ -60,7 +60,7 @@ class Repo(Base):
         self.groupid = [] # this is productid in kalpana terms
         self.relative_path = None
         self.files = []
-        self.gpgkeys = []
+        self.allow_upload = 0
 
     def get_repo_source(self):
         if not self.source:

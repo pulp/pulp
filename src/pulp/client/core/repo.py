@@ -154,9 +154,9 @@ class Create(RepoAction):
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
-        self.parser.add_option("--groupid", dest="groupid",
+        self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
-        self.parser.add_option("--gpgkeys", dest="gpgkeys",
+        self.parser.add_option("--keys", dest="keys",
                                help=_("a ',' separated list of directories and/or files contining GPG keys"))
 
     def _get_cert_options(self):
@@ -179,16 +179,42 @@ class Create(RepoAction):
         relative_path = self.opts.relativepath
         groupid = self.opts.groupid
         cert_data = self._get_cert_options()
-        keys = self.opts.gpgkeys
-        if keys:
+        keylist = self.opts.keys
+        if keylist:
             reader = KeyReader()
-            keys = reader.expand(keys)
+            keylist = reader.expand(keylist)
         repo = self.pconn.create(id, name, arch, feed, symlinks, schedule,
                                  cert_data=cert_data,
                                  relative_path=relative_path,
                                  groupid=groupid,
-                                 gpgkeys=keys)
+                                 gpgkeys=keylist)
         print _("Successfully created repository [ %s ]") % repo['id']
+        
+class Clone(RepoAction):
+    
+    description = _('clone a repository')
+    
+    def setup_parser(self):
+        super(Clone, self).setup_parser()
+        self.parser.add_option("--clone_name", dest="clone_name",
+                               help=_("common repository name for cloned repo"))
+        self.parser.add_option("--clone_id", dest="clone_id",
+                               help=_("id of cloned repo"))
+        self.parser.add_option("--relativepath", dest="relativepath",
+                               help=_("relative path where the repository is stored and exposed to clients; this defaults to repo id"))
+        self.parser.add_option("--groupid", dest="groupid",
+                               help=_("a group to which the repository belongs; this is just a string identifier"))
+ 
+    def run(self):
+        id = self.get_required_option('id')
+        clone_id = self.opts.clone_id
+        clone_name = self.opts.clone_name or clone_id
+        relative_path = self.opts.relativepath
+        groupid = self.opts.groupid
+        status = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, 
+                                  relative_path=relative_path, groupid=groupid)
+        print _("Successfully cloned repository [ %s ] to [ %s ] ") % (id, clone_id)
+ 
 
 
 class Delete(RepoAction):
@@ -210,8 +236,8 @@ class Update(RepoAction):
     # format (option, method)
     OPTIONS = (
         ('feed', 'updatefeed'),
-        ('setkeys', 'setkeys'),
-        ('clearkeys', 'clearkeys'),
+        ('addkeys', 'addkeys'),
+        ('rmkeys', 'rmkeys'),
     )
 
     def setup_parser(self):
@@ -234,10 +260,10 @@ class Update(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
-        self.parser.add_option("--setkeys", dest="setkeys",
+        self.parser.add_option("--addkeys", dest="addkeys",
                                help=_("a ',' separated list of directories and/or files contining GPG keys"))
-        self.parser.add_option("--clearkeys", dest="clearkeys", action='store_true', default=False,
-                               help=_("clear the GPG keys"))
+        self.parser.add_option("--rmkeys", dest="rmkeys",
+                               help=_("a ',' separated list of GPG key names"))
     def run(self):
         id = self.get_required_option('id')
         repo = self.pconn.repository(id)
@@ -268,21 +294,18 @@ class Update(RepoAction):
         """ update the feed """
         repo['feed'] = feed
 
-    def setkeys(self, repo, keys):
-        """ update the GPG keys """
+    def addkeys(self, repo, keylist):
+        """ add the GPG keys """
         id = str(repo['id'])
         reader = KeyReader()
-        expanded = reader.expand(keys)
-        self.pconn.updatekeys(id, expanded)
-        return True
+        keylist = reader.expand(keylist)
+        self.pconn.addkeys(id, keylist)
 
-    def clearkeys(self, repo, flag):
-        """ clear the GPG keys """
-        if flag:
-            id = str(repo['id'])
-            self.pconn.updatekeys(id, [])
-            return True
-
+    def rmkeys(self, repo, keylist):
+        """ add the GPG keys """
+        id = str(repo['id'])
+        keylist = keylist.split(',')
+        self.pconn.rmkeys(id, keylist)
 
 class Sync(RepoAction):
 
@@ -411,6 +434,12 @@ class Upload(RepoAction):
             if not pkginfo.has_key('nvrea'):
                 print _("Package %s is not an rpm; skipping") % frpm
                 continue
+            name, version, release, epoch, arch = pkginfo['nvrea']
+
+            if self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch):
+                system_exit(os.EX_OK, \
+                            _("Package [%s] already exists on the server in repo %s") % (pkginfo['pkgname'], id))
+ 
             pkgstream = base64.b64encode(open(frpm).read())
             status = self.pconn.upload(id, pkginfo, pkgstream)
             if status:
@@ -433,6 +462,16 @@ class Schedules(RepoAction):
         schedules = self.pconn.all_schedules()
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
+
+
+class ListKeys(RepoAction):
+
+    description = _('list gpg keys')
+
+    def run(self):
+        id = self.get_required_option('id')
+        for key in self.pconn.listkeys(id):
+            print os.path.basename(key)
 
 
 class Repo(Command):

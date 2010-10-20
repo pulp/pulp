@@ -40,6 +40,7 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.keystore import KeyStore
 from pulp.server.api.errata import ErrataApi
 from pulp.server.auth.certificate import Certificate
 from pulp.server.db.model import PackageGroup
@@ -183,7 +184,7 @@ class TestApi(unittest.TestCase):
 
     def test_repository_with_groupid(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com/mypath', groupid="testgroup")
+            'i386', 'yum:http://example.com/mypath', groupid=["testgroup"])
         found = self.rapi.repository('some-id')
         assert(found is not None)
         assert(found['id'] == 'some-id')
@@ -253,8 +254,7 @@ class TestApi(unittest.TestCase):
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 0)
 
-    def test_repo_updatekeys(self):
-        KEYS = 'gpgkeys'
+    def test_repo_gpgkeys(self):
         id = 'fedora'
         relativepath = 'f11/i386'
         feed = 'yum:http://abc.com/%s' % relativepath
@@ -262,25 +262,21 @@ class TestApi(unittest.TestCase):
         keyA = ('keyA', 'MY KEY (A) CONTENT')
         keyB = ('keyB', 'MY KEY (B) CONTENT')
         keylist = [keyA, keyB]
+        ks = KeyStore(relativepath)
+        ks.clean()
         # multiple (2) keys
-        self.rapi.updatekeys(id, keylist)
-        repo = self.rapi.repository(id)
-        found = repo[KEYS]
+        self.rapi.addkeys(id, keylist)
+        found = self.rapi.listkeys(id)
         for i in range(0, len(keylist)):
             path = os.path.join(relativepath, keylist[i][0])
             self.assertTrue(path in found[i])
         # single key
-        self.rapi.updatekeys(id, keylist[1:])
-        repo = self.rapi.repository(id)
-        found = repo[KEYS]
+        ks.clean()
+        self.rapi.addkeys(id, keylist[1:])
+        found = self.rapi.listkeys(id)
         path = os.path.join(relativepath, keylist[1][0])
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0], path)
-        # clear keys
-        self.rapi.updatekeys(id, [])
-        repo = self.rapi.repository(id)
-        found = repo[KEYS]
-        self.assertEqual(len(found), 0)
 
     def test_repo_errata(self):
         repo = self.rapi.create('some-id', 'some name', \
