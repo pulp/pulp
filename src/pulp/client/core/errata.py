@@ -66,9 +66,9 @@ class List(ErrataAction):
         if not (consumerid or repoid):
             system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
         if repoid:
-            errata = self.rconn.errata(repoid, self.options.type)
+            errata = self.rconn.errata(repoid, self.opts.type)
         elif consumerid:
-            errata = self.cconn.errata(consumerid, self.options.type)
+            errata = self.cconn.errata(consumerid, self.opts.type)
         if not errata:
             system_exit(os.EX_OK, _("No errata available to list"))
         print errata
@@ -116,9 +116,9 @@ class Install(ErrataAction):
         errataids = data[2:]
         if not errataids:
             system_exit(os.EX_USAGE, _("Specify an errata id to install"))
-        if self.options.consumerid:
+        if self.opts.consumerid:
             task = self.cconn.installerrata(consumerid, errataids)
-        elif self.options.consumergroupid:
+        elif self.opts.consumergroupid:
             task = self.cgconn.installerrata(consumergroupid, errataids)
         print _('Created task id: %s') % task['id']
         state = None
