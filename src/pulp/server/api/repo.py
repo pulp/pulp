@@ -15,33 +15,34 @@
 
 
 # Python
+from datetime import datetime
 import logging
 import gzip
+from itertools import chain
 from optparse import OptionParser
 import os
 import shutil
 import traceback
-from datetime import datetime
-from itertools import chain
 from urlparse import urlparse
 
 # Pulp
-import pulp.server.util
 from pulp.server import comps_util
+from pulp.server import config
 from pulp.server import crontab
 from pulp.server import upload
 from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
-from pulp.server.api.package import PackageApi
+from pulp.server.api.fetch_listings import CDNConnection
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
+from pulp.server.api.package import PackageApi
 from pulp.server.auditing import audit
-from pulp.server.event.dispatcher import event
-from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
+from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
-from pulp.server.api.fetch_listings import CDNConnection
+import pulp.server.util
+
 
 log = logging.getLogger(__name__)
 
