@@ -222,6 +222,15 @@ class RepoConnection(PulpConnection):
             repo[field] = self.conn.request_get('%s%s/' % (method, field))
         return repo
 
+    def clone(self, repoid, clone_id, clone_name, relative_path=None, groupid=None):
+        method = "/repositories/%s/clone/" % repoid
+        data = {"clone_id"   : clone_id,
+                "clone_name" : clone_name,
+                "relative_path" : relative_path,
+                "groupid"       : groupid}           
+        return self.conn.request_post(method, params=data)
+    
+
     def repositories(self):
         method = "/repositories/"
         return self.conn.request_get(method)
@@ -336,10 +345,19 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/list_errata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
-    def updatekeys(self, id, keys):
-        params = dict(keys=keys)
-        method = "/repositories/%s/updatekeys/" % id
+    def addkeys(self, id, keylist):
+        params = dict(keylist=keylist)
+        method = "/repositories/%s/addkeys/" % id
         return self.conn.request_post(method, params=params)
+
+    def rmkeys(self, id, keylist):
+        params = dict(keylist=keylist)
+        method = "/repositories/%s/rmkeys/" % id
+        return self.conn.request_post(method, params=params)
+
+    def listkeys(self, id):
+        method = "/repositories/%s/listkeys/" % id
+        return self.conn.request_post(method, params=dict(x=1))
 
 
 class ConsumerConnection(PulpConnection):

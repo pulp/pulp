@@ -25,6 +25,7 @@ from pulp.client.lock import Lock
 from pulp.client.config import Config
 from pulp.client.logutil import getLogger
 
+cfg = Config()
 log = getLogger(__name__)
 
 
@@ -72,7 +73,7 @@ class Pulp:
     """
     The pulp server.
     """
-    def __init__(self, cfg):
+    def __init__(self):
         host = cfg.server.host
         port = cfg.server.port
         self.rapi = RepoConnection(host=host, port=port)
@@ -95,6 +96,9 @@ class Pulp:
                 repos.append(repo)
         return products
     
+    def listkeys(self, id):
+        return self.rapi.listkeys(id)
+
     def consumerId(self):
         return str(ConsumerId())
 
@@ -105,8 +109,7 @@ class Action:
     """
 
     def __init__(self, ):
-        self.cfg = Config()
-        self.pulp = Pulp(self.cfg)
+        self.pulp = Pulp()
 
 
 class UpdateAction(Action):
@@ -151,34 +154,33 @@ class UpdateAction(Action):
         """
         unique = set()
         products = self.pulp.getProducts()
-        baseurl = self.cfg.cds.baseurl
         for product in products:
-            for r in self.getContent(product, baseurl):
+            for r in self.getContent(product):
                 unique.add(r)
         return unique
 
-    def getContent(self, product, baseurl):
+    def getContent(self, product):
         """
         Get L{Repo} object(s) for a given subscription.
         @param product: A product (contains content sets).
         @type product: dict
-        @param baseurl: The yum base url to be joined with relative url.
-        @type baseurl: str
         @return: A list of L{Repo} objects for the specified product.
         @rtype: [L{Repo},...]
         """
         lst = []
+        baseurl = cfg.cds.baseurl
+        keyurl = cfg.cds.keyurl
         for cont in product['content']:
             if not cont:
                 continue
-            id = cont['id']
+            id = str(cont['id'])
             path = cont['relative_path']
-            keys = cont.get('gpgkeys', [])
+            keys = self.pulp.listkeys(id)
             repo = Repo(id)
             repo['name'] = cont['name']
             repo['baseurl'] = self.join(baseurl, path)
             repo['enabled'] = cont.get('enabled', '1')
-            repo['gpgkey'] = self.fmt(baseurl, keys)
+            repo['gpgkey'] = self.fmt(keyurl, keys)
             lst.append(repo)
         return lst
 
