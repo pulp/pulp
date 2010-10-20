@@ -62,6 +62,7 @@ class Repo(Base):
         self.files = []
         self.gpgkeys = []
         self.allow_upload = 0
+        self.publish = False
 
     def get_repo_source(self):
         if not self.source:

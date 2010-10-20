@@ -114,7 +114,7 @@ class RepoApi(BaseApi):
             for gid in groupid:
                 r['groupid'].append(gid)
 
-        if relative_path is None:
+        if relative_path is None or relative_path == "":
             if r['source'] is not None :
                 if r['source']['type'] == "local":
                     r['relative_path'] = r['id']
@@ -128,6 +128,9 @@ class RepoApi(BaseApi):
                 r['allow_upload']  = 1
         else:
             r['relative_path'] = relative_path
+        # Remove leading "/", they will interfere with symlink
+        # operations for publishing a repository
+        r['relative_path'] = r['relative_path'].lstrip('/')
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
             path = r['relative_path']
@@ -140,7 +143,7 @@ class RepoApi(BaseApi):
         default_to_publish = config.config.get('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
-        repo = self.repository(r["id"])
+        r = self.repository(r["id"])
         return r
 
     @audit(params=['id', 'state'])
@@ -156,6 +159,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         repo['publish'] = state
         self.update(repo)
+        repo = self._get_existing_repo(id)
         if repo['publish']:
            self._create_published_link(repo)
         else:
@@ -164,17 +168,29 @@ class RepoApi(BaseApi):
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):
             os.mkdir(self.published_path)
-        log.error("repo['relative_path'] = %s" % (repo['relative_path']))
-        source_path = os.path.join(self.localStoragePath, repo["relative_path"])
+        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["relative_path"])
         link_path = os.path.join(self.published_path, repo["relative_path"])
-        if not os.path.islink(link_path):
+        if not os.path.exists(source_path):
+            # Create source repo location
+            os.makedirs(source_path)
+        if not os.path.exists(os.path.dirname(link_path)):
+            # Create published dir as well as 
+            # any needed dir parts if rel_path has multiple parts
+            os.makedirs(os.path.dirname(link_path))
+        if not os.path.exists(link_path):
+            if os.path.lexists(link_path):
+                # Clean up broken sym link
+                os.unlink(link_path)
             log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
             os.symlink(source_path, link_path)
 
     def _delete_published_link(self, repo):
-        link_path = os.path.join(self.published_path, repo["relative_path"])
-        if os.path.islink(link_path):
-            os.unlink(link_path)
+        if repo["relative_path"]:
+            link_path = os.path.join(self.published_path, repo["relative_path"])
+            if os.path.lexists(link_path):
+                # need to use lexists so we will return True even for broken links
+                os.unlink(link_path)
 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
@@ -298,8 +314,9 @@ class RepoApi(BaseApi):
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
-        repo_sync.delete_schedule(repo)
         log.info("Delete API call invoked %s" % repo)
+        self._delete_published_link(repo)
+        repo_sync.delete_schedule(repo)
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
@@ -320,7 +337,7 @@ class RepoApi(BaseApi):
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
         self.objectdb.remove({'id' : id}, safe=True)
-
+        
     @audit()
     def update(self, repo_data):
         repo = self._get_existing_repo(repo_data['id'])
