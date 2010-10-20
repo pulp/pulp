@@ -40,6 +40,7 @@ from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.event.dispatcher import event
+import pulp.server.logs
 from pulp.server.pexceptions import PulpException
 import pulp.server.util
 
@@ -997,6 +998,9 @@ class RepoApi(BaseApi):
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':
+
+    # Need to start logging since this will be called outside of the WSGI application
+    pulp.server.logs.start_logging()
 
     # Currently this option parser is configured to automatically assume repo sync. If
     # further repo-related operations are ever added this will need to be refined, along

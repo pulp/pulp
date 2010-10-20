@@ -33,6 +33,8 @@ from pulp.server.api.base import BaseApi
 from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Event
+import pulp.server.logs
+
 
 # globals ---------------------------------------------------------------------
 
@@ -390,5 +392,9 @@ def _get_lifetime():
 _check_crontab()
 # cull old auditing events from the database
 if __name__ == '__main__':
+
+    # Need to start logging since this will be called outside of the WSGI application
+    pulp.server.logs.start_logging()
+
     lifetime = _get_lifetime()
     cull_events(lifetime)
