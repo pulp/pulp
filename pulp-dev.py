@@ -28,6 +28,7 @@ DIRS = (
     '/srv',
     '/srv/pulp',
     '/var/lib/pulp',
+    '/var/lib/pulp/published',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
@@ -107,6 +108,7 @@ def install(opts):
     # packages dir
     os.system('setfacl -m user:apache:rwx /var/log/pulp')
     os.system('setfacl -m user:apache:rwx /var/lib/pulp')
+    os.system('setfacl -m user:apache:rwx /var/lib/pulp/published')
     # guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/www/pub')
