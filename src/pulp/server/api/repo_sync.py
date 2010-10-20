@@ -365,6 +365,9 @@ class LocalSynchronizer(BaseSynchronizer):
                 if not os.path.exists(pkg_dirname):
                     os.makedirs(pkg_dirname)
                 shutil.copy(pkg, pkg_location)
+                repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+                if not os.path.islink(repo_pkg_path):
+                    os.symlink(pkg_location, repo_pkg_path)
             else:
                 log.debug("package Already exists in packages location, create symlink under repo")
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
