@@ -237,6 +237,7 @@ class RepositoryActions(AsyncController):
     exposed_actions = (
         'sync',
         '_sync',
+        'clone',
         'upload',
         'add_package',
         'get_package',
@@ -275,6 +276,32 @@ class RepositoryActions(AsyncController):
 
     # XXX hack to make the web services unit tests work
     _sync = sync
+
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def clone(self, id):
+        """
+        Clone a repository.
+        @param id: repository id
+        @return: True on successful clone of repository
+        """        
+        repo_data = self.params()
+        if api.repository(id, default_fields) is None:
+            return self.conflict('A repository with the id, %s, does not exist' % id)
+        if api.repository(repo_data['clone_id'], default_fields) is not None:
+            return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
+        
+        api.clone(id,
+                  repo_data['clone_id'],
+                  repo_data['clone_name'],
+                  relative_path=repo_data.get('relative_path', None),
+                  groupid=repo_data.get('groupid', None),
+                  )
+        return self.ok(True)
+ 
+
+
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

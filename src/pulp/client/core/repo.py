@@ -189,6 +189,32 @@ class Create(RepoAction):
                                  groupid=groupid,
                                  gpgkeys=keylist)
         print _("Successfully created repository [ %s ]") % repo['id']
+        
+class Clone(RepoAction):
+    
+    description = _('clone a repository')
+    
+    def setup_parser(self):
+        super(Clone, self).setup_parser()
+        self.parser.add_option("--clone_name", dest="clone_name",
+                               help=_("common repository name for cloned repo"))
+        self.parser.add_option("--clone_id", dest="clone_id",
+                               help=_("id of cloned repo"))
+        self.parser.add_option("--relativepath", dest="relativepath",
+                               help=_("relative path where the repository is stored and exposed to clients; this defaults to repo id"))
+        self.parser.add_option("--groupid", dest="groupid",
+                               help=_("a group to which the repository belongs; this is just a string identifier"))
+ 
+    def run(self):
+        id = self.get_required_option('id')
+        clone_id = self.opts.clone_id
+        clone_name = self.opts.clone_name or clone_id
+        relative_path = self.opts.relativepath
+        groupid = self.opts.groupid
+        status = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, 
+                                  relative_path=relative_path, groupid=groupid)
+        print _("Successfully cloned repository [ %s ] to [ %s ] ") % (id, clone_id)
+ 
 
 
 class Delete(RepoAction):

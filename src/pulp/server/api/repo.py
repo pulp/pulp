@@ -135,6 +135,19 @@ class RepoApi(BaseApi):
             repo_sync.update_schedule(r)
         return r
 
+    def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None):
+        repo = self.repository(id)
+        if repo is None:
+            raise PulpException("A Repo with id %s does not exist" % id)
+        REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
+        parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
+        r = self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
+                        relative_path=relative_path)
+        log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
+        self.sync(clone_id)
+        return True
+
+
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
         cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)

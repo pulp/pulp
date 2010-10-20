@@ -81,6 +81,7 @@ def setup_admin(admin):
     repo_cmd.add_action('status', repo.Status())
     repo_cmd.add_action('content', repo.Content())
     repo_cmd.add_action('create', repo.Create())
+    repo_cmd.add_action('clone', repo.Clone())
     repo_cmd.add_action('delete', repo.Delete())
     repo_cmd.add_action('update', repo.Update())
     repo_cmd.add_action('sync', repo.Sync())
