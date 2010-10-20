@@ -196,7 +196,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id-mypath')
         assert(found is not None)
         assert(found['id'] == 'some-id-mypath')
-        assert(found['relative_path'] == "mypath/")
+        assert(found['relative_path'] == "mypath")
 
         # default path
         repo = self.rapi.create('some-id-default-path', 'some name', \
