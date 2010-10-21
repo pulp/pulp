@@ -207,8 +207,8 @@ class RepoApi(BaseApi):
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
         REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-        parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
-        r = self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
+        parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
+        self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
                         relative_path=relative_path)
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
         self.sync(clone_id)
