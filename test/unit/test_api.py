@@ -196,7 +196,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id-mypath')
         assert(found is not None)
         assert(found['id'] == 'some-id-mypath')
-        assert(found['relative_path'] == "/mypath/")
+        assert(found['relative_path'] == "mypath")
 
         # default path
         repo = self.rapi.create('some-id-default-path', 'some name', \
@@ -204,7 +204,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id-default-path')
         assert(found is not None)
         assert(found['id'] == 'some-id-default-path')
-        assert(found['relative_path'] == "/mypath")
+        assert(found['relative_path'] == "mypath")
 
     def test_consumer_group(self):
         print "Consumer group tests:"

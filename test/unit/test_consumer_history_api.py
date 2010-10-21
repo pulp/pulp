@@ -461,6 +461,19 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.assertEqual(results[0]['type_name'], consumer_history.TYPE_REPO_BOUND)
         self.assertEqual(results[1]['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
 
+    def test_query_start_end_range_edge_cases(self):
+        # Setup
+        self._populate_for_date_queries()
+
+        # Test
+        end_date = datetime.datetime(2000, 4, 1)
+        start_date = datetime.datetime(2000, 2, 1)
+
+        results = self.consumer_history_api.query(start_date=start_date, end_date=end_date)
+
+        # Verify
+        self.assertEqual(len(results), 2)
+
     def test_cull_history(self):
         # Setup
         self._populate_for_cull()

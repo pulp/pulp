@@ -15,33 +15,35 @@
 
 
 # Python
+from datetime import datetime
 import logging
 import gzip
+from itertools import chain
 from optparse import OptionParser
 import os
 import shutil
 import traceback
-from datetime import datetime
-from itertools import chain
 from urlparse import urlparse
 
 # Pulp
-import pulp.server.util
 from pulp.server import comps_util
+from pulp.server import config
 from pulp.server import crontab
 from pulp.server import upload
 from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
-from pulp.server.api.package import PackageApi
+from pulp.server.api.fetch_listings import CDNConnection
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
+from pulp.server.api.package import PackageApi
 from pulp.server.auditing import audit
-from pulp.server.event.dispatcher import event
-from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
+from pulp.server.event.dispatcher import event
+import pulp.server.logs
 from pulp.server.pexceptions import PulpException
-from pulp.server.api.fetch_listings import CDNConnection
+import pulp.server.util
+
 
 log = logging.getLogger(__name__)
 
@@ -57,6 +59,7 @@ class RepoApi(BaseApi):
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
+        self.published_path = os.path.join(self.localStoragePath, "published")
 
     @property
     def _indexes(self):
@@ -114,17 +117,23 @@ class RepoApi(BaseApi):
             for gid in groupid:
                 r['groupid'].append(gid)
 
-        if relative_path is None:
+        if relative_path is None or relative_path == "":
             if r['source'] is not None :
-                # For none product repos, default to repoid
-                url_parse = urlparse(str(r['source']["url"]))
-                r['relative_path'] = url_parse.path
+                if r['source']['type'] == "local":
+                    r['relative_path'] = r['id']
+                else:
+                    # For none product repos, default to repoid
+                    url_parse = urlparse(str(r['source']["url"]))
+                    r['relative_path'] = url_parse.path
             else:
                 r['relative_path'] = r['id']
                 # There is no repo source, allow package uploads
                 r['allow_upload']  = 1
         else:
             r['relative_path'] = relative_path
+        # Remove leading "/", they will interfere with symlink
+        # operations for publishing a repository
+        r['relative_path'] = r['relative_path'].strip('/')
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
             path = r['relative_path']
@@ -133,7 +142,57 @@ class RepoApi(BaseApi):
         self.insert(r)
         if sync_schedule:
             repo_sync.update_schedule(r)
+        default_to_publish = config.config.get('repos', 'default_to_published')
+        self.publish(r["id"], default_to_publish)
+        # refresh repo object from mongo
+        r = self.repository(r["id"])
         return r
+
+    @audit(params=['id', 'state'])
+    def publish(self, id, state):
+        """
+        Controls if we publish this repository through Apache.  True means the
+        repository will be published, False means it will not be.
+        @type id: str
+        @param id: repository id
+        @type state: boolean
+        @param state: True is enable publish, False is disable publish
+        """
+        repo = self._get_existing_repo(id)
+        repo['publish'] = state
+        self.update(repo)
+        repo = self._get_existing_repo(id)
+        if repo['publish']:
+           self._create_published_link(repo)
+        else:
+           self._delete_published_link(repo)
+
+    def _create_published_link(self, repo):
+        if not os.path.isdir(self.published_path):
+            os.mkdir(self.published_path)
+        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["relative_path"])
+        link_path = os.path.join(self.published_path, repo["relative_path"])
+        if not os.path.exists(source_path):
+            # Create source repo location
+            os.makedirs(source_path)
+        if not os.path.exists(os.path.dirname(link_path)):
+            # Create published dir as well as 
+            # any needed dir parts if rel_path has multiple parts
+            os.makedirs(os.path.dirname(link_path))
+        if not os.path.exists(link_path):
+            if os.path.lexists(link_path):
+                # Clean up broken sym link
+                os.unlink(link_path)
+            log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
+            os.symlink(source_path, link_path)
+
+    def _delete_published_link(self, repo):
+        if repo["relative_path"]:
+            link_path = os.path.join(self.published_path, repo["relative_path"])
+            if os.path.lexists(link_path):
+                # need to use lexists so we will return True even for broken links
+                os.unlink(link_path)
 
     def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None):
         repo = self.repository(id)
@@ -146,7 +205,6 @@ class RepoApi(BaseApi):
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
         self.sync(clone_id)
         return True
-
 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
@@ -270,8 +328,9 @@ class RepoApi(BaseApi):
     @audit()
     def delete(self, id):
         repo = self._get_existing_repo(id)
-        repo_sync.delete_schedule(repo)
         log.info("Delete API call invoked %s" % repo)
+        self._delete_published_link(repo)
+        repo_sync.delete_schedule(repo)
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
@@ -292,7 +351,7 @@ class RepoApi(BaseApi):
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
         self.objectdb.remove({'id' : id}, safe=True)
-
+        
     @audit()
     def update(self, repo_data):
         repo = self._get_existing_repo(repo_data['id'])
@@ -939,6 +998,9 @@ class RepoApi(BaseApi):
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':
+
+    # Need to start logging since this will be called outside of the WSGI application
+    pulp.server.logs.start_logging()
 
     # Currently this option parser is configured to automatically assume repo sync. If
     # further repo-related operations are ever added this will need to be refined, along

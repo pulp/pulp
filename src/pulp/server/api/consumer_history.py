@@ -157,9 +157,9 @@ class ConsumerHistoryApi(BaseApi):
         # Add in date range limits if specified
         date_range = {}
         if start_date:
-            date_range['$gt'] = start_date
+            date_range['$gte'] = start_date
         if end_date:
-            date_range['$lt'] = end_date
+            date_range['$lte'] = end_date
 
         if len(date_range) > 0:
             search_params['timestamp'] = date_range

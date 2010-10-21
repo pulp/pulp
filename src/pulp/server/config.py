@@ -53,6 +53,7 @@ _default_values = {
         'content_url': 'https://cdn.redhat.com/',
         'content_cert_location': '/etc/pki/content',
         'use_entitlement_certs': 'false',
+        'default_to_published': 'true',
     },
     'rhn': {
         'threads': '3',

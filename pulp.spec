@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.74
+Version:        0.0.75
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -115,8 +115,9 @@ cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 mkdir -p %{buildroot}/etc/pki/content
 
 mkdir -p %{buildroot}/var/lib/pulp
+mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
-ln -s /var/lib/pulp %{buildroot}/var/www/pub
+ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
 # Pulp Agent
 mkdir -p %{buildroot}/usr/bin
@@ -183,6 +184,31 @@ fi
 
 
 %changelog
+* Wed Oct 20 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.75-1
+- Fixing a local sync - fails sync the first time, only downloads packages but
+  does not link it to repo (skarmark@redhat.com)
+- Repo cloning api and cli changes (skarmark@redhat.com)
+- server gpg keys using http://. Remove 'gpgkeys' from domain model and add
+  listkeys() to the API.  This will work better for cloned repos. Add a
+  pulp/gpg directory exposed under plain http.  Then, manage symlinks to the
+  keys stored under pulp/repos.  RepoLib was refitted to fetch the keys and
+  join to a new client.conf property under [cds].  The CLI was changed to
+  provide:   'repo update --addkeys'   'repo update --rmkeys'   'repo listkeys'
+  for key management. (jortel@redhat.com)
+- Adding driver for simulating consumer create and delete events on qpid bus
+  (pkilambi@redhat.com)
+- Adding support to specify multiple groups when creating a repo
+  (pkilambi@redhat.com)
+- Adding allow_upload flag to repo collection. Feed repos will have this
+  defaulted to 0 and feedless repos will have this enabled to allow uploads
+  from clients (pkilambi@redhat.com)
+- Adding a server side check to validate if package exists before doing an
+  upload (pkilambi@redhat.com)
+- Update DB w/ GPG keys during repo sync. (jortel@redhat.com)
+- 623704 - Add error handling for duplicate packagroup name on creation
+  (jmatthew@redhat.com)
+- 623429 - --type option in packagegroup delete_package (jmatthew@redhat.com)
+
 * Fri Oct 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.74-1
 - 641038 - packagegroup create does not check if the repoid exists or not
   (jmatthew@redhat.com)

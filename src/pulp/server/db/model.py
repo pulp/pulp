@@ -61,6 +61,7 @@ class Repo(Base):
         self.relative_path = None
         self.files = []
         self.allow_upload = 0
+        self.publish = False
 
     def get_repo_source(self):
         if not self.source:

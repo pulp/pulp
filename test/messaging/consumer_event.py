@@ -30,7 +30,7 @@ class ConsumerDriver:
     def create(self):
         p = EventProducer()
         d = dict(
-                 id='cp-consumer',
+                 id='test-consumer',
                  description='candlepin consumer',
                  owner='admin'
                  )
@@ -40,7 +40,7 @@ class ConsumerDriver:
     def delete(self):
         p = EventProducer()
         d = dict(
-                 id='cp-consumer',
+                 id='test-consumer',
                  owner = 'admin',
                  )
         p.send('consumer.deleted', d)

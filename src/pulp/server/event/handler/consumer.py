@@ -85,11 +85,14 @@ class ConsumerEvent(EventHandler):
         """
         log.error("Consumer event create processing %s" % event)
         consumerid   = event['id']
-        description = event['description']
+        if not event.has_key('description'):
+            description = consumerid
+        else:
+            description = event['description']
         log.error("Consumer event data %s" % consumerid)
         self.capi.create(consumerid, description)
         #invoke agent here to get consumer package profile
-        agent = Agent(id, async=True)
+        agent = Agent(consumerid, async=True)
         update = agent.ProfileUpdateAction()
         update.perform()
 

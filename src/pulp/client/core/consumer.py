@@ -281,9 +281,9 @@ class History(ConsumerAction):
         self.parser.add_option('--sort', dest='sort',
                                help=_('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'))
         self.parser.add_option('--start_date', dest='start_date',
-                               help=_('only return entries that occur after the given date (format: mm-dd-yyyy)'))
+                               help=_('only return entries that occur on or after the given date (format: yyyy-mm-dd)'))
         self.parser.add_option('--end_date', dest='end_date',
-                               help=_('only return entries that occur before the given date (format: mm-dd-yyyy)'))
+                               help=_('only return entries that occur on or before the given date (format: yyyy-mm-dd)'))
 
     def run(self):
         consumerid = self.get_required_option('id')
