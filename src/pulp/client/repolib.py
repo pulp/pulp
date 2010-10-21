@@ -176,13 +176,32 @@ class UpdateAction(Action):
             id = str(cont['id'])
             path = cont['relative_path']
             keys = self.pulp.listkeys(id)
+            published = cont.get('published', 1)
             repo = Repo(id)
             repo['name'] = cont['name']
             repo['baseurl'] = self.join(baseurl, path)
-            repo['enabled'] = cont.get('enabled', '1')
+            repo['enabled'] = self.decode(published, 1, '1', '0')
             repo['gpgkey'] = self.fmt(keyurl, keys)
             lst.append(repo)
         return lst
+
+    def decode(self, *s):
+        """
+        Provides simple string value decoding.
+        @param s: A list of strings.
+        @type s: [str,..]
+        @return: the decoded value.
+        """
+        base = s[0]
+        choices = s[1:-1]
+        default = s[-1]
+        matched = False
+        for v in choices:
+            if matched:
+                return v
+            if v == base:
+                matched = True
+        return default
 
     def fmt(self, baseurl, v):
         """
