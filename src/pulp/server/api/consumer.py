@@ -116,7 +116,7 @@ class ConsumerApi(BaseApi):
                 return consumergroup['id']
         return None
 
-    def findbyrepo(self, repoid):
+    def findsubscribed(self, repoid):
         """
         Find consumers by repoid.
         Returns consumers that are subscribed (bound) to the
@@ -126,7 +126,7 @@ class ConsumerApi(BaseApi):
         @return: A list of consumer objects.
         @rtype: list
         """
-        db = self._get_consumergroup_collection()
+        db = self._getcollection()
         query = dict(repoids=repoid)
         return tuple(db.find(query))
     

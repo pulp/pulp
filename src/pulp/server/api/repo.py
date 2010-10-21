@@ -974,6 +974,7 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         added = ks.add(keylist)
         log.info('repository (%s), added keys: %s', id, added)
+        self.update_subscribed(id)
         return added
 
     @audit(params=['id', 'keylist'])
@@ -983,6 +984,7 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         deleted = ks.delete(keylist)
         log.info('repository (%s), delete keys: %s', id, deleted)
+        self.update_subscribed(id)
         return deleted
 
     def listkeys(self, id):
@@ -992,10 +994,16 @@ class RepoApi(BaseApi):
         return ks.list()
 
     def update_subscribed(self, repoid):
+        """
+        Do an asynchronous RMI to subscribed agents
+        to update the .repo file.
+        @param repoid: The updated repo ID.
+        @type repoid: str
+        """
         from pulp.server.api.consumer import ConsumerApi
         capi = ConsumerApi()
-        consumers = [str(c['id']) for c in capi.findbyrepo(repoid)]
-        agent = Agent(consumers, async=True)
+        cids = [str(c['id']) for c in capi.findsubscribed(repoid)]
+        agent = Agent(cids, async=True)
         repolib = agent.RepoLib()
         repolib.update()
 
