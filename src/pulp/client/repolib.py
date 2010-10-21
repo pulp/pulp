@@ -176,11 +176,11 @@ class UpdateAction(Action):
             id = str(cont['id'])
             path = cont['relative_path']
             keys = self.pulp.listkeys(id)
-            published = cont.get('published', 1)
+            enabled = cont.get('publish', 'true')
             repo = Repo(id)
             repo['name'] = cont['name']
             repo['baseurl'] = self.join(baseurl, path)
-            repo['enabled'] = self.decode(published, 1, '1', '0')
+            repo['enabled'] = self.decode(enabled, 'true', '1', '0')
             repo['gpgkey'] = self.fmt(keyurl, keys)
             lst.append(repo)
         return lst
