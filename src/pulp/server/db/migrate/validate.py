@@ -47,12 +47,13 @@ def _validate_model(model_name, objectdb, reference):
             if field in model and (value is None or isinstance(model[field], vtype)):
                 continue
             num_errors += 1
+            error_prefix = 'model validation failure in %s for model %s:' % \
+                    (model_name, str(model['_id']))
             if field not in model:
-                _log.error('model validation failure in %s for model %s: field %s is not present' %
-                           model_name, str(model['_id']), field)
+                _log.error(error_prefix + ' field %s is not present' % field)
             else:
-                _log.error('model validation failure in %s for model %s: field %s is not a %s' %
-                           model_name, str(model['_id']), field, vtype)
+                _log.error(error_prefix + ' field %s is not a %s' %
+                           (field, vtype))
     return num_errors
 
 # individual model validation -------------------------------------------------
@@ -130,7 +131,24 @@ def _validate_package_group():
     @rtype: int
     @return: number of errors found during validation
     """
-    return 0
+    num_errors = 0
+    objectdb = repo.RepoApi()._getcollection()
+    reference = model.PackageGroup('', '', '')
+    for repo in objectdb.find({'packagegroups': {'$gt': 0}}):
+        for pg in repo['packagegroups'].values():
+            for field, value in reference.items():
+                vtype = value(type)
+                if field in pg and (value is None or isinstance(pg[field], vtype)):
+                    continue
+                num_errors += 1
+                error_prefix = 'model validation failure in PackageGroup for Repo %s, PackageGroup %s:' % \
+                        (str(repo['_id']), str(pg['_id']))
+                if field not in pg:
+                    _log.error(error_prefix + ' field %s is not present' % field)
+                else:
+                    _log.error(error_prefix + ' field %s is not a %s' %
+                               (field, vtype))
+    return num_errors
 
 
 def _validate_package_group_category():
@@ -139,7 +157,25 @@ def _validate_package_group_category():
     @rtype: int
     @return: number of errors found during validation
     """
-    return 0
+    num_errors = 0
+    objectdb = repo.RepoApi()._getcollection()
+    reference = model.PackageGroupCategory('', '', '')
+    for repo in objectdb.find({'packagegroupcategories': {'$gt': 0}}):
+        for pgc in repo['packagegroupcategories'].values():
+            for field, value in reference.items():
+                vtype = value(type)
+                if field in pgc and (value is None or isinstance(pgc[field], vtype)):
+                    continue
+                num_errors += 1
+                error_prefix = 'model validation failure in PackageGroupCategory for Repo %s, PackageGroup %s:' % \
+                        (str(repo['_id']), str(pgc['_id']))
+                if field not in pgc:
+                    _log.error(error_prefix + ' field %s is not present' %
+                               field)
+                else:
+                    _log.error(error_prefix + ' field %s is not a %s' %
+                               (field, vtype))
+    return num_errors
 
 
 def _validate_repo():
@@ -162,20 +198,20 @@ def _validate_repo_source():
     num_errors = 0
     objectdb = repo.RepoApi()._getcollection()
     reference = model.RepoSource('yum:http://reference.org/reference_repo/')
-    for model in objectdb.find():
-        source = model['source']
-        if source is None:
-            continue
+    for repo in objectdb.find({'source': {'$ne': None}}):
+        source = repo['source']
         for field, value in reference.items():
             vtype = type(value)
             if field in source and isinstance(source[field], vtype):
                 continue
+            num_errors += 1
+            error_prefix = 'model validation failure in RepoSource for Repo %s:' % \
+                    str(repo['_id'])
             if field not in source:
-                _log.error('model validation failure in RepoSource for Repo %s: field %s is not present' %
-                           str(model['_id']), field)
+                _log.error(error_prefix + ' field %s is not present' % field)
             else:
-                _log.error('model validation failure in RepoSource for Repo %s: field %s is not a %s' %
-                           str(model['_id']), field, vtype)
+                _log.error(error_prefix + ' field %s is not a %s' %
+                           (field, vtype))
     return num_errors
 
 
