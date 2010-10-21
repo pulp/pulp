@@ -43,7 +43,8 @@ from pulp.server.event.dispatcher import event
 import pulp.server.logs
 from pulp.server.pexceptions import PulpException
 import pulp.server.util
-
+from pulp.server.api.fetch_listings import CDNConnection
+from pulp.server.agent import Agent
 
 log = logging.getLogger(__name__)
 
@@ -989,6 +990,14 @@ class RepoApi(BaseApi):
         path = repo['relative_path']
         ks = KeyStore(path)
         return ks.list()
+
+    def update_subscribed(self, repoid):
+        from pulp.server.api.consumer import ConsumerApi
+        capi = ConsumerApi()
+        consumers = [str(c['id']) for c in capi.findbyrepo(repoid)]
+        agent = Agent(consumers, async=True)
+        repolib = agent.RepoLib()
+        repolib.update()
 
     def all_schedules(self):
         '''
