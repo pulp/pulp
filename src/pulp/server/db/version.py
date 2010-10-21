@@ -27,3 +27,27 @@ class DataModelVersion(Base):
     def __init__(self, version):
         _id = version
         version = version
+
+
+def _init_db():
+    global _version_db
+    if _version_db is not None:
+        return
+    _version_db = get_object_db('data_model', ['version'])
+
+
+def get_version_from_db():
+    pass
+
+
+def set_version_in_db(version):
+    pass
+
+
+def check_version():
+    pass
+
+# validate on import ----------------------------------------------------------
+
+_init_db()
+check_version()
