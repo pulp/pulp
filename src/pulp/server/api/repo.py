@@ -169,6 +169,7 @@ class RepoApi(BaseApi):
                 self._create_published_link(repo)
             else:
                 self._delete_published_link(repo)
+            self.update_subscribed(id)
         except Exception, e:
             log.error(e)
             return False
