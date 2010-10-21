@@ -31,6 +31,9 @@ _default_values = {
     'consumer_history': {
         'lifetime': '180', # in days
     },
+    'database': {
+        'auto_upgrade': 'true',
+    },
     'logs': {
         'level': 'info',
         'max_size': '1048576',
