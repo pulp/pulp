@@ -92,7 +92,7 @@ class KeyStore:
         """
         linked = []
         self.clean()
-        for path in self.keyfiles():
+        for path, content in self.keyfiles():
             fn = os.path.basename(path)
             dst = os.path.join(lnkdir(), self.path, fn)
             self.link(path, dst)
