@@ -46,6 +46,7 @@ default_fields = [
     'groupid',
     'relative_path',
     'files',
+    'publish',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -252,6 +253,7 @@ class RepositoryActions(AsyncController):
         'addkeys',
         'rmkeys',
         'listkeys',
+        'update_publish',
     )
 
     @JSONController.error_handler
@@ -487,6 +489,19 @@ class RepositoryActions(AsyncController):
     def listkeys(self, id):
         keylist = api.listkeys(id)
         return self.ok(keylist)
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def update_publish(self, id):
+        """
+        Alter a repository's 'publish' state.
+        True means the repository is exposed through Apache.
+        False means to stop exposing from Apache
+        @param id: repository id
+        @return True on success, False on failure
+        """
+        data = self.params()
+        return self.ok(api.publish(id, bool(data['state'])))
 
     @JSONController.error_handler
     def POST(self, id, action_name):

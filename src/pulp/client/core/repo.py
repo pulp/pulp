@@ -71,7 +71,7 @@ class List(RepoAction):
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], repo["source"], repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'])
+                    repo['files_count'], repo['publish'])
 
 
 class Status(RepoAction):
@@ -473,6 +473,30 @@ class ListKeys(RepoAction):
         for key in self.pconn.listkeys(id):
             print os.path.basename(key)
 
+class Publish(RepoAction):
+    description = _('enable/disable repository being published by apache')
+    
+    def setup_parser(self):
+        super(Publish, self).setup_parser()
+        self.parser.add_option("--disable", dest="disable", action="store_true", 
+                default=False, help=_("disable publish for this repository"))
+        self.parser.add_option("--enable", dest="enable", action="store_true", 
+                default=False, help=_("enable publish for this repository"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        if self.opts.enable and self.opts.disable:
+            system_exit(os.EX_USAGE, _("Error, both enable and disable are set to True"))
+        if not self.opts.enable and not self.opts.disable:
+            system_exit(os.EX_USAGE, _("Error, either --enable or --disable needs to be chosen"))
+        if self.opts.enable:
+            state = True
+        if self.opts.disable:
+            state = False
+        if self.pconn.update_publish(id, state):
+            print _("Repository [%s] 'published' has been set to [%s]") % (id, state)
+        else:
+            print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
 
 class Repo(Command):
 

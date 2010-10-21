@@ -162,10 +162,15 @@ class RepoApi(BaseApi):
         repo['publish'] = state
         self.update(repo)
         repo = self._get_existing_repo(id)
-        if repo['publish']:
-           self._create_published_link(repo)
-        else:
-           self._delete_published_link(repo)
+        try:
+            if repo['publish']:
+                self._create_published_link(repo)
+            else:
+                self._delete_published_link(repo)
+        except Exception, e:
+            log.error(e)
+            return False
+        return True
 
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):

@@ -358,6 +358,10 @@ class RepoConnection(PulpConnection):
     def listkeys(self, id):
         method = "/repositories/%s/listkeys/" % id
         return self.conn.request_post(method, params=dict(x=1))
+    
+    def update_publish(self, id, state):
+        method = "/repositories/%s/update_publish/" % id
+        return self.conn.request_post(method, params={"state":state})
 
 
 class ConsumerConnection(PulpConnection):
