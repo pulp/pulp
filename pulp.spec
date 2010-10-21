@@ -31,13 +31,15 @@ Requires: mod_python
 Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
+%if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
-%if 0%{?fedora} < 13
 Requires: rhm-cpp-server-store
 Requires: mongo
 Requires: mongo-server
 %else:
+Requires: qpid-cpp-server
+Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
