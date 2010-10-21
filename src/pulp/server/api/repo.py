@@ -143,7 +143,8 @@ class RepoApi(BaseApi):
         self.insert(r)
         if sync_schedule:
             repo_sync.update_schedule(r)
-        default_to_publish = config.config.get('repos', 'default_to_published')
+        default_to_publish = \
+            config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
         r = self.repository(r["id"])
