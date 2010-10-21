@@ -31,6 +31,12 @@ def parse_args():
     return options
 
 
+def migrate_to_one():
+    updater = One()
+    updater.migrate()
+    updater.set_version()
+
+
 def main():
     options = parse_args()
     if options.auto and not config.getboolean('database', 'auto_upgrade'):
@@ -39,9 +45,7 @@ def main():
     if database_version == current_data_model_version:
         return os.EX_USAGE
     if database_version is None:
-        updater = One()
-        updater.migrate()
-        updater.validate()
-        updater.set_version()
-        return os.EX_OK
+        migrate_to_one()
+        if current_data_model_version == 1:
+            return os.EX_OK
     return os.EX_SOFTWARE
