@@ -17,7 +17,7 @@ from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Base
 
 
-current_data_model_version = 1
+VERSION = 1
 
 _version_db = None
 
@@ -25,8 +25,9 @@ _version_db = None
 class DataModelVersion(Base):
 
     def __init__(self, version):
-        _id = version
-        version = version
+        self._id = version
+        self.version = version
+        self.is_validated = False
 
 
 def _init_db():
@@ -36,11 +37,15 @@ def _init_db():
     _version_db = get_object_db('data_model', ['version'])
 
 
-def get_version_from_db():
+def get_version_in_use():
     pass
 
 
-def set_version_in_db(version):
+def set_version(version):
+    pass
+
+
+def set_validated():
     pass
 
 
