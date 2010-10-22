@@ -18,9 +18,11 @@ import sys
 from optparse import OptionParser, SUPPRESS_HELP
 
 from pulp.server.config import config
-from pulp.server.db.migrate.one import One
+from pulp.server.db.migrate import one
 from pulp.server.db.migrate.validate import validate
-from pulp.server.db.version import current_data_model_version, get_version_from_db
+from pulp.server.db.version import (
+    VERSION, get_version_in_use, set_version, set_validated)
+from pulp.server.logs import start_logging
 
 
 def parse_args():
@@ -34,25 +36,28 @@ def parse_args():
 
 
 def migrate_to_one():
-    updater = One()
-    updater.migrate()
-    updater.set_version()
+    one.migrate()
+    set_version(1)
 
 
 def main():
+    start_logging()
     options = parse_args()
     if options.auto and not config.getboolean('database', 'auto_upgrade'):
         print >> sys.stderr, 'pulp is not configured for auto upgrade'
         return os.EX_CONFIG
-    database_version = get_version_from_db()
-    if database_version == current_data_model_version:
+    version = get_version_in_use()
+    if version == VERSION:
         print 'data model in use matches the current version'
         return os.EX_OK
-    if database_version is None:
-        migrate_to_one()
+    while version < VERSION:
+        if version is None:
+            migrate_to_one()
+        version = get_version_in_use()
     errors = validate()
     if errors:
         print >> sys.stderr, '%d errors on validation, see pulp log for details'
         return os.EX_DATAERR
-    print 'database migration to version %d complete' % current_data_model_version
+    set_validated()
+    print 'database migration to version %d complete' % VERSION
     return os.EX_OK
