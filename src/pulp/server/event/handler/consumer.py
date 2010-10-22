@@ -119,6 +119,6 @@ class ConsumerEvent(EventHandler):
         @param event: The event payload.
         @type event: dict.
         """
-        log.error("Repo event delete processing %s" % event)
+        log.error("Consumer event delete processing %s" % event)
         consumerid   = event['id']
         self.capi.delete(consumerid)
