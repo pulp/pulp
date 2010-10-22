@@ -14,10 +14,12 @@
 # in this software or its documentation.
 
 import os
+import sys
 from optparse import OptionParser, SUPPRESS_HELP
 
 from pulp.server.config import config
 from pulp.server.db.migrate.one import One
+from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import current_data_model_version, get_version_from_db
 
 
@@ -40,12 +42,17 @@ def migrate_to_one():
 def main():
     options = parse_args()
     if options.auto and not config.getboolean('database', 'auto_upgrade'):
+        print >> sys.stderr, 'pulp is not configured for auto upgrade'
         return os.EX_CONFIG
     database_version = get_version_from_db()
     if database_version == current_data_model_version:
-        return os.EX_USAGE
+        print 'data model in use matches the current version'
+        return os.EX_OK
     if database_version is None:
         migrate_to_one()
-        if current_data_model_version == 1:
-            return os.EX_OK
-    return os.EX_SOFTWARE
+    errors = validate()
+    if errors:
+        print >> sys.stderr, '%d errors on validation, see pulp log for details'
+        return os.EX_DATAERR
+    print 'database migration to version %d complete' % current_data_model_version
+    return os.EX_OK
