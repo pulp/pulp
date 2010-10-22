@@ -46,6 +46,7 @@ default_fields = [
     'groupid',
     'relative_path',
     'files',
+    'publish',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -252,6 +253,7 @@ class RepositoryActions(AsyncController):
         'addkeys',
         'rmkeys',
         'listkeys',
+        'update_publish',
     )
 
     @JSONController.error_handler
@@ -292,15 +294,17 @@ class RepositoryActions(AsyncController):
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
         
-        api.clone(id,
+        task = api.clone(id,
                   repo_data['clone_id'],
                   repo_data['clone_name'],
                   relative_path=repo_data.get('relative_path', None),
                   groupid=repo_data.get('groupid', None),
-                  )
-        return self.ok(True)
- 
-
+                  timeout=repo_data['timeout'])
+        if not task:
+            return self.conflict('Error in cloning repo [%s]' % id)
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
 
     @JSONController.error_handler
@@ -487,6 +491,19 @@ class RepositoryActions(AsyncController):
     def listkeys(self, id):
         keylist = api.listkeys(id)
         return self.ok(keylist)
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def update_publish(self, id):
+        """
+        Alter a repository's 'publish' state.
+        True means the repository is exposed through Apache.
+        False means to stop exposing from Apache
+        @param id: repository id
+        @return True on success, False on failure
+        """
+        data = self.params()
+        return self.ok(api.publish(id, bool(data['state'])))
 
     @JSONController.error_handler
     def POST(self, id, action_name):

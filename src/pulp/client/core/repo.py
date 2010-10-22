@@ -38,6 +38,9 @@ class FileError(Exception):
 class SyncError(Exception):
     pass
 
+class CloneError(Exception):
+    pass
+
 # base repo action class ------------------------------------------------------
 
 class RepoAction(Action):
@@ -71,7 +74,7 @@ class List(RepoAction):
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], repo["source"], repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'])
+                    repo['files_count'], repo['publish'])
 
 
 class Status(RepoAction):
@@ -193,7 +196,7 @@ class Create(RepoAction):
 class Clone(RepoAction):
     
     description = _('clone a repository')
-    
+
     def setup_parser(self):
         super(Clone, self).setup_parser()
         self.parser.add_option("--clone_name", dest="clone_name",
@@ -204,17 +207,84 @@ class Clone(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to repo id"))
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
- 
-    def run(self):
+        self.parser.add_option("--timeout", dest="timeout",
+                               help=_("repository clone timeout"))
+        self.parser.add_option('-F', '--foreground', dest='foreground',
+                               action='store_true', default=False,
+                               help=_('clone repository in the foreground'))
+   
+
+    def print_clone_progress(self, progress):
+        # erase the previous progress
+        if hasattr(self, '_previous_progress'):
+            sys.stdout.write('\b' * (len(self._previous_progress)))
+            sys.stdout.flush()
+            delattr(self, '_previous_progress')
+        # handle the initial None case
+        if progress is None:
+            self._previous_progress = '[' + ' ' * 53 + '] 0%'
+            sys.stdout.write(self._previous_progress)
+            sys.stdout.flush()
+            return
+        # calculate the progress
+        done = float(progress['size_total']) - float(progress['size_left'])
+        total = float(progress['size_total'])
+        portion = done / total
+        percent = str(int(100 * portion))
+        pkgs_done = str(progress['items_total'] - progress['items_left'])
+        pkgs_total = str(progress['items_total'])
+        # create the progress bar
+        bar_width = 50
+        bar_ticks = '=' * int(bar_width * portion)
+        bar_spaces = ' ' * (bar_width - len(bar_ticks))
+        bar = '[' + bar_ticks + bar_spaces + ']'
+        # set the previous progress and print
+        self._previous_progress = '%s %s%% (%s of %s pkgs)' % \
+            (bar, percent, pkgs_done, pkgs_total)
+        sys.stdout.write(self._previous_progress)
+        sys.stdout.flush()
+
+    def print_clone_finish(self, state, progress):
+        self.print_clone_progress(progress)
+        print ''
+        print _('Clone: %s') % state.title()
+
+    def clone_foreground(self, task):
+        print _('You can safely CTRL+C this current command and it will continue')
+        try:
+            while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
+                self.print_clone_progress(task['progress'])
+                time.sleep(0.25)
+                task = self.pconn.sync_status(task['status_path'])
+        except KeyboardInterrupt:
+            print ''
+            return
+        self.print_clone_finish(task['state'], task['progress'])
+        if task['state'] == 'error':
+            raise SyncError(task['traceback'][-1])
+
+    def get_task(self):
         id = self.get_required_option('id')
+        tasks = self.pconn.sync_list(id)
+        if tasks and tasks[0]['state'] in ('waiting', 'running'):
+            print _('Sync for parent repository %s already in progress') % id
+            return tasks[0]
         clone_id = self.opts.clone_id
         clone_name = self.opts.clone_name or clone_id
         relative_path = self.opts.relativepath
         groupid = self.opts.groupid
-        status = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, 
-                                  relative_path=relative_path, groupid=groupid)
-        print _("Successfully cloned repository [ %s ] to [ %s ] ") % (id, clone_id)
- 
+        timeout = self.opts.timeout
+        task = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, 
+                                  relative_path=relative_path, groupid=groupid, timeout=timeout)
+        print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
+        return task
+   
+    def run(self):
+        foreground = self.opts.foreground
+        task = self.get_task()
+        if not foreground:
+            system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
+        self.clone_foreground(task)        
 
 
 class Delete(RepoAction):
@@ -473,6 +543,30 @@ class ListKeys(RepoAction):
         for key in self.pconn.listkeys(id):
             print os.path.basename(key)
 
+class Publish(RepoAction):
+    description = _('enable/disable repository being published by apache')
+    
+    def setup_parser(self):
+        super(Publish, self).setup_parser()
+        self.parser.add_option("--disable", dest="disable", action="store_true", 
+                default=False, help=_("disable publish for this repository"))
+        self.parser.add_option("--enable", dest="enable", action="store_true", 
+                default=False, help=_("enable publish for this repository"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        if self.opts.enable and self.opts.disable:
+            system_exit(os.EX_USAGE, _("Error, both enable and disable are set to True"))
+        if not self.opts.enable and not self.opts.disable:
+            system_exit(os.EX_USAGE, _("Error, either --enable or --disable needs to be chosen"))
+        if self.opts.enable:
+            state = True
+        if self.opts.disable:
+            state = False
+        if self.pconn.update_publish(id, state):
+            print _("Repository [%s] 'published' has been set to [%s]") % (id, state)
+        else:
+            print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
 
 class Repo(Command):
 

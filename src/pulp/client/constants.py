@@ -24,6 +24,7 @@ Arch               \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s
 Files              \t%-25s
+Publish            \t%-25s
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """

@@ -222,12 +222,13 @@ class RepoConnection(PulpConnection):
             repo[field] = self.conn.request_get('%s%s/' % (method, field))
         return repo
 
-    def clone(self, repoid, clone_id, clone_name, relative_path=None, groupid=None):
+    def clone(self, repoid, clone_id, clone_name, relative_path=None, groupid=None, timeout=None):
         method = "/repositories/%s/clone/" % repoid
-        data = {"clone_id"   : clone_id,
-                "clone_name" : clone_name,
+        data = {"clone_id"      : clone_id,
+                "clone_name"    : clone_name,
                 "relative_path" : relative_path,
-                "groupid"       : groupid}           
+                "groupid"       : groupid,
+                "timeout"       : timeout}           
         return self.conn.request_post(method, params=data)
     
 
@@ -358,6 +359,10 @@ class RepoConnection(PulpConnection):
     def listkeys(self, id):
         method = "/repositories/%s/listkeys/" % id
         return self.conn.request_post(method, params=dict(x=1))
+    
+    def update_publish(self, id, state):
+        method = "/repositories/%s/update_publish/" % id
+        return self.conn.request_post(method, params={"state":state})
 
 
 class ConsumerConnection(PulpConnection):

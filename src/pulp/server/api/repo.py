@@ -43,7 +43,8 @@ from pulp.server.event.dispatcher import event
 import pulp.server.logs
 from pulp.server.pexceptions import PulpException
 import pulp.server.util
-
+from pulp.server.api.fetch_listings import CDNConnection
+from pulp.server.agent import Agent
 
 log = logging.getLogger(__name__)
 
@@ -142,7 +143,8 @@ class RepoApi(BaseApi):
         self.insert(r)
         if sync_schedule:
             repo_sync.update_schedule(r)
-        default_to_publish = config.config.get('repos', 'default_to_published')
+        default_to_publish = \
+            config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
         r = self.repository(r["id"])
@@ -162,10 +164,16 @@ class RepoApi(BaseApi):
         repo['publish'] = state
         self.update(repo)
         repo = self._get_existing_repo(id)
-        if repo['publish']:
-           self._create_published_link(repo)
-        else:
-           self._delete_published_link(repo)
+        try:
+            if repo['publish']:
+                self._create_published_link(repo)
+            else:
+                self._delete_published_link(repo)
+            self.update_subscribed(id)
+        except Exception, e:
+            log.error(e)
+            return False
+        return True
 
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):
@@ -194,17 +202,20 @@ class RepoApi(BaseApi):
                 # need to use lexists so we will return True even for broken links
                 os.unlink(link_path)
 
-    def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None):
+    def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None, feed=None, 
+              progress_callback=None, timeout=None):
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
+        
         REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-        parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
-        r = self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
+        parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
+        
+        self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
                         relative_path=relative_path)
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
-        self.sync(clone_id)
-        return True
+        task = self.sync(clone_id, progress_callback=progress_callback, timeout=timeout)
+        return task
 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
@@ -968,6 +979,7 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         added = ks.add(keylist)
         log.info('repository (%s), added keys: %s', id, added)
+        self.update_subscribed(id)
         return added
 
     @audit(params=['id', 'keylist'])
@@ -977,6 +989,7 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         deleted = ks.delete(keylist)
         log.info('repository (%s), delete keys: %s', id, deleted)
+        self.update_subscribed(id)
         return deleted
 
     def listkeys(self, id):
@@ -984,6 +997,20 @@ class RepoApi(BaseApi):
         path = repo['relative_path']
         ks = KeyStore(path)
         return ks.list()
+
+    def update_subscribed(self, repoid):
+        """
+        Do an asynchronous RMI to subscribed agents
+        to update the .repo file.
+        @param repoid: The updated repo ID.
+        @type repoid: str
+        """
+        from pulp.server.api.consumer import ConsumerApi
+        capi = ConsumerApi()
+        cids = [str(c['id']) for c in capi.findsubscribed(repoid)]
+        agent = Agent(cids, async=True)
+        repolib = agent.RepoLib()
+        repolib.update()
 
     def all_schedules(self):
         '''

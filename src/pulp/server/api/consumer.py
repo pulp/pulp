@@ -115,7 +115,20 @@ class ConsumerApi(BaseApi):
             if key in group_keyvalues.keys() and group_keyvalues[key]!=value:
                 return consumergroup['id']
         return None
-            
+
+    def findsubscribed(self, repoid):
+        """
+        Find consumers by repoid.
+        Returns consumers that are subscribed (bound) to the
+        specified repo.
+        @param repoid: A repo ID.
+        @type repoid: str
+        @return: A list of consumer objects.
+        @rtype: list
+        """
+        db = self._getcollection()
+        query = dict(repoids=repoid)
+        return tuple(db.find(query))
     
     @audit()
     def add_key_value_pair(self, id, key, value):
