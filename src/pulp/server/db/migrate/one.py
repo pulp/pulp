@@ -13,10 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server.db.migrate.base import Migration
 
-
-class One(Migration):
-
-    def __init__(self):
-        super(One, self).__init__(1)
+def migrate():
+    pass
