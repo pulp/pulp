@@ -21,10 +21,14 @@ class Migration(object):
     def __init__(self, version_number):
         self.version_number = version_number
 
-    def migrate(self):
+    # document utility methods
+
+    def add_field_with_default(self, objectdb, field, default=None):
         pass
 
-    def validate(self):
+    # migration methods
+
+    def migrate(self):
         pass
 
     def set_version(self):
