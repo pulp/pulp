@@ -294,15 +294,17 @@ class RepositoryActions(AsyncController):
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
         
-        api.clone(id,
+        task = api.clone(id,
                   repo_data['clone_id'],
                   repo_data['clone_name'],
                   relative_path=repo_data.get('relative_path', None),
                   groupid=repo_data.get('groupid', None),
-                  )
-        return self.ok(True)
- 
-
+                  timeout=repo_data['timeout'])
+        if not task:
+            return self.conflict('Error in cloning repo [%s]' % id)
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
 
     @JSONController.error_handler

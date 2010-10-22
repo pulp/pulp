@@ -202,17 +202,20 @@ class RepoApi(BaseApi):
                 # need to use lexists so we will return True even for broken links
                 os.unlink(link_path)
 
-    def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None):
+    def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None, feed=None, 
+              progress_callback=None, timeout=None):
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
+        
         REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
+        
         self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
                         relative_path=relative_path)
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
-        self.sync(clone_id)
-        return True
+        task = self.sync(clone_id, progress_callback=progress_callback, timeout=timeout)
+        return task
 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
