@@ -222,10 +222,11 @@ class RepoConnection(PulpConnection):
             repo[field] = self.conn.request_get('%s%s/' % (method, field))
         return repo
 
-    def clone(self, repoid, clone_id, clone_name, relative_path=None, groupid=None, timeout=None):
+    def clone(self, repoid, clone_id, clone_name, feed='parent', relative_path=None, groupid=None, timeout=None):
         method = "/repositories/%s/clone/" % repoid
         data = {"clone_id"      : clone_id,
                 "clone_name"    : clone_name,
+                "feed"          : feed,
                 "relative_path" : relative_path,
                 "groupid"       : groupid,
                 "timeout"       : timeout}           

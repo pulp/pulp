@@ -47,6 +47,7 @@ default_fields = [
     'relative_path',
     'files',
     'publish',
+    'clone_ids',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -295,11 +296,11 @@ class RepositoryActions(AsyncController):
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
         
         task = api.clone(id,
-                  repo_data['clone_id'],
-                  repo_data['clone_name'],
-                  relative_path=repo_data.get('relative_path', None),
-                  groupid=repo_data.get('groupid', None),
-                  timeout=repo_data['timeout'])
+                         repo_data['clone_id'],
+                         repo_data['clone_name'],
+                         repo_data['feed'],
+                         relative_path=repo_data.get('relative_path', None),
+                         groupid=repo_data.get('groupid', None))
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
         task_info = self._task_to_dict(task)
