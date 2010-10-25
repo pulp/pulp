@@ -60,7 +60,7 @@ class RepoApi(BaseApi):
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
-        self.published_path = os.path.join(self.localStoragePath, "published")
+        self.published_path = os.path.join(self.localStoragePath, "published", "repos")
 
     @property
     def _indexes(self):
