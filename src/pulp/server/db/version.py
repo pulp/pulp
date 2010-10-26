@@ -13,6 +13,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import pymongo
+
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Base
 
@@ -27,7 +29,7 @@ class DataModelVersion(Base):
     def __init__(self, version):
         self._id = version
         self.version = version
-        self.is_validated = False
+        self.validated = False
 
 
 def _init_db():
@@ -37,20 +39,46 @@ def _init_db():
     _version_db = get_object_db('data_model', ['version'])
 
 
+def _get_latest_version():
+    assert _version_db is not None
+    versions = _version_db.find()
+    if not versions:
+        return None
+    versions.sort({'version': pymongo.DESCENDING}).limit(1)
+    return list(versions)[0]
+
+
 def get_version_in_use():
-    pass
-
-
-def set_version(version):
-    pass
-
-
-def set_validated():
-    pass
+    assert _version_db is not None
+    v = _get_latest_version()
+    return v.version
 
 
 def check_version():
-    pass
+    assert _version_db is not None
+    v = _get_latest_version()
+    # XXX this should log and exit if there is a version mismatch,
+    # not return a boolean
+    return v.version == VERSION
+
+
+def set_version(version):
+    assert _version_db is not None
+    v = DataModelVersion(version)
+    _version_db.save(v, safe=True)
+
+
+def is_validated():
+    assert _version_db is not None
+    v = _get_latest_version()
+    return v.validated
+
+
+def set_validated():
+    assert _version_db is not None
+    v = _get_latest_version()
+    v.validated = True
+    _version_db.save(v, safe=True)
 
 # validate on import ----------------------------------------------------------
 
