@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.75
+Version:        0.0.76
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -186,6 +186,37 @@ fi
 
 
 %changelog
+* Tue Oct 26 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.76-1
+- Fix gpg keys broken by repo publish feature. (jortel@redhat.com)
+- Changed to work with 'publish' being a boolean. (jortel@redhat.com)
+- unit test update for repo publish (jmatthew@redhat.com)
+- Added origin feed type for repo cloning cli, gpg key cloning from parent repo
+  and added handling for changing feed of cloned repo when parent is deleted
+  (skarmark@redhat.com)
+- Async capability for repo cloning added in api and cli (skarmark@redhat.com)
+- Update subscribed systems .repo when repo 'publish' is modified.
+  (jortel@redhat.com)
+- patch from morazi - I stumbled on F14 versions of qpid no longer having the
+  Provides:  qpidd & qpidd-ssl (pkilambi@redhat.com)
+- fix for getting boolean 'default_to_published' (jmatthew@redhat.com)
+- Fix relink() failing in unit tests. (jortel@redhat.com)
+- Rename & fix findsubscribed() query. (jortel@redhat.com)
+- Expose 'publish' field on repos in WS. (jortel@redhat.com)
+- Set enabled= based on repo.published. (jortel@redhat.com)
+- Add methods to update .repo on repo subscribers. (jortel@redhat.com)
+- Adding repo publish --enable/--disable to CLI (jmatthew@redhat.com)
+- 638715 - Changed behavior of history date queries to include the dates
+  specified. (jason.dobies@redhat.com)
+- 641912 - Added call to start logging on cron initiated scripts.
+  (jason.dobies@redhat.com)
+- 638710 - Corrected docs on date format. (jason.dobies@redhat.com)
+- fix for repo create, we weren't accessing SON doc as a dictionary
+  (jmatthew@redhat.com)
+- rpm will create dir for 'published' and change symlink to /var/www/pub
+  (jmatthew@redhat.com)
+- Add repository publish - enable/disable exposure through apache
+  (jmatthew@redhat.com)
+
 * Wed Oct 20 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.75-1
 - Fixing a local sync - fails sync the first time, only downloads packages but
   does not link it to repo (skarmark@redhat.com)
