@@ -21,7 +21,7 @@ from pulp.server.config import config
 from pulp.server.db.migrate import one
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
-    VERSION, get_version_in_use, set_version, set_validated)
+    VERSION, get_version_in_use, set_validated)
 from pulp.server.logs import start_logging
 
 
@@ -37,7 +37,7 @@ def parse_args():
 
 def migrate_to_one():
     one.migrate()
-    set_version(1)
+    one.set_version()
 
 
 def main():
