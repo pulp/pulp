@@ -35,7 +35,8 @@ def top_repos_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
 
 def top_gpg_location():
-    return "%s/%s" % (config.config.get('paths', 'local_storage'), "gpg")
+    base = config.config.get('paths', 'local_storage')
+    return os.path.join(base, 'published', 'gpg')
 
 def top_package_location():
     return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")

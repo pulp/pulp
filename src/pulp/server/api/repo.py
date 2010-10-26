@@ -60,7 +60,7 @@ class RepoApi(BaseApi):
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
-        self.published_path = os.path.join(self.localStoragePath, "published")
+        self.published_path = os.path.join(self.localStoragePath, "published", "repos")
 
     @property
     def _indexes(self):
@@ -202,21 +202,69 @@ class RepoApi(BaseApi):
                 # need to use lexists so we will return True even for broken links
                 os.unlink(link_path)
 
-    def clone(self, id, clone_id, clone_name, groupid=None, relative_path=None, feed=None, 
-              progress_callback=None, timeout=None):
+    def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, progress_callback=None):
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
-        
-        REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-        parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
-        
+        cloned_repo = self.repository(clone_id)
+        if cloned_repo is not None:
+            raise PulpException("A Repo with id %s exists. Choose a different id." % clone_id)   
+
+        REPOS_LOCATION = "%s/%s/" % (config.config.get('paths', 'local_storage'), "repos")
+        parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
+        log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
         self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
                         relative_path=relative_path)
-        log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
-        task = self.sync(clone_id, progress_callback=progress_callback, timeout=timeout)
-        return task
-
+        """
+        Sync from parent repo
+        """
+        try:
+            self._sync(clone_id)
+        except:
+            raise PulpException("Repo cloning of [%s] failed" % id)
+        
+        """
+        Update feed type for cloned repo if "origin" or "feedless"        
+        """
+        cloned_repo = self.repository(clone_id)
+        if feed == "origin":
+            cloned_repo['source'] = repo['source']
+        elif feed == "none":
+            cloned_repo['source'] = None
+        self.update(cloned_repo)    
+            
+        """
+        Update clone_ids for parent repo
+        """            
+        clone_ids = repo['clone_ids']
+        clone_ids.append(clone_id)
+        repo['clone_ids'] = clone_ids
+        self.update(repo)   
+        
+        """
+        Update gpg keys from parent repo
+        """
+        keylist = []
+        key_paths = self.listkeys(id)
+        for key_path in key_paths:
+            key_path = REPOS_LOCATION + key_path
+            f = open(key_path)
+            fn = os.path.basename(key_path)
+            content = f.read()
+            keylist.append((fn, content))
+            f.close()
+        self.addkeys(clone_id, keylist)
+        
+    @audit()
+    def clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, progress_callback=None, timeout=None):
+        """
+        Run a repo clone asynchronously.
+        """
+        return self.run_async(self._clone,
+                              [id, clone_id, clone_name, feed, groupid, relative_path],
+                              {'progress_callback': progress_callback},
+                              timeout=timeout)
+ 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
         cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)
@@ -340,6 +388,13 @@ class RepoApi(BaseApi):
     def delete(self, id):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
+        #update feed of clones of this repo to None unless they point to origin
+        for clone_id in repo['clone_ids']:
+            cloned_repo = self._get_existing_repo(clone_id)
+            if cloned_repo['source'] != repo['source']:
+                cloned_repo['source'] = None
+                self.update(cloned_repo)
+
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")

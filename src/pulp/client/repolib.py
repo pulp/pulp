@@ -176,11 +176,11 @@ class UpdateAction(Action):
             id = str(cont['id'])
             path = cont['relative_path']
             keys = self.pulp.listkeys(id)
-            enabled = cont.get('publish', 'true')
+            enabled = cont.get('publish', True)
             repo = Repo(id)
             repo['name'] = cont['name']
             repo['baseurl'] = self.join(baseurl, path)
-            repo['enabled'] = self.decode(enabled, 'true', '1', '0')
+            repo['enabled'] = self.decode(enabled, True, '1', '0')
             repo['gpgkey'] = self.fmt(keyurl, keys)
             lst.append(repo)
         return lst
@@ -254,7 +254,7 @@ class Repo(dict):
     PROPERTIES = (
         ('name', 0, None),
         ('baseurl', 0, None),
-        ('enabled', 1, '1'),
+        ('enabled', 0, '1'),
         ('gpgkey', 0, None),
         ('sslverify', 0, '0'),
     )

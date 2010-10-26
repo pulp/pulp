@@ -74,7 +74,7 @@ class List(RepoAction):
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], repo["source"], repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'], repo['publish'])
+                    repo['files_count'], repo['publish'], repo['clone_ids'])
 
 
 class Status(RepoAction):
@@ -199,10 +199,12 @@ class Clone(RepoAction):
 
     def setup_parser(self):
         super(Clone, self).setup_parser()
-        self.parser.add_option("--clone_name", dest="clone_name",
-                               help=_("common repository name for cloned repo"))
         self.parser.add_option("--clone_id", dest="clone_id",
                                help=_("id of cloned repo"))
+        self.parser.add_option("--clone_name", dest="clone_name",
+                               help=_("common repository name for cloned repo"))
+        self.parser.add_option("--feed", dest="feed",
+                               help=_("feed of cloned_repo: parent/origin/none"))
         self.parser.add_option("--relativepath", dest="relativepath",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to repo id"))
         self.parser.add_option("--groupid", dest="groupid",
@@ -271,10 +273,11 @@ class Clone(RepoAction):
             return tasks[0]
         clone_id = self.opts.clone_id
         clone_name = self.opts.clone_name or clone_id
+        feed = self.opts.feed or 'parent'
         relative_path = self.opts.relativepath
         groupid = self.opts.groupid
         timeout = self.opts.timeout
-        task = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, 
+        task = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
                                   relative_path=relative_path, groupid=groupid, timeout=timeout)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
         return task
