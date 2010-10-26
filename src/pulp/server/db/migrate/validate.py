@@ -19,6 +19,7 @@ from pulp.server.api import (
     consumer_group, consumer_history, consumer, errata, package, repo, user)
 from pulp.server.auditing import _objdb as auditing_objectdb
 from pulp.server.db import model
+from pulp.server.db import version
 
 
 _log = getLogger('pulp')
@@ -44,7 +45,8 @@ def _validate_model(model_name, objectdb, reference):
             vtype = type(value)
             # a default value of None really can't be automatically validated, 
             # should be validated in the individual validation method
-            if field in model and (value is None or isinstance(model[field], vtype)):
+            if field in model and (value is None or
+                                   isinstance(model[field], vtype)):
                 continue
             num_errors += 1
             error_prefix = 'model validation failure in %s for model %s:' % \
@@ -88,7 +90,22 @@ def _validate_consumer_history_event():
     """
     objectdb = consumer_history.ConsumerHistoryApi()._getcollection()
     reference = model.ConsumerHistoryEvent('', '', '', '')
-    return _validate_model(model.ConsumerHistoryEvent.__name__, objectdb, reference)
+    return _validate_model(model.ConsumerHistoryEvent.__name__,
+                           objectdb,
+                           reference)
+
+
+def _validate_data_model_version():
+    """
+    Validate the DataModelVersion model
+    @rtype: int
+    @return: number of errors found during validation
+    """
+    objectdb = version._version_db
+    reference = version.DataModelVersion(0)
+    return _validate_model(version.DataModelVersion.__name__,
+                           objectdb,
+                           reference)
 
 
 def _validate_errata():
@@ -144,7 +161,8 @@ def _validate_package_group():
                 error_prefix = 'model validation failure in PackageGroup for Repo %s, PackageGroup %s:' % \
                         (str(repo['_id']), str(pg['_id']))
                 if field not in pg:
-                    _log.error(error_prefix + ' field %s is not present' % field)
+                    _log.error(error_prefix + ' field %s is not present' %
+                               field)
                 else:
                     _log.error(error_prefix + ' field %s is not a %s' %
                                (field, vtype))
@@ -164,7 +182,8 @@ def _validate_package_group_category():
         for pgc in repo['packagegroupcategories'].values():
             for field, value in reference.items():
                 vtype = value(type)
-                if field in pgc and (value is None or isinstance(pgc[field], vtype)):
+                if field in pgc and (value is None or
+                                     isinstance(pgc[field], vtype)):
                     continue
                 num_errors += 1
                 error_prefix = 'model validation failure in PackageGroupCategory for Repo %s, PackageGroup %s:' % \
@@ -237,6 +256,7 @@ def validate():
     num_errors += _validate_consumer()
     num_errors += _validate_consumer_group()
     num_errors += _validate_consumer_history_event()
+    num_errors += _validate_data_model_version()
     num_errors += _validate_errata()
     num_errors += _validate_event()
     num_errors += _validate_package()
