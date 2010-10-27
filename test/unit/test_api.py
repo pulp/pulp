@@ -269,7 +269,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.listkeys(id)
         for i in range(0, len(keylist)):
             path = os.path.join(relativepath, keylist[i][0])
-            self.assertTrue(path in found[i])
+            self.assertTrue(path in found)
         # single key
         ks.clean()
         self.rapi.addkeys(id, keylist[1:])
