@@ -108,12 +108,13 @@ class Install(ErrataAction):
         self.parser.add_option_group(id_group)
 
     def run(self):
-        data = self.args
+        errataids = self.args
+
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
         if not (consumerid or consumergroupid):
             self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
-        errataids = data[2:]
+
         if not errataids:
             system_exit(os.EX_USAGE, _("Specify an errata id to install"))
         if self.opts.consumerid:
