@@ -31,6 +31,7 @@ def setup_client(client):
     consumer_cmd.add_action('bind', consumer.Bind())
     consumer_cmd.add_action('unbind', consumer.Unbind())
     consumer_cmd.add_action('history', consumer.History())
+    consumer_cmd.add_action('update', consumer.Update())
     client.add_command('consumer', consumer_cmd)
 
     errata_cmd = errata.Errata()
