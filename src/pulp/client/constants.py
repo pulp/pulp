@@ -19,7 +19,8 @@
 AVAILABLE_REPOS_LIST = """
 Label              \t%-25s
 Name               \t%-25s
-Feed               \t%-25s
+FeedURL            \t%-25s
+FeedType           \t%-25s
 Arch               \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s

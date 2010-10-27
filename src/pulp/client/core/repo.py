@@ -71,8 +71,12 @@ class List(RepoAction):
             system_exit(os.EX_OK, _("No repositories available to list"))
         print_header(_('List of Available Repositories'))
         for repo in repos:
+            feedUrl = feedType = None
+            if repo['source']:
+                feedUrl = repo['source']['url']
+                feedType = repo['source']['type']
             print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], repo["source"], repo["arch"],
+                    repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], repo['publish'], repo['clone_ids'])
 
