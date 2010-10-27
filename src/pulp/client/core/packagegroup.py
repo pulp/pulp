@@ -215,8 +215,8 @@ class Install(PackageGroupAction):
     description = _('schedule a packagegroup install')
 
     def setup_parser(self):
-        self.parser.add_option("-g", "--pkggroupid", action="append", dest="pkggroupid",
-                               help=_("packagegroup to install on a given consumer; to specify multiple package groups use multiple -g (required)"))
+        self.parser.add_option("--id", dest="id", action="append",
+                               help=_("package group id (required)"))
         self.parser.add_option("--consumerid", dest="consumerid",
                                help=_("consumer id (required)"))
 
