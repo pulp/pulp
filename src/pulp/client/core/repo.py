@@ -492,7 +492,10 @@ class Upload(RepoAction):
         files = self.args
         dir = self.opts.dir
         if dir:
-            files += utils.processDirectory(dir, "rpm")
+            try:
+                files += utils.processDirectory(dir, "rpm")
+            except Exception, e:
+                system_exit(os.EX_DATAERR, _(str(e)))
         if not files:
             system_exit(os.EX_USAGE,
                         _("Need to provide at least one file to perform upload"))
