@@ -48,3 +48,13 @@ class AuthApi(BaseApi):
 
         private_key, cert = cert_generator.make_admin_user_cert(user)
         return private_key, cert
+
+    def isadmin(self, login):
+        """
+        Get whether the specified login is the admin user.
+        @param login: A login to check.
+        @type login: str
+        @rtype: bool
+        """
+        adminlogin = cert_generator.ADMIN_PREFIX[:-1]
+        return ( login ==  adminlogin )

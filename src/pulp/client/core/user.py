@@ -81,8 +81,11 @@ class Delete(UserAction):
         if not user:
             system_exit(os.EX_DATAERR,
                         _("User [ %s ] does not exist") % deleteusername)
-        self.userconn.delete(login=deleteusername)
-        print _("Successfully deleted User [ %s ]") % deleteusername
+        deleted = self.userconn.delete(login=deleteusername)
+        if deleted:
+            print _("Successfully deleted User [ %s ]") % deleteusername
+        else:
+            print _("User [%s] not deleted") % deleteusername
 
 # user command ----------------------------------------------------------------
 

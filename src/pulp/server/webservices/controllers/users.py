@@ -98,6 +98,8 @@ class User(JSONController):
         @param login: login of user to delete
         @return: True on successful deletion of user
         """
+        if auth_api.isadmin(login):
+            return self.ok(False)
         api.delete(login=login)
         return self.ok(True)
 
