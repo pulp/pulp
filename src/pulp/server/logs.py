@@ -57,6 +57,9 @@ def configure_pulp_grinder_logging():
     pulp_handler.setFormatter(formatter)
     pulp_logger.addHandler(pulp_handler)
 
+    qpid_logger = logging.getLogger('qpid')
+    qpid_logger.addHandler(pulp_handler)
+
     grinder_file = config.config.get('logs', 'grinder_file')
     check_log_file(grinder_file)
     grinder_logger = logging.getLogger('grinder')
