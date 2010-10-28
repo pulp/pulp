@@ -45,7 +45,6 @@ from pulp.server.pexceptions import PulpException
 import pulp.server.util
 from pulp.server.api.fetch_listings import CDNConnection
 from pulp.server.agent import Agent
-
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
@@ -397,6 +396,20 @@ class RepoApi(BaseApi):
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
+        #unsubscribe consumers from this repo
+        #importing here to bypass circular imports
+        from pulp.server.api.consumer import ConsumerApi 
+        capi = ConsumerApi()
+        bound_consumers = capi.findsubscribed(repo['id'])
+        for consumer in bound_consumers:
+            try:
+                log.info("Unsubscribe repoid %s from consumer %s" % (repo['id'], consumer['id']))
+                capi.unbind(consumer['id'], repo['id'])
+            except:
+                log.error("failed to unbind repoid %s from consumer %s moving on.." % \
+                          (repo['id'], consumer['id']))
+                continue
+        
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
