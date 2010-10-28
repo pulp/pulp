@@ -345,7 +345,7 @@ class Update(RepoAction):
                                help=_("path location to ca certificate"))
         self.parser.add_option("--cert", dest="cert",
                                help=_("path location to entitlement certificate key"))
-        self.parser.add_option("--schedule", dest="schedule",
+        self.parser.add_option("--schedule", dest="sync_schedule",
                                help=_("schedule for automatically synchronizing the repository"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
