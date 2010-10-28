@@ -24,8 +24,7 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import setup_connection, RepoConnection, \
-    RestlibException
+from pulp.client.connection import setup_connection, RepoConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
@@ -51,6 +50,22 @@ class RepoAction(Action):
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("repository id (required)"))
+
+    def get_repo(self, id):
+        """
+        Convenience method for getting a required repository from pulp, and
+        exiting with an appropriate error message if the repository doesn't
+        exist.
+        @type id: str
+        @param id: repository id
+        @rtype: dict
+        @return: dictionary representing the repository
+        """
+        assert hasattr(self, 'pconn')
+        repo = self.pconn.repository(id)
+        if repo is None:
+            system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
+        return repo
 
 # repo actions ----------------------------------------------------------------
 
@@ -87,7 +102,7 @@ class Status(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        repo = self.pconn.repository(id)
+        repo = self.get_repo(id)
         syncs = self.pconn.sync_list(id)
         print_header(_('Status for %s') % id)
         print _('Repository: %s') % repo['id']
@@ -119,7 +134,7 @@ class Content(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        repo = self.pconn.repository(id)
+        repo = self.get_repo(id)
         files = repo['files']
         packages = self.pconn.packages(id)
         print_header(_('Contents of %s') % id)
@@ -196,9 +211,9 @@ class Create(RepoAction):
                                  groupid=groupid,
                                  gpgkeys=keylist)
         print _("Successfully created repository [ %s ]") % repo['id']
-        
+
 class Clone(RepoAction):
-    
+
     description = _('clone a repository')
 
     def setup_parser(self):
@@ -218,7 +233,7 @@ class Clone(RepoAction):
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
                                help=_('clone repository in the foreground'))
-   
+
 
     def print_clone_progress(self, progress):
         # erase the previous progress
@@ -271,6 +286,7 @@ class Clone(RepoAction):
 
     def get_task(self):
         id = self.get_required_option('id')
+        self.get_repo(id)
         tasks = self.pconn.sync_list(id)
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for parent repository %s already in progress') % id
@@ -285,13 +301,13 @@ class Clone(RepoAction):
                                   relative_path=relative_path, groupid=groupid, timeout=timeout)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
         return task
-   
+
     def run(self):
         foreground = self.opts.foreground
         task = self.get_task()
         if not foreground:
             system_exit(os.EX_OK, _('Use "repo status" to check on the progress'))
-        self.clone_foreground(task)        
+        self.clone_foreground(task)
 
 
 class Delete(RepoAction):
@@ -343,9 +359,7 @@ class Update(RepoAction):
                                help=_("a ',' separated list of GPG key names"))
     def run(self):
         id = self.get_required_option('id')
-        repo = self.pconn.repository(id)
-        if not repo:
-            system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
+        repo = self.get_repo(id)
         optdict = vars(self.opts)
         for k, v in optdict.items():
             if not v:
@@ -447,6 +461,7 @@ class Sync(RepoAction):
 
     def get_task(self):
         id = self.get_required_option('id')
+        self.get_repo(id)
         tasks = self.pconn.sync_list(id)
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for repository %s already in progress') % id
@@ -471,6 +486,7 @@ class CancelSync(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
+        self.get_repo(id)
         syncs = self.pconn.sync_list(id)
         if not syncs:
             system_exit(os.EX_OK, _('No sync to cancel'))
@@ -519,7 +535,7 @@ class Upload(RepoAction):
             if self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch):
                 system_exit(os.EX_OK, \
                             _("Package [%s] already exists on the server in repo %s") % (pkginfo['pkgname'], id))
- 
+
             pkgstream = base64.b64encode(open(frpm).read())
             status = self.pconn.upload(id, pkginfo, pkgstream)
             if status:
@@ -553,14 +569,15 @@ class ListKeys(RepoAction):
         for key in self.pconn.listkeys(id):
             print os.path.basename(key)
 
+
 class Publish(RepoAction):
     description = _('enable/disable repository being published by apache')
-    
+
     def setup_parser(self):
         super(Publish, self).setup_parser()
-        self.parser.add_option("--disable", dest="disable", action="store_true", 
+        self.parser.add_option("--disable", dest="disable", action="store_true",
                 default=False, help=_("disable publish for this repository"))
-        self.parser.add_option("--enable", dest="enable", action="store_true", 
+        self.parser.add_option("--enable", dest="enable", action="store_true",
                 default=False, help=_("enable publish for this repository"))
 
     def run(self):
@@ -577,6 +594,8 @@ class Publish(RepoAction):
             print _("Repository [%s] 'published' has been set to [%s]") % (id, state)
         else:
             print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
+
+# repo command ----------------------------------------------------------------
 
 class Repo(Command):
 
