@@ -30,9 +30,9 @@ class Login(Action):
     description = _('stores user credentials on this machine')
 
     def setup_parser(self):
-        self.parser.add_option('--username', dest='username',
+        self.parser.add_option('-u', '--username', dest='username',
                                help=_('pulp account username'))
-        self.parser.add_option('--password', dest='password',
+        self.parser.add_option('-p', '--password', dest='password',
                                help=_('pulp account password'))
 
     def setup_connections(self):
