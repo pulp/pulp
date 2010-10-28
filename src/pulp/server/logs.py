@@ -15,9 +15,8 @@
 # in this software or its documentation.
 
 import logging
-import logging.handlers
 import os
-import os.path
+from logging import handlers
 
 from pulp.server import config
 
@@ -52,9 +51,9 @@ def configure_pulp_grinder_logging():
     check_log_file(pulp_file)
     pulp_logger = logging.getLogger('pulp')
     pulp_logger.setLevel(level)
-    pulp_handler = logging.handlers.RotatingFileHandler(pulp_file,
-                                                        maxBytes=max_size,
-                                                        backupCount=backups)
+    pulp_handler = handlers.RotatingFileHandler(pulp_file,
+                                                maxBytes=max_size,
+                                                backupCount=backups)
     pulp_handler.setFormatter(formatter)
     pulp_logger.addHandler(pulp_handler)
 
@@ -62,9 +61,9 @@ def configure_pulp_grinder_logging():
     check_log_file(grinder_file)
     grinder_logger = logging.getLogger('grinder')
     grinder_logger.setLevel(level)
-    grinder_handler = logging.handlers.RotatingFileHandler(grinder_file,
-                                                           maxBytes=max_size,
-                                                           backupCount=backups)
+    grinder_handler = handlers.RotatingFileHandler(grinder_file,
+                                                   maxBytes=max_size,
+                                                   backupCount=backups)
     grinder_handler.setFormatter(formatter)
     grinder_logger.addHandler(grinder_handler)
 
@@ -90,10 +89,10 @@ def configure_audit_logging():
     # removing the handler to no avail...
     logger = logging.getLogger('auditing')
     logger.setLevel(logging.INFO)
-    handler = logging.handlers.TimedRotatingFileHandler(file,
-                                                        when=units,
-                                                        interval=lifetime,
-                                                        backupCount=backups)
+    handler = handlers.TimedRotatingFileHandler(file,
+                                                when=units,
+                                                interval=lifetime,
+                                                backupCount=backups)
     logger.addHandler(handler)
 
 # pulp logging api ------------------------------------------------------------
@@ -106,10 +105,11 @@ def start_logging():
     """
     assert config.config is not None
     global started
-    if not started:
-        configure_pulp_grinder_logging()
-        configure_audit_logging()
-        started = True
+    if started:
+        return
+    configure_pulp_grinder_logging()
+    configure_audit_logging()
+    started = True
 
 
 def stop_logging():
@@ -117,9 +117,12 @@ def stop_logging():
     Convenience function to stop pulp's different logging mechanisms.
     """
     global started
-    if started:
-        logging.shutdown()
-        started = False
+    if not started:
+        return
+    # remove all the existing handlers and loggers from the logging module
+    logging.shutdown()
+    logging.Logger.manager.loggerDict = {} # ew
+    started = False
 
 
 def restart_logging():
