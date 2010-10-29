@@ -97,6 +97,7 @@ class PackageGroups:
             log.info("Added '%s' group to transaction, packages: %s", grp_id, txmbrs)
         yb.resolveDeps()
         yb.processTransaction()
+        return packagegroupids
 
 @remote
 @alias(name='admin')
