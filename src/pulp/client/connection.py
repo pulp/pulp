@@ -106,7 +106,9 @@ class Restlib(object):
         self.key_file = key_file
 
     def _request(self, request_type, method, info=None):
-        handler = method
+        # Convert the method (path) into a string so we dont 
+        # have any unicode characters in the URL
+        handler = str(method)
         if not handler.startswith(self.apihandler):
             #handler = self.apihandler + handler
             handler = '/'.join((self.apihandler, handler))

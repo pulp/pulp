@@ -27,6 +27,15 @@ _cfg = Config()
 _log = getLogger(__name__)
 
 # base command class ----------------------------------------------------------
+#
+# NOTE: If you are adding or removing Commands and Actions you 
+# need to edit:
+#
+# 1) pulp/bin/pulp-admin 
+# 2) pulp/bin/pulp-client
+#
+# They contain the mapping and lists of Commands and Actions for 
+# everything the CLI can do.
 
 class Command(object):
     """

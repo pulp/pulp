@@ -92,6 +92,21 @@ class TestUsers(unittest.TestCase):
         self.uapi.delete(login=login)
         user = self.uapi.user(login)
         assert(user is None)
+        
+    def test_update_password(self):
+        login = 'some-login'
+        clear_txt_pass = 'some password'
+        user = self.uapi.create(login)
+        user['password'] = clear_txt_pass
+        user = self.uapi.update(user)
+        
+        # Lookup user again and verify password is hashed
+        user = self.uapi.user(login)
+        self.assertTrue(user is not None)
+        self.assertTrue(user['password'] is not None)
+        self.assertNotEqual(clear_txt_pass, user['password'])
+
+        
 
 
 if __name__ == '__main__':

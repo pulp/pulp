@@ -59,6 +59,18 @@ class UserApi(BaseApi):
         self.insert(user)
         return user
 
+    @audit(params=['user'])
+    def update(self, user):
+        """
+        Update a user and hash the inbound password
+        """
+        password = user['password']
+        if (password is not None):
+            user['password'] = password_util.hash_password(password)
+        BaseApi.update(self, user)
+        return user
+
+
     def users(self, spec=None, fields=None):
         """
         List all users.

@@ -30,6 +30,14 @@ class UserAction(Action):
 
     def setup_connections(self):
         self.userconn = setup_connection(UserConnection)
+        
+    def get_user(self, username):
+        user = self.userconn.user(login=username)
+        if not user:
+            system_exit(os.EX_DATAERR,
+                        _("User [ %s ] does not exist") % username)
+        return user
+
 
 # user actions ----------------------------------------------------------------
 
@@ -67,6 +75,31 @@ class Create(UserAction):
                 (user['login'], user["name"])
 
 
+class Update(UserAction):
+
+    description = _('update a user')
+
+    def setup_parser(self):
+        self.parser.add_option("--username", dest="username",
+                               help=_("username of user you wish to edit. Not editable (required)"))
+        self.parser.add_option("--password", dest="password", default='',
+                               help=_("updated password to assign to user"))
+        self.parser.add_option("--name", dest="name", default='',
+                               help=_("updated name of user for display purposes"))
+
+    def run(self):
+        username = self.get_required_option('username')
+        password = self.opts.password
+        name = self.opts.name
+        
+        user = self.get_user(username)
+        user['name'] = name
+        user['password'] = password
+        self.userconn.update(user)
+        print _("Successfully updated [ %s ] with name [ %s ]") % \
+                (user['login'], user["name"])
+
+
 class Delete(UserAction):
 
     description = _('delete a user')
@@ -77,10 +110,7 @@ class Delete(UserAction):
 
     def run(self):
         deleteusername = self.get_required_option('username')
-        user = self.userconn.user(login=deleteusername)
-        if not user:
-            system_exit(os.EX_DATAERR,
-                        _("User [ %s ] does not exist") % deleteusername)
+        user = self.get_user(deleteusername)
         deleted = self.userconn.delete(login=deleteusername)
         if deleted:
             print _("Successfully deleted User [ %s ]") % deleteusername
