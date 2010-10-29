@@ -14,8 +14,10 @@
 # in this software or its documentation.
 
 import os
+import sys
 from gettext import gettext as _
 from optparse import OptionParser
+from M2Crypto import SSL
 
 from pulp.client.config import Config
 from pulp.client.connection import RestlibException
@@ -196,6 +198,14 @@ class Action(object):
         try:
             self.setup_connections()
             self.run()
+        except SSL.Checker.WrongHost, wh:
+            print _("ERROR: The server hostname you have configured in /etc/pulp/client.conf does not match the")
+            print _("hostname returned from the Pulp server you are connecting to.  ")
+            print ""
+            print _("You have: [%s] configured but got: [%s] from the server.") % (wh.expectedHost, wh.actualHost)
+            print ""
+            print _("Please correct the host in the /etc/pulp/client.conf file")
+            sys.exit(1)
         except RestlibException, re:
             _log.error("error: %s" % re)
             system_exit(re.code, _('error: operation failed: ') + re.msg)
