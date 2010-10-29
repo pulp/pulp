@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.76
+Version:        0.0.77
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -186,6 +186,42 @@ fi
 
 
 %changelog
+* Fri Oct 29 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.77-1
+- 647828 - Older clients are not able to connect to pulp on f13
+  (jmatthew@redhat.com)
+- 632277 - Configure 'qpid' logger to use pulp appender. (jortel@redhat.com)
+- 619077 - fixing variable name (mmccune@redhat.com)
+- 647522 - repo delete should now unbind consumers from the repo before
+  deleteting (pkilambi@redhat.com)
+- 632577 added code to logs.stop_logging to wipe out the existing
+  loggers in the python logging module (jconnor@redhat.com)
+- 641364 added the -u and -p options back into auth login
+  (jconnor@redhat.com)
+- 641438 added get_repo method to base RepoAction class that will
+  exit if the repo is not found (jconnor@redhat.com)
+- 638736 - Fixed.  User 'admin' not permitted by WS controller.
+  (jortel@redhat.com)
+- 643011 changed the default number of threads for downloads to 5
+  this seems to give grinder a chance to actually calculate information needed
+  for the progress bar (jconnor@redhat.com)
+- 630977 - Repo list output now is formatted to show feed url and type as
+  separate fields (pkilambi@redhat.com)
+- 623923 - Handle read errors during upload (pkilambi@redhat.com)
+- 634283 Adding consumer update to pulp-client (pkilambi@redhat.com)
+- 638288 - errata installs should now be successfully scheduled
+  (pkilambi@redhat.com)
+- skip directories when importing keys (pkilambi@redhat.com)
+- fix intermittent unit test failure on test_repo_gpgkeys (jmatthew@redhat.com)
+- 643952 - pulp-admin packagegroup install failing (jmatthew@redhat.com)
+- added data model version model validation (jconnor@redhat.com)
+- added comments and documentation to the version module (jconnor@redhat.com)
+- moved setting the version into one module added logging to one.migrate added
+  comments to one module for developer posterity (jconnor@redhat.com)
+- implemented version set and query methods (jconnor@redhat.com)
+- changed script to use changes made in migration package and version module
+  (jconnor@redhat.com)
+- added database section to conf (jconnor@redhat.com)
+
 * Tue Oct 26 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.76-1
 - Fix gpg keys broken by repo publish feature. (jortel@redhat.com)
 - Changed to work with 'publish' being a boolean. (jortel@redhat.com)
