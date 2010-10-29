@@ -180,7 +180,8 @@ class Bind(ConsumerAction):
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.bind(consumerid, repoid)
-        self.repolib.update()
+        if credentials.get_consumer_id():
+            self.repolib.update()
         print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                 (consumerid, repoid)
 
@@ -198,7 +199,8 @@ class Unbind(ConsumerAction):
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.unbind(consumerid, repoid)
-        self.repolib.update()
+        if credentials.get_consumer_id():
+            self.repolib.update()
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 
