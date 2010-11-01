@@ -268,7 +268,12 @@ class GetKeyValues(ConsumerAction):
     def run(self):
         consumerid = self.get_required_option('id')
         keyvalues = self.cconn.get_keyvalues(consumerid)
-        print "%s" % keyvalues
+        print_header(_("Consumer Key-values"))
+        print constants.CONSUMER_KEY_VALUE_INFO % ("key", "value")
+      
+        for key in keyvalues.keys():
+            print constants.CONSUMER_KEY_VALUE_INFO % (key, keyvalues['key'])
+        system_exit(os.EX_OK)       
 
 
 

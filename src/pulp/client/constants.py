@@ -45,6 +45,11 @@ Profile            \t%-25s
 Additional info    \t%-25s
 """
 
+CONSUMER_KEY_VALUE_INFO = """
+\t%-25s    :    \t%-25s
+"""
+
+
 REPO_SCHEDULES_LIST = """
 Label              \t%-25s
 Schedule           \t%-25s
