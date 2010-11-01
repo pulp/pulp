@@ -31,7 +31,7 @@ log = logging.getLogger('pulp')
 # packages controllers --------------------------------------------------------
 
 class Packages(JSONController):
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def GET(self):
@@ -43,7 +43,7 @@ class Packages(JSONController):
         filters = self.filters(valid_filters)
         spec = mongo.filters_to_re_spec(filters)
         return self.ok(api.package_descriptions(spec))
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def DELETE(self):
@@ -62,14 +62,19 @@ class Packages(JSONController):
         @return: package meta data on successful creation of package
         """
         data = self.params()
-        package = api.create(data['name'], data['epoch'],data['version'],  
+        package = api.create(data['name'], data['epoch'], data['version'],
                              data['release'], data['arch'], data['description'],
                              data['checksum_type'], data['checksum'], data['filename'])
         return self.created(None, package)
-    
-    
+
+    def POST(self):
+        # REST dictates POST to collection, and PUT to specific resource for
+        # creation, this is the start of supporting both
+        return self.PUT()
+
+
 class Package(JSONController):
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def GET(self, id):
@@ -87,14 +92,14 @@ class Package(JSONController):
         '''
         api.delete(id)
         return self.ok(True)
-    
-    
+
+
 class PackageDeferredFields(JSONController):
-    
+
     # NOTE the intersection of exposed_fields and exposed_actions must be empty
     exposed_fields = (
     )
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def GET(self, id, field_name):
@@ -102,16 +107,16 @@ class PackageDeferredFields(JSONController):
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
         return field(id)
-    
-    
+
+
 class PackageActions(JSONController):
-    
+
     # See pulp.webservices.repositories.RepositoryActions for design
-    
+
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
     )
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def POST(self, id, action_name):
@@ -119,7 +124,7 @@ class PackageActions(JSONController):
         if action is None:
             self.internal_server_error('No implementation for %s found' % action_name)
         return action(id)
-    
+
 
 class Versions(JSONController):
 

@@ -49,7 +49,7 @@ class Errata(JSONController):
         @return: errata that was created
         """
         errata_data = self.params()
-        errata = api.create(errata_data['id'], 
+        errata = api.create(errata_data['id'],
                           errata_data['title'],
                           errata_data['description'],
                           errata_data['version'],
@@ -66,6 +66,11 @@ class Errata(JSONController):
                           errata_data.get('repo_defined', False),
                           errata_data.get('immutable', False))
         return self.created(errata['id'], errata)
+
+    def POST(self):
+        # REST dictates POST to collection, and PUT to specific resource for
+        # creation, this is the start of supporting both
+        return self.PUT()
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

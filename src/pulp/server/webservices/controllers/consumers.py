@@ -35,9 +35,9 @@ log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
 default_fields = ['id', 'description', 'key_value_pairs']
-             
+
 # controllers -----------------------------------------------------------------
-    
+
 class Consumers(JSONController):
 
     @JSONController.error_handler
@@ -62,7 +62,7 @@ class Consumers(JSONController):
             for f in ConsumerDeferredFields.exposed_fields:
                 c[f] = http.extend_uri_path('/'.join((c['id'], f)))
         return self.ok(consumers)
-     
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def PUT(self):
@@ -75,10 +75,15 @@ class Consumers(JSONController):
         consumer = consumer_api.consumer(id)
         if consumer is not None:
             return self.conflict('Consumer with id: %s, already exists' % id)
-        consumer = consumer_api.create(id, consumer_data['description'], 
+        consumer = consumer_api.create(id, consumer_data['description'],
                                        consumer_data['key_value_pairs'])
         path = http.extend_uri_path(consumer.id)
         return self.created(path, consumer)
+
+    def POST(self):
+        # REST dictates POST to collection, and PUT to specific resource for
+        # creation, this is the start of supporting both
+        return self.PUT()
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -89,7 +94,7 @@ class Consumers(JSONController):
         """
         consumer_api.clean()
         return self.ok(True)
-    
+
 
 class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
@@ -99,7 +104,7 @@ class Bulk(JSONController):
         consumer_api.bulkcreate(self.params())
         return self.ok(True)
 
- 
+
 class Consumer(JSONController):
 
     @JSONController.error_handler
@@ -117,7 +122,7 @@ class Consumer(JSONController):
         for field in ConsumerDeferredFields.exposed_fields:
             consumer[field] = http.extend_uri_path(field)
         return self.ok(consumer)
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def PUT(self, id):
@@ -150,7 +155,7 @@ class Consumer(JSONController):
 
 
 class ConsumerDeferredFields(JSONController):
-    
+
     # NOTE the intersection of exposed_fields and exposed_actions must be empty
     exposed_fields = (
         'package_profile',
@@ -170,7 +175,7 @@ class ConsumerDeferredFields(JSONController):
         packages = consumer_api.packages(id)
         packages = self.filter_results(packages, filters)
         return self.ok(packages)
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def repoids(self, id):
         """
@@ -184,8 +189,8 @@ class ConsumerDeferredFields(JSONController):
         consumer = consumer_api.consumer(id, fields=['repoids'])
         repoids = self.filter_results(consumer['repoids'], filters)
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
-        return self.ok(repo_data)   
-   
+        return self.ok(repo_data)
+
     @RoleCheck(admin=True)
     def certificate(self, id):
         """
@@ -223,12 +228,12 @@ class ConsumerDeferredFields(JSONController):
         if field is None:
             return self.internal_server_error('No implementation for %s found' % field_name)
         return field(id)
-    
+
 
 class ConsumerActions(AsyncController):
-    
+
     # See pulp.webservices.repositories.RepositoryActions for design
-    
+
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
         'bind',
@@ -243,7 +248,7 @@ class ConsumerActions(AsyncController):
         'installerrata',
         'history',
     )
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def bind(self, id):
         """
@@ -253,7 +258,7 @@ class ConsumerActions(AsyncController):
         data = self.params()
         consumer_api.bind(id, data)
         return self.ok(True)
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def unbind(self, id):
         """
@@ -280,7 +285,7 @@ class ConsumerActions(AsyncController):
             return self.conflict('Given key [%s] already exist' % data['key'])
         consumer_api.add_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def delete_key_value_pair(self, id):
         """
@@ -296,8 +301,8 @@ class ConsumerActions(AsyncController):
         if data not in key_value_pairs.keys():
             return self.conflict('Given key [%s] does not exist' % data)
         consumer_api.delete_key_value_pair(id, data)
-        return self.ok(True) 
-    
+        return self.ok(True)
+
     @RoleCheck(consumer_id=True, admin=True)
     def update_key_value_pair(self, id):
         """
@@ -336,7 +341,7 @@ class ConsumerActions(AsyncController):
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroups(self, id):
         """
@@ -410,7 +415,7 @@ class ConsumerActions(AsyncController):
         @type action_name: str
         @param action_name: action name
         """
-        
+
         action = getattr(self, action_name, None)
         log.debug("consumers.py POST.  Action: %s" % action_name)
         if action is None:
@@ -442,10 +447,10 @@ URLS = (
     '/$', 'Consumers',
     '/bulk/$', 'Bulk',
     '/([^/]+)/$', 'Consumer',
-    
+
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerDeferredFields.exposed_fields),
     'ConsumerDeferredFields',
-    
+
     '/([^/]+)/(%s)/$' % '|'.join(ConsumerActions.exposed_actions),
     'ConsumerActions',
 

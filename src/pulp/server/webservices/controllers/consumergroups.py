@@ -50,6 +50,11 @@ class ConsumerGroups(JSONController):
                                    consumergroup_data['consumerids'])
         return self.created(consumergroup['id'], consumergroup)
 
+    def POST(self):
+        # REST dictates POST to collection, and PUT to specific resource for
+        # creation, this is the start of supporting both
+        return self.PUT()
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def DELETE(self):
@@ -127,7 +132,7 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         api.unbind(id, data)
         return self.ok(None)
-    
+
     def add_key_value_pair(self, id):
         """
         Add key-value information to consumergroup.
@@ -136,7 +141,7 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         api.add_key_value_pair(id, data['key'], data['value'], data['force'])
         return self.ok(True)
-    
+
     def delete_key_value_pair(self, id):
         """
         Delete key-value information from consumergroup.
@@ -144,8 +149,8 @@ class ConsumerGroupActions(AsyncController):
         """
         data = self.params()
         api.delete_key_value_pair(id, data)
-        return self.ok(True) 
-   
+        return self.ok(True)
+
     def update_key_value_pair(self, id):
         """
         Update key-value information of a consumergroup.
@@ -154,7 +159,7 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         api.update_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
-   
+
     def add_consumer(self, id):
         """
         Add a consumer to the group.
@@ -172,8 +177,8 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         api.delete_consumer(id, data)
         return self.ok(None)
-    
-    
+
+
     def installpackages(self, id):
         """
         Install packages.
@@ -182,7 +187,7 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         names = data.get('packagenames', [])
         return self.ok(api.installpackages(id, names))
-    
+
     def installerrata(self, id):
         """
          Install applicable errata
@@ -190,8 +195,8 @@ class ConsumerGroupActions(AsyncController):
         """
         data = self.params()
         errataids = data.get('errataids', [])
-        types     = data.get('types', [])
-        return self.ok(api.installerrata(id, errataids, types)) 
+        types = data.get('types', [])
+        return self.ok(api.installerrata(id, errataids, types))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

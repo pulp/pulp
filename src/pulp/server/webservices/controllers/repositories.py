@@ -105,6 +105,11 @@ class Repositories(JSONController):
         repo['uri_ref'] = path
         return self.created(path, repo)
 
+    def POST(self):
+        # REST dictates POST to collection, and PUT to specific resource for
+        # creation, this is the start of supporting both
+        return self.PUT()
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def DELETE(self):
