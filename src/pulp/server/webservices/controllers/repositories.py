@@ -91,15 +91,15 @@ class Repositories(JSONController):
             return self.conflict('A repository with the id, %s, already exists' % id)
 
         repo = api.create(id,
-                         repo_data['name'],
-                         repo_data['arch'],
-                         feed=repo_data.get('feed', None),
-                         symlinks=repo_data.get('use_symlinks', False),
-                         sync_schedule=repo_data.get('sync_schedule', None),
-                         cert_data=repo_data.get('cert_data', None),
-                         relative_path=repo_data.get('relative_path', None),
-                         groupid=repo_data.get('groupid', None),
-                         gpgkeys=repo_data.get('gpgkeys', None),)
+                          repo_data['name'],
+                          repo_data['arch'],
+                          feed=repo_data.get('feed', None),
+                          symlinks=repo_data.get('use_symlinks', False),
+                          sync_schedule=repo_data.get('sync_schedule', None),
+                          cert_data=repo_data.get('cert_data', None),
+                          relative_path=repo_data.get('relative_path', None),
+                          groupid=repo_data.get('groupid', None),
+                          gpgkeys=repo_data.get('gpgkeys', None),)
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
@@ -266,8 +266,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful sync of repository from feed
         """
         timeout = self.timeout(self.params())
-        #task = self.start_task(api.sync, [id], timeout=timeout, unique=True)
-        task = api.sync(id, timeout=timeout)
+        task = self.start_task(api._sync, [id], timeout=timeout, unique=True)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
@@ -280,7 +279,6 @@ class RepositoryActions(AsyncController):
     # XXX hack to make the web services unit tests work
     _sync = sync
 
-    
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def clone(self, id):
@@ -288,13 +286,13 @@ class RepositoryActions(AsyncController):
         Clone a repository.
         @param id: repository id
         @return: True on successful clone of repository
-        """        
+        """
         repo_data = self.params()
         if api.repository(id, default_fields) is None:
             return self.conflict('A repository with the id, %s, does not exist' % id)
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
-        
+
         task = api.clone(id,
                          repo_data['clone_id'],
                          repo_data['clone_name'],
@@ -462,7 +460,7 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.addkeys(id, data['keylist'])
         return self.ok(True)
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def get_package_by_nvrea(self, id):
@@ -473,12 +471,12 @@ class RepositoryActions(AsyncController):
         @return A package object if exists in repo and filesystem
         """
         data = self.params()
-        return self.ok(api.get_package_by_nvrea(id, 
-                                        data['name'], 
-                                        data['version'], 
-                                        data['release'], 
-                                        data['epoch'], 
-                                        data['arch'],))
+        return self.ok(api.get_package_by_nvrea(id,
+                                                data['name'],
+                                                data['version'],
+                                                data['release'],
+                                                data['epoch'],
+                                                data['arch'],))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -492,7 +490,7 @@ class RepositoryActions(AsyncController):
     def listkeys(self, id):
         keylist = api.listkeys(id)
         return self.ok(keylist)
-    
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def update_publish(self, id):

@@ -25,15 +25,17 @@ try:
 except ImportError:
     import simplejson as json
 
-import pymongo.json_util
 import web
+from pymongo import json_util
 
 from pulp.server import async
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import auth
 from pulp.server.webservices import http
 
-log = logging.getLogger(__name__)
+
+_log = logging.getLogger(__name__)
+
 
 class JSONController(object):
     """
@@ -52,7 +54,7 @@ class JSONController(object):
             except Exception:
                 exc_info = sys.exc_info()
                 tb_msg = ''.join(traceback.format_exception(*exc_info))
-                log.error("%s" % (traceback.format_exc()))
+                _log.error("%s" % (traceback.format_exc()))
                 return self.internal_server_error(tb_msg)
         return report_error
 
@@ -91,14 +93,17 @@ class JSONController(object):
         """
         return http.query_parameters(valid)
 
+    # result methods ----------------------------------------------------------
+
     def filter_results(self, results, filters):
         """
-        @deprecated: use mongo.filters_to_re_spec and pass the result into pulp's api instead
+        @deprecated: use mongo.filters_to_re_spec and pass the result into
+                     pulp's api instead
         @type results: iterable of pulp model instances
         @param results: results from a db query
         @type filters: dict of str: list
         @param filters: result filters passed in, in the uri
-        @return: list of model instances that meat the criteria in the filters
+        @return: list of model instances that meet the criteria in the filters
         """
         if not filters:
             return results
@@ -113,14 +118,14 @@ class JSONController(object):
                 new_results.append(result)
         return new_results
 
-    # response methods --------------------------------------------------------
+    # http response methods ---------------------------------------------------
 
     def _output(self, data):
         """
         JSON encode the response and set the appropriate headers
         """
         http.header('Content-Type', 'application/json')
-        return json.dumps(data, default=pymongo.json_util.default)
+        return json.dumps(data, default=json_util.default)
 
     def ok(self, data):
         """
@@ -229,6 +234,9 @@ class AsyncController(JSONController):
     Base controller class with convenience methods for executing asynchronous
     tasks.
     """
+
+    # result methods ----------------------------------------------------------
+
     def _task_to_dict(self, task):
         """
         Convert a task to a dictionary (non-destructive) while retaining the
@@ -254,6 +262,8 @@ class AsyncController(JSONController):
             return http.uri_path()
         return http.extend_uri_path(id)
 
+    # sync task methods -------------------------------------------------------
+
     def start_task(self,
                    func,
                    args=[],
@@ -262,7 +272,6 @@ class AsyncController(JSONController):
                    unique=False):
         """
         Execute the function and its arguments as an asynchronous task.
-        @deprecated: the async execution is being pushed down into the api
         @param func: python callable
         @param args: positional arguments for func
         @param kwargs: key word arguments for func
@@ -273,7 +282,6 @@ class AsyncController(JSONController):
     def cancel_task(self, task):
         """
         Cancel the passed in task
-        @deprecated: the async execution is being pushed down into the api
         @type task: Task instance
         @param task: task to cancel
         @return: True if the task was successfully canceled, False otherwise
@@ -286,7 +294,6 @@ class AsyncController(JSONController):
     def task_status(self, id):
         """
         Get the current status of an asynchronous task.
-        @deprecated: the async execution is being pushed down into the api
         @param id: task id
         @return: TaskModel instance
         """
@@ -300,7 +307,6 @@ class AsyncController(JSONController):
     def find_task(self, id):
         """
         Find and return a task with the given id
-        @deprecated: the async execution is being pushed down into the api
         @type id: str
         @param id: id of task to find
         @return: Task instance if a task with the id exists, None otherwise
@@ -318,7 +324,8 @@ class AsyncController(JSONController):
         @return: datetime.timedelta instance corresponding to a properly
                  formatted timeout value if found in data, None otherwise
         """
-        if 'timeout' not in data or data['timeout'] is None:
+        timeout = data.get('timeout', None)
+        if timeout is None:
             return None
         timeouts = {
             'days': lambda x: timedelta(days=x),
@@ -329,7 +336,6 @@ class AsyncController(JSONController):
             'hours': lambda x: timedelta(hours=x),
             'weeks': lambda x: timedelta(weeks=x)
         }
-        timeout = data['timeout']
         if timeout.find(':') < 0:
             return None
         units, length = timeout.split(':', 1)
@@ -341,6 +347,8 @@ class AsyncController(JSONController):
         except ValueError:
             return None
         return timeouts[units](length)
+
+    # http response methods ---------------------------------------------------
 
     def accepted(self, status):
         """
