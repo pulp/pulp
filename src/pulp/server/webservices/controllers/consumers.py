@@ -294,6 +294,12 @@ class ConsumerActions(AsyncController):
         
         """
         data = self.params()
+        consumer = consumer_api.consumer(id)
+        if not consumer:
+            return self.not_found('Consumer [%s] does not exist' % id)
+        key_value_pairs = consumer['key_value_pairs']
+        if data['key'] not in key_value_pairs.keys():
+            return self.not_found('Given key [%s] does not exist' % data['key'])
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
 

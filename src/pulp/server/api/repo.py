@@ -469,14 +469,18 @@ class RepoApi(BaseApi):
     def packages(self, id, name=None):
         """
         Return list of Package objects in this Repo
+        @type id: str
+        @param id: repository id
+        @type name: str
+        @param name: package name
+        @rtype: list
+        @return: package objects belonging to this repository
         """
         repo = self._get_existing_repo(id)
-        packages = repo['packages']
-        # XXX this is WRONG!!!!, we are returning a dict if name is None
-        # otherwise we are returning a list!
-        if name is None:
-            return packages
-        return [p for p in packages.values() if p['name'].find(name) >= 0]
+        packages = [self.packageapi.package(p) for p in repo['packages']]
+        if name is not None:
+            packages = [p for p in packages.values() if p['name'].find(name) >= 0]
+        return packages
 
     def package_count(self, id):
         """
