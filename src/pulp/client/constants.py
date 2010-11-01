@@ -46,7 +46,7 @@ Additional info    \t%-25s
 """
 
 CONSUMER_KEY_VALUE_INFO = """
-\t%-25s    :    \t%-25s
+\t%-15s:\t%-15s
 """
 
 
