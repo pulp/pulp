@@ -477,9 +477,10 @@ class RepoApi(BaseApi):
         @return: package objects belonging to this repository
         """
         repo = self._get_existing_repo(id)
-        packages = [self.packageapi.package(p) for p in repo['packages']]
+        repo_packages = repo['packages']
+        packages = [self.packageapi.package(p) for p in repo_packages.keys()]
         if name is not None:
-            packages = [p for p in packages.values() if p['name'].find(name) >= 0]
+            packages = [p for p in packages if p['name'].find(name) >= 0]
         return packages
 
     def package_count(self, id):

@@ -836,12 +836,9 @@ class TestApi(unittest.TestCase):
         self.assertTrue(saved_pkg['checksum'][test_checksum_type] == test_checksum)
         self.assertTrue(saved_pkg['filename'] == test_filename)
         # Verify we can find this package version through repo api calls
-        pkgs = self.rapi.packages(repo['id'])
-        self.assertTrue(pkgs.has_key(packageid))
-        self.assertTrue(pkgs[packageid] is not None)
-        self.assertTrue(pkgs[packageid]['filename'] == test_filename)
         pkgs = self.rapi.packages(repo['id'], test_pkg_name)
         self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(pkgs[0]['id'] == packageid)
         self.assertTrue(pkgs[0]['filename'] == test_filename)
 
         # Remove package from repo
