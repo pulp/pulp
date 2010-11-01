@@ -18,19 +18,18 @@ import web
 
 from pulp.server import config
 from pulp.server.logs import start_logging
-from pulp.server.webservices import controllers
+from pulp.server.webservices.controllers import (
+    audit, consumergroups, consumers, errata, packages, repositories, users)
 
 
-# NOTE: If you add a item here make sure you also add 
-#       it to controllers/__init__.py
-URLS = (
-    '/consumers', controllers.consumers.application,
-    '/consumergroups', controllers.consumergroups.application,
-    '/events', controllers.audit.application,
-    '/packages', controllers.packages.application,
-    '/repositories', controllers.repositories.application,
-    '/users', controllers.users.application,
-    '/errata', controllers.errata.application,
+urls = (
+    '/consumers', consumers.application,
+    '/consumergroups', consumergroups.application,
+    '/events', audit.application,
+    '/packages', packages.application,
+    '/repositories', repositories.application,
+    '/users', users.application,
+    '/errata', errata.application,
 )
 
 
@@ -45,7 +44,7 @@ def wsgi_application():
     
     @return: wsgi application callable
     """
-    application = web.subdir_application(URLS)
+    application = web.subdir_application(urls)
     _configure_application(application)
     start_logging()
     return application.wsgifunc()
