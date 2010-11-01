@@ -24,7 +24,6 @@ from pulp.server.webservices import controllers
 # NOTE: If you add a item here make sure you also add 
 #       it to controllers/__init__.py
 URLS = (
-    '/test', controllers.test.application,
     '/consumers', controllers.consumers.application,
     '/consumergroups', controllers.consumergroups.application,
     '/events', controllers.audit.application,
