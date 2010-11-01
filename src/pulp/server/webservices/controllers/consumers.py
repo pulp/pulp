@@ -272,6 +272,12 @@ class ConsumerActions(AsyncController):
         
         """
         data = self.params()
+        consumer = consumer_api.consumer(id)
+        if not consumer:
+            return self.conflict('Consumer [%s] does not exist' % id)
+        key_value_pairs = consumer['key_value_pairs']
+        if data['key'] in key_value_pairs.keys():
+            return self.conflict('Given key [%s] already exist' % data['key'])
         consumer_api.add_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
     
@@ -283,6 +289,12 @@ class ConsumerActions(AsyncController):
         
         """
         data = self.params()
+        consumer = consumer_api.consumer(id)
+        if not consumer:
+            return self.conflict('Consumer [%s] does not exist' % id)
+        key_value_pairs = consumer['key_value_pairs']
+        if data not in key_value_pairs.keys():
+            return self.conflict('Given key [%s] does not exist' % data)
         consumer_api.delete_key_value_pair(id, data)
         return self.ok(True) 
     
@@ -296,10 +308,10 @@ class ConsumerActions(AsyncController):
         data = self.params()
         consumer = consumer_api.consumer(id)
         if not consumer:
-            return self.not_found('Consumer [%s] does not exist' % id)
+            return self.conflict('Consumer [%s] does not exist' % id)
         key_value_pairs = consumer['key_value_pairs']
         if data['key'] not in key_value_pairs.keys():
-            return self.not_found('Given key [%s] does not exist' % data['key'])
+            return self.conflict('Given key [%s] does not exist' % data['key'])
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
 
