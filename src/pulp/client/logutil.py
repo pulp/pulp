@@ -18,17 +18,25 @@ import logging
 from logging import root, Formatter
 from logging.handlers import RotatingFileHandler
 
+USRDIR = '~/.pulp'
 LOGDIR = '/var/log/pulp'
 LOGFILE = 'client.log'
 
 handler = None
 
+def __logdir():
+    if os.getuid() == 0:
+        return LOGDIR
+    else:
+        return os.path.expanduser(USRDIR)
+
 def getLogger(name):
     global handler
-    if not os.path.exists(LOGDIR):
-        os.mkdir(LOGDIR)
+    logdir = __logdir()
+    if not os.path.exists(logdir):
+        os.mkdir(logdir)
     if handler is None:
-        path = os.path.join(LOGDIR, LOGFILE)
+        path = os.path.join(logdir, LOGFILE)
         fmt = '%(asctime)s [%(levelname)s][%(threadName)s] %(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
         handler = RotatingFileHandler(path, maxBytes=0x100000, backupCount=5)
         handler.setFormatter(Formatter(fmt))
