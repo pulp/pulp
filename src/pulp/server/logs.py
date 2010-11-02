@@ -47,19 +47,24 @@ def configure_pulp_grinder_logging():
     fmt = '%(asctime)s [%(levelname)s][%(threadName)s] %(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
     formatter = logging.Formatter(fmt)
 
+    #
+    # Pulp (pulp, qpid, gopher)
+    #
     pulp_file = config.config.get('logs', 'pulp_file')
     check_log_file(pulp_file)
-    pulp_logger = logging.getLogger('pulp')
-    pulp_logger.setLevel(level)
     pulp_handler = handlers.RotatingFileHandler(pulp_file,
                                                 maxBytes=max_size,
                                                 backupCount=backups)
     pulp_handler.setFormatter(formatter)
-    pulp_logger.addHandler(pulp_handler)
 
-    qpid_logger = logging.getLogger('qpid')
-    qpid_logger.addHandler(pulp_handler)
+    for pkg in ('pulp', 'qpid', 'gopher'):
+        logger = logging.getLogger(pkg)
+        logger.setLevel(level)
+        logger.addHandler(pulp_handler)
 
+    #
+    # Grinder
+    #
     grinder_file = config.config.get('logs', 'grinder_file')
     check_log_file(grinder_file)
     grinder_logger = logging.getLogger('grinder')
