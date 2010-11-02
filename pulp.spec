@@ -19,6 +19,7 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 
+Requires: %{name}-common %{version}
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
@@ -63,6 +64,7 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
+Requires: %{name}-common %{version}
 Requires: gopher
 
 %if 0%{?rhel} > 5
@@ -72,7 +74,16 @@ Requires: python-hashlib
 %description client
 A collection of tools to interact and perform content specific operations such as repo management, 
 package profile updates etc.
- 
+
+
+%package common
+Summary:        Pulp common python packages.
+Group:          Development/Languages
+BuildRequires:  rpm-python
+
+%description common
+A collection of resource that are common between the pulp
+server and client.
 
 %prep
 %setup -q
@@ -132,18 +143,23 @@ pulp-migrate --auto
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/server/
-%config(noreplace) /etc/pulp/pulp.conf
-%config(noreplace) /etc/httpd/conf.d/pulp.conf
-%attr(775, apache, apache) /etc/pulp
+%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
+%attr(775, apache, apache) %{_sysconfdir}/pulp
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/webservices.wsgi
 %attr(750, apache, apache) /srv/pulp/bootstrap.wsgi
 %attr(3775, apache, apache) /var/lib/pulp
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
-%attr(3775, root, root) /etc/pki/content
-/etc/pki/pulp/ca.key
-/etc/pki/pulp/ca.crt
+%attr(3775, root, root) %{_sysconfdir}/pki/content
+%{_sysconfdir}/pki/pulp/ca.key
+%{_sysconfdir}/pki/pulp/ca.crt
+
+%files common
+%defattr(-,root,root,-)
+%doc
+%{python_sitelib}/pulp/__init__.*
 
 
 %files client
@@ -154,20 +170,11 @@ pulp-migrate --auto
 %{_bindir}/pulp-admin
 %{_bindir}/pulp-client
 %{_bindir}/pulp-migrate
-%{_bindir}/pulpd
-%attr(755,root,root) %{_sysconfdir}/init.d/pulpd
+%{_libdir}/gopher/plugins/pulp.*
+%{_sysconfdir}/gopher/plugins/pulp.conf
+>>>>>>> Spec changes to support gopher refit.
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
-%config(noreplace) /etc/pulp/client.conf
-
-%post client
-chkconfig --add pulpd
-
-%preun client
-if [ $1 = 0 ] ; then
-   /sbin/service pulpd stop >/dev/null 2>&1
-   /sbin/chkconfig --del pulpd
-fi
-
+%config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
 * Wed Nov 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.78-1
