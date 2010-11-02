@@ -32,6 +32,9 @@ import pulp.server.auth.password_util as password_util
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
+from pulp.server.config import config
+from pulp.server.LDAPConnection import LDAPConnection
+from pulp.server.db.model import User
 
 # globals ---------------------------------------------------------------------
 
@@ -100,6 +103,7 @@ class RoleCheck(object):
             if fargs and getattr(fargs[0], '__class__', None):
                 instance, fargs = fargs[0], fargs[1:]
                 result = f(instance, *fargs, **kw)
+                
             else:
                 result = f(*(fargs), **kw)
 
@@ -163,15 +167,11 @@ class RoleCheck(object):
         username, id = cert_generator.decode_admin_user(encoded_user)
 
         # Verify a user exists with the given name
-        user = USER_API.user(username)
-        if user is None:
-            LOG.error('User [%s] specified in certificate was not found in the system' % username)
-            return None
-
-        # Verify the correct user ID
-        if id != user['id']:
-            LOG.error('ID in admin certificate for user [%s] was incorrect' % username)
-            return None
+        if config.has_section("ldap"):
+            # found an ldap configuration, check to see if user exists
+            user = self.check_user_pass_on_ldap(username)
+        else:
+            user = self.check_user_pass_on_pulp(username)
 
         return user
 
@@ -200,21 +200,69 @@ class RoleCheck(object):
             password = uname_pass[1]
 
             # Verify a user exists with the given name
-            user = USER_API.user(username)
-            if user is None:
-                LOG.error('User [%s] specified in certificate was not found in the system' %
-                          username)
-                return None
+            if config.has_section("ldap"):
+                # found an ldap configuration, check to see if user exists
+                return self.check_user_pass_on_ldap(username, password)
+            else:
+                return self.check_user_pass_on_pulp(username, password)
+        return None
+    
+    def check_user_pass_on_ldap(self, username, password=None):
+        '''
+        verify the credentials for user on ldap server.
+        @param username: Userid to be validated on ldap server
+        @param password: password credentials for userid
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
+        '''
+        if not config.has_section("ldap"):
+            LOG.info("No external ldap server available")
+            return
+        ldapserver = config.get("ldap", "uri")
+        base       = config.get("ldap", "base")
+        ldapuser   = config.get("ldap", "user")
+        auth       = config.get("ldap", "password")
 
-            # Verify the correct password was specified
+        ldapserv = LDAPConnection(ldapuser, auth, ldapserver)
+        ldapserv.connect()
+        user = ldapserv.lookup_user(base, username, password) or None
+
+        LOG.error("User %s found in the ldap database" % user)
+        ldapserv.disconnect()
+        if user:
+            #create a transient user object to represent the ldap user
+            user = User(username, username, password, username)
+        return user
+    
+    def check_user_pass_on_pulp(self, username, password=None):
+        '''
+        verify the credentials for user on local pulp server.
+        @param username: Userid to be validated on server
+        @param password: password credentials for userid
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
+        '''
+        user = USER_API.user(username)
+        if user is None:
+            LOG.error('User [%s] specified in certificate was not found in the system' %
+                      username)
+            return None
+        
+        # Verify the correct user ID
+        if id != user['id']:
+            LOG.error('ID in admin certificate for user [%s] was incorrect' % username)
+            return None
+
+        # Verify the correct password was specified
+        if password:
             good_password = password_util.check_password(user['password'], password)
             if not good_password:
                 LOG.error('Password for user [%s] was incorrect' % username)
                 return None
 
-            return user
-
-        return None
+        return user
             
     def check_consumer(self, check_id=False, *fargs):
         '''
