@@ -115,8 +115,8 @@ class LDAPConnection:
 
 if __name__ == '__main__':
     ldapserv = LDAPConnection('cn=Directory Manager', \
-                              'dog8code',
-                              'ldap://prad.rdu.redhat.com')
+                              'redhat',
+                              'ldap://localhost')
     ldapserv.connect()
     print ldapserv.lookup_user("dc=rdu,dc=redhat,dc=com", "pulpuser1")
     print ldapserv.authenticate_user("dc=rdu,dc=redhat,dc=com", "pulpuser1", "redhat")
