@@ -20,7 +20,7 @@ Contains QPID event classes.
 
 import os
 from pulp.server.event import *
-from pulp.messaging.consumer import EventConsumer
+from pulp.server.event.consumer import EventConsumer
 from threading import RLock as Mutex
 import pulp.server.event.handler as hpx
 from logging import getLogger

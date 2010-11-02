@@ -20,7 +20,7 @@
 import sys
 sys.path.append('../../')
 
-from pulp.messaging.producer import EventProducer
+from pulp.server.event.producer import EventProducer
 from pulp.server.event.dispatcher import EventDispatcher
 #from logging import INFO, basicConfig
 from optparse import Option, OptionParser

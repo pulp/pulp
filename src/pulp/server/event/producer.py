@@ -2,8 +2,6 @@
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# Authors: Jeff Ortel <jortel@redhat.com>
-#
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
 # implied, including the implied warranties of MERCHANTABILITY or FITNESS
@@ -16,25 +14,26 @@
 # in this software or its documentation.
 #
 
-import sys
-sys.path.append('../../')
+"""
+Contains QPID event producer classes.
+"""
 
-from pulp.server.event.dispatcher import EventDispatcher
-from pulp.messaging.consumer import EventConsumer
-from logging import INFO, basicConfig
-
-basicConfig(filename='/tmp/messaging.log', level=INFO)
-
-class MyConsumer(EventConsumer):
-    def raised(self, subject, event):
-        print 'Event (%s) "%s" raised' % (subject, event)
+from gopher.messaging import Topic
+from gopher.messaging.producer import Producer
 
 
-def main():
-    consumer = MyConsumer('user.#')
-    #consumer = MyConsumer('user.#', 'myqueue') # durable subscriber
-    consumer.start()
-    consumer.join()
+class EventProducer(Producer):
+    """
+    Event producer.
+    """
 
-if __name__ == '__main__':
-    main()
+    def send(self, subject, event):
+        """
+        Send an event.
+        @param subject: A subject.
+        @type subject: str
+        @param event: The event body
+        @type event: object
+        """
+        destination = Topic('event', subject)
+        Producer.send(self, destination, event=event)

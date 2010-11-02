@@ -19,7 +19,6 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 
-Requires: pulp-common = %{version}
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
@@ -32,6 +31,7 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
+Requires: gopher-common
 %if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
@@ -57,24 +57,13 @@ Requires: python-hashlib
 Pulp provides replication, access, and accounting for software repositories.
 
 
-%package common
-Summary:        Pulp common modules.
-Group:          Development/Languages
-BuildRequires:  rpm-python
-Requires: python-simplejson
-Requires: python-qpid >= 0.7
-
-%description common
-Contains modules common to the Pulp server and client.
-
-
 %package client
 Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires: pulp-common = %{version}
 Requires: python-simplejson
 Requires: m2crypto
+Requires: gopher
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -122,12 +111,11 @@ mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
-# Pulp Agent
-mkdir -p %{buildroot}/usr/bin
-cp bin/pulpd %{buildroot}/usr/bin
-
-mkdir -p %{buildroot}/etc/init.d
-cp etc/init.d/pulpd %{buildroot}/etc/init.d
+# Gopher Plugin
+mkdir -p %{buildroot}/etc/gopher/plugins
+mkdir -p %{buildroot}/usr/lib/gopher/plugins
+cp etc/gopher/plugins/*.conf %{buildroot}/etc/gopher/plugins
+cp src/pulp/client/gopher/pulp.py %{buildroot}/usr/lib/gopher/plugins
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -156,13 +144,6 @@ pulp-migrate --auto
 %attr(3775, root, root) /etc/pki/content
 /etc/pki/pulp/ca.key
 /etc/pki/pulp/ca.crt
-
-
-%files common
-%defattr(-,root,root,-)
-%doc
-%{python_sitelib}/pulp/*.py*
-%{python_sitelib}/pulp/messaging/
 
 
 %files client

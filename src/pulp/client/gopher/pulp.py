@@ -14,18 +14,53 @@
 #
 
 """
-Remoted class for pulp agent.
+Pulp (gopher) plugin.
+Contains recurring actions and remote classes.
 """
 
 import os
-from pulp.client import *
-from pulp.client.repolib import RepoLib
+from pulp.client import ConsumerId
+from pulp.client.connection import ConsumerConnection, RestlibException
+from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
-from pulp.messaging.decorators import *
+from pulp.client.repolib import RepoLib
+from gopher.agent.action import *
+from gopher.messaging.decorators import *
 from yum import YumBase
+
 from logging import getLogger
 
 log = getLogger(__name__)
+cfg = Config()
+
+
+@remote
+@action(minutes=cfg.server.interval)
+class ProfileUpdateAction(Action):
+    """
+    Package Profile Update Action to update installed package info for a
+    registered consumer
+    """
+    @remotemethod
+    def perform(self):
+        """
+        Looks up the consumer id and latest pkg profile info and cals
+        the api to update the consumer profile
+        """
+        cid = ConsumerId()
+        if not cid.exists():
+            log.error("Not Registered")
+            return
+        try:
+            cconn = ConsumerConnection(host=cfg.server.host or "localhost",
+                                       port=cfg.server.port or 443)
+            pkginfo = PackageProfile().getPackageList()
+            cconn.profile(cid.read(), pkginfo)
+            log.info("Profile updated successfully for consumer %s" % cid.read())
+        except RestlibException, re:
+            log.error("Error: %s" % re)
+        except Exception, e:
+            log.error("Error: %s" % e)
 
 
 @remote
@@ -98,20 +133,6 @@ class PackageGroups:
         yb.resolveDeps()
         yb.processTransaction()
         return packagegroupids
-
-@remote
-@alias(name='admin')
-class AgentAdmin:
-
-    @remotemethod
-    def hello(self):
-        s = []
-        cfg = Config()
-        cid = ConsumerId()
-        s.append('Hello, I am agent "%s"' % cid.uuid)
-        s.append('Here is my configuration:\n%s' % cfg)
-        s.append('Status: ready')
-        return '\n'.join(s)
 
 
 @remote

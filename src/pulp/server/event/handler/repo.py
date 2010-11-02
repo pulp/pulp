@@ -19,8 +19,8 @@ Contains REPO event handler classes.
 """
 
 from pulp.server.event.dispatcher import *
+from pulp.server.event.producer import EventProducer
 from pulp.server.api.repo import RepoApi
-from pulp.messaging.producer import EventProducer
 from logging import getLogger
 
 log = getLogger(__name__)

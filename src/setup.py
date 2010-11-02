@@ -48,7 +48,6 @@ setup(
         '../bin/pulp-admin',
         '../bin/pulp-client',
         '../bin/pulp-migrate',
-        '../bin/pulpd',
     ],
     include_package_data=False,
     data_files=[],

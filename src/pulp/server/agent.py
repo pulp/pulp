@@ -20,32 +20,22 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
-from pulp.messaging.base import Container
-from pulp.messaging.producer import Producer
+from gopher.proxy import Agent as Base
+from gopher.messaging.producer import Producer
 from pulp.server.config import config
 
 
-class Agent(Container):
+class Agent(Base):
     """
-    A collection of stubs that represent the agent.
+    A server-side proxy for the pulp agent.
     """
 
     def __init__(self, uuid, **options):
         """
         @param uuid: The consumer uuid.
         @type uuid: str|list
-        @param options: Messaging L{pulp.messaging.Options}
+        @param options: Messaging L{gopher.messaging.Options}
         """
         url = config.get('messaging', 'url')
-        self.__producer = Producer(url=url)
-        Container.__init__(self, uuid, self.__producer, **options)
-
-    def delete(self):
-        """
-        Delete all messaging resources.
-        """
-        queue = self._Container__destination()
-        if isinstance(queue, (list, tuple)):
-            raise Exception, 'group delete, not permitted'
-        session = self.__producer.session()
-        queue.delete(session)
+        producer = Producer(url=url)
+        Base.__init__(self, uuid, producer, **options)

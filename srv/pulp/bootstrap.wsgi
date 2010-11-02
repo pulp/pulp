@@ -18,7 +18,7 @@ from pulp.server.logs import start_logging
 from pulp.server.event.dispatcher import EventDispatcher
 from pulp.server.async import ReplyHandler
 from pulp.server.config import config
-from pulp.messaging.broker import Broker
+from gopher.messaging.broker import Broker
 
 # start logging
 start_logging()

@@ -33,15 +33,20 @@ DIRS = (
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
 
+#
+# Str entry assumes same src and dst relative path.
+# Tuple entry is explicit (src, dst)
+#
 LINKS = (
-    'etc/init.d/pulpd',
     'etc/pulp/pulp.conf',
     'etc/pulp/client.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
+    'etc/gopher/plugins/pulp.conf',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
+    ('src/pulp/client/gopher/pulp.py', '/usr/lib/gopher/plugins/pulp.py'),
 )
 
 def parse_cmdline():
@@ -90,15 +95,28 @@ def create_dirs(opts):
         os.mkdir(d, 0777)
 
 
+def getlinks():
+    links = []
+    for l in LINKS:
+        if isinstance(l, (list,tuple)):
+            src = l[0]
+            dst = l[1]
+        else:
+            src = l
+            dst = os.path.join('/', l)
+        links.append((src, dst))
+    return links
+
+
 def install(opts):
     create_dirs(opts)
     currdir = os.path.abspath(os.path.dirname(__file__))
-    for l in LINKS:
-        debug(opts, 'creating link: /%s' % l)
-        if os.path.exists('/' + l):
-            debug(opts, '/%s exists, skipping' % l)
+    for src, dst in getlinks():
+        debug(opts, 'creating link: %s' % dst)
+        if os.path.exists(dst):
+            debug(opts, '%s exists, skipping' % dst)
             continue
-        os.symlink(os.path.join(currdir, l), '/' + l)
+        os.symlink(os.path.join(currdir, src), dst)
 
     # Link between pulp and apache
     if not os.path.exists('/var/www/pub'):
@@ -122,12 +140,12 @@ def install(opts):
 
 
 def uninstall(opts):
-    for l in LINKS:
-        debug(opts, 'removing link: /%s' % l)
-        if not os.path.exists('/' + l):
-            debug(opts, '/%s does not exist, skipping' % l)
+    for src, dst in getlinks():
+        debug(opts, 'removing link: %s' % dst)
+        if not os.path.exists(dst):
+            debug(opts, '%s does not exist, skipping' % dst)
             continue
-        os.unlink('/' + l)
+        os.unlink(dst)
 
     # Link between pulp and apache
     if os.path.exists('/var/www/pub'):
