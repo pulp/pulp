@@ -89,7 +89,8 @@ def main():
         lattr.setDN("cn=%s,dc=rdu,dc=redhat,dc=com" % userid)
         attr, dn = lattr.buildBody()
         ldapserv.add_users(dn, attrs=attr)
-    ldapserv.lookup_user("dc=rdu,dc=redhat,dc=com", "pulpuser1", "redhat")
+    ldapserv.lookup_user("dc=rdu,dc=redhat,dc=com", "pulpuser1")
+    ldapserv.authenticate_user("dc=rdu,dc=redhat,dc=com", "pulpuser1", "redhat")
     ldapserv.disconnect()
 
 if __name__ == '__main__':

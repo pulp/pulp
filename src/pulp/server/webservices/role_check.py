@@ -222,15 +222,17 @@ class RoleCheck(object):
         ldapserver = config.get("ldap", "uri")
         base       = config.get("ldap", "base")
         ldapuser   = config.get("ldap", "user")
-        auth       = config.get("ldap", "password")
+        ldappass   = config.get("ldap", "password")
 
-        ldapserv = LDAPConnection(ldapuser, auth, ldapserver)
+        ldapserv = LDAPConnection(ldapuser, ldappass, ldapserver)
         ldapserv.connect()
-        user = ldapserv.lookup_user(base, username, password) or None
+        LOG.error("User to lookup in ldap DB %s %s" % (username, password))
+        status = ldapserv.authenticate_user(base, username, password)
 
-        LOG.error("User %s found in the ldap database" % user)
+        LOG.error("User %s found in the ldap database" % username)
         ldapserv.disconnect()
-        if user:
+        user = None
+        if status:
             #create a transient user object to represent the ldap user
             user = User(username, username, password, username)
         return user

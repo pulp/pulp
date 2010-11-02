@@ -31,6 +31,7 @@ Requires: mod_python
 Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
+Requires: python-ldap
 %if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl

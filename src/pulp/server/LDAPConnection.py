@@ -22,7 +22,7 @@ import ldap.modlist
 log = logging.getLogger("LDAPConnection")
 
 class LDAPConnection:
-    def __init__(self, admin, password, server='ldap://localhost:389'):
+    def __init__(self, admin=None, password=None, server='ldap://localhost:389'):
         self.ldapserver =  server
         self.ldapadmin  =  admin
         self.ldappassword = password
@@ -34,7 +34,11 @@ class LDAPConnection:
         """
         try:
             self.lconn = ldap.initialize(self.ldapserver)
-            self.lconn.simple_bind_s(self.ldapadmin, self.ldappassword)
+            if not self.ldapadmin or not self.ldappassword:
+                #do an anonymous bind
+                self.lconn.simple_bind_s()
+            else:
+                self.lconn.simple_bind_s(self.ldapadmin, self.ldappassword)
         except ldap.LDAPError, e:
             log.error("Unable to establish a connection to ldap server")
 
@@ -73,34 +77,47 @@ class LDAPConnection:
             self.lconn.delete_s(dn)
         except ldap.LDAPError, e:
             log.error("Failed to delete user with dn %s to the ldap server" % dn)
+            
+    def authenticate_user(self, base, user, password):
+        """
+        @param user:  Userid to be validated in ldap server
+        @param password: password credentials for userid
+        
+        return a boolean, If the bind succeeds else Invalid auth
+        """
+        user = "cn=%s,%s" % (user, base)
+        try:
+            self.lconn.simple_bind_s(user, password)
+            log.info("Found user with id %s with matching credentials" % user)
+        except:
+            log.info("Invalid Credentials for %s." % user)
+            return False
+        return True
 
-
-    def lookup_user(self, baseDN, user, password=None):
+    def lookup_user(self, baseDN, user):
         """
         @param baseDN: The base DN of the ldap server
                        ex: dc=example,dc=com
         @param user:  Userid to be validated in ldap server
-        @param password: password credentials for userid
 
         Returns the user info list with data in ldap server
         """
         scope = ldap.SCOPE_SUBTREE
-        if password:
-            filter = "(|(uid=%s)(userPassword=%s))" % (user, password)
-        else:
-            filter = "(uid=%s)" % user
+        filter = "(uid=%s)" % user
+        log.info("filter to lookup redhat ldap %s" % filter)
         result = self.lconn.search_s(baseDN, scope, filter)
         if result:
             log.info("Found user with id %s with matching credentials" % user)
         else:
-            log.info("User %s Not Found.")
+            log.info("User %s Not Found." % user)
         return result
 
 
 if __name__ == '__main__':
     ldapserv = LDAPConnection('cn=Directory Manager', \
-                              'redhat',
-                              'ldap://localhost:389')
+                              'dog8code',
+                              'ldap://prad.rdu.redhat.com')
     ldapserv.connect()
-    ldapserv.lookup_user("dc=rdu,dc=redhat,dc=com", "pulpuser99", "redhat")
+    print ldapserv.lookup_user("dc=rdu,dc=redhat,dc=com", "pulpuser1")
+    print ldapserv.authenticate_user("dc=rdu,dc=redhat,dc=com", "pulpuser1", "redhat")
     ldapserv.disconnect()
