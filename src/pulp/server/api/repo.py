@@ -396,12 +396,12 @@ class RepoApi(BaseApi):
         
         #update clone_ids of its parent repo        
         parent_repos = self.repositories({'clone_ids' : id})
-        parent_repo = parent_repos[0]
-        clone_ids = parent_repo['clone_ids']
-        clone_ids.remove(id)
-        parent_repo['clone_ids'] = clone_ids
-        self.update(parent_repo)
-                                
+        if len(parent_repos) == 1:
+            parent_repo = parent_repos[0]
+            clone_ids = parent_repo['clone_ids']
+            clone_ids.remove(id)
+            parent_repo['clone_ids'] = clone_ids
+            self.update(parent_repo)
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
