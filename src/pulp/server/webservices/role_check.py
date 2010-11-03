@@ -230,7 +230,10 @@ class RoleCheck(object):
 
         ldapserv = LDAPConnection(ldapuser, ldappass, ldapserver)
         ldapserv.connect()
-        status = ldapserv.authenticate_user(base, username, password)
+        if password:
+            status = ldapserv.authenticate_user(base, username, password)
+        else:
+            status = ldapserv.lookup_user(base, username)
 
         LOG.error("User %s found in the ldap database: %s" % (username, status))
         ldapserv.disconnect()
