@@ -50,6 +50,7 @@ class TestAuthorization(unittest.TestCase):
     def tearDown(self):
         self.uapi.clean()
         self.capi.clean()
+        self.roleapi.clean()
         testutil.common_cleanup()
 
     def test_create_role(self):
@@ -66,7 +67,7 @@ class TestAuthorization(unittest.TestCase):
         # Todo: move this to an enum
         resource_type = 'REPO'
         
-        role = self.rolapi.create(name, desc, action_type, resource_type)
+        role = self.roleapi.create(name, desc, action_type, resource_type)
         return role
     
     def test_edit_role(self):

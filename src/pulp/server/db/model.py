@@ -229,3 +229,14 @@ class Errata(Base):
         self.pkglist = pkglist
         self.repo_defined = repo_defined
         self.immutable = immutable
+
+class Role(Base):
+    def __init__(self, name, description, action_types, resource_type):
+        self.name = name
+        self.description = description
+        self.action_types = action_types
+        self.resource_type = resource_type
+
+    def __unicode__(self):
+        return unicode(self.name)
+
