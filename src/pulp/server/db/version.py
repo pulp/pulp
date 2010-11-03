@@ -27,7 +27,7 @@ from pulp.server.db.model import Base
 # increment this if you change the data model
 VERSION = 1
 
-_log = logging.getLogger('pulp')
+# this isn't anything
 _version_db = None
 
 # data model version model ----------------------------------------------------
@@ -49,7 +49,7 @@ class DataModelVersion(Base):
         self.version = version
         self.validated = False
 
-# data model version api ------------------------------------------------------
+# database access functions ---------------------------------------------------
 
 def _init_db():
     """
@@ -67,13 +67,24 @@ def _get_latest_version():
     @rtype: L{DataModelVersion} instance
     @return: the data model intance with the most recent version
     """
-    assert _version_db is not None
+    _init_db()
     versions = _version_db.find()
-    if not versions:
+    if versions.count() == 0:
         return None
-    versions.sort({'version': pymongo.DESCENDING}).limit(1)
+    versions.sort('version', pymongo.DESCENDING).limit(1)
     return list(versions)[0]
 
+
+def _set_version(version):
+    """
+    Utility function to save versions to the database.
+    @type version: L{DataModelVersion} instance
+    @param version: the version to save
+    """
+    _init_db()
+    _version_db.save(version, safe=True)
+
+# data model version api ------------------------------------------------------
 
 def get_version_in_use():
     """
@@ -81,7 +92,6 @@ def get_version_in_use():
     @rtype: int
     @return: integer data model version
     """
-    assert _version_db is not None
     v = _get_latest_version()
     return v.version
 
@@ -92,14 +102,15 @@ def check_version():
     data model version in use in the db. If a mismatch is detected, the
     mismatch is logged and the application exits.
     """
-    assert _version_db is not None
     v = _get_latest_version()
-    if v.version == VERSION:
+    if v is not None and v.version == VERSION:
         return
-    _log.critical('data model version mismatch: %d in use, but needs to be %d' %
-                  v.version, VERSION)
-    _log.critical('pulp exiting: please migrate your database to the latest data model')
-    sys.exit(os.EX_DATAERR)
+    msg = 'data model version mismatch: %s in use, but needs to be %s' % \
+            (v and v.version, VERSION)
+    log = logging.getLogger('pulp')
+    log.critical(msg)
+    log.critical("use the 'pulp-migrate' tool to fix this before restarting the web server")
+    raise RuntimeError(msg)
 
 
 def set_version(version):
@@ -108,9 +119,8 @@ def set_version(version):
     @type version: int
     @param version: data model version
     """
-    assert _version_db is not None
     v = DataModelVersion(version)
-    _version_db.save(v, safe=True)
+    _set_version(v)
 
 
 def is_validated():
@@ -119,7 +129,6 @@ def is_validated():
     @rtype: bool
     @return: True if the data model has been validated, False otherwise
     """
-    assert _version_db is not None
     v = _get_latest_version()
     return v.validated
 
@@ -128,12 +137,6 @@ def set_validated():
     """
     Flag the latest data model version as validated.
     """
-    assert _version_db is not None
     v = _get_latest_version()
     v.validated = True
-    _version_db.save(v, safe=True)
-
-# check for version mismatch on import ----------------------------------------
-
-_init_db()
-check_version()
+    _set_version(v)
