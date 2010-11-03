@@ -16,7 +16,8 @@
 
 import web
 
-from pulp.server import config
+from pulp.server import config # unused here, but initializes configuration
+from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
     audit, consumergroups, consumers, errata, packages, repositories, users)
@@ -33,18 +34,13 @@ urls = (
 )
 
 
-def _configure_application(application):
-    pass
-
-
 def wsgi_application():
     """
     Application factory to create, configure, and return a WSGI application
     using the web.py framework.
-    
     @return: wsgi application callable
     """
     application = web.subdir_application(urls)
-    _configure_application(application)
     start_logging()
+    check_version()
     return application.wsgifunc()
