@@ -44,9 +44,10 @@ setup(
     url='',
     license='GPLv2+',
     packages=find_packages(),
-    scripts = [
+    scripts=[
         '../bin/pulp-admin',
         '../bin/pulp-client',
+        '../bin/pulp-migrate',
         '../bin/pulpd',
     ],
     include_package_data=False,
