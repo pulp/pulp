@@ -59,7 +59,7 @@ class TestAuthorization(unittest.TestCase):
         self.assertNotNone(role['action_type'])
         self.assertNotNone(role['resource_type'])
 
-	def create_role(self, name):
+    def create_role(self, name):
         desc = 'test desc for role'
         # Todo: move these to an enum
         action_type = ['READ', 'WRITE']
@@ -67,39 +67,39 @@ class TestAuthorization(unittest.TestCase):
         resource_type = 'REPO'
         
         role = self.rolapi.create(name, desc, action_type, resource_type)
-		return role
-	
-	def test_edit_role(self):
-		role = self.create_role('edit-role')
-		role['desc'] = 'updated desc'
-		self.roleapi.update(role)
-		updated = self.roleapi.role('edit-role')
-		self.assertEquals(updated['description'], 'updated desc')
-	
-	def test_delete_role(self):
-		role = self.create_role('delete-role')
-		self.assertNotNone(self.roleapi.role('delete-role'))
-		self.roleapi.delete('delete-role')
-		self.assertNone(self.roleapi.role('delete-role'))
-		
-	def test_role_within_role(self):
-		role1 = self.create_role('root-role')
-		role2 = self.create_role('child-role')
-		role1['children'] = [role2]
-		role2['parent'] = role1
-		self.roleapi.update(role1)
-		self.roleapi.update(role2)
-		
-		updated_root = self.roleapi.role('root-role')
-		self.assertNotNone(updated_root['children'])
-		
-		updated_child = self.roleapi.role('child-role')
-		self.assertEquals(updated_root['children'], [updated_child])
-		self.assertEquals(updated_child['parent'], updated_root)
-		
-		
+        return role
+    
+    def test_edit_role(self):
+        role = self.create_role('edit-role')
+        role['desc'] = 'updated desc'
+        self.roleapi.update(role)
+        updated = self.roleapi.role('edit-role')
+        self.assertEquals(updated['description'], 'updated desc')
+    
+    def test_delete_role(self):
+        role = self.create_role('delete-role')
+        self.assertNotNone(self.roleapi.role('delete-role'))
+        self.roleapi.delete('delete-role')
+        self.assertNone(self.roleapi.role('delete-role'))
+        
+    def test_role_within_role(self):
+        role1 = self.create_role('root-role')
+        role2 = self.create_role('child-role')
+        role1['children'] = [role2]
+        role2['parent'] = role1
+        self.roleapi.update(role1)
+        self.roleapi.update(role2)
+        
+        updated_root = self.roleapi.role('root-role')
+        self.assertNotNone(updated_root['children'])
+        
+        updated_child = self.roleapi.role('child-role')
+        self.assertEquals(updated_root['children'], [updated_child])
+        self.assertEquals(updated_child['parent'], updated_root)
+        
+        
 
-		
+        
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
     logging.root.setLevel(logging.ERROR)
