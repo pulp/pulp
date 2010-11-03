@@ -86,7 +86,7 @@ def main():
         lattr.setuserPassword('redhat')
         lattr.setDescription('pulp ldap test user')
         lattr.setMail('%s@redhat.com' % userid)
-        lattr.setDN("cn=%s,dc=rdu,dc=redhat,dc=com" % userid)
+        lattr.setDN("uid=%s,dc=rdu,dc=redhat,dc=com" % userid)
         attr, dn = lattr.buildBody()
         ldapserv.add_users(dn, attrs=attr)
     ldapserv.lookup_user("dc=rdu,dc=redhat,dc=com", "pulpuser1")

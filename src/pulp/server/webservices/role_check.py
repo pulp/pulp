@@ -232,7 +232,7 @@ class RoleCheck(object):
         ldapserv.connect()
         status = ldapserv.authenticate_user(base, username, password)
 
-        LOG.error("User %s found in the ldap database" % username)
+        LOG.error("User %s found in the ldap database: %s" % (username, status))
         ldapserv.disconnect()
         user = None
         if status:

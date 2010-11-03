@@ -62,7 +62,7 @@ class LDAPConnection:
         """
         ldif = ldap.modlist.addModlist(attrs)
         try:
-            print self.lconn.add_s(dn, ldif)
+            self.lconn.add_s(dn, ldif)
         except ldap.ALREADY_EXISTS:
             log.info('User %s already Exists on ldap server.' % dn)
         except ldap.LDAPError:
@@ -85,7 +85,7 @@ class LDAPConnection:
         
         return a boolean, If the bind succeeds else Invalid auth
         """
-        user = "cn=%s,%s" % (user, base)
+        user = "uid=%s,%s" % (user, base)
         try:
             self.lconn.simple_bind_s(user, password)
             log.info("Found user with id %s with matching credentials" % user)
