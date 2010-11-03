@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.77
+Version:        0.0.78
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -187,6 +187,47 @@ fi
 
 
 %changelog
+* Wed Nov 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.78-1
+- 648918 - Correcting a small error (skarmark@redhat.com)
+- adding regex search to packages call (jmatthew@redhat.com)
+- 648918 - Fixing cloned repo delete problem (skarmark@redhat.com)
+- 648615 - removed relative_path error in repo clone (skarmark@redhat.com)
+- if no password passed in, like in acase of certificates, use a lookup
+  (pkilambi@redhat.com)
+- changing the user dn to user uid instead of cn by default
+  (pkilambi@redhat.com)
+- Adding id check to admin cert method after user object is aquired
+  (pkilambi@redhat.com)
+- remove password display from logs (pkilambi@redhat.com)
+- clean up (pkilambi@redhat.com)
+- More changes to support authentication via bind (pkilambi@redhat.com)
+- External LDAP Support: (pkilambi@redhat.com)
+- allowing post and put to a collection to create new resource
+  (jconnor@redhat.com)
+- changed controller import so they are imported directly into the application
+  module (jconnor@redhat.com)
+- removed test controllers from web services (jconnor@redhat.com)
+- undeprecating the async calls in the base controller as we are still using
+  them (jconnor@redhat.com)
+- 631970 - Remove requirement to be root user to run pulp-admin.
+  (jortel@redhat.com)
+- 640724 - formatting consumer get_value output (skarmark@redhat.com)
+- 640724 - formatting consumer get_value output (skarmark@redhat.com)
+- 639980 - Error messages added when trying to add/delete/update key value for
+  a non existent key with pulp-admin consumer (skarmark@redhat.com)
+- Fixing unit tests for repo.packages api (skarmark@redhat.com)
+- 641901 - Removing repo.packages api inconsistency (skarmark@redhat.com)
+- 626451 - put error handling at the top (mmccune@redhat.com)
+- 642321 - packagegroup install returns None even when a packagegroup is
+  installed successfully. (jmatthew@redhat.com)
+- adding comment to show user how to edit password (mmccune@redhat.com)
+- 631895 - now you can edit a user and change their password
+  (mmccune@redhat.com)
+- 634000 -  Adding another check to validate if the consumer bound/unbound
+  is same as local consumer before calling repolib update (pkilambi@redhat.com)
+- 634000 -  only invoke repolib if consumer exists on the machine pulp-admin
+  is executed (pkilambi@redhat.com)
+
 * Fri Oct 29 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.77-1
 - 647828 - Older clients are not able to connect to pulp on f13
   (jmatthew@redhat.com)
