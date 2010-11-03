@@ -19,7 +19,7 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-nose	
 BuildRequires:  rpm-python
 
-Requires: %{name}-common %{version}
+Requires: %{name}-common = %{version}
 Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
@@ -32,7 +32,7 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: gopher-common
+Requires: gopher-common >= 0.8
 %if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
@@ -64,8 +64,8 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
-Requires: %{name}-common %{version}
-Requires: gopher
+Requires: %{name}-common = %{version}
+Requires: gopher >= 0.8
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
