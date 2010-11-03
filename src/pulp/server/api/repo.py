@@ -387,12 +387,21 @@ class RepoApi(BaseApi):
     def delete(self, id):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
-        #update feed of clones of this repo to None unless they point to origin
+        #update feed of clones of this repo to None unless they point to origin feed
         for clone_id in repo['clone_ids']:
             cloned_repo = self._get_existing_repo(clone_id)
             if cloned_repo['source'] != repo['source']:
                 cloned_repo['source'] = None
                 self.update(cloned_repo)
+        
+        #update clone_ids of its parent repo        
+        parent_repos = self.repositories({'clone_ids' : id})
+        parent_repo = parent_repos[0]
+        clone_ids = parent_repo['clone_ids']
+        clone_ids.remove(id)
+        parent_repo['clone_ids'] = clone_ids
+        self.update(parent_repo)
+                                
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
