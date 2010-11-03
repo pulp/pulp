@@ -42,23 +42,63 @@ def common_cleanup():
     auditing.cull_events(timedelta())
 
 
-def create_package(api, name):
+def create_package(api, name, version="1.2.3", release="1.el5", epoch="1",
+        arch="x86_64", description="test description text",
+        checksum_type = "sha256", 
+        checksum="9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e",
+        filename="test-filename-1.2.3-1.el5.x86_64.rpm"):
+    """
+    Returns a SON object representing the package.
+    """
     test_pkg_name = name
-    test_epoch = "1"
-    test_version = "1.2.3"
-    test_release = "1.el5"
+    test_epoch = epoch
+    test_version = version
+    test_release = release
+    test_arch = arch
+    test_description = description
+    test_checksum_type = checksum_type
+    test_checksum = checksum
+    test_filename = filename
+    p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+        release=test_release, arch=test_arch, description=test_description,
+        checksum_type=checksum_type, checksum=test_checksum, filename=test_filename)
+    # We are looking up package trough mongo so we get a SON object to return.
+    # instead of returning the model.Package object
+    lookedUp = api.package(p['id'])
+    return lookedUp
+    #p = api.package_by_ivera(name, test_version, test_epoch, test_release, test_arch)
+    #if (p == None):
+    #    p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+    #        release=test_release, arch=test_arch, description=test_description,
+    #        checksum_type=checksum_type, checksum=test_checksum, filename=test_filename)
+    #    lookedUp = api.package(p['id'])
+    #    return lookedUp
+    #else:
+    #    return p
+
+def create_random_package(api):
+    test_pkg_name = random_string()
+    test_epoch = random.randint(0, 2)
+    test_version = "%s.%s.%s" % (random.randint(0, 100),
+                                random.randint(0, 100), random.randint(0, 100))
+    test_release = "%s.el5" % random.randint(0, 10)
     test_arch = "x86_64"
-    test_description = "test description text"
+    test_description = ""
+    test_requires = []
+    test_provides = []
+    for x in range(10):
+        test_description = test_description + " " + random_string()
+        test_requires.append(random_string())
+        test_provides.append(random_string())
+
     test_checksum_type = "sha256"
     test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
-    test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
-    p = api.package_by_ivera(name, test_version, test_epoch, test_release, test_arch)
-    if (p == None):
-        p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
-            release=test_release, arch=test_arch, description=test_description,
-            checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        lookedUp = api.package(p['id'])
-        return lookedUp
-    else:
-        return p
+    test_filename = "test-filename-zzz-%s-%s.x86_64.rpm" % (test_version, test_release)
+    p = api.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+        release=test_release, arch=test_arch, description=test_description,
+        checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+    p['requires'] = test_requires
+    p['provides'] = test_requires
+    api.update(p)
+    return p
 

@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import re
 import pymongo
 
 # Pulp
@@ -79,25 +80,47 @@ class PackageApi(BaseApi):
         return self.objectdb.find_one({'id': id})
 
     def packages(self, name=None, epoch=None, version=None, release=None, arch=None, 
-            filename=None, checksum_type=None, checksum=None):
+            filename=None, checksum_type=None, checksum=None, regex=False):
         """
         Return a list of all package version objects matching search terms
         """
         searchDict = {}
         if name:
-            searchDict['name'] = name
+            if regex:
+                searchDict['name'] = {"$regex":re.compile(name)}
+            else:
+                searchDict['name'] = name
         if epoch:
-            searchDict['epoch'] = epoch
+            if regex:
+                searchDict['epoch'] = {"$regex":re.compile(epoch)}
+            else:
+                searchDict['epoch'] = epoch
         if version:
-            searchDict['version'] = version
+            if regex:
+                searchDict['version'] = {"$regex":re.compile(version)}
+            else:
+                searchDict['version'] = version
         if release:
-            searchDict['release'] = release
+            if regex:
+                searchDict['release'] = {"$regex":re.compile(release)}
+            else:
+                searchDict['release'] = release
         if arch:
-            searchDict['arch'] = arch
+            if regex:
+                searchDict['arch'] = {"$regex":re.compile(arch)}
+            else:
+                searchDict['arch'] = arch
         if filename:
-            searchDict['filename'] = filename
+            if regex:
+                searchDict['filename'] = {"$regex":re.compile(filename)}
+            else:
+                searchDict['filename'] = filename
         if checksum_type and checksum:
-            searchDict['checksum.%s' % checksum_type] = checksum
+            if regex:
+                searchDict['checksum.%s' % checksum_type] = \
+                    {"$regex":re.compile(checksum)}
+            else:
+                searchDict['checksum.%s' % checksum_type] = checksum
         if (len(searchDict.keys()) == 0):
             return list(self.objectdb.find())
         else:
@@ -117,5 +140,4 @@ class PackageApi(BaseApi):
         '''
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
         return list(self.objectdb.find(spec, ['id', 'name', 'description']))
-                                       
-        
+

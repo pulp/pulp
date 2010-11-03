@@ -221,10 +221,10 @@ class TestApi(unittest.TestCase):
     def test_repo_packages(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
-        p = self.create_package('test_repo_packages')
+        p = testutil.create_package(self.papi, 'test_repo_packages')
         self.rapi.add_package(repo["id"], p['id'])
         for i in range(10):
-            package = self.create_package(random_string())
+            package = testutil.create_package(self.papi, random_string())
             self.rapi.add_package(repo["id"], package['id'])
 
         found = self.rapi.repository('some-id')
@@ -374,7 +374,7 @@ class TestApi(unittest.TestCase):
     def test_repo_package_by_name(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
-        p = self.create_package('test_pkg_by_name')
+        p = testutil.create_package(self.papi, 'test_pkg_by_name')
         self.rapi.add_package(repo["id"], p['id'])
 
         pkg = self.rapi.get_package(repo['id'], p['name'])
@@ -386,7 +386,7 @@ class TestApi(unittest.TestCase):
         pkggroup = self.rapi.create_packagegroup(repo["id"],
                 'test-group-id', 'test-group-name',
                 'test-group-description')
-        package = self.create_package('test_repo_packages')
+        package = testutil.create_package(self.papi, 'test_repo_packages')
         self.rapi.add_package(repo["id"], package["id"])
         self.rapi.add_packages_to_group(repo["id"], pkggroup["id"],
                 [package["name"]], gtype="default")
@@ -516,7 +516,7 @@ class TestApi(unittest.TestCase):
 
         for i in range(10):
             randName = random_string()
-            package = self.create_package(randName)
+            package = testutil.create_package(self.papi, randName)
             packages.append(package)
 
         c['package_profile'] = packages
@@ -750,109 +750,12 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('large-sync', 'some name', 'i386')
         numpacks = 5000
         for x in range(numpacks):
-            self.rapi._add_package(repo, self.create_random_package())
+            self.rapi._add_package(repo, testutil.create_random_package(self.papi))
             if (x % 100 == 0):
                 print "Created [%s] packages" % x
         print "Updating repo"
         self.rapi.update(repo)
         self.assertTrue(numpacks, self.rapi.packages(repo['id']))
-
-    def create_package(self, name):
-        test_pkg_name = name
-        test_epoch = "1"
-        test_version = "1.2.3"
-        test_release = "1.el5"
-        test_arch = "x86_64"
-        test_description = "zzz test description text zzz"
-        test_checksum_type = "sha256"
-        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
-        test_filename = "test-filename-zzz-1.2.3-1.el5.x86_64.rpm"
-        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
-                release=test_release, arch=test_arch, description=test_description,
-                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        lookedUp = self.papi.package(p['id'])
-        return lookedUp
-
-
-
-    def create_random_package(self):
-        test_pkg_name = random_string()
-        test_epoch = random.randint(0, 2)
-        test_version = "%s.%s.%s" % (random.randint(0, 100),
-                                random.randint(0, 100), random.randint(0, 100))
-        test_release = "%s.el5" % random.randint(0, 10)
-        test_arch = "x86_64"
-        test_description = ""
-        test_requires = []
-        test_provides = []
-        for x in range(10):
-            test_description = test_description + " " + random_string()
-            test_requires.append(random_string())
-            test_provides.append(random_string())
-
-        test_checksum_type = "sha256"
-        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
-        test_filename = "test-filename-zzz-%s-%s.x86_64.rpm" % (test_version, test_release)
-        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
-                release=test_release, arch=test_arch, description=test_description,
-                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        p['requires'] = test_requires
-        p['provides'] = test_requires
-        self.papi.update(p)
-        return p
-
-    def test_packages(self):
-        repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
-        repo = self.rapi.repository(repo["id"])
-        test_pkg_name = "test_package_versions_name"
-        test_epoch = "1"
-        test_version = "1.2.3"
-        test_release = "1.el5"
-        test_arch = "x86_64"
-        test_description = "test description text"
-        test_checksum_type = "sha256"
-        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
-        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
-        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
-                release=test_release, arch=test_arch, description=test_description,
-                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
-        print "Package! %s" % p
-        # Add this package version to the repo
-        self.rapi.add_package(repo["id"], p['id'])
-        # Lookup repo and confirm new package version was added
-        repo = self.rapi.repository(repo["id"])
-        self.assertTrue(repo["packages"].has_key(p['id']))
-        packageid = p['id']
-        self.assertTrue(len(repo["packages"][p['id']]) is not None)
-        saved_pkg = repo["packages"][packageid]
-        self.assertTrue(saved_pkg['name'] == test_pkg_name)
-        self.assertTrue(saved_pkg['epoch'] == test_epoch)
-        self.assertTrue(saved_pkg['version'] == test_version)
-        self.assertTrue(saved_pkg['release'] == test_release)
-        self.assertTrue(saved_pkg['arch'] == test_arch)
-        self.assertTrue(saved_pkg['description'] == test_description)
-        self.assertTrue(saved_pkg['checksum'].has_key(test_checksum_type))
-        self.assertTrue(saved_pkg['checksum'][test_checksum_type] == test_checksum)
-        self.assertTrue(saved_pkg['filename'] == test_filename)
-        # Verify we can find this package version through repo api calls
-        pkgs = self.rapi.packages(repo['id'], test_pkg_name)
-        self.assertTrue(len(pkgs) == 1)
-        self.assertTrue(pkgs[0]['id'] == packageid)
-        self.assertTrue(pkgs[0]['filename'] == test_filename)
-
-        # Remove package from repo
-        self.rapi.remove_package(repo['id'], p)
-        repo = self.rapi.repository(repo['id'])
-        self.assertTrue(not repo["packages"].has_key(test_pkg_name))
-        # Verify package has been removed from repo and since
-        # no other repos were referencing it, the package has been removed
-        # from the package collection as well
-        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch,
-                version=test_version, release=test_release, arch=test_arch,
-                filename=test_filename, checksum_type=test_checksum_type,
-                checksum=test_checksum)
-        self.assertTrue(len(found) == 0)
 
     def test_find_repos_by_package(self):
         # Goal is to search by errata id and discover the repos
