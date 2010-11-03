@@ -172,6 +172,10 @@ class RoleCheck(object):
             user = self.check_user_pass_on_ldap(username)
         else:
             user = self.check_user_pass_on_pulp(username)
+            # Verify the correct user ID
+            if id != user['id']:
+                LOG.error('ID in admin certificate for user [%s] was incorrect' % username)
+                return None
 
         return user
 
@@ -251,10 +255,7 @@ class RoleCheck(object):
                       username)
             return None
         
-        # Verify the correct user ID
-        if id != user['id']:
-            LOG.error('ID in admin certificate for user [%s] was incorrect' % username)
-            return None
+        
 
         # Verify the correct password was specified
         if password:
