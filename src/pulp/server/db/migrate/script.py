@@ -21,7 +21,7 @@ from pulp.server.config import config
 from pulp.server.db.migrate import one
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
-    VERSION, get_version_in_use, set_validated)
+    VERSION, get_version_in_use, is_validated, set_validated)
 from pulp.server.logs import start_logging
 
 
@@ -49,14 +49,15 @@ def main():
     version = get_version_in_use()
     if version == VERSION:
         print 'data model in use matches the current version'
-        return os.EX_OK
     while version < VERSION:
         if version is None:
             migrate_to_one()
         version = get_version_in_use()
-    errors = validate()
+    errors = 0
+    if not is_validated():
+        errors = validate()
     if errors:
-        print >> sys.stderr, '%d errors on validation, see pulp log for details'
+        print >> sys.stderr, '%d errors on validation, see pulp log for details' % errors
         return os.EX_DATAERR
     set_validated()
     print 'database migration to version %d complete' % VERSION

@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 from logging import getLogger
+from uuid import UUID
 
 from pulp.server.api import (
     consumer_group, consumer_history, consumer, errata, package, repo, user)
@@ -23,6 +24,12 @@ from pulp.server.db import version
 
 
 _log = getLogger('pulp')
+
+# reference utilities ---------------------------------------------------------
+
+def _base_id(reference):
+    reference._id = reference.id = None
+
 
 # general model validation ----------------------------------------------------
 
@@ -67,7 +74,7 @@ def _validate_consumer():
     @return: number of errors found during validation
     """
     objectdb = consumer.ConsumerApi()._getcollection()
-    reference = model.Consumer('', '')
+    reference = model.Consumer(u'', None)
     return _validate_model(model.Consumer.__name__, objectdb, reference)
 
 
@@ -78,7 +85,7 @@ def _validate_consumer_group():
     @return: number of errors found during validation
     """
     objectdb = consumer_group.ConsumerGroupApi()._getcollection()
-    reference = model.ConsumerGroup('', '')
+    reference = model.ConsumerGroup(u'', u'')
     return _validate_model(model.ConsumerGroup.__name__, objectdb, reference)
 
 
@@ -89,7 +96,8 @@ def _validate_consumer_history_event():
     @return: number of errors found during validation
     """
     objectdb = consumer_history.ConsumerHistoryApi()._getcollection()
-    reference = model.ConsumerHistoryEvent('', '', '', '')
+    reference = model.ConsumerHistoryEvent(u'', u'', u'', None)
+    _base_id(reference)
     return _validate_model(model.ConsumerHistoryEvent.__name__,
                            objectdb,
                            reference)
@@ -115,7 +123,7 @@ def _validate_errata():
     @return: number of errors found during validation
     """
     objectdb = errata.ErrataApi()._getcollection()
-    reference = model.Errata('', '', '', '', '', '')
+    reference = model.Errata(u'', u'', u'', u'', u'', u'')
     return _validate_model(model.Errata.__name__, objectdb, reference)
 
 
@@ -127,7 +135,8 @@ def _validate_event():
     @return: number of errors found during validation
     """
     objectdb = auditing_objectdb
-    reference = model.Event('', '')
+    reference = model.Event(u'', u'')
+    _base_id(reference)
     return _validate_model(model.Event.__name__, objectdb, reference)
 
 
@@ -138,7 +147,8 @@ def _validate_package():
     @return: number of errors found during validation
     """
     objectdb = package.PackageApi()._getcollection()
-    reference = model.Package('', '', '', '', '', '', '', '')
+    reference = model.Package(u'', u'', u'', u'', u'', u'', u'', u'', u'')
+    _base_id(reference)
     return _validate_model(model.Package.__name__, objectdb, reference)
 
 
@@ -150,16 +160,16 @@ def _validate_package_group():
     """
     num_errors = 0
     objectdb = repo.RepoApi()._getcollection()
-    reference = model.PackageGroup('', '', '')
-    for repo in objectdb.find({'packagegroups': {'$gt': 0}}):
-        for pg in repo['packagegroups'].values():
+    reference = model.PackageGroup(u'', u'', u'')
+    for r in objectdb.find({'packagegroups': {'$gt': 0}}):
+        for pg in r['packagegroups'].values():
             for field, value in reference.items():
                 vtype = value(type)
                 if field in pg and (value is None or isinstance(pg[field], vtype)):
                     continue
                 num_errors += 1
                 error_prefix = 'model validation failure in PackageGroup for Repo %s, PackageGroup %s:' % \
-                        (str(repo['_id']), str(pg['_id']))
+                        (str(r['_id']), str(pg['_id']))
                 if field not in pg:
                     _log.error(error_prefix + ' field %s is not present' %
                                field)
@@ -177,9 +187,9 @@ def _validate_package_group_category():
     """
     num_errors = 0
     objectdb = repo.RepoApi()._getcollection()
-    reference = model.PackageGroupCategory('', '', '')
-    for repo in objectdb.find({'packagegroupcategories': {'$gt': 0}}):
-        for pgc in repo['packagegroupcategories'].values():
+    reference = model.PackageGroupCategory(u'', u'', u'')
+    for r in objectdb.find({'packagegroupcategories': {'$gt': 0}}):
+        for pgc in r['packagegroupcategories'].values():
             for field, value in reference.items():
                 vtype = value(type)
                 if field in pgc and (value is None or
@@ -187,7 +197,7 @@ def _validate_package_group_category():
                     continue
                 num_errors += 1
                 error_prefix = 'model validation failure in PackageGroupCategory for Repo %s, PackageGroup %s:' % \
-                        (str(repo['_id']), str(pgc['_id']))
+                        (str(r['_id']), str(pgc['_id']))
                 if field not in pgc:
                     _log.error(error_prefix + ' field %s is not present' %
                                field)
@@ -204,7 +214,7 @@ def _validate_repo():
     @return: number of errors found during validation
     """
     objectdb = repo.RepoApi()._getcollection()
-    reference = model.Repo('', '', '')
+    reference = model.Repo(u'', u'', u'')
     return _validate_model(model.Repo.__name__, objectdb, reference)
 
 
@@ -216,16 +226,16 @@ def _validate_repo_source():
     """
     num_errors = 0
     objectdb = repo.RepoApi()._getcollection()
-    reference = model.RepoSource('yum:http://reference.org/reference_repo/')
-    for repo in objectdb.find({'source': {'$ne': None}}):
-        source = repo['source']
+    reference = model.RepoSource(u'yum:http://reference.org/reference_repo/')
+    for r in objectdb.find({'source': {'$ne': None}}):
+        source = r['source']
         for field, value in reference.items():
             vtype = type(value)
             if field in source and isinstance(source[field], vtype):
                 continue
             num_errors += 1
             error_prefix = 'model validation failure in RepoSource for Repo %s:' % \
-                    str(repo['_id'])
+                    str(r['_id'])
             if field not in source:
                 _log.error(error_prefix + ' field %s is not present' % field)
             else:
@@ -241,7 +251,7 @@ def _validate_user():
     @return: number of errors found during validation
     """
     objectdb = user.UserApi()._getcollection()
-    reference = model.User('', '', '', None)
+    reference = model.User(u'', u'', u'', None)
     return _validate_model(model.User.__name__, objectdb, reference)
 
 # validation api --------------------------------------------------------------

@@ -14,8 +14,6 @@
 # in this software or its documentation.
 
 import logging
-import os
-import sys
 
 import pymongo
 
@@ -84,6 +82,16 @@ def _set_version(version):
     _init_db()
     _version_db.save(version, safe=True)
 
+
+def _update_version(version):
+    """
+    Utility function to update versions in the database.
+    @type version: L{DataModelVersion} instance
+    @param version: the version to update
+    """
+    _init_db()
+    _version_db.update({'_id': version['_id']}, version, safe=True)
+
 # data model version api ------------------------------------------------------
 
 def get_version_in_use():
@@ -93,7 +101,9 @@ def get_version_in_use():
     @return: integer data model version
     """
     v = _get_latest_version()
-    return v.version
+    if v is None:
+        return None
+    return v['version']
 
 
 def check_version():
@@ -103,10 +113,13 @@ def check_version():
     mismatch is logged and the application exits.
     """
     v = _get_latest_version()
-    if v is not None and v.version == VERSION:
+    if v is not None and v['version'] == VERSION and v['validated']:
         return
-    msg = 'data model version mismatch: %s in use, but needs to be %s' % \
-            (v and v.version, VERSION)
+    if v is None or v['version'] != VERSION:
+        msg = 'data model version mismatch: %s in use, but needs to be %s' % \
+                (v and v.version, VERSION)
+    else:
+        msg = 'data model version is up to date, but has not been validated'
     log = logging.getLogger('pulp')
     log.critical(msg)
     log.critical("use the 'pulp-migrate' tool to fix this before restarting the web server")
@@ -130,7 +143,7 @@ def is_validated():
     @return: True if the data model has been validated, False otherwise
     """
     v = _get_latest_version()
-    return v.validated
+    return v['validated']
 
 
 def set_validated():
@@ -138,5 +151,7 @@ def set_validated():
     Flag the latest data model version as validated.
     """
     v = _get_latest_version()
-    v.validated = True
-    _set_version(v)
+    if v['validated']:
+        return
+    v['validated'] = True
+    _update_version(v)

@@ -47,9 +47,9 @@ class Repo(Base):
         self.packages = dict()
         self.packagegroups = dict()
         self.packagegroupcategories = dict()
-        self.repomd_xml_path = ""
-        self.group_xml_path = ""
-        self.group_gz_xml_path = ""
+        self.repomd_xml_path = u""
+        self.group_xml_path = u""
+        self.group_gz_xml_path = u""
         self.sync_schedule = None
         self.last_sync = None
         self.use_symlinks = None
@@ -150,7 +150,7 @@ class PackageGroupCategory(Base):
         self.repo_defined = repo_defined
 
 class Consumer(Base):
-    def __init__(self, id, description, key_value_pairs = {}):
+    def __init__(self, id, description, key_value_pairs={}):
         self._id = id
         self.id = id
         self.description = description
@@ -159,7 +159,7 @@ class Consumer(Base):
         self.key_value_pairs = key_value_pairs
 
 class ConsumerGroup(Base):
-    def __init__(self, id, description, consumerids=[], key_value_pairs = {}):
+    def __init__(self, id, description, consumerids=[], key_value_pairs={}):
         self._id = id
         self.id = id
         self.description = description
@@ -208,9 +208,9 @@ class Errata(Base):
     Errata model to represent software updates
     maps to yum.update_md.UpdateNotice fields
     """
-    def __init__(self, id, title, description, version, release, type, status="",
-            updated="", issued="", pushcount="", from_str="",
-            reboot_suggested="", references=[], pkglist=[], repo_defined=False,
+    def __init__(self, id, title, description, version, release, type, status=u"",
+            updated=u"", issued=u"", pushcount=u"", from_str=u"",
+            reboot_suggested=u"", references=[], pkglist=[], repo_defined=False,
             immutable=False):
         self._id = id
         self.id = id
