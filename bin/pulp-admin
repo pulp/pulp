@@ -17,8 +17,7 @@
 
 from pulp.client.cli.base import PulpCLI
 from pulp.client.core import (
-    auth, consumer, consumergroup, errata, package, packagegroup, repo, user)
-
+    auth, consumer, consumergroup, errata, package, packagegroup, repo, user, search)
 
 def setup_admin(admin):
     auth_cmd = auth.Auth()
@@ -97,6 +96,10 @@ def setup_admin(admin):
     user_cmd.add_action('delete', user.Delete())
     user_cmd.add_action('update', user.Update())
     admin.add_command('user', user_cmd)
+
+    search_cmd = search.Search()
+    search_cmd.add_action('packages', search.Packages())
+    admin.add_command('search', search_cmd)
 
 if __name__ == "__main__":
     admin = PulpCLI()

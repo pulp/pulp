@@ -20,7 +20,8 @@ from pulp.server import config # unused here, but initializes configuration
 from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
-    audit, consumergroups, consumers, errata, packages, repositories, users)
+    audit, consumergroups, consumers, errata, packages, 
+    repositories, search, users)
 
 
 urls = (
@@ -29,6 +30,7 @@ urls = (
     '/events', audit.application,
     '/packages', packages.application,
     '/repositories', repositories.application,
+    '/search', search.application,
     '/users', users.application,
     '/errata', errata.application,
 )

@@ -653,6 +653,29 @@ class ErrataConnection(PulpConnection):
             pushcount=None, from_str=None, reboot_suggested=None):
         pass
 
+
+class SearchConnection(PulpConnection):
+    """
+    Connection class to access search related calls
+    """
+    def packages(self, name=None, epoch=None, version=None, release=None, arch=None, filename=None):
+        data = {}
+        if name:
+            data["name"] = name
+        if epoch:
+            data["epoch"] = epoch
+        if version:
+            data["version"] = version
+        if release:
+            data["release"] = release
+        if arch:
+            data["arch"] = arch
+        if filename:
+            data["filename"] = filename
+        method = "/search/packages/"
+        return self.conn.request_put(method, params=data)
+
+
 if __name__ == '__main__':
     rconn = RepoConnection()
     print "+--------------------------------+"
