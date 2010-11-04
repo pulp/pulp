@@ -162,12 +162,15 @@ class PulpIdentity:
     CRTPATH = '/etc/pki/consumer/cert.pem'
 
     def getuuid(self):
-        f = open(self.CRTPATH)
-        content = f.read()
-        f.close()
-        x509 = X509.load_cert_string(content)
-        subject = self.subject(x509)
-        return subject['CN']
+        try:
+            f = open(self.CRTPATH)
+            content = f.read()
+            f.close()
+            x509 = X509.load_cert_string(content)
+            subject = self.subject(x509)
+            return subject['CN']
+        except IOError:
+            pass
 
     def subject(self, x509):
         """
