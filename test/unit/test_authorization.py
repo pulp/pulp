@@ -55,10 +55,10 @@ class TestAuthorization(unittest.TestCase):
 
     def test_create_role(self):
         role = self.create_role('test-role')
-        self.assertNotNone(role['name'])
-        self.assertNotNone(role['description'])
-        self.assertNotNone(role['action_type'])
-        self.assertNotNone(role['resource_type'])
+        self.assertTrue(role['name'])
+        self.assertTrue(role['description'])
+        self.assertTrue(role['action_types'])
+        self.assertTrue(role['resource_type'])
 
     def create_role(self, name):
         desc = 'test desc for role'
@@ -79,9 +79,9 @@ class TestAuthorization(unittest.TestCase):
     
     def test_delete_role(self):
         role = self.create_role('delete-role')
-        self.assertNotNone(self.roleapi.role('delete-role'))
-        self.roleapi.delete('delete-role')
-        self.assertNone(self.roleapi.role('delete-role'))
+        self.assertTrue(self.roleapi.role('delete-role'))
+        self.roleapi.delete(role)
+        self.assertFalse(self.roleapi.role('delete-role'))
         
     def test_role_within_role(self):
         role1 = self.create_role('root-role')
