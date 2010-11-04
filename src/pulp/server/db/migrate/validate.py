@@ -123,7 +123,7 @@ def _validate_errata():
     @return: number of errors found during validation
     """
     objectdb = errata.ErrataApi()._getcollection()
-    reference = model.Errata(u'', u'', u'', u'', u'', u'')
+    reference = model.Errata(u'', u'', None, u'', u'', u'')
     return _validate_model(model.Errata.__name__, objectdb, reference)
 
 
