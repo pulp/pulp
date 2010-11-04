@@ -225,10 +225,7 @@ class RoleCheck(object):
             return
         ldapserver = config.get("ldap", "uri")
         base       = config.get("ldap", "base")
-        ldapuser   = config.get("ldap", "user")
-        ldappass   = config.get("ldap", "password")
-
-        ldapserv = LDAPConnection(ldapuser, ldappass, ldapserver)
+        ldapserv = LDAPConnection(ldapserver)
         ldapserv.connect()
         if password:
             status = ldapserv.authenticate_user(base, username, password)
