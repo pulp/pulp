@@ -21,6 +21,7 @@ from pulp.server.auditing import audit
 from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
+from pulp.server.event.dispatcher import event
 import pulp.server.auth.password_util as password_util
 
 log = logging.getLogger(__name__)
@@ -59,3 +60,12 @@ class RoleApi(BaseApi):
         """
         return self.objectdb.find_one({'name': name}, fields)
 
+    @audit(params=['name'])
+    def delete(self, name):
+        self.objectdb.remove({'name' : name}, safe=True)
+        
+        
+        
+        
+        
+        
