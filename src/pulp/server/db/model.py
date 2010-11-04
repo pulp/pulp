@@ -210,7 +210,7 @@ class Errata(Base):
     """
     def __init__(self, id, title, description, version, release, type, status=u"",
             updated=u"", issued=u"", pushcount=u"", from_str=u"",
-            reboot_suggested=u"", references=[], pkglist=[], repo_defined=False,
+            reboot_suggested=False, references=[], pkglist=[], repo_defined=False,
             immutable=False):
         self._id = id
         self.id = id
