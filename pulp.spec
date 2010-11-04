@@ -137,6 +137,7 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
+pulp-migrate --auto
 
 %files
 %defattr(-,root,root,-)
