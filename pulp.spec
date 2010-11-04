@@ -172,7 +172,6 @@ pulp-migrate --auto
 %{_bindir}/pulp-migrate
 %{_libdir}/gopher/plugins/pulp.*
 %{_sysconfdir}/gopher/plugins/pulp.conf
->>>>>>> Spec changes to support gopher refit.
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
