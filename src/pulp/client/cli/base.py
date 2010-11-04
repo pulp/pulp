@@ -19,7 +19,9 @@ from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
 from pulp.client import credentials
+from pulp.client.config import Config
 
+_cfg = Config()
 
 class PulpCLI(object):
     """
@@ -71,6 +73,8 @@ class PulpCLI(object):
                                default=None, help=SUPPRESS_HELP)
         credentials.add_option('--key-file', dest='key_file',
                                default=None, help=SUPPRESS_HELP)
+        credentials.add_option('-s', '--server', dest='server',
+				default=None, help=_('pulp server host'))
         self.parser.add_option_group(credentials)
 
     def main(self, args=sys.argv[1:]):
@@ -87,6 +91,9 @@ class PulpCLI(object):
         command = self._commands.get(args[0], None)
         if command is None:
             self.parser.error(_('Invalid command; please see --help'))
+        if opts.server is not None:
+            _cfg._sections['server'].__setitem__('host', opts.server)
+            _cfg.write()
         username = opts.username
         password = opts.password
         if None not in (username, password):
