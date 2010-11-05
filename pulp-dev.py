@@ -24,6 +24,8 @@ DIRS = (
     '/etc/httpd',
     '/etc/httpd/conf.d',
     '/etc/pulp',
+    '/etc/gopher',
+    '/etc/gopher/plugins',
     '/etc/pki/pulp',
     '/srv',
     '/srv/pulp',
@@ -31,6 +33,8 @@ DIRS = (
     '/var/lib/pulp/published',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
+    '/usr/lib/gopher',
+    '/usr/lib/gopher/plugins',
 )
 
 #
