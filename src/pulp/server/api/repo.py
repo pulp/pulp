@@ -134,6 +134,9 @@ class RepoApi(BaseApi):
         # Remove leading "/", they will interfere with symlink
         # operations for publishing a repository
         r['relative_path'] = r['relative_path'].strip('/')
+        r['repomd_xml_path'] = \
+                os.path.join(pulp.server.util.top_repos_location(),
+                        r['relative_path'], 'repodata/repomd.xml')
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
             path = r['relative_path']
@@ -959,7 +962,7 @@ class RepoApi(BaseApi):
             # If the repomd file is not valid, or if we are missingg
             # a group metadata file, no point in continuing. 
             if not os.path.exists(repo["repomd_xml_path"]):
-                log.debug("Skipping update of groups metadata since missing repomd file: '%s'" %
+                log.warn("Skipping update of groups metadata since missing repomd file: '%s'" %
                           (repo["repomd_xml_path"]))
                 return False
             xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
@@ -979,8 +982,8 @@ class RepoApi(BaseApi):
             return comps_util.update_repomd_xml_file(repo["repomd_xml_path"],
                 repo["group_xml_path"], repo["group_gz_xml_path"])
         except Exception, e:
-            log.debug("_update_groups_metadata exception caught: %s" % (e))
-            log.debug("Traceback: %s" % (traceback.format_exc()))
+            log.warn("_update_groups_metadata exception caught: %s" % (e))
+            log.warn("Traceback: %s" % (traceback.format_exc()))
             return False
 
     def _sync(self, id, progress_callback=None):
