@@ -53,6 +53,9 @@ class LDAPAttribute:
     def setDN(self, dn):
         self.dn = dn
 
+    def setOU(self, ou):
+	self.ou = ou
+
     def buildBody(self):
         attrs = {}
         attrs['objectclass'] = self.objectclass 
@@ -62,6 +65,7 @@ class LDAPAttribute:
         attrs['userPassword'] = self.userPassword
         attrs['description '] = self.description
         attrs['mail'] = self.email
+        attrs['ou']   = self.ou
         return attrs, self.dn
 
 
@@ -82,6 +86,7 @@ def main():
         lattr.setObjectclass('inetorgperson')
         lattr.setCN(userid)
         lattr.setSN(userid)
+        lattr.setOU('Candlepin')
         lattr.setuserId(userid)
         lattr.setuserPassword('redhat')
         lattr.setDescription('pulp ldap test user')
