@@ -131,6 +131,10 @@ cp src/pulp/client/gopher/pulp.py %{buildroot}/usr/lib/gopher/plugins
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 
+# Touch ghost files (these won't be packaged)
+mkdir -p %{buildroot}/etc/yum.repos.d
+touch %{buildroot}/etc/yum.repos.d/pulp.repo
+
 %clean
 rm -rf %{buildroot}
 
@@ -171,7 +175,7 @@ pulp-migrate --auto
 %{_bindir}/pulp-admin
 %{_bindir}/pulp-client
 %{_bindir}/pulp-migrate
-%{_libdir}/gopher/plugins/pulp.*
+%{_exec_prefix}/lib/gopher/plugins/pulp.*
 %{_sysconfdir}/gopher/plugins/pulp.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
