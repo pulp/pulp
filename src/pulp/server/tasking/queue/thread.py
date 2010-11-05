@@ -111,8 +111,11 @@ def get_descendants(thread):
         raise RuntimeError('Cannot find descendants of an untracked thread')
     descendants = _thread_tree.get(thread, [])
     for d in descendants:
-        descendants.extend(_thread_tree.get(d(), []))
-    return [d() for d in descendants if d() is not None]
+        t = d()
+        if t is None:
+            continue
+        descendants.extend(_thread_tree.get(t, []))
+    return filter(lambda d: d is not None, [d() for d in descendants])
 
 # thread interruption api -----------------------------------------------------
 
@@ -211,7 +214,7 @@ class TaskThread(TrackedThread):
         
         NOTE this is executed in the context of the calling thread and blocks
         until the exception has been delivered to this thread and this thread
-        exists.
+        exits.
         """
         # embedded methods to reduce code duplication
         def test_exception_event():
