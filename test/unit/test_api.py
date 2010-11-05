@@ -232,6 +232,22 @@ class TestApi(unittest.TestCase):
         assert(packages is not None)
         assert(packages[p['id']] is not None)
 
+    def test_repo_package_count(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com')
+        num_packages = 50
+        package = None
+        for i in range(num_packages):
+            package = testutil.create_package(self.papi, random_string())
+            self.rapi.add_package(repo["id"], package['id'])
+
+        count = self.rapi.package_count('some-id')
+        self.assertTrue(num_packages == count)
+        self.rapi.remove_package('some-id', package)
+        count = self.rapi.package_count('some-id')
+        self.assertTrue(count == (num_packages - 1))
+        
+
     def test_repo_erratum(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')

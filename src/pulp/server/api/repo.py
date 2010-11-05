@@ -500,8 +500,7 @@ class RepoApi(BaseApi):
         @rtype: int
         @return: the number of package in the repository corresponding to id
         """
-        packages = self.packages(id)
-        return len(packages)
+        return self.repository(id)['package_count']
 
     def get_package(self, id, name):
         """
@@ -540,6 +539,8 @@ class RepoApi(BaseApi):
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
         self._add_package(repo, package)
+        package['repo_ids'] = repoid
+        self.packageapi.update(package)
         self.objectdb.save(repo, safe=True)
 
     def _add_package(self, repo, p):
@@ -551,6 +552,8 @@ class RepoApi(BaseApi):
             # No need to update repo, this Package is already under this repo
             return
         packages[p['id']] = p
+        # increment the package count
+        repo['package_count'] = repo['package_count'] + 1 
 
     @audit()
     def remove_package(self, repoid, p):
@@ -560,6 +563,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         # this won't fail even if the package is not in the repo's packages
         repo['packages'].pop(p['id'], None)
+        repo['package_count'] = repo['package_count'] - 1
         self.objectdb.save(repo, safe=True)
         # Remove package from repo location on file system
         pkg_repo_path = pulp.server.util.get_repo_package_path(

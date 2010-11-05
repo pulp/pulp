@@ -17,6 +17,7 @@
 ## Simple file you can run with ipython if you want to poke around the API ##
 import sys
 sys.path.append("../../src")
+sys.path.append("../common")
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -25,6 +26,9 @@ from pulp.server.api.user import UserApi
 from pulp.server.db.model import Package
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import Repo
+from pulp.server.util import random_string
+
+import testutil
 
 capi = ConsumerApi()
 papi = PackageApi()

@@ -32,7 +32,7 @@ sys.path.insert(0, srcdir)
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.db import Consumer
+from pulp.server.db.model import Consumer
 from pulp.server.util import random_string
 import pulp.server.util
 from testutil import create_package
@@ -61,8 +61,8 @@ class LargeLoad(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
-        db = self.rapi.db
-        self.rapi.connection.drop_database(db)
+        # db = self.rapi.objectdb
+        # self.rapi.objectdb.database.connection.drop_database(db)
         
     def create_repos(self):
         print "RPMDIRS: %s" % self.dirlist
@@ -71,7 +71,7 @@ class LargeLoad(unittest.TestCase):
             id = rdir.replace('/', '.')
             repo = self.rapi.create(id,'test repo: %s' % rdir, \
                 'i386', 'local:file://%s' % rdir)
-            self.rapi.sync(repo.id)
+            self.rapi._sync(repo['id'])
             numrepos = numrepos + 1
         
         return numrepos
@@ -128,8 +128,10 @@ class LargeLoad(unittest.TestCase):
         consumers = self.capi.consumers()
         print "consumers!"
         c = consumers[0]
+        print "C: %s" % c['package_profile']
         # assert(len(consumers) == self.numconsumers)
         packages = self.capi.packages(c['id'])
+        
         randomPackage = random.choice(packages)
         p = ll.papi.package_by_ivera(randomPackage['name'],
                                      randomPackage['version'],
@@ -140,7 +142,7 @@ class LargeLoad(unittest.TestCase):
         c2 = self.capi.consumer(last_id)
         assert(c2 != None)
         print "Searching for all consumers with %s package id" % TEST_PACKAGE_ID
-        cwithp = ll.capi.consumers_with_package_name(TEST_PACKAGE_ID)
+        cwithp = ll.capi.consumers_with_package_names([TEST_PACKAGE_ID])
         print "Found [%s] consumers with packageid: [%s]" % (len(cwithp), TEST_PACKAGE_ID)
 
 
@@ -151,7 +153,8 @@ parser.add_option('--numconsumers', dest='numconsumers',
                  action='store', default=1000, help='Number of consumers you want to load')
 
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
-parser.add_option('--config', dest='config', action='store', help='Configuration file', default="../../etc/pulp/pulp.conf")
+parser.add_option('--config', dest='config', action='store', help='Configuration file',
+                  default="../../etc/pulp/pulp.conf")
 parser.add_option('--skiprepos', dest='skiprepos', action='store_true', help='Skip repo imports')
 parser.add_option('--skipclean', dest='skipclean', action='store_true', help='Skip clean')
 
@@ -162,8 +165,8 @@ numconsumers = int(cmdoptions.numconsumers)
 skiprepos = cmdoptions.skiprepos
 skipclean = cmdoptions.skipclean
 print "Attempting to load configuration from: %s" % (cmdoptions.config)
-pulp.config.add_config_file(cmdoptions.config)
-config = pulp.config.config
+pulp.server.config.add_config_file(cmdoptions.config)
+config = pulp.server.config
 
 if (clean):
     ll = LargeLoad(None, None, dict())

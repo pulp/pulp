@@ -45,6 +45,7 @@ class Repo(Base):
         self.arch = arch
         self.release = None
         self.packages = dict()
+        self.package_count = 0
         self.packagegroups = dict()
         self.packagegroupcategories = dict()
         self.repomd_xml_path = u""
