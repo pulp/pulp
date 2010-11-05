@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.79
+Version:        0.0.80
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,39 @@ pulp-migrate --auto
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 05 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.80-1
+- adding ou to populate users script (pkilambi@redhat.com)
+- update pulp.spec for gopher lib on 64bit systems and fix for ghost file
+  pulp.repo (jmatthew@redhat.com)
+- update pulp rpm spec so it will delete /etc/yum.repos.d/pulp.repo when rpm is
+  removed (jmatthew@redhat.com)
+- Add missing directories for gopher. (jortel@redhat.com)
+- 649327 - removed reace conditions in get_descendants where threads
+  can exit and have the references disappear while we are collecting them from
+  the thread tree (jconnor@redhat.com)
+- Change to return uuid of None when not registerd. (jortel@redhat.com)
+- Add identity plugin. (jortel@redhat.com)
+- configure so gopher lib logs in pulp.log. (jortel@redhat.com)
+- Spec changes to support gopher refit. (jortel@redhat.com)
+- Refit pulp to use gopher. (jortel@redhat.com)
+- fixed bugs in validation for Errata description (which can possible be None)
+  and reboot_suggested (which is a bool) (jconnor@redhat.com)
+- fixed ldap config to not require user/password anymore. (pkilambi@redhat.com)
+- Adding WS/CLI for package search (jmatthew@redhat.com)
+- 649668 - Adding --server option to override config setting from commandline
+  (pkilambi@redhat.com)
+- added auto migration to pulp post script in rpm spec (jconnor@redhat.com)
+- incremented pulp version for db versioning (jconnor@redhat.com)
+- added new pulp-migrate script, including in setup.py and rpm sepc files
+  (jconnor@redhat.com)
+- fixed problems with validation found while hand-testing yes, this is a sucky
+  commit message (jconnor@redhat.com)
+- changed version check to explicit and added it to web services application
+  (jconnor@redhat.com)
+- changed database initialization to lazy changed logging to setup just before
+  use fixed *several* logic errors in db version detection (wtf)
+  (jconnor@redhat.com)
+
 * Wed Nov 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.78-1
 - 648918 - Correcting a small error (skarmark@redhat.com)
 - adding regex search to packages call (jmatthew@redhat.com)
