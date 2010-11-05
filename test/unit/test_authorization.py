@@ -38,7 +38,6 @@ from pulp.server.api.role import RoleApi
 from pulp.server.db.model import RoleActionType
 from pulp.server.db.model import RoleResourceType
 
-
 import pulp.server.auth.auth as auth
 import testutil
 
@@ -117,7 +116,6 @@ class TestAuthorization(unittest.TestCase):
         role = self.roleapi.create(name, desc, action_type, resource_type)
         return role
     
-
 
         
 if __name__ == '__main__':

@@ -45,6 +45,7 @@ class RoleApi(BaseApi):
         self.insert(role)
         return role
 
+
     def roles(self, spec=None, fields=None):
         """
         List all Roles.
@@ -95,7 +96,7 @@ class PermissionApi(BaseApi):
 
     @audit(params=['name'])
     def delete(self, id):
-        self.objectdb.remove({'id' : name}, safe=True)
+        self.objectdb.remove({'id' : id}, safe=True)
         
         
         

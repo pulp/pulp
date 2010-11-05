@@ -263,4 +263,3 @@ class Permission(Base):
         self.instance = instance
         self.user = user
 
-
