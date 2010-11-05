@@ -145,6 +145,7 @@ pulp-migrate --auto
 %{python_sitelib}/pulp/server/
 %config(noreplace) %{_sysconfdir}/pulp/pulp.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
+%ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(775, apache, apache) %{_sysconfdir}/pulp
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/webservices.wsgi
