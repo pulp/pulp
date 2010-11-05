@@ -233,10 +233,12 @@ class Errata(Base):
 
 class Role(Base):
     def __init__(self, name, description, action_types, resource_type):
+        Base.__init__(self)
         self.name = name
         self.description = description
         self.action_types = action_types
         self.resource_type = resource_type
+        self.parent = None
 
     def __unicode__(self):
         return unicode(self.name)
