@@ -94,7 +94,7 @@ class Restlib(object):
             base64string = base64.encodestring(raw)[:-1]
             auth = "Basic %s" % base64string
         else:
-            auth = None
+            auth = ''
         default_locale = locale.getdefaultlocale()[0]
         if default_locale:
             default_locale = default_locale.lower().replace('_', '-')
