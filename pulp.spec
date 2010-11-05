@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.80
+Version:        0.0.81
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -181,6 +181,10 @@ pulp-migrate --auto
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 05 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.81-1
+- 649517 - httplib in py2.7 does not handle None headers correctly. Converting
+  them to string so http requests pas through (pkilambi@redhat.com)
+
 * Fri Nov 05 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.80-1
 - adding ou to populate users script (pkilambi@redhat.com)
 - update pulp.spec for gopher lib on 64bit systems and fix for ghost file
