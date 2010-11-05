@@ -242,4 +242,25 @@ class Role(Base):
 
     def __unicode__(self):
         return unicode(self.name)
+    
+class RoleActionType(object):
+    READ = 'READ'
+    CREATE = 'CREATE'
+    WRITE = 'WRITE'
+    DELETE = 'DELETE'
+    
+class RoleResourceType(object):
+    REPO = 'REPO'
+    CONSUMER = 'CONSUMER'
+    PACKAGE = 'PACKAGE'
+    USER = 'USER'
+    
+    
+class Permission(Base):
+    def __init__(self, role, instance, user):
+        Base.__init__(self)
+        self.role = role
+        self.instance = instance
+        self.user = user
+
 

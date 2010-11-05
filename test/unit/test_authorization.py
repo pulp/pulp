@@ -32,7 +32,13 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.role import PermissionApi
 from pulp.server.api.role import RoleApi
+from pulp.server.db.model import RoleActionType
+from pulp.server.db.model import RoleResourceType
+
+
 import pulp.server.auth.auth as auth
 import testutil
 
@@ -43,7 +49,9 @@ class TestAuthorization(unittest.TestCase):
         self.uapi = UserApi()
         self.capi = ConsumerApi()
         self.roleapi = RoleApi()
-
+        self.repoapi = RepoApi()
+        self.userapi = UserApi()
+        self.permapi = PermissionApi()
         # Make sure to reset the principal between tests
         auth.set_principal(auth.SystemPrincipal())
 
@@ -51,6 +59,8 @@ class TestAuthorization(unittest.TestCase):
         self.uapi.clean()
         self.capi.clean()
         self.roleapi.clean()
+        self.repoapi.clean()
+        self.permapi.clean()
         testutil.common_cleanup()
 
     def test_create_role(self):
@@ -87,13 +97,22 @@ class TestAuthorization(unittest.TestCase):
         updated_child = self.roleapi.role('child-role')
         self.assertEquals(updated_child['parent'], updated_root)
         
+        
+    def test_create_permission(self):
+        role = self.create_role('perm-test-role')
+        repo = self.repoapi.create('perm-test-repo', 'perm-test', 'i386')
+        user = self.userapi.create('perm-test-user')
+        perm = self.permapi.create(role, repo, user)  
+        self.assertTrue(perm)
+        self.assertTrue(perm['role'])
+        self.assertTrue(perm['instance'])
+        self.assertTrue(perm['user'])
+        
     # Util Method
     def create_role(self, name):
         desc = 'test desc for role'
-        # Todo: move these to an enum
-        action_type = ['READ', 'WRITE']
-        # Todo: move this to an enum
-        resource_type = 'REPO'
+        action_type = [RoleActionType.CREATE, RoleActionType.WRITE]
+        resource_type = RoleResourceType.REPO
         
         role = self.roleapi.create(name, desc, action_type, resource_type)
         return role
