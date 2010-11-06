@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# pulpd         Startup script for the Pulp Web Services
+#
+# chkconfig: - 97 9
+#
+### BEGIN INIT INFO
+# Required-Start: $mongod $qpidd $httpd
+# Required-Stop: $httpd $qpidd $mongod
+# Short-Description: start and stop the pulp webservices
+# Description: Pulp is comprehensive content repository and consumer management 
+
+. /etc/rc.d/init.d/functions
+RETVAL=0
+init_file=/var/lib/pulp/init.run
+
+
+init() {
+    /etc/rc.d/init.d/mongod start
+    /usr/bin/pulp-migrate --auto
+    RETVAL=$?
+    [ $RETVAL = 0 ] && touch ${init_file}
+    return $RETVAL
+}
+
+start() {
+    if [ ! -f $init_file ]; then
+        echo $"Pulp database not initialized, please run: $0 init"
+        RETVAL=2
+        return $RETVAL
+    fi
+    /etc/rc.d/init.d/mongod start
+    RETVAL=$?
+    [ $RETVAL = 0 ] && /etc/rc.d/init.d/qpidd start
+    RETVAL=$?
+    [ $RETVAL = 0 ] && /etc/rc.d/ini.d/httpd start
+    RETVAL=$?
+    return $RETVAL
+}
+
+stop() {
+    /etc/rc.d/ini.d/httpd stop
+    /etc/rc.d/init.d/qpidd stop
+    /etc/rc.d/init.d/mongod stop
+    return $RETVAL
+}
+
+case "$1" in
+    init)
+        init
+        ;;
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo $"Usage: pulpd {init|start|stop|restart}"
+        RETVAL=3
+esac
+
+exit $RETVAL
