@@ -103,20 +103,24 @@ popd
 mkdir -p %{buildroot}/etc/pulp
 cp etc/pulp/* %{buildroot}/etc/pulp
 
+# Pulp Log
 mkdir -p %{buildroot}/var/log/pulp
 
 # Apache Configuration
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp etc/httpd/conf.d/pulp.conf %{buildroot}/etc/httpd/conf.d/
 
+# Pulp Web Services
 cp -R srv %{buildroot}
 
+# Pulp PKI
 mkdir -p %{buildroot}/etc/pki/pulp
 mkdir -p %{buildroot}/etc/pki/consumer
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
 mkdir -p %{buildroot}/etc/pki/content
 
+# Pulp Runtime
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
@@ -127,6 +131,10 @@ mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
 cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
+
+# Pulp Init.d
+mkdir -p %{buildroot}/etc/rc.d/init.d
+cp etc/rc.d/init.d/pulpd %{buildroot}/etc/rc.d/init.d/
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -157,6 +165,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
 %attr(3775, root, root) %{_sysconfdir}/pki/content
+%attr{3775, root, root) %{_sysconfdir}/rc.d/init.d/pulpd
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 
