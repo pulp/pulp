@@ -18,8 +18,8 @@
 Contains QPID event producer classes.
 """
 
-from gopher.messaging import Topic
-from gopher.messaging.producer import Producer
+from gofer.messaging import Topic
+from gofer.messaging.producer import Producer
 
 
 class EventProducer(Producer):

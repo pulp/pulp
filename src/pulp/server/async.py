@@ -17,8 +17,8 @@ from pulp.server.agent import Agent
 from pulp.server.tasking.queue.fifo import FIFOTaskQueue
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.config import config
-from gopher.messaging import Queue
-from gopher.messaging.async import ReplyConsumer, Listener
+from gofer.messaging import Queue
+from gofer.messaging.async import ReplyConsumer, Listener
 from logging import getLogger
 
 log = getLogger(__name__)

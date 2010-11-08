@@ -6,14 +6,14 @@ srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
 
 from unittest import TestCase
-from gopher.messaging.decorators import *
-from gopher.messaging.base import Agent
-from gopher.messaging.base import Container
-from gopher.messaging.store import PendingQueue
-from gopher.messaging.consumer import RequestConsumer
-from gopher.messaging.async import ReplyConsumer, Listener
-from gopher.messaging.producer import Producer
-from gopher.messaging import Queue
+from gofer.messaging.decorators import *
+from gofer.messaging.base import Agent
+from gofer.messaging.base import Container
+from gofer.messaging.store import PendingQueue
+from gofer.messaging.consumer import RequestConsumer
+from gofer.messaging.async import ReplyConsumer, Listener
+from gofer.messaging.producer import Producer
+from gofer.messaging import Queue
 from time import sleep
 import logging
 

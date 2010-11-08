@@ -24,8 +24,8 @@ DIRS = (
     '/etc/httpd',
     '/etc/httpd/conf.d',
     '/etc/pulp',
-    '/etc/gopher',
-    '/etc/gopher/plugins',
+    '/etc/gofer',
+    '/etc/gofer/plugins',
     '/etc/pki/pulp',
     '/srv',
     '/srv/pulp',
@@ -33,8 +33,8 @@ DIRS = (
     '/var/lib/pulp/published',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
-    '/usr/lib/gopher',
-    '/usr/lib/gopher/plugins',
+    '/usr/lib/gofer',
+    '/usr/lib/gofer/plugins',
 )
 
 #
@@ -47,10 +47,10 @@ LINKS = (
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
-    'etc/gopher/plugins/pulp.conf',
+    'etc/gofer/plugins/pulp.conf',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
-    ('src/pulp/client/gopher/pulp.py', '/usr/lib/gopher/plugins/pulp.py'),
+    ('src/pulp/client/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
 )
 
 def parse_cmdline():
