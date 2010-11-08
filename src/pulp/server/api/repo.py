@@ -45,6 +45,7 @@ from pulp.server.pexceptions import PulpException
 import pulp.server.util
 from pulp.server.api.fetch_listings import CDNConnection
 from pulp.server.agent import Agent
+from pulp.server.api.distribution import DistributionApi
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
@@ -58,6 +59,7 @@ class RepoApi(BaseApi):
         BaseApi.__init__(self)
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
+        self.distroapi = DistributionApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
 
@@ -1119,7 +1121,34 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
-
+    
+    def add_distribution(self, repoid, distroid):
+        '''
+         Associate a distribution to a given repo
+         @param repoid: The repo ID.
+         @param distroid: The distribution ID.
+        '''
+        repo = self._get_existing_repo(repoid)
+        if self.distroapi.distribution(distroid) is None:
+            raise PulpException("Distribution ID [%s] does not exist" % distroid)
+        repo['distributionid'].append(distroid)
+        self.objectdb.save(repo, safe=True)
+        log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
+        
+    def delete_distribution(self, repoid, distroid):
+        '''
+         Delete a distribution from a given repo
+         @param repoid: The repo ID.
+         @param distroid: The distribution ID.
+        '''
+        repo = self._get_existing_repo(repoid)
+        if distroid in repo['distributionid']:
+            del repo['distributionid'][repo['distributionid'].index(distroid)]
+            self.objectdb.save(repo, safe=True)
+            log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
+        else:
+            log.error("No Distribution with ID %s associated to this repo" % distroid)
+        
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

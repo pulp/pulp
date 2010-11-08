@@ -33,6 +33,7 @@ from grinder.RHNSync import RHNSync
 from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server import config
 from pulp.server.pexceptions import PulpException
@@ -139,6 +140,7 @@ class BaseSynchronizer(object):
     def __init__(self):
         self.package_api = PackageApi()
         self.errata_api = ErrataApi()
+        self.distro_api = DistributionApi()
 
     def add_packages_from_dir(self, dir, repo):
 
@@ -160,8 +162,14 @@ class BaseSynchronizer(object):
         if not os.path.exists(images_dir):
             log.info("No image files to import to repo..")
         else:
-            repo['files'] = pulp.server.util.listdir(images_dir)
-            log.debug("Added %s potential image files to repo %s" % (len(repo['files']), repo['id']))
+            # Handle distributions that are part of repo syncs
+            files = pulp.server.util.listdir(images_dir) or []
+            id = description = "ks-" + repo['id'] + "-" + repo['arch'] 
+            distro = self.distro_api.create(id, description, \
+                                            os.path.dirname(images_dir), files)
+            log.info("Created a distributionID %s" % distro['id'])
+            repo['distributionid'].append(distro['id'])
+            log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
         # Import groups metadata if present
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):

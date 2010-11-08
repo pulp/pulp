@@ -64,6 +64,7 @@ class Repo(Base):
         self.allow_upload = 0
         self.publish = False
         self.clone_ids = []
+        self.distributionid = []
 
     def get_repo_source(self):
         if not self.source:
@@ -230,3 +231,15 @@ class Errata(Base):
         self.pkglist = pkglist
         self.repo_defined = repo_defined
         self.immutable = immutable
+
+class Distribution(Base):
+    '''
+     Distribution Model to represent kickstart trees
+    '''
+    def __init__(self, id, description, relativepath, files=[]):
+        self._id = id
+        self.id = id
+        self.description = description
+        self.files = files
+        self.relativepath = relativepath
+
