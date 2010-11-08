@@ -18,8 +18,8 @@
 Contains QPID event consumer classes.
 """
 
-from gopher.messaging import Topic
-from gopher.messaging.consumer import Consumer
+from gofer.messaging import Topic
+from gofer.messaging.consumer import Consumer
 from logging import getLogger
 
 log = getLogger(__name__)

@@ -45,6 +45,7 @@ from pulp.server.pexceptions import PulpException
 import pulp.server.util
 from pulp.server.api.fetch_listings import CDNConnection
 from pulp.server.agent import Agent
+from pulp.server.api.distribution import DistributionApi
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
@@ -58,8 +59,10 @@ class RepoApi(BaseApi):
         BaseApi.__init__(self)
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
+        self.distroapi = DistributionApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
+        self.distro_path = os.path.join(self.localStoragePath, "ks")
 
     @property
     def _indexes(self):
@@ -94,6 +97,16 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         return repo
 
+    @audit()
+    def clean(self):
+        """
+        Delete all the Repo objects in the database and remove associated
+        files from filesystem.  WARNING: Destructive
+        """
+        found = self.repositories(fields=["id"])
+        for r in found:
+            self.delete(r["id"])
+
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
@@ -124,7 +137,7 @@ class RepoApi(BaseApi):
                 else:
                     # For none product repos, default to repoid
                     url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse.path
+                    r['relative_path'] = url_parse.path or r['id']
             else:
                 r['relative_path'] = r['id']
                 # There is no repo source, allow package uploads
@@ -183,19 +196,7 @@ class RepoApi(BaseApi):
         source_path = os.path.join(pulp.server.util.top_repos_location(), 
                 repo["relative_path"])
         link_path = os.path.join(self.published_path, repo["relative_path"])
-        if not os.path.exists(source_path):
-            # Create source repo location
-            os.makedirs(source_path)
-        if not os.path.exists(os.path.dirname(link_path)):
-            # Create published dir as well as 
-            # any needed dir parts if rel_path has multiple parts
-            os.makedirs(os.path.dirname(link_path))
-        if not os.path.exists(link_path):
-            if os.path.lexists(link_path):
-                # Clean up broken sym link
-                os.unlink(link_path)
-            log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
-            os.symlink(source_path, link_path)
+        pulp.server.util.create_symlinks(source_path, link_path)
 
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
@@ -408,6 +409,10 @@ class RepoApi(BaseApi):
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
+        
+        #remove any distributions
+        for distroid in repo['distributionid']:
+            self.remove_distribution(repo['id'], distroid)
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi 
@@ -1109,7 +1114,49 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
-
+    
+    def add_distribution(self, repoid, distroid):
+        '''
+         Associate a distribution to a given repo
+         @param repoid: The repo ID.
+         @param distroid: The distribution ID.
+        '''
+        repo = self._get_existing_repo(repoid)
+        if self.distroapi.distribution(distroid) is None:
+            raise PulpException("Distribution ID [%s] does not exist" % distroid)
+        repo['distributionid'].append(distroid)
+        self.objectdb.save(repo, safe=True)
+        self._create_ks_link(repo)
+        log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
+        
+    def remove_distribution(self, repoid, distroid):
+        '''
+         Delete a distribution from a given repo
+         @param repoid: The repo ID.
+         @param distroid: The distribution ID.
+        '''
+        repo = self._get_existing_repo(repoid)
+        if distroid in repo['distributionid']:
+            del repo['distributionid'][repo['distributionid'].index(distroid)]
+            self.objectdb.save(repo, safe=True)
+            self._delete_ks_link(repo)
+            log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
+        else:
+            log.error("No Distribution with ID %s associated to this repo" % distroid)
+            
+    def _create_ks_link(self, repo):
+        if not os.path.isdir(self.distro_path):
+            os.mkdir(self.distro_path)
+        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["relative_path"])
+        link_path = os.path.join(self.distro_path, repo["relative_path"])
+        pulp.server.util.create_symlinks(source_path, link_path)
+    
+    def _delete_ks_link(self, repo):
+        link_path = os.path.join(self.distro_path, repo["relative_path"])
+        if os.path.lexists(link_path):
+            # need to use lexists so we will return True even for broken links
+            os.unlink(link_path)
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

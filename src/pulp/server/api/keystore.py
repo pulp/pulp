@@ -121,13 +121,13 @@ class KeyStore:
         pattern = '----BEGIN PGP PUBLIC KEY BLOCK-----'
         path = os.path.join(keydir(), self.path)
         for fn in os.listdir(path):
-            if os.path.isdir(fn):
-                continue
             for ext in ('.rpm','.gz','.xml'):
                 if fn.endswith(ext):
                     continue
             try:
                 fp = os.path.join(path, fn)
+                if os.path.isdir(fp):
+                    continue
                 f = open(fp)
                 content = f.read()
                 if pattern in content:

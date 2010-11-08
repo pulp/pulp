@@ -20,8 +20,8 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
-from gopher.proxy import Agent as Base
-from gopher.messaging.producer import Producer
+from gofer.proxy import Agent as Base
+from gofer.messaging.producer import Producer
 from pulp.server.config import config
 
 
@@ -34,7 +34,7 @@ class Agent(Base):
         """
         @param uuid: The consumer uuid.
         @type uuid: str|list
-        @param options: Messaging L{gopher.messaging.Options}
+        @param options: Messaging L{gofer.messaging.Options}
         """
         url = config.get('messaging', 'url')
         producer = Producer(url=url)

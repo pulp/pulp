@@ -81,15 +81,25 @@ class PackageUpload:
         return pkg
 
 def create_repo(dir, groups=None):
-    cmd = "createrepo --update %s" % (dir)
-    if groups:
-        cmd = "createrepo -g %s --update %s" % (groups, dir)
+    cmd = "createrepo -g %s --update %s" % (groups, dir)
+    if not groups:
+        cmd = "createrepo --update %s" % (dir)
+        repodata_file = os.path.join(dir, "repodata", "repomd.xml")
+        if os.path.isfile(repodata_file):
+            log.info("Checking what metadata types are available: %s" % \
+                    (util.get_repomd_filetypes(repodata_file)))
+            if "group" in util.get_repomd_filetypes(repodata_file):
+                comps_file = util.get_repomd_filetype_path(
+                    repodata_file, "group")
+                comps_file = os.path.join(dir, comps_file)
+                if comps_file and os.path.isfile(comps_file):
+                    cmd = "createrepo -g %s --update %s" % (comps_file, dir)
     status, out = commands.getstatusoutput(cmd)
 
     if status != 0:
         log.error("createrepo on %s failed" % dir)
         raise CreateRepoError(out)
-    log.info("createrepo on %s finished" % dir)
+    log.info("[%s] on %s finished" % (cmd, dir))
     return status, out
 
 def modify_repo(dir, new_file):

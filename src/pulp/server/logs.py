@@ -57,7 +57,7 @@ def configure_pulp_grinder_logging():
                                                 backupCount=backups)
     pulp_handler.setFormatter(formatter)
 
-    for pkg in ('pulp', 'qpid', 'gopher'):
+    for pkg in ('pulp', 'qpid', 'gofer'):
         logger = logging.getLogger(pkg)
         logger.setLevel(level)
         logger.addHandler(pulp_handler)

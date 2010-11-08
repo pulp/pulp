@@ -32,7 +32,7 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: gopher-common >= 0.8
+Requires: gofer-lib >= 0.1
 %if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
@@ -65,7 +65,7 @@ BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
 Requires: %{name}-common = %{version}
-Requires: gopher >= 0.8
+Requires: gofer >= 0.1
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -103,30 +103,38 @@ popd
 mkdir -p %{buildroot}/etc/pulp
 cp etc/pulp/* %{buildroot}/etc/pulp
 
+# Pulp Log
 mkdir -p %{buildroot}/var/log/pulp
 
 # Apache Configuration
 mkdir -p %{buildroot}/etc/httpd/conf.d/
 cp etc/httpd/conf.d/pulp.conf %{buildroot}/etc/httpd/conf.d/
 
+# Pulp Web Services
 cp -R srv %{buildroot}
 
+# Pulp PKI
 mkdir -p %{buildroot}/etc/pki/pulp
 mkdir -p %{buildroot}/etc/pki/consumer
 cp etc/pki/pulp/* %{buildroot}/etc/pki/pulp
 
 mkdir -p %{buildroot}/etc/pki/content
 
+# Pulp Runtime
 mkdir -p %{buildroot}/var/lib/pulp
 mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
-# Gopher Plugin
-mkdir -p %{buildroot}/etc/gopher/plugins
-mkdir -p %{buildroot}/usr/lib/gopher/plugins
-cp etc/gopher/plugins/*.conf %{buildroot}/etc/gopher/plugins
-cp src/pulp/client/gopher/pulp.py %{buildroot}/usr/lib/gopher/plugins
+# Gofer Plugin
+mkdir -p %{buildroot}/etc/gofer/plugins
+mkdir -p %{buildroot}/usr/lib/gofer/plugins
+cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
+cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
+
+# Pulp Init.d
+mkdir -p %{buildroot}/etc/rc.d/init.d
+cp etc/rc.d/init.d/pulpd %{buildroot}/etc/rc.d/init.d/
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -140,7 +148,6 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
-pulp-migrate --auto
 
 %files
 %defattr(-,root,root,-)
@@ -158,6 +165,7 @@ pulp-migrate --auto
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
 %attr(3775, root, root) %{_sysconfdir}/pki/content
+%attr{3775, root, root) %{_sysconfdir}/rc.d/init.d/pulpd
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 
@@ -175,8 +183,8 @@ pulp-migrate --auto
 %{_bindir}/pulp-admin
 %{_bindir}/pulp-client
 %{_bindir}/pulp-migrate
-%{_exec_prefix}/lib/gopher/plugins/pulp.*
-%{_sysconfdir}/gopher/plugins/pulp.conf
+%{_exec_prefix}/lib/gofer/plugins/pulp.*
+%{_sysconfdir}/gofer/plugins/pulp.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
@@ -187,19 +195,19 @@ pulp-migrate --auto
 
 * Fri Nov 05 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.80-1
 - adding ou to populate users script (pkilambi@redhat.com)
-- update pulp.spec for gopher lib on 64bit systems and fix for ghost file
+- update pulp.spec for gofer lib on 64bit systems and fix for ghost file
   pulp.repo (jmatthew@redhat.com)
 - update pulp rpm spec so it will delete /etc/yum.repos.d/pulp.repo when rpm is
   removed (jmatthew@redhat.com)
-- Add missing directories for gopher. (jortel@redhat.com)
+- Add missing directories for gofer. (jortel@redhat.com)
 - 649327 - removed reace conditions in get_descendants where threads
   can exit and have the references disappear while we are collecting them from
   the thread tree (jconnor@redhat.com)
 - Change to return uuid of None when not registerd. (jortel@redhat.com)
 - Add identity plugin. (jortel@redhat.com)
-- configure so gopher lib logs in pulp.log. (jortel@redhat.com)
-- Spec changes to support gopher refit. (jortel@redhat.com)
-- Refit pulp to use gopher. (jortel@redhat.com)
+- configure so gofer lib logs in pulp.log. (jortel@redhat.com)
+- Spec changes to support gofer refit. (jortel@redhat.com)
+- Refit pulp to use gofer. (jortel@redhat.com)
 - fixed bugs in validation for Errata description (which can possible be None)
   and reboot_suggested (which is a bool) (jconnor@redhat.com)
 - fixed ldap config to not require user/password anymore. (pkilambi@redhat.com)

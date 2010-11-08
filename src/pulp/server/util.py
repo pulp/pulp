@@ -285,6 +285,21 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
         hash[:3], name, version, release, arch, filename)
     return pkg_location
 
+def create_symlinks(source_path, link_path):
+    if not os.path.exists(source_path):
+        # Create source repo location
+        os.makedirs(source_path)
+    if not os.path.exists(os.path.dirname(link_path)):
+        # Create published dir as well as 
+        # any needed dir parts if rel_path has multiple parts
+        os.makedirs(os.path.dirname(link_path))
+    if not os.path.exists(link_path):
+        if os.path.lexists(link_path):
+            # Clean up broken sym link
+            os.unlink(link_path)
+        log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
+        os.symlink(source_path, link_path)
+
 class Singleton(type):
     """
     Singleton metaclass. To make a class instance a singleton, use this class

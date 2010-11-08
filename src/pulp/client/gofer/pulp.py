@@ -14,7 +14,7 @@
 #
 
 """
-Pulp (gopher) plugin.
+Pulp (gofer) plugin.
 Contains recurring actions and remote classes.
 """
 
@@ -24,8 +24,8 @@ from pulp.client.connection import ConsumerConnection, RestlibException
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 from pulp.client.repolib import RepoLib
-from gopher.agent.action import *
-from gopher.decorators import *
+from gofer.agent.action import *
+from gofer.decorators import *
 from M2Crypto import X509
 from yum import YumBase
 

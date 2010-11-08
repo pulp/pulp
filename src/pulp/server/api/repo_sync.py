@@ -33,6 +33,7 @@ from grinder.RHNSync import RHNSync
 from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server import config
 from pulp.server.pexceptions import PulpException
@@ -139,6 +140,7 @@ class BaseSynchronizer(object):
     def __init__(self):
         self.package_api = PackageApi()
         self.errata_api = ErrataApi()
+        self.distro_api = DistributionApi()
 
     def add_packages_from_dir(self, dir, repo):
 
@@ -155,13 +157,8 @@ class BaseSynchronizer(object):
         endTime = time.time()
         log.debug("Repo: %s read [%s] packages took %s seconds" %
                 (repo['id'], len(added_packages), endTime - startTime))
-        log.debug("Begin to add files from %s into %s" % (dir, repo['id']))
-        images_dir = os.path.join(dir, "images")
-        if not os.path.exists(images_dir):
-            log.info("No image files to import to repo..")
-        else:
-            repo['files'] = pulp.server.util.listdir(images_dir)
-            log.debug("Added %s potential image files to repo %s" % (len(repo['files']), repo['id']))
+        # process kickstart files/images part of the repo
+        self._process_repo_images(dir, repo)
         # Import groups metadata if present
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):
@@ -195,6 +192,28 @@ class BaseSynchronizer(object):
                 log.debug("Loaded updateinfo from %s for %s" % \
                         (updateinfo_xml_path, repo["id"]))
         return added_packages, added_errataids
+    
+    def _process_repo_images(self, repodir, repo):
+        log.debug("Processing any images synced as part of the repo")
+        images_dir = os.path.join(repodir, "images")
+        if not os.path.exists(images_dir):
+            log.info("No image files to import to repo..")
+            return
+        # Handle distributions that are part of repo syncs
+        files = pulp.server.util.listdir(images_dir) or []
+        id = description = "ks-" + repo['id'] + "-" + repo['arch'] 
+        distro = self.distro_api.create(id, description, \
+                                        os.path.dirname(images_dir), files)
+        log.info("Created a distributionID %s" % distro['id'])
+        distro_path = os.path.join(config.config.get('paths', 'local_storage'), "ks")
+        if not os.path.isdir(distro_path):
+            os.mkdir(distro_path)
+        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+                repo["relative_path"])
+        link_path = os.path.join(distro_path, repo["relative_path"])
+        pulp.server.util.create_symlinks(source_path, link_path)
+        log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
+
     
     def add_keys_from_dir(self, dir, repo):
         """
