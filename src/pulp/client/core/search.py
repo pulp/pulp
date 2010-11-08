@@ -86,10 +86,6 @@ class Packages(SearchAction):
                         pkg["release"], pkg["arch"]), evra_field_size),
                     self.form_item_string(pkg["filename"], filename_field_size),
                     pkg["repos"])
-                    #self.form_item_string(repos, repos_field_size))
-            #print "%s\t\t%s:%s-%s.%s\t\t%s\t\t%s" % (pkg["name"], pkg["epoch"], 
-            #        pkg["version"], pkg["release"], pkg["arch"], 
-            #        pkg["filename"], pkg["repos"])
 
     def form_item_string(self, msg, field_size):
         return string.ljust(msg, field_size)
