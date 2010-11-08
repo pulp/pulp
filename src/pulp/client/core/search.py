@@ -16,6 +16,7 @@
 #
 
 import os
+import string
 import sys
 import time
 from gettext import gettext as _
@@ -68,11 +69,41 @@ class Packages(SearchAction):
         if not pkgs:
            system_exit(os.EX_DATAERR, _("No packages found."))
 
+        name_field_size = self.get_field_size(pkgs, field_name="name")
+        evra_field_size = self.get_field_size(pkgs, msg="%s:%s-%s.%s", 
+                field_names=("epoch", "version", "release", "arch"))
+        filename_field_size = self.get_field_size(pkgs, field_name="filename")
+        repos_field_size = self.get_field_size(pkgs, field_name="repos")
         print_header(_("Package Information"))
+        print _("%s\t%s\t%s\t%s" % (self.form_item_string("Name", name_field_size),
+                self.form_item_string("EVRA", evra_field_size), 
+                self.form_item_string("Filename", filename_field_size),
+                self.form_item_string("Repositories", repos_field_size)))
         for pkg in pkgs:
-            print """%s \t%s:%s-%s.%s\t%s""" % (pkg["name"], pkg["epoch"], pkg["version"], pkg["release"], pkg["arch"], pkg["filename"])
+            print "%s\t%s\t%s\t%s" % \
+                    (self.form_item_string(pkg["name"], name_field_size), 
+                    self.form_item_string("%s:%s-%s.%s" % (pkg["epoch"], pkg["version"],
+                        pkg["release"], pkg["arch"]), evra_field_size),
+                    self.form_item_string(pkg["filename"], filename_field_size),
+                    pkg["repos"])
+                    #self.form_item_string(repos, repos_field_size))
+            #print "%s\t\t%s:%s-%s.%s\t\t%s\t\t%s" % (pkg["name"], pkg["epoch"], 
+            #        pkg["version"], pkg["release"], pkg["arch"], 
+            #        pkg["filename"], pkg["repos"])
 
+    def form_item_string(self, msg, field_size):
+        return string.ljust(msg, field_size)
 
+    def get_field_size(self, items, msg=None, field_name="", field_names=()):
+        largest_item_length = 0
+        for item in items:
+            if msg:
+                test_string = msg % (field_names)
+            else:
+                test_string = "%s" % (item[field_name])
+            if len(test_string) > largest_item_length:
+                largest_item_length = len(test_string)
+        return largest_item_length
 
 # search command -------------------------------------------------------------
 

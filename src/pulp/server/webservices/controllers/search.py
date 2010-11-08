@@ -15,10 +15,12 @@
 # in this software or its documentation.
 
 import logging
+import time
 
 import web
 
 from pulp.server.api.package import PackageApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.role_check import RoleCheck
@@ -26,6 +28,7 @@ from pulp.server.webservices.role_check import RoleCheck
 # globals ---------------------------------------------------------------------
 
 papi = PackageApi()
+rapi = RepoApi()
 log = logging.getLogger('pulp')
 
 # search controllers --------------------------------------------------------
@@ -39,7 +42,7 @@ class PackageSearch(JSONController):
         List available packages.
         @return: a list of packages
         """
-        log.error("search:   GET received")
+        log.info("search:   GET received")
         valid_filters = ('id', 'name')
         filters = self.filters(valid_filters)
         spec = mongo.filters_to_re_spec(filters)
@@ -73,9 +76,18 @@ class PackageSearch(JSONController):
         filename = None
         if data.has_key("filename"):
             filename = data["filename"]
-        return self.ok(papi.packages(name=name, epoch=epoch, version=version,
-            release=release, arch=arch, filename=filename, regex=True))
-
+        start_time = time.time()
+        pkgs = papi.packages(name=name, epoch=epoch, version=version,
+            release=release, arch=arch, filename=filename, regex=True)
+        initial_search_end = time.time()
+        for p in pkgs:
+            p["repos"] = rapi.find_repos_by_package(p["id"])
+        repo_lookup_time = time.time()
+        log.info("Search [%s]: package lookup: %s, repo correlation: %s, total: %s" % \
+                (data, (initial_search_end - start_time), 
+                    (repo_lookup_time - initial_search_end),
+                    (repo_lookup_time - start_time)))
+        return self.ok(pkgs)
     def POST(self):
         # REST dictates POST to collection, and PUT to specific resource for
         # creation, this is the start of supporting both
