@@ -129,12 +129,12 @@ class TestDistribution(unittest.TestCase):
         distro = self.dapi.create(distroid, None, None, [])
         
         repoid = 'test-repodist'
-        self.rapi.create(repoid, 'some name', 'i386', 'yum:http://example.com')
+        self.rapi.create(repoid, 'some name', 'i386', 'yum:http://example.com/test/path')
         self.rapi.add_distribution(repoid, distroid)
         repo = self.rapi.repository(repoid)
         assert(distroid in repo['distributionid'])
         
-        self.rapi.delete_distribution(repoid, distroid)
+        self.rapi.remove_distribution(repoid, distroid)
         repo = self.rapi.repository(repoid)
         assert(distroid not in repo['distributionid'])
         

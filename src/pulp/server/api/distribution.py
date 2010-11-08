@@ -13,11 +13,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server.api.base import BaseApi
-from pulp.server.auditing import audit
+import logging
 from pulp.server.db import model
+from pulp.server.auditing import audit
+from pulp.server.api.base import BaseApi
 from pulp.server.db.connection import get_object_db
-
+log = logging.getLogger(__name__)
 
 distribution_fields = model.Distribution(None, None, None, []).keys()
 
