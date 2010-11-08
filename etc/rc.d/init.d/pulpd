@@ -12,7 +12,7 @@
 
 . /etc/rc.d/init.d/functions
 RETVAL=0
-init_file=/var/lib/pulp/init.run
+init_file=/var/lib/pulp/init.flag
 
 
 init() {
@@ -29,17 +29,14 @@ start() {
         RETVAL=2
         return $RETVAL
     fi
-    /etc/rc.d/init.d/mongod start
-    RETVAL=$?
-    [ $RETVAL = 0 ] && /etc/rc.d/init.d/qpidd start
-    RETVAL=$?
-    [ $RETVAL = 0 ] && /etc/rc.d/ini.d/httpd start
-    RETVAL=$?
+    /etc/rc.d/init.d/mongod start || RETVAL=$?
+    [ $RETVAL = 0 ] && /etc/rc.d/init.d/qpidd start || RETVAL=$?
+    [ $RETVAL = 0 ] && /etc/rc.d/init.d/httpd start || RETVAL=$?
     return $RETVAL
 }
 
 stop() {
-    /etc/rc.d/ini.d/httpd stop
+    /etc/rc.d/init.d/httpd stop
     /etc/rc.d/init.d/qpidd stop
     /etc/rc.d/init.d/mongod stop
     return $RETVAL
