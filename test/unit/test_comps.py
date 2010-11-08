@@ -48,15 +48,19 @@ log = logging.getLogger('pulp.test.testcomps')
 
 class TestComps(unittest.TestCase):
 
+    def clean(self):
+        self.rapi.clean()
+        testutil.common_cleanup()
+
     def setUp(self):
         self.config = testutil.load_test_config()
         self.rapi = RepoApi()
         self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         logging.root.setLevel(logging.ERROR)
+        self.clean()
 
     def tearDown(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
+        self.clean()
 
     def test_sync_groups_data(self):
         repo = self.rapi.create('test_sync_groups_data_id',

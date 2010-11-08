@@ -50,6 +50,7 @@ from pulp.server.db.model import RepoSource
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
+from pulp.server.util import top_repos_location
 import testutil
 
 logging.root.setLevel(logging.ERROR)
@@ -661,8 +662,9 @@ class TestApi(unittest.TestCase):
         assert(packagea['_id'] == packageb['_id'])
 
     def test_sync(self):
+        p = os.path.join(self.data_path, "repo_resync_a")
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://mmccune.fedorapeople.org/pulp/')
+                'local:%s' % (p))
         failed = False
         try:
             self.rapi._sync('invalid-id-not-found')
@@ -673,7 +675,9 @@ class TestApi(unittest.TestCase):
         self.rapi._sync(repo['id'])
 
         # Check that local storage has dir and rpms
-        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/repos/' + repo['id'])
+        d = os.path.join(top_repos_location(), repo['relative_path'])
+        self.assertTrue(os.path.isdir(d))
+        dirList = os.listdir(d)
         assert(len(dirList) > 0)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']

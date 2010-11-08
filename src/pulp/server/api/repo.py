@@ -94,6 +94,16 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         return repo
 
+    @audit()
+    def clean(self):
+        """
+        Delete all the Repo objects in the database and remove associated
+        files from filesystem.  WARNING: Destructive
+        """
+        found = self.repositories(fields=["id"])
+        for r in found:
+            self.delete(r["id"])
+
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
