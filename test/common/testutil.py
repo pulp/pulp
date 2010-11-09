@@ -14,12 +14,13 @@
 # in this software or its documentation.
 
 import os
+import random
 from datetime import timedelta
 
 from pulp.server import auditing
 from pulp.server import config
 from pulp.server.logs import start_logging, stop_logging
-
+from pulp.server.util import random_string
 
 def load_test_config():
 

@@ -547,8 +547,6 @@ class RepoApi(BaseApi):
         # TODO:  We might want to restrict Packages we add to only
         #        allow 1 NEVRA per repo and require filename to be unique
         self._add_package(repo, package)
-        package['repo_ids'] = repoid
-        self.packageapi.update(package)
         self.objectdb.save(repo, safe=True)
 
     def _add_package(self, repo, p):
@@ -590,18 +588,14 @@ class RepoApi(BaseApi):
                 log.debug("Delete package %s at %s" % (p, pkg_packages_path))
                 os.remove(pkg_packages_path)
 
-
     def find_repos_by_package(self, pkgid):
         """
         Return repos that contain passed in package id
         @param pkgid: package id
         """
-        ret_val = []
-        repos = self.repositories(fields=["id", "packages"])
-        for r in repos:
-            if pkgid in r["packages"]:
-                ret_val.append(r["id"])
-        return ret_val
+        key = "packages.%s" % pkgid
+        found = list(self.objectdb.find({key: {"$exists": True}}, fields=["id"]))
+        return [r["id"] for r in found]
 
     def errata(self, id, types=()):
         """

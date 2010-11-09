@@ -142,5 +142,33 @@ class TestApi(unittest.TestCase):
                 checksum=test_checksum)
         self.assertTrue(len(found) == 0)
 
+    def test_find_repos_by_package(self):
+        repo_a = self.rapi.create('some-id_a', 'some name',
+            'i386', 'yum:http://example.com')
+        repo_b = self.rapi.create('some-id_b', 'some name',
+            'i386', 'yum:http://example.com')
+        repo_a = self.rapi.repository(repo_a["id"])
+        repo_b = self.rapi.repository(repo_b["id"])
+        pkg1 = testutil.create_random_package(self.papi)
+        pkg2 = testutil.create_random_package(self.papi)
+        pkg3 = testutil.create_random_package(self.papi)
+        self.rapi.add_package(repo_a["id"], pkg1["id"])
+        self.rapi.add_package(repo_a["id"], pkg2["id"])
+        self.rapi.add_package(repo_b["id"], pkg1["id"])
+
+        found = self.rapi.repository(repo_a["id"])
+        self.assertTrue(pkg1["id"] in found["packages"])
+        self.assertTrue(pkg2["id"] in found["packages"])
+        self.assertTrue(pkg3["id"] not in found["packages"])
+
+        found = self.rapi.repository(repo_b["id"])
+        self.assertTrue(pkg1["id"] in found["packages"])
+
+        found = self.rapi.find_repos_by_package(pkg1["id"])
+        self.assertTrue(len(found) == 2)
+        self.assertTrue(repo_a["id"] in found)
+        self.assertTrue(repo_b["id"] in found)
+
+
 if __name__ == '__main__':
     unittest.main()
