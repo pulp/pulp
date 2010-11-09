@@ -205,7 +205,7 @@ class BaseSynchronizer(object):
         distro = self.distro_api.create(id, description, \
                                         os.path.dirname(images_dir), files)
         log.info("Created a distributionID %s" % distro['id'])
-        distro_path = os.path.join(config.config.get('paths', 'local_storage'), "ks")
+        distro_path = os.path.join(config.config.get('paths', 'local_storage'), "published", "ks")
         if not os.path.isdir(distro_path):
             os.mkdir(distro_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(), 
