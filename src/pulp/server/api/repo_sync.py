@@ -346,10 +346,13 @@ class YumSynchronizer(BaseSynchronizer):
             clikey = repo['key'].encode('utf8')
 
         num_threads = config.config.getint('yum', 'threads')
+        remove_old = config.config.getboolean('yum', 'remove_old_packages')
+        num_old_pkgs_keep   = config.config.getint('yum', 'num_old_pkgs_keep')
         yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert,
                                 clikey=clikey,
-                                packages_location=pulp.server.util.top_package_location())
+                                packages_location=pulp.server.util.top_package_location(),
+				remove_old=remove_old, numOldPackages=num_old_pkgs_keep)
         relative_path = repo['relative_path']
         if relative_path:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
