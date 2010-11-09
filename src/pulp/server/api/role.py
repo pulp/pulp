@@ -63,6 +63,25 @@ class RoleApi(BaseApi):
     def delete(self, name):
         self.objectdb.remove({'name' : name}, safe=True)
         
+    def add_user(self, role, user):
+        """
+        Add a single user to this role, granting them the permission to the object
+        owned by this Role 
+        """
+        roles = user['roles']
+        if (roles.has_key(role['name'])):
+             roles[role['name']] = role
+             self.userapi.update(user)
+        users = role['users']
+        if (users.count(user) == 0):
+            users.append(user)
+            self.update(role)
+        
+    def check(self, user, object, permission_type):
+        return False
+        
+        
+        
         
 class PermissionApi(BaseApi):
 
@@ -73,11 +92,19 @@ class PermissionApi(BaseApi):
 
 
     @audit(params=['role'])
-    def create(self, role, instance, user):
+    def create_with_role(self, role, instance):
         """
         Create a new Permission object and return it
         """
-        permission = model.Permission(role, instance, user)
+        permission = model.Permission(instance, role=role)
+        self.insert(permission)
+        return permission
+
+    def create_with_user(self, user, instance):
+        """
+        Create a new Permission object and return it
+        """
+        permission = model.Permission(instance, user=user)
         self.insert(permission)
         return permission
 

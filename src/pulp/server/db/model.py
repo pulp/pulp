@@ -184,6 +184,7 @@ class User(Base):
         self.login = login
         self.password = password
         self.name = name
+        self.roles = {}
 
     def __unicode__(self):
         return unicode(self.name)
@@ -252,6 +253,7 @@ class Role(Base):
         self.action_types = action_types
         self.resource_type = resource_type
         self.parent = None
+        self.users = []
 
     def __unicode__(self):
         return unicode(self.name)
@@ -270,10 +272,12 @@ class RoleResourceType(object):
     
     
 class Permission(Base):
-    def __init__(self, role, instance, user):
+    def __init__(self, instance, user = None, role = None):
         Base.__init__(self)
         self.role = role
         self.instance = instance
         self.user = user
+        if (not self.user and not self.role):
+            raise ValueError("User or Role must be specified, both are None")
 
 

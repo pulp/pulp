@@ -35,6 +35,7 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.role import PermissionApi
 from pulp.server.api.role import RoleApi
+from pulp.server.db.model import Permission
 from pulp.server.db.model import RoleActionType
 from pulp.server.db.model import RoleResourceType
 
@@ -101,22 +102,47 @@ class TestAuthorization(unittest.TestCase):
         role = self.create_role('perm-test-role')
         repo = self.repoapi.create('perm-test-repo', 'perm-test', 'i386')
         user = self.userapi.create('perm-test-user')
-        perm = self.permapi.create(role, repo, user)  
+        perm = self.permapi.create_with_role(repo, role)  
         self.assertTrue(perm)
         self.assertTrue(perm['role'])
         self.assertTrue(perm['instance'])
-        self.assertTrue(perm['user'])
         
+        perm = self.permapi.create_with_user(repo, user)
+        self.assertTrue(perm['user'])
+    
+    def test_permission_constructor(self):
+        role = self.create_role('const-test')
+        repo = self.repoapi.create('const-test-repo', 'const-test', 'i386')
+        failed = False
+        try:
+            permission = Permission(repo)
+        except:
+            failed = True
+        self.assertTrue(failed)
+        
+    
+    # Check if a user has a role
+    def test_read_repo(self):
+        (user, repo, role) = self.create_bundle('read-test-role', 'read-test-user')
+        self.roleapi.add_user(role, user)
+        self.assertTrue(self.roleapi.check(user, repo, RoleActionType.READ))
+        
+    
+    def create_bundle(self, rolename, username):
+        role = self.create_role(rolename)
+        repo = self.repoapi.create('perm-test-repo', 'perm-test', 'i386')
+        user = self.userapi.create('perm-test-user')
+        perm = self.permapi.create_with_role(repo, role)
+        return (user, repo, role)  
+    
     # Util Method
     def create_role(self, name):
         desc = 'test desc for role'
-        action_type = [RoleActionType.CREATE, RoleActionType.WRITE]
+        action_type = [RoleActionType.CREATE, RoleActionType.WRITE, RoleActionType.READ]
         resource_type = RoleResourceType.REPO
-        
         role = self.roleapi.create(name, desc, action_type, resource_type)
         return role
     
-
         
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
