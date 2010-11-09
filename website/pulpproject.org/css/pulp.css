@@ -1,0 +1,76 @@
+
+/* elements ---------------------------------------------------------------- */
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #fff;
+  foreground: #333;
+}
+
+/* ids --------------------------------------------------------------------- */
+
+#header {
+}
+
+#about {
+}
+
+#bullets {
+}
+
+#download {
+}
+
+#content {
+}
+
+#main {
+}
+
+#sidebar {
+}
+
+/* classes ----------------------------------------------------------------- */
+
+.larger {
+}
+
+.smaller {
+}
+
+.hidden {
+}
+
+.white {
+}
+
+.black {
+}
+
+.grey {
+}
+
+.orange {
+}
+
+.blue {
+}
+
+.green {
+}
+
+.orange-bg {
+}
+
+.blue-bg {
+}
+
+.green-bg {
+}
+
+.light-bg {
+}
