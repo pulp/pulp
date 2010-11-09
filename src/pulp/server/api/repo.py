@@ -62,7 +62,7 @@ class RepoApi(BaseApi):
         self.distroapi = DistributionApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
-        self.distro_path = os.path.join(self.localStoragePath, "ks")
+        self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
 
     @property
     def _indexes(self):
