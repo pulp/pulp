@@ -182,8 +182,12 @@ class RepoApi(BaseApi):
         try:
             if repo['publish']:
                 self._create_published_link(repo)
+                if repo['distributionid']:
+                    self._create_ks_link(repo)
             else:
                 self._delete_published_link(repo)
+                if repo['distributionid']:
+                    self._delete_ks_link(repo)
             self.update_subscribed(id)
         except Exception, e:
             log.error(e)
@@ -910,6 +914,31 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
 
     @audit()
+    def delete_packagegroup_from_category(self, repoid, categoryid, groupid):
+        repo = self._get_existing_repo(repoid)
+        if categoryid in repo['packagegroupcategories']:
+            if repo["packagegroupcategories"][categoryid]["immutable"]:
+                raise PulpException(
+                        "Changes to immutable categories are not supported: %s" \
+                                % (categoryid))
+            repo['packagegroupcategories'].remove(categoryid)
+
+        self.update(repo)
+        self._update_groups_metadata(repo["id"])
+
+    @audit()
+    def add_packagegroup_to_category(self, repoid, categoryid, groupid):
+        repo = self._get_existing_repo(repoid)
+        if categoryid in repo['packagegroupcategories']:
+            if repo["packagegroupcategories"][categoryid]["immutable"]:
+                raise PulpException(
+                        "Changes to immutable categories are not supported: %s" \
+                                % (categoryid))
+        repo['packagegroupcategories'][categoryid].append(groupid)
+        self.update(repo)
+        self._update_groups_metadata(repo["id"])
+
+    @audit()
     def update_packagegroupcategory(self, repoid, pgc):
         """
         Save the passed in PackageGroupCategory to this repo
@@ -1120,7 +1149,8 @@ class RepoApi(BaseApi):
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.objectdb.save(repo, safe=True)
-        self._create_ks_link(repo)
+        if repo['publish']:
+            self._create_ks_link(repo)
         log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
         
     def remove_distribution(self, repoid, distroid):
@@ -1144,10 +1174,12 @@ class RepoApi(BaseApi):
         source_path = os.path.join(pulp.server.util.top_repos_location(), 
                 repo["relative_path"])
         link_path = os.path.join(self.distro_path, repo["relative_path"])
+        log.info("Linking %s" % link_path)
         pulp.server.util.create_symlinks(source_path, link_path)
     
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
+        log.info("Unlinking %s" % link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)

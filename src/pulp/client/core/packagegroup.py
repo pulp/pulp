@@ -238,6 +238,105 @@ class Install(PackageGroupAction):
         else:
             print("\nPackage group install failed")
 
+# --- Package Group Category Operations ---
+class ListCategory(PackageGroupAction):
+
+    description = _('list available package group categories')
+
+    def setup_parser(self):
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        cats = self.pconn.packagegroupcategories(repoid)
+        if not cats:
+            system_exit(os.EX_DATAERR,
+                        _("No package group categories found in repo [%s]") % (repoid))
+        print_header(_("Repository: %s") % (repoid), _("Package Group Category Information"))
+        for key in sorted(cats.keys()):
+            print "\t %s" % (key)
+
+
+class InfoCategory(PackageGroupAction):
+
+    description = _('lookup information for a package group category')
+
+    def setup_parser(self):
+        super(Info, self).setup_parser()
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+
+    def run(self):
+        categoryid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        cats = self.pconn.packagegroupcategories(repoid)
+        if not cats or categoryid not in cats:
+            system_exit(os.EX_DATAERR,
+                        _("Package group category [%s] not found in repo [%s]") %
+                        (categoryid, repoid))
+        print_header(_("Package Group Category Information"))
+        info = cats[categoryid]
+        print constants.PACKAGE_GROUP_CATEGORY_INFO % (
+                info["name"], info["id"])
+
+class CreateCategory(PackageGroupAction):
+
+    description = _('create a package group category')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("category id (required)"))
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+        self.parser.add_option("-n", "--name", dest="name",
+                               help=_("category name (required)"))
+        self.parser.add_option("-d", "--description", dest="description", default="",
+                               help=_("category description, default is ''"))
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        categoryid = self.get_required_option('id')
+        categoryname = self.get_required_option('name')
+        description = self.opts.description
+        try:
+            status = self.pconn.create_packagegroupcategory(repoid, categoryid,
+                    categoryname, description)
+        except Exception, e:
+            _log.error(_("Failed on category [%s] create:\n%s") % (categoryid, e))
+            status = False
+        if not status:
+            print _("Unable to create package group category [%s] in repository [%s]") % \
+                    (categoryid, repoid)
+        else:
+            print _("Package group category [%s] created in repository [%s]") % \
+                (categoryid, repoid)
+
+
+class DeleteCategory(PackageGroupAction):
+
+    description = _('delete a package group category')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("category id (required)"))
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        categoryid = self.get_required_option('id')
+        try:
+            self.pconn.delete_packagegroupcategory(repoid, categoryid)
+        except Exception, e:
+            _log.error(e)
+            print _("Unable to delete package group category [%s] from repository [%s]") % \
+                (categoryid, repoid)
+        else:
+            print _("Package group category [%s] deleted from repository [%s]") % \
+                (categoryid, repoid)
+
+
 # package group command -------------------------------------------------------
 
 class PackageGroup(Command):

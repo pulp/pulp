@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.81
+Version:        0.0.83
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -189,6 +189,48 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Wed Nov 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.83-1
+- changed migrate script to use different log file to avoid permissions issues
+  on fresh install (jconnor@redhat.com)
+- Adding list/info functionality for package group categories
+  (jmatthew@redhat.com)
+
+* Wed Nov 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.82-1
+- honor the published flag when exposing kickstart trees via http
+  (pkilambi@redhat.com)
+- continue checking rest of packages in the batch before exiting
+  (pkilambi@redhat.com)
+- Allow repos with distributions be accessible via http and browsable
+  (pkilambi@redhat.com)
+- Changing the create to return back existing distro if exists with same id
+  (pkilambi@redhat.com)
+- Adding additional checks to catch if distribution already exists
+  (pkilambi@redhat.com)
+- Adding additional checks to catch if distribution already exists
+  (pkilambi@redhat.com)
+- Cleanup search packages display of repos and limit data returned
+  (jmatthew@redhat.com)
+- oh this is not looking good... (jconnor@redhat.com)
+- Improved performance of "search packages" (jmatthew@redhat.com)
+- Adding support for removing old packages and specifying no of old packages to
+  keep on sync (pkilambi@redhat.com)
+- Exposing the repos with kickstart trees publicly via http. Apache directives
+  to allow access to http://<hostname>/pulp/ks/<relative_path>
+  (pkilambi@redhat.com)
+- Create symlinks to /ks directory when a distribution is synced/added to the
+  repo. Remove the symlinks upon distro removal from repo or repo delete.
+  (pkilambi@redhat.com)
+- added init.d script to rpm spec (jconnor@redhat.com)
+- Fix patch that tests for dir when looking for gpg keys. (jortel@redhat.com)
+- Cleaned up CLI display for search packages (jmatthew@redhat.com)
+- Distribution Support: (pkilambi@redhat.com)
+- Repo 'clean' will delete contents from filesystem as well as mongodb
+  (jmatthew@redhat.com)
+- fix for preserving group metadata from a package upload (jmatthew@redhat.com)
+- 623435 - fix packagegroup metadata for non-synced repos (jmatthew@redhat.com)
+- 649861 - adding a package_count field to track packages in a repo
+  (mmccune@redhat.com)
+
 * Fri Nov 05 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.81-1
 - 649517 - httplib in py2.7 does not handle None headers correctly. Converting
   them to string so http requests pas through (pkilambi@redhat.com)

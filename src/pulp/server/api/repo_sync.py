@@ -204,7 +204,11 @@ class BaseSynchronizer(object):
         id = description = "ks-" + repo['id'] + "-" + repo['arch'] 
         distro = self.distro_api.create(id, description, \
                                         os.path.dirname(images_dir), files)
+        repo['distributionid'].append(distro['id'])
         log.info("Created a distributionID %s" % distro['id'])
+        if not repo['publish']:
+            # the repo is not published, dont expose the repo yet
+            return
         distro_path = os.path.join(config.config.get('paths', 'local_storage'), "published", "ks")
         if not os.path.isdir(distro_path):
             os.mkdir(distro_path)

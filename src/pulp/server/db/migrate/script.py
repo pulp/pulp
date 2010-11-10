@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 import os
 import sys
 from optparse import OptionParser, SUPPRESS_HELP
@@ -22,17 +23,29 @@ from pulp.server.db.migrate import one
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
     VERSION, get_version_in_use, is_validated, set_validated)
-from pulp.server.logs import start_logging
 
 
 def parse_args():
     parser = OptionParser()
     parser.add_option('--auto', action='store_true', dest='auto',
                       default=False, help=SUPPRESS_HELP)
+    parser.add_option('--log-file', dest='log_file',
+                      default='/var/log/pulp/db.log',
+                      help='file for log messages')
+    parser.add_option('--log-level', dest='log_level', default='info',
+                      help='level of logging (debug, info, error, critical)')
     options, args = parser.parse_args()
     if args:
         parser.error('unknown arguments: %s' % ', '.join(args))
     return options
+
+
+def start_logging(options):
+    level = getattr(logging, options.log_level.upper(), logging.INFO)
+    logger = logging.getLogger('pulp') # imitate the pulp log handler
+    logger.setLevel(level)
+    handler = logging.FileHandler(options.log_file)
+    logger.addHandler(handler)
 
 
 def migrate_to_one():
@@ -41,8 +54,8 @@ def migrate_to_one():
 
 
 def main():
-    start_logging()
     options = parse_args()
+    start_logging(options)
     if options.auto and not config.getboolean('database', 'auto_upgrade'):
         print >> sys.stderr, 'pulp is not configured for auto upgrade'
         return os.EX_CONFIG
@@ -57,7 +70,8 @@ def main():
     if not is_validated():
         errors = validate()
     if errors:
-        print >> sys.stderr, '%d errors on validation, see pulp log for details' % errors
+        print >> sys.stderr, '%d errors on validation, see %s for details' % \
+                (errors, options.log_file)
         return os.EX_DATAERR
     set_validated()
     print 'database migration to version %d complete' % VERSION

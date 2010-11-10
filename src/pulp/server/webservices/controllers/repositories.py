@@ -252,6 +252,10 @@ class RepositoryActions(AsyncController):
         'delete_package_from_group',
         'delete_packagegroup',
         'create_packagegroup',
+        'create_packagegroupcategory',
+        'delete_packagegroupcategory',
+        'add_packagegroup_to_category',
+        'delete_packagegroup_from_category',
         'add_errata',
         'list_errata',
         'delete_errata',
@@ -426,6 +430,79 @@ class RepositoryActions(AsyncController):
             return self.not_found('No groupid specified')
         groupid = p["groupid"]
         return self.ok(api.delete_packagegroup(id, groupid))
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def create_packagegroupcategory(self, id):
+        """
+        Creates a PackageGroupCategory in a repository
+        @param id: repository id
+        @return:
+        """
+        _log.info("create_packagegroupcategory invoked")
+        p = self.params()
+        if "categoryid" not in p:
+            return self.not_found('No categoryid specified')
+        categoryid = p["categoryid"]
+        if "categoryname" not in p:
+            return self.not_found('No categoryname specified')
+        categoryname = p["categoryname"]
+        if "description" not in p:
+            return self.not_found('No description specified')
+        descrp = p["description"]
+        return self.ok(api.create_packagegroupcategory(id, categoryid, categoryname,
+                                               descrp))
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def delete_packagegroupcategory(self, id):
+        """
+        Removes a PackageGroupCategory from a repository
+        @param id: repository id
+        @return:
+        """
+        _log.info("delete_packagegroupcategory invoked")
+        p = self.params()
+        if "categoryid" not in p:
+            return self.not_found('No categoryid specified')
+        categoryid = p["categoryid"]
+        return self.ok(api.delete_packagegroupcategory(id, categoryid))
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def add_packagegroup_to_category(self, id):
+        """
+        Add a packagegroup to a category in a repository
+        @param id: repository id
+        @return:
+        """
+        _log.info("add_packagegroup_to_category invoked")
+        p = self.params()
+        if "categoryid" not in p:
+            return self.not_found("No categoryid specified")
+        if "groupid" not in p:
+            return self.not_found('No groupid specified')
+        groupid = p["groupid"]
+        categoryid = p["categoryid"]
+        return self.ok(api.add_packagegroup_to_category(id, categoryid, groupid))
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def delete_packagegroup_from_category(self, id):
+        """
+        Delete a packagegroup to a category in a repository
+        @param id: repository id
+        @return:
+        """
+        _log.info("delete_packagegroup_from_category")
+        p = self.params()
+        if "categoryid" not in p:
+            return self.not_found("No categoryid specified")
+        if "groupid" not in p:
+            return self.not_found('No groupid specified')
+        groupid = p["groupid"]
+        categoryid = p["categoryid"]
+        return self.ok(api.delete_packagegroup_from_category(id, categoryid, groupid))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
