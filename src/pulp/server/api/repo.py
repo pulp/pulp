@@ -185,7 +185,6 @@ class RepoApi(BaseApi):
                 if repo['distributionid']:
                     self._create_ks_link(repo)
             else:
-                log.error("Not publishedd")
                 self._delete_published_link(repo)
                 if repo['distributionid']:
                     self._delete_ks_link(repo)
@@ -1150,11 +1149,12 @@ class RepoApi(BaseApi):
         source_path = os.path.join(pulp.server.util.top_repos_location(), 
                 repo["relative_path"])
         link_path = os.path.join(self.distro_path, repo["relative_path"])
+        log.info("Linking %s" % link_path)
         pulp.server.util.create_symlinks(source_path, link_path)
     
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
-        log.error("Unlinking %s" % link_path)
+        log.info("Unlinking %s" % link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
