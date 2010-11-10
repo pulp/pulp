@@ -43,8 +43,11 @@ class DistributionApi(BaseApi):
         Create a new Distribution object and return it
         """
         d = model.Distribution(id, description, relativepath, files)
-        self.insert(d)
-        return d
+        try:
+            self.insert(d)
+            return d
+        except DuplicateKeyError:
+            log.error("Distribution with same id  %s already exists" % id)
 
     @audit(params=["id"])
     def delete(self, id):
