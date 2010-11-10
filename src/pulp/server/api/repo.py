@@ -914,6 +914,31 @@ class RepoApi(BaseApi):
         self._update_groups_metadata(repo["id"])
 
     @audit()
+    def delete_packagegroup_from_category(self, repoid, categoryid, groupid):
+        repo = self._get_existing_repo(repoid)
+        if categoryid in repo['packagegroupcategories']:
+            if repo["packagegroupcategories"][categoryid]["immutable"]:
+                raise PulpException(
+                        "Changes to immutable categories are not supported: %s" \
+                                % (categoryid))
+            repo['packagegroupcategories'].remove(categoryid)
+
+        self.update(repo)
+        self._update_groups_metadata(repo["id"])
+
+    @audit()
+    def add_packagegroup_to_category(self, repoid, categoryid, groupid):
+        repo = self._get_existing_repo(repoid)
+        if categoryid in repo['packagegroupcategories']:
+            if repo["packagegroupcategories"][categoryid]["immutable"]:
+                raise PulpException(
+                        "Changes to immutable categories are not supported: %s" \
+                                % (categoryid))
+        repo['packagegroupcategories'][categoryid].append(groupid)
+        self.update(repo)
+        self._update_groups_metadata(repo["id"])
+
+    @audit()
     def update_packagegroupcategory(self, repoid, pgc):
         """
         Save the passed in PackageGroupCategory to this repo

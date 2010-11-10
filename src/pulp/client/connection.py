@@ -298,6 +298,10 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/packagegroups/" % repoid
         return self.conn.request_get(method)
 
+    def packagegroupcategories(self, repoid):
+        method = "/repositories/%s/packagegroupcategories/" % repoid
+        return self.conn.request_get(method)
+
     def create_packagegroup(self, repoid, groupid, groupname, description):
         method = "/repositories/%s/create_packagegroup/" % repoid
         return self.conn.request_post(method, params={"groupid":groupid,
@@ -316,6 +320,25 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/delete_package_from_group/" % repoid
         return self.conn.request_post(method,
                 params={"groupid":groupid, "name":pkgname, "type":gtype})
+
+    def create_packagegroupcategory(self, repoid, categoryid, categoryname, description):
+        method = "/repositories/%s/create_packagegroupcategory/" % repoid
+        return self.conn.request_post(method, params={"categoryid":categoryid,
+            "categoryname":categoryname, "description":description})
+
+    def delete_packagegroupcategory(self, repoid, categoryid):
+        method = "/repositories/%s/delete_packagegroupcategory/" % repoid
+        return self.conn.request_post(method, params={"categoryid":categoryid})
+
+    def add_packagegroup_to_category(self, repoid, categoryid, groupid):
+        method = "/repositories/%s/add_packagegroup_to_category/" % repoid
+        return self.conn.request_post(method,
+                params={"categoryid":categoryid, "groupid":groupid})
+
+    def delete_packagegroup_from_category(self, repoid, categoryid, groupid):
+        method = "/repositories/%s/delete_packagegroup_from_category/" % repoid
+        return self.conn.request_post(method,
+                params={"categoryid":categoryid, "groupid":groupid})
 
     def upload(self, id, pkginfo, pkgstream):
         uploadinfo = {'repo' : id,
