@@ -18,7 +18,6 @@ from pulp.server.db import model
 from pulp.server.auditing import audit
 from pulp.server.api.base import BaseApi
 from pulp.server.db.connection import get_object_db
-from pymongo.errors import DuplicateKeyError
 log = logging.getLogger(__name__)
 
 distribution_fields = model.Distribution(None, None, None, []).keys()
@@ -43,12 +42,13 @@ class DistributionApi(BaseApi):
         """
         Create a new Distribution object and return it
         """
-        d = model.Distribution(id, description, relativepath, files)
-        try:
-            self.insert(d)
+        d = self.distribution(id)
+        if d:
+            log.info("Distribution with id %s already exists" % id)
             return d
-        except DuplicateKeyError:
-            log.error("Distribution with same id  %s already exists" % id)
+        d = model.Distribution(id, description, relativepath, files)
+        self.insert(d)
+        return d
 
     @audit(params=["id"])
     def delete(self, id):
