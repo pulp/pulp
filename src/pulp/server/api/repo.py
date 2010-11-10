@@ -182,8 +182,13 @@ class RepoApi(BaseApi):
         try:
             if repo['publish']:
                 self._create_published_link(repo)
+                if repo['distributionid']:
+                    self._create_ks_link(repo)
             else:
+                log.error("Not publishedd")
                 self._delete_published_link(repo)
+                if repo['distributionid']:
+                    self._delete_ks_link(repo)
             self.update_subscribed(id)
         except Exception, e:
             log.error(e)
@@ -1120,7 +1125,8 @@ class RepoApi(BaseApi):
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
         self.objectdb.save(repo, safe=True)
-        self._create_ks_link(repo)
+        if repo['publish']:
+            self._create_ks_link(repo)
         log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
         
     def remove_distribution(self, repoid, distroid):
@@ -1148,6 +1154,7 @@ class RepoApi(BaseApi):
     
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
+        log.error("Unlinking %s" % link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
