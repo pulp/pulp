@@ -69,10 +69,10 @@ class DistributionApi(BaseApi):
         Return a distribution object based on the id
         """
         return self.objectdb.find_one({'id': id})
-
-    def search_by_repo(self, repoid):
+    
+    def distributions(self):
         """
-        lookup distributions associated to a repo id
+         Return all available distributions
         """
-        pass
+        return list(self.objectdb.find())
 

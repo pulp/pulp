@@ -367,6 +367,10 @@ class RepoConnection(PulpConnection):
     def update_publish(self, id, state):
         method = "/repositories/%s/update_publish/" % id
         return self.conn.request_post(method, params={"state":state})
+    
+    def list_distribution(self, id):
+        method = "/repositories/%s/list_distribution/" % id
+        return self.conn.request_post(method, params={'id':id})
 
 
 class ConsumerConnection(PulpConnection):
@@ -653,7 +657,21 @@ class ErrataConnection(PulpConnection):
             release=None, type=None, status=None, updated=None, issued=None,
             pushcount=None, from_str=None, reboot_suggested=None):
         pass
-
+    
+class DistributionConnection(PulpConnection):
+    """
+    Connection class to access distribution related calls
+    """
+    def clean(self):
+        pass
+    
+    def distributions(self):
+        method = '/distribution/'
+        return self.conn.request_get(method)
+    
+    def distribution(self, id):
+        method = '/distribution/%s/' % str(id)
+        return self.conn.request_get(method)
 
 class SearchConnection(PulpConnection):
     """

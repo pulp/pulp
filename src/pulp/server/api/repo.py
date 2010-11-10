@@ -1183,6 +1183,18 @@ class RepoApi(BaseApi):
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
+            
+    def list_distributions(self, repoid):
+        '''
+         List distribution in a given repo
+         @param repoid: The repo ID.
+         @return list: distribution objects.
+        '''
+        repo = self._get_existing_repo(repoid)
+        distributions = []
+        for distro in repo['distributionid']:
+            distributions.append(self.distroapi.distribution(distro))
+        return distributions
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

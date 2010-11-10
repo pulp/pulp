@@ -84,6 +84,20 @@ Packages Effected     \t%-25s
 References            \t%-25s
 """
 
+DISTRO_LIST = """
+Id                    \t%-25s
+Description           \t%-25s 
+URL                   \t%-25s
+"""
+
+DISTRO_INFO = """
+Id                    \t%-25s
+Description           \t%-25s 
+URL                   \t%-25s
+Files                 \t%-25s
+relativepath          \t%-25s
+"""
+
 # The quotes are intentionally placed odd on the consumer history constants to
 # allow additional details to be concatenated on to the base information. It looks
 # ugly in code but makes the actual CLI output much cleaner. So be careful when

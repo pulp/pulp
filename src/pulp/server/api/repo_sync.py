@@ -202,8 +202,7 @@ class BaseSynchronizer(object):
         # Handle distributions that are part of repo syncs
         files = pulp.server.util.listdir(images_dir) or []
         id = description = "ks-" + repo['id'] + "-" + repo['arch'] 
-        distro = self.distro_api.create(id, description, \
-                                        os.path.dirname(images_dir), files)
+        distro = self.distro_api.create(id, description, repo["relative_path"], files)
         repo['distributionid'].append(distro['id'])
         log.info("Created a distributionID %s" % distro['id'])
         if not repo['publish']:

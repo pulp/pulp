@@ -264,6 +264,7 @@ class RepositoryActions(AsyncController):
         'rmkeys',
         'listkeys',
         'update_publish',
+        'list_distribution',
     )
 
     @JSONController.error_handler
@@ -585,6 +586,14 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         return self.ok(api.publish(id, bool(data['state'])))
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def list_distribution(self, id):
+        """
+         list available distributions in a given repo.
+        """
+        return self.ok(api.list_distributions(id))
 
     @JSONController.error_handler
     def POST(self, id, action_name):
