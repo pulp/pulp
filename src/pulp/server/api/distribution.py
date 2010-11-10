@@ -18,6 +18,7 @@ from pulp.server.db import model
 from pulp.server.auditing import audit
 from pulp.server.api.base import BaseApi
 from pulp.server.db.connection import get_object_db
+from pymongo.errors import DuplicateKeyError
 log = logging.getLogger(__name__)
 
 distribution_fields = model.Distribution(None, None, None, []).keys()
