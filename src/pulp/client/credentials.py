@@ -112,8 +112,8 @@ class Login(Bundle):
     """
 
     ROOT = '~/.pulp'
-    KEY = 'admin-key.pem'
-    CRT = 'admin-cert.pem'
+    KEY = 'user-key.pem'
+    CRT = 'user-cert.pem'
 
     def root(self):
         return os.path.expanduser(self.ROOT)
