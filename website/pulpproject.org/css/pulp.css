@@ -6,71 +6,165 @@
   padding: 0;
 }
 
+a {
+  text-decoration: none;
+}
+
 body {
-  background-color: #fff;
-  foreground: #333;
+  background: #fff url('/images/pulp-content-bg.png') repeat-y left top;
+  color: #333;
+  font: 16pt/18pt "Droid Sans",sans-serif;
+}
+
+h1, h2, h3 {
+  font-weight: bold;
+  text-shadow: 2px;
+}
+
+h1 {
+  font-size: 2em;
+  line-height: 2em;
+}
+
+h2 {
+  font-size: 1.5em;
+  line-height: 1.5em;
+}
+
+h3 {
+  font-size: 1em;
+  line-height: 1em;
+}
+
+p {
+  padding-bottom: 15px;
 }
 
 /* ids --------------------------------------------------------------------- */
 
 #header {
+  background: url('/images/pulp-header.png') no-repeat left top;
 }
 
-#about {
+#logo {
+  width: 309px;
+  height: 220px;
+  background: url('/images/pulp-logo.png') no-repeat left top;
+  position: absolute;
+  left: 0px;
+  top: 0px;
 }
 
-#bullets {
+#tagline {
+  width: 472px;
+  height: 29px;
+  background: url('/images/pulp-juicy-tagline.png') no-repeat left top;
+  position: absolute;
+  left: 240px;
+  top: 120px;
 }
 
-#download {
+#redhat {
+  width: 276px;
+  height: 25px;
+  background: url('/images/pulp-community-website.png') no-repeat left top;
+  position: absolute;
+  left: 720px;
+  top: 190px;
+}
+
+#intro {
+  background: url('/images/pulp-intro-bg.png') repeat-x left top;
+}
+
+#intro li {
+  list-style-image: url('/images/bullet-orange.png');
 }
 
 #content {
 }
 
-#main {
-}
-
-#sidebar {
-}
-
 /* classes ----------------------------------------------------------------- */
 
 .larger {
+  font-size: 1.2em;
 }
 
 .smaller {
+  font-size: .8em;
 }
 
 .hidden {
+  visibility: hidden;
+}
+
+.invisible {
+  display: none;
+}
+
+.justified {
+  text-align: justify;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.bold {
+  font-weight: bold;
 }
 
 .white {
+  color: #fff;
 }
 
 .black {
+  color: #000;
 }
 
 .grey {
+  color: #666;
 }
 
 .orange {
+  color: #CE5C00;
 }
 
 .blue {
+  color: #3465A4;
 }
 
 .green {
+  color: #4E9A06;
 }
 
 .orange-bg {
+  background-color: #F57900;
+  filter: alpha(opacity=50);
+  opacity: 0.5;
 }
 
 .blue-bg {
+  background-color: #3465A4;
+  filter: alpha(opacity=55);
+  opacity: 0.55;
 }
 
 .green-bg {
+  background-color: #73D126;
+  filter: alpha(opacity=65);
+  opacity: 0.65;
 }
 
 .light-bg {
+  background-color: #000;
+  filter: alpha(opacity=65);
+  opacity: 0.65;
+}
+
+.region {
+  margin-top: 30px;
+  padding: 15px;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
 }
