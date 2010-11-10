@@ -17,6 +17,7 @@ import logging
 import uuid
 
 from pulp.server.api.base import BaseApi
+from pulp.server.api.user import UserApi
 from pulp.server.auditing import audit
 from pulp.server import config
 from pulp.server.db import model
@@ -30,6 +31,11 @@ user_fields = model.User(None, None, None, None).keys()
 
 class RoleApi(BaseApi):
 
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.userapi = UserApi()
+
+
     def _getcollection(self):
         return get_object_db('roles',
                              self._unique_indexes,
@@ -42,7 +48,7 @@ class RoleApi(BaseApi):
         Create a new Role object and return it
         """
         role = model.Role(name, description, action_types, resource_type)
-        self.insert(role)
+        role = self.insert(role)
         return role
 
 
@@ -69,21 +75,50 @@ class RoleApi(BaseApi):
         owned by this Role 
         """
         roles = user['roles']
-        if (roles.has_key(role['name'])):
-             roles[role['name']] = role
-             self.userapi.update(user)
+        if (not roles.has_key(role['name'])):
+            log.debug("Adding role!")
+            roles[role['name']] = role
+            self.userapi.update(user)
         users = role['users']
         if (users.count(user) == 0):
             users.append(user)
             self.update(role)
         
-    def check(self, user, object, permission_type):
+    def check(self, user, object, resource_type, action_type):
+        """
+        Check if the passed in user has access to make the operation
+        on the object you pass in.  This method is currently very inefficent 
+        and will be improved as time goes on.
+        """
+        roles = user['roles'].values()
+        for role in roles:
+            log.debug('Resource_type: %s' % resource_type)
+            log.debug('Role: %s' % role)
+            log.debug('role[resource_type]: %s' % role['resource_type'])
+            # First check if Role is the right object type 
+            object_match = False
+            if role['resource_type'] == resource_type:
+                action_types = role['action_types']
+                log.debug("action_types: %s" % action_types)
+                if (action_types.count(action_type) > 0):
+                    action_match = True
+                permissions = role['permissions']
+                log.debug("Permissions: %s" % permissions)
+                for perm in permissions:
+                    if (perm['instance'] == object):
+                        object_match = True
+                log.debug("Action_match: %s , object_match: %s" % (action_match, object_match))
+                return (action_match and object_match)
         return False
         
         
         
-        
 class PermissionApi(BaseApi):
+
+    def __init__(self):
+        BaseApi.__init__(self)
+        self.roleapi = RoleApi()
+
 
     def _getcollection(self):
         return get_object_db('permissions',
@@ -92,15 +127,17 @@ class PermissionApi(BaseApi):
 
 
     @audit(params=['role'])
-    def create_with_role(self, role, instance):
+    def create_with_role(self, instance, role):
         """
         Create a new Permission object and return it
         """
         permission = model.Permission(instance, role=role)
+        role['permissions'].append(permission)
+        self.roleapi.update(role)
         self.insert(permission)
         return permission
 
-    def create_with_user(self, user, instance):
+    def create_with_user(self, instance, user):
         """
         Create a new Permission object and return it
         """

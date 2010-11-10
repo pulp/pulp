@@ -104,11 +104,12 @@ class TestAuthorization(unittest.TestCase):
         user = self.userapi.create('perm-test-user')
         perm = self.permapi.create_with_role(repo, role)  
         self.assertTrue(perm)
-        self.assertTrue(perm['role'])
-        self.assertTrue(perm['instance'])
+        self.assertTrue(perm['role'] == role)
+        self.assertTrue(perm['instance'] == repo)
         
         perm = self.permapi.create_with_user(repo, user)
-        self.assertTrue(perm['user'])
+        self.assertTrue(perm['user'] == user)
+        self.assertTrue(len(role['permissions']) > 0) 
     
     def test_permission_constructor(self):
         role = self.create_role('const-test')
@@ -120,12 +121,20 @@ class TestAuthorization(unittest.TestCase):
             failed = True
         self.assertTrue(failed)
         
+    def test_add_user_role(self):
+        (user, repo, role) = self.create_bundle('read-test-role', 'read-test-user')
+        
+        self.roleapi.add_user(role, user)
+        self.assertTrue(len(user['roles'].keys()) > 0 )
+        self.assertTrue(len(role['users']) == 1)
+        
     
     # Check if a user has a role
     def test_read_repo(self):
         (user, repo, role) = self.create_bundle('read-test-role', 'read-test-user')
         self.roleapi.add_user(role, user)
-        self.assertTrue(self.roleapi.check(user, repo, RoleActionType.READ))
+        self.assertTrue(self.roleapi.check(user, repo, RoleResourceType.REPO,
+                                           RoleActionType.READ))
         
     
     def create_bundle(self, rolename, username):

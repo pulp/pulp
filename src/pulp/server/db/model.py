@@ -254,6 +254,7 @@ class Role(Base):
         self.resource_type = resource_type
         self.parent = None
         self.users = []
+        self.permissions = []
 
     def __unicode__(self):
         return unicode(self.name)
