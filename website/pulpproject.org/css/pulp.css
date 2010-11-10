@@ -14,12 +14,12 @@ a {
 body {
   background: #fff url('/images/pulp-content-bg.png') repeat-y left top;
   color: #333;
-  font: 16pt/18pt "Droid Sans",sans-serif;
+  font: 12pt/14pt "Droid Sans",sans-serif;
 }
 
 h1, h2, h3 {
   font-weight: bold;
-  text-shadow: 2px;
+  text-shadow: #666 -1px 1px 2px;
 }
 
 h1 {
@@ -44,6 +44,7 @@ p {
 /* ids --------------------------------------------------------------------- */
 
 #header {
+  height: 210px;
   background: url('/images/pulp-header.png') no-repeat left top;
 }
 
@@ -71,7 +72,7 @@ p {
   background: url('/images/pulp-community-website.png') no-repeat left top;
   position: absolute;
   left: 720px;
-  top: 190px;
+  top: 170px;
 }
 
 #intro {
@@ -158,7 +159,7 @@ p {
 }
 
 .light-bg {
-  background-color: #000;
+  background-color: #fff;
   filter: alpha(opacity=65);
   opacity: 0.65;
 }
