@@ -23,8 +23,7 @@ import time
 from gettext import gettext as _
 
 import pulp.client.constants as constants
-from pulp.client.connection import (
-    setup_connection, ConsumerConnection, RepoConnection)
+from pulp.client.connection import ConsumerConnection, RepoConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.logutil import getLogger
@@ -36,8 +35,8 @@ _log = getLogger(__name__)
 class PackageGroupAction(Action):
 
     def setup_connections(self):
-        self.pconn = setup_connection(RepoConnection)
-        self.cconn = setup_connection(ConsumerConnection)
+        self.pconn = RepoConnection()
+        self.cconn = ConsumerConnection()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",

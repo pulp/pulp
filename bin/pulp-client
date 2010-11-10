@@ -16,12 +16,22 @@
 #
 
 import sys
+import os
 from gettext import gettext as _
 
-from pulp.client import credentials
+from pulp.client.credentials import Consumer
 from pulp.client.cli.base import PulpCLI
 from pulp.client.core import consumer, errata, repo
-from pulp.client.credentials import root_check
+
+
+def root_check():
+    """
+    Simple function to assure execution by root
+    """
+    if os.getuid() == 0:
+        return
+    print >> sys.stderr, _('error: must be root to execute')
+    sys.exit(os.EX_NOUSER)
 
 
 def setup_client(client):
@@ -44,9 +54,10 @@ def setup_client(client):
 
 
 if __name__ == '__main__':
-    root_check()
+    #root_check()
     client = PulpCLI()
     setup_client(client)
-    if not credentials.set_local_consumer_id():
+    bundle = Consumer()
+    if not bundle.getid():
         print >> sys.stderr, _("warning: this client is not registered; please register to continue")
     client.main()

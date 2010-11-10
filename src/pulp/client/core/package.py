@@ -20,10 +20,7 @@ import sys
 import time
 from gettext import gettext as _
 from optparse import OptionGroup
-
-from pulp.client.connection import (
-    setup_connection, RepoConnection, ConsumerConnection,
-    ConsumerGroupConnection)
+from pulp.client.connection import RepoConnection, ConsumerConnection, ConsumerGroupConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -32,9 +29,9 @@ from pulp.client.core.utils import print_header, system_exit
 class PackageAction(Action):
 
     def setup_connections(self):
-        self.pconn = setup_connection(RepoConnection)
-        self.cconn = setup_connection(ConsumerConnection)
-        self.cgconn = setup_connection(ConsumerGroupConnection)
+        self.pconn = RepoConnection()
+        self.cconn = ConsumerConnection()
+        self.cgconn = ConsumerGroupConnection()
 
 # package actions -------------------------------------------------------------
 

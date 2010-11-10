@@ -23,9 +23,8 @@ from gettext import gettext as _
 from optparse import OptionGroup, SUPPRESS_HELP
 
 from pulp.client import constants
-from pulp.client import credentials
 from pulp.client.connection import (
-    setup_connection, ErrataConnection, RepoConnection, ConsumerConnection,
+    ErrataConnection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit
@@ -35,10 +34,10 @@ from pulp.client.core.utils import system_exit
 class ErrataAction(Action):
 
     def setup_connections(self):
-        self.econn = setup_connection(ErrataConnection)
-        self.rconn = setup_connection(RepoConnection)
-        self.cconn = setup_connection(ConsumerConnection)
-        self.cgconn = setup_connection(ConsumerGroupConnection)
+        self.econn = ErrataConnection()
+        self.rconn = RepoConnection()
+        self.cconn = ConsumerConnection()
+        self.cgconn = ConsumerGroupConnection()
 
 # errata actions --------------------------------------------------------------
 
@@ -49,7 +48,7 @@ class List(ErrataAction):
     def setup_parser(self):
         default = None
         help = _('consumer id (required)')
-        consumerid = credentials.get_consumer_id()
+        consumerid = self.getid()
         if consumerid is not None:
             default = consumerid
             help = SUPPRESS_HELP

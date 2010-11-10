@@ -20,7 +20,7 @@ import os
 from gettext import gettext as _
 
 from pulp.client import constants
-from pulp.client.connection import setup_connection, UserConnection
+from pulp.client.connection import UserConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -29,7 +29,7 @@ from pulp.client.core.utils import print_header, system_exit
 class UserAction(Action):
 
     def setup_connections(self):
-        self.userconn = setup_connection(UserConnection)
+        self.userconn = UserConnection()
         
     def get_user(self, username):
         user = self.userconn.user(login=username)

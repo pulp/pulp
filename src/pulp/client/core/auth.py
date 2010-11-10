@@ -17,10 +17,9 @@
 
 import os
 from gettext import gettext as _
-
-from pulp.client import auth_utils
-from pulp.client import credentials
-from pulp.client.connection import setup_connection, UserConnection
+from pulp.client.credentials import Credentials
+from pulp.client.credentials import Login as LoginBundle
+from pulp.client.connection import UserConnection
 from pulp.client.core.base import Action, Command
 
 # auth actions ----------------------------------------------------------------
@@ -37,28 +36,19 @@ class Login(Action):
 
     def setup_connections(self):
         # first take into account the new credentials
-        username = self.opts.username
-        password = self.opts.password
-        if None not in (username, password):
-            credentials.set_username_password(username, password)
-        self.authconn = setup_connection(UserConnection)
+        Credentials.setuser(self.opts.username, self.opts.password)
+        self.authconn = UserConnection()
 
     def run(self):
         # Retrieve the certificate information from the server
         cert_dict = self.authconn.admin_certificate()
-        # Determine the destination and store the cert information there
-        if not os.path.exists(auth_utils.admin_cert_dir()):
-            os.makedirs(auth_utils.admin_cert_dir())
         # Write the certificate data
-        cert_filename, key_filename = auth_utils.admin_cert_paths()
-        f = open(cert_filename, 'w')
-        f.write(cert_dict['certificate'])
-        f.close()
-        f = open(key_filename, 'w')
-        f.write(cert_dict['private_key'])
-        f.close()
+        bundle = LoginBundle()
+        key = cert_dict['private_key']
+        crt = cert_dict['certificate']
+        bundle.write(key, crt)
         print _('User credentials successfully stored at [%s]') % \
-                auth_utils.admin_cert_dir()
+                bundle.root()
 
 
 class Logout(Action):
@@ -66,14 +56,10 @@ class Logout(Action):
     description = _('removes stored user credentials on this machine')
 
     def run(self):
-        # Determine the destination and store the cert information there
-        cert_filename, key_filename = auth_utils.admin_cert_paths()
         # Remove the certificate and private key files
-        if os.path.exists(cert_filename):
-            os.remove(cert_filename)
-        if os.path.exists(key_filename):
-            os.remove(key_filename)
-        print _('User credentials removed from [%s]') % auth_utils.admin_cert_dir()
+        bundle = LoginBundle()
+        bundle.delete()
+        print _('User credentials removed from [%s]') % bundle.root()
 
 # auth command ----------------------------------------------------------------
 

@@ -18,7 +18,7 @@ import sys
 from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
-from pulp.client import credentials
+from pulp.client.credentials import Credentials
 from pulp.client.config import Config
 
 _cfg = Config()
@@ -94,13 +94,6 @@ class PulpCLI(object):
         if opts.server is not None:
             _cfg._sections['server'].__setitem__('host', opts.server)
             _cfg.write()
-        username = opts.username
-        password = opts.password
-        if None not in (username, password):
-            credentials.set_username_password(username, password)
-        cert_file = opts.cert_file
-        key_file = opts.key_file
-        if None not in (cert_file, key_file):
-            credentials.set_cert_key_files(cert_file, key_file)
+        Credentials.setuser(opts.username, opts.password)
+        Credentials.setcert(opts.key_file, opts.cert_file)
         command.main(args[1:])
-

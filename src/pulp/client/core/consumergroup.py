@@ -15,7 +15,7 @@ import os
 from gettext import gettext as _
 
 from pulp.client import constants
-from pulp.client.connection import setup_connection, ConsumerGroupConnection
+from pulp.client.connection import ConsumerGroupConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.repolib import RepoLib
@@ -29,7 +29,7 @@ class ConsumerGroupAction(Action):
         self.repolib = RepoLib()
 
     def setup_connections(self):
-        self.cgconn = setup_connection(ConsumerGroupConnection)
+        self.cgconn = ConsumerGroupConnection()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",

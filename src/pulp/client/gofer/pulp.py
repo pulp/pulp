@@ -24,9 +24,9 @@ from pulp.client.connection import ConsumerConnection, RestlibException
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 from pulp.client.repolib import RepoLib
+from pulp.client.credentials import Consumer
 from gofer.agent.action import *
 from gofer.decorators import *
-from M2Crypto import X509
 from yum import YumBase
 
 from logging import getLogger
@@ -159,33 +159,6 @@ class Shell:
 @identity
 class PulpIdentity:
 
-    CRTPATH = '/etc/pki/consumer/cert.pem'
-
     def getuuid(self):
-        try:
-            f = open(self.CRTPATH)
-            content = f.read()
-            f.close()
-            x509 = X509.load_cert_string(content)
-            subject = self.subject(x509)
-            return subject['CN']
-        except IOError:
-            pass
-
-    def subject(self, x509):
-        """
-        Get the certificate subject.
-        note: Missing NID mapping for UID added to patch openssl.
-        @return: A dictionary of subject fields.
-        @rtype: dict
-        """
-        d = {}
-        subject = x509.get_subject()
-        subject.nid['UID'] = 458
-        for key, nid in subject.nid.items():
-            entry = subject.get_entries_by_nid(nid)
-            if len(entry):
-                asn1 = entry[0].get_data()
-                d[key] = str(asn1)
-                continue
-        return d
+        bundle = Consumer()
+        return bundle.getid()
