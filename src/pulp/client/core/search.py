@@ -80,12 +80,13 @@ class Packages(SearchAction):
                 self.form_item_string("Filename", filename_field_size),
                 self.form_item_string("Repositories", repos_field_size)))
         for pkg in pkgs:
+            repos = ", ".join(pkg["repos"])
             print "%s\t%s\t%s\t%s" % \
                     (self.form_item_string(pkg["name"], name_field_size), 
                     self.form_item_string("%s:%s-%s.%s" % (pkg["epoch"], pkg["version"],
                         pkg["release"], pkg["arch"]), evra_field_size),
                     self.form_item_string(pkg["filename"], filename_field_size),
-                    pkg["repos"])
+                    repos)
 
     def form_item_string(self, msg, field_size):
         return string.ljust(msg, field_size)
