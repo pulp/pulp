@@ -69,14 +69,11 @@ class TestDistribution(unittest.TestCase):
 
     def test_duplicate(self):
         id = 'test_duplicate_distro'
-        distro = self.dapi.create(id, None, None, [])
-        assert(distro is not None)
-        status = False
-        try:
-            distro = self.dapi.create(id, None, None, [])
-        except DuplicateKeyError:
-            status = True
-        self.assertTrue(status)
+        distro1 = self.dapi.create(id, None, None, [])
+        assert(distro1 is not None)
+        distro2 = self.dapi.create(id, None, None, [])
+        assert(distro2 is not None)
+        self.assertTrue(distro1 == distro2)
 
         status = True
         try:
