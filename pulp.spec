@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.82
+Version:        0.0.83
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -189,6 +189,12 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Wed Nov 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.83-1
+- changed migrate script to use different log file to avoid permissions issues
+  on fresh install (jconnor@redhat.com)
+- Adding list/info functionality for package group categories
+  (jmatthew@redhat.com)
+
 * Wed Nov 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.82-1
 - honor the published flag when exposing kickstart trees via http
   (pkilambi@redhat.com)
