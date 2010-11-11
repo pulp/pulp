@@ -1,35 +1,33 @@
 
 /* elements ---------------------------------------------------------------- */
 
-* {
-  margin: 0;
-  padding: 0;
-}
-
 a {
   text-decoration: none;
   color: inherit;
 }
 
 body {
-  background: #fff url('/images/pulp-content-bg.png') repeat-y left top;
-  color: #333;
+  background-color: #fff;
+  color: #111;
   font: 12pt/14pt "Droid Sans",sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 h1, h2, h3 {
   font-weight: bold;
-  text-shadow: #666 -1px 1px 2px;
+  text-shadow: #999 -1px 1px 2px;
+  margin: 0;
 }
 
 h1 {
-  font-size: 2em;
-  line-height: 2em;
+  font-size: 1.7em;
+  line-height: 1.7em;
 }
 
 h2 {
-  font-size: 1.5em;
-  line-height: 1.5em;
+  font-size: 1.3em;
+  line-height: 1.3em;
 }
 
 h3 {
@@ -38,10 +36,19 @@ h3 {
 }
 
 p {
+  margin: 0;
   padding-bottom: 15px;
 }
 
+ul {
+  margin: 0;
+}
+
 /* ids --------------------------------------------------------------------- */
+
+#background {
+  background: #fff url('/images/pulp-content-bg.png') repeat-y center top;
+}
 
 #header {
   height: 210px;
@@ -71,7 +78,7 @@ p {
   height: 25px;
   background: url('/images/pulp-community-website.png') no-repeat left top;
   position: absolute;
-  left: 720px;
+  left: 690px;
   top: 170px;
 }
 
@@ -80,13 +87,21 @@ p {
 }
 
 #intro li {
-  list-style-image: url('/images/bullet-orange.png');
+  list-style-image: url('/images/pulp-bullet-orange.png');
 }
 
 #content {
 }
 
 /* classes ----------------------------------------------------------------- */
+
+.flt_left {
+  float: left;
+}
+
+.flt_right {
+  float: right;
+}
 
 .larger {
   font-size: 1.2em;
@@ -104,8 +119,16 @@ p {
   display: none;
 }
 
+.inline {
+  display: inline;
+}
+
 .justified {
   text-align: justify;
+}
+
+.centered {
+  text-align: center;
 }
 
 .italic {
@@ -125,43 +148,36 @@ p {
 }
 
 .grey {
-  color: #666;
+  color: #333;
 }
 
 .orange {
-  color: #CE5C00;
+  color: #d06911;
 }
 
 .blue {
-  color: #3465A4;
+  color: #3566a5;
 }
 
 .green {
-  color: #4E9A06;
+  color: #56a111;
 }
 
 .orange-bg {
-  background-color: #F57900;
-  filter: alpha(opacity=50);
-  opacity: 0.5;
+  background-color: #dea95f;
 }
 
 .blue-bg {
-  background-color: #3465A4;
-  filter: alpha(opacity=55);
-  opacity: 0.55;
+  background-color: #6e98c9;
 }
 
 .green-bg {
-  background-color: #73D126;
-  filter: alpha(opacity=65);
-  opacity: 0.65;
+  background-color: #8ad365;
 }
 
 .light-bg {
+/*  background-color: #e5f1fc;*/
   background-color: #fff;
-  filter: alpha(opacity=65);
-  opacity: 0.65;
 }
 
 .region {
@@ -169,4 +185,8 @@ p {
   padding: 15px;
   border-radius: 10px;
   -moz-border-radius: 10px;
+}
+
+.sidebar {
+  margin-left: 20px;
 }

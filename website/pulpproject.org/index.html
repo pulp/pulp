@@ -3,12 +3,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <link rel="stylesheet" type="text/css" href="/css/960.css" />
+  <link rel="stylesheet" type="text/css" href="/css/grid.css" />
   <link rel="stylesheet" type="text/css" href="/css/pulp.css" />
   <title>Pulp - Juicy Software Repository Management</title>
 </head>
-<body class="container_12">
-  <div id="header" class="grid_12 alpha omega">
+<body>
+<div id="background" class="container">
+  <div id="header" class="cols_12 alpha omega">
     <div id="logo">
       <h1 class="invisible">Pulp</h1>
     </div>
@@ -22,8 +23,8 @@
     </a>
   </div>
   <div class="clear"></div>
-  <div id="intro" class="grid_12 alpha omega white">
-    <div class="grid_8 alpha">
+  <div id="intro" class="cols_12 white">
+    <div class="cols_8">
       <h1>Do you wish you could...</h1>
       <ul>
         <li>Push a security fix out to hundreds of systems in one command?</li>
@@ -36,12 +37,12 @@
         <li>Enforce systems to upgrade within finely-defined maintenance 
         windows eaily?</li>
       </ul>
-      <h1>...you can, with Pulp!</h1>
+      <h1 style="margin-left: 240px;">...you can, with Pulp!</h1>
     </div>
-    <div class="grid_3 omega">
+    <div class="cols_3 sidebar">
       <a href="">
-        <div class="orange-bg region">
-          <h1>DOWNLOAD NOW</h1>
+        <div class="orange-bg region centered">
+          <h2>DOWNLOAD NOW</h2>
         </div>
       </a>
       <br />
@@ -50,31 +51,68 @@
       Enterprise Linux 6</p>
       <h3>Instructions:</h3>
       <p>Run <span class="italic">yum install pulp</span> after installing 
-      repository package via 'dwnload now'.</p>
+      repository package via 'download now'.</p>
     </div>
   </div>
   <div class="clear"></div>
-  <div id="content" class="grid_12 alpha omega">
-    <div  class="grid_7 alpha">
+  <div id="content" class="cols_12">
+    <div  class="cols_7">
       <div class="light-bg region">
         <h1 class="orange">What is Pulp?</h1>
-        <p></p>
+        <p>Pulp is a Python application for managing software repositories and
+        their associated content, such as packages, errata, and distributions.
+        It can replicate software repositories from a variety of supported
+        sources, such as http/https, file system, ISO, and RHN, to a local
+        on-site repository. It provides mechanisms for systems to gain access
+        to these repositories, providing centralized software installation.</p>
+        <p>Pulp provides tracking of which systems are using which repositories
+        along with a full system history of installation actions. It uses a
+        fine-grained, roles-based, permission model (RBAC) that provides
+        authentication and authorization for repositories, including integration
+        with external LDAP.</p>
         <img src="/images/pulp-diagram.png" />
-        <p></p>
-        <img src="/images/pulp-diagram2.png" />
+        <p>Pulp can define groups for repositories, packages, and systems and
+        use those groups for bulk operations. It can define and enforce system
+        maintenance windows. It also maintains an inventory of system package
+        profiles, both current and historical information on any changes. It
+        provides fully configurable auditing of all user-initiated actions.</p>
+        <p>Pulp has a fully documented RESTful API and command line interface
+        for management. It uses SSL secured communications between client and
+        Pulp server for both API operations and repository access. Its command
+        line interface, data storage, and error messaging are all fully
+        localized.</p>
+        <img src="/images/pulp-diagram-2.png" />
         <h1 class="orange">Quick Command Reference</h1>
-        <div class="grid_3 alpha">
-          <span class="larger bold green">Server</span><br />
+        <div class="cols_3">
+          <span class="larger bold green">Server:</span>
+          <span class="larger bold grey italic">pulp-admin</span><br />
+          <hr />
+          <ul>
+           <li>auth</li>
+           <li>consumer</li>
+           <li>consumergroup</li>
+           <li>errata</li>
+           <li>package</li>
+           <li>packagegroup</li>
+           <li>repo</li>
+           <li>search</li>
+           <li>user</li>
+          </ul>
         </div>
-        <div class="grid_1"></div>
-        <div class="grid_3 alpha">
-          <span class="larger bold green">client</span><br />
+        <div class="cols_3">
+          <span class="larger bold green">Client:</span>
+          <span class="larger bold grey italic">pulp-client</span><br />
+          <hr />
+          <ul>
+           <li>consumer</li>
+           <li>errata</li>
+           <li>repo</li>
+          </ul>
         </div>
         <div class="clear"></div>
       </div>
     </div>
-    <div class="grid_1"></div>
-    <div class="grid_4 omega">
+    <div class="cols_4_5">
       <div class="green-bg region">
         <h2 class="green">Resources</h2>
         <div class="larger grey">
@@ -97,7 +135,9 @@
         <h2 class="orange">The Crew</h2>
       </div>
     </div>
+  <div class="cols_12">&nbsp;</div>
   </div>
   <div class="clear"></div>
+</div>
 </body>
 </html>
