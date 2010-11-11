@@ -102,14 +102,16 @@ class TestAuthorization(unittest.TestCase):
         role = self.create_role('perm-test-role')
         repo = self.repoapi.create('perm-test-repo', 'perm-test', 'i386')
         user = self.userapi.create('perm-test-user')
-        perm = self.permapi.create_with_role(repo, role)  
+        role = self.roleapi.add_instance(repo['id'], role['name'])
+        self.assertTrue(len(role['permissions']) > 0)
+        perm = role['permissions'][0]
         self.assertTrue(perm)
         self.assertTrue(perm['role'] == role)
         self.assertTrue(perm['instance'] == repo)
         
         perm = self.permapi.create_with_user(repo, user)
         self.assertTrue(perm['user'] == user)
-        self.assertTrue(len(role['permissions']) > 0) 
+        
     
     def test_permission_constructor(self):
         role = self.create_role('const-test')
@@ -141,7 +143,7 @@ class TestAuthorization(unittest.TestCase):
         role = self.create_role(rolename)
         repo = self.repoapi.create('perm-test-repo', 'perm-test', 'i386')
         user = self.userapi.create('perm-test-user')
-        perm = self.permapi.create_with_role(repo, role)
+        self.roleapi._add_instance(repo, role)
         return (user, repo, role)  
     
     # Util Method

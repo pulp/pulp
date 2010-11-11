@@ -18,12 +18,15 @@ import uuid
 
 from pulp.server.api.base import BaseApi
 from pulp.server.api.user import UserApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
+from pulp.server.pexceptions import PulpException
 from pulp.server import config
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.event.dispatcher import event
 import pulp.server.auth.password_util as password_util
+from pulp.server.db.model import RoleResourceType
 
 log = logging.getLogger(__name__)
 user_fields = model.User(None, None, None, None).keys()
@@ -34,6 +37,8 @@ class RoleApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         self.userapi = UserApi()
+        self.permapi = PermissionApi()
+        self.repoapi = RepoApi()
 
 
     def _getcollection(self):
@@ -68,7 +73,32 @@ class RoleApi(BaseApi):
     @audit(params=['name'])
     def delete(self, name):
         self.objectdb.remove({'name' : name}, safe=True)
+
+    def add_instance(self, instance_id, role_name):
+        role = self.role(role_name)
+        instance = None
+        resource_type = role['resource_type']
+        if resource_type == RoleResourceType.REPO:
+            repo = self.repoapi.repository(instance_id)
+            self._add_instance(repo, role)
+        else:
+            raise PulpException("Only support access control on Repositories") 
         
+        return role
+
+        
+    def _add_instance(self, instance, role):
+        """
+        Add an object to this Role
+        TODO: Add object type checking to make sure we arent 
+        adding objects to Roles managing the wrong type of thing
+        """
+        permission = self.permapi.create_with_role(instance, role)
+        role['permissions'].append(permission)
+        self.update(role)
+
+         
+    
     def add_user(self, role, user):
         """
         Add a single user to this role, granting them the permission to the object
@@ -117,7 +147,6 @@ class PermissionApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.roleapi = RoleApi()
 
 
     def _getcollection(self):
@@ -132,8 +161,6 @@ class PermissionApi(BaseApi):
         Create a new Permission object and return it
         """
         permission = model.Permission(instance, role=role)
-        role['permissions'].append(permission)
-        self.roleapi.update(role)
         self.insert(permission)
         return permission
 
