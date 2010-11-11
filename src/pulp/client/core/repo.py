@@ -93,7 +93,8 @@ class List(RepoAction):
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'], repo['publish'], repo['clone_ids'])
+                    repo['files_count'], ' '.join(repo['distributionid']) or None, 
+                    repo['publish'], repo['clone_ids'])
 
 
 class Status(RepoAction):

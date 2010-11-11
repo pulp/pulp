@@ -48,6 +48,7 @@ default_fields = [
     'files',
     'publish',
     'clone_ids',
+    'distributionid'
 ]
 
 # restful controllers ---------------------------------------------------------

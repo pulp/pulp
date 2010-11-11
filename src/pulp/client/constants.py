@@ -25,6 +25,7 @@ Arch               \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s
 Files              \t%-25s
+Distributions      \t%-25s
 Publish            \t%-25s
 Clones             \t%-25s
 """
