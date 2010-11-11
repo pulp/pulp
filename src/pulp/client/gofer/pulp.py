@@ -49,15 +49,15 @@ class ProfileUpdateAction(Action):
         """
         bundle = Consumer()
         cid = bundle.getid()
-        if not cid.exists():
+        if not cid:
             log.error("Not Registered")
             return
         try:
             cconn = ConsumerConnection(host=cfg.server.host or "localhost",
                                        port=cfg.server.port or 443)
             pkginfo = PackageProfile().getPackageList()
-            cconn.profile(cid.read(), pkginfo)
-            log.info("Profile updated successfully for consumer %s" % cid.read())
+            cconn.profile(cid, pkginfo)
+            log.info("Profile updated successfully for consumer %s" % cid)
         except RestlibException, re:
             log.error("Error: %s" % re)
         except Exception, e:
