@@ -19,7 +19,6 @@ Contains recurring actions and remote classes.
 """
 
 import os
-from pulp.client import ConsumerId
 from pulp.client.connection import ConsumerConnection, RestlibException
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
@@ -48,7 +47,8 @@ class ProfileUpdateAction(Action):
         Looks up the consumer id and latest pkg profile info and cals
         the api to update the consumer profile
         """
-        cid = ConsumerId()
+        bundle = Consumer()
+        cid = bundle.getid()
         if not cid.exists():
             log.error("Not Registered")
             return

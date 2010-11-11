@@ -19,7 +19,7 @@ Contains repo management (backend) classes.
 
 import os
 from iniparse import ConfigParser as Parser
-from pulp.client import ConsumerId
+from pulp.client.credentials import Consumer
 from pulp.client.connection import ConsumerConnection, RepoConnection
 from pulp.client.lock import Lock
 from pulp.client.config import Config
@@ -100,7 +100,8 @@ class Pulp:
         return self.rapi.listkeys(id)
 
     def consumerId(self):
-        return str(ConsumerId())
+        bundle = Consumer()
+        return bundle.getid()
 
 
 class Action:
