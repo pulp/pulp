@@ -25,6 +25,7 @@ Arch               \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s
 Files              \t%-25s
+Distributions      \t%-25s
 Publish            \t%-25s
 Clones             \t%-25s
 """
@@ -62,6 +63,12 @@ Mandatory packages  \t%-25s
 Default packages    \t%-25s
 Optional packages   \t%-25s
 Conditional packages\t%-25s
+"""
+
+PACKAGE_GROUP_CATEGORY_INFO = """
+Name                \t%-25s
+Id                  \t%-25s
+Groups              \t%-25s
 """
 
 

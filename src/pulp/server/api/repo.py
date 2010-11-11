@@ -921,8 +921,11 @@ class RepoApi(BaseApi):
                 raise PulpException(
                         "Changes to immutable categories are not supported: %s" \
                                 % (categoryid))
-            repo['packagegroupcategories'].remove(categoryid)
-
+            if groupid not in repo['packagegroupcategories'][categoryid]['packagegroupids']:
+                raise PulpException(
+                        "Group id [%s] is not in category [%s]" % \
+                                (groupid, categoryid))
+            repo['packagegroupcategories'][categoryid]['packagegroupids'].remove(groupid)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -934,7 +937,7 @@ class RepoApi(BaseApi):
                 raise PulpException(
                         "Changes to immutable categories are not supported: %s" \
                                 % (categoryid))
-        repo['packagegroupcategories'][categoryid].append(groupid)
+        repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
