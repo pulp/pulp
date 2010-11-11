@@ -36,7 +36,10 @@ class Login(Action):
 
     def setup_connections(self):
         # first take into account the new credentials
-        Credentials.setuser(self.opts.username, self.opts.password)
+        username = self.opts.username
+        password = self.opts.password
+        if username and password:
+            Credentials.setuser(username, password)
         self.authconn = UserConnection()
 
     def run(self):
