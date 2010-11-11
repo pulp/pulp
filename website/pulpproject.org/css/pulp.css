@@ -7,7 +7,7 @@ a {
 }
 
 body {
-  background-color: #fff;
+  background: #D7E6F4 url('../images/pulp-page-bg.png') repeat-y center top;
   color: #111;
   font: 12pt/14pt "Droid Sans",sans-serif;
   margin: 0;
