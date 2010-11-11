@@ -6,17 +6,20 @@ a {
   color: inherit;
 }
 
+a:hover {
+  text-decoration: none;
+}
+
 body {
   background: #D7E6F4 url('../images/pulp-page-bg.png') repeat-y center top;
   color: #111;
-  font: 12pt/14pt "Droid Sans",sans-serif;
+  font: 10pt/16pt "Droid Sans",sans-serif;
   margin: 0;
   padding: 0;
 }
 
 h1, h2, h3 {
   font-weight: bold;
-  text-shadow: #999 -1px 1px 2px;
   margin: 0;
 }
 
@@ -33,6 +36,10 @@ h2 {
 h3 {
   font-size: 1em;
   line-height: 1em;
+}
+
+li {
+  padding-bottom: 4px;
 }
 
 p {
@@ -86,7 +93,7 @@ ul {
   background: url('../images/pulp-intro-bg.png') repeat-x left top;
 }
 
-#intro li {
+#intro ul li {
   list-style-image: url('../images/pulp-bullet-orange.png');
 }
 
@@ -104,7 +111,7 @@ ul {
 }
 
 .larger {
-  font-size: 1.2em;
+  font-size: 1.1em;
 }
 
 .smaller {
@@ -139,6 +146,10 @@ ul {
   font-weight: bold;
 }
 
+.shadow {
+  text-shadow: #999 -1px 1px 2px;
+}
+
 .white {
   color: #fff;
 }
@@ -149,6 +160,10 @@ ul {
 
 .grey {
   color: #333;
+}
+
+.ltgrey {
+  color: #444;
 }
 
 .orange {
@@ -189,4 +204,17 @@ ul {
 
 .sidebar {
   margin-left: 20px;
+}
+
+.plain {
+  list-style: none outside;
+}
+
+.avatar {
+  float: left;
+  width: 60px;
+  height: 60px;
+  background-color: #d06911;
+  margin-right: 20px;
+  margin-bottom: 20px;
 }
