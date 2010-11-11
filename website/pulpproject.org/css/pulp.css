@@ -47,18 +47,18 @@ ul {
 /* ids --------------------------------------------------------------------- */
 
 #background {
-  background: #fff url('/images/pulp-content-bg.png') repeat-y center top;
+  background: #fff url('../images/pulp-content-bg.png') repeat-y center top;
 }
 
 #header {
   height: 210px;
-  background: url('/images/pulp-header.png') no-repeat left top;
+  background: url('../images/pulp-header.png') no-repeat left top;
 }
 
 #logo {
   width: 309px;
   height: 220px;
-  background: url('/images/pulp-logo.png') no-repeat left top;
+  background: url('../images/pulp-logo.png') no-repeat left top;
   position: absolute;
   left: 0px;
   top: 0px;
@@ -67,7 +67,7 @@ ul {
 #tagline {
   width: 472px;
   height: 29px;
-  background: url('/images/pulp-juicy-tagline.png') no-repeat left top;
+  background: url('../images/pulp-juicy-tagline.png') no-repeat left top;
   position: absolute;
   left: 240px;
   top: 120px;
@@ -76,18 +76,18 @@ ul {
 #redhat {
   width: 276px;
   height: 25px;
-  background: url('/images/pulp-community-website.png') no-repeat left top;
+  background: url('../images/pulp-community-website.png') no-repeat left top;
   position: absolute;
   left: 690px;
   top: 170px;
 }
 
 #intro {
-  background: url('/images/pulp-intro-bg.png') repeat-x left top;
+  background: url('../images/pulp-intro-bg.png') repeat-x left top;
 }
 
 #intro li {
-  list-style-image: url('/images/pulp-bullet-orange.png');
+  list-style-image: url('../images/pulp-bullet-orange.png');
 }
 
 #content {
