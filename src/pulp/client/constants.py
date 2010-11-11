@@ -65,6 +65,12 @@ Optional packages   \t%-25s
 Conditional packages\t%-25s
 """
 
+PACKAGE_GROUP_CATEGORY_INFO = """
+Name                \t%-25s
+Id                  \t%-25s
+Groups              \t%-25s
+"""
+
 
 AVAILABLE_USERS_LIST = """
 Login :               \t%-25s    
