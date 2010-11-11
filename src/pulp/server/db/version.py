@@ -123,7 +123,7 @@ def check_version():
     log = logging.getLogger('pulp')
     log.critical(msg)
     log.critical("use the 'pulp-migrate' tool to fix this before restarting the web server")
-    # raise RuntimeError(msg)
+    raise RuntimeError(msg)
 
 
 def set_version(version):
