@@ -512,7 +512,7 @@ class RepoApi(BaseApi):
         @rtype: int
         @return: the number of package in the repository corresponding to id
         """
-        return self.repository(id)['package_count']
+        return self.repository(id, fields=["package_count"])['package_count']
 
     def get_package(self, id, name):
         """
