@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.88
+Version:        0.0.89
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -40,7 +40,7 @@ Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
 %else:
-%if 0%{?fedora} < 13
+%if 0%{?fedora}
 Requires: qpidd
 Requires: qpidd-ssl
 Requires: rhm-cpp-server-store
@@ -197,6 +197,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.89-1
+- 
+
 * Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.88-1
 - 
 
