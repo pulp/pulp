@@ -204,7 +204,10 @@ def audit(params=None, record_result=False):
                 _record_event()
                 raise
             else:
-                event.result = audit_repr(result) if record_result else None
+                if record_result:
+                    event.result = audit_repr(result)
+                else:
+                    event.result = None
                 _record_event()
                 return result
 
