@@ -25,7 +25,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-@handler(entity='consumer')
+#@handler(entity='consumer')
 class ConsumerEvent(EventHandler):
     """
     The I{consumer} event handler.

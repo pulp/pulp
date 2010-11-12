@@ -26,7 +26,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-@handler(entity='repo')
+#@handler(entity='repo')
 class RepoEvent(EventHandler):
     """
     The I{repo} event handler.

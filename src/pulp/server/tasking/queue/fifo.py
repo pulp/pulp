@@ -83,8 +83,8 @@ class FIFOTaskQueue(TaskQueue):
             _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
                           ''.join(traceback.format_exception(*sys.exc_info())))
             raise
-        finally:
-            self.__lock.release()
+        #finally:
+        self.__lock.release()
 
     def _get_tasks(self):
         """

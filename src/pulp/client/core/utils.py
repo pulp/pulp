@@ -49,7 +49,11 @@ def system_exit(code, msgs=None):
     if msgs:
         if isinstance(msgs, basestring):
             msgs = (msgs,)
-        out = sys.stdout if code == os.EX_OK else sys.stderr
+        if code == os.EX_OK:
+            out = sys.stdout
+        else:
+            out = sys.stderr
+        #out = sys.stdout if code == os.EX_OK else sys.stderr
         for msg in msgs:
             print >> out, msg
     sys.exit(code)

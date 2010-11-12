@@ -214,5 +214,5 @@ class Action(object):
         except Exception, e:
             _log.error("error: %s" % e)
             raise
-        finally:
-            print ''
+        #finally:
+        print ''
