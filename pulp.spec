@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.86
+Version:        0.0.87
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -33,6 +33,13 @@ Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
 Requires: gofer-lib >= 0.1
+%if 0%{?rhel}
+Requires: qpid-cpp-server
+Requires: qpid-cpp-server-ssl
+Requires: qpid-cpp-server-store
+Requires: mongodb
+Requires: mongodb-server
+%else:
 %if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
@@ -45,6 +52,7 @@ Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
+%endif
 %endif
 # newer pulp builds should require same client version
 Requires: %{name}-client >= %{version}
@@ -189,6 +197,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.87-1
+- 
+
 * Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.86-1
 - Removing python2.6 syntax from pulp code (skarmark@redhat.com)
 
