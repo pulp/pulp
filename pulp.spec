@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.89
+Version:        0.0.90
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -33,14 +33,8 @@ Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
 Requires: gofer-lib >= 0.1
-%if 0%{?rhel} == 5
-Requires: qpid-cpp-server
-Requires: qpid-cpp-server-ssl
-Requires: qpid-cpp-server-store
-Requires: mongodb
-Requires: mongodb-server
-%else:
-%if 0%{?fedora}
+
+%if 14%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
 Requires: rhm-cpp-server-store
@@ -53,7 +47,7 @@ Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
 %endif
-%endif
+
 # newer pulp builds should require same client version
 Requires: %{name}-client >= %{version}
 
@@ -197,6 +191,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.90-1
+- Fixing build error because of missing @handler (skarmark@redhat.com)
+
 * Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.89-1
 - 
 
