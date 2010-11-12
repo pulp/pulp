@@ -308,7 +308,11 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
         timestamp_range['$gt'] = lower_bound
     if upper_bound is not None:
         timestamp_range['$lt'] = upper_bound
-    spec = {'timestamp': timestamp_range} if timestamp_range else None
+    if timestamp_range:
+        spec = {'timestamp': timestamp_range}
+    else:
+        spec = None
+    #spec = {'timestamp': timestamp_range} if timestamp_range else None
     return events(spec, fields, limit, errors_only)
 
 
