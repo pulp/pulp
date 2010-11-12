@@ -26,7 +26,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-#@handler(entity='product')
+@handler(entity='product')
 class ProductEvent(EventHandler):
     """
     The I{product} event handler.
