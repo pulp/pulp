@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.83
+Version:        0.0.92
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -33,7 +33,8 @@ Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
 Requires: gofer-lib >= 0.1
-%if 0%{?fedora} < 13
+
+%if 14%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
 Requires: rhm-cpp-server-store
@@ -46,6 +47,7 @@ Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
 %endif
+
 # newer pulp builds should require same client version
 Requires: %{name}-client >= %{version}
 
@@ -189,6 +191,22 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Mon Nov 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.92-1
+- QE build
+
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.90-1
+- Fixing build error because of missing @handler (skarmark@redhat.com)
+
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.86-1
+- Removing python2.6 syntax from pulp code (skarmark@redhat.com)
+
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.85-1
+- Removing python2.6 syntax from pulp code (skarmark@redhat.com)
+
+* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.84-1
+- Removing python2.6 syntax from pulp code (skarmark@redhat.com)
+
+
 * Wed Nov 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.83-1
 - changed migrate script to use different log file to avoid permissions issues
   on fresh install (jconnor@redhat.com)

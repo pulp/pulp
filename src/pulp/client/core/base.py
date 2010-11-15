@@ -21,6 +21,7 @@ from M2Crypto import SSL
 
 from pulp.client.config import Config
 from pulp.client.connection import RestlibException
+from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.core.utils import system_exit
 from pulp.client.logutil import getLogger
 
@@ -164,6 +165,15 @@ class Action(object):
             self.parser.error(_('Option %s is required; please see --help') % flag)
         return value
 
+    def getconsumerid(self):
+        """
+        Get the consumer ID from the identity certificate.
+        @return: The consumer id.  Returns (None) when not registered.
+        @rtype: str
+        """
+        bundle = ConsumerBundle()
+        return bundle.getid()
+
     def setup_parser(self):
         """
         Add custom options to the parser
@@ -214,5 +224,5 @@ class Action(object):
         except Exception, e:
             _log.error("error: %s" % e)
             raise
-        finally:
-            print ''
+        #finally:
+        print ''

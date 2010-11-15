@@ -24,7 +24,7 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import setup_connection, RepoConnection
+from pulp.client.connection import RepoConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
@@ -45,7 +45,7 @@ class CloneError(Exception):
 class RepoAction(Action):
 
     def setup_connections(self):
-        self.pconn = setup_connection(RepoConnection)
+        self.pconn = RepoConnection()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -93,7 +93,8 @@ class List(RepoAction):
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'], repo['publish'], repo['clone_ids'])
+                    repo['files_count'], ' '.join(repo['distributionid']) or None, 
+                    repo['publish'], repo['clone_ids'])
 
 
 class Status(RepoAction):

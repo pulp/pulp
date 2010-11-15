@@ -19,14 +19,13 @@ Contains recurring actions and remote classes.
 """
 
 import os
-from pulp.client import ConsumerId
 from pulp.client.connection import ConsumerConnection, RestlibException
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 from pulp.client.repolib import RepoLib
+from pulp.client.credentials import Consumer
 from gofer.agent.action import *
 from gofer.decorators import *
-from M2Crypto import X509
 from yum import YumBase
 
 from logging import getLogger
@@ -48,16 +47,17 @@ class ProfileUpdateAction(Action):
         Looks up the consumer id and latest pkg profile info and cals
         the api to update the consumer profile
         """
-        cid = ConsumerId()
-        if not cid.exists():
+        bundle = Consumer()
+        cid = bundle.getid()
+        if not cid:
             log.error("Not Registered")
             return
         try:
             cconn = ConsumerConnection(host=cfg.server.host or "localhost",
                                        port=cfg.server.port or 443)
             pkginfo = PackageProfile().getPackageList()
-            cconn.profile(cid.read(), pkginfo)
-            log.info("Profile updated successfully for consumer %s" % cid.read())
+            cconn.profile(cid, pkginfo)
+            log.info("Profile updated successfully for consumer %s" % cid)
         except RestlibException, re:
             log.error("Error: %s" % re)
         except Exception, e:
@@ -159,33 +159,6 @@ class Shell:
 @identity
 class PulpIdentity:
 
-    CRTPATH = '/etc/pki/consumer/cert.pem'
-
     def getuuid(self):
-        try:
-            f = open(self.CRTPATH)
-            content = f.read()
-            f.close()
-            x509 = X509.load_cert_string(content)
-            subject = self.subject(x509)
-            return subject['CN']
-        except IOError:
-            pass
-
-    def subject(self, x509):
-        """
-        Get the certificate subject.
-        note: Missing NID mapping for UID added to patch openssl.
-        @return: A dictionary of subject fields.
-        @rtype: dict
-        """
-        d = {}
-        subject = x509.get_subject()
-        subject.nid['UID'] = 458
-        for key, nid in subject.nid.items():
-            entry = subject.get_entries_by_nid(nid)
-            if len(entry):
-                asn1 = entry[0].get_data()
-                d[key] = str(asn1)
-                continue
-        return d
+        bundle = Consumer()
+        return bundle.getid()

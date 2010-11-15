@@ -21,11 +21,10 @@ from gettext import gettext as _
 from optparse import SUPPRESS_HELP
 
 from pulp.client import constants
-from pulp.client import credentials
 from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
-from pulp.client.connection import setup_connection, ConsumerConnection
+from pulp.client.connection import ConsumerConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.package_profile import PackageProfile
@@ -33,8 +32,6 @@ from pulp.client.repolib import RepoLib
 
 
 _cfg = Config()
-#TODO: move this to config
-_consumer_file = "/etc/pulp/consumer"
 
 # base consumer action --------------------------------------------------------
 
@@ -45,12 +42,12 @@ class ConsumerAction(Action):
         self.repolib = RepoLib()
 
     def setup_connections(self):
-        self.cconn = setup_connection(ConsumerConnection)
+        self.cconn = ConsumerConnection()
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
         default = None
-        id = credentials.get_consumer_id()
+        id = self.getconsumerid()
         if id is not None:
             help = SUPPRESS_HELP
             default = id
@@ -136,11 +133,10 @@ class Create(ConsumerAction):
         description = getattr(self.opts, 'description', id)
         consumer = self.cconn.create(id, description)
         cert_dict = self.cconn.certificate(id)
-        certificate = cert_dict['certificate']
         key = cert_dict['private_key']
-        utils.writeToFile(_consumer_file, consumer['id'])
-        utils.writeToFile(ConsumerConnection.CERT_PATH, certificate)
-        utils.writeToFile(ConsumerConnection.KEY_PATH, key)
+        crt = cert_dict['certificate']
+        bundle = ConsumerBundle()
+        bundle.write(key, crt)
         pkginfo = PackageProfile().getPackageList()
         self.cconn.profile(id, pkginfo)
         print _("Successfully created consumer [ %s ]") % consumer['id']
@@ -177,11 +173,11 @@ class Bind(ConsumerAction):
                        help=_("repo identifier (required)"))
 
     def run(self):
+        myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.bind(consumerid, repoid)
-        if credentials.get_consumer_id() and \
-            credentials.get_consumer_id() == consumerid:
+        if myid and myid == consumerid:
             self.repolib.update()
         print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                 (consumerid, repoid)
@@ -197,11 +193,11 @@ class Unbind(ConsumerAction):
                        help=_("repo identifier (required)"))
 
     def run(self):
+        myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.unbind(consumerid, repoid)
-        if credentials.get_consumer_id() and \
-            credentials.get_consumer_id() == consumerid:
+        if myid and myid == consumerid:
             self.repolib.update()
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)

@@ -23,8 +23,7 @@ import time
 from gettext import gettext as _
 
 import pulp.client.constants as constants
-from pulp.client.connection import (
-    setup_connection, ConsumerConnection, RepoConnection)
+from pulp.client.connection import ConsumerConnection, RepoConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.logutil import getLogger
@@ -36,8 +35,8 @@ _log = getLogger(__name__)
 class PackageGroupAction(Action):
 
     def setup_connections(self):
-        self.pconn = setup_connection(RepoConnection)
-        self.cconn = setup_connection(ConsumerConnection)
+        self.pconn = RepoConnection()
+        self.cconn = ConsumerConnection()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -263,12 +262,13 @@ class InfoCategory(PackageGroupAction):
     description = _('lookup information for a package group category')
 
     def setup_parser(self):
-        super(Info, self).setup_parser()
+        self.parser.add_option("--categoryid", dest="categoryid",
+                               help=_("category id (required)"))
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
 
     def run(self):
-        categoryid = self.get_required_option('id')
+        categoryid = self.get_required_option('categoryid')
         repoid = self.get_required_option('repoid')
         cats = self.pconn.packagegroupcategories(repoid)
         if not cats or categoryid not in cats:
@@ -278,14 +278,14 @@ class InfoCategory(PackageGroupAction):
         print_header(_("Package Group Category Information"))
         info = cats[categoryid]
         print constants.PACKAGE_GROUP_CATEGORY_INFO % (
-                info["name"], info["id"])
+                info["name"], info["id"], info["packagegroupids"])
 
 class CreateCategory(PackageGroupAction):
 
     description = _('create a package group category')
 
     def setup_parser(self):
-        self.parser.add_option("--id", dest="id",
+        self.parser.add_option("--categoryid", dest="categoryid",
                                help=_("category id (required)"))
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
@@ -296,7 +296,7 @@ class CreateCategory(PackageGroupAction):
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        categoryid = self.get_required_option('id')
+        categoryid = self.get_required_option('categoryid')
         categoryname = self.get_required_option('name')
         description = self.opts.description
         try:
@@ -318,14 +318,14 @@ class DeleteCategory(PackageGroupAction):
     description = _('delete a package group category')
 
     def setup_parser(self):
-        self.parser.add_option("--id", dest="id",
+        self.parser.add_option("--categoryid", dest="categoryid",
                                help=_("category id (required)"))
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        categoryid = self.get_required_option('id')
+        categoryid = self.get_required_option('categoryid')
         try:
             self.pconn.delete_packagegroupcategory(repoid, categoryid)
         except Exception, e:
@@ -335,6 +335,59 @@ class DeleteCategory(PackageGroupAction):
         else:
             print _("Package group category [%s] deleted from repository [%s]") % \
                 (categoryid, repoid)
+
+class AddGroupToCategory(PackageGroupAction):
+
+    description = _('add package group to an existing package group category')
+
+    def setup_parser(self):
+        super(AddGroupToCategory, self).setup_parser()
+        self.parser.add_option("--categoryid", dest="categoryid",
+                               help=_("category id (required)"))
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        categoryid = self.get_required_option('categoryid')
+        groupid = self.get_required_option('id')
+
+        try:
+            self.pconn.add_packagegroup_to_category(repoid, categoryid, groupid)
+        except Exception, e:
+            _log.error(e)
+            print _("Unable to add group [%s] to category [%s] in repository [%s]") % \
+                    (groupid, categoryid, repoid)
+        else:
+            print _("Package group [%s] added to category [%s] in repository [%s]") % \
+                (groupid, categoryid, repoid)
+
+
+
+class DeleteGroupFromCategory(PackageGroupAction):
+
+    description = _('delete package group from an existing package group category')
+
+    def setup_parser(self):
+        super(DeleteGroupFromCategory, self).setup_parser()
+        self.parser.add_option("--categoryid", dest="categoryid",
+                               help=_("category id (required)"))
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+
+    def run(self):
+        groupid = self.get_required_option('id')
+        repoid = self.get_required_option('repoid')
+        categoryid = self.get_required_option('categoryid')
+        try:
+            self.pconn.delete_packagegroup_from_category(repoid, categoryid, groupid)
+        except Exception, e:
+            _log.error(e)
+            print _("Unable to delete [%s] from category [%s] in repository [%s]") % \
+                    (groupid, categoryid, repoid)
+        else:
+            print _("Group [%s] deleted from category [%s] in repository [%s]") % \
+                    (groupid, categoryid, repoid)
 
 
 # package group command -------------------------------------------------------

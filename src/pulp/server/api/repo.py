@@ -32,7 +32,7 @@ from pulp.server import crontab
 from pulp.server import upload
 from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
-from pulp.server.api.fetch_listings import CDNConnection
+from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
@@ -43,7 +43,6 @@ from pulp.server.event.dispatcher import event
 import pulp.server.logs
 from pulp.server.pexceptions import PulpException
 import pulp.server.util
-from pulp.server.api.fetch_listings import CDNConnection
 from pulp.server.agent import Agent
 from pulp.server.api.distribution import DistributionApi
 log = logging.getLogger(__name__)
@@ -110,7 +109,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               cert_data=None, groupid=None, relative_path=None, gpgkeys=[]):
+               cert_data=None, groupid=[], relative_path=None, gpgkeys=[]):
         """
         Create a new Repository object and return it
         """
@@ -263,7 +262,7 @@ class RepoApi(BaseApi):
         self.addkeys(clone_id, keylist)
         
     @audit()
-    def clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, progress_callback=None, timeout=None):
+    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None, progress_callback=None, timeout=None):
         """
         Run a repo clone asynchronously.
         """
@@ -292,7 +291,7 @@ class RepoApi(BaseApi):
         return cert_files
 
     @audit(params=['groupid', 'content_set'])
-    def create_product_repo(self, content_set, cert_data, groupid=None):
+    def create_product_repo(self, content_set, cert_data, groupid=None, gpg_key_url=None):
         """
          Creates a repo associated to a product. Usually through an event raised
          from candlepin
@@ -312,14 +311,16 @@ class RepoApi(BaseApi):
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
-        repo_info = serv.fetch_urls(content_set)
+        repo_info = serv.fetch_listing(content_set)
+        gpg_key  = serv.fetch_gpgkeys(gpg_key_url)
         for label, uri in repo_info.items():
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
                                    feed="yum:" + CDN_URL + '/' + uri,
-                                   cert_data=cert_data, groupid=groupid,
+                                   cert_data=cert_data, groupid=[groupid],
                                    relative_path=uri)
                 repo['release'] = label.split("-")[-2]
+                self.addkeys(repo['id'], [gpg_key])
                 self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
@@ -348,8 +349,8 @@ class RepoApi(BaseApi):
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
-        repo_info = serv.fetch_urls(content_set)
-
+        repo_info = serv.fetch_listing(content_set)
+        gpg_key  = serv.fetch_gpgkeys(gpg_key_url)
         for label, uri in repo_info.items():
             try:
                 repo = self._get_existing_repo(label)
@@ -360,7 +361,8 @@ class RepoApi(BaseApi):
                         repo[key] = value
                 repo['arch'] = label.split("-")[-1]
                 repo['relative_path'] = uri
-                repo['groupid'] = groupid
+                repo['groupid'] = [groupid]
+                self.addkeys(repo['id'], [gpg_key])
                 self.update(repo)
             except PulpException, pe:
                 log.error(pe)
@@ -383,6 +385,7 @@ class RepoApi(BaseApi):
             return
         
         repos = self.repositories(spec={"groupid" : groupid})
+        log.error("List of repos to be deleted %s" % repos)
         for repo in repos:
             try:
                 self.delete(repo['id'])
@@ -413,6 +416,11 @@ class RepoApi(BaseApi):
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
+        
+        # delete gpg key links
+        path = repo['relative_path']
+        ks = KeyStore(path)
+        ks.clean(True)
         
         #remove any distributions
         for distroid in repo['distributionid']:
@@ -450,6 +458,8 @@ class RepoApi(BaseApi):
                     raise
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
+
+        # delete the object
         self.objectdb.remove({'id' : id}, safe=True)
         
     @audit()
@@ -512,7 +522,7 @@ class RepoApi(BaseApi):
         @rtype: int
         @return: the number of package in the repository corresponding to id
         """
-        return self.repository(id)['package_count']
+        return self.repository(id, fields=["package_count"])['package_count']
 
     def get_package(self, id, name):
         """
@@ -921,8 +931,11 @@ class RepoApi(BaseApi):
                 raise PulpException(
                         "Changes to immutable categories are not supported: %s" \
                                 % (categoryid))
-            repo['packagegroupcategories'].remove(categoryid)
-
+            if groupid not in repo['packagegroupcategories'][categoryid]['packagegroupids']:
+                raise PulpException(
+                        "Group id [%s] is not in category [%s]" % \
+                                (groupid, categoryid))
+            repo['packagegroupcategories'][categoryid]['packagegroupids'].remove(groupid)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -934,7 +947,7 @@ class RepoApi(BaseApi):
                 raise PulpException(
                         "Changes to immutable categories are not supported: %s" \
                                 % (categoryid))
-        repo['packagegroupcategories'][categoryid].append(groupid)
+        repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -1183,6 +1196,18 @@ class RepoApi(BaseApi):
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
+            
+    def list_distributions(self, repoid):
+        '''
+         List distribution in a given repo
+         @param repoid: The repo ID.
+         @return list: distribution objects.
+        '''
+        repo = self._get_existing_repo(repoid)
+        distributions = []
+        for distro in repo['distributionid']:
+            distributions.append(self.distroapi.distribution(distro))
+        return distributions
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

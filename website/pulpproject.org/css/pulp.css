@@ -1,35 +1,36 @@
 
 /* elements ---------------------------------------------------------------- */
 
-* {
-  margin: 0;
-  padding: 0;
-}
-
 a {
   text-decoration: none;
   color: inherit;
 }
 
+a:hover {
+  text-decoration: none;
+}
+
 body {
-  background: #fff url('/images/pulp-content-bg.png') repeat-y left top;
-  color: #333;
-  font: 12pt/14pt "Droid Sans",sans-serif;
+  background: #D7E6F4 url('../images/pulp-page-bg.png') repeat-y center top;
+  color: #111;
+  font: 10pt/16pt "Droid Sans",sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 h1, h2, h3 {
   font-weight: bold;
-  text-shadow: #666 -1px 1px 2px;
+  margin: 0;
 }
 
 h1 {
-  font-size: 2em;
-  line-height: 2em;
+  font-size: 1.7em;
+  line-height: 1.7em;
 }
 
 h2 {
-  font-size: 1.5em;
-  line-height: 1.5em;
+  font-size: 1.3em;
+  line-height: 1.3em;
 }
 
 h3 {
@@ -37,21 +38,34 @@ h3 {
   line-height: 1em;
 }
 
+li {
+  padding-bottom: 4px;
+}
+
 p {
+  margin: 0;
   padding-bottom: 15px;
+}
+
+ul {
+  margin: 0;
 }
 
 /* ids --------------------------------------------------------------------- */
 
+#background {
+  background: #fff url('../images/pulp-content-bg.png') repeat-y center top;
+}
+
 #header {
   height: 210px;
-  background: url('/images/pulp-header.png') no-repeat left top;
+  background: url('../images/pulp-header.png') no-repeat left top;
 }
 
 #logo {
   width: 309px;
   height: 220px;
-  background: url('/images/pulp-logo.png') no-repeat left top;
+  background: url('../images/pulp-logo.png') no-repeat left top;
   position: absolute;
   left: 0px;
   top: 0px;
@@ -60,7 +74,7 @@ p {
 #tagline {
   width: 472px;
   height: 29px;
-  background: url('/images/pulp-juicy-tagline.png') no-repeat left top;
+  background: url('../images/pulp-juicy-tagline.png') no-repeat left top;
   position: absolute;
   left: 240px;
   top: 120px;
@@ -69,18 +83,18 @@ p {
 #redhat {
   width: 276px;
   height: 25px;
-  background: url('/images/pulp-community-website.png') no-repeat left top;
+  background: url('../images/pulp-community-website.png') no-repeat left top;
   position: absolute;
-  left: 720px;
+  left: 690px;
   top: 170px;
 }
 
 #intro {
-  background: url('/images/pulp-intro-bg.png') repeat-x left top;
+  background: url('../images/pulp-intro-bg.png') repeat-x left top;
 }
 
-#intro li {
-  list-style-image: url('/images/bullet-orange.png');
+#intro ul li {
+  list-style-image: url('../images/pulp-bullet-orange.png');
 }
 
 #content {
@@ -88,8 +102,16 @@ p {
 
 /* classes ----------------------------------------------------------------- */
 
+.flt_left {
+  float: left;
+}
+
+.flt_right {
+  float: right;
+}
+
 .larger {
-  font-size: 1.2em;
+  font-size: 1.1em;
 }
 
 .smaller {
@@ -104,8 +126,16 @@ p {
   display: none;
 }
 
+.inline {
+  display: inline;
+}
+
 .justified {
   text-align: justify;
+}
+
+.centered {
+  text-align: center;
 }
 
 .italic {
@@ -114,6 +144,10 @@ p {
 
 .bold {
   font-weight: bold;
+}
+
+.shadow {
+  text-shadow: #999 -1px 1px 2px;
 }
 
 .white {
@@ -125,43 +159,40 @@ p {
 }
 
 .grey {
-  color: #666;
+  color: #333;
+}
+
+.ltgrey {
+  color: #444;
 }
 
 .orange {
-  color: #CE5C00;
+  color: #d06911;
 }
 
 .blue {
-  color: #3465A4;
+  color: #3566a5;
 }
 
 .green {
-  color: #4E9A06;
+  color: #56a111;
 }
 
 .orange-bg {
-  background-color: #F57900;
-  filter: alpha(opacity=50);
-  opacity: 0.5;
+  background-color: #dea95f;
 }
 
 .blue-bg {
-  background-color: #3465A4;
-  filter: alpha(opacity=55);
-  opacity: 0.55;
+  background-color: #6e98c9;
 }
 
 .green-bg {
-  background-color: #73D126;
-  filter: alpha(opacity=65);
-  opacity: 0.65;
+  background-color: #8ad365;
 }
 
 .light-bg {
+/*  background-color: #e5f1fc;*/
   background-color: #fff;
-  filter: alpha(opacity=65);
-  opacity: 0.65;
 }
 
 .region {
@@ -169,4 +200,21 @@ p {
   padding: 15px;
   border-radius: 10px;
   -moz-border-radius: 10px;
+}
+
+.sidebar {
+  margin-left: 20px;
+}
+
+.plain {
+  list-style: none outside;
+}
+
+.avatar {
+  float: left;
+  width: 60px;
+  height: 60px;
+  background-color: #d06911;
+  margin-right: 20px;
+  margin-bottom: 20px;
 }

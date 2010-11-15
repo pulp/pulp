@@ -22,9 +22,7 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client.connection import (
-    setup_connection, SearchConnection, RepoConnection,
-    PackageConnection)
+from pulp.client.connection import SearchConnection, RepoConnection, PackageConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -33,9 +31,9 @@ from pulp.client.core.utils import print_header, system_exit
 class SearchAction(Action):
 
     def setup_connections(self):
-        self.sconn = setup_connection(SearchConnection)
-        self.rconn = setup_connection(RepoConnection)
-        self.pconn = setup_connection(PackageConnection)
+        self.sconn = SearchConnection()
+        self.rconn = RepoConnection()
+        self.pconn = PackageConnection()
 
 # search actions -------------------------------------------------------------
 

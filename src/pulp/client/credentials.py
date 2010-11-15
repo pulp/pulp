@@ -14,141 +14,255 @@
 # in this software or its documentation.
 
 """
-Module for holding and manipulating pulp and end-user credentials
+Module containing classes to manage client credentials.
 """
 
 import os
-import sys
+from pulp.client.config import Config
 from gettext import gettext as _
+from M2Crypto import X509
 
-from pulp.client import auth_utils
-
-
-# TODO make this configurable
-_consumer_id_file = '/etc/pulp/consumer'
-
-_username = None
-_password = None
-_cert_file = None
-_key_file = None
-_local_consumer_id = None
+cfg = Config()
 
 
 class CredentialError(Exception):
     """
-    Error raise when credentials fail to validate
+    Credentials fail to validate
     """
     pass
 
 
-def root_check():
+class Bundle:
     """
-    Simple function to assure execution by root
+    Represents x509, pem encoded key & cert bundles.
     """
-    if os.getuid() == 0:
-        return
-    print >> sys.stderr, _('error: must be root to execute')
-    sys.exit(os.EX_NOUSER)
+
+    def root(self):
+        """
+        Get the bundle I{root} directory.
+        @return: An absolute path.
+        @rtype: str
+        """
+        pass
+
+    def keypath(self):
+        """
+        Get the absolute path to the private key file.
+        @return: Absolute path to the private key.
+        @rtype: str
+        """
+        pass
+
+    def crtpath(self):
+        """
+        Get the absolute path to the certificate file.
+        @return: Absolute path to certificate.
+        @rtype: str
+        """
+        pass
+
+    def valid(self):
+        """
+        Validate the bundle.
+        @return: True if exists & valid.
+        @rtype: bool
+        """
+        validkey = os.path.exists(self.keypath())
+        validcrt = os.path.exists(self.crtpath())
+        return ( validkey and validcrt )
+
+    def write(self, key, crt):
+        """
+        Write the specified I{key} & I{crt} bundle.
+        @param key: The PEM text for the private key.
+        @type key: str
+        @param crt: The PEM text for the cert.
+        @type crt: str
+        """
+        self.mkdir()
+        f = open(self.keypath(), 'w')
+        f.write(key)
+        f.close()
+        f = open(self.crtpath(), 'w')
+        f.write(crt)
+        f.close()
+
+    def delete(self):
+        """
+        Delete the bundle.
+        """
+        for path in (self.keypath(), self.crtpath()):
+            try:
+                os.unlink(path)
+            except:
+                pass
+
+    def mkdir(self):
+        """
+        Ensure I{root} directory exists.
+        """
+        path = self.root()
+        if not os.path.exists(path):
+            os.makedirs(path)
 
 
-def get_username_password():
+class Login(Bundle):
     """
-    Get username and password credentials
-    @rtype: tuple of None(s) or str's
-    @return: username and password
+    The bundle for logged in user.
     """
-    return (_username, _password)
+
+    ROOT = '~/.pulp'
+    KEY = 'user-key.pem'
+    CRT = 'user-cert.pem'
+
+    def root(self):
+        return os.path.expanduser(self.ROOT)
+
+    def keypath(self):
+        return os.path.join(self.root(), self.KEY)
+
+    def crtpath(self):
+        return os.path.join(self.root(), self.CRT)
 
 
-def set_username_password(username, password):
+class Consumer(Bundle):
     """
-    Set username and password credentials
-    @type username: str
-    @param username: pulp username
-    @type password: str
-    @param password: pulp password
+    The bundle for the consumer.
     """
-    global _username, _password
-    assert None not in (username, password)
-    _username = username
-    _password = password
+
+    ROOT = '/etc/pki/consumer'
+    KEY = 'key.pem'
+    CRT = 'cert.pem'
+
+    def root(self):
+        return self.ROOT
+
+    def keypath(self):
+        return os.path.join(self.root(), self.KEY)
+
+    def crtpath(self):
+        return os.path.join(self.root(), self.CRT)
+
+    def getid(self):
+        """
+        Get the consumer ID.
+        @return: The consumer ID.
+        @rtype: str
+        """
+        try:
+            f = open(self.crtpath())
+            content = f.read()
+            f.close()
+            x509 = X509.load_cert_string(content)
+            subject = self.subject(x509)
+            return subject['CN']
+        except IOError:
+            pass
+
+    def subject(self, x509):
+        """
+        Get the certificate subject.
+        note: Missing NID mapping for UID added to patch openssl.
+        @return: A dictionary of subject fields.
+        @rtype: dict
+        """
+        d = {}
+        subject = x509.get_subject()
+        subject.nid['UID'] = 458
+        for key, nid in subject.nid.items():
+            entry = subject.get_entries_by_nid(nid)
+            if len(entry):
+                asn1 = entry[0].get_data()
+                d[key] = str(asn1)
+                continue
+        return d
 
 
-def get_cert_key_files():
+class Manual:
     """
-    Get certificate and private file paths
-    @rtype: tuple of str's
-    @return: file paths for cert and key credentials
+    A manually defined bundle.
+    Usually passed as parameters to the CLI.
     """
-    return (_cert_file, _key_file)
+
+    __keypath = None
+    __crtpath = None
+
+    @classmethod
+    def set(self, key, crt):
+        self.__keypath = key
+        self.__crtpath = crt
+
+    def keypath(self):
+        return self.__keypath
+
+    def crtpath(self):
+        return self.__crtpath
+
+    def valid(self):
+        return ( self.__keypath and self.__crtpath )
 
 
-def set_cert_key_files(cert_file, key_file):
+class Credentials:
     """
-    Set the paths to the certificate and private key files
-    @type cert_file: str
-    @param cert_file: path to certificate file 
-    @type key_file: str
-    @param key_file: path to private key file
+    Represents the client credentials.
     """
-    global _cert_file, _key_file
-    assert None not in (cert_file, key_file)
-    _cert_file = cert_file
-    _key_file = key_file
 
+    __userid = None
+    __password = None
 
-def set_local_cert_key_files():
-    """
-    Method to set the certificate and key file paths to their local defaults
-    """
-    global _cert_file, _key_file
-    _cert_file, _key_file = auth_utils.admin_cert_paths()
+    @classmethod
+    def setuser(cls, userid=None, password=None):
+        """
+        Set the current logged in user credentials.
+        @param userid: The user name.
+        @type userid: str
+        @param password: The password
+        @type password: str
+        """
+        cls.__userid = userid
+        cls.__password = password
 
+    @classmethod
+    def setcert(cls, keypath=None, crtpath=None):
+        """
+        Overrides certificate credentials.
+        @param keypath: The abolute path to a private key.
+        @type keypath: str
+        @param crtpath: The absolute path to a cert.
+        @type crtpath: str
+        """
+        Manual.set(keypath, crtpath)
 
-def get_credentials():
-    """
-    """
-    # a provided username and password will override cert and key files
-    username, password = get_username_password()
-    cert_file = key_file = None
-    if None in (username, password):
-        username = password = None
-        if None in get_cert_key_files():
-            set_local_cert_key_files()
-        cert_file, key_file = get_cert_key_files()
-    # make sure there is one valid set of credentials
-    if None in (username, password) and None in (cert_file, key_file):
-        raise CredentialError(_('no pulp credentials found'))
-    # check to see if we can access the cert and key files
-    if cert_file is not None and not os.access(cert_file, os.F_OK | os.R_OK):
-        raise CredentialError(_('cannot read cert file: %s') % cert_file)
-    if key_file is not None and not os.access(key_file, os.F_OK | os.R_OK):
-        raise CredentialError(_('cannot read key file: %s') % cert_file)
-    return (username, password, cert_file, key_file)
+    def best(self):
+        """
+        Get the best available credentials.
+        @return: Tuple: (userid,pwd,keypath,crtpath)
+        @rtype: tuple.
+        """
+        if not self.__userid or not self.__password:
+            key, crt = self.__bestbundle()
+        else:
+            key, crt = (None, None)
+        credentials = (self.__userid, self.__password, key, crt)
+        self.validate(credentials)
+        return credentials
 
+    def validate(self, credentials):
+        """
+        Validate credentials.
+        Must have either valid userid/password OR valid key,crt.
+        @raise CredentialsError: When credentials insufficient.
+        """
+        userid, password, key, crt = credentials
+        if userid and password:
+            return
+        if key and crt:
+            return
+        raise CredentialError, _('No valid credentials found')
 
-def get_consumer_id():
-    """
-    Get the local consumer id
-    @rtype: str or None
-    @return: consumer id
-    """
-    return _local_consumer_id
-
-
-def set_local_consumer_id():
-    """
-    Set the local consumer id for a registered client
-    @rtype: bool
-    @return: True if client is registered and can read the id, False otherwise
-    """
-    global _local_consumer_id
-    if not os.access(_consumer_id_file, os.F_OK | os.R_OK):
-        return False
-    try:
-        _local_consumer_id = file(_consumer_id_file, 'r').read()
-    except IOError, e:
-        # TODO log the error
-        raise
-    else:
-        return True
+    def __bestbundle(self):
+        for bclass in (Manual, Login, Consumer):
+            b = bclass()
+            if b.valid():
+                return (b.keypath(), b.crtpath())
+        return (None, None)

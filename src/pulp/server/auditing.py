@@ -89,7 +89,11 @@ class MethodInspector(object):
         if 'self' in args:
             args.remove('self')
 
-        self.params = params if params is not None else list(args)
+        if params is not None:
+            self.params = params
+        else:
+            self.params = list(args)
+        #self.params = params if params is not None else list(args)
 
         self.__param_to_index = dict((a, i + 1) for i, a in
                                      enumerate(args)
@@ -200,7 +204,10 @@ def audit(params=None, record_result=False):
                 _record_event()
                 raise
             else:
-                event.result = audit_repr(result) if record_result else None
+                if record_result:
+                    event.result = audit_repr(result)
+                else:
+                    event.result = None
                 _record_event()
                 return result
 
@@ -301,7 +308,11 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
         timestamp_range['$gt'] = lower_bound
     if upper_bound is not None:
         timestamp_range['$lt'] = upper_bound
-    spec = {'timestamp': timestamp_range} if timestamp_range else None
+    if timestamp_range:
+        spec = {'timestamp': timestamp_range}
+    else:
+        spec = None
+    #spec = {'timestamp': timestamp_range} if timestamp_range else None
     return events(spec, fields, limit, errors_only)
 
 

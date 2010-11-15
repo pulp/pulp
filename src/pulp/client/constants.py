@@ -25,6 +25,7 @@ Arch               \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s
 Files              \t%-25s
+Distributions      \t%-25s
 Publish            \t%-25s
 Clones             \t%-25s
 """
@@ -64,6 +65,12 @@ Optional packages   \t%-25s
 Conditional packages\t%-25s
 """
 
+PACKAGE_GROUP_CATEGORY_INFO = """
+Name                \t%-25s
+Id                  \t%-25s
+Groups              \t%-25s
+"""
+
 
 AVAILABLE_USERS_LIST = """
 Login :               \t%-25s    
@@ -82,6 +89,20 @@ Release               \t%-25s
 Status                \t%-25s
 Packages Effected     \t%-25s
 References            \t%-25s
+"""
+
+DISTRO_LIST = """
+Id                    \t%-25s
+Description           \t%-25s 
+URL                   \t%-25s
+"""
+
+DISTRO_INFO = """
+Id                    \t%-25s
+Description           \t%-25s 
+URL                   \t%-25s
+Files                 \t%-25s
+relativepath          \t%-25s
 """
 
 # The quotes are intentionally placed odd on the consumer history constants to

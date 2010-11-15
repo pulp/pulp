@@ -17,7 +17,8 @@
 
 from pulp.client.cli.base import PulpCLI
 from pulp.client.core import (
-    auth, consumer, consumergroup, errata, package, packagegroup, repo, user, search)
+    auth, consumer, consumergroup, errata, package, 
+    packagegroup, repo, user, search, distribution)
 
 def setup_admin(admin):
     auth_cmd = auth.Auth()
@@ -28,9 +29,7 @@ def setup_admin(admin):
     consumer_cmd = consumer.Consumer()
     consumer_cmd.add_action('list', consumer.List())
     consumer_cmd.add_action('info', consumer.Info())
-    consumer_cmd.add_action('create', consumer.Create())
     consumer_cmd.add_action('delete', consumer.Delete())
-    consumer_cmd.add_action('update', consumer.Update())
     consumer_cmd.add_action('bind', consumer.Bind())
     consumer_cmd.add_action('unbind', consumer.Unbind())
     consumer_cmd.add_action('add_keyvalue', consumer.AddKeyValue())
@@ -76,6 +75,8 @@ def setup_admin(admin):
     packagegroup_cmd.add_action('info_category', packagegroup.InfoCategory())
     packagegroup_cmd.add_action('create_category', packagegroup.CreateCategory())
     packagegroup_cmd.add_action('delete_category', packagegroup.DeleteCategory())
+    packagegroup_cmd.add_action('add_group', packagegroup.AddGroupToCategory())
+    packagegroup_cmd.add_action('delete_group', packagegroup.DeleteGroupFromCategory())
     admin.add_command('packagegroup', packagegroup_cmd)
 
     repo_cmd = repo.Repo()
@@ -104,6 +105,11 @@ def setup_admin(admin):
     search_cmd = search.Search()
     search_cmd.add_action('packages', search.Packages())
     admin.add_command('search', search_cmd)
+    
+    distro_cmd = distribution.Distribution()
+    distro_cmd.add_action('list', distribution.List())
+    distro_cmd.add_action('info', distribution.Info())
+    admin.add_command('distribution', distro_cmd)
 
 if __name__ == "__main__":
     admin = PulpCLI()

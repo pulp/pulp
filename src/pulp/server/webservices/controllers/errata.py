@@ -72,15 +72,6 @@ class Errata(JSONController):
         # creation, this is the start of supporting both
         return self.PUT()
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def DELETE(self):
-        """
-        @return: True on successful deletion of all users
-        """
-        api.clean()
-        return self.ok(True)
-
 
 class Erratum(JSONController):
 

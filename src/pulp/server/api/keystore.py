@@ -100,14 +100,18 @@ class KeyStore:
             linked.append(entry)
         return linked
 
-    def clean(self):
+    def clean(self, all=False):
         """
-        Remove links.
+        Remove all of the links.
+        @param all: Indicates the I{link} directory is to be removed.
+        @type all: bool
         """
         dir = os.path.join(lnkdir(), self.path)
         for fn in os.listdir(dir):
             path = os.path.join(dir, fn)
             self.unlink(path)
+        if all:
+            self.unlink(dir)
 
     def keyfiles(self):
         """
@@ -162,15 +166,16 @@ class KeyStore:
         """
         try:
             log.info('unlinking: %s', path)
-            os.unlink(path)
+            if os.path.isdir(path):
+                os.rmdir(path)
+            else:
+                os.unlink(path)
         except:
             log.error(path, exc_info=True)
 
     def mkdir(self):
         """
-        Ensure the directory at I{path} exists.
-        @param path: An absolute (directory) path.
-        @type path: str
+        Ensure the key and link directories exist.
         """
         for root in (keydir(), lnkdir()):
             path = os.path.join(root, self.path)

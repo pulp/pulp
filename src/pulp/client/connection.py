@@ -30,42 +30,18 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
-from pulp.client import credentials
+from pulp.client.credentials import Credentials
 from pulp.client.config import Config
 from pulp.client.logutil import getLogger
 
 
-_cfg = Config()
+cfg = Config()
 log = getLogger(__name__)
 
 consumer_deferred_fields = ['package_profile', 'repoids']
 package_deferred_fields = []
 repository_deferred_fields = ['packages', 'packagegroups', 'packagegroupcategories']
 
-
-def setup_connection(connection_class):
-    """
-    Factory method that instantiates the connection class with the credentials
-    from the credentials module
-    @type connections_class: PulpConnection class
-    @param connection_class: pulp connection class to instantiate
-    @rtype: PulpConnection instance
-    @return: instance of the pulp connection class
-    """
-    username, password, cert_file, key_file = credentials.get_credentials()
-    return connection_class(host=_cfg.server.host or 'localhost',
-                            port=_cfg.server.port or 443,
-                            username=username,
-                            password=password,
-                            cert_file=cert_file,
-                            key_file=key_file)
-
-
-def realpath(path):
-    if os.path.exists(path):
-        return path
-    else:
-        return None
 
 
 class RestlibException(Exception):
@@ -156,25 +132,27 @@ class Restlib(object):
     def request_delete(self, method):
         return self._request("DELETE", method)
 
+
 class PulpConnection:
     """
     Proxy connection to Pulp Server
     """
 
-    CERT_PATH = "/etc/pki/consumer/cert.pem"
-    KEY_PATH = "/etc/pki/consumer/key.pem"
+    HANDLER = "/pulp/api"
+    HOST = cfg.server.host
+    PORT = cfg.server.port
 
-    def __init__(self, host='localhost', port=443, handler="/pulp/api",
-            cert_file=realpath(CERT_PATH), key_file=realpath(KEY_PATH),
-            username=None, password=None):
+    def __init__(self, host=HOST, port=PORT):
         self.host = host
         self.port = port
-        self.handler = handler
+        self.handler = self.HANDLER
         self.conn = None
-        self.cert_file = cert_file
-        self.key_file = key_file
-        self.username = username
+        credentials = Credentials()
+        userid, password, key, crt = credentials.best()
+        self.username = userid
         self.password = password
+        self.key_file = key
+        self.cert_file = crt
         # initialize connection
         self.setUp()
 
@@ -389,6 +367,10 @@ class RepoConnection(PulpConnection):
     def update_publish(self, id, state):
         method = "/repositories/%s/update_publish/" % id
         return self.conn.request_post(method, params={"state":state})
+    
+    def list_distribution(self, id):
+        method = "/repositories/%s/list_distribution/" % id
+        return self.conn.request_post(method, params={'id':id})
 
 
 class ConsumerConnection(PulpConnection):
@@ -675,7 +657,21 @@ class ErrataConnection(PulpConnection):
             release=None, type=None, status=None, updated=None, issued=None,
             pushcount=None, from_str=None, reboot_suggested=None):
         pass
-
+    
+class DistributionConnection(PulpConnection):
+    """
+    Connection class to access distribution related calls
+    """
+    def clean(self):
+        pass
+    
+    def distributions(self):
+        method = '/distribution/'
+        return self.conn.request_get(method)
+    
+    def distribution(self, id):
+        method = '/distribution/%s/' % str(id)
+        return self.conn.request_get(method)
 
 class SearchConnection(PulpConnection):
     """
