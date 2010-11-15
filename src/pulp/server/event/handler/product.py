@@ -93,8 +93,10 @@ class ProductEvent(EventHandler):
                        'cert' : event['entitlement_cert'],
                        'key'  : event['cert_public_key'],
                        }
+        gpg_key_url = event['gpg_key_url']
         log.error("Repo event data %s %s %s" % (product_name, content_sets, cert_data))
-        self.rapi.create_product_repo(content_sets, cert_data, groupid=product_name)
+        self.rapi.create_product_repo(content_sets, cert_data, groupid=product_name, 
+                                      gpg_key_url=gpg_key_url)
 
     @inbound(action='updated')
     def updated(self, event):

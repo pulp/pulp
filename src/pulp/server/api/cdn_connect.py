@@ -18,6 +18,7 @@
 
 import logging
 from M2Crypto import SSL, httpslib
+import os
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class CDNConnection:
             raise Exception(response.status, response.read())
         return response.read()
     
-    def fetch_urls(self, content_sets):
+    def fetch_listing(self, content_sets):
         version_arch_urls = {}
         for content_set in content_sets:
             label = content_set['content_set_label']
@@ -72,7 +73,15 @@ class CDNConnection:
             except Exception:
                 log.error("Unable to fetch the listings file for relative url %s" % uri)
         return version_arch_urls
-
+    
+    def fetch_gpgkeys(self, key_uri):
+        gpg_key_name = os.path.basename(key_uri)
+        try:
+            gpg_key_data = self._request_get(key_uri)
+        except Exception:
+            log.error("Unable to fetch the gpg key info for %s" % key_uri)
+        return (gpg_key_name, gpg_key_data)
+    
     def disconnect(self):
         self.httpServ.close()
         
