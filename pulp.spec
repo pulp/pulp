@@ -194,15 +194,6 @@ setfacl -m u:apache:rwx /etc/pki/content/
 * Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.90-1
 - Fixing build error because of missing @handler (skarmark@redhat.com)
 
-* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.89-1
-- 
-
-* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.88-1
-- 
-
-* Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.87-1
-- 
-
 * Fri Nov 12 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.86-1
 - Removing python2.6 syntax from pulp code (skarmark@redhat.com)
 
