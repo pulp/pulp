@@ -70,7 +70,6 @@ def sync(repo, repo_source, progress_callback=None):
         raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
     synchronizer = type_classes[source_type]()
     repo_dir = synchronizer.sync(repo, repo_source, progress_callback)
-    synchronizer.add_keys_from_dir(repo_dir, repo)
     return synchronizer.add_packages_from_dir(repo_dir, repo)
 
 
@@ -216,23 +215,6 @@ class BaseSynchronizer(object):
         link_path = os.path.join(distro_path, repo["relative_path"])
         pulp.server.util.create_symlinks(source_path, link_path)
         log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
-
-    
-    def add_keys_from_dir(self, dir, repo):
-        """
-        Add GPG keys.
-        Keys found in the I{dir} are associated to the specified I{repo}.
-        @param dir: The repo directory.
-        @type dir: str
-        @param repo: A repo domain object.
-        @type repo: dict
-        @return: The updated repo.
-        @rtype: dict
-        """
-        path = repo['relative_path']
-        keystore = KeyStore(path)
-        keystore.relink()
-        return repo
 
     def import_package(self, package, repo, repo_defined=False):
         """
