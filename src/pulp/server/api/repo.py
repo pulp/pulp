@@ -417,6 +417,11 @@ class RepoApi(BaseApi):
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
         
+        # delete gpg key links
+        path = repo['relative_path']
+        ks = KeyStore(path)
+        ks.clean(True)
+        
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
@@ -453,6 +458,8 @@ class RepoApi(BaseApi):
                     raise
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
+
+        # delete the object
         self.objectdb.remove({'id' : id}, safe=True)
         
     @audit()
