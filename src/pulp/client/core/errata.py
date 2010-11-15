@@ -48,7 +48,7 @@ class List(ErrataAction):
     def setup_parser(self):
         default = None
         help = _('consumer id (required)')
-        consumerid = self.getid()
+        consumerid = self.getconsumerid()
         if consumerid is not None:
             default = consumerid
             help = SUPPRESS_HELP

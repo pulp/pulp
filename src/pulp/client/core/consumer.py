@@ -21,7 +21,6 @@ from gettext import gettext as _
 from optparse import SUPPRESS_HELP
 
 from pulp.client import constants
-from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.config import Config
@@ -48,15 +47,11 @@ class ConsumerAction(Action):
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
         default = None
-        id = self.getid()
+        id = self.getconsumerid()
         if id is not None:
             help = SUPPRESS_HELP
             default = id
         self.parser.add_option("--id", dest="id", default=default, help=help)
-
-    def getid(self):
-        bundle = ConsumerBundle()
-        return bundle.getid()
 
 # consumer actions ------------------------------------------------------------
 
@@ -178,11 +173,11 @@ class Bind(ConsumerAction):
                        help=_("repo identifier (required)"))
 
     def run(self):
+        myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.bind(consumerid, repoid)
-        if self.getid() and \
-            self.getid() == consumerid:
+        if myid and myid == consumerid:
             self.repolib.update()
         print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                 (consumerid, repoid)
@@ -198,11 +193,11 @@ class Unbind(ConsumerAction):
                        help=_("repo identifier (required)"))
 
     def run(self):
+        myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.cconn.unbind(consumerid, repoid)
-        if self.getid() and \
-            self.getid() == consumerid:
+        if myid and myid == consumerid:
             self.repolib.update()
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
