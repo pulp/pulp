@@ -268,17 +268,16 @@ class RoleActionType(object):
 class RoleResourceType(object):
     REPO = 'REPO'
     CONSUMER = 'CONSUMER'
-    PACKAGE = 'PACKAGE'
     USER = 'USER'
-    
+    REPO_GROUP = 'REPO_GROUP'
+    CONSUMER_GROUP = 'CONSUMER_GROUP'
     
 class Permission(Base):
-    def __init__(self, instance, user = None, role = None):
+    def __init__(self, instance, user_login = None, role_id = None):
         Base.__init__(self)
-        self.role = role
         self.instance = instance
-        self.user = user
-        if (not self.user and not self.role):
-            raise ValueError("User or Role must be specified, both are None")
-
+        self.user_login = user_login
+        self.role_id = role_id
+        if (not self.user_login and not self.role_id):
+            raise ValueError("user_login or role_id must be specified, both are None")
 

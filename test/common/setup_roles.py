@@ -37,7 +37,15 @@ userapi = UserApi()
 roleapi.clean()
 repoapi.clean()
 
+# Reset Admin Roles
+admin = userapi.user('admin')
+admin['roles'] = {}
+userapi.update(admin)
+
 repo = repoapi.create('perm-test-repo', 'perm-test', 'i386')
+
+if not userapi.user('non-admin'):
+    non_admin = userapi.create('non-admin', 'password', 'Non Admin')
 
 desc = 'Repository Administrator Role'
 action_type = [RoleActionType.CREATE, RoleActionType.WRITE, RoleActionType.READ]
@@ -47,7 +55,8 @@ role = roleapi.create('repo-admin', desc, action_type, resource_type)
 
 admin = userapi.user('admin')
 
-roleapi.add_instance(repo['id'], role['name'])
+role = roleapi.add_instance(repo['id'], role['name'])
 
 roleapi.add_user(role, admin)
 
+print "Admin roles: %s" % admin['roles']

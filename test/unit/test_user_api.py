@@ -105,6 +105,13 @@ class TestUsers(unittest.TestCase):
         self.assertTrue(user is not None)
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
+        
+        # Verify an update with existing password doesn't double-hash the
+        # password.
+        user = self.uapi.user(login)
+        existing_password = user['password']
+        updated = self.uapi.update(user)
+        self.assertEqual(updated['password'], existing_password)
 
         
 

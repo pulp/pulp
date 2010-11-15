@@ -62,11 +62,18 @@ class UserApi(BaseApi):
     @audit(params=['user'])
     def update(self, user):
         """
-        Update a user and hash the inbound password
+        Update a user and hash the inbound password if it is different
+        from the existing password
         """
+        old_user = self.user(user['login'])
         password = user['password']
-        if (password is not None):
-            user['password'] = password_util.hash_password(password)
+        if password is not None:
+            print "Pass not none."
+            if password == old_user['password']:
+                user['password'] = old_user['password']
+            else:
+                user['password'] = password_util.hash_password(password)
+                
         BaseApi.update(self, user)
         return user
 

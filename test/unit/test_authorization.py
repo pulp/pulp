@@ -106,11 +106,11 @@ class TestAuthorization(unittest.TestCase):
         self.assertTrue(len(role['permissions']) > 0)
         perm = role['permissions'][0]
         self.assertTrue(perm)
-        self.assertTrue(perm['role'] == role)
+        self.assertTrue(perm['role_id'] == role['id'])
         self.assertTrue(perm['instance'] == repo)
         
         perm = self.permapi.create_with_user(repo, user)
-        self.assertTrue(perm['user'] == user)
+        self.assertTrue(perm['user_login'] == user['login'])
         
     
     def test_permission_constructor(self):

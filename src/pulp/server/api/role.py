@@ -105,13 +105,14 @@ class RoleApi(BaseApi):
         owned by this Role 
         """
         roles = user['roles']
+        print "Roles: %s" % roles
         if (not roles.has_key(role['name'])):
             log.debug("Adding role!")
             roles[role['name']] = role
             self.userapi.update(user)
         users = role['users']
         if (users.count(user) == 0):
-            users.append(user)
+            users.append(user['login'])
             self.update(role)
         
     def check(self, user, object, resource_type, action_type):
@@ -120,24 +121,27 @@ class RoleApi(BaseApi):
         on the object you pass in.  This method is currently very inefficent 
         and will be improved as time goes on.
         """
+        log.error("User in check(): %s"  % user)
         roles = user['roles'].values()
         for role in roles:
-            log.debug('Resource_type: %s' % resource_type)
-            log.debug('Role: %s' % role)
-            log.debug('role[resource_type]: %s' % role['resource_type'])
+            log.info('Resource_type: %s' % resource_type)
+            log.info('Role: %s' % role)
+            log.info('role[resource_type]: %s' % role['resource_type'])
             # First check if Role is the right object type 
             object_match = False
             if role['resource_type'] == resource_type:
                 action_types = role['action_types']
-                log.debug("action_types: %s" % action_types)
+                log.info("action_types: %s" % action_types)
                 if (action_types.count(action_type) > 0):
                     action_match = True
                 permissions = role['permissions']
-                log.debug("Permissions: %s" % permissions)
+                log.info("Permissions: %s" % permissions)
                 for perm in permissions:
-                    if (perm['instance'] == object):
+                    log.info("Instance: %s" % perm['instance'])
+                    log.info("object: %s" % object)
+                    if (perm['instance']['id'] == object['id']):
                         object_match = True
-                log.debug("Action_match: %s , object_match: %s" % (action_match, object_match))
+                log.info("Action_match: %s , object_match: %s" % (action_match, object_match))
                 return (action_match and object_match)
         return False
         
@@ -160,7 +164,7 @@ class PermissionApi(BaseApi):
         """
         Create a new Permission object and return it
         """
-        permission = model.Permission(instance, role=role)
+        permission = model.Permission(instance, role_id=role['id'])
         self.insert(permission)
         return permission
 
@@ -168,7 +172,7 @@ class PermissionApi(BaseApi):
         """
         Create a new Permission object and return it
         """
-        permission = model.Permission(instance, user=user)
+        permission = model.Permission(instance, user_login=user['login'])
         self.insert(permission)
         return permission
 

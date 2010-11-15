@@ -27,9 +27,13 @@ import web
 import pulp.server.auth.auth as principal
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.role import RoleApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.auth.certificate import Certificate
 import pulp.server.auth.password_util as password_util
 import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.db.model import RoleActionType
+from pulp.server.db.model import RoleResourceType
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.config import config
@@ -41,6 +45,8 @@ from pulp.server.db.model import User
 LOG = logging.getLogger(__name__)
 USER_API = UserApi()
 CONSUMER_API = ConsumerApi()
+ROLE_API = RoleApi()
+REPO_API = RepoApi()
 
 # decorator--------------------------------------------------------------------
 
@@ -75,13 +81,13 @@ class RoleCheck(object):
                 roles[key] = self.dec_kw[key]
             
             user = None
-
+            LOG.error("in role_check")
             # Admin role trumps any other checking
             if roles['admin']:
                 # If not using cert check uname and password
                 try:
                     user = self.check_admin(*fargs)
-                    principal.set_principal(user)                    
+                    LOG.error("User: %s" % user)
                 except PulpException, pe:
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
@@ -90,7 +96,16 @@ class RoleCheck(object):
             # Consumer role checking
             if not user and (roles['consumer'] or roles['consumer_id']):
                 user = self.check_consumer(roles['consumer_id'], *fargs)
-
+                
+            # Check the Roles assigned to the User. Demo code
+            # repo = REPO_API.repository(fargs[1])
+            # LOG.error("REPO: %s" % repo)
+            # LOG.error("User: %s" % user)
+            # if (not ROLE_API.check(user, repo, RoleResourceType.REPO,
+            #                               RoleActionType.READ)):
+            #    LOG.error("Failed check!")
+            #    user = None
+            
             # Process the results of the auth checks
             if not user:
                 http.status_unauthorized()
@@ -126,6 +141,9 @@ class RoleCheck(object):
         '''
 
         return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
+                
+    
+    
 
     def check_admin_cert(self, *fargs):
         '''
