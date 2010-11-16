@@ -27,8 +27,10 @@ from pulp.client.config import Config
 from pulp.client.connection import ConsumerConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
+from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
+
 
 
 _cfg = Config()
