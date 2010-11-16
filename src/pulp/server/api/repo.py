@@ -312,7 +312,7 @@ class RepoApi(BaseApi):
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
-        gpg_key  = serv.fetch_gpgkeys(gpg_key_url)
+        gpg_keys  = serv.fetch_gpgkeys(gpg_key_url)
         for label, uri in repo_info.items():
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
@@ -320,7 +320,7 @@ class RepoApi(BaseApi):
                                    cert_data=cert_data, groupid=[groupid],
                                    relative_path=uri)
                 repo['release'] = label.split("-")[-2]
-                self.addkeys(repo['id'], [gpg_key])
+                self.addkeys(repo['id'], gpg_keys)
                 self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
@@ -329,7 +329,7 @@ class RepoApi(BaseApi):
         serv.disconnect()
         
     @audit(params=['groupid', 'content_set'])
-    def update_product_repo(self, content_set, cert_data, groupid=None):
+    def update_product_repo(self, content_set, cert_data, groupid=None, gpg_key_url=[]):
         """
          Creates a repo associated to a product. Usually through an event raised
          from candlepin
@@ -350,7 +350,7 @@ class RepoApi(BaseApi):
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
-        gpg_key  = serv.fetch_gpgkeys(gpg_key_url)
+        gpg_keys  = serv.fetch_gpgkeys(gpg_key_url)
         for label, uri in repo_info.items():
             try:
                 repo = self._get_existing_repo(label)
@@ -362,7 +362,7 @@ class RepoApi(BaseApi):
                 repo['arch'] = label.split("-")[-1]
                 repo['relative_path'] = uri
                 repo['groupid'] = [groupid]
-                self.addkeys(repo['id'], [gpg_key])
+                self.addkeys(repo['id'], gpg_keys)
                 self.update(repo)
             except PulpException, pe:
                 log.error(pe)

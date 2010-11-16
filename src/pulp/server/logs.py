@@ -56,11 +56,22 @@ def configure_pulp_grinder_logging():
                                                 maxBytes=max_size,
                                                 backupCount=backups)
     pulp_handler.setFormatter(formatter)
+    
 
-    for pkg in ('pulp', 'qpid', 'gofer'):
+    for pkg in ('pulp', 'gofer'):
         logger = logging.getLogger(pkg)
         logger.setLevel(level)
         logger.addHandler(pulp_handler)
+
+    #
+    # Qpid - qpid debug is very verbose, so break this out so we
+    # we can enable pulp in debug and not be forced to have qpid in debug
+    #
+    qpid_level_name = config.config.get('logs', 'qpid_log_level').upper()
+    qpid_level = getattr(logging, qpid_level_name, logging.INFO)
+    logger = logging.getLogger('qpid')
+    logger.setLevel(qpid_level)
+    logger.addHandler(pulp_handler)
 
     #
     # Grinder

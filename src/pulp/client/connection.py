@@ -463,6 +463,11 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installpackagegroups/" % id
         body = dict(packageids=packageids)
         return self.conn.request_post(method, params=body)
+    
+    def installpackagegroupcategories(self, id, repoid, categoryids):
+        method = "/consumers/%s/installpackagegroupcategories/" % id
+        body = dict(categoryids=categoryids, repoid=repoid)
+        return self.conn.request_post(method, params=body)
 
     def errata(self, id, types=None):
         method = "/consumers/%s/listerrata/" % id

@@ -22,6 +22,7 @@ import web
 
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
+from pulp.server.api.repo import RepoApi
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -31,6 +32,7 @@ from pulp.server.webservices.role_check import RoleCheck
 
 consumer_api = ConsumerApi()
 history_api = ConsumerHistoryApi()
+repo_api = RepoApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
@@ -244,6 +246,7 @@ class ConsumerActions(AsyncController):
         'profile',
         'installpackages',
         'installpackagegroups',
+        'installpackagegroupcategories',
         'listerrata',
         'installerrata',
         'history',
@@ -253,6 +256,7 @@ class ConsumerActions(AsyncController):
     def bind(self, id):
         """
         Bind (subscribe) a user to a repository.
+        @type id: str
         @param id: consumer id
         """
         data = self.params()
@@ -263,6 +267,7 @@ class ConsumerActions(AsyncController):
     def unbind(self, id):
         """
         Unbind (unsubscribe) a user to a repository.
+        @type id: str
         @param id: consumer id
         """
         data = self.params()
@@ -273,6 +278,7 @@ class ConsumerActions(AsyncController):
     def add_key_value_pair(self, id):
         """
         Add key-value information to consumer.
+        @type id: str
         @param id: consumer id
         
         """
@@ -290,6 +296,7 @@ class ConsumerActions(AsyncController):
     def delete_key_value_pair(self, id):
         """
         Delete key-value information from consumer.
+        @type id: str
         @param id: consumer id
         
         """
@@ -307,6 +314,7 @@ class ConsumerActions(AsyncController):
     def update_key_value_pair(self, id):
         """
         Update key-value information of a consumer.
+        @type id: str
         @param id: consumer id
         
         """
@@ -324,6 +332,8 @@ class ConsumerActions(AsyncController):
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
+        @type id: str
+        @param id: consumer id
         """
         log.debug("consumers.py profile() with id: %s" % id)
         consumer_api.profile_update(id, self.params())
@@ -334,6 +344,8 @@ class ConsumerActions(AsyncController):
         """
         Install packages.
         Body contains a list of package names.
+        @type id: str
+        @param id: consumer id
         """
         data = self.params()
         names = data.get('packagenames', [])
@@ -347,10 +359,38 @@ class ConsumerActions(AsyncController):
         """
         Install package groups.
         Body contains a list of package ids.
+        @type id: str
+        @param id: consumer id
         """
         data = self.params()
         ids = data.get('packageids', [])
         task = consumer_api.installpackagegroups(id, ids)
+        taskdict = self._task_to_dict(task)
+        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
+    
+    @RoleCheck(consumer_id=True, admin=True)
+    def installpackagegroupcategories(self, id):
+        """
+        Install package group categories.
+        Body contains a list of package group category ids.
+        @type id: str
+        @param id: consumer id
+        """
+        data = self.params()
+        categoryids = data.get('categoryids', [])
+        repo_id = data.get('repoid')
+        if not repo_id:
+            return self.conflict('No repository id was passed in.')
+        group_ids = []
+        for cat_id in categoryids:
+            pkggrpcat = repo_api.packagegroupcategory(repo_id, cat_id)
+            if not pkggrpcat:
+                return self.conflict('Given category id [%s] in repo [%s] does not exist' % (cat_id, repo_id))
+            group_ids.extend(pkggrpcat['packagegroupids'])
+        if not group_ids:
+            return self.conflict('Given category ids [%s] contain no groups to install' % categoryids)
+        task = consumer_api.installpackagegroups(id, group_ids)
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -360,6 +400,8 @@ class ConsumerActions(AsyncController):
         """
         Install errata
         Body contains list of errata ids and/or type
+        @type id: str
+        @param id: consumer id
         """
         data = self.params()
         eids = data.get('errataids', [])
@@ -373,8 +415,10 @@ class ConsumerActions(AsyncController):
     @RoleCheck(consumer_id=True, admin=True)
     def listerrata(self, id):
         """
-         list applicable errata for a given repo.
-         filter by errata type if any
+        list applicable errata for a given repo.
+        filter by errata type if any
+        @type id: str
+        @param id: consumer id
         """
         data = self.params()
         return self.ok(consumer_api.listerrata(id, data['types']))
@@ -382,6 +426,10 @@ class ConsumerActions(AsyncController):
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def history(self, id):
+        """
+        @type id: str
+        @param id: consumer id
+        """
         data = self.params()
 
         event_type = data.get('event_type', None)
