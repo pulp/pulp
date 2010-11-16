@@ -35,6 +35,7 @@ _default_values = {
         'auto_upgrade': 'true',
     },
     'logs': {
+        'qpid_log_level': 'info',
         'level': 'info',
         'max_size': '1048576',
         'backups': '4',
