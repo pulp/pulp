@@ -17,17 +17,23 @@
 import threading
 
 from pulp.server.util import Singleton
+from pulp.server.db.model import User
 
 # default system principal ----------------------------------------------------
 
-class SystemPrincipal(object):
+class SystemPrincipal(User):
     """
     Class representing the default "system" principal.
     """
     __metaclass__ = Singleton
+    ID = '00000000-0000-0000-0000-000000000000'
+    LOGIN = u'SYSTEM'
+
+    def __init__(self):
+        User.__init__(self, self.LOGIN, self.ID, self.LOGIN, self.LOGIN)
     
     def __unicode__(self):
-        return u'SYSTEM'
+        return self.LOGIN
     
 # thread-local storage for holding the current principal ----------------------
 
@@ -40,7 +46,10 @@ def set_principal(principal):
     Set the current principal (user) of the system.
     @param principal: current system user
     """
-    _storage.principal = principal
+    if principal:
+        _storage.principal = principal
+    else:
+        clear_principal()
 
 
 def get_principal():

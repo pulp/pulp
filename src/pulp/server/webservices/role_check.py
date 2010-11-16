@@ -75,6 +75,10 @@ class RoleCheck(object):
             the "self" will be the first argument.
             '''
             
+            # default the current principal to be sure it's not
+            # left over from the last call.
+            principal.clear_principal()
+
             # Determine which roles will be checked by this instance of the decorator
             roles = {'consumer': None, 'admin': None, 'consumer_id': None}
             for key in self.dec_kw.keys():
@@ -169,10 +173,10 @@ class RoleCheck(object):
         encoded_user = subject.get('CN', None)
 
         # Verify the certificate has been signed by the pulp CA
-        valid = cert_generator.verify_cert(cert_pem)
-        if not valid:
-            LOG.error('Admin certificate with CN [%s] is signed by a foreign CA' % encoded_user)
-            return None
+        #valid = cert_generator.verify_cert(cert_pem)
+        #if not valid:
+        #    LOG.error('Admin certificate with CN [%s] is signed by a foreign CA' % encoded_user)
+        #    return None
 
         # If there is no user/pass combo, this is not a valid admin certificate
         if not encoded_user:

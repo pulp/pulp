@@ -190,13 +190,10 @@ class ConsumerHistoryApi(BaseApi):
         Returns the value to use as the originator of the consumer event (either the
         consumer itself or an admin user).
 
-        @return: name of the originator value to use in the event
+        @return: login of the originator value to use in the event
         @rtype:  string
         '''
-        if is_system_principal():
-            return ORIGINATOR_CONSUMER
-        else:
-            return get_principal()['login']
+        return get_principal()['login']
 
     def consumer_created(self, consumer_id):
         '''
