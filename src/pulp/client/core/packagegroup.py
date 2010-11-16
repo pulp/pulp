@@ -336,6 +336,37 @@ class DeleteCategory(PackageGroupAction):
             print _("Package group category [%s] deleted from repository [%s]") % \
                 (categoryid, repoid)
 
+class InstallCategory(PackageGroupAction):
+
+    description = _('schedule a packagegroupcategory install')
+
+    def setup_parser(self):
+        self.parser.add_option("--categoryid", dest="categoryid", action="append",
+                               help=_("package group category id (required)"))
+        self.parser.add_option("--consumerid", dest="consumerid",
+                               help=_("consumer id (required)"))
+        self.parser.add_option("--repoid", dest="repoid",
+                               help=_("repo id (required)"))
+
+    def run(self):
+        consumerid = self.get_required_option('consumerid')
+        categoryid = self.get_required_option('categoryid')
+        repoid = self.get_required_option('repoid')
+        task = self.cconn.installpackagegroupcategories(consumerid, 
+                repoid, categoryid)
+        state = None
+        spath = task['status_path']
+        while state not in ('finished', 'error', 'canceled', 'timed_out'):
+            sys.stdout.write('.')
+            sys.stdout.flush()
+            time.sleep(2)
+            status = self.cconn.task_status(spath)
+            state = status['state']
+        if state == 'finished':
+            print _('\n[%s] installed on %s') % (status['result'], consumerid)
+        else:
+            print("\nPackage group category install failed")
+
 class AddGroupToCategory(PackageGroupAction):
 
     description = _('add package group to an existing package group category')

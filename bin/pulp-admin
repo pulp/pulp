@@ -71,6 +71,7 @@ def setup_admin(admin):
     packagegroup_cmd.add_action('add_package', packagegroup.AddPackage())
     packagegroup_cmd.add_action('delete_package', packagegroup.DeletePackage())
     packagegroup_cmd.add_action('install', packagegroup.Install())
+    packagegroup_cmd.add_action('install_category', packagegroup.InstallCategory())
     packagegroup_cmd.add_action('list_category', packagegroup.ListCategory())
     packagegroup_cmd.add_action('info_category', packagegroup.InfoCategory())
     packagegroup_cmd.add_action('create_category', packagegroup.CreateCategory())
