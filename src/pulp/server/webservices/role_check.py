@@ -87,6 +87,7 @@ class RoleCheck(object):
                 # If not using cert check uname and password
                 try:
                     user = self.check_admin(*fargs)
+                    principal.set_principal(user)
                     LOG.error("User: %s" % user)
                 except PulpException, pe:
                     http.status_unauthorized()
