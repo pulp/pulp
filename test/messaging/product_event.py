@@ -47,7 +47,8 @@ class ProductDriver:
         cert_data = {'ca' : open(CA_CERT, "rb").read(),
                      'cert' : open(CERT_FILE, "rb").read(),
                      'key' : open(CERT_KEY, 'rb').read()}
-        gpg_key_url = "/content/dist/rhel/server-6/releases/6Server/x86_64/os/RPM-GPG-KEY-redhat-release"
+        gpg_key_url = [{'gpg_key_label': "RPM-GPG-KEY-redhat-release",
+                        'gpg_key_url' : "/content/dist/rhel/server-6/releases/6Server/x86_64/os/RPM-GPG-KEY-redhat-release"},]
         d = dict(
                  id='1',
                  name = 'rhel-server',
@@ -68,7 +69,8 @@ class ProductDriver:
         cert_data = {'ca' : open(CA_CERT, "rb").read(),
                      'cert' : open(CERT_FILE, "rb").read(),
                      'key' : open(CERT_KEY, 'rb').read()}
-        gpg_key_url = "/content/dist/rhel/server-6/releases/6Server/x86_64/os/RPM-GPG-KEY-redhat-release"
+        gpg_key_url = [{'gpg_key_label': "RPM-GPG-KEY-redhat-release",
+                        'gpg_key_url' : "/content/dist/rhel/server-6/releases/6Server/x86_64/os/RPM-GPG-KEY-redhat-release"},]
         d = dict(
                  id='1',
                  name = 'rhel-server',
