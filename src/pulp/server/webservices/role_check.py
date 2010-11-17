@@ -172,6 +172,10 @@ class RoleCheck(object):
         subject = idcert.subject()
         encoded_user = subject.get('CN', None)
 
+        # On 11/17/10 (below) commented out.  Apache already doing this but left in
+        # temporatily to reflect the change.  We should remove after this approach
+        # proves out.
+
         # Verify the certificate has been signed by the pulp CA
         #valid = cert_generator.verify_cert(cert_pem)
         #if not valid:
