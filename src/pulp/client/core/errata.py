@@ -27,7 +27,7 @@ from pulp.client.connection import (
     ErrataConnection, RepoConnection, ConsumerConnection,
     ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import system_exit
+from pulp.client.core.utils import system_exit, print_header
 
 # errata action base class ----------------------------------------------------
 
@@ -47,13 +47,14 @@ class List(ErrataAction):
 
     def setup_parser(self):
         default = None
-        help = _('consumer id (required)')
         consumerid = self.getconsumerid()
         if consumerid is not None:
             default = consumerid
             help = SUPPRESS_HELP
-        self.parser.add_option("--consumerid", dest="consumerid",
-                               default=default, help=help)
+        self.parser.add_option("--consumerid",
+                               dest="consumerid",
+                               default=default,
+                               help=_('This option is required if a consumer doesn\'t exist locally.'))
         self.parser.add_option("--repoid", dest="repoid",
                                help=_("repository id"))
         self.parser.add_option("--type", dest="type", action="append",
@@ -66,11 +67,15 @@ class List(ErrataAction):
             system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
         if repoid:
             errata = self.rconn.errata(repoid, self.opts.type)
+            if errata:
+                print_header(_("Available Errata in Repo [%s]" % repoid))
         elif consumerid:
             errata = self.cconn.errata(consumerid, self.opts.type)
+            if errata:
+                print_header(_("Applicable Errata for consumer [%s]" % consumerid))
         if not errata:
             system_exit(os.EX_OK, _("No errata available to list"))
-        print errata
+        print(" , ".join(errata))
 
 
 class Info(ErrataAction):
@@ -86,12 +91,16 @@ class Info(ErrataAction):
         effected_pkgs = [str(pinfo['filename'])
                          for pkg in errata['pkglist']
                          for pinfo in pkg['packages']]
+        ref = ""
+        for reference in errata['references']:
+            for key, value in reference.items():
+                ref += "\n\t\t\t%s : %s" % (key, value) 
         print constants.ERRATA_INFO % (errata['id'], errata['title'],
                                        errata['description'], errata['type'],
                                        errata['issued'], errata['updated'],
                                        errata['version'], errata['release'],
-                                       errata['status'], effected_pkgs,
-                                       errata['references'])
+                                       errata['status'], ",\n\t\t\t".join(effected_pkgs),
+                                       ref) #errata['references'])
 
 
 class Install(ErrataAction):
