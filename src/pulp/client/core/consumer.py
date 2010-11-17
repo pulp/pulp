@@ -104,20 +104,27 @@ class Info(ConsumerAction):
 
     description = _('list of accessible consumer info')
 
+    def setup_parser(self):
+        super(Info, self).setup_parser()
+        self.parser.add_option('--show-profile', action="store_true",
+                               help=_("show package profile information associated with this consumer"))
+        
     def run(self):
         id = self.get_required_option('id')
         cons = self.cconn.consumer(id)
-        pkgs = ""
-        for pkg in cons['package_profile'].values():
-            for pkgversion in pkg:
-                pkgs += " " + utils.getRpmName(pkgversion)
-        cons['package_profile'] = pkgs
+        
         print_header(_("Consumer Information"))
-        for con in cons:
-            print constants.AVAILABLE_CONSUMER_INFO % \
-                    (con["id"], con["description"], con["repoids"],
-                     con["package_profile"])
-
+        print constants.AVAILABLE_CONSUMER_INFO % \
+                (cons["id"], cons["description"], cons["repoids"].keys(), cons['key_value_pairs'])
+        if not self.opts.show_profile:
+            system_exit(os.EX_OK)
+        # Construct package profile list
+        print_header(_("Package Profile associated with consumer [%s]" % id))
+        pkgs = ""
+        for pkg in cons['package_profile']:
+            pkgs += " \n" + utils.getRpmName(pkg)
+        
+        system_exit(os.EX_OK, pkgs)
 
 class Create(ConsumerAction):
 
