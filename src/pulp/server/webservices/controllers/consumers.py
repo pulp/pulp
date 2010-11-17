@@ -394,7 +394,8 @@ class ConsumerActions(AsyncController):
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
-
+    
+    @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def installerrata(self, id):
         """
@@ -407,6 +408,8 @@ class ConsumerActions(AsyncController):
         eids = data.get('errataids', [])
         types = data.get('types', [])
         task = consumer_api.installerrata(id, eids, types)
+        if not task:
+            return self.not_found('Errata %s you requested is not applicable for your system' % id)
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)

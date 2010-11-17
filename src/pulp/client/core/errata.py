@@ -116,10 +116,15 @@ class Install(ErrataAction):
 
         if not errataids:
             system_exit(os.EX_USAGE, _("Specify an errata id to install"))
+
         if self.opts.consumerid:
             task = self.cconn.installerrata(consumerid, errataids)
         elif self.opts.consumergroupid:
             task = self.cgconn.installerrata(consumergroupid, errataids)
+
+        if not task:
+            system_exit(os.EX_DATAERR, 
+                _("The requested errataids %s are not applicable for your system" % errataids))
         print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']

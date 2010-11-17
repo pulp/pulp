@@ -408,6 +408,9 @@ class ConsumerApi(BaseApi):
         if errataids:
             applicable_errata = self._applicable_errata(consumer, types)
             for eid in errataids:
+                if eid not in applicable_errata.keys():
+                    log.error("ErrataId %s is not part of applicable errata. Skipping" % eid)
+                    continue
                 errata_titles.append(eid)
                 for pobj in applicable_errata[eid]:
                     if pobj["arch"] != "src":
@@ -418,6 +421,8 @@ class ConsumerApi(BaseApi):
             for pobj in pkgobjs:
                 if pobj["arch"] != "src":
                     pkgs.append(pobj["name"])
+        if not len(pkgs):
+            return None
         log.error("Packages to install [%s]" % pkgs)
         task = InstallErrata(id, pkgs, errata_titles)
         return task
