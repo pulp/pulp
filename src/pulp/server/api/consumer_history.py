@@ -53,9 +53,6 @@ TYPES = (TYPE_CONSUMER_CREATED, TYPE_CONSUMER_DELETED, TYPE_REPO_BOUND,
          TYPE_REPO_UNBOUND, TYPE_PACKAGE_INSTALLED, TYPE_PACKAGE_UNINSTALLED,
          TYPE_ERRATA_INSTALLED, TYPE_PROFILE_CHANGED)
 
-# Used to identify an event as triggered by the consumer (as compared to an admin)
-ORIGINATOR_CONSUMER = 'consumer'
-
 # Maps user entered query sort parameters to the pymongo representation
 SORT_ASCENDING = 'ascending'
 SORT_DESCENDING = 'descending'

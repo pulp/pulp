@@ -75,7 +75,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
         self.assertTrue(entry['timestamp'] is not None)
 
@@ -98,7 +98,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
         self.assertTrue(entry['timestamp'] is not None)
 
@@ -122,7 +122,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_REPO_BOUND)
         self.assertTrue(entry['timestamp'] is not None)
         self.assertEqual(entry['details']['repo_id'], 789)
@@ -147,7 +147,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_REPO_UNBOUND)
         self.assertTrue(entry['timestamp'] is not None)
         self.assertEqual(entry['details']['repo_id'], 789)
@@ -174,7 +174,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_PACKAGE_INSTALLED)
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
@@ -204,7 +204,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_ERRATA_INSTALLED)
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
@@ -233,7 +233,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_PACKAGE_UNINSTALLED)
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
@@ -279,7 +279,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], consumer_history.ORIGINATOR_CONSUMER)
+        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_PROFILE_CHANGED)
         self.assertTrue(entry['timestamp'] is not None)
         self.assertTrue(entry['details']['package_profile'] is not None)

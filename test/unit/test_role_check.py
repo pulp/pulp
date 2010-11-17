@@ -135,21 +135,6 @@ class TestRoleCheck(unittest.TestCase):
         retval = self.admin_only('foo', 'baz')
         self.assertEqual(retval, 'baz')
 
-    def test_admin_cert_foreign_ca(self):
-        # Setup
-        data_dir = os.path.abspath(os.path.dirname(__file__))
-        test_cert = data_dir + '/data/test_admin_cert_bad_ca.pem'
-        cert = Certificate()
-        cert.read(test_cert)
-
-        web.ctx['headers'] = []
-        web.ctx['environ'] = dict()
-        web.ctx.environ['SSL_CLIENT_CERT'] = cert.toPEM()
-
-        # Test
-        self.admin_only('somevalue')
-        self.assertTrue(web.ctx.status.startswith('401'))
-
     def test_username_pass(self):
         # Setup
 
