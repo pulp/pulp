@@ -122,3 +122,6 @@ class ConsumerEvent(EventHandler):
         log.error("Consumer event delete processing %s" % event)
         consumerid   = event['id']
         self.capi.delete(consumerid)
+
+
+ConsumerEvent = handler(entity='consumer', ConsumerEvent)
