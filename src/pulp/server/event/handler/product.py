@@ -26,7 +26,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-#@handler(entity='product')
+@handler(entity='product')
 class ProductEvent(EventHandler):
     """
     The I{product} event handler.
@@ -190,4 +190,4 @@ class ProductEvent(EventHandler):
                 log.error("Unbind the consumer %s from repo %s" % (consumerid, repo['id']))
                 self.capi.unbind(consumer['id'], repo['id'])
                 
-ProductEvent = handler(ProductEvent, entity='product')
+        
