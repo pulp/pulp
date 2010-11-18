@@ -26,7 +26,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-@handler(entity='repo')
+#@handler(entity='repo')
 class RepoEvent(EventHandler):
     """
     The I{repo} event handler.
@@ -38,6 +38,7 @@ class RepoEvent(EventHandler):
         self.rapi = RepoApi()
         self.producer = EventProducer()
 
+    @handler(entity='repo')
     @outbound(action='created')
     def create(self, *args, **kwargs):
         """
@@ -53,6 +54,7 @@ class RepoEvent(EventHandler):
             name=args[2],)
         self.producer.send('repo.created', event)
 
+    @handler(entity='repo')
     @outbound(action='updated')
     def update(self, *args, **kwargs):
         """
@@ -65,6 +67,7 @@ class RepoEvent(EventHandler):
         """
         pass
 
+    @handler(entity='repo')
     @outbound(action='deleted')
     def delete(self, *args, **kwargs):
         """
@@ -76,7 +79,8 @@ class RepoEvent(EventHandler):
         @type kwargs: list
         """
         pass
-
+    
+    @handler(entity='repo')
     @inbound(action='created')
     def created(self, event):
         """
@@ -92,6 +96,7 @@ class RepoEvent(EventHandler):
         arch = event.get('arch', 'noarch')
         self.rapi.create(id, name, arch)
 
+    @handler(entity='repo')
     @inbound(action='updated')
     def updated(self, event):
         """
@@ -103,7 +108,8 @@ class RepoEvent(EventHandler):
         @type event: dict.
         """
         pass
-
+    
+    @handler(entity='repo')
     @inbound(action='deleted')
     def deleted(self, event):
         """
