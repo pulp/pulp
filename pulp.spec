@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.93
+Version:        0.0.94
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -34,7 +34,7 @@ Requires: openssl
 Requires: python-ldap
 Requires: gofer-lib >= 0.1
 
-%if 0%{?el5}
+%if 0%{?.el5}
 Requires: qpid-cpp-server
 Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
@@ -200,6 +200,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.94-1
+- 
+
 * Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.93-1
 - sayli hackergotchi (mmccune@redhat.com)
 - jconnor (mmccune@redhat.com)
