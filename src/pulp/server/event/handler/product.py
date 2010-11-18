@@ -191,4 +191,4 @@ class ProductEvent(EventHandler):
                 self.capi.unbind(consumer['id'], repo['id'])
                 
         
-ProductEvent = handler(entity='product', ProductEvent)
+ProductEvent = handler(ProductEvent, entity='product')

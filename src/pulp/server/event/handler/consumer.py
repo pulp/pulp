@@ -124,4 +124,4 @@ class ConsumerEvent(EventHandler):
         self.capi.delete(consumerid)
 
 
-ConsumerEvent = handler(entity='consumer', ConsumerEvent)
+ConsumerEvent = handler(ConsumerEvent, entity='consumer')
