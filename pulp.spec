@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.97
+Version:        0.0.103
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -53,6 +53,9 @@ Requires: mongodb-server
 Requires: %{name}-client >= %{version}
 
 %if 0%{?rhel} > 5
+Requires: python-uuid
+Requires: python-ssl
+Requires: python-ctypes
 Requires: python-hashlib
 %endif
 
@@ -192,6 +195,54 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.103-1
+- Revert "trying a replacement for class decorator" holding off on this fix
+  until discussion with folks tomorrow This reverts commit
+  7ce50dcf218572b3ebf3d0f1fbac062ee212a78b. (skarmark@redhat.com)
+- trying a replacement for class decorator (skarmark@redhat.com)
+- We need to find proper repolacement for Class decorators
+  (skarmark@redhat.com)
+
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com>
+- Revert "trying a replacement for class decorator" holding off on this fix
+  until discussion with folks tomorrow This reverts commit
+  7ce50dcf218572b3ebf3d0f1fbac062ee212a78b. (skarmark@redhat.com)
+- trying a replacement for class decorator (skarmark@redhat.com)
+- We need to find proper repolacement for Class decorators
+  (skarmark@redhat.com)
+
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com>
+- Revert "trying a replacement for class decorator" holding off on this fix
+  until discussion with folks tomorrow This reverts commit
+  7ce50dcf218572b3ebf3d0f1fbac062ee212a78b. (skarmark@redhat.com)
+- trying a replacement for class decorator (skarmark@redhat.com)
+- We need to find proper repolacement for Class decorators
+  (skarmark@redhat.com)
+
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com>
+- Revert "trying a replacement for class decorator" holding off on this fix
+  until discussion with folks tomorrow This reverts commit
+  7ce50dcf218572b3ebf3d0f1fbac062ee212a78b. (skarmark@redhat.com)
+- trying a replacement for class decorator (skarmark@redhat.com)
+- We need to find proper repolacement for Class decorators
+  (skarmark@redhat.com)
+
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com>
+- Revert "trying a replacement for class decorator" holding off on this fix
+  until discussion with folks tomorrow This reverts commit
+  7ce50dcf218572b3ebf3d0f1fbac062ee212a78b. (skarmark@redhat.com)
+- trying a replacement for class decorator (skarmark@redhat.com)
+- We need to find proper repolacement for Class decorators
+  (skarmark@redhat.com)
+
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com>
+- Revert "trying a replacement for class decorator" holding off on this fix
+  until discussion with folks tomorrow This reverts commit
+  7ce50dcf218572b3ebf3d0f1fbac062ee212a78b. (skarmark@redhat.com)
+- trying a replacement for class decorator (skarmark@redhat.com)
+- We need to find proper repolacement for Class decorators
+  (skarmark@redhat.com)
+
 * Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.97-1
 - Class decorators are not supported in python2.4 (skarmark@redhat.com)
 
