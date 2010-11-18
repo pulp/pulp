@@ -74,17 +74,8 @@ class CDNConnection:
                 log.error("Unable to fetch the listings file for relative url %s" % uri)
         return version_arch_urls
     
-    def fetch_gpgkeys(self, gpg_key_data):
-        gpg_keys = []
-        for gpgkey in gpg_key_data: 
-            label = gpgkey['gpg_key_label']
-            uri   = str(gpgkey['gpg_key_url'])
-            try:
-                ginfo = self._request_get(uri)
-                gpg_keys.append((label, ginfo))
-            except Exception:
-                log.error("Unable to fetch the gpg key info for %s" % uri)
-        return gpg_keys
+    def fetch_gpgkeys(self, gpg_key_uri):
+        return self._request_get(gpg_key_uri)
     
     def disconnect(self):
         self.httpServ.close()

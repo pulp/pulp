@@ -96,7 +96,7 @@ class ProductEvent(EventHandler):
         gpg_key_url = event['gpg_key_url']
         log.error("Repo event data %s %s %s" % (product_name, content_sets, cert_data))
         self.rapi.create_product_repo(content_sets, cert_data, groupid=product_name, 
-                                      gpg_key_url=gpg_key_url)
+                                      gpg_keys=gpg_key_url)
 
     @inbound(action='updated')
     def updated(self, event):
@@ -118,7 +118,7 @@ class ProductEvent(EventHandler):
                       }
         gpg_key_url = event['gpg_key_url']
         log.error("Repo event data %s %s %s" % (product_name, content_sets, cert_data))
-        self.rapi.update_product_repo(content_sets, cert_data, groupid=product_name, gpg_key_url=gpg_key_url)
+        self.rapi.update_product_repo(content_sets, cert_data, groupid=product_name, gpg_keys=gpg_key_url)
 
     @inbound(action='deleted')
     def deleted(self, event):

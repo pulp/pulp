@@ -291,7 +291,7 @@ class RepoApi(BaseApi):
         return cert_files
 
     @audit(params=['groupid', 'content_set'])
-    def create_product_repo(self, content_set, cert_data, groupid=None, gpg_key_url=None):
+    def create_product_repo(self, content_set, cert_data, groupid=None, gpg_keys=None):
         """
          Creates a repo associated to a product. Usually through an event raised
          from candlepin
@@ -301,6 +301,8 @@ class RepoApi(BaseApi):
          @type content_set: dict(<label> : <relative_url>,)
          @param cert_data: a dictionary of ca_cert, cert and key for this product
          @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
+         @param gpg_keys: list of keys to be associated with the repo
+         @type gpg_keys: list(dict(gpg_key_label : <gpg-key-label>, gpg_key_url : url),)
         """
         if not cert_data or not content_set:
             # Nothing further can be done, exit
@@ -312,7 +314,7 @@ class RepoApi(BaseApi):
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
-        gpg_keys  = serv.fetch_gpgkeys(gpg_key_url)
+        gkeys = self._get_gpg_keys(serv, gpg_keys)
         for label, uri in repo_info.items():
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
@@ -320,16 +322,16 @@ class RepoApi(BaseApi):
                                    cert_data=cert_data, groupid=[groupid],
                                    relative_path=uri)
                 repo['release'] = label.split("-")[-2]
-                self.addkeys(repo['id'], gpg_keys)
+                self.addkeys(repo['id'], gkeys)
                 self.update(repo)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
                 continue
 
         serv.disconnect()
-        
+       
     @audit(params=['groupid', 'content_set'])
-    def update_product_repo(self, content_set, cert_data, groupid=None, gpg_key_url=[]):
+    def update_product_repo(self, content_set, cert_data, groupid=None, gpg_keys=[]):
         """
          Creates a repo associated to a product. Usually through an event raised
          from candlepin
@@ -339,6 +341,8 @@ class RepoApi(BaseApi):
          @type content_set: dict(<label> : <relative_url>,)
          @param cert_data: a dictionary of ca_cert, cert and key for this product
          @type cert_data: dict(ca : <ca_cert>, cert: <ent_cert>, key : <cert_key>)
+         @param gpg_keys: list of keys to be associated with the repo
+         @type gpg_keys: list(dict(gpg_key_label : <gpg-key-label>, gpg_key_url : url),)
         """
         if not cert_data or not content_set:
             # Nothing further can be done, exit
@@ -350,7 +354,7 @@ class RepoApi(BaseApi):
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
-        gpg_keys  = serv.fetch_gpgkeys(gpg_key_url)
+        gkeys  = self._get_gpg_keys(serv, gpg_keys)
         for label, uri in repo_info.items():
             try:
                 repo = self._get_existing_repo(label)
@@ -362,7 +366,7 @@ class RepoApi(BaseApi):
                 repo['arch'] = label.split("-")[-1]
                 repo['relative_path'] = uri
                 repo['groupid'] = [groupid]
-                self.addkeys(repo['id'], gpg_keys)
+                self.addkeys(repo['id'], gkeys)
                 self.update(repo)
             except PulpException, pe:
                 log.error(pe)
@@ -373,6 +377,23 @@ class RepoApi(BaseApi):
 
         serv.disconnect()
         
+    def _get_gpg_keys(self, serv, gpg_key_list):
+        gpg_keys = []
+        for gpgkey in gpg_key_list:
+            label = gpgkey['gpg_key_label']
+            uri   = str(gpgkey['gpg_key_url'])
+            try:
+                if uri.startswith("file://"):
+                    key_path = urlparse(uri).path.encode('ascii', 'ignore')
+                    ginfo = open(key_path, "rb").read()
+                else:
+                    ginfo = serv.fetch_gpgkeys(uri)
+                gpg_keys.append((label, ginfo))
+            except Exception:
+                raise
+                log.error("Unable to fetch the gpg key info for %s" % uri)
+        return gpg_keys
+         
     def delete_product_repo(self, groupid=None):
         """
          delete repos associated to a product. Usually through an event raised
