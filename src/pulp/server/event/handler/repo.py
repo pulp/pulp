@@ -116,4 +116,4 @@ class RepoEvent(EventHandler):
         """
         pass
 
-RepoEvent = handler(entity='repo', RepoEvent)
+RepoEvent = handler(RepoEvent, entity='repo')
