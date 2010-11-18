@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.92
+Version:        0.0.93
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -34,7 +34,15 @@ Requires: openssl
 Requires: python-ldap
 Requires: gofer-lib >= 0.1
 
-%if 14%{?fedora} < 13
+%if 0%{?el5}
+Requires: qpid-cpp-server
+Requires: qpid-cpp-server-ssl
+Requires: qpid-cpp-server-store
+Requires: mongodb
+Requires: mongodb-server
+%else
+%if 0%{?fedora}
+%if 0%{?fedora} < 13
 Requires: qpidd
 Requires: qpidd-ssl
 Requires: rhm-cpp-server-store
@@ -46,6 +54,7 @@ Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
+%endif
 %endif
 
 # newer pulp builds should require same client version
@@ -191,6 +200,13 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.93-1
+- sayli hackergotchi (mmccune@redhat.com)
+- jconnor (mmccune@redhat.com)
+- Preethi was on the website twice. (jrist@redhat.com)
+
+
+
 * Mon Nov 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.92-1
 - QE build
 
