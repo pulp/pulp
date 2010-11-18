@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.95
+Version:        0.0.96
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -192,6 +192,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.96-1
+- Class decorators are not supported in python2.4 (skarmark@redhat.com)
+
 * Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.95-1
 - 
 
