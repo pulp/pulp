@@ -303,6 +303,8 @@ class DynLoader:
     @type pkg: python module
     """
 
+    EXTS = ('py',)
+
     def __init__(self, pkg):
         """
         @param pkg: A package object.
@@ -322,7 +324,19 @@ class DynLoader:
             mod, ext = fn.rsplit('.',1)
             if mod in loaded:
                 continue
+            if not self.valid(ext):
+                continue
             modpath = os.path.join(path, fn)
             imp.load_source(mod, modpath)
             log.info('module: %s at: %s, loaded', mod, modpath)
             loaded.append(mod)
+
+    def valid(self, ext):
+        """
+        Validate extenson
+        @param ext: an extension.
+        @type ext: str
+        @return: True if valid.
+        @rtype: bool
+        """
+        return ( ext in self.EXTS )
