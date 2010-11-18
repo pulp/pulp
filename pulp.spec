@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.104
+Version:        0.0.105
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -195,6 +195,18 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.105-1
+- Mitigate (imp) module import of .pyc files to do with default filesystem
+  encoding. (jortel@redhat.com)
+- Fixing the event handler to handle file based or http based gpg key urls
+  (pkilambi@redhat.com)
+- Example script to parse PackageKit groups info and create pkg grp categories
+  in pulp (jmatthew@redhat.com)
+- prevent duplicates from package group/category lists (jmatthew@redhat.com)
+- Simplify event handler dynamic import. (jortel@redhat.com)
+- bug#654681 - Only add distro id to repo if same id doesnt already exist
+  (pkilambi@redhat.com)
+
 * Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.104-1
 - 
 
