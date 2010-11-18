@@ -52,7 +52,7 @@ def handler(entity):
                 _method[0],
                 _method[1])
             _method = ({},{})
-        finally:
+        #finally:
             mutex.release()
         return cls
     return decorator
@@ -68,7 +68,7 @@ def inbound(action):
         mutex.acquire()
         try:
             _method[0][action] = fn
-        finally:
+        #finally:
             mutex.release()
         return fn
     return decorator
@@ -84,7 +84,7 @@ def outbound(action):
         mutex.acquire()
         try:
             _method[1][action] = fn
-        finally:
+        #finally:
             mutex.release()
         return fn
     return decorator
@@ -221,7 +221,7 @@ class EventDispatcher(EventConsumer):
                 return
             loader = DynLoader(hpx)
             loader.load()
-        finally:
+        #finally:
             mutex.release()
 
     @classmethod
@@ -251,7 +251,7 @@ class EventDispatcher(EventConsumer):
             else:
                 method = handler.outbound(outbound)
             return (inst, method)
-        finally:
+        #finally:
             mutex.release()
 
     def raised(self, subject, event):
@@ -278,7 +278,7 @@ class EventDispatcher(EventConsumer):
             flags.suspend(subject)
             try:
                 method(inst, event)
-            finally:
+            #finally:
                 flags.resume(subject)
         except:
             log.error('{inbound} event failed (%s):\n%s',
