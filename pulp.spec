@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.103
+Version:        0.0.104
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -32,6 +32,9 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
+Requires: python-uuid
+Requires: python-ssl
+Requires: python-ctypes
 Requires: gofer-lib >= 0.1
 
 %if 14%{?fedora} < 13
@@ -53,9 +56,6 @@ Requires: mongodb-server
 Requires: %{name}-client >= %{version}
 
 %if 0%{?rhel} > 5
-Requires: python-uuid
-Requires: python-ssl
-Requires: python-ctypes
 Requires: python-hashlib
 %endif
 
@@ -195,6 +195,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.104-1
+- 
+
 * Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.103-1
 - Revert "trying a replacement for class decorator" holding off on this fix
   until discussion with folks tomorrow This reverts commit
