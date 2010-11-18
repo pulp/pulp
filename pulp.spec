@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.105
+Version:        0.0.106
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -32,9 +32,6 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: python-uuid
-Requires: python-ssl
-Requires: python-ctypes
 Requires: gofer-lib >= 0.1
 
 %if 14%{?fedora} < 13
@@ -49,6 +46,11 @@ Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
 Requires: mongodb
 Requires: mongodb-server
+%endif
+%if 0%{?rhel} >= 5
+Requires: python-uuid
+Requires: python-ssl
+Requires: python-ctypes
 %endif
 
 
@@ -195,6 +197,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.106-1
+- Linked command reference to the wiki. (jrist@redhat.com)
+
 * Thu Nov 18 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.105-1
 - Mitigate (imp) module import of .pyc files to do with default filesystem
   encoding. (jortel@redhat.com)
