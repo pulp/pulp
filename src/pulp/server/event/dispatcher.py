@@ -19,6 +19,7 @@ Contains QPID event classes.
 """
 
 import os
+import imp
 from pulp.server.event import *
 from pulp.server.event.consumer import EventConsumer
 from threading import RLock as Mutex
@@ -320,23 +321,7 @@ class DynLoader:
             mod, ext = fn.rsplit('.',1)
             if mod in loaded:
                 continue
-            part = path.split('/')
-            part.append(mod)
-            self.__import(part[1:])
+            modpath = os.path.join(path, fn)
+            imp.load_source(mod, modpath)
+            log.info('module: %s at: %s, loaded', mod, modpath)
             loaded.append(mod)
-
-    def __import(self, path):
-        """
-        Import modules the the specified path.
-        @param path: A list of path elements.
-        @type path: list
-        """
-        for i in range(0, len(path)):
-            mod = '.'.join(path[i:])
-            try:
-                __import__(mod)
-                log.info('%s - imported.', mod)
-                return # succeeded
-            except:
-                pass
-        raise ImportError, '.'.join(path)
