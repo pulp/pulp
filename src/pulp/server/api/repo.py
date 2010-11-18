@@ -834,17 +834,20 @@ class RepoApi(BaseApi):
         for pkg_name in pkg_names:
             if gtype == "mandatory":
                 if pkg_name not in group["mandatory_package_names"]:
-                    group["mandatory_package_names"].append(pkg_name)
+                    if pkg_name not in group["mandatory_package_names"]:
+                        group["mandatory_package_names"].append(pkg_name)
             elif gtype == "conditional":
                 if not requires:
                     raise PulpException("Parameter 'requires' has not been set, it is required by conditional group types")
                 group["conditional_package_names"][pkg_name] = requires
             elif gtype == "optional":
                 if pkg_name not in group["optional_package_names"]:
-                    group["optional_package_names"].append(pkg_name)
+                    if pkg_name not in group["optional_package_names"]:
+                        group["optional_package_names"].append(pkg_name)
             else:
                 if pkg_name not in group["default_package_names"]:
-                    group["default_package_names"].append(pkg_name)
+                    if pkg_name not in group["default_package_names"]:
+                        group["default_package_names"].append(pkg_name)
         self.update(repo)
         self._update_groups_metadata(repo["id"])
 
@@ -947,9 +950,10 @@ class RepoApi(BaseApi):
                 raise PulpException(
                         "Changes to immutable categories are not supported: %s" \
                                 % (categoryid))
-        repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
-        self.update(repo)
-        self._update_groups_metadata(repo["id"])
+        if groupid not in repo['packagegroupcategories'][categoryid]["packagegroupids"]:
+            repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
+            self.update(repo)
+            self._update_groups_metadata(repo["id"])
 
     @audit()
     def update_packagegroupcategory(self, repoid, pgc):
