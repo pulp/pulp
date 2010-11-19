@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.106
+Version:        0.0.107
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -197,6 +197,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 19 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.107-1
+- Tag for the sprint 17 community release
+
 * Thu Nov 18 2010 Sayli Karmarkar <skarmark@redhat.com> 0.0.106-1
 - Linked command reference to the wiki. (jrist@redhat.com)
 
