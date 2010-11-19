@@ -85,14 +85,13 @@ class RoleCheck(object):
                 roles[key] = self.dec_kw[key]
             
             user = None
-            LOG.error("in role_check")
             # Admin role trumps any other checking
             if roles['admin']:
                 # If not using cert check uname and password
                 try:
                     user = self.check_admin(*fargs)
                     principal.set_principal(user)
-                    LOG.error("User: %s" % user)
+                    LOG.info("User: %s" % user)
                 except PulpException, pe:
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
@@ -250,8 +249,16 @@ class RoleCheck(object):
         if not config.has_section("ldap"):
             LOG.info("No external ldap server available")
             return
-        ldapserver = config.get("ldap", "uri")
-        base       = config.get("ldap", "base")
+        try:
+            ldapserver = config.get("ldap", "uri")
+        except:
+            log.info("No valid server found, default to localhost")
+            ldapserver = "ldap://localhost"
+        try:
+            base = config.get("ldap", "base")
+        except:
+            log.info("No valid base found, default to localhost")
+            base = "dc=localhost"
         ldapserv = LDAPConnection(ldapserver)
         ldapserv.connect()
         if password:
@@ -259,7 +266,7 @@ class RoleCheck(object):
         else:
             status = ldapserv.lookup_user(base, username)
 
-        LOG.error("User %s found in the ldap database: %s" % (username, status))
+        LOG.info("User %s found in the ldap database: %s" % (username, status))
         ldapserv.disconnect()
         user = None
         if status:
