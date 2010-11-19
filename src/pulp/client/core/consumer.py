@@ -79,8 +79,8 @@ class List(ConsumerAction):
             print_header(_("Consumer Information"))
             for con in cons:
                 print constants.AVAILABLE_CONSUMER_INFO % \
-                        (con["id"], con["description"], con["repoids"],
-                         con["package_profile"], con["key_value_pairs"])
+                        (con["id"], con["description"], \
+                         con["repoids"],con["key_value_pairs"])
             system_exit(os.EX_OK)
 
         if value is None:
