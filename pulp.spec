@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.107
+Version:        0.0.108
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -197,6 +197,10 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Nov 19 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.108-1
+- 655086 - Fixing the print string to exclude pkg profile by default in
+  consumer list (pkilambi@redhat.com)
+
 * Fri Nov 19 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.107-1
 - Tag for the sprint 17 community release
 
