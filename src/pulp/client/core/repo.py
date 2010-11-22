@@ -93,7 +93,7 @@ class List(RepoAction):
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
-                    repo['files_count'], ' '.join(repo['distributionid']) or None, 
+                    repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'])
 
 
@@ -172,7 +172,7 @@ class Create(RepoAction):
         self.parser.add_option("--key", dest="key",
                                help=_("path location to entitlement certificate key"))
         self.parser.add_option("--schedule", dest="schedule",
-                               help=_("schedule for automatically synchronizing the repository"))
+                               help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
@@ -344,7 +344,7 @@ class Update(RepoAction):
         self.parser.add_option("--cert", dest="cert",
                                help=_("path location to entitlement certificate key"))
         self.parser.add_option("--schedule", dest="sync_schedule",
-                               help=_("schedule for automatically synchronizing the repository"))
+                               help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
