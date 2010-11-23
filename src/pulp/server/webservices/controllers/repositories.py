@@ -56,7 +56,7 @@ default_fields = [
 class Repositories(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @RoleCheck(admin=True, consumer=True)
     def GET(self):
         """
         List all available repositories.
