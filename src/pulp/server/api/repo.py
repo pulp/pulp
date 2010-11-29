@@ -109,7 +109,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               cert_data=None, groupid=[], relative_path=None, gpgkeys=[]):
+               cert_data=None, groupid=(), relative_path=None, gpgkeys=()):
         """
         Create a new Repository object and return it
         """
@@ -221,17 +221,13 @@ class RepoApi(BaseApi):
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
         self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
                         relative_path=relative_path)
-        """
-        Sync from parent repo
-        """
+        # Sync from parent repo
         try:
             self._sync(clone_id)
         except:
             raise PulpException("Repo cloning of [%s] failed" % id)
         
-        """
-        Update feed type for cloned repo if "origin" or "feedless"        
-        """
+        # Update feed type for cloned repo if "origin" or "feedless"
         cloned_repo = self.repository(clone_id)
         if feed == "origin":
             cloned_repo['source'] = repo['source']
@@ -239,17 +235,13 @@ class RepoApi(BaseApi):
             cloned_repo['source'] = None
         self.update(cloned_repo)    
             
-        """
-        Update clone_ids for parent repo
-        """            
+        # Update clone_ids for parent repo
         clone_ids = repo['clone_ids']
         clone_ids.append(clone_id)
         repo['clone_ids'] = clone_ids
         self.update(repo)   
         
-        """
-        Update gpg keys from parent repo
-        """
+        # Update gpg keys from parent repo
         keylist = []
         key_paths = self.listkeys(id)
         for key_path in key_paths:
@@ -827,7 +819,7 @@ class RepoApi(BaseApi):
 
 
     @audit()
-    def add_packages_to_group(self, repoid, groupid, pkg_names=[], 
+    def add_packages_to_group(self, repoid, groupid, pkg_names=(), 
             gtype="default", requires=None):
         """
         @param repoid: repository id
