@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.108
+Version:        0.0.109
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -197,6 +197,17 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Mon Nov 29 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.109-1
+- 655256 - GET on repositories was only allowing admin and not consumers
+  causing the auth to fail using consumer certs (pkilambi@redhat.com)
+- 655258, new help text for repo update --schedule
+  (jconnor@redhat.com)
+- added comment about minimum threads in pulp.conf (jconnor@redhat.com)
+- updating links to proper spots on the web (mmccune@redhat.com)
+- Linked Index to itself... (jrist@redhat.com)
+- updated hackergotchis (mmccune@redhat.com)
+- Adding some error handling to ldap authentication (pkilambi@redhat.com)
+
 * Fri Nov 19 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.108-1
 - 655086 - Fixing the print string to exclude pkg profile by default in
   consumer list (pkilambi@redhat.com)
