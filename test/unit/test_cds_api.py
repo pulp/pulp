@@ -15,7 +15,6 @@
 # in this software or its documentation.
 
 # Python
-import datetime
 import os
 import sys
 import unittest
