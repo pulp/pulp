@@ -281,3 +281,19 @@ class Permission(Base):
         if (not self.user_login and not self.role_id):
             raise ValueError("user_login or role_id must be specified, both are None")
 
+class CDS(Base):
+    '''
+    Represents an external CDS instance managed by this pulp server.
+    '''
+
+    def __init__(self, hostname, name=None, description=None):
+        self.hostname = hostname
+        if name:
+            self.name = name
+        else:
+            self.name = hostname
+        self.description = description
+
+    def __str__(self):
+        return self.hostname
+
