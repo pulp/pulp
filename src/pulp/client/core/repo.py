@@ -1,7 +1,5 @@
 #!/usr/bin/python
 #
-# Pulp Repo management module
-#
 # Copyright (c) 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -14,7 +12,6 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
-#
 
 import base64
 import os
