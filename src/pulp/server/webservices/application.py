@@ -20,11 +20,12 @@ from pulp.server import config # unused here, but initializes configuration
 from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
-    audit, consumergroups, consumers, errata, packages, 
+    audit, cds, consumergroups, consumers, errata, packages, 
     repositories, search, users, roles, distribution)
 
 
 urls = (
+    '/cds', cds.application,
     '/consumers', consumers.application,
     '/consumergroups', consumergroups.application,
     '/events', audit.application,
