@@ -48,6 +48,7 @@ LINKS = (
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
     'etc/gofer/plugins/pulp.conf',
+    'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
     ('src/pulp/client/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),

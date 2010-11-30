@@ -142,7 +142,7 @@ cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
 
 # Pulp Init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
-cp etc/rc.d/init.d/pulpd %{buildroot}/etc/rc.d/init.d/
+cp etc/rc.d/init.d/pulp-server %{buildroot}/etc/rc.d/init.d/
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -173,7 +173,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %attr(3775, apache, apache) /var/www/pub
 %attr(3775, apache, apache) /var/log/pulp
 %attr(3775, root, root) %{_sysconfdir}/pki/content
-%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulpd
+%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-server
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 
