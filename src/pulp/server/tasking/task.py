@@ -238,7 +238,7 @@ class AsyncTask(Task):
     def invoked(self, result):
         """
         The I{method} has been successfully invoked.
-        Do __not__ advance the tesk state as this is managed
+        Do __not__ advance the task state as this is managed
         by external processing.
         """
         pass
