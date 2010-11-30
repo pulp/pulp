@@ -11,7 +11,7 @@ a:hover {
 }
 
 body {
-  background: #D7E6F4 url('../images/pulp-page-bg.png') repeat-y center top;
+  background: #B5D6F7 url('../images/pulp-page-bg.png') no-repeat top left;
   color: #111;
   font: 10pt/16pt "Droid Sans",sans-serif;
   margin: 0;
@@ -57,18 +57,14 @@ ul {
 
 /* ids --------------------------------------------------------------------- */
 
-#background {
-  background: #fff url('../images/pulp-content-bg.png') repeat-y center top;
-}
-
 #header {
   height: 210px;
-  background: url('../images/pulp-header.png') no-repeat left top;
 }
 
 #logo {
-  width: 309px;
+  width: 298px;
   height: 220px;
+  margin-left: -40px;
   background: url('../images/pulp-logo.png') no-repeat left top;
   position: absolute;
   left: 0px;
@@ -94,6 +90,7 @@ ul {
 }
 
 #intro {
+  padding-top: 15px;
   background: url('../images/pulp-intro-bg.png') repeat-x left top;
 }
 
@@ -186,6 +183,8 @@ ul {
   background-color: #dea95f;
 }
 
+.orange-bg h3 { margin-top: 0px !important; }
+
 .blue-bg {
   background-color: #6e98c9;
 }
@@ -206,12 +205,15 @@ ul {
   -moz-border-radius: 10px;
 }
 
+.region h3 { margin-top: -10px; margin-bottom: 10px; }
+
 .sidebar {
   margin-left: 20px;
 }
 
 .plain {
-  list-style: none outside;
+  list-style: disc outside;
+  margin-left: -20px !important;
 }
 
 .avatar {
