@@ -63,6 +63,7 @@ def main():
     if version == VERSION:
         print 'data model in use matches the current version'
     while version < VERSION:
+        # ADD MIGRATION CALLS HERE
         if version is None:
             migrate_to_one()
         version = get_version_in_use()
