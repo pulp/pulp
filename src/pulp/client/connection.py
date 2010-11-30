@@ -702,6 +702,24 @@ class SearchConnection(PulpConnection):
         method = "/search/packages/"
         return self.conn.request_put(method, params=data)
 
+class CdsConnection(PulpConnection):
+    '''
+    Connection class to the CDS APIs.
+    '''
+    def register(self, hostname, name=None, description=None):
+        data = {'hostname'    : hostname,
+                'name'        : name,
+                'description' : description,}
+        method = '/cds/'
+        return self.conn.request_put(method, params=data)
+
+    def unregister(self, hostname):
+        method = '/cds/%s/' % hostname
+        return self.conn.request_delete(method)
+
+    def list(self):
+        method = '/cds/'
+        return self.conn.request_get(method)
 
 if __name__ == '__main__':
     rconn = RepoConnection()

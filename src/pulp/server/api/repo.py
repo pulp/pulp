@@ -195,7 +195,7 @@ class RepoApi(BaseApi):
 
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):
-            os.mkdir(self.published_path)
+            os.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(), 
                 repo["relative_path"])
         link_path = os.path.join(self.published_path, repo["relative_path"])

@@ -133,3 +133,9 @@ hostname returned from the Pulp server you are connecting to.
 You have: [%s] configured but received: [%s] from the server.
 
 Either correct the host in /etc/pulp/ or specify --server=%s"""
+
+CDS_INFO = '''
+Name                \t%-25s
+Hostname            \t%-25s
+Description         \t%-25s             
+'''

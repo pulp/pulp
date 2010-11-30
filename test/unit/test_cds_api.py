@@ -147,3 +147,33 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         self.assertTrue(cds is None)
+
+    def test_cds_list(self):
+        '''
+        Tests the basic case of listing a series of CDS instances.
+        '''
+
+        # Setup
+        self.cds_api.register('cds01.example.com')
+        self.cds_api.register('cds02.example.com')
+        self.cds_api.register('cds03.example.com')
+        self.cds_api.register('cds04.example.com')
+
+        # Test
+        all_cds = self.cds_api.list()
+
+        # Verify
+        self.assertEqual(4, len(all_cds))
+
+
+    def test_cds_list_no_cds_instances(self):
+        '''
+        Tests the edge case of listing CDS instances when there are none.
+        '''
+
+        # Test
+        all_cds = self.cds_api.list()
+
+        # Verify
+        self.assertEqual(0, len(all_cds))
+        

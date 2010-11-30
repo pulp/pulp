@@ -107,3 +107,12 @@ class CdsApi(BaseApi):
             return None
         else:
             return matching_cds[0]
+
+    def list(self):
+        '''
+        Lists all CDS instances.
+
+        @return: list of all registered CDS instances; empty list if none are registered
+        @rtype:  list
+        '''
+        return list(self.objectdb.find())
