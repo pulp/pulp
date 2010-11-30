@@ -181,10 +181,12 @@ class RepositoryDeferredFields(JSONController):
         'packagegroups',
         'packagegroupcategories',
         'errata',
+        'distribution',
     )
 
     @JSONController.error_handler
     def packages(self, id):
+        #TODO: Extremely slow for large repos
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
         repo = api.repository(id, ['id', 'packages'])
@@ -217,6 +219,13 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('type')
         types = self.filters(valid_filters)['type']
         return self.ok(api.errata(id, types))
+    
+    @JSONController.error_handler
+    def distribution(self, id):
+        """
+         list available distributions in a given repo.
+        """
+        return self.ok(api.list_distributions(id))
 
     @JSONController.error_handler
     @RoleCheck(consumer=True, admin=True)
@@ -265,7 +274,6 @@ class RepositoryActions(AsyncController):
         'rmkeys',
         'listkeys',
         'update_publish',
-        'list_distribution',
     )
 
     @JSONController.error_handler
@@ -587,14 +595,6 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         return self.ok(api.publish(id, bool(data['state'])))
-    
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def list_distribution(self, id):
-        """
-         list available distributions in a given repo.
-        """
-        return self.ok(api.list_distributions(id))
 
     @JSONController.error_handler
     def POST(self, id, action_name):

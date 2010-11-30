@@ -21,7 +21,7 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import RepoConnection
+from pulp.client.connection import RepoConnection, ConsumerConnection, ErrataConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
@@ -43,7 +43,8 @@ class RepoAction(Action):
 
     def setup_connections(self):
         self.pconn = RepoConnection()
-
+        self.cconn = ConsumerConnection()
+        self.econn = ErrataConnection()
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("repository id (required)"))
@@ -129,26 +130,60 @@ class Status(RepoAction):
 class Content(RepoAction):
 
     description = _('list the contents of a repository')
-
+    
+    def setup_parser(self):
+        super(Content, self).setup_parser()
+        opt_group = self.parser.add_option_group("Updates Only")
+        opt_group.add_option("--updates", action="store_true", dest="updates",
+                               help=_("only list available updates"))
+        opt_group.add_option("--consumerid", dest="consumerid",
+                               help=_("consumer id to list available updates."))
     def run(self):
         id = self.get_required_option('id')
+        if self.opts.updates and not self.opts.consumerid:
+            system_exit(os.EX_USAGE, _('Consumer Id is required with --updates option.'))
         repo = self.get_repo(id)
+        all_packages = self.pconn.packages(id)
+        all_pnames = [pkg['filename'] for pkg in all_packages]
+        all_errata = self.pconn.errata(repo['id'])
         files = repo['files']
-        packages = self.pconn.packages(id)
+        if self.opts.updates:
+            consumerid = self.opts.consumerid
+            pkg_updates = self.cconn.package_updates(consumerid)
+            pkgs = []
+            for p in pkg_updates:
+                #limit updates to repo packages
+                if p['filename'] in all_pnames:
+                    pkgs.append(p['filename'])
+            pnames = pkgs
+            # limit errata to repo
+            cerrata = self.cconn.errata(consumerid)
+            applicable_errata = []
+            for e in cerrata:
+                if e in all_errata:
+                    applicable_errata.append(e)
+            errata = applicable_errata
+        else:
+            pnames = all_pnames
+            errata = all_errata
         print_header(_('Contents of %s') % id)
-        print _('files in %s:') % id
+        
+        print _('\nPackages in %s: \n') % id
+        if not pnames:
+            print _(' none')
+        else:
+            print '\n'.join(pnames[:])
+        print _('\nErrata in %s: \n') % id
+        if not errata:
+            print _(' none')
+        else:
+            print '\n'.join(errata[:])
+        print _('\nfiles in %s: \n') % id
         if not files:
             print _(' none')
         else:
             for f in sorted(repo['files']):
                 print ' ' + f
-        print _('packages in %s:') % id
-        if not packages:
-            print _(' none')
-        else:
-            for p in sorted(packages, key=lambda p: p['filename']):
-                print ' ' + p['filename']
-
 
 class Create(RepoAction):
 

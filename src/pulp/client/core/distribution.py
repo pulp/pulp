@@ -49,7 +49,7 @@ class List(DistributionAction):
     def run(self):
         repoid = self.opts.repoid
         if repoid:
-            distribution = self.rconn.list_distribution(repoid)
+            distribution = self.rconn.distribution(repoid)
         else:
             distribution = self.dconn.distributions()
         if not distribution:

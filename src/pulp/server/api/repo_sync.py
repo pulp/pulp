@@ -227,7 +227,7 @@ class BaseSynchronizer(object):
         """
         try:
             retval = None
-            file_name = package.relativepath
+            file_name = os.path.basename(package.relativepath)
             hashtype = "sha256"
             checksum = package.checksum
             found = self.package_api.packages(name=package.name,

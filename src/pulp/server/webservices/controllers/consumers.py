@@ -163,7 +163,8 @@ class ConsumerDeferredFields(JSONController):
         'package_profile',
         'repoids',
         'certificate',
-        'keyvalues'
+        'keyvalues',
+        'package_updates',
     )
     @RoleCheck(consumer_id=True, admin=True)
     def package_profile(self, id):
@@ -220,6 +221,15 @@ class ConsumerDeferredFields(JSONController):
         keyvalues = consumer_api.get_keyvalues(id)
         return self.ok(keyvalues)
 
+    @JSONController.error_handler
+    @RoleCheck(consumer_id=True, admin=True)
+    def package_updates(self, id):
+        """
+        list applicable package updates for a given consumerid.
+        @type id: str
+        @param id: consumer id
+        """
+        return self.ok(consumer_api.list_package_updates(id))
 
     @JSONController.error_handler
     def GET(self, id, field_name):

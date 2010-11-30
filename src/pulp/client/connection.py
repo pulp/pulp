@@ -279,6 +279,10 @@ class RepoConnection(PulpConnection):
     def packagegroupcategories(self, repoid):
         method = "/repositories/%s/packagegroupcategories/" % repoid
         return self.conn.request_get(method)
+    
+    def distribution(self, id):
+        method = "/repositories/%s/distribution/" % id
+        return self.conn.request_get(method)
 
     def create_packagegroup(self, repoid, groupid, groupname, description):
         method = "/repositories/%s/create_packagegroup/" % repoid
@@ -367,11 +371,6 @@ class RepoConnection(PulpConnection):
     def update_publish(self, id, state):
         method = "/repositories/%s/update_publish/" % id
         return self.conn.request_post(method, params={"state":state})
-    
-    def list_distribution(self, id):
-        method = "/repositories/%s/list_distribution/" % id
-        return self.conn.request_post(method, params={'id':id})
-
 
 class ConsumerConnection(PulpConnection):
     """
@@ -473,6 +472,10 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/listerrata/" % id
         body = dict(types=types)
         return self.conn.request_post(method, params=body)
+    
+    def package_updates(self, id):
+        method = "/consumers/%s/package_updates/" % id
+        return self.conn.request_get(method)
 
     def installerrata(self, id, errataids, types=()):
         erratainfo = {'consumerid' : id,
