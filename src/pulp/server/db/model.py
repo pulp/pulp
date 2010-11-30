@@ -287,6 +287,7 @@ class CDS(Base):
     '''
 
     def __init__(self, hostname, name=None, description=None):
+        Base.__init__(self)
         self.hostname = hostname
         if name:
             self.name = name
