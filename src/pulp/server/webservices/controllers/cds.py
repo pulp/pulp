@@ -80,7 +80,7 @@ class CdsInstance(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def DELETE(self):
+    def DELETE(self, id):
         cds_api.unregister(id)
         return self.ok(True)
 
