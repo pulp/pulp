@@ -23,19 +23,17 @@ logging.root.setLevel(logging.ERROR)
 PendingQueue.ROOT = '/tmp/pulp/messaging'
 
 
-@remote
-@alias('dog')
 class Dog:
 
     WAG = 'WAG'
     WAGMSG = 'Yes master.  I will wag my tail because that is what dogs do.'
     BRKMSG = 'Yes master.  I will bark because that is what dogs do. "%s"'
 
-    @remotemethod
+    @remote
     def bark(self, words):
         return self.BRKMSG % words
 
-    @remotemethod
+    @remote
     def wag(self, n):
         wags = []
         for i in range(0, n):
@@ -88,12 +86,13 @@ class TestMessaging(TestCase):
         __agent = TestAgent(self.ID)
         agent = RemoteAgent(self.ID)
         dog = agent.Dog()
-        r = agent.dog.bark('pulp rocks!')
+        r = dog.bark('pulp rocks!')
         results.append(r)
         r = dog.wag(self.WAGS)
         results.append(r)
         self.validate(results)
         agent.close()
+        __agent.close()
 
     def testAsynchronous(self):
         __agent = TestAgent(self.ID)
@@ -108,6 +107,7 @@ class TestMessaging(TestCase):
         self.validate(lnr.replies)
         agent.close()
         async.close()
+        __agent.close()
 
     def testExceptions(self):
         raised = 0
@@ -127,6 +127,7 @@ class TestMessaging(TestCase):
             raised += 1
         self.assertEqual(raised, 2)
         agent.close()
+        __agent.close()
 
     def validate(self, results):
         # dog.bark()
