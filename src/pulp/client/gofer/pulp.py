@@ -24,7 +24,6 @@ from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 from pulp.client.repolib import RepoLib
 from pulp.client.credentials import Consumer
-from gofer.agent.action import *
 from gofer.decorators import *
 from yum import YumBase
 
@@ -34,14 +33,13 @@ log = getLogger(__name__)
 cfg = Config()
 
 
-@remote
-@action(minutes=cfg.server.interval)
-class ProfileUpdateAction(Action):
+class ProfileUpdateAction:
     """
     Package Profile Update Action to update installed package info for a
     registered consumer
     """
-    @remotemethod
+    @remote
+    @action(minutes=cfg.server.interval)
     def perform(self):
         """
         Looks up the consumer id and latest pkg profile info and cals
@@ -64,14 +62,12 @@ class ProfileUpdateAction(Action):
             log.error("Error: %s" % e)
 
 
-@remote
-@alias(name=['RepoLib', 'repolib'])
 class Repo:
     """
     Pulp (pulp.repo) yum repository object.
     """
 
-    @remotemethod
+    @remote
     def update(self):
         """
         Update the pulp.repo based on information
@@ -82,14 +78,12 @@ class Repo:
         rlib.update()
 
 
-@remote
-@alias(name='packages')
 class Packages:
     """
     Package management object.
     """
 
-    @remotemethod
+    @remote
     def install(self, packageinfo):
         """
         Install packages by name.
@@ -112,14 +106,13 @@ class Packages:
         yb.processTransaction()
         return installed
 
-@remote
-@alias(name='packagegroups')
+
 class PackageGroups:
     """
     PackageGroup management object
     """
 
-    @remotemethod
+    @remote
     def install(self, packagegroupids):
         """
         Install packagegroups by id.
@@ -136,11 +129,9 @@ class PackageGroups:
         return packagegroupids
 
 
-@remote
-@alias(name='shell')
 class Shell:
 
-    @remotemethod
+    @remote
     def run(self, cmd):
         """
         Run a shell command.
@@ -156,9 +147,9 @@ class Shell:
             f.close()
 
 
-@identity
 class PulpIdentity:
 
+    @identity
     def getuuid(self):
         bundle = Consumer()
         return bundle.getid()
