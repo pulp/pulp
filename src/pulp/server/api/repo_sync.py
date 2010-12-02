@@ -55,7 +55,7 @@ def yum_rhn_progress_callback(info):
     return dict(zip(fields, values))
 
 
-def sync(repo, repo_source, skip_dict, progress_callback=None):
+def sync(repo, repo_source, skip_dict={}, progress_callback=None):
     '''
     Synchronizes content for the given RepoSource.
 
@@ -144,7 +144,7 @@ class BaseSynchronizer(object):
     def add_packages_from_dir(self, dir, repo, skip={}):
         added_packages = {}
         added_errataids = []
-        if not skip.has_key('packages') or skip['packages'] == 1:
+        if not skip.has_key('packages') or skip['packages'] != 1:
             startTime = time.time()
             log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
             package_list = pulp.server.util.get_repo_packages(dir)
@@ -331,7 +331,7 @@ class BaseSynchronizer(object):
 
 class YumSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source, skip_dict, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         cacert = clicert = clikey = None
         if repo['ca'] and repo['cert'] and repo['key']:
             cacert = repo['ca'].encode('utf8')
