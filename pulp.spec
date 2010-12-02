@@ -32,7 +32,7 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: gofer-lib >= 0.1
+Requires: gofer-lib >= 0.3
 
 %if 14%{?fedora} < 13
 Requires: qpidd
@@ -73,7 +73,7 @@ BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
 Requires: %{name}-common = %{version}
-Requires: gofer >= 0.1
+Requires: gofer >= 0.3
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
