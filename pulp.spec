@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.109
+Version:        0.0.110
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -197,6 +197,39 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Thu Dec 02 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.110-1
+- Adding support to be able to skip specific content from syncs. This commit
+  includes (pkilambi@redhat.com)
+- Fix messaging unit tests. (jortel@redhat.com)
+- Refit pulp (gofer) plugin to match gofer 0.3. (jortel@redhat.com)
+- config clean up (pkilambi@redhat.com)
+- forgotten file from previous commit (duffy@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (mmccune@redhat.com)
+- updated css from mizmo (duffy@redhat.com)
+- typo for 'task' (jmatthew@redhat.com)
+- fix for repo publish to create published path if it has been deleted
+  (jmatthew@redhat.com)
+- Added CLI hooks for CDS register, unregister, and list.
+  (jason.dobies@redhat.com)
+- Added wiring from web services to CDS API. (jason.dobies@redhat.com)
+- Finished docs (jason.dobies@redhat.com)
+- Added API call for listing all CDS entries. Fixed an issue with the ID not
+  being set correctly in the CDS domain model. (jason.dobies@redhat.com)
+- updated css and images for better layout and colors (duffy@redhat.com)
+- renamed server init.d script from pulpd to pulp-server (jconnor@redhat.com)
+- added comment in internal where migration calls should be made
+  (jconnor@redhat.com)
+- Adding support - for all available content - for listing content by updates-
+  only per consumer - new cli changes to include --updates and consumerid
+  (pkilambi@redhat.com)
+- Header cleanup (jason.dobies@redhat.com)
+- Removed unused import (jason.dobies@redhat.com)
+- Code and comment cleanup (jason.dobies@redhat.com)
+- Added CDS model entity and basic register and retrieval APIs.
+  (jason.dobies@redhat.com)
+- fixing background for website (mmccune@redhat.com)
+
 * Mon Nov 29 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.109-1
 - 655256 - GET on repositories was only allowing admin and not consumers
   causing the auth to fail using consumer certs (pkilambi@redhat.com)
