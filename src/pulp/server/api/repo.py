@@ -1044,7 +1044,7 @@ class RepoApi(BaseApi):
             log.warn("Traceback: %s" % (traceback.format_exc()))
             return False
 
-    def _sync(self, id, progress_callback=None):
+    def _sync(self, id, skip_dict={}, progress_callback=None):
         """
         Sync a repo from the URL contained in the feed
         """
@@ -1052,46 +1052,48 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        sync_packages, sync_errataids = repo_sync.sync(repo, repo_source, progress_callback)
+        sync_packages, sync_errataids = repo_sync.sync(repo, repo_source, skip_dict, progress_callback)
         log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
             len(sync_errataids)))
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call
         self.update(repo)
-        # Remove packages that are no longer in source repo
-        for pid in repo["packages"]:
-            if pid not in sync_packages and \
-                repo["packages"][pid]["repo_defined"]:
-                # Only remove packages that are defined by the repo
-                # Example: don't delete uploaded packages
-                log.info("Removing package <%s> from repo <%s>" % (repo["packages"][pid], repo["id"]))
-                self.remove_package(repo["id"], repo["packages"][pid])
-        # Refresh repo object since we may have deleted some packages
-        repo = self._get_existing_repo(id)
-        for p in sync_packages.values():
-            self._add_package(repo, p)
-        # Update repo for package additions
-        self.update(repo)
-        # Determine removed errata
-        log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
-        for eid in self.errata(id):
-            if eid not in sync_errataids:
-                log.info("Removing errata %s from repo %s" % (eid, id))
-                self.delete_erratum(id, eid)
-        # Add in all errata, existing errata will be skipped
-        repo = self._get_existing_repo(id) #repo object must be refreshed
-        for eid in sync_errataids:
-            self._add_erratum(repo, eid)
+        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+            # Remove packages that are no longer in source repo
+            for pid in repo["packages"]:
+                if pid not in sync_packages and \
+                    repo["packages"][pid]["repo_defined"]:
+                    # Only remove packages that are defined by the repo
+                    # Example: don't delete uploaded packages
+                    log.info("Removing package <%s> from repo <%s>" % (repo["packages"][pid], repo["id"]))
+                    self.remove_package(repo["id"], repo["packages"][pid])
+            # Refresh repo object since we may have deleted some packages
+            repo = self._get_existing_repo(id)
+            for p in sync_packages.values():
+                self._add_package(repo, p)
+            # Update repo for package additions
+            self.update(repo)
+        if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
+            # Determine removed errata
+            log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
+            for eid in self.errata(id):
+                if eid not in sync_errataids:
+                    log.info("Removing errata %s from repo %s" % (eid, id))
+                    self.delete_erratum(id, eid)
+            # Add in all errata, existing errata will be skipped
+            repo = self._get_existing_repo(id) #repo object must be refreshed
+            for eid in sync_errataids:
+                self._add_erratum(repo, eid)
         repo['last_sync'] = datetime.now()
         self.update(repo)
 
     @audit()
-    def sync(self, id, progress_callback=None, timeout=None):
+    def sync(self, id, progress_callback=None, timeout=None, skip=None):
         """
         Run a repo sync asynchronously.
         """
         return self.run_async(self._sync,
-                              [id],
+                              [id, skip],
                               {'progress_callback': progress_callback},
                               timeout=timeout)
 

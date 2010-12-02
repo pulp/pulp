@@ -55,7 +55,7 @@ def yum_rhn_progress_callback(info):
     return dict(zip(fields, values))
 
 
-def sync(repo, repo_source, progress_callback=None):
+def sync(repo, repo_source, skip_dict, progress_callback=None):
     '''
     Synchronizes content for the given RepoSource.
 
@@ -69,8 +69,8 @@ def sync(repo, repo_source, progress_callback=None):
     if source_type not in type_classes:
         raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
     synchronizer = type_classes[source_type]()
-    repo_dir = synchronizer.sync(repo, repo_source, progress_callback)
-    return synchronizer.add_packages_from_dir(repo_dir, repo)
+    repo_dir = synchronizer.sync(repo, repo_source, skip_dict, progress_callback)
+    return synchronizer.add_packages_from_dir(repo_dir, repo, skip_dict)
 
 
 def update_schedule(repo):
@@ -141,23 +141,28 @@ class BaseSynchronizer(object):
         self.errata_api = ErrataApi()
         self.distro_api = DistributionApi()
 
-    def add_packages_from_dir(self, dir, repo):
-
-        startTime = time.time()
-        log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
-        package_list = pulp.server.util.get_repo_packages(dir)
+    def add_packages_from_dir(self, dir, repo, skip={}):
         added_packages = {}
         added_errataids = []
-        log.debug("Processing %s potential packages" % (len(package_list)))
-        for package in package_list:
-            package = self.import_package(package, repo, repo_defined=True)
-            if (package is not None):
-                added_packages[package["id"]] = package
-        endTime = time.time()
-        log.debug("Repo: %s read [%s] packages took %s seconds" %
-                (repo['id'], len(added_packages), endTime - startTime))
-        # process kickstart files/images part of the repo
-        self._process_repo_images(dir, repo)
+        if not skip.has_key('packages') or skip['packages'] == 1:
+            startTime = time.time()
+            log.debug("Begin to add packages from %s into %s" % (dir, repo['id']))
+            package_list = pulp.server.util.get_repo_packages(dir)
+            log.debug("Processing %s potential packages" % (len(package_list)))
+            for package in package_list:
+                package = self.import_package(package, repo, repo_defined=True)
+                if (package is not None):
+                    added_packages[package["id"]] = package
+            endTime = time.time()
+            log.debug("Repo: %s read [%s] packages took %s seconds" %
+                    (repo['id'], len(added_packages), endTime - startTime))
+        else:
+            log.info("Skipping package imports from sync process")
+        if not skip.has_key('distribution') or skip['distribution'] != 1:
+            # process kickstart files/images part of the repo
+            self._process_repo_images(dir, repo)
+        else:
+	    log.info("skipping distribution imports from sync process")
         # Import groups metadata if present
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):
@@ -180,7 +185,7 @@ class BaseSynchronizer(object):
                 group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
                         group_gz_xml_path)
                 repo['group_gz_xml_path'] = group_gz_xml_path
-            if "updateinfo" in ftypes:
+            if "updateinfo" in ftypes and not skip.has_key('errata') or skip['errata'] != 1:
                 updateinfo_xml_path = pulp.server.util.get_repomd_filetype_path(
                         repomd_xml_path, "updateinfo")
                 updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
@@ -190,6 +195,8 @@ class BaseSynchronizer(object):
                 added_errataids = self.sync_updateinfo_data(updateinfo_xml_path, repo)
                 log.debug("Loaded updateinfo from %s for %s" % \
                         (updateinfo_xml_path, repo["id"]))
+            else:
+                log.info("Skipping errata imports from sync process")
         return added_packages, added_errataids
     
     def _process_repo_images(self, repodir, repo):
@@ -324,7 +331,7 @@ class BaseSynchronizer(object):
 
 class YumSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict, progress_callback=None):
         cacert = clicert = clikey = None
         if repo['ca'] and repo['cert'] and repo['key']:
             cacert = repo['ca'].encode('utf8')
@@ -338,7 +345,7 @@ class YumSynchronizer(BaseSynchronizer):
                                 num_threads, cacert=cacert, clicert=clicert,
                                 clikey=clikey,
                                 packages_location=pulp.server.util.top_package_location(),
-				remove_old=remove_old, numOldPackages=num_old_pkgs_keep)
+				remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict)
         relative_path = repo['relative_path']
         if relative_path:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)

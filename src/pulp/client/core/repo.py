@@ -436,6 +436,12 @@ class Sync(RepoAction):
         super(Sync, self).setup_parser()
         self.parser.add_option("--timeout", dest="timeout",
                                help=_("synchronization timeout"))
+        self.parser.add_option("--no-packages", action="store_true", dest="nopackages",
+                               help=_("skip packages from the sync process"))
+        self.parser.add_option("--no-errata", action="store_true", dest="noerrata",
+                               help=_("skip errata from the sync process"))
+        self.parser.add_option("--no-distribution", action="store_true", dest="nodistro",
+                               help=_("skip distributions from the sync process"))
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
                                help=_('synchronize repository in the foreground'))
@@ -496,8 +502,17 @@ class Sync(RepoAction):
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for repository %s already in progress') % id
             return tasks[0]
+	skip = {}
+        if self.opts.nopackages:
+	    skip['packages'] = 1
+            # skip errata as well, no point of errata without pkgs
+            skip['errata']  = 1
+        if self.opts.noerrata:
+            skip['errata'] = 1
+        if self.opts.nodistro:
+            skip['distribution'] = 1
         timeout = self.opts.timeout
-        task = self.pconn.sync(id, timeout)
+        task = self.pconn.sync(id, skip, timeout)
         print _('Sync for repository %s started') % id
         return task
 

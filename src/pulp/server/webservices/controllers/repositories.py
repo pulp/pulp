@@ -284,8 +284,9 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        timeout = self.timeout(self.params())
-        task = self.start_task(api._sync, [id], timeout=timeout, unique=True)
+        repo_params = self.params()
+        timeout = self.timeout(repo_params)
+        task = self.start_task(api._sync, [id, repo_params['skip']], timeout=timeout, unique=True)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])

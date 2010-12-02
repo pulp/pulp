@@ -235,9 +235,9 @@ class RepoConnection(PulpConnection):
         method = "/repositories/"
         return self.conn.request_delete(method)
 
-    def sync(self, repoid, timeout=None):
+    def sync(self, repoid, skip={}, timeout=None):
         method = "/repositories/%s/sync/" % repoid
-        return self.conn.request_post(method, params={"timeout":timeout})
+        return self.conn.request_post(method, params={"timeout":timeout, "skip" : skip})
 
     def sync_list(self, repoid):
         method = '/repositories/%s/sync/' % repoid
