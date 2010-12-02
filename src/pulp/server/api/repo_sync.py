@@ -412,28 +412,35 @@ class LocalSynchronizer(BaseSynchronizer):
             else:
                 if not os.path.exists(dst_repo_dir):
                     os.makedirs(dst_repo_dir)
-                self._sync_rpms(dst_repo_dir, src_repo_dir)
+                if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+                    self._sync_rpms(dst_repo_dir, src_repo_dir)
+                else:
+		    log.info("Skipping package imports from sync process")
                 # compute and import repo image files            
                 src_images_dir = os.path.join(src_repo_dir, "images")
                 if not os.path.exists(src_images_dir):
                     log.info("No image files to import")
                 else:
-                    imlist = pulp.server.util.listdir(src_images_dir)
-                    dst_images_dir = os.path.join(dst_repo_dir, "images")
-                    for imfile in imlist:
-                        rel_file_path = imfile.split('/images/')[-1]
-                        dst_file_path = os.path.join(dst_images_dir, rel_file_path)
-                        if os.path.exists(dst_file_path):
-                            dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
-                            src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
-                            if src_file_checksum == dst_file_checksum:
-                                log.info("file %s already exists with same checksum. skip import" % rel_file_path)
-                                continue
-                        file_dir = os.path.dirname(dst_file_path)
-                        if not os.path.exists(file_dir):
-                            os.makedirs(file_dir)
-                        shutil.copy(imfile, dst_file_path)
-                        log.info("Imported file %s " % dst_file_path)
+		    if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
+                        imlist = pulp.server.util.listdir(src_images_dir)
+                        dst_images_dir = os.path.join(dst_repo_dir, "images")
+                        for imfile in imlist:
+                            rel_file_path = imfile.split('/images/')[-1]
+                            dst_file_path = os.path.join(dst_images_dir, rel_file_path)
+                            if os.path.exists(dst_file_path):
+                                dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
+                                src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
+                                if src_file_checksum == dst_file_checksum:
+                                    log.info("file %s already exists with same checksum. skip import" % rel_file_path)
+                                    continue
+                            file_dir = os.path.dirname(dst_file_path)
+                            if not os.path.exists(file_dir):
+                                os.makedirs(file_dir)
+                            shutil.copy(imfile, dst_file_path)
+                            log.info("Imported file %s " % dst_file_path)
+                            self._process_repo_images(dst_repo_dir, repo)
+                    else:
+                        log.info("Skipping distribution imports from sync process")
                 groups_xml_path = None
                 updateinfo_path = None
                 src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
@@ -449,7 +456,7 @@ class LocalSynchronizer(BaseSynchronizer):
                             log.debug("Copied groups over to %s" % (dst_repo_dir))
                         groups_xml_path = os.path.join(dst_repo_dir,
                             os.path.basename(src_groups))
-                    if "updateinfo" in ftypes:
+                    if "updateinfo" in ftypes and (not skip_dict.has_key('errata') or skip_dict['errata'] != 1):
                         f = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "updateinfo")
                         src_updateinfo_path = os.path.join(src_repo_dir, f)
                         if os.path.isfile(src_updateinfo_path):
@@ -468,6 +475,8 @@ class LocalSynchronizer(BaseSynchronizer):
                                 os.path.join(dst_repo_dir, "updateinfo.xml"), "wt"))
                             log.debug("Copied %s to %s" % (src_updateinfo_path, dst_repo_dir))
                             updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
+                    else:
+		        log.info("Skipping errata imports from sync process")
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
                 pulp.server.upload.create_repo(dst_repo_dir, groups=groups_xml_path)
@@ -511,12 +520,14 @@ class RHNSynchronizer(BaseSynchronizer):
 
         # Perform the sync
         dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
-        s.syncPackages(channel, savePath=dest_dir, callback=progress_callback)
-        s.createRepo(dest_dir)
-        updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
-        if os.path.isfile(updateinfo_path):
-            log.info("updateinfo_path is found, calling updateRepo")
-            s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
+        if not skip_dict('packages') or skip_dict['packages'] != 1:
+            s.syncPackages(channel, savePath=dest_dir, callback=progress_callback)
+            s.createRepo(dest_dir)
+        if not skip_dict('errata') or skip_dict['errata'] != 1:
+            updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
+            if os.path.isfile(updateinfo_path):
+                log.info("updateinfo_path is found, calling updateRepo")
+                s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
 
         return dest_dir
 
