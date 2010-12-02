@@ -185,7 +185,7 @@ class BaseSynchronizer(object):
                 group_gz_xml_path = os.path.join(dir.encode("ascii", "ignore"),
                         group_gz_xml_path)
                 repo['group_gz_xml_path'] = group_gz_xml_path
-            if "updateinfo" in ftypes and not skip.has_key('errata') or skip['errata'] != 1:
+            if "updateinfo" in ftypes and (not skip.has_key('errata') or skip['errata'] != 1):
                 updateinfo_xml_path = pulp.server.util.get_repomd_filetype_path(
                         repomd_xml_path, "updateinfo")
                 updateinfo_xml_path = os.path.join(dir.encode("ascii", "ignore"),
