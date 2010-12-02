@@ -399,7 +399,7 @@ class LocalSynchronizer(BaseSynchronizer):
                 log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
                 os.remove(os.path.join(dst_repo_dir, epkg))
 
-    def sync(self, repo, repo_source, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         try:
@@ -487,7 +487,7 @@ class LocalSynchronizer(BaseSynchronizer):
 
 class RHNSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
         pieces = repo_source['url'].split('/')
