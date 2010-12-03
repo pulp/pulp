@@ -299,3 +299,24 @@ class CDS(Base):
     def __str__(self):
         return self.hostname
 
+class CDSHistoryEvent(Base):
+    '''
+    Represents a single event that occurred on a CDS.
+    '''
+
+    def __init__(self, cds_hostname, originator, type_name, details):
+        Base.__init__(self)
+        self.cds_hostname = cds_hostname
+        self.originator = originator
+        self.type_name = type_name
+        self.details = details
+        self.timestamp = datetime.datetime.now()
+
+class CDSHistoryEventType(object):
+    '''
+    Enumeration of possible history event types. This corresponds to the type_name attribute
+    on the CDSHistoryEvent class.
+    '''
+    SYNC = 'SYNC'
+    ADD_REPO = 'ADD_REPO'
+    REMOVE_REPO = 'REMOVE_REPO'

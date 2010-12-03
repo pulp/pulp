@@ -35,7 +35,7 @@ class CdsApi(BaseApi):
         self.repo_api = RepoApi()
 
     def _getcollection(self):
-        return get_object_db('cds', self._unique_indexes, self._indexes)
+        return get_object_db('cds', ['hostname'], self._indexes)
 
 # -- public api ---------------------------------------------------------------------
 
@@ -199,7 +199,7 @@ class CdsApi(BaseApi):
         cds = self.cds(cds_hostname)
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
-
+        
 # -- internal only api ---------------------------------------------------------------------
 
     def unassociate_all_from_repo(self, repo_id):
