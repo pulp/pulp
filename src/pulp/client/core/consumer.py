@@ -51,7 +51,7 @@ class ConsumerAction(Action):
         default = None
         id = self.getconsumerid()
         if id is not None:
-            help = SUPPRESS_HELP
+            help = _("consumer identifier eg: foo.example.com")
             default = id
         self.parser.add_option("--id", dest="id", default=default, help=help)
 
