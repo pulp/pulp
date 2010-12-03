@@ -19,6 +19,7 @@ import logging
 import pymongo
 from pymongo.son_manipulator import AutoReference, NamespaceInjector
 
+from pulp.server import config
 
 _connection = None
 _database = None
@@ -27,16 +28,25 @@ _log = logging.getLogger(__name__)
 
 # connection api --------------------------------------------------------------
 
-def _initialize():
+def reinitialize(name=None, seeds=None):
+    _initialize(name, seeds)
+
+def _initialize(name=None, seeds=None):
     """
     Initialize the connection pool and top-level database for pulp.
     """
     global _connection, _database
     try:
-        _connection = pymongo.Connection()
-        _database = _connection._database
+        if not name:
+            name = config.config.get('database', 'name')
+        if not seeds:
+            seeds = config.config.get('database', 'seeds')
+        _log.info("Attempting Database connection with seeds = %s" % (seeds))
+        _connection = pymongo.Connection(seeds)
+        _database = getattr(_connection, name)
         _database.add_son_manipulator(NamespaceInjector())
         _database.add_son_manipulator(AutoReference(_database))
+        _log.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
     except Exception:
         _log.critical('Database initialization failed')
         _connection = None

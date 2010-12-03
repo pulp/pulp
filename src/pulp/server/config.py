@@ -33,6 +33,8 @@ _default_values = {
     },
     'database': {
         'auto_upgrade': 'true',
+        'name': '_database',
+        'seeds': 'localhost:27017',
     },
     'logs': {
         'qpid_log_level': 'info',

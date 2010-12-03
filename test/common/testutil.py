@@ -19,6 +19,7 @@ from datetime import timedelta
 
 from pulp.server import auditing
 from pulp.server import config
+from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.util import random_string
 
@@ -34,7 +35,8 @@ def load_test_config():
     except RuntimeError:
         pass
     start_logging()
-
+    # Re-init the database connection so we can pick up settings for the test database
+    connection.reinitialize()
     return config.config
 
 
