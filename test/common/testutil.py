@@ -23,6 +23,10 @@ from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.util import random_string
 
+def initialize():
+    connection.initialize()
+    auditing.initialize()
+
 def load_test_config():
 
     if not os.path.exists('/tmp/pulp'):
@@ -36,7 +40,7 @@ def load_test_config():
         pass
     start_logging()
     # Re-init the database connection so we can pick up settings for the test database
-    connection.reinitialize()
+    initialize()
     return config.config
 
 
@@ -105,3 +109,6 @@ def create_random_package(api):
     api.update(p)
     return p
 
+
+#implicit initialize
+initialize()

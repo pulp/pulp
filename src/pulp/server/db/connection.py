@@ -28,10 +28,7 @@ _log = logging.getLogger(__name__)
 
 # connection api --------------------------------------------------------------
 
-def reinitialize(name=None, seeds=None):
-    _initialize(name, seeds)
-
-def _initialize(name=None, seeds=None):
+def initialize(name=None, seeds=None):
     """
     Initialize the connection pool and top-level database for pulp.
     """
@@ -77,7 +74,3 @@ def get_object_db(name, unique_indexes=[], other_indexes=[], order=pymongo.DESCE
         #_log.debug('Object DB %s: adding non-unique index: %s' % (objdb.name, index))
         objdb.ensure_index([(index, order)], unique=False, background=True)
     return objdb
-
-# initialize on import --------------------------------------------------------
-
-_initialize()

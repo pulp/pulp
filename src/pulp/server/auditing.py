@@ -39,12 +39,16 @@ import pulp.server.logs
 # globals ---------------------------------------------------------------------
 
 # auditing events database
-_objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
+_objdb = None
 
 # setup log - do not change this to __name__
 _log = logging.getLogger('auditing')
 
 # auditing helper api and classes ---------------------------------------------
+
+def initialize():
+    global _objdb
+    _objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
 
 def audit_repr(value):
     """

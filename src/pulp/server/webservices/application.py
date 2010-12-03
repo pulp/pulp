@@ -17,6 +17,8 @@
 import web
 
 from pulp.server import config # unused here, but initializes configuration
+from pulp.server import auditing
+from pulp.server.db import connection
 from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
@@ -47,5 +49,7 @@ def wsgi_application():
     """
     application = web.subdir_application(urls)
     start_logging()
+    connection.initialize()
+    auditing.initialize()
     check_version()
     return application.wsgifunc()
