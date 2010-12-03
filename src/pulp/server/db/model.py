@@ -304,7 +304,7 @@ class CDSHistoryEvent(Base):
     Represents a single event that occurred on a CDS.
     '''
 
-    def __init__(self, cds_hostname, originator, type_name, details):
+    def __init__(self, cds_hostname, originator, type_name, details=None):
         Base.__init__(self)
         self.cds_hostname = cds_hostname
         self.originator = originator
@@ -317,6 +317,12 @@ class CDSHistoryEventType(object):
     Enumeration of possible history event types. This corresponds to the type_name attribute
     on the CDSHistoryEvent class.
     '''
-    SYNC = 'SYNC'
-    ADD_REPO = 'ADD_REPO'
-    REMOVE_REPO = 'REMOVE_REPO'
+    REGISTERED = 'REGISTERED'
+    UNREGISTERED = 'UNREGISTERED'
+    SYNC_STARTED = 'SYNC_STARTED'
+    SYNC_FINISHED = 'SYNC_FINISHED'
+    REPO_ASSOCIATED = 'REPO_ASSOCIATED'
+    REPO_UNASSOCIATED = 'REPO_UNASSOCIATED'
+
+    TYPES = (REGISTERED, UNREGISTERED, SYNC_STARTED, SYNC_FINISHED, REPO_ASSOCIATED, REPO_UNASSOCIATED)
+    
