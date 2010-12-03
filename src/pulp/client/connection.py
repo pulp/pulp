@@ -721,6 +721,24 @@ class CdsConnection(PulpConnection):
         method = '/cds/'
         return self.conn.request_get(method)
 
+    def history(self, hostname, event_type=None, limit=None, sort=None, start_date=None,
+                end_date=None):
+
+        data = {}
+        if event_type:
+            data['event_type'] = event_type
+        if limit:
+            data['limit'] = limit
+        if sort:
+            data['sort'] = sort
+        if start_date:
+            data['start_date'] = start_date
+        if end_date:
+            data['end_date'] = end_date
+
+        method = '/cds/history/%s/' % hostname
+        return self.conn.request_post(method, params=data)
+
 if __name__ == '__main__':
     rconn = RepoConnection()
     print "+--------------------------------+"

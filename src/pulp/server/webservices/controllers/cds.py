@@ -15,6 +15,7 @@
 # in this software or its documentation.
 
 # Python
+import datetime
 import logging
 
 # 3rd Party
@@ -22,6 +23,8 @@ import web
 
 # Pulp
 from pulp.server.api.cds import CdsApi
+import pulp.server.api.cds_history as cds_history
+from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.role_check import RoleCheck
@@ -29,8 +32,8 @@ from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
-
 cds_api = CdsApi()
+cds_history_api = CdsHistoryApi()
 log = logging.getLogger(__name__)
 
 # restful controllers ---------------------------------------------------------
@@ -84,10 +87,41 @@ class CdsInstance(JSONController):
         cds_api.unregister(id)
         return self.ok(True)
 
+class CdsHistory(JSONController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def POST(self, id):
+        data = self.params()
+
+        event_type = data.get('event_type', None)
+        limit = data.get('limit', None)
+        sort = data.get('sort', None)
+        start_date = data.get('start_date', None)
+        end_date = data.get('end_date', None)
+
+        if sort is None:
+            sort = cds_history.SORT_DESCENDING
+
+        if limit:
+            limit = int(limit)
+
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+
+        results = cds_history_api.query(cds_hostname=id, event_type=event_type, limit=limit,
+                                        sort=sort, start_date=start_date, end_date=end_date)
+        return self.ok(results)
+
+
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'CdsInstances',
+    '/history/([^/]+)/$', 'CdsHistory',
     '/([^/]+)/$', 'CdsInstance',
 )
 

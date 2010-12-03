@@ -18,6 +18,7 @@ import logging
 
 # Pulp
 from pulp.server.api.base import BaseApi
+from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 from pulp.server.db.connection import get_object_db
@@ -33,6 +34,7 @@ class CdsApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         self.repo_api = RepoApi()
+        self.cds_history_api = CdsHistoryApi()
 
     def _getcollection(self):
         return get_object_db('cds', ['hostname'], self._indexes)
@@ -74,6 +76,8 @@ class CdsApi(BaseApi):
         cds = CDS(hostname, name, description)
         self.insert(cds)
 
+        self.cds_history_api.cds_registered(hostname)
+
         return cds
 
     @audit()
@@ -96,6 +100,8 @@ class CdsApi(BaseApi):
         # Decide what should happen if the unregister fails
 
         self.objectdb.remove({'hostname' : hostname}, safe=True)
+
+        self.cds_history_api.cds_unregistered(hostname)
 
     def cds(self, hostname):
         '''
@@ -155,6 +161,8 @@ class CdsApi(BaseApi):
 
         self.objectdb.save(cds, safe=True)
 
+        self.cds_history_api.repo_associated(cds_hostname, repo_id)
+
     def unassociate_repo(self, cds_hostname, repo_id):
         '''
         Removes an existing association between a CDS and a repo. This call will not cause
@@ -182,6 +190,8 @@ class CdsApi(BaseApi):
 
         self.objectdb.save(cds, safe=True)
 
+        self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
+
     def sync(self, cds_hostname):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
@@ -199,7 +209,10 @@ class CdsApi(BaseApi):
         cds = self.cds(cds_hostname)
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
-        
+
+        # Call out to dispatcher to trigger sync
+        # Dispatcher will do the history additions since the call will be async
+               
 # -- internal only api ---------------------------------------------------------------------
 
     def unassociate_all_from_repo(self, repo_id):
@@ -220,3 +233,5 @@ class CdsApi(BaseApi):
         for cds in cds_list:
             cds['repo_ids'].remove(repo_id)
             self.objectdb.save(cds, safe=True)
+
+            self.cds_history_api.repo_unassociated(cds['hostname'], repo_id)

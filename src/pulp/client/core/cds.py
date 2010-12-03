@@ -82,3 +82,34 @@ class List(Action):
 
         for cds in all_cds:
             print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description']))
+
+class History(Action):
+
+    description = _('displays the history of events on a CDS')
+
+    def setup_connections(self):
+        self.cds_conn = CdsConnection()
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('hostname (required)'))
+        self.parser.add_option('--event_type', dest='event_type',
+                               help=_('limits displayed history entries to the given type'))
+        self.parser.add_option('--limit', dest='limit',
+                               help=_('limits displayed history entries to the given amount (must be greater than zero)'))
+        self.parser.add_option('--sort', dest='sort',
+                               help=_('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'))
+        self.parser.add_option('--start_date', dest='start_date',
+                               help=_('only return entries that occur on or after the given date (format: yyyy-mm-dd)'))
+        self.parser.add_option('--end_date', dest='end_date',
+                               help=_('only return entries that occur on or before the given date (format: yyyy-mm-dd)'))
+
+    def run(self):
+        hostname = self.get_required_option('hostname')
+
+        results = self.cds_conn.history(hostname, event_type=self.opts.event_type,
+                                        limit=self.opts.limit, sort=self.opts.sort,
+                                        start_date=self.opts.start_date,
+                                        end_date=self.opts.end_date)
+
+        print(results)

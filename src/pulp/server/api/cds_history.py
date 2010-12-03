@@ -40,7 +40,7 @@ SORT_DIRECTION = {
 
 # -- api ---------------------------------------------------------------------
 
-class CDSHistoryApi(BaseApi):
+class CdsHistoryApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
