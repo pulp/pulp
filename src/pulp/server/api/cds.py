@@ -18,10 +18,12 @@ import logging
 
 # Pulp
 from pulp.server.api.base import BaseApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDS
 from pulp.server.pexceptions import PulpException
+
 
 log = logging.getLogger(__name__)
 
@@ -30,9 +32,12 @@ class CdsApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
+        self.repo_api = RepoApi()
 
     def _getcollection(self):
         return get_object_db('cds', self._unique_indexes, self._indexes)
+
+# -- public api ---------------------------------------------------------------------
 
     @audit()
     def register(self, hostname, name=None, description=None):
@@ -116,3 +121,102 @@ class CdsApi(BaseApi):
         @rtype:  list
         '''
         return list(self.objectdb.find())
+
+    def associate_repo(self, cds_hostname, repo_id):
+        '''
+        Associates a repo with a CDS. All data in an associated repo will be kept synchronized
+        when the CDS synchronization occurs. This call will not cause the initial
+        synchronization of the repo to occur to this CDS; that must be explicitly done through
+        a separate call or picked up during the next scheduled sync for the CDS. This call has
+        no effect if the given repo is already associated with the given CDS.
+
+        @param cds_hostname: identifies the CDS to associate the repo with; the CDS entry
+                             must exist prior to this call
+        @type  cds_hostname: string; may not be None
+
+        @param repo_id: identifies the repo to associate with the CDS; the repo must exist
+                        prior to this call
+        @type  repo_id: string; may not be None
+
+        @raise PulpException: if the CDS or repo does not exist
+        '''
+
+        # Entity load and sanity check on the arguments
+        cds = self.cds(cds_hostname)
+        if cds is None:
+            raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
+
+        repo = self.repo_api.repository(repo_id)
+        if repo is None:
+            raise PulpException('Repository with ID [%s] could not be found' % repo_id)
+
+        if repo_id not in cds['repo_ids']:
+            cds['repo_ids'].append(repo_id)
+
+        self.objectdb.save(cds, safe=True)
+
+    def unassociate_repo(self, cds_hostname, repo_id):
+        '''
+        Removes an existing association between a CDS and a repo. This call will not cause
+        the repo data to be deleted from the CDS; that must be explicitly done through
+        a separate call or picked up during the next scheduled sync for the CDS. This call has
+        no effect if the given repo is not associated with the given CDS.
+
+        @param cds_hostname: identifies the CDS to remove the repo association; the CDS entry
+                             must exist prior to this call
+        @type  cds_hostname: string; may not be None
+
+        @param repo_id: identifies the repo to unassociate from the CDS
+        @type  repo_id: string; may not be None
+
+        @raise PulpException: if the CDS does not exist
+        '''
+
+        # Entity load and sanity check on the arguments
+        cds = self.cds(cds_hostname)
+        if cds is None:
+            raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
+
+        if repo_id in cds['repo_ids']:
+            cds['repo_ids'].remove(repo_id)
+
+        self.objectdb.save(cds, safe=True)
+
+    def sync(self, cds_hostname):
+        '''
+        Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
+        regardless of when its next scheduled sync would be. The CDS will be brought up to
+        speed with all repos it is currently associated with, including deleting repos that
+        are no longer associated with the CDS.
+
+        @param cds_hostname: identifies the CDS
+        @type  cds_hostname: string; may not be None
+
+        @raise PulpException: if the CDS does not exist
+        '''
+
+        # Entity load and sanity check on the arguments
+        cds = self.cds(cds_hostname)
+        if cds is None:
+            raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
+
+# -- internal only api ---------------------------------------------------------------------
+
+    def unassociate_all_from_repo(self, repo_id):
+        '''
+        Unassociates all CDS instances that are associated with the given repo. This is
+        meant to be called in response to a repo being deleted. Unlike the unassociate call
+        that requires an explicit sync, this call will trigger a message to be sent to each
+        CDS to remove the repo. The rationale is that if a repo is deleted, we want it to
+        be deleted everywhere as soon as possible without having to make the user explicitly
+        trigger syncs on all CDS instances that may have the repo.
+        '''
+
+        # Find all CDS instances associated with the given repo
+        cds_list = self.objectdb.find({'repo_ids': {'$exists': True}})
+
+        # Queue calls to the CDS to unassociate
+
+        for cds in cds_list:
+            cds['repo_ids'].remove(repo_id)
+            self.objectdb.save(cds, safe=True)

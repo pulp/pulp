@@ -294,6 +294,7 @@ class CDS(Base):
         else:
             self.name = hostname
         self.description = description
+        self.repo_ids = []
 
     def __str__(self):
         return self.hostname
