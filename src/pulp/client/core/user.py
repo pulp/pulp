@@ -17,6 +17,7 @@
 #
 
 import os
+import getpass
 from gettext import gettext as _
 
 from pulp.client import constants
@@ -61,18 +62,16 @@ class Create(UserAction):
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
                                help=_("new username to create (required)"))
-        self.parser.add_option("--password", dest="password", default='',
-                               help=_("password for authentication"))
         self.parser.add_option("--name", dest="name", default='',
                                help=_("name of user for display purposes"))
 
     def run(self):
         newusername = self.get_required_option('username')
-        newpassword = self.opts.password
+        newpassword = getpass.getpass("Enter password for user %s: " % newusername)
         name = self.opts.name
         user = self.userconn.create(newusername, newpassword, name)
         print _("Successfully created user [ %s ] with name [ %s ]") % \
-                (user['login'], user["name"])
+                (user['login'], user['name'])
 
 
 class Update(UserAction):
@@ -82,19 +81,20 @@ class Update(UserAction):
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
                                help=_("username of user you wish to edit. Not editable (required)"))
-        self.parser.add_option("--password", dest="password", default='',
-                               help=_("updated password to assign to user"))
+        self.parser.add_option("-P", "--password", dest="password", action='store_true', default=False,
+                               help=_('change user password'))
         self.parser.add_option("--name", dest="name", default='',
                                help=_("updated name of user for display purposes"))
 
     def run(self):
         username = self.get_required_option('username')
-        password = self.opts.password
         name = self.opts.name
         
         user = self.get_user(username)
         user['name'] = name
-        user['password'] = password
+        if self.opts.password:
+            newpassword = getpass.getpass("Enter new password for user %s: " % username)
+            user['password'] = newpassword
         self.userconn.update(user)
         print _("Successfully updated [ %s ] with name [ %s ]") % \
                 (user['login'], user["name"])
