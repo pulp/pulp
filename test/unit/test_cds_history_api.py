@@ -29,7 +29,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 
 sys.path.insert(0, commondir)
 
-from pulp.server.api.cds_history import CDSHistoryApi
+from pulp.server.api.cds_history import CdsHistoryApi
 import pulp.server.auth.auth as auth
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent, User
 from pulp.server.pexceptions import PulpException
@@ -39,7 +39,7 @@ class TestCDSHistoryApi(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.cds_history_api = CDSHistoryApi()
+        self.cds_history_api = CdsHistoryApi()
 
         self.user = User('cds_admin', '12345', 'password', 'CDS User')
         auth.set_principal(self.user)
