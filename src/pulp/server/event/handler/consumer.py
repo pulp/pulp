@@ -25,7 +25,6 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-@handler(entity='consumer')
 class ConsumerEvent(EventHandler):
     """
     The I{consumer} event handler.
@@ -122,3 +121,6 @@ class ConsumerEvent(EventHandler):
         log.error("Consumer event delete processing %s" % event)
         consumerid   = event['id']
         self.capi.delete(consumerid)
+
+
+EventDispatcher.register('consumer', ConsumerEvent)

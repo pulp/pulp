@@ -21,6 +21,7 @@ Contains QPID event classes.
 
 import os
 import imp
+import inspect
 from pulp.server.event import *
 from pulp.server.event.consumer import EventConsumer
 from threading import RLock as Mutex
@@ -32,33 +33,6 @@ mutex = Mutex()
 flags = EventFlags()
 
 
-# decorator workspace for correlating
-# methods to classes.
-_method = ({},{})
-
-
-def handler(entity):
-    """
-    Event handler decorator.
-    Associate a handler class with an entity.
-    @param entity: The I{entity} part of an AMQP subject.
-    @type entity: str
-    """
-    def decorator(cls):
-        mutex.acquire()
-        try:
-            global _method
-            EventDispatcher.register(
-                entity,
-                cls,
-                _method[0],
-                _method[1])
-            _method = ({},{})
-        finally:
-            mutex.release()
-        return cls
-    return decorator
-
 def inbound(action):
     """
     Event (inbound) method decorator.
@@ -69,7 +43,7 @@ def inbound(action):
     def decorator(fn):
         mutex.acquire()
         try:
-            _method[0][action] = fn
+            fn.inbound = action
         finally:
             mutex.release()
         return fn
@@ -85,7 +59,7 @@ def outbound(action):
     def decorator(fn):
         mutex.acquire()
         try:
-            _method[1][action] = fn
+            fn.outbound = action
         finally:
             mutex.release()
         return fn
@@ -197,18 +171,26 @@ class EventDispatcher(EventConsumer):
         log.info('Event dispatcher - started.')
 
     @classmethod
-    def register(cls, entity, hclass, inbound, outbound):
+    def register(cls, entity, hclass):
         """
         Register a handler.
+        Find decorated functions and use them to associate
+        methods to actions.
         @param entity: The entity name.
         @type entity: str
         @param hclass: The handler class.
         @param hclass: class
-        @param inbound: The I{inbound} method mappings.
-        @type inbound: dict
-        @param outbound: The I{outbound} method mappings.
-        @type outbound: dict
         """
+        inbound = {}
+        outbound = {}
+        for name, method in inspect.getmembers(hclass, inspect.ismethod):
+            fn = method.im_func
+            if hasattr(fn, 'inbound'):
+                inbound[fn.inbound] = method
+                continue
+            if hasattr(fn, 'outbound'):
+                outbound[fn.outbound] = method
+                continue
         cls.handlers[entity] = \
             Handler(hclass, inbound, outbound)
 
