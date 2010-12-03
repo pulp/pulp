@@ -40,6 +40,7 @@ class TestCDSHistoryApi(unittest.TestCase):
     def setUp(self):
         self.config = testutil.load_test_config()
         self.cds_history_api = CdsHistoryApi()
+        self.cds_history_api.clean()
 
         self.user = User('cds_admin', '12345', 'password', 'CDS User')
         auth.set_principal(self.user)

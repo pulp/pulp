@@ -28,6 +28,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.server.api.cds import CdsApi
+from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.pexceptions import PulpException
 
@@ -35,14 +36,20 @@ import testutil
 
 class TestCdsApi(unittest.TestCase):
 
+    def clean(self):
+        self.repo_api.clean()
+        self.cds_history_api.clean()
+        self.cds_api.clean()
+
     def setUp(self):
         self.config = testutil.load_test_config()
         self.cds_api = CdsApi()
+        self.cds_history_api = CdsHistoryApi()
         self.repo_api = RepoApi()
+        self.clean()
 
     def tearDown(self):
-        self.repo_api.clean()
-        self.cds_api.clean()
+        self.clean()
         testutil.common_cleanup()
 
     def test_register_simple_attributes(self):
