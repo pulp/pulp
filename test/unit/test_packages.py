@@ -107,7 +107,7 @@ class TestApi(unittest.TestCase):
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         print "Package! %s" % p
         # Add this package version to the repo
-        self.rapi.add_package(repo["id"], p['id'])
+        self.rapi.add_package(repo["id"],[p['id']])
         # Lookup repo and confirm new package version was added
         repo = self.rapi.repository(repo["id"])
         self.assertTrue(repo["packages"].has_key(p['id']))
@@ -152,9 +152,9 @@ class TestApi(unittest.TestCase):
         pkg1 = testutil.create_random_package(self.papi)
         pkg2 = testutil.create_random_package(self.papi)
         pkg3 = testutil.create_random_package(self.papi)
-        self.rapi.add_package(repo_a["id"], pkg1["id"])
-        self.rapi.add_package(repo_a["id"], pkg2["id"])
-        self.rapi.add_package(repo_b["id"], pkg1["id"])
+        self.rapi.add_package(repo_a["id"], [pkg1["id"]])
+        self.rapi.add_package(repo_a["id"], [pkg2["id"]])
+        self.rapi.add_package(repo_b["id"], [pkg1["id"]])
 
         found = self.rapi.repository(repo_a["id"])
         self.assertTrue(pkg1["id"] in found["packages"])

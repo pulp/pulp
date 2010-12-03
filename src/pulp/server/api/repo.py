@@ -562,18 +562,48 @@ class RepoApi(BaseApi):
                     return p
         return {}
 
+    def get_package_by_filename(self, id, filename):
+        """
+          Return matching Package object in this Repo by filename
+        """
+	log.info('looking up pkg filename [%s] in repo [%s]' % (filename, id))
+        repo = self._get_existing_repo(id)
+        packages = repo['packages']
+        for p in packages.values():
+	    if filename == p['filename']:
+	        return p
+        return {}
+
     @audit()
-    def add_package(self, repoid, packageid):
+    def add_package(self, repoid, packageids=[]):
         """
         Adds the passed in package to this repo
         """
         repo = self._get_existing_repo(repoid)
-        package = self.packageapi.package(packageid)
-        if package is None:
-            raise PulpException("No Package with id: %s found" % packageid)
-        # TODO:  We might want to restrict Packages we add to only
-        #        allow 1 NEVRA per repo and require filename to be unique
-        self._add_package(repo, package)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        if not os.path.exists(repo_path):
+	    os.makedirs(repo_path)
+        for pid in packageids:
+            package = self.packageapi.package(pid)
+            if package is None:
+                #raise PulpException("No Package with id: %s found" % pid)
+                log.error("No Package with id: %s found" % pid)
+                continue
+            # TODO:  We might want to restrict Packages we add to only
+            #        allow 1 NEVRA per repo and require filename to be unique
+            self._add_package(repo, package)
+            shared_pkg =  pulp.server.util.get_shared_package_path(
+                    package['name'], package['version'], package['release'], 
+		    package['arch'], package["filename"], package['checksum'])
+            pkg_repo_path = pulp.server.util.get_repo_package_path(
+                    repo['relative_path'], package["filename"])
+            if not os.path.exists(pkg_repo_path):
+                try:
+                    os.symlink(shared_pkg, pkg_repo_path)
+                except OSError:
+                    log.error("Link %s already exists" % pkg_repo_path)
+        pulp.server.upload.create_repo(repo_path)
         self.objectdb.save(repo, safe=True)
 
     def _add_package(self, repo, p):

@@ -267,7 +267,10 @@ class RepoConnection(PulpConnection):
                                                       'release' : release,
                                                       'epoch'   : epoch,
                                                       'arch'    : arch})
-    
+    def get_package_by_filename(self, id, filename):
+        method = "/repositories/%s/get_package_by_filename/" % id 
+        return self.conn.request_post(method, params={'filename' : filename})
+
     def packages(self, repoid):
         method = "/repositories/%s/packages/" % repoid
         return self.conn.request_get(method)

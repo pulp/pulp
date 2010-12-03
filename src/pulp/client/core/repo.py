@@ -640,6 +640,47 @@ class Publish(RepoAction):
         else:
             print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
 
+
+class AddPackages(RepoAction):
+    description = _('Add specific package(s) from the source repository.')
+
+    def setup_parser(self):
+        super(AddPackages, self).setup_parser()
+        self.parser.add_option("-p", "--package", action="append", dest="packageid",
+                help=_("Package filename to add to this repository"))
+        self.parser.add_option("--source", dest="srcrepo",
+	        help=_("Source repository with specified packages to perform add"))
+
+    def run(self):
+        id = self.get_required_option('id')
+	if not self.opts.packageid:
+            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
+        if not self.opts.srcrepo:
+            system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
+	pids = [] 
+	for pkg in self.opts.packageid:
+            pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
+            pids.append(pinfo['id'])
+	try:
+            if pinfo:
+	        self.pconn.add_package(id, pids) #pinfo['id'])
+            else:
+                print _("Package [%s] is not part of the source repository [%s]" % (pkg, self.opts.srcrepo))
+        except Exception:
+	    raise
+            print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
+	print _("Successfully added packages %s to repo [%s]." %(self.opts.packageid, id))
+	
+
+class AddErrata(RepoAction):
+    description = _('Add specific errata from the source repository')
+
+    def setup_parser(self):
+        pass
+
+    def run(self):
+        pass
+
 # repo command ----------------------------------------------------------------
 
 class Repo(Command):

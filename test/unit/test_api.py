@@ -223,10 +223,10 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
         p = testutil.create_package(self.papi, 'test_repo_packages')
-        self.rapi.add_package(repo["id"], p['id'])
+        self.rapi.add_package(repo["id"], [p['id']])
         for i in range(10):
             package = testutil.create_package(self.papi, random_string())
-            self.rapi.add_package(repo["id"], package['id'])
+            self.rapi.add_package(repo["id"], [package['id']])
 
         found = self.rapi.repository('some-id')
         packages = found['packages']
@@ -240,7 +240,7 @@ class TestApi(unittest.TestCase):
         package = None
         for i in range(num_packages):
             package = testutil.create_package(self.papi, random_string())
-            self.rapi.add_package(repo["id"], package['id'])
+            self.rapi.add_package(repo["id"], [package['id']])
 
         count = self.rapi.package_count('some-id')
         self.assertTrue(num_packages == count)
@@ -353,7 +353,7 @@ class TestApi(unittest.TestCase):
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         print "Package! %s" % p
         # Add this package version to the repo
-        self.rapi.add_package(repo["id"], p['id'])
+        self.rapi.add_package(repo["id"], [p['id']])
         self.rapi.update(repo)
         test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
                                                     'name': 'pulp-test-package',
@@ -392,7 +392,7 @@ class TestApi(unittest.TestCase):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
         p = testutil.create_package(self.papi, 'test_pkg_by_name')
-        self.rapi.add_package(repo["id"], p['id'])
+        self.rapi.add_package(repo["id"], [p['id']])
 
         pkg = self.rapi.get_package(repo['id'], p['name'])
         assert(pkg is not None)
@@ -404,7 +404,7 @@ class TestApi(unittest.TestCase):
                 'test-group-id', 'test-group-name',
                 'test-group-description')
         package = testutil.create_package(self.papi, 'test_repo_packages')
-        self.rapi.add_package(repo["id"], package["id"])
+        self.rapi.add_package(repo["id"], [package["id"]])
         self.rapi.add_packages_to_group(repo["id"], pkggroup["id"],
                 [package["name"]], gtype="default")
         # Verify package is present in group

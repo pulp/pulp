@@ -104,6 +104,7 @@ def setup_admin(admin):
     repo_cmd.add_action('schedules', repo.Schedules())
     repo_cmd.add_action('listkeys', repo.ListKeys())
     repo_cmd.add_action('publish', repo.Publish())
+    repo_cmd.add_action('add_packages', repo.AddPackages())
     admin.add_command('repo', repo_cmd)
 
     user_cmd = user.User()

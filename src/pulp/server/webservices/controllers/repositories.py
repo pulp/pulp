@@ -270,6 +270,7 @@ class RepositoryActions(AsyncController):
         'list_errata',
         'delete_errata',
         'get_package_by_nvrea',
+	'get_package_by_filename',
         'addkeys',
         'rmkeys',
         'listkeys',
@@ -345,7 +346,7 @@ class RepositoryActions(AsyncController):
     def add_package(self, id):
         """
         @param id: repository id
-        @return: True on successful addition of package to repository
+        @return: True on successful addition of packages to repository
         """
         data = self.params()
         api.add_package(id, data['packageid'])
@@ -570,6 +571,16 @@ class RepositoryActions(AsyncController):
                                                 data['release'],
                                                 data['epoch'],
                                                 data['arch'],))
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def get_package_by_filename(self, id):
+        """
+        get package from repo with specified rpm filename
+        @param id: repository id
+        @return A package object if exists in repo
+        """
+        data = self.params()
+        return self.ok(api.get_package_by_filename(id, data['filename']))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
