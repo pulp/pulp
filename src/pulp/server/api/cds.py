@@ -158,10 +158,8 @@ class CdsApi(BaseApi):
 
         if repo_id not in cds['repo_ids']:
             cds['repo_ids'].append(repo_id)
-
-        self.objectdb.save(cds, safe=True)
-
-        self.cds_history_api.repo_associated(cds_hostname, repo_id)
+            self.objectdb.save(cds, safe=True)
+            self.cds_history_api.repo_associated(cds_hostname, repo_id)
 
     def unassociate_repo(self, cds_hostname, repo_id):
         '''
@@ -187,11 +185,9 @@ class CdsApi(BaseApi):
 
         if repo_id in cds['repo_ids']:
             cds['repo_ids'].remove(repo_id)
-
-        self.objectdb.save(cds, safe=True)
-
-        self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
-
+            self.objectdb.save(cds, safe=True)
+            self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
+       
     def sync(self, cds_hostname):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
@@ -233,5 +229,4 @@ class CdsApi(BaseApi):
         for cds in cds_list:
             cds['repo_ids'].remove(repo_id)
             self.objectdb.save(cds, safe=True)
-
             self.cds_history_api.repo_unassociated(cds['hostname'], repo_id)

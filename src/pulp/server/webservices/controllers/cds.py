@@ -116,12 +116,34 @@ class CdsHistory(JSONController):
                                         sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
+class CdsRepoAssociate(JSONController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def POST(self, id):
+        data = self.params()
+        repo_id = data.get('repo_id')
+        cds_api.associate_repo(id, repo_id)
+        return self.ok(True)
+
+class CdsRepoUnassociate(JSONController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def POST(self, id):
+        data = self.params()
+        repo_id = data.get('repo_id')
+        cds_api.unassociate_repo(id, repo_id)
+        return self.ok(True)
+
 
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'CdsInstances',
     '/history/([^/]+)/$', 'CdsHistory',
+    '/([^/]+)/associate/$', 'CdsRepoAssociate',
+    '/([^/]+)/unassociate/$', 'CdsRepoUnassociate',
     '/([^/]+)/$', 'CdsInstance',
 )
 

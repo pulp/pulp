@@ -739,6 +739,16 @@ class CdsConnection(PulpConnection):
         method = '/cds/history/%s/' % hostname
         return self.conn.request_post(method, params=data)
 
+    def associate(self, hostname, repo_id):
+        data = {'repo_id' : repo_id}
+        method = '/cds/%s/associate/' % hostname
+        return self.conn.request_post(method, params=data)
+
+    def unassociate(self, hostname, repo_id):
+        data = {'repo_id' : repo_id}
+        method = '/cds/%s/unassociate/' % hostname
+        return self.conn.request_post(method, params=data)
+
 if __name__ == '__main__':
     rconn = RepoConnection()
     print "+--------------------------------+"

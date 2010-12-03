@@ -29,6 +29,8 @@ def setup_admin(admin):
     cds_cmd = cds.Cds()
     cds_cmd.add_action('register', cds.Register())
     cds_cmd.add_action('unregister', cds.Unregister())
+    cds_cmd.add_action('associate_repo', cds.Associate())
+    cds_cmd.add_action('unassociate_repo', cds.Unassociate())
     cds_cmd.add_action('list', cds.List())
     cds_cmd.add_action('history', cds.History())
     admin.add_command('cds', cds_cmd)

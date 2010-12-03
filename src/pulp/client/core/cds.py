@@ -39,7 +39,7 @@ class Register(Action):
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
-                               help=_('hostname (required)'))
+                               help=_('CDS hostname (required)'))
         self.parser.add_option('--name', dest='name',
                                help=_('display name'))
         self.parser.add_option('--description', dest='description',
@@ -63,7 +63,7 @@ class Unregister(Action):
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
-                               help=_('hostname (required)'))
+                               help=_('CDS hostname (required)'))
 
     def run(self):
         hostname = self.get_required_option('hostname')
@@ -92,7 +92,7 @@ class History(Action):
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
-                               help=_('hostname (required)'))
+                               help=_('CDS hostname (required)'))
         self.parser.add_option('--event_type', dest='event_type',
                                help=_('limits displayed history entries to the given type'))
         self.parser.add_option('--limit', dest='limit',
@@ -113,3 +113,43 @@ class History(Action):
                                         end_date=self.opts.end_date)
 
         print(results)
+
+class Associate(Action):
+
+    description = _('associates a repo with a CDS')
+
+    def setup_connections(self):
+        self.cds_conn = CdsConnection()
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('CDS hostname (required)'))
+        self.parser.add_option('--repoid', dest='repo_id',
+                               help=_('repo identifier (required)'))
+
+    def run(self):
+        hostname = self.get_required_option('hostname')
+        repo_id = self.get_required_option('repo_id')
+
+        result = self.cds_conn.associate(hostname, repo_id)
+        print(result)
+
+class Unassociate(Action):
+
+    description = _('unassociates a repo from a CDS')
+
+    def setup_connections(self):
+        self.cds_conn = CdsConnection()
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('CDS hostname (required)'))
+        self.parser.add_option('--repoid', dest='repo_id',
+                               help=_('repo identifier (required)'))
+
+    def run(self):
+        hostname = self.get_required_option('hostname')
+        repo_id = self.get_required_option('repo_id')
+
+        result = self.cds_conn.unassociate(hostname, repo_id)
+        print(result)
