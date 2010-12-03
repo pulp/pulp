@@ -186,7 +186,10 @@ class ConsumerGroupActions(AsyncController):
         """
         data = self.params()
         names = data.get('packagenames', [])
-        return self.ok(api.installpackages(id, names))
+        task = api.installpackages(id, names)
+        taskdict = self._task_to_dict(task)
+        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
 
     def installerrata(self, id):
         """

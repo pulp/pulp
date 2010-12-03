@@ -291,6 +291,7 @@ class ConsumerGroupApi(BaseApi):
         for consumerid in consumergroup['consumerids']:
             items.append((consumerid, packagenames))
         task = InstallPackages(items)
+        return task
     
     def installerrata(self, id, errataids=[], types=[]):
         """
