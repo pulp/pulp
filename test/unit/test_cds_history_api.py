@@ -31,7 +31,7 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.cds_history import CDSHistoryApi
 import pulp.server.auth.auth as auth
-from pulp.server.db.model import CDSHistoryEventType, User
+from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent, User
 from pulp.server.pexceptions import PulpException
 import testutil
 
@@ -230,3 +230,248 @@ class TestCDSHistoryApi(unittest.TestCase):
 
         # Test
         self.assertRaises(PulpException, self.cds_history_api.sync_finished, None)
+
+    def test_query_all(self):
+        '''
+        Tests querying all history entries.
+        '''
+
+        # Setup
+        self._populate_for_queries()
+
+        # Test
+        results = self.cds_history_api.query()
+
+        # Verify
+        self.assertEqual(7, len(results));
+
+    def test_query_invalid_type(self):
+        '''
+        Tests that querying specifying an invalid type throws an exception.
+        '''
+
+        # Test
+        self.assertRaises(PulpException, self.cds_history_api.query, event_type='foo')
+
+    def test_query_negative_limit(self):
+        '''
+        Tests that querying with a negative limit throws an exception.
+        '''
+
+        # Test
+        self.assertRaises(PulpException, self.cds_history_api.query, limit=-1)
+
+    def test_query_zero_limit(self):
+        '''
+        Tests that querying with a zero limit throws an exception.
+        '''
+
+        # Test
+        self.assertRaises(PulpException, self.cds_history_api.query, limit=0)
+
+    def test_query_invalid_sort(self):
+        '''
+        Tests that querying with an invalid sort direction throws an exception.
+        '''
+
+        # Test
+        self.assertRaises(PulpException, self.cds_history_api.query, sort='foo')
+
+    def test_query_cds_no_entries(self):
+        '''
+        Tests that querying for a CDS that has no history entries does not throw an exception.
+        '''
+
+        # Test
+        results = self.cds_history_api.query()
+
+        # Verify
+        # The above call should not throw an error
+        self.assertEqual(0, len(results))
+
+    def test_query_by_cds(self):
+        '''
+        Tests scoping a query to a specific CDS.
+        '''
+
+        # Setup
+        self._populate_for_queries()
+
+        # Test
+        results1 = self.cds_history_api.query(cds_hostname='cds-01.example.com')
+        results2 = self.cds_history_api.query(cds_hostname='cds-02.example.com')
+
+        # Verify
+        self.assertEqual(5, len(results1))
+        self.assertEqual(2, len(results2))
+
+        for r in results1:
+            self.assertEqual('cds-01.example.com', r['cds_hostname'])
+
+        for r in results2:
+            self.assertEqual('cds-02.example.com', r['cds_hostname'])
+
+    def test_query_by_type(self):
+        '''
+        Tests scoping a query to a specific event type.
+        '''
+
+        # Setup
+        self._populate_for_queries()
+
+        # Test
+        results = self.cds_history_api.query(event_type=CDSHistoryEventType.REGISTERED)
+
+        # Verify
+        self.assertEqual(2, len(results))
+
+        for r in results:
+            self.assertEqual(CDSHistoryEventType.REGISTERED, r['type_name'])
+
+    def test_query_with_limit(self):
+        '''
+        Tests limiting the number of returned results to lower than the total amount.
+        '''
+
+        # Setup
+        self._populate_for_queries()
+
+        # Test
+        results = self.cds_history_api.query(limit=3) # populate call adds more than 3
+
+        # Verify
+        self.assertEqual(3, len(results))
+
+    def test_query_sort_direction(self):
+        '''
+        Tests that specifying a result sort properly sorts the results.
+        '''
+
+        # Setup
+        self.cds_history_api.cds_registered('cds-02.example.com')
+        time.sleep(1) # make sure the timestamps will be different
+        self.cds_history_api.repo_associated('cds-02.example.com', 'repo3')
+
+        # Test
+        ascending = self.cds_history_api.query(sort='ascending')
+        descending = self.cds_history_api.query(sort='descending')
+
+        # Verify
+        self.assertEqual(2, len(ascending))
+        self.assertEqual(2, len(descending))
+
+        self.assertEqual(CDSHistoryEventType.REGISTERED, ascending[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, descending[0]['type_name'])
+
+    def test_query_start_range(self):
+        '''
+        Tests that specifying a start range properly scopes the results.
+        '''
+
+        # Setup
+        self._populate_for_date_queries()
+
+        # Test
+        start_date = datetime.datetime(2000, 5, 1)
+        results = self.cds_history_api.query(start_date=start_date)
+
+        # Verify
+        self.assertEqual(2, len(results))
+        self.assertEqual(CDSHistoryEventType.UNREGISTERED, results[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.REPO_UNASSOCIATED, results[1]['type_name'])
+
+    def test_query_end_range(self):
+        '''
+        Tests that specifying an end range properly scopes the results.
+        '''
+
+        # Setup
+        self._populate_for_date_queries()
+
+        # Test
+        end_date = datetime.datetime(2000, 5, 1)
+        results = self.cds_history_api.query(end_date=end_date)
+
+        # Verify
+        self.assertEqual(2, len(results))
+        self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, results[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.REGISTERED, results[1]['type_name'])
+
+    def test_query_start_and_end_range(self):
+        '''
+        Tests that specifying both a start and end range properly scopes the results.
+        '''
+
+        # Setup
+        self._populate_for_date_queries()
+
+        # Test
+        start_date = datetime.datetime(2000, 3, 1)
+        end_date = datetime.datetime(2000, 7, 1)
+        results = self.cds_history_api.query(start_date=start_date, end_date=end_date)
+
+        # Verify
+        self.assertEqual(2, len(results))
+        self.assertEqual(CDSHistoryEventType.REPO_UNASSOCIATED, results[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, results[1]['type_name'])
+
+    def test_query_start_end_date_range_edge_cases(self):
+        '''
+        Tests that both start and end date ranges are inclusive.
+        '''
+
+        # Setup
+        self._populate_for_date_queries()
+
+        # Test
+        start_date = datetime.datetime(2000, 2, 1)
+        end_date = datetime.datetime(2000, 4, 1)
+        results = self.cds_history_api.query(start_date=start_date, end_date=end_date)
+
+        # Verify
+        self.assertEqual(2, len(results))
+        self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, results[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.REGISTERED, results[1]['type_name'])
+        
+# -- test utilities -----------------------------------------------------------------------
+
+    def _populate_for_queries(self):
+        '''
+        Populates the CDS history collection with a series of entries for query
+        related tests.
+        '''
+
+        # cds-01.example.com
+        self.cds_history_api.cds_registered('cds-01.example.com')
+        self.cds_history_api.repo_associated('cds-01.example.com', 'repo1')
+        self.cds_history_api.repo_associated('cds-01.example.com', 'repo2')
+        self.cds_history_api.sync_started('cds-01.example.com')
+        self.cds_history_api.sync_finished('cds-01.example.com')
+
+        # cds-02.example.com
+        self.cds_history_api.cds_registered('cds-02.example.com')
+        self.cds_history_api.repo_associated('cds-02.example.com', 'repo3')
+
+    def _populate_for_date_queries(self):
+        '''
+        Populates the CDS history collection with entries staggered by a large date range,
+        suitable for being able to query within date ranges.
+
+        The events are manually created and stored in the database; using the API calls
+        will cause the timestamps to be set to 'now' in all cases.
+        '''
+
+        e1 = CDSHistoryEvent('cds1.example.com', 'admin', CDSHistoryEventType.REGISTERED)
+        e2 = CDSHistoryEvent('cds2.example.com', 'admin', CDSHistoryEventType.REPO_ASSOCIATED)
+        e3 = CDSHistoryEvent('cds3.example.com', 'admin', CDSHistoryEventType.REPO_UNASSOCIATED)
+        e4 = CDSHistoryEvent('cds4.example.com', 'admin', CDSHistoryEventType.UNREGISTERED)
+
+        e1.timestamp = datetime.datetime(2000, 2, 1)
+        e2.timestamp = datetime.datetime(2000, 4, 1)
+        e3.timestamp = datetime.datetime(2000, 6, 1)
+        e4.timestamp = datetime.datetime(2000, 10, 1)
+
+        self.cds_history_api.objectdb.insert(e1)
+        self.cds_history_api.objectdb.insert(e2)
+        self.cds_history_api.objectdb.insert(e3)
+        self.cds_history_api.objectdb.insert(e4)
