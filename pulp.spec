@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.110
+Version:        0.0.111
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -197,6 +197,20 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Fri Dec 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.111-1
+- 658240 - Fixed failing package install on consumergroup because of wrong
+  task_id return (skarmark@redhat.com)
+- 624512 - Password in new user creation is not displayed on the screen
+  (skarmark@redhat.com)
+- 655195 - Added missing --consumerid option from pulp-admin consumer cli
+  (skarmark@redhat.com)
+- Adding support to be able to skip specific content from local and rhn syncs
+  (pkilambi@redhat.com)
+- fixing the condition causing key error (pkilambi@redhat.com)
+- setting skip_dict default to unimplemented sync modules (pkilambi@redhat.com)
+- default skip list to empty hash for backward compatibility
+  (pkilambi@redhat.com)
+
 * Thu Dec 02 2010 Pradeep Kilambi <pkilambi@redhat.com> 0.0.110-1
 - Adding support to be able to skip specific content from syncs. This commit
   includes (pkilambi@redhat.com)
