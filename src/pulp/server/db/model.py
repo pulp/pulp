@@ -318,12 +318,12 @@ class CDSHistoryEventType(object):
     Enumeration of possible history event types. This corresponds to the type_name attribute
     on the CDSHistoryEvent class.
     '''
-    REGISTERED = 'REGISTERED'
-    UNREGISTERED = 'UNREGISTERED'
-    SYNC_STARTED = 'SYNC_STARTED'
-    SYNC_FINISHED = 'SYNC_FINISHED'
-    REPO_ASSOCIATED = 'REPO_ASSOCIATED'
-    REPO_UNASSOCIATED = 'REPO_UNASSOCIATED'
+    REGISTERED = 'registered'
+    UNREGISTERED = 'unregistered'
+    SYNC_STARTED = 'sync_started'
+    SYNC_FINISHED = 'sync_finished'
+    REPO_ASSOCIATED = 'repo_associated'
+    REPO_UNASSOCIATED = 'repo_unassociated'
 
     TYPES = (REGISTERED, UNREGISTERED, SYNC_STARTED, SYNC_FINISHED, REPO_ASSOCIATED, REPO_UNASSOCIATED)
     

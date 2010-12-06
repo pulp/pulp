@@ -17,9 +17,10 @@
 from gettext import gettext as _
 
 # Pulp
-from pulp.client import constants
+from pulp.client import constants, json_utils
 from pulp.client.connection import CdsConnection
 from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header
 
 
 # commands ----------------------------------------------------------------------
@@ -80,8 +81,14 @@ class List(Action):
     def run(self):
         all_cds = self.cds_conn.list()
 
+        print_header(_('CDS Instances'))
+
         for cds in all_cds:
-            print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description']))
+            if cds['repo_ids']:
+                repo_list = ', '.join(cds['repo_ids'])
+            else:
+                repo_list = _('None')
+            print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description'], repo_list, cds['last_sync']))
 
 class History(Action):
 
@@ -112,7 +119,21 @@ class History(Action):
                                         start_date=self.opts.start_date,
                                         end_date=self.opts.end_date)
 
-        print(results)
+        print_header(_("CDS History"))
+        for entry in results:
+            # Attempt to translate the programmatic event type name to a user readable one
+            type_name = entry['type_name']
+            event_type = constants.CDS_HISTORY_EVENT_TYPES.get(type_name, type_name)
+
+            # Common event details
+            print constants.CDS_HISTORY_ENTRY % \
+                  (event_type, json_utils.parse_date(entry['timestamp']), entry['originator'])
+
+            # Based on the type of event, add on the event specific details. Otherwise,
+            # just throw an empty line to account for the blank line that's added
+            # by the details rendering.
+            if type_name == 'repo_associated' or type_name == 'repo_unassociated':
+                print constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id'])
 
 class Associate(Action):
 
@@ -124,15 +145,18 @@ class Associate(Action):
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
                                help=_('CDS hostname (required)'))
-        self.parser.add_option('--repoid', dest='repo_id',
+        self.parser.add_option('--repoid', dest='repoid',
                                help=_('repo identifier (required)'))
 
     def run(self):
         hostname = self.get_required_option('hostname')
-        repo_id = self.get_required_option('repo_id')
+        repo_id = self.get_required_option('repoid')
 
         result = self.cds_conn.associate(hostname, repo_id)
-        print(result)
+        if result:
+            print(_('Successfully associated CDS [%s] with repo [%s]' % (hostname, repo_id)))
+        else:
+            print(_('Error occurred during association, please check the server for more information'))
 
 class Unassociate(Action):
 
@@ -152,4 +176,8 @@ class Unassociate(Action):
         repo_id = self.get_required_option('repo_id')
 
         result = self.cds_conn.unassociate(hostname, repo_id)
-        print(result)
+        if result:
+            print(_('Successfully associated CDS [%s] with repo [%s]' % (hostname, repo_id)))
+        else:
+            print(_('Error occurred during association, please check the server for more information'))
+

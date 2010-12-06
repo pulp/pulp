@@ -137,5 +137,21 @@ Either correct the host in /etc/pulp/ or specify --server=%s"""
 CDS_INFO = '''
 Name                \t%-25s
 Hostname            \t%-25s
-Description         \t%-25s             
+Description         \t%-25s
+Repos               \t%-25s
+Last Sync           \t%-25s
 '''
+
+CDS_HISTORY_ENTRY = '''
+Event Type          \t%-25s
+Timestamp           \t%-25s
+Originator          \t%-25s'''
+
+CDS_HISTORY_EVENT_TYPES = {
+    'registered' : 'Registered',
+    'unregistered' : 'Unregistered',
+    'sync_started' : 'Sync Started',
+    'sync_finished' : 'Sync Finished',
+    'repo_associated' : 'Repo Associated',
+    'repo_unassociated' : 'Repo Unassociated',
+}
