@@ -295,6 +295,7 @@ class CDS(Base):
             self.name = hostname
         self.description = description
         self.repo_ids = []
+        self.last_sync = None
 
     def __str__(self):
         return self.hostname
