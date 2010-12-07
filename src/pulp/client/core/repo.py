@@ -502,7 +502,7 @@ class Sync(RepoAction):
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for repository %s already in progress') % id
             return tasks[0]
-	skip = {}
+        skip = {}
         if self.opts.nopackages:
 	    skip['packages'] = 1
             # skip errata as well, no point of errata without pkgs
