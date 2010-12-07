@@ -739,7 +739,7 @@ class CdsConnection(PulpConnection):
         if end_date:
             data['end_date'] = end_date
 
-        method = '/cds/history/%s/' % hostname
+        method = '/cds/%s/history/' % hostname
         return self.conn.request_post(method, params=data)
 
     def associate(self, hostname, repo_id):

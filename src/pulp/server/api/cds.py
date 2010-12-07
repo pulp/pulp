@@ -21,6 +21,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
+from pulp.server.cds.dispatcher import GoferDispatcher
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDS
 from pulp.server.pexceptions import PulpException
@@ -35,6 +36,7 @@ class CdsApi(BaseApi):
         BaseApi.__init__(self)
         self.repo_api = RepoApi()
         self.cds_history_api = CdsHistoryApi()
+        self.dispatcher = GoferDispatcher()
 
     def _getcollection(self):
         return get_object_db('cds', ['hostname'], self._indexes)
@@ -71,9 +73,11 @@ class CdsApi(BaseApi):
         if existing_cds:
             raise PulpException('CDS already exists with hostname [%s]' % hostname)
 
-        # Add call here to fire off initialize call to the CDS
-
         cds = CDS(hostname, name, description)
+
+        # Add call here to fire off initialize call to the CDS
+        self.dispatcher.init_cds(cds)
+
         self.insert(cds)
 
         self.cds_history_api.cds_registered(hostname)

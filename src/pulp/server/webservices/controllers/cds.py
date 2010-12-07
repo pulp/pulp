@@ -26,7 +26,7 @@ from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.webservices import http
-from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.role_check import RoleCheck
 
 
@@ -87,11 +87,39 @@ class CdsInstance(JSONController):
         cds_api.unregister(id)
         return self.ok(True)
 
-class CdsHistory(JSONController):
+class CdsActions(AsyncController):
+
+    exposed_actions = (
+        'sync',
+        'associate',
+        'unassociate',
+        'history',
+    )
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def POST(self, id):
+    def sync(self, id):
+        pass
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def associate(self, id):
+        data = self.params()
+        repo_id = data.get('repo_id')
+        cds_api.associate_repo(id, repo_id)
+        return self.ok(True)
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def unassociate(self, id):
+        data = self.params()
+        repo_id = data.get('repo_id')
+        cds_api.unassociate_repo(id, repo_id)
+        return self.ok(True)
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def history(self, id):
         data = self.params()
 
         event_type = data.get('event_type', None)
@@ -116,34 +144,34 @@ class CdsHistory(JSONController):
                                         sort=sort, start_date=start_date, end_date=end_date)
         return self.ok(results)
 
-class CdsRepoAssociate(JSONController):
-
     @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def POST(self, id):
-        data = self.params()
-        repo_id = data.get('repo_id')
-        cds_api.associate_repo(id, repo_id)
-        return self.ok(True)
+    def POST(self, id, action_name):
+        '''
+        Action dispatcher. This method checks to see if the action is exposed,
+        and if so, implemented. It then calls the corresponding method (named
+        the same as the action) to handle the request.
 
-class CdsRepoUnassociate(JSONController):
+        @param id: CDS hostname
+        @type  id: string
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def POST(self, id):
-        data = self.params()
-        repo_id = data.get('repo_id')
-        cds_api.unassociate_repo(id, repo_id)
-        return self.ok(True)
+        @param action_name: name of the action to invoke
+        @type  action_name: string
 
-
+        @return: http response
+        '''
+        cds= cds_api.cds(id)
+        if not cds:
+            return self.not_found('No CDS with hostname [%s] found' % id)
+        action = getattr(self, action_name, None)
+        if action is None:
+            return self.internal_server_error('No implementation for [%s] found' % action_name)
+        return action(id)
+    
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'CdsInstances',
-    '/history/([^/]+)/$', 'CdsHistory',
-    '/([^/]+)/associate/$', 'CdsRepoAssociate',
-    '/([^/]+)/unassociate/$', 'CdsRepoUnassociate',
+    '/([^/]+)/(%s)/$' % '|'.join(CdsActions.exposed_actions), 'CdsActions',
     '/([^/]+)/$', 'CdsInstance',
 )
 
