@@ -415,13 +415,13 @@ class LocalSynchronizer(BaseSynchronizer):
                 if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
                     self._sync_rpms(dst_repo_dir, src_repo_dir)
                 else:
-		    log.info("Skipping package imports from sync process")
+                    log.info("Skipping package imports from sync process")
                 # compute and import repo image files            
                 src_images_dir = os.path.join(src_repo_dir, "images")
                 if not os.path.exists(src_images_dir):
                     log.info("No image files to import")
                 else:
-		    if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
+                    if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
                         imlist = pulp.server.util.listdir(src_images_dir)
                         dst_images_dir = os.path.join(dst_repo_dir, "images")
                         for imfile in imlist:
@@ -476,7 +476,7 @@ class LocalSynchronizer(BaseSynchronizer):
                             log.debug("Copied %s to %s" % (src_updateinfo_path, dst_repo_dir))
                             updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
                     else:
-		        log.info("Skipping errata imports from sync process")
+                        log.info("Skipping errata imports from sync process")
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
                 pulp.server.upload.create_repo(dst_repo_dir, groups=groups_xml_path)

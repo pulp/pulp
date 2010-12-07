@@ -45,6 +45,7 @@ from pulp.server.pexceptions import PulpException
 import pulp.server.util
 from pulp.server.agent import Agent
 from pulp.server.api.distribution import DistributionApi
+from pulp.server import updateinfo 
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
@@ -566,12 +567,12 @@ class RepoApi(BaseApi):
         """
           Return matching Package object in this Repo by filename
         """
-	log.info('looking up pkg filename [%s] in repo [%s]' % (filename, id))
+        log.info('looking up pkg filename [%s] in repo [%s]' % (filename, id))
         repo = self._get_existing_repo(id)
         packages = repo['packages']
         for p in packages.values():
-	    if filename == p['filename']:
-	        return p
+            if filename == p['filename']:
+                return p
         return {}
 
     @audit()
@@ -583,7 +584,7 @@ class RepoApi(BaseApi):
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
-	    os.makedirs(repo_path)
+            os.makedirs(repo_path)
         for pid in packageids:
             package = self.packageapi.package(pid)
             if package is None:
@@ -678,7 +679,8 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         self._add_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
-
+        updateinfo.generate_updateinfo(repo)
+        
     def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
@@ -687,6 +689,28 @@ class RepoApi(BaseApi):
         for erratumid in errataids:
             self._add_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
+        self._update_errata_packages(repoid, errataids)
+        updateinfo.generate_updateinfo(repo)
+        
+    def _update_errata_packages(self, repoid, errataids=()):
+        repo = self._get_existing_repo(repoid)
+        for erratumid in errataids:
+            erratum = self.errataapi.erratum(erratumid)
+            if erratum is None:
+                log.info("No Erratum with id: %s found" % erratumid)
+                continue
+            
+            packageids = []
+            for pkg in erratum['pkglist']:
+                for pinfo in pkg['packages']:
+                    epkg = self.packageapi.package_by_ivera(pinfo['name'], 
+                                                            pinfo['version'], 
+                                                            pinfo['epoch'], 
+                                                            pinfo['release'], 
+                                                            pinfo['arch'])
+                    if epkg:
+                        packageids.append(epkg['id'])
+        self.add_package(repo['id'], packageids)
 
     def _add_erratum(self, repo, erratumid):
         """
@@ -705,6 +729,7 @@ class RepoApi(BaseApi):
             errata[erratum['type']] = []
 
         errata[erratum['type']].append(erratum['id'])
+        
 
     @audit()
     def delete_erratum(self, repoid, erratumid):
@@ -714,7 +739,8 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         self._delete_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
-
+        updateinfo.generate_updateinfo(repo)
+        
     def delete_errata(self, repoid, errataids):
         """
         delete list of errata from this repo
@@ -723,6 +749,7 @@ class RepoApi(BaseApi):
         for erratumid in errataids:
             self._delete_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
+        updateinfo.generate_updateinfo(repo)
 
     def _delete_erratum(self, repo, erratumid):
         """

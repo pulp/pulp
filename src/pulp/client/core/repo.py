@@ -653,33 +653,47 @@ class AddPackages(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-	if not self.opts.packageid:
+        if not self.opts.packageid:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
-	pids = [] 
-	for pkg in self.opts.packageid:
+        pids = [] 
+        for pkg in self.opts.packageid:
             pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
             pids.append(pinfo['id'])
-	try:
+        try:
             if pinfo:
-	        self.pconn.add_package(id, pids) #pinfo['id'])
+                self.pconn.add_package(id, pids) #pinfo['id'])
             else:
                 print _("Package [%s] is not part of the source repository [%s]" % (pkg, self.opts.srcrepo))
         except Exception:
-	    raise
+            raise
             print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
-	print _("Successfully added packages %s to repo [%s]." %(self.opts.packageid, id))
-	
+        print _("Successfully added packages %s to repo [%s]." %(self.opts.packageid, id))
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
 
     def setup_parser(self):
-        pass
+        super(AddErrata, self).setup_parser()
+        self.parser.add_option("-e", "--errata", action="append", dest="errataid",
+                help=_("Errata Id to add to this repository"))
+        self.parser.add_option("--source", dest="srcrepo",
+            help=_("Source repository with specified packages to perform add"))
 
     def run(self):
-        pass
+        id = self.get_required_option('id')
+        if not self.opts.errataid:
+            system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform an add."))
+        if not self.opts.srcrepo:
+            system_exit(os.EX_USAGE, _("Error, a source respository where erratum exists is required"))
+        errataids = self.opts.errataid
+        try:
+            self.pconn.add_errata(id, errataids)
+        except Exception:
+            raise
+            print _("Unable to add errata [%s] to repo [%s]" % (errataids, id))
+        print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
 
 # repo command ----------------------------------------------------------------
 
