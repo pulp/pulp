@@ -18,8 +18,15 @@ import os
 import sys
 from optparse import OptionParser, SUPPRESS_HELP
 
+from pulp.server import auditing
 from pulp.server.config import config
 from pulp.server.db import connection
+# The db connection and auditing need to be initialied before
+# any further imports since the imports execute initialization
+# code relying on the db/auditing to be setup
+connection.initialize()
+auditing.initialize()
+
 from pulp.server.db.migrate import one
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
@@ -57,7 +64,6 @@ def migrate_to_one():
 def main():
     options = parse_args()
     start_logging(options)
-    connection.initialize()
     if options.auto and not config.getboolean('database', 'auto_upgrade'):
         print >> sys.stderr, 'pulp is not configured for auto upgrade'
         return os.EX_CONFIG
