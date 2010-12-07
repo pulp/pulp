@@ -181,3 +181,19 @@ class Unassociate(Action):
         else:
             print(_('Error occurred during association, please check the server for more information'))
 
+class Sync(Action):
+
+    description = _('triggers an immediate sync between the pulp server and the given CDS')
+
+    def setup_connections(self):
+        self.cds_conn = CdsConnection()
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('CDS hostname (required)'))
+
+    def run(self):
+        hostname = self.get_required_option('hostname')
+
+        result = self.cds_conn.sync(hostname)
+        print(result)

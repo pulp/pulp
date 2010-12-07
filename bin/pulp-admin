@@ -33,6 +33,7 @@ def setup_admin(admin):
     cds_cmd.add_action('unassociate_repo', cds.Unassociate())
     cds_cmd.add_action('list', cds.List())
     cds_cmd.add_action('history', cds.History())
+    cds_cmd.add_action('sync', cds.Sync())
     admin.add_command('cds', cds_cmd)
 
     consumer_cmd = consumer.Consumer()
