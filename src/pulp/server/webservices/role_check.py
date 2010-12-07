@@ -21,19 +21,16 @@ try:
 except ImportError:
     import simplejson as json
 
-import pymongo.json_util 
+import pymongo.json_util
 import web
 
 import pulp.server.auth.auth as principal
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.role import RoleApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auth.certificate import Certificate
 import pulp.server.auth.password_util as password_util
 import pulp.server.auth.cert_generator as cert_generator
-from pulp.server.db.model import RoleActionType
-from pulp.server.db.model import RoleResourceType
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.config import config
@@ -45,7 +42,6 @@ from pulp.server.db.model import User
 LOG = logging.getLogger(__name__)
 USER_API = UserApi()
 CONSUMER_API = ConsumerApi()
-ROLE_API = RoleApi()
 REPO_API = RepoApi()
 
 # decorator--------------------------------------------------------------------
@@ -62,7 +58,7 @@ class RoleCheck(object):
         '''The decorator arguments are passed here. Save them for runtime.'''
         self.dec_args = dec_args
         self.dec_kw = dec_kw
-        
+
     def __call__(self, f):
         def check_roles(*fargs, **kw):
             '''
@@ -74,7 +70,7 @@ class RoleCheck(object):
             the argument list, which is redundant.  If this wraps a class instance,
             the "self" will be the first argument.
             '''
-            
+
             # default the current principal to be sure it's not
             # left over from the last call.
             principal.clear_principal()
@@ -83,7 +79,7 @@ class RoleCheck(object):
             roles = {'consumer': None, 'admin': None, 'consumer_id': None}
             for key in self.dec_kw.keys():
                 roles[key] = self.dec_kw[key]
-            
+
             user = None
             # Admin role trumps any other checking
             if roles['admin']:
@@ -96,25 +92,16 @@ class RoleCheck(object):
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
                     return json.dumps(pe.value, default=pymongo.json_util.default)
-            
+
             # Consumer role checking
             if not user and (roles['consumer'] or roles['consumer_id']):
                 user = self.check_consumer(roles['consumer_id'], *fargs)
-                
-            # Check the Roles assigned to the User. Demo code
-            # repo = REPO_API.repository(fargs[1])
-            # LOG.error("REPO: %s" % repo)
-            # LOG.error("User: %s" % user)
-            # if (not ROLE_API.check(user, repo, RoleResourceType.REPO,
-            #                               RoleActionType.READ)):
-            #    LOG.error("Failed check!")
-            #    user = None
-            
+
             # Process the results of the auth checks
             if not user:
                 http.status_unauthorized()
                 http.header('Content-Type', 'application/json')
-                return json.dumps("Authorization failed. Check your username and password or your certificate", 
+                return json.dumps("Authorization failed. Check your username and password or your certificate",
                                   default=pymongo.json_util.default)
 
             # If it wraps a class instance, call the function on the instance;
@@ -122,7 +109,7 @@ class RoleCheck(object):
             if fargs and getattr(fargs[0], '__class__', None):
                 instance, fargs = fargs[0], fargs[1:]
                 result = f(instance, *fargs, **kw)
-                
+
             else:
                 result = f(*(fargs), **kw)
 
@@ -145,9 +132,9 @@ class RoleCheck(object):
         '''
 
         return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
-                
-    
-    
+
+
+
 
     def check_admin_cert(self, *fargs):
         '''
@@ -236,7 +223,7 @@ class RoleCheck(object):
             else:
                 return self.check_user_pass_on_pulp(username, password)
         return None
-    
+
     def check_user_pass_on_ldap(self, username, password=None):
         '''
         verify the credentials for user on ldap server.
@@ -273,7 +260,7 @@ class RoleCheck(object):
             #create a transient user object to represent the ldap user
             user = User(username, username, password, username)
         return user
-    
+
     def check_user_pass_on_pulp(self, username, password=None):
         '''
         verify the credentials for user on local pulp server.
@@ -288,8 +275,8 @@ class RoleCheck(object):
             LOG.error('User [%s] specified in certificate was not found in the system' %
                       username)
             return None
-        
-        
+
+
 
         # Verify the correct password was specified
         if password:
@@ -299,7 +286,7 @@ class RoleCheck(object):
                 return None
 
         return user
-            
+
     def check_consumer(self, check_id=False, *fargs):
         '''
         Determines if the certificate in the request represents a valid consumer certificate.
@@ -361,4 +348,4 @@ class RoleCheck(object):
             return consumer
         else:
             return None
-            
+
