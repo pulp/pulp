@@ -21,7 +21,8 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
-from pulp.server.cds.dispatcher import GoferDispatcher
+from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
+                                       CdsCommunicationsException, CdsMethodException, CdsDispatcherException
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDS
 from pulp.server.pexceptions import PulpException
@@ -76,7 +77,18 @@ class CdsApi(BaseApi):
         cds = CDS(hostname, name, description)
 
         # Add call here to fire off initialize call to the CDS
-        self.dispatcher.init_cds(cds)
+        try:
+            self.dispatcher.init_cds(cds)
+        except CdsTimeoutException:
+            raise PulpException('Timeout occurred attempting to initialize CDS [%s]' % hostname)
+        except CdsCommunicationsException:
+            # TODO: send more error information with the PulpException
+            # instead of saying to check the server log
+            log.exception('Communications exception occurred initializing CDS [%s]' % hostname)
+            raise PulpException('Communications error while attempting to initialize CDS [%s]; check the server log for more information' % hostname)
+        except CdsMethodException:
+            log.exception('CDS error encountered while attempting to initialize CDS [%s]' % hostname)
+            raise PulpException('CDS error encountered while attempting to initialize CDS [%s]; check the server log for more information' % hostname)
 
         self.insert(cds)
 
@@ -199,6 +211,9 @@ class CdsApi(BaseApi):
         speed with all repos it is currently associated with, including deleting repos that
         are no longer associated with the CDS.
 
+        This call is synchronous and potentially long running. Any threading of this call
+        must already be in place.
+
         @param cds_hostname: identifies the CDS
         @type  cds_hostname: string; may not be None
 
@@ -210,9 +225,34 @@ class CdsApi(BaseApi):
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
-        # Call out to dispatcher to trigger sync
-        # Dispatcher will do the history additions since the call will be async
-               
+        # Load the repo objects to send to the CDS with the call
+        repos = []
+        for repo_id in cds['repo_ids']:
+            repo = self.repo_api.repository(repo_id)
+            repos.append(repo)
+
+        # Call out to dispatcher to trigger sync, adding the appropriate history entries
+        self.cds_history_api.sync_started(cds_hostname)
+
+        # Catch any exception so thed sync_finished call is still made; can't add a
+        # finally block when an except is in place in python 2.4, otherwise this would
+        # be simpler.
+        sync_error = None
+        try:
+            self.dispatcher.sync(cds, repos)
+        except CdsDispatcherException, e:
+            sync_error = e
+        except Exception, e:
+            log.exception('Non-CdsDispatcherException error caught on sync invocation for CDS [%s]' % cds['hostname'])
+            sync_error = e
+
+        self.cds_history_api.sync_finished(cds_hostname, sync_error)
+
+        # Make sure the caller gets the error like normal (after the event logging) if
+        # one occurred
+        if sync_error is not None:
+            raise sync_error
+
 # -- internal only api ---------------------------------------------------------------------
 
     def unassociate_all_from_repo(self, repo_id):
