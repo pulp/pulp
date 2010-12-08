@@ -17,7 +17,11 @@ from pulp.server.db.model.base import Base
 
 
 class Permission(Base):
-
+    """
+    Model representing the user permissions associated with a pulp resource.
+    @ivar resource: uri path of resource
+    @ivar users: dictionary of user id: tuple of allowed operations
+    """
     def __init__(self, resource):
         super(Permission, self).__init__()
         self.resource = resource
@@ -25,13 +29,25 @@ class Permission(Base):
 
 
 class Role(Base):
-
+    """
+    Model representing a set of users and the permissions granted those users
+    as a group.
+    @ivar name: role's name
+    @ivar permissions: dictionary of resource: tuple of allowed operations
+    """
     def __init__(self, name):
         self._id = self.name = name
         self.permissions = {}
 
 
 class User(Base):
+    """
+    Model representing a user of pulp.
+    @ivar login: user's login name
+    @ivar password: password for login credentials
+    @ivar name: user's full name
+    @ivar roles: list of roles user belongs to
+    """
     def __init__(self, login, id, password, name):
         self._id = id
         self.id = id
