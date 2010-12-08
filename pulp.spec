@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.111
+Version:        0.0.112
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -197,6 +197,20 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
 %changelog
+* Wed Dec 08 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.112-1
+- Wired gofer CDS dispatcher and mocked out calls for test cases.
+  (jason.dobies@redhat.com)
+- Selective Errata sync suppport. This commit includes, (pkilambi@redhat.com)
+- invoke connection/auditing initialize prior to other pulp imports
+  (jmatthew@redhat.com)
+- Replace class decorators in event handlers for python 2.4 compat.
+  (jortel@redhat.com)
+- Added associate/unassociate to webservices and CLI. (jason.dobies@redhat.com)
+- 649118 - [RFE] Support for running mongo DB on separate instance
+  (jmatthew@redhat.com)
+- Wired up CDS history to webservices and CLI (still need to format).
+  (jason.dobies@redhat.com)
+
 * Fri Dec 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.111-1
 - 658240 - Fixed failing package install on consumergroup because of wrong
   task_id return (skarmark@redhat.com)
