@@ -21,7 +21,7 @@ import pymongo
 
 # Pulp
 from pulp.server.api.base import BaseApi
-from pulp.server.auth.auth import get_principal
+from pulp.server.auth.principal import get_principal
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent
 from pulp.server.pexceptions import PulpException
@@ -47,7 +47,7 @@ class CdsHistoryApi(BaseApi):
 
     def _getcollection(self):
         return get_object_db('cds_history', self._unique_indexes, self._indexes)
-    
+
 # -- public api ---------------------------------------------------------------------
 
     def query(self, cds_hostname=None, event_type=None, limit=None, sort='descending',

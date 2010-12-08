@@ -24,11 +24,11 @@ except ImportError:
 import pymongo.json_util
 import web
 
-import pulp.server.auth.auth as principal
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auth.certificate import Certificate
+from pulp.server.auth import principal
 import pulp.server.auth.password_util as password_util
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.pexceptions import PulpException

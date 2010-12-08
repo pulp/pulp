@@ -28,7 +28,7 @@ import pymongo
 # Pulp
 from pulp.server import config
 from pulp.server.api.base import BaseApi
-from pulp.server.auth.auth import get_principal, is_system_principal
+from pulp.server.auth.principal import get_principal, is_system_principal
 from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
@@ -138,7 +138,7 @@ class ConsumerHistoryApi(BaseApi):
         # Verify the limit makes sense
         if limit is not None and limit < 1:
             raise PulpException('Invalid limit [%s], limit must be greater than zero' % limit)
-            
+
         # Verify the sort direction was valid
         if not sort in SORT_DIRECTION:
             valid_sorts = ', '.join(SORT_DIRECTION)
@@ -259,7 +259,7 @@ class ConsumerHistoryApi(BaseApi):
             package_nveras = [package_nveras]
 
         details = {'package_nveras' : package_nveras,
-                   'errata_titles'  : errata_titles,}
+                   'errata_titles'  : errata_titles, }
 
         # If any errata were installed, flag the consumer event as an errata install;
         # otherwise flag it as a plain package installation

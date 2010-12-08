@@ -15,7 +15,7 @@ import logging
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-import pulp.server.auth.auth as principal
+from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
 
 
