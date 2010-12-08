@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -57,4 +55,4 @@ class AuthApi(BaseApi):
         @rtype: bool
         """
         adminlogin = cert_generator.ADMIN_PREFIX[:-1]
-        return ( login ==  adminlogin )
+        return (login == adminlogin)

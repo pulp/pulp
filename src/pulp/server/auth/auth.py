@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -31,10 +30,10 @@ class SystemPrincipal(User):
 
     def __init__(self):
         User.__init__(self, self.LOGIN, self.ID, self.LOGIN, self.LOGIN)
-    
+
     def __unicode__(self):
         return self.LOGIN
-    
+
 # thread-local storage for holding the current principal ----------------------
 
 _storage = threading.local()
@@ -71,6 +70,7 @@ def clear_principal():
     This resets the principal to a "system" default.
     """
     _storage.principal = SystemPrincipal()
+
 
 def is_system_principal():
     '''

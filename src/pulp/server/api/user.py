@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2010 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -73,7 +71,7 @@ class UserApi(BaseApi):
                 user['password'] = old_user['password']
             else:
                 user['password'] = password_util.hash_password(password)
-                
+
         BaseApi.update(self, user)
         return user
 
