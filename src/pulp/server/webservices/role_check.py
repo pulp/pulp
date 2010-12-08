@@ -239,12 +239,12 @@ class RoleCheck(object):
         try:
             ldapserver = config.get("ldap", "uri")
         except:
-            log.info("No valid server found, default to localhost")
+            LOG.info("No valid server found, default to localhost")
             ldapserver = "ldap://localhost"
         try:
             base = config.get("ldap", "base")
         except:
-            log.info("No valid base found, default to localhost")
+            LOG.info("No valid base found, default to localhost")
             base = "dc=localhost"
         ldapserv = LDAPConnection(ldapserver)
         ldapserv.connect()
