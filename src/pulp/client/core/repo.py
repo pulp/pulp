@@ -646,56 +646,56 @@ class AddPackages(RepoAction):
 
     def setup_parser(self):
         super(AddPackages, self).setup_parser()
-        self.parser.add_option("-p", "--package", action="append", dest="packageid",
+        self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
 	        help=_("Source repository with specified packages to perform add"))
 
     def run(self):
         id = self.get_required_option('id')
-        if not self.opts.packageid:
+        if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
         pids = [] 
-        for pkg in self.opts.packageid:
+        for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
             pids.append(pinfo['id'])
         try:
             if pinfo:
-                self.pconn.add_package(id, pids) #pinfo['id'])
+                self.pconn.add_package(id, pids)
             else:
                 print _("Package [%s] is not part of the source repository [%s]" % (pkg, self.opts.srcrepo))
         except Exception:
             raise
             print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
-        print _("Successfully added packages %s to repo [%s]." %(self.opts.packageid, id))
+        print _("Successfully added packages %s to repo [%s]." %(self.opts.pkgname, id))
 
 class RemovePackages(RepoAction):
     description = _('Remove specific package(s) from the source repository.')
 
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
-        self.parser.add_option("-p", "--package", action="append", dest="packageid",
+        self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to remove to this repository"))
 
     def run(self):
         id = self.get_required_option('id')
-        if not self.opts.packageid:
+        if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
         pids = []
-        for pkg in self.opts.packageid:
+        for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(id, pkg)
             pids.append(pinfo)
         try:
             if pinfo:
-                self.pconn.remove_package(id, pids) #pinfo['id'])
+                self.pconn.remove_package(id, pids)
             else:
                 print _("Package [%s] is not part of the source repository [%s]" % (pkg, id))
         except Exception:
             raise
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
-        print _("Successfully removed package(s) %s to repo [%s]." %(self.opts.packageid, id))
+        print _("Successfully removed package(s) %s to repo [%s]." %(self.opts.pkgname, id))
 
 
 class AddErrata(RepoAction):
