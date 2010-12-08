@@ -646,6 +646,16 @@ class RepoApi(BaseApi):
                 log.debug("Delete package %s at %s" % (p, pkg_packages_path))
                 os.remove(pkg_packages_path)
 
+    def remove_packages(self, repoid, pkgobjs=[]):
+        """
+         Remove one or more packages from a repository
+        """
+        if not pkgobjs:
+            # Nothing to perform, return
+            return
+        for pkg in pkgobjs:
+            self.remove_package(repoid, pkg)
+
     def find_repos_by_package(self, pkgid):
         """
         Return repos that contain passed in package id

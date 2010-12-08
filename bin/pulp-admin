@@ -106,6 +106,7 @@ def setup_admin(admin):
     repo_cmd.add_action('listkeys', repo.ListKeys())
     repo_cmd.add_action('publish', repo.Publish())
     repo_cmd.add_action('add_packages', repo.AddPackages())
+    repo_cmd.add_action('delete_package', repo.RemovePackages())
     repo_cmd.add_action('add_errata', repo.AddErrata())
     admin.add_command('repo', repo_cmd)
 

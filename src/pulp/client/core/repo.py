@@ -671,6 +671,35 @@ class AddPackages(RepoAction):
             print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
         print _("Successfully added packages %s to repo [%s]." %(self.opts.packageid, id))
 
+class RemovePackages(RepoAction):
+    description = _('Remove specific package(s) from the source repository.')
+
+    def setup_parser(self):
+        super(RemovePackages, self).setup_parser()
+        self.parser.add_option("-p", "--package", action="append", dest="packageid",
+                help=_("Package filename to add to this repository"))
+        #self.parser.add_option("--source", dest="srcrepo",
+        #        help=_("Source repository with specified packages to perform add"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        if not self.opts.packageid:
+            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
+        pids = []
+        for pkg in self.opts.packageid:
+            pinfo = self.pconn.get_package_by_filename(id, pkg)
+            pids.append(pinfo)
+        try:
+            if pinfo:
+                self.pconn.remove_package(id, pids) #pinfo['id'])
+            else:
+                print _("Package [%s] is not part of the source repository [%s]" % (pkg, id))
+        except Exception:
+            raise
+            print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
+        print _("Successfully removed package(s) %s to repo [%s]." %(self.opts.packageid, id))
+
+
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
 

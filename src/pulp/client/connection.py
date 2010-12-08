@@ -256,6 +256,12 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/add_package/" % repoid
         return self.conn.request_post(method, params=addinfo)
 
+    def remove_package(self, repoid, pkgobj=[]):
+        rminfo = {'repoid' : repoid,
+                  'package' : pkgobj,}
+        method = "/repositories/%s/delete_package/" % repoid
+        return self.conn.request_post(method, params=rminfo)
+
     def get_package(self, repoid, pkg_name):
         method = "/repositories/%s/get_package/" % repoid
         return self.conn.request_post(method, params=pkg_name)
