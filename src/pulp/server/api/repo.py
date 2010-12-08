@@ -705,14 +705,14 @@ class RepoApi(BaseApi):
         
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
+        addids = []
+        rmids = []
         for erratumid in errataids:
             erratum = self.errataapi.erratum(erratumid)
             if erratum is None:
                 log.info("No Erratum with id: %s found" % erratumid)
                 continue
             
-            addids = []
-            rmids = []
             for pkg in erratum['pkglist']:
                 for pinfo in pkg['packages']:
                     epkg = self.packageapi.package_by_ivera(pinfo['name'], 
