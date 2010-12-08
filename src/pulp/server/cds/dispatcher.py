@@ -18,7 +18,7 @@ Contains classes that are used to send messages to CDS instances.
 '''
 
 # 3rd Party
-from gofer.messaging.dispatcher import ClassNotFound, MethodNotFound, NotPermitted
+from gofer.messaging.dispatcher import DispatchError
 from gofer.messaging.policy import RequestTimeout
 from gofer.proxy import Agent
 
@@ -73,11 +73,7 @@ class GoferDispatcher(object):
             self._cds_stub(cds).initialize()
         except RequestTimeout, e:
             raise CdsTimeoutException(e)
-        except ClassNotFound, e:
-            raise CdsCommunicationsException(e)
-        except MethodNotFound, e:
-            raise CdsCommunicationsException(e)
-        except NotPermitted, e:
+        except DispatchError, e:
             raise CdsCommunicationsException(e)
         except Exception, e:
             raise CdsMethodException(e)
@@ -101,11 +97,7 @@ class GoferDispatcher(object):
             self._cds_stub(cds).sync(repos)
         except RequestTimeout, e:
             raise CdsTimeoutException(e)
-        except ClassNotFound, e:
-            raise CdsCommunicationsException(e)
-        except MethodNotFound, e:
-            raise CdsCommunicationsException(e)
-        except NotPermitted, e:
+        except DispatchError, e:
             raise CdsCommunicationsException(e)
         except Exception, e:
             raise CdsMethodException(e)
