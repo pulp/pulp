@@ -15,6 +15,8 @@
 
 # Python
 import logging
+import sys
+import traceback
 
 # Pulp
 from pulp.server.api.base import BaseApi
@@ -144,6 +146,7 @@ class CdsApi(BaseApi):
         '''
         return list(self.objectdb.find())
 
+    @audit()
     def associate_repo(self, cds_hostname, repo_id):
         '''
         Associates a repo with a CDS. All data in an associated repo will be kept synchronized
@@ -177,6 +180,7 @@ class CdsApi(BaseApi):
             self.objectdb.save(cds, safe=True)
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
 
+    @audit()
     def unassociate_repo(self, cds_hostname, repo_id):
         '''
         Removes an existing association between a CDS and a repo. This call will not cause
@@ -203,7 +207,8 @@ class CdsApi(BaseApi):
             cds['repo_ids'].remove(repo_id)
             self.objectdb.save(cds, safe=True)
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
-       
+
+    @audit()
     def sync(self, cds_hostname):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
@@ -238,20 +243,25 @@ class CdsApi(BaseApi):
         # finally block when an except is in place in python 2.4, otherwise this would
         # be simpler.
         sync_error = None
+        sync_exception = None
         try:
             self.dispatcher.sync(cds, repos)
         except CdsDispatcherException, e:
-            sync_error = e
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_error = traceback.extract_tb(exc_traceback)
+            sync_exception = e
         except Exception, e:
             log.exception('Non-CdsDispatcherException error caught on sync invocation for CDS [%s]' % cds['hostname'])
-            sync_error = e
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_error = traceback.extract_tb(exc_traceback)
+            sync_exception = e
 
         self.cds_history_api.sync_finished(cds_hostname, sync_error)
 
         # Make sure the caller gets the error like normal (after the event logging) if
         # one occurred
-        if sync_error is not None:
-            raise sync_error
+        if sync_exception is not None:
+            raise PulpException(repr(sync_exception))
 
 # -- internal only api ---------------------------------------------------------------------
 
