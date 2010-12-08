@@ -84,16 +84,20 @@ def _get_users_belonging_to_role(role):
     return users
 
 
-def _permission_granted_by_other_role(role, user, resource, operation):
-    for role_name in user['roles']:
-        if role['name'] == role_name:
+def _get_other_roles(role, role_names):
+    return [_get_role(n) for n in role_names if n != role['name']]
+
+
+def _operations_not_granted_by_roles(resource, operations, roles):
+    culled_ops = operations[:]
+    for role in roles:
+        permissions = role['permissions']
+        if resource not in permissions:
             continue
-        other_role = _role_api.role(role_name)
-        if resource not in other_role['permissions']:
-            continue
-        if operation in other_role['permissions'][resource]:
-            return True
-    return False
+        for operation in culled_ops[:]:
+            if operation in permissions[resource]:
+                culled_ops.remove(operation)
+    return culled_ops
 
 # permissions api -------------------------------------------------------------
 
@@ -125,8 +129,10 @@ def revoke_permissions_from_role(resource, role_name, operations_name):
     users = _get_users_belonging_to_role(role)
     operations = _get_operations(operation_names)
     for user in users:
-        user_ops = [o for o in operations
-                    if not _permission_granted_by_other_role(role, user, resource, o)]
+        other_roles = _get_other_roles(role, user['roles'])
+        user_ops = _operations_not_granted_by_roles(resource,
+                                                    operations,
+                                                    other_roles)
         _permission_api.revoke(resource, user, user_ops)
     return True
 
@@ -146,8 +152,10 @@ def delete_role(role_name):
     users = _get_users_belonging_to_role(role)
     for resource, operations in role['permissions'].items():
         for user in users:
-            user_ops = [o for o in operations
-                        if not _permission_granted_by_other_role(role, user, resource, o)]
+            other_roles = _get_other_roles(role, user['roles'])
+            user_ops = _operations_not_granted_by_roles(resource,
+                                                        operations,
+                                                        other_roles)
             _permission_api.revoke(resource, user, user_ops)
     _role_api.delete(role)
     return True
@@ -165,8 +173,10 @@ def remove_user_from_role(role_name, user_name):
     role = _get_role(role_name)
     user = _get_user(user_name)
     for resource, operations in role['permissions'].items():
-        user_ops = [o for o in operations
-                    if not _permission_granted_by_other_role(role, user, resource, o)]
+        other_roles = _get_other_roles(role, user['roles'])
+        user_ops = _operations_not_granted_by_roles(resource,
+                                                    operations,
+                                                    other_roles)
         _permission_api.revoke(resource, user, user_ops)
     return True
 
