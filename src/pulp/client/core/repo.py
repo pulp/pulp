@@ -677,14 +677,12 @@ class RemovePackages(RepoAction):
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="packageid",
-                help=_("Package filename to add to this repository"))
-        #self.parser.add_option("--source", dest="srcrepo",
-        #        help=_("Source repository with specified packages to perform add"))
+                help=_("Package filename to remove to this repository"))
 
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.packageid:
-            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
         pids = []
         for pkg in self.opts.packageid:
             pinfo = self.pconn.get_package_by_filename(id, pkg)
@@ -723,6 +721,28 @@ class AddErrata(RepoAction):
             raise
             print _("Unable to add errata [%s] to repo [%s]" % (errataids, id))
         print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
+
+class RemoveErrata(RepoAction):
+    description = _('Remove specific errata from the source repository')
+
+    def setup_parser(self):
+        super(RemoveErrata, self).setup_parser()
+        self.parser.add_option("-e", "--errata", action="append", dest="errataid",
+                help=_("Errata Id to delete to this repository"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        if not self.opts.errataid:
+            system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform a delete."))
+        errataids = self.opts.errataid
+        try:
+            self.pconn.delete_errata(id, errataids)
+        except Exception:
+            raise
+            print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
+        print _("Successfully removed Errata %s to repo [%s]." %(errataids, id))
+
+
 
 # repo command ----------------------------------------------------------------
 

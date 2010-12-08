@@ -108,6 +108,7 @@ def setup_admin(admin):
     repo_cmd.add_action('add_packages', repo.AddPackages())
     repo_cmd.add_action('delete_package', repo.RemovePackages())
     repo_cmd.add_action('add_errata', repo.AddErrata())
+    repo_cmd.add_action('delete_errata', repo.RemoveErrata())
     admin.add_command('repo', repo_cmd)
 
     user_cmd = user.User()
