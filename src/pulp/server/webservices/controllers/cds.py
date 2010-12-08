@@ -99,7 +99,23 @@ class CdsActions(AsyncController):
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def sync(self, id):
-        pass
+
+        # Check to see if a timeout was specified
+        params = self.params()
+        timeout = self.timeout(params)
+
+        # Kick off the async task
+        task = self.start_task(cds_api.sync, [id], timeout=timeout, unique=True)
+
+        # If no task was returned, the uniqueness check was tripped which means
+        # there's already a sync running for this CDS.
+        if task is None:
+            return self.conflict('Sync already in process for CDS [%s]' % id)
+
+        # Munge the task information to return to the caller 
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

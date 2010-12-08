@@ -283,7 +283,7 @@ class TestErrata(unittest.TestCase):
         type = 'test_errata_type'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
         self.assertTrue(test_errata_1 is not None)
-
+        test_errata_1['pkglist'] = 'test1.rpm'
         id = 'test_errata_id_2'
         title = 'test_errata_title_2'
         description = 'test_errata_description_2'
@@ -292,8 +292,9 @@ class TestErrata(unittest.TestCase):
         type = 'test_errata_type'
         test_errata_2 = self.eapi.create(id, title, description, version, release, type)
         self.assertTrue(test_errata_2 is not None)
+        test_errata_2['pkglist'] = 'test2.rpm'
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
-
+        
         errata = self.rapi.errata('some-id', types=['test_errata_type'])
         self.assertTrue(len(errata) == 2)
 
