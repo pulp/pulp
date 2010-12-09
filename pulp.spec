@@ -73,7 +73,7 @@ BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
 Requires: %{name}-common = %{version}
-Requires: gofer >= 0.3
+Requires: gofer >= 0.7
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -90,8 +90,21 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 
 %description common
-A collection of resource that are common between the pulp
-server and client.
+A collection of resources that are common between the pulp server and client.
+
+
+%package cds
+Summary:        Provides the ability to run as a pulp external CDS.
+Group:          Development/Languages
+BuildRequires:  rpm-python
+Requires:       gofer >= 0.7
+Requires:       grinder
+Requires:       httpd
+
+%description cds
+Tools necessary to interact synchronize content from a pulp server and serve that content
+to clients.
+
 
 %prep
 %setup -q
@@ -134,11 +147,16 @@ mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
-# Gofer Plugin
+# Client Gofer Plugin
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
 cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
+
+# CDS Gofer Plugin
+mkdir -p %{buildroot}/etc/gofer/cds-plugins
+cp etc/gofer/cds-plugins/*.conf %{buildroot}/etc/gofer/plugins
+cp src/pulp/cds/gofer/gofer_cds_plugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # Pulp Init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
@@ -195,6 +213,14 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{_sysconfdir}/gofer/plugins/pulp.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
+
+
+%files cds
+%defattr(-,root,root,-)
+%doc
+%{_sysconfdir}/gofer/plugins/gofer_cds_plugin.conf
+%{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
+
 
 %changelog
 * Wed Dec 08 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.112-1
