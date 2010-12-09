@@ -17,13 +17,19 @@
 Contains classes that are used to send messages to CDS instances.
 '''
 
+# Python
+import logging
+
 # 3rd Party
 from gofer.messaging.dispatcher import DispatchError
 from gofer.messaging.policy import RequestTimeout
 from gofer.proxy import Agent
 
-# -- exceptions -------------------------------------------------------------------
 
+log = logging.getLogger(__name__)
+
+
+# -- exceptions -------------------------------------------------------------------
 
 class CdsDispatcherException(Exception):
     '''
@@ -130,4 +136,5 @@ class GoferDispatcher(object):
         @return: uuid suitable to pass to the message bus when sending messages to this CDS
         @rtype:  string
         '''
-        return 'cds-' + cds['hostname']
+        # return 'cds-' + cds['hostname']
+        return cds['hostname']
