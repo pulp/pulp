@@ -33,6 +33,7 @@ Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
 Requires: gofer-lib >= 0.7
+Requires: crontabs
 
 %if 14%{?fedora} < 13
 Requires: qpidd
