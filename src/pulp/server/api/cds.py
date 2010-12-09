@@ -32,6 +32,15 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
+REPO_FIELDS = [
+    'id',
+    'source',
+    'name',
+    'arch',
+    'relative_path',
+    'publish',
+]
+
 
 class CdsApi(BaseApi):
 
@@ -225,6 +234,8 @@ class CdsApi(BaseApi):
         @raise PulpException: if the CDS does not exist
         '''
 
+        log.info('Synchronizing CDS [%s]' % cds_hostname)
+
         # Entity load and sanity check on the arguments
         cds = self.cds(cds_hostname)
         if cds is None:
@@ -233,7 +244,7 @@ class CdsApi(BaseApi):
         # Load the repo objects to send to the CDS with the call
         repos = []
         for repo_id in cds['repo_ids']:
-            repo = self.repo_api.repository(repo_id)
+            repo = self.repo_api.repository(repo_id, fields=REPO_FIELDS)
             repos.append(repo)
 
         # Call out to dispatcher to trigger sync, adding the appropriate history entries
