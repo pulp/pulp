@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.112
+Version:        0.0.113
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -223,6 +223,14 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Thu Dec 09 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.113-1
+- Initial work towards getting a CDS RPM built. Still debugging the build.
+  (jason.dobies@redhat.com)
+- Incremented gofer version to match what the CDS dispatcher is expecting.
+  (jason.dobies@redhat.com)
+- Updated error handling for gofer 0.7 changes. (jason.dobies@redhat.com)
+- Added test cases for dispatcher calls that fail. (jason.dobies@redhat.com)
+
 * Wed Dec 08 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.112-1
 - Wired gofer CDS dispatcher and mocked out calls for test cases.
   (jason.dobies@redhat.com)
