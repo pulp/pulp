@@ -175,19 +175,31 @@ class CdsActions(AsyncController):
 
         @return: http response
         '''
-        cds= cds_api.cds(id)
+        cds = cds_api.cds(id)
         if not cds:
             return self.not_found('No CDS with hostname [%s] found' % id)
         action = getattr(self, action_name, None)
         if action is None:
             return self.internal_server_error('No implementation for [%s] found' % action_name)
         return action(id)
+
+class CdsSyncStatus(AsyncController):
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def GET(self, id, task_id):
+        task_info = self.task_status(task_id)
+        if task_info is None:
+            return self.not_found('No sync with id [%s] found' % (task_id))
+        return self.ok(task_info)
+
     
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'CdsInstances',
     '/([^/]+)/(%s)/$' % '|'.join(CdsActions.exposed_actions), 'CdsActions',
+    '/([^/]+)/sync/([^/]+)/$', 'CdsSyncStatus',
     '/([^/]+)/$', 'CdsInstance',
 )
 
