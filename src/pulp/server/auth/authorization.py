@@ -362,3 +362,34 @@ def list_users_in_role(role_name):
     """
     role = _get_role(role_name)
     return _get_users_belonging_to_role(role)
+
+# super user role -------------------------------------------------------------
+
+super_user_role = 'SuperUsers'
+
+def check_for_super_user_role():
+    role = _role_api.role(super_user_role)
+    if role is None:
+        role = _role_api.create(super_user_role)
+
+# authorization api -----------------------------------------------------------
+
+def is_superuser(user):
+    return super_user_role in user.roles
+
+
+def is_authorized(resource, user, operation):
+    if is_superuser(user):
+        return True
+    login = user['login']
+    parts = [p for p in resource.split('/') if p]
+    while parts:
+        current_resource = '/%s/' % '/'.join(parts)
+        permission = _permission_api.permission(current_resource)
+        if permission is not None:
+            if operation in permission['users'].get(login, []):
+                return True
+        parts = parts[:-1]
+    permission = _permission_api.permission('/')
+    return (permission is not None and
+            operation in permission['users'].get(login, []))
