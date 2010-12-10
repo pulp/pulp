@@ -106,11 +106,12 @@ class Packages:
         yb.processTransaction()
         
         if reboot_suggested:
-            try:
-                assumeyes = cfg.client.assumeyes
-            except:
+            cfg_assumeyes = cfg.client.assumeyes
+            if cfg_assumeyes in ["True", "False"]:
+                assumeyes = eval(cfg_assumeyes)
+            else:
                 assumeyes = assumeyes
-            if assumeyes:
+            if assumeyes is True:
                 self.__schedule_reboot()
                 return (installed, {'reboot_performed' :True})
             else:
