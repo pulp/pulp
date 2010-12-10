@@ -715,6 +715,10 @@ class CdsConnection(PulpConnection):
     '''
     Connection class to the CDS APIs.
     '''
+    def cds(self, hostname):
+        method = '/cds/%s/' % hostname
+        return self.conn.request_get(method)
+    
     def register(self, hostname, name=None, description=None):
         data = {'hostname'    : hostname,
                 'name'        : name,

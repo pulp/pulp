@@ -23,13 +23,28 @@ from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header
 
 
-# commands ----------------------------------------------------------------------
+
+# -- utilities ---------------------------------------------------------------------
+
+def _print_cds(cds):
+    if cds['repo_ids']:
+        repo_list = ', '.join(cds['repo_ids'])
+    else:
+        repo_list = _('None')
+
+    if cds['last_sync'] is None:
+        formatted_date = _('Never')
+    else:
+        formatted_date = json_utils.parse_date(cds['last_sync'])
+    print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description'], repo_list, formatted_date))
+
+# -- commands ----------------------------------------------------------------------
 
 class Cds(Command):
 
     description = _('CDS instance management actions')
 
-# actions ----------------------------------------------------------------------
+# -- actions ----------------------------------------------------------------------
 
 class Register(Action):
 
@@ -84,16 +99,7 @@ class List(Action):
         print_header(_('CDS Instances'))
 
         for cds in all_cds:
-            if cds['repo_ids']:
-                repo_list = ', '.join(cds['repo_ids'])
-            else:
-                repo_list = _('None')
-
-            if cds['last_sync'] is None:
-                formatted_date = _('Never')
-            else:
-                formatted_date = json_utils.parse_date(cds['last_sync'])
-            print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description'], repo_list, formatted_date))
+            _print_cds(cds)
 
 class History(Action):
 
@@ -213,9 +219,52 @@ class Status(Action):
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
                                help=_('CDS hostname (required)'))
+        self.parser.add_option('--recent', dest='num_recent_syncs', default='3', action='store',
+                               help=_('number of most recent syncs for which to show details'))
 
     def run(self):
         hostname = self.get_required_option('hostname')
 
-        result = self.cds_conn.sync_list(hostname)
-        print(result)
+        # Server data retrieval
+        cds = self.cds_conn.cds(hostname)
+        sync_list = self.cds_conn.sync_list(hostname)
+
+        # Print the CDS details
+        print_header(_('CDS Status'))
+        _print_cds(cds)
+
+        # Print details of the latest sync
+        if sync_list is None or len(sync_list) == 0:
+            return
+
+        print_header(_('Most Recent Sync Tasks'))
+
+        if int(self.opts.num_recent_syncs) < len(sync_list):
+            upper_limit = int(self.opts.num_recent_syncs)
+        else:
+            upper_limit = len(sync_list)
+
+        counter = 0
+        while counter < upper_limit:
+            if sync_list[counter]['start_time'] is not None:
+                start_time = json_utils.parse_date(sync_list[counter]['start_time'])
+            else:
+                start_time = _('Not Started')
+
+            if sync_list[counter]['finish_time'] is not None:
+                finish_time = json_utils.parse_date(sync_list[counter]['finish_time'])
+            else:
+                finish_time = _('In Progress')
+
+            print(_(constants.CDS_SYNC_DETAILS % (sync_list[counter]['state'], start_time, finish_time)))
+
+            if sync_list[counter]['exception'] is not None:
+                msg = 'Exception           \t%-25s' % sync_list[counter]['exception']
+                print(msg)
+
+            if sync_list[counter]['traceback'] is not None:
+                print(_('Traceback'))
+                formatted = ''.join(sync_list[counter]['traceback'])
+                print(formatted)
+
+            counter += 1
