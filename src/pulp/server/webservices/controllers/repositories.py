@@ -271,7 +271,7 @@ class RepositoryActions(AsyncController):
         'list_errata',
         'delete_errata',
         'get_package_by_nvrea',
-	'get_package_by_filename',
+        'get_package_by_filename',
         'addkeys',
         'rmkeys',
         'listkeys',
