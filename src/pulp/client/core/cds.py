@@ -88,7 +88,12 @@ class List(Action):
                 repo_list = ', '.join(cds['repo_ids'])
             else:
                 repo_list = _('None')
-            print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description'], repo_list, cds['last_sync']))
+
+            if cds['last_sync'] is None:
+                formatted_date = _('Never')
+            else:
+                formatted_date = json_utils.parse_date(cds['last_sync'])
+            print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description'], repo_list, formatted_date))
 
 class History(Action):
 
