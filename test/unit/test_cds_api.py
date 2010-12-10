@@ -598,4 +598,4 @@ class TestCdsApi(unittest.TestCase):
         self.assertTrue(history[0]['details']['error'] is not None)
 
         cds = self.cds_api.cds('cds.example.com')
-        self.assertTrue(cds['timestamp'] is not None)
+        self.assertTrue(cds['last_sync'] is not None)
