@@ -254,22 +254,32 @@ class CdsApi(BaseApi):
         # Catch any exception so thed sync_finished call is still made; can't add a
         # finally block when an except is in place in python 2.4, otherwise this would
         # be simpler.
-        sync_error = None
-        sync_exception = None
+        sync_error_msg = None
+        sync_traceback = None
         try:
             self.dispatcher.sync(cds, repos)
-        except CdsDispatcherException, e:
-            log.exception('Error occurred on sync for CDS [%s]' % cds_hostname)
+        except CdsTimeoutException:
+            log.exception('Timeout occurred during sync to CDS [%s]' % cds_hostname)
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            sync_error = traceback.extract_tb(exc_traceback)
-            sync_exception = e
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Timeout occurred during sync'
+        except CdsCommunicationsException:
+            log.exception('Communications error during sync to CDS [%s]' % cds_hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Unknown communications error during sync'
+        except CdsMethodException:
+            log.exception('CDS threw an error during sync to CDS [%s]' % cds_hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Error on the CDS during sync'
         except Exception, e:
             log.exception('Non-CdsDispatcherException error caught on sync invocation for CDS [%s]' % cds['hostname'])
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            sync_error = traceback.extract_tb(exc_traceback)
-            sync_exception = e
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Unknown error during sync'
 
-        self.cds_history_api.sync_finished(cds_hostname, sync_error)
+        self.cds_history_api.sync_finished(cds_hostname, error=sync_error_msg)
 
         # Update the CDS to indicate the last sync time
         cds['last_sync'] = datetime.datetime.now()
@@ -277,8 +287,8 @@ class CdsApi(BaseApi):
 
         # Make sure the caller gets the error like normal (after the event logging) if
         # one occurred
-        if sync_exception is not None:
-            raise PulpException('Error occurred on sync for CDS [%s]; check the server log for more information', cds_hostname)
+        if sync_error_msg is not None:
+            raise PulpException('%s; check the server log for more information' % sync_error_msg), None, sync_traceback
 
 # -- internal only api ---------------------------------------------------------------------
 
