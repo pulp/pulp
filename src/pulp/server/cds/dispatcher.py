@@ -19,6 +19,7 @@ Contains classes that are used to send messages to CDS instances.
 
 # Python
 import logging
+import sys
 
 # 3rd Party
 from gofer.messaging.dispatcher import DispatchError
@@ -37,6 +38,9 @@ class CdsDispatcherException(Exception):
     '''
     def __init__(self, wrapped_exception):
         self.wrapped_exception = wrapped_exception
+
+    def __repr__(self):
+        return self.wrapped_exception.__repr__()
 
 class CdsTimeoutException(CdsDispatcherException):
     '''
@@ -78,11 +82,11 @@ class GoferDispatcher(object):
         try:
             self._cds_stub(cds).initialize()
         except RequestTimeout, e:
-            raise CdsTimeoutException(e)
+            raise CdsTimeoutException(e), None, sys.exc_info()[2]
         except DispatchError, e:
-            raise CdsCommunicationsException(e)
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except Exception, e:
-            raise CdsMethodException(e)
+            raise CdsMethodException(e), None, sys.exc_info()[2]
 
     def sync(self, cds, repos):
         '''
@@ -102,12 +106,11 @@ class GoferDispatcher(object):
         try:
             self._cds_stub(cds).sync(repos)
         except RequestTimeout, e:
-            raise CdsTimeoutException(e)
+            raise CdsTimeoutException(e), None, sys.exc_info()[2]
         except DispatchError, e:
-            raise CdsCommunicationsException(e)
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except Exception, e:
-            raise CdsMethodException(e)
-
+            raise CdsMethodException(e), None, sys.exc_info()[2]
 
     def _cds_stub(self, cds):
         '''

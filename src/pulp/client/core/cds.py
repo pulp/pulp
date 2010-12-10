@@ -197,3 +197,20 @@ class Sync(Action):
 
         result = self.cds_conn.sync(hostname)
         print(result)
+
+class Status(Action):
+
+    description = _('displays the sync status of the given CDS')
+
+    def setup_connections(self):
+        self.cds_conn = CdsConnection()
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('CDS hostname (required)'))
+
+    def run(self):
+        hostname = self.get_required_option('hostname')
+
+        result = self.cds_conn.sync_list(hostname)
+        print(result)

@@ -259,6 +259,7 @@ class CdsApi(BaseApi):
         try:
             self.dispatcher.sync(cds, repos)
         except CdsDispatcherException, e:
+            log.exception('Error occurred on sync for CDS [%s]' % cds_hostname)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_error = traceback.extract_tb(exc_traceback)
             sync_exception = e
@@ -271,13 +272,13 @@ class CdsApi(BaseApi):
         self.cds_history_api.sync_finished(cds_hostname, sync_error)
 
         # Update the CDS to indicate the last sync time
-        cds['timestamp'] = datetime.datetime.now()
-        self.update(cds)
+        cds['last_sync'] = datetime.datetime.now()
+        self.objectdb.save(cds, safe=True)
 
         # Make sure the caller gets the error like normal (after the event logging) if
         # one occurred
         if sync_exception is not None:
-            raise PulpException(repr(sync_exception))
+            raise PulpException('Error occurred on sync for CDS [%s]; check the server log for more information', cds_hostname)
 
 # -- internal only api ---------------------------------------------------------------------
 

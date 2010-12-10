@@ -763,6 +763,10 @@ class CdsConnection(PulpConnection):
         method = '/cds/%s/sync/' % hostname
         return self.conn.request_post(method, params=data)
 
+    def sync_list(self, hostname):
+        method = '/cds/%s/sync/' % hostname
+        return self.conn.request_get(method)
+
 if __name__ == '__main__':
     rconn = RepoConnection()
     print "+--------------------------------+"

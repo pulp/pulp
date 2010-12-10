@@ -25,6 +25,7 @@ import web
 from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
+from pulp.server.async import find_async
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.role_check import RoleCheck
@@ -87,35 +88,14 @@ class CdsInstance(JSONController):
         cds_api.unregister(id)
         return self.ok(True)
 
+
 class CdsActions(AsyncController):
 
     exposed_actions = (
-        'sync',
         'associate',
         'unassociate',
         'history',
     )
-
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def sync(self, id):
-
-        # Check to see if a timeout was specified
-        params = self.params()
-        timeout = self.timeout(params)
-
-        # Kick off the async task
-        task = self.start_task(cds_api.sync, [id], timeout=timeout, unique=True)
-
-        # If no task was returned, the uniqueness check was tripped which means
-        # there's already a sync running for this CDS.
-        if task is None:
-            return self.conflict('Sync already in process for CDS [%s]' % id)
-
-        # Munge the task information to return to the caller 
-        task_info = self._task_to_dict(task)
-        task_info['status_path'] = self._status_path(task.id)
-        return self.accepted(task_info)
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -183,11 +163,64 @@ class CdsActions(AsyncController):
             return self.internal_server_error('No implementation for [%s] found' % action_name)
         return action(id)
 
-class CdsSyncStatus(AsyncController):
+class CdsSyncActions(AsyncController):
+   
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def POST(self, id):
+        '''
+        Triggers a sync against the CDS identified by id.
+        '''
+
+        # Check to see if a timeout was specified
+        params = self.params()
+        timeout = self.timeout(params)
+
+        # Kick off the async task
+        task = self.start_task(cds_api.sync, [id], timeout=timeout, unique=True)
+
+        # If no task was returned, the uniqueness check was tripped which means
+        # there's already a sync running for this CDS.
+        if task is None:
+            return self.conflict('Sync already in process for CDS [%s]' % id)
+
+        # Munge the task information to return to the caller
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def GET(self, id):
+        '''
+        Returns a list of tasks associated with the CDS identified by id.
+        '''
+
+        # Find all sync tasks associated with the given CDS
+        tasks = [t for t in find_async(method_name='sync')
+                 if (t.args and id in t.args) or
+                 (t.kwargs and id in t.kwargs.values())]
+
+        if len(tasks) == 0:
+            return self.not_found('No sync tasks found for CDS [%s]' % id)
+
+        all_task_infos = []
+        for task in tasks:
+            info = self._task_to_dict(task)
+            info['status_path'] = self._status_path(task.id)
+            all_task_infos.append(info)
+
+        return self.ok(all_task_infos)
+
+
+class CdsSyncTaskStatus(AsyncController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def GET(self, id, task_id):
+        '''
+        Returns the state of an individual CDS sync task.
+        '''
         task_info = self.task_status(task_id)
         if task_info is None:
             return self.not_found('No sync with id [%s] found' % (task_id))
@@ -199,7 +232,8 @@ class CdsSyncStatus(AsyncController):
 urls = (
     '/$', 'CdsInstances',
     '/([^/]+)/(%s)/$' % '|'.join(CdsActions.exposed_actions), 'CdsActions',
-    '/([^/]+)/sync/([^/]+)/$', 'CdsSyncStatus',
+    '/([^/]+)/sync/$', 'CdsSyncActions',
+    '/([^/]+)/sync/([^/]+)/$', 'CdsSyncTaskStatus',
     '/([^/]+)/$', 'CdsInstance',
 )
 
