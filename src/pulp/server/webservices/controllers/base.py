@@ -30,6 +30,7 @@ import web
 from pymongo import json_util
 
 from pulp.server import async
+from pulp.server.auth.authorization import is_authorized
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import http
@@ -66,12 +67,15 @@ class JSONController(object):
         def _auth_required(method):
             @functools.wraps(method)
             def _auth_decorator(self, *args, **kwargs):
-                user = None
+                user = None # XXX remove me
+                login_pass = http.http_username_password()
+                if login_pass:
+                    login, password = login_pass
                 #user = auth.authenticate()
                 #if not user:
                 #    msg = _('Authorization failed. Check your username and password or your certificate')
                 #    return self.unauthorized(msg)
-                #if operation is not None and not auth.authorize(None, user, operation):
+                #if operation is not None and not is_authorized(None, user, operation):
                 #    msg = _('Authorization failed. You do not have permission to access this resource')
                 #    return self.unauthorized(msg)
                 set_principal(user)

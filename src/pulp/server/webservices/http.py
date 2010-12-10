@@ -18,14 +18,16 @@
 HTTP utilities to help pulp web services with HTTP using the web.py framework
 """
 
+import base64
 import httplib
 import os
+import re
 import urllib
 
 import web
 
 # request methods -------------------------------------------------------------
-    
+
 def query_parameters(valid):
     """
     @type valid: list of str's
@@ -41,7 +43,15 @@ def query_parameters(valid):
     defaults = {}.fromkeys(valid, [])
     params = web.input(**defaults)
     # scrub out invalid keys and empty lists from the parameters
-    return dict((k,v) for k,v in params.items() if k in valid and v)
+    return dict((k, v) for k, v in params.items() if k in valid and v)
+
+# http auth methods -----------------------------------------------------------
+
+_whitespace_regex = re.compile('\w+')
+
+
+class HTTPAuthError(Exception):
+    pass
 
 
 def http_authorization():
@@ -52,9 +62,77 @@ def http_authorization():
     """
     credentials = web.ctx.environ.get('HTTP_AUTHORIZATION', None)
     return credentials
-     
+
+
+def _is_http_basic_auth(credentials):
+    """
+    Check if the credentials are for http basic authorization
+    @type credentials: str
+    @param credentials: value of the HTTP_AUTHORIZATION header
+    @return: True if the credentials are for http basic authorization,
+             False otherwise
+    """
+    if len(credentials) < 5:
+        return False
+    type = credentials[:5].lower()
+    return type == 'basic'
+
+
+def _http_basic_username_password(credentials):
+    """
+    Get the username and password from http basic authorization credentials
+    """
+    credentials = credentials.strip()
+    if not _whitespace_regex.match(credentials):
+        raise HTTPAuthError('malformed basic authentication information')
+    encoded_str = _whitespace_regex.split(credentials, 1)[1].strip()
+    decoded_str = base64.decodestring(encoded_str)
+    if decoded_str.find(':') < 0:
+        raise HTTPAuthError('malformed basic authentication information')
+    return decoded_str.split(':', 1)
+
+
+def _is_http_digest_auth(credentials):
+    """
+    Check if the credentials are for http digest authorization
+    @type credentials: str
+    @param credentials: value of the HTTP_AUTHORIZATION header
+    @return: True if the credentials are for http digest authorization,
+             False otherwise
+    """
+    if len(credentials) < 6:
+        return False
+    type = credentials[:6].lower()
+    return type == 'digest'
+
+
+def _http_digest_username_password(credentials):
+    """
+    Get the username and password from http digest authorization credentials
+    """
+    raise NotImplementedError('HTTP Digest Authorization not yet implemented')
+
+
+def http_username_password():
+    """
+    Return a the username, password tuple from the http authorization header
+    Return None if the header isn't found
+    Raises an exception if the authorization scheme cannot be determined
+    @rtype: tuple of str's or None
+    @return: username, password tuple or None
+    @raise L{HTTPAuthError} instance: if authorization cannot be determined
+    """
+    credentials = http_authorization()
+    if credentials is None:
+        return None
+    if _is_http_basic_auth(credentials):
+        return _http_basic_username_password(credentials)
+    if _is_http_digest_auth(credentials):
+        return _http_digest_username_password(credentials)
+    raise HTTPAuthError('Unrecognized HTTP Authorization')
+
 # uri path functions ----------------------------------------------------------
-   
+
 def uri_path():
     """
     Return the current URI path
@@ -82,8 +160,20 @@ def extend_uri_path(suffix):
         path += '/'
     return path
 
+
+def resource_path():
+    """
+    Return the uri path with the /pulp/api prefix stripped off
+    @rtype: str
+    @return: uri formatted path
+    """
+    parts = [p for p in uri_path().split('/') if p][2:]
+    if not parts:
+        return '/'
+    return '/%s/' % '/'.join(parts)
+
 # response functions ----------------------------------------------------------
-   
+
 def header(hdr, value, unique=True):
     """
     Adds 'hdr: value' to the response.
@@ -100,16 +190,16 @@ def header(hdr, value, unique=True):
     hdr = web.utf8(hdr)
     value = web.utf8(value)
     previous = []
-    for h,v in web.ctx.headers:
+    for h, v in web.ctx.headers:
         if h.lower() == hdr.lower():
-            previous.append((h,v))
+            previous.append((h, v))
     if unique:
         for p in previous:
             web.ctx.headers.remove(p)
     web.ctx.headers.append((hdr, value))
 
 # status functions ------------------------------------------------------------
-      
+
 def _status(code):
     """
     Non-public function to set the web ctx status
@@ -117,80 +207,79 @@ def _status(code):
     @param code: http response code
     """
     web.ctx.status = '%d %s' % (code, httplib.responses[code])
-    
-    
+
+
 def status_ok():
     """
     Set response code to ok
     """
     _status(httplib.OK)
-    
-    
+
+
 def status_created():
     """
     Set response code to created
     """
     _status(httplib.CREATED)
-    
-    
+
+
 def status_no_content():
     """
     Set response code to no content
     """
     _status(httplib.NO_CONTENT)
-    
+
 
 def status_accepted():
     """
     Set response code to accepted
     """
     _status(httplib.ACCEPTED)
-    
-    
+
+
 def status_bad_request():
     """
     Set the response code to bad request
     """
     _status(httplib.BAD_REQUEST)
-    
+
 
 def status_unauthorized():
     """
     Set response code to unauthorized
     """
     _status(httplib.UNAUTHORIZED)
-    
-    
+
+
 def status_not_found():
     """
     Set response code to not found
     """
     _status(httplib.NOT_FOUND)
-    
-    
+
+
 def status_method_not_allowed():
     """
     Set response code to method not allowed
     """
     _status(httplib.METHOD_NOT_ALLOWED)
-    
-    
+
+
 def status_not_acceptable():
     """
     Set response code to not acceptable
     """
     _status(httplib.NOT_ACCEPTABLE)
-    
-    
+
+
 def status_conflict():
     """
     Set response code to conflict
     """
     _status(httplib.CONFLICT)
-    
+
 def status_internal_server_error():
     """
     Set the resonse code to internal server error
     """
     _status(httplib.INTERNAL_SERVER_ERROR)
-    
