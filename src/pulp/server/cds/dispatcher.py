@@ -24,7 +24,9 @@ import sys
 # 3rd Party
 from gofer.messaging.dispatcher import DispatchError
 from gofer.messaging.policy import RequestTimeout
-from gofer.proxy import Agent
+
+# Pulp
+from pulp.server.agent import Agent
 
 
 log = logging.getLogger(__name__)
