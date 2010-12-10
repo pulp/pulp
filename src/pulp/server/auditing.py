@@ -24,8 +24,14 @@ import traceback
 from pprint import pformat
 
 import pymongo
-from pymongo.bson import BSON
-from pymongo.son import SON
+try:
+    from pymongo.bson import BSON
+except:
+    from bson import BSON
+try:
+    from pymongo.son import SON
+except:
+    from bson.son import SON
 
 from pulp.server import config
 from pulp.server.auth import auth
