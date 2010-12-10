@@ -84,7 +84,7 @@ class Packages:
     """
 
     @remote
-    def install(self, packageinfo):
+    def install(self, packageinfo, reboot_suggested=False, assumeyes=False):
         """
         Install packages by name.
         @param packageinfo: A list of strings for pkg names
@@ -104,8 +104,24 @@ class Packages:
                 yb.tsInfo.addInstall(p)
         yb.resolveDeps()
         yb.processTransaction()
-        return installed
-
+        
+        if reboot_suggested:
+            try:
+                assumeyes = cfg.client.assumeyes
+            except:
+                assumeyes = assumeyes
+            if assumeyes:
+                self.__schedule_reboot()
+                return (installed, {'reboot_performed' :True})
+            else:
+                return (installed, {'reboot_performed' :False})
+                
+        return (installed, None)
+    
+    def __schedule_reboot(self):
+        interval = cfg.client.reboot_schedule
+        os.system("shutdown -r %s &" % interval)
+        log.info("System is scheduled to reboot in %s minutes" % interval)
 
 class PackageGroups:
     """

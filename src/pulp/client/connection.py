@@ -486,10 +486,11 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/package_updates/" % id
         return self.conn.request_get(method)
 
-    def installerrata(self, id, errataids, types=()):
+    def installerrata(self, id, errataids, assumeyes=False, types=()):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
-                      'types'    :   types}
+                      'types'    :   types,
+                      'assumeyes' : assumeyes}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
