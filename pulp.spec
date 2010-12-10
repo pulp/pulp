@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.113
+Version:        0.0.114
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -224,6 +224,17 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1
+- Update the last sync timestamp on the CDS at a sync.
+  (jason.dobies@redhat.com)
+- Added an ID sort as a backup to differentiate between ties.
+  (jason.dobies@redhat.com)
+- Initial CDS plugin implementation. Seeing issues with grinder connecting to
+  pulp repos. (jason.dobies@redhat.com)
+- 661850 - Added crontabs as a dependency. (jason.dobies@redhat.com)
+- 636525 - Include the checksum information of the package existing on the
+  server (pkilambi@redhat.com)
+
 * Thu Dec 09 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.113-1
 - Initial work towards getting a CDS RPM built. Still debugging the build.
   (jason.dobies@redhat.com)
