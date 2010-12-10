@@ -553,7 +553,7 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
 
         cds = self.cds_api.cds('cds.example.com')
-        self.assertTrue(cds['timestamp'] is not None)
+        self.assertTrue(cds['last_sync'] is not None)
 
     def test_sync_invalid_cds(self):
         '''
