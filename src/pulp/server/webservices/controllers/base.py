@@ -19,6 +19,7 @@ import logging
 import sys
 import traceback
 from datetime import timedelta
+from gettext import gettext as _
 
 try:
     import json
@@ -29,8 +30,8 @@ import web
 from pymongo import json_util
 
 from pulp.server import async
+from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.tasking.task import task_complete_states
-from pulp.server.webservices import auth
 from pulp.server.webservices import http
 
 
@@ -59,18 +60,26 @@ class JSONController(object):
         return report_error
 
     @staticmethod
-    def user_auth_required(roles=()):
+    def auth_required(operation=None):
         """
-        Static Controller method to check user permissions on web service calls
         """
-        def _user_auth_required(method):
+        def _auth_required(method):
             @functools.wraps(method)
-            def check_user_auth(self, *args, **kwargs):
-                if not auth.check_roles(roles):
-                    return self.unauthorized('You do not have permission for this URI')
-                return method(self, *args, **kwargs)
-            return check_user_auth
-        return _user_auth_required
+            def _auth_decorator(self, *args, **kwargs):
+                user = None
+                #user = auth.authenticate()
+                #if not user:
+                #    msg = _('Authorization failed. Check your username and password or your certificate')
+                #    return self.unauthorized(msg)
+                #if operation is not None and not auth.authorize(None, user, operation):
+                #    msg = _('Authorization failed. You do not have permission to access this resource')
+                #    return self.unauthorized(msg)
+                set_principal(user)
+                value = method(self, *args, **kwargs)
+                clear_principal()
+                return value
+            return _auth_decorator
+        return _auth_required
 
     # input methods -----------------------------------------------------------
 
