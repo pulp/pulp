@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 # Python
+import datetime
 import logging
 import sys
 import traceback
@@ -268,6 +269,10 @@ class CdsApi(BaseApi):
             sync_exception = e
 
         self.cds_history_api.sync_finished(cds_hostname, sync_error)
+
+        # Update the CDS to indicate the last sync time
+        cds['timestamp'] = datetime.datetime.now()
+        self.update(cds)
 
         # Make sure the caller gets the error like normal (after the event logging) if
         # one occurred
