@@ -60,8 +60,7 @@ def http_authorization():
     @return: str representing the http authorization credentials if found,
              None otherwise
     """
-    credentials = web.ctx.environ.get('HTTP_AUTHORIZATION', None)
-    return credentials
+    return web.ctx.environ.get('HTTP_AUTHORIZATION', None)
 
 
 def _is_http_basic_auth(credentials):
@@ -131,6 +130,16 @@ def http_username_password():
         return _http_digest_username_password(credentials)
     raise HTTPAuthError('Unrecognized HTTP Authorization')
 
+# ssl methods -----------------------------------------------------------------
+
+def ssl_client_cert():
+    """
+    Return the ssl client cert if it is found, None otherwise
+    @rtype: str or None
+    @return: pem encoded cert
+    """
+    return web.ctx.environ.get('SSL_CLIENT_CERT', None)
+
 # uri path functions ----------------------------------------------------------
 
 def uri_path():
@@ -167,7 +176,9 @@ def resource_path():
     @rtype: str
     @return: uri formatted path
     """
-    parts = [p for p in uri_path().split('/') if p][2:]
+    parts = [p for p in uri_path().split('/') if p]
+    assert parts[:2] == ('pulp', 'api')
+    parts = parts[2:]
     if not parts:
         return '/'
     return '/%s/' % '/'.join(parts)
