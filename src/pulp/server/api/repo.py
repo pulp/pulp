@@ -715,9 +715,13 @@ class RepoApi(BaseApi):
             
             for pkg in erratum['pkglist']:
                 for pinfo in pkg['packages']:
+                    if pinfo['epoch'] in ['None', None]:
+                        epoch = '0'
+                    else:
+                        epoch = pinfo['epoch'] 
                     epkg = self.packageapi.package_by_ivera(pinfo['name'], 
                                                             pinfo['version'], 
-                                                            pinfo['epoch'], 
+                                                            epoch, 
                                                             pinfo['release'], 
                                                             pinfo['arch'])
                     if epkg:
