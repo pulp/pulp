@@ -171,11 +171,22 @@ rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 mkdir -p %{buildroot}/etc/yum.repos.d
 touch %{buildroot}/etc/yum.repos.d/pulp.repo
 
+%install cds
+
+# This should match what's in gofer_cds_plugin.conf and pulp-cds.conf
+mkdir -p %{buildroot}/var/lib/pulp-cds
+
+# Apache Configuration
+mkdir -p %{buildroot}/etc/httpd/conf.d/
+cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
+
 %clean
 rm -rf %{buildroot}
 
+
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
+
 
 %files
 %defattr(-,root,root,-)
@@ -222,7 +233,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %doc
 %{_sysconfdir}/gofer/plugins/gofer_cds_plugin.conf
 %{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
-
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 
 %changelog
 * Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1
