@@ -85,7 +85,7 @@ class CdsGoferReceiver(object):
             
             log.debug('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
 
-            fetch = YumRepoGrinder('', url, num_threads)
+            fetch = YumRepoGrinder('', url, num_threads, sslverify=0)
             fetch.fetchYumRepo(repo_path)
 
 
