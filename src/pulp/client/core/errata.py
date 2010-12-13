@@ -133,9 +133,9 @@ class Install(ErrataAction):
             assumeyes =  True
 
         if self.opts.consumerid:
-            task = self.cconn.installerrata(consumerid, errataids, assumeyes)
+            task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
         elif self.opts.consumergroupid:
-            task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes)
+            task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
 
         if not task:
             system_exit(os.EX_DATAERR, 
@@ -149,7 +149,7 @@ class Install(ErrataAction):
             time.sleep(2)
             status = self.cconn.task_status(spath)
             state = status['state']
-        if state == 'finished':
+        if state == 'finished' and consumerid:
             (installed, reboot_status) = status['result']
             if reboot_status.has_key('reboot_performed') and reboot_status['reboot_performed']:
                 print _('\nSuccessfully installed [%s] and reboot scheduled on [%s]' % (installed, (consumerid or (consumergroupid))))
@@ -159,6 +159,8 @@ class Install(ErrataAction):
             else:  
                 print _('\nSuccessfully installed [%s] on [%s]') % \
                       (installed, (consumerid or (consumergroupid)))
+        elif state == 'finished' and consumergroupid:
+            print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
         else:
             print("\nErrata install failed")
 

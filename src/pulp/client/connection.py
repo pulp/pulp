@@ -564,10 +564,11 @@ class ConsumerGroupConnection(PulpConnection):
         body = dict(packagenames=packagenames)
         return self.conn.request_post(method, params=body)
 
-    def installerrata(self, id, errataids, types=[]):
+    def installerrata(self, id, errataids, types=[], assumeyes=False):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
-                      'types'    :   types}
+                      'types'    :   types,
+                      'assumeyes' : assumeyes,}
         method = "/consumergroups/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 

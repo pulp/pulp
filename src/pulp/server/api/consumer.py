@@ -471,7 +471,6 @@ class ConsumerApi(BaseApi):
 
         pkg_profile_dict = [dict(pkg) for pkg in pkg_profile]
         pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
-
         #Compute applicable errata by subscribed repos
         errataids = [eid for repoid in consumer["repoids"] \
                      for eid in self.repoapi.errata(repoid, types) ]
