@@ -92,15 +92,16 @@ class CdsApi(BaseApi):
         try:
             self.dispatcher.init_cds(cds)
         except CdsTimeoutException:
-            raise PulpException('Timeout occurred attempting to initialize CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Timeout occurred attempting to initialize CDS [%s]' % hostname), None, exc_traceback
         except CdsCommunicationsException:
-            # TODO: send more error information with the PulpException
-            # instead of saying to check the server log
             log.exception('Communications exception occurred initializing CDS [%s]' % hostname)
-            raise PulpException('Communications error while attempting to initialize CDS [%s]; check the server log for more information' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Communications error while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
         except CdsMethodException:
             log.exception('CDS error encountered while attempting to initialize CDS [%s]' % hostname)
-            raise PulpException('CDS error encountered while attempting to initialize CDS [%s]; check the server log for more information' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('CDS error encountered while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
 
         self.insert(cds)
 
