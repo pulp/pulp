@@ -110,13 +110,13 @@ def generate_updateinfo(repo):
         }
         un._md = _md
         um.add_notice(un)
-    repo_dir = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['id']) 
+    repo_dir = "%s/%s/" % (pulp.server.util.top_repos_location(), repo['relative_path']) 
     if not um._notices:
         # nothing to do return
         return
     updateinfo_path = None
     try:
-        updateinfo_path = "%s/%s" % (repo_dir, "updateinfo.xml") 
+        updateinfo_path = "%s/%s" % (repo_dir, "updateinfo.xml")
         updateinfo_xml = um.xml(fileobj=open(updateinfo_path, 'wt'))
         log.info("updateinfo.xml generated and written to file %s" % updateinfo_path)
     except:
