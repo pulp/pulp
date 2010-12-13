@@ -143,8 +143,14 @@ class History(Action):
             # Based on the type of event, add on the event specific details. Otherwise,
             # just throw an empty line to account for the blank line that's added
             # by the details rendering.
+
             if type_name == 'repo_associated' or type_name == 'repo_unassociated':
-                print constants.CONSUMER_HISTORY_REPO % (entry['details']['repo_id'])
+                print(_(constants.CONSUMER_HISTORY_REPO % entry['details']['repo_id']))
+
+            if type_name == 'sync_finished' and \
+               'error' in entry['details'] and \
+               entry['details']['error'] is not None:
+               print(_(constants.CDS_HISTORY_ENTRY_ERROR % entry['details']['error']))
 
 class Associate(Action):
 
@@ -219,7 +225,7 @@ class Status(Action):
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
                                help=_('CDS hostname (required)'))
-        self.parser.add_option('--recent', dest='num_recent_syncs', default='3', action='store',
+        self.parser.add_option('--recent', dest='num_recent_syncs', default='1', action='store',
                                help=_('number of most recent syncs for which to show details'))
 
     def run(self):
@@ -259,12 +265,14 @@ class Status(Action):
             print(_(constants.CDS_SYNC_DETAILS % (sync_list[counter]['state'], start_time, finish_time)))
 
             if sync_list[counter]['exception'] is not None:
-                msg = 'Exception           \t%-25s' % sync_list[counter]['exception']
+                msg = _(constants.CDS_HISTORY_ENTRY_ERROR % sync_list[counter]['exception'])
                 print(msg)
 
             if sync_list[counter]['traceback'] is not None:
                 print(_('Traceback'))
-                formatted = ''.join(sync_list[counter]['traceback'])
+                # The spaces here are to indent the traceback so it's more obvious that
+                # it is part of the reporting and not a result of running the CLI command
+                formatted = '    ' + '      '.join(sync_list[counter]['traceback'])
                 print(formatted)
 
             counter += 1

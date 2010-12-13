@@ -147,6 +147,8 @@ Event Type          \t%-25s
 Timestamp           \t%-25s
 Originator          \t%-25s'''
 
+CDS_HISTORY_ENTRY_ERROR = '''Exception           \t%-25s'''
+
 CDS_HISTORY_EVENT_TYPES = {
     'registered' : 'Registered',
     'unregistered' : 'Unregistered',
