@@ -56,6 +56,7 @@ def initialize():
     global _objdb
     _objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
 
+
 def audit_repr(value):
     """
     Return an audit-friendly representation of a value.
@@ -103,7 +104,6 @@ class MethodInspector(object):
             self.params = params
         else:
             self.params = list(args)
-        #self.params = params if params is not None else list(args)
 
         self.__param_to_index = dict((a, i + 1) for i, a in
                                      enumerate(args)
@@ -161,11 +161,6 @@ def audit(params=None, record_result=False):
     events on pulp's model instances.
     Any call to a decorated method will both record the event in the database
     and log it to a special log file.
-    
-    A decorated method may have an optional keyword argument, 'principal',
-    passed in that represents the user or other entity making the call.
-    This optional keyword argument is not passed to the underlying method,
-    unless the pass_principal flag is True.
     
     @type params: list or tuple of str's or None
     @param params: list of names of parameters to record the values of,
