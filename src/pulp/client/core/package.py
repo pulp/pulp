@@ -103,7 +103,7 @@ class Install(PackageAction):
             print _('\n[%s] installed on %s') % \
                   (status['result'], (consumerid or consumergroupid))
         else:
-            print _("\nPackage install failed")
+            system_exit(-1, _("\nPackage install failed"))
 
 class Search(PackageAction):
 
