@@ -17,6 +17,7 @@ import os
 import socket
 
 # 3rd Party
+from gofer.agent.plugin import Plugin
 from gofer.decorators import remote, identity
 from grinder.RepoFetch import YumRepoGrinder
 
@@ -25,6 +26,9 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.FileHandler('/var/log/pulp-cds/gofer.log'))
 log.setLevel(logging.DEBUG)
 log.info('CDS gofer plugin initialized')
+
+plugin = Plugin.find(__name__)
+config = plugin.cfg()
 
 
 class CdsGoferReceiver(object):
@@ -75,9 +79,9 @@ class CdsGoferReceiver(object):
         log.info('Received sync call')
         log.info(repos)
 
-        num_threads = 10
         pulp_server_hostname = '192.168.0.201'
-        packages_location = '/pulp-cds/'
+        num_threads = config.cds.sync_threads
+        packages_location = config.cds.packages_dir
 
         # Delete any existing repos that were synchronized but are not in the repo list
 
@@ -89,7 +93,7 @@ class CdsGoferReceiver(object):
 
             if not os.path.exists(repo_path):
                 os.makedirs(repo_path)
-            
+
             log.debug('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
 
             fetch = YumRepoGrinder('', url, num_threads, sslverify=0)
