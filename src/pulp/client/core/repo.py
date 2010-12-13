@@ -687,17 +687,15 @@ class RemovePackages(RepoAction):
         pids = []
         for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(id, pkg)
-            pids.append(pinfo)
-        try:
-            if pinfo:
-                self.pconn.remove_package(id, pids)
-            else:
-                print _("Package [%s] is not part of the source repository [%s]" % (pkg, id))
-        except Exception:
-            raise
-            print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
-        print _("Successfully removed package(s) %s to repo [%s]." %(self.opts.pkgname, id))
-
+            try:
+                if pinfo:
+                    self.pconn.remove_package(id, [pinfo])
+                    print _("Successfully removed package %s from repo [%s]." %(pkg, id))
+                else:
+                    print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
+            except Exception:
+                print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
+                
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
@@ -719,8 +717,7 @@ class AddErrata(RepoAction):
         try:
             self.pconn.add_errata(id, errataids)
         except Exception:
-            raise
-            print _("Unable to add errata [%s] to repo [%s]" % (errataids, id))
+            system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
         print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
 
 class RemoveErrata(RepoAction):
@@ -739,7 +736,6 @@ class RemoveErrata(RepoAction):
         try:
             self.pconn.delete_errata(id, errataids)
         except Exception:
-            raise
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
         print _("Successfully removed Errata %s to repo [%s]." %(errataids, id))
 
