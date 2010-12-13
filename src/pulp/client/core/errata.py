@@ -151,14 +151,15 @@ class Install(ErrataAction):
             state = status['state']
         if state == 'finished' and consumerid:
             (installed, reboot_status) = status['result']
-            if reboot_status.has_key('reboot_performed') and reboot_status['reboot_performed']:
+            if not reboot_status:
+                print _('\nSuccessfully installed [%s] on [%s]') % \
+                      (installed, (consumerid or (consumergroupid)))
+            elif reboot_status.has_key('reboot_performed') and reboot_status['reboot_performed']:
                 print _('\nSuccessfully installed [%s] and reboot scheduled on [%s]' % (installed, (consumerid or (consumergroupid))))
             elif reboot_status.has_key('reboot_performed') and not reboot_status['reboot_performed']:
                 print _('\nSuccessfully installed [%s]; This update requires a reboot, please reboot [%s] at your earliest convenience' % \
-                        (installed, (consumerid or (consumergroupid))))
-            else:  
-                print _('\nSuccessfully installed [%s] on [%s]') % \
-                      (installed, (consumerid or (consumergroupid)))
+                        (installed, (consumerid or (consumergroupid))))  
+                
         elif state == 'finished' and consumergroupid:
             print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
         else:
