@@ -14,6 +14,7 @@
 # Python
 import logging
 import os
+import socket
 
 # 3rd Party
 from gofer.decorators import remote, identity
@@ -30,7 +31,13 @@ class CdsGoferReceiver(object):
 
     @identity
     def getuuid(self):
-        return 'cds-oracle.batcave.org'
+        '''
+        Returns the bus ID on which this plugin will receive messages.
+
+        @return: bus name used by gofer
+        @rtype:  string
+        '''
+        return 'cds-%s' % socket.gethostname()
 
     @remote
     def initialize(self):

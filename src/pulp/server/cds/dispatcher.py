@@ -141,5 +141,4 @@ class GoferDispatcher(object):
         @return: uuid suitable to pass to the message bus when sending messages to this CDS
         @rtype:  string
         '''
-        # return 'cds-' + cds['hostname']
-        return cds['hostname']
+        return 'cds-%s' % cds['hostname']
