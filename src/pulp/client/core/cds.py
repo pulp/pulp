@@ -212,8 +212,9 @@ class Sync(Action):
     def run(self):
         hostname = self.get_required_option('hostname')
 
-        result = self.cds_conn.sync(hostname)
-        print(result)
+        self.cds_conn.sync(hostname)
+        print(_('Sync for CDS [%s] started' % hostname))
+        print(_('Use "cds status" to check on the progress'))
 
 class Status(Action):
 
