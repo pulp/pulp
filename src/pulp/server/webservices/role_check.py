@@ -22,8 +22,13 @@ except ImportError:
     import simplejson as json
 
 import pymongo.json_util
+import oauth2 as oauth 
 import web
 
+from ConfigParser import NoOptionError
+
+import pulp.server.auth.auth as principal
+from pulp.server import config
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
@@ -33,7 +38,6 @@ import pulp.server.auth.password_util as password_util
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
-from pulp.server.config import config
 from pulp.server.LDAPConnection import LDAPConnection
 from pulp.server.db.model import User
 
@@ -74,7 +78,12 @@ class RoleCheck(object):
             # default the current principal to be sure it's not
             # left over from the last call.
             principal.clear_principal()
-
+            
+            
+            for k in web.ctx.environ.keys():
+                val = web.ctx.environ[k]
+                LOG.error("env var: {%s:\'%s\'}" % (k, val))
+                
             # Determine which roles will be checked by this instance of the decorator
             roles = {'consumer': None, 'admin': None, 'consumer_id': None}
             for key in self.dec_kw.keys():
@@ -96,7 +105,21 @@ class RoleCheck(object):
             # Consumer role checking
             if not user and (roles['consumer'] or roles['consumer_id']):
                 user = self.check_consumer(roles['consumer_id'], *fargs)
-
+                
+            # Last check for OAuth authentication
+            if not user:
+                user = self.check_oauth(*fargs)
+                LOG.info("User from oauth check: %s" % user)
+                
+            # Check the Roles assigned to the User. Demo code
+            # repo = REPO_API.repository(fargs[1])
+            # LOG.error("REPO: %s" % repo)
+            # LOG.error("User: %s" % user)
+            # if (not ROLE_API.check(user, repo, RoleResourceType.REPO,
+            #                               RoleActionType.READ)):
+            #    LOG.error("Failed check!")
+            #    user = None
+            
             # Process the results of the auth checks
             if not user:
                 http.status_unauthorized()
@@ -180,7 +203,7 @@ class RoleCheck(object):
         username, id = cert_generator.decode_admin_user(encoded_user)
 
         # Verify a user exists with the given name
-        if config.has_section("ldap"):
+        if config.config.has_section("ldap"):
             # found an ldap configuration, check to see if user exists
             user = self.check_user_pass_on_ldap(username)
         else:
@@ -190,6 +213,63 @@ class RoleCheck(object):
                 LOG.error('ID in admin certificate for user [%s] was incorrect' % username)
                 return None
 
+        return user
+
+    def check_oauth(self, *fargs):
+        '''
+        If the request uses OAuth HTTP authorization, verify the OAuth signature 
+        and the pulp-user header to determine who the caller is 
+
+        @return: user instance of the authenticated user if valid
+                 credentials were specified; None otherwise
+        @rtype:  L{pulp.server.db.model.User}
+        '''
+        # Get the credentials from the request
+        user = None
+        environment = web.ctx.environ
+        auth_string = environment.get('HTTP_AUTHORIZATION', None)
+        if not auth_string:
+            return None
+        
+        scheme = environment.get('wsgi.url_scheme', None)
+        host = environment.get('HTTP_HOST', None)
+        uri = environment.get('REQUEST_URI', None)
+        request_url = "%s://%s%s" % (scheme,host,uri)
+        query_string = environment.get('QUERY_STRING', None)
+        request_method = environment.get('REQUEST_METHOD', None)
+        pulp_user =  environment.get('HTTP_PULP_USER', None)
+        LOG.info("Pulp User      : %s" % pulp_user)
+        headers = {"Authorization": auth_string}
+        
+        LOG.info("Request_method : %s" % request_method)
+        LOG.info("request_url    : %s" % request_url)
+        LOG.info("headers        : %s" % headers)
+        LOG.info("query_string   : %s" % query_string)
+        oauth_request = oauth.Request.from_request(request_method, request_url, 
+                                       headers=headers, query_string=query_string)
+        if oauth_request:
+            try:
+                key = config.config.get('security', 'oauth_key')
+                secret = config.config.get('security', 'oauth_secret')
+            except NoOptionError, noe:
+                LOG.error(noe)
+                LOG.error("Attempting OAuth authentication and you do not have oauth_key and oauth_secret in pulp.conf")
+                return None
+                
+            consumer = oauth.Consumer(key=key, secret=secret)
+            # token = oauth.Token(key, secret)
+            # print "Token: %s" % token
+            oauth_server = oauth.Server()
+            oauth_server.add_signature_method(oauth.SignatureMethod_HMAC_SHA1())
+            # If this passes then we have a valid oauth signature
+            try:
+                params = oauth_server.verify_request(oauth_request, consumer, None)
+            except oauth.Error, e:
+                LOG.error("error verifying OAuth signature : %s" % e)
+                return None
+            user = self._validate_user_exists(pulp_user)
+            
+        LOG.info("user from OAuth request: %s" % user)
         return user
 
     def check_username_pass(self, *fargs):
@@ -217,7 +297,7 @@ class RoleCheck(object):
             password = uname_pass[1]
 
             # Verify a user exists with the given name
-            if config.has_section("ldap"):
+            if config.config.has_section("ldap"):
                 # found an ldap configuration, check to see if user exists
                 return self.check_user_pass_on_ldap(username, password)
             else:
@@ -233,16 +313,16 @@ class RoleCheck(object):
                  credentials were specified; None otherwise
         @rtype:  L{pulp.server.db.model.User}
         '''
-        if not config.has_section("ldap"):
+        if not config.config.has_section("ldap"):
             LOG.info("No external ldap server available")
             return
         try:
-            ldapserver = config.get("ldap", "uri")
+            ldapserver = config.config.get("ldap", "uri")
         except:
             LOG.info("No valid server found, default to localhost")
             ldapserver = "ldap://localhost"
         try:
-            base = config.get("ldap", "base")
+            base = config.config.get("ldap", "base")
         except:
             LOG.info("No valid base found, default to localhost")
             base = "dc=localhost"
@@ -270,13 +350,9 @@ class RoleCheck(object):
                  credentials were specified; None otherwise
         @rtype:  L{pulp.server.db.model.User}
         '''
-        user = USER_API.user(username)
+        user = self._validate_user_exists(username)
         if user is None:
-            LOG.error('User [%s] specified in certificate was not found in the system' %
-                      username)
             return None
-
-
 
         # Verify the correct password was specified
         if password:
@@ -286,7 +362,15 @@ class RoleCheck(object):
                 return None
 
         return user
-
+    
+    def _validate_user_exists(self, username):
+        user = USER_API.user(username)
+        if user is None:
+            LOG.error('User [%s] specified in certificate was not found in the system' %
+                      username)
+            return None
+        return user
+            
     def check_consumer(self, check_id=False, *fargs):
         '''
         Determines if the certificate in the request represents a valid consumer certificate.

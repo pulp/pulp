@@ -147,6 +147,8 @@ Event Type          \t%-25s
 Timestamp           \t%-25s
 Originator          \t%-25s'''
 
+CDS_HISTORY_ENTRY_ERROR = '''Exception           \t%-25s'''
+
 CDS_HISTORY_EVENT_TYPES = {
     'registered' : 'Registered',
     'unregistered' : 'Unregistered',
@@ -155,3 +157,8 @@ CDS_HISTORY_EVENT_TYPES = {
     'repo_associated' : 'Repo Associated',
     'repo_unassociated' : 'Repo Unassociated',
 }
+
+CDS_SYNC_DETAILS = '''
+State               \t%-25s
+Start Time          \t%-25s
+Finish Time         \t%-25s'''

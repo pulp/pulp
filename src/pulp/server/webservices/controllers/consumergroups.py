@@ -199,7 +199,13 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         errataids = data.get('errataids', [])
         types = data.get('types', [])
-        return self.ok(api.installerrata(id, errataids, types))
+        assumeyes = data.get('assumeyes', False)
+        task = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
+        if not task:
+            return self.not_found('Errata %s you requested is not applicable for your system' % id)
+        taskdict = self._task_to_dict(task)
+        taskdict['status_path'] = self._status_path(task.id)
+        return self.accepted(taskdict)
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

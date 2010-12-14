@@ -256,6 +256,12 @@ class RepoConnection(PulpConnection):
         method = "/repositories/%s/add_package/" % repoid
         return self.conn.request_post(method, params=addinfo)
 
+    def remove_package(self, repoid, pkgobj=[]):
+        rminfo = {'repoid' : repoid,
+                  'package' : pkgobj,}
+        method = "/repositories/%s/delete_package/" % repoid
+        return self.conn.request_post(method, params=rminfo)
+
     def get_package(self, repoid, pkg_name):
         method = "/repositories/%s/get_package/" % repoid
         return self.conn.request_post(method, params=pkg_name)
@@ -480,10 +486,11 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/package_updates/" % id
         return self.conn.request_get(method)
 
-    def installerrata(self, id, errataids, types=()):
+    def installerrata(self, id, errataids, assumeyes=False, types=()):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
-                      'types'    :   types}
+                      'types'    :   types,
+                      'assumeyes' : assumeyes}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -557,10 +564,11 @@ class ConsumerGroupConnection(PulpConnection):
         body = dict(packagenames=packagenames)
         return self.conn.request_post(method, params=body)
 
-    def installerrata(self, id, errataids, types=[]):
+    def installerrata(self, id, errataids, types=[], assumeyes=False):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
-                      'types'    :   types}
+                      'types'    :   types,
+                      'assumeyes' : assumeyes,}
         method = "/consumergroups/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -709,6 +717,10 @@ class CdsConnection(PulpConnection):
     '''
     Connection class to the CDS APIs.
     '''
+    def cds(self, hostname):
+        method = '/cds/%s/' % hostname
+        return self.conn.request_get(method)
+    
     def register(self, hostname, name=None, description=None):
         data = {'hostname'    : hostname,
                 'name'        : name,
@@ -756,6 +768,10 @@ class CdsConnection(PulpConnection):
         data = {}
         method = '/cds/%s/sync/' % hostname
         return self.conn.request_post(method, params=data)
+
+    def sync_list(self, hostname):
+        method = '/cds/%s/sync/' % hostname
+        return self.conn.request_get(method)
 
 if __name__ == '__main__':
     rconn = RepoConnection()

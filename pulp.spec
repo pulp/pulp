@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.111
+Version:        0.0.114
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -24,6 +24,7 @@ Requires: python-pymongo
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson
+Requires: python-oauth2
 Requires: grinder >= 0.0.59
 Requires: httpd
 Requires: mod_wsgi
@@ -32,7 +33,9 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: gofer-lib >= 0.3
+Requires: gofer-lib >= 0.7
+Requires: crontabs
+Requires: acl
 
 %if 14%{?fedora} < 13
 Requires: qpidd
@@ -73,7 +76,7 @@ BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
 Requires: %{name}-common = %{version}
-Requires: gofer >= 0.3
+Requires: gofer >= 0.7
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -90,8 +93,21 @@ Group:          Development/Languages
 BuildRequires:  rpm-python
 
 %description common
-A collection of resource that are common between the pulp
-server and client.
+A collection of resources that are common between the pulp server and client.
+
+
+%package cds
+Summary:        Provides the ability to run as a pulp external CDS.
+Group:          Development/Languages
+BuildRequires:  rpm-python
+Requires:       gofer >= 0.7
+Requires:       grinder
+Requires:       httpd
+
+%description cds
+Tools necessary to interact synchronize content from a pulp server and serve that content
+to clients.
+
 
 %prep
 %setup -q
@@ -134,11 +150,16 @@ mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
-# Gofer Plugin
+# Client Gofer Plugin
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
 cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
+
+# CDS Gofer Plugin
+mkdir -p %{buildroot}/etc/gofer/cds-plugins
+cp etc/gofer/cds-plugins/*.conf %{buildroot}/etc/gofer/plugins
+cp src/pulp/cds/gofer/gofer_cds_plugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # Pulp Init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
@@ -151,11 +172,22 @@ rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 mkdir -p %{buildroot}/etc/yum.repos.d
 touch %{buildroot}/etc/yum.repos.d/pulp.repo
 
+%install cds
+
+# This should match what's in gofer_cds_plugin.conf and pulp-cds.conf
+mkdir -p %{buildroot}/var/lib/pulp-cds
+
+# Apache Configuration
+mkdir -p %{buildroot}/etc/httpd/conf.d/
+cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
+
 %clean
 rm -rf %{buildroot}
 
+
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
+
 
 %files
 %defattr(-,root,root,-)
@@ -196,7 +228,48 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 
+
+%files cds
+%defattr(-,root,root,-)
+%doc
+%{_sysconfdir}/gofer/plugins/gofer_cds_plugin.conf
+%{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
+
 %changelog
+* Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1
+- Update the last sync timestamp on the CDS at a sync.
+  (jason.dobies@redhat.com)
+- Added an ID sort as a backup to differentiate between ties.
+  (jason.dobies@redhat.com)
+- Initial CDS plugin implementation. Seeing issues with grinder connecting to
+  pulp repos. (jason.dobies@redhat.com)
+- 661850 - Added crontabs as a dependency. (jason.dobies@redhat.com)
+- 636525 - Include the checksum information of the package existing on the
+  server (pkilambi@redhat.com)
+
+* Thu Dec 09 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.113-1
+- Initial work towards getting a CDS RPM built. Still debugging the build.
+  (jason.dobies@redhat.com)
+- Incremented gofer version to match what the CDS dispatcher is expecting.
+  (jason.dobies@redhat.com)
+- Updated error handling for gofer 0.7 changes. (jason.dobies@redhat.com)
+- Added test cases for dispatcher calls that fail. (jason.dobies@redhat.com)
+
+* Wed Dec 08 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.112-1
+- Wired gofer CDS dispatcher and mocked out calls for test cases.
+  (jason.dobies@redhat.com)
+- Selective Errata sync suppport. This commit includes, (pkilambi@redhat.com)
+- invoke connection/auditing initialize prior to other pulp imports
+  (jmatthew@redhat.com)
+- Replace class decorators in event handlers for python 2.4 compat.
+  (jortel@redhat.com)
+- Added associate/unassociate to webservices and CLI. (jason.dobies@redhat.com)
+- 649118 - [RFE] Support for running mongo DB on separate instance
+  (jmatthew@redhat.com)
+- Wired up CDS history to webservices and CLI (still need to format).
+  (jason.dobies@redhat.com)
+
 * Fri Dec 03 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.111-1
 - 658240 - Fixed failing package install on consumergroup because of wrong
   task_id return (skarmark@redhat.com)

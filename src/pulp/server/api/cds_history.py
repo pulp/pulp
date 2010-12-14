@@ -122,7 +122,8 @@ class CdsHistoryApi(BaseApi):
             cursor = self.objectdb.find(search_params)
 
         # Sort by most recent entry first
-        cursor.sort('timestamp', direction=SORT_DIRECTION[sort])
+        cursor.sort( [ ('timestamp', SORT_DIRECTION[sort]),
+                       ('id', pymongo.DESCENDING) ] )
 
         # If a limit was specified, add it to the cursor
         if limit:

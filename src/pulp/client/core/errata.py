@@ -114,6 +114,8 @@ class Install(ErrataAction):
         id_group.add_option("--consumergroupid", dest="consumergroupid",
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
+        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
+                            help=_("Assume yes; assume that install performs all the suggested actions such as reboot on successful install."))
 
     def run(self):
         errataids = self.args
@@ -126,10 +128,14 @@ class Install(ErrataAction):
         if not errataids:
             system_exit(os.EX_USAGE, _("Specify an errata id to install"))
 
+        assumeyes = False
+        if self.opts.assumeyes:
+            assumeyes =  True
+
         if self.opts.consumerid:
-            task = self.cconn.installerrata(consumerid, errataids)
+            task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
         elif self.opts.consumergroupid:
-            task = self.cgconn.installerrata(consumergroupid, errataids)
+            task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
 
         if not task:
             system_exit(os.EX_DATAERR, 
@@ -143,9 +149,19 @@ class Install(ErrataAction):
             time.sleep(2)
             status = self.cconn.task_status(spath)
             state = status['state']
-        if state == 'finished':
-            print _('\n[%s] installed on %s') % \
-                  (status['result'], (consumerid or (consumergroupid)))
+        if state == 'finished' and consumerid:
+            (installed, reboot_status) = status['result']
+            if not reboot_status:
+                print _('\nSuccessfully installed [%s] on [%s]') % \
+                      (installed, (consumerid or (consumergroupid)))
+            elif reboot_status.has_key('reboot_performed') and reboot_status['reboot_performed']:
+                print _('\nSuccessfully installed [%s] and reboot scheduled on [%s]' % (installed, (consumerid or (consumergroupid))))
+            elif reboot_status.has_key('reboot_performed') and not reboot_status['reboot_performed']:
+                print _('\nSuccessfully installed [%s]; This update requires a reboot, please reboot [%s] at your earliest convenience' % \
+                        (installed, (consumerid or (consumergroupid))))  
+                
+        elif state == 'finished' and consumergroupid:
+            print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
         else:
             print("\nErrata install failed")
 

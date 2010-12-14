@@ -257,6 +257,7 @@ class RepositoryActions(AsyncController):
         'clone',
         'upload',
         'add_package',
+        'delete_package',
         'get_package',
         'add_packages_to_group',
         'delete_package_from_group',
@@ -270,7 +271,7 @@ class RepositoryActions(AsyncController):
         'list_errata',
         'delete_errata',
         'get_package_by_nvrea',
-	    'get_package_by_filename',
+        'get_package_by_filename',
         'addkeys',
         'rmkeys',
         'listkeys',
@@ -351,6 +352,18 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.add_package(id, data['packageid'])
         return self.ok(True)
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def delete_package(self, id):
+        """
+        @param id: repository id
+        @return: True on successful removal of packages to repository
+        """
+        data = self.params()
+        api.remove_packages(id, data['package'])
+        return self.ok(True)
+
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

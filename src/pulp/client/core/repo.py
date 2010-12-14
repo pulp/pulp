@@ -576,9 +576,10 @@ class Upload(RepoAction):
                 print _("Package %s is not an rpm; skipping") % frpm
                 continue
             name, version, release, epoch, arch = pkginfo['nvrea']
-
-            if self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch):
-                print _("Package [%s] already exists on the server in repo %s") % (pkginfo['pkgname'], id)
+            pkg_on_server = self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch)
+            if pkg_on_server:
+                print _("Package [%s] already exists on the server with checksum [%s] in repo %s") % \
+                        (pkginfo['pkgname'], pkg_on_server['checksum'], id)
                 continue
 
             pkgstream = base64.b64encode(open(frpm).read())
@@ -646,30 +647,55 @@ class AddPackages(RepoAction):
 
     def setup_parser(self):
         super(AddPackages, self).setup_parser()
-        self.parser.add_option("-p", "--package", action="append", dest="packageid",
+        self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
 	        help=_("Source repository with specified packages to perform add"))
 
     def run(self):
         id = self.get_required_option('id')
-        if not self.opts.packageid:
+        if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
         pids = [] 
-        for pkg in self.opts.packageid:
+        for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
             pids.append(pinfo['id'])
         try:
             if pinfo:
-                self.pconn.add_package(id, pids) #pinfo['id'])
+                self.pconn.add_package(id, pids)
             else:
                 print _("Package [%s] is not part of the source repository [%s]" % (pkg, self.opts.srcrepo))
         except Exception:
             raise
             print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
-        print _("Successfully added packages %s to repo [%s]." %(self.opts.packageid, id))
+        print _("Successfully added packages %s to repo [%s]." %(self.opts.pkgname, id))
+
+class RemovePackages(RepoAction):
+    description = _('Remove specific package(s) from the source repository.')
+
+    def setup_parser(self):
+        super(RemovePackages, self).setup_parser()
+        self.parser.add_option("-p", "--package", action="append", dest="pkgname",
+                help=_("Package filename to remove to this repository"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        if not self.opts.pkgname:
+            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
+        pids = []
+        for pkg in self.opts.pkgname:
+            pinfo = self.pconn.get_package_by_filename(id, pkg)
+            try:
+                if pinfo:
+                    self.pconn.remove_package(id, [pinfo])
+                    print _("Successfully removed package %s from repo [%s]." %(pkg, id))
+                else:
+                    print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
+            except Exception:
+                print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
+                
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
@@ -691,9 +717,29 @@ class AddErrata(RepoAction):
         try:
             self.pconn.add_errata(id, errataids)
         except Exception:
-            raise
-            print _("Unable to add errata [%s] to repo [%s]" % (errataids, id))
+            system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
         print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
+
+class RemoveErrata(RepoAction):
+    description = _('Remove specific errata from the source repository')
+
+    def setup_parser(self):
+        super(RemoveErrata, self).setup_parser()
+        self.parser.add_option("-e", "--errata", action="append", dest="errataid",
+                help=_("Errata Id to delete to this repository"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        if not self.opts.errataid:
+            system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform a delete."))
+        errataids = self.opts.errataid
+        try:
+            self.pconn.delete_errata(id, errataids)
+        except Exception:
+            print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
+        print _("Successfully removed Errata %s to repo [%s]." %(errataids, id))
+
+
 
 # repo command ----------------------------------------------------------------
 

@@ -362,7 +362,7 @@ class TestErrata(unittest.TestCase):
         errlist = self.capi.listerrata(c['id'], types=['security'])
         assert(len(errlist) == 1)
 
-        pkguplist = self.capi.list_package_updates(c['id'])
+        pkguplist = self.capi.list_package_updates(c['id'])['packages']
         assert(len(pkguplist) == 1)
 
     def test_errata_repo_sync_rhel(self):

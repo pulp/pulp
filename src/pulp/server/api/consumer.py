@@ -394,7 +394,7 @@ class ConsumerApi(BaseApi):
     
       
         
-    def installerrata(self, id, errataids=(), types=()):
+    def installerrata(self, id, errataids=(), types=(), assumeyes=False):
         """
         Install errata on the consumer.
         @param id: A consumer id.
@@ -407,26 +407,34 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         pkgs = []
         errata_titles = []
+        reboot_suggested = False 
         if errataids:
             applicable_errata = self._applicable_errata(consumer, types)
+            rlist = []
             for eid in errataids:
                 if eid not in applicable_errata.keys():
                     log.error("ErrataId %s is not part of applicable errata. Skipping" % eid)
                     continue
                 errata_titles.append(eid)
-                for pobj in applicable_errata[eid]:
+                for pobj in applicable_errata[eid]['packages']:
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"])
+                rlist.append(applicable_errata[eid]['reboot_suggested'])
+            if True in rlist:
+                # if there is atleast one reboot_suggested=True, we trigger a reboot.
+                reboot_suggested = True
         else:
             #apply all updates
-            pkgobjs = self.list_package_updates(id, types)
+            install_data = self.list_package_updates(id, types)
+            pkgobjs = install_data['packages']
+            reboot_suggested = install_data['reboot_suggested']
             for pobj in pkgobjs:
                 if pobj["arch"] != "src":
                     pkgs.append(pobj["name"])
         if not len(pkgs):
             return None
         log.error("Packages to install [%s]" % pkgs)
-        task = InstallErrata(id, pkgs, errata_titles)
+        task = InstallErrata(id, pkgs, errata_titles, reboot_suggested=reboot_suggested, assumeyes=assumeyes)
         return task
         
     def listerrata(self, id, types=()):
@@ -441,8 +449,18 @@ class ConsumerApi(BaseApi):
         List applicable package updates for a given consumer id
         """
         consumer = self.consumer(id)
-        return [ item for etype in self._applicable_errata(consumer, types).values() \
-                for item in etype ]
+        applicable_errata = self._applicable_errata(consumer, types)
+        pkglist = [ item for etype in applicable_errata.values() \
+                                    for item in etype['packages'] ]
+        return {'packages' : pkglist,
+                'reboot_required' : self.check_reboot_required(applicable_errata)}
+        
+    def check_reboot_required(self, applicable_errata):
+        reboot_suggested = False
+        if True in [item['reboot_suggested'] for item in applicable_errata.values()]:
+            # if there is atleast one reboot_suggested=True, we trigger a reboot.
+            reboot_suggested = True
+        return reboot_suggested
     
     def _applicable_errata(self, consumer, types=()):
         """ 
@@ -453,7 +471,6 @@ class ConsumerApi(BaseApi):
 
         pkg_profile_dict = [dict(pkg) for pkg in pkg_profile]
         pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
-
         #Compute applicable errata by subscribed repos
         errataids = [eid for repoid in consumer["repoids"] \
                      for eid in self.repoapi.errata(repoid, types) ]
@@ -482,8 +499,9 @@ class ConsumerApi(BaseApi):
                         if status == 1:
                             # erratum pkg is newer, add to update list
                             if not applicable_errata.has_key(erratumid):
-                                applicable_errata[erratumid] = []
-                            applicable_errata[erratumid].append(pkg)
+                                applicable_errata[erratumid] = {'packages' : [],
+                                                                'reboot_suggested' : erratum['reboot_suggested']}
+                            applicable_errata[erratumid]['packages'].append(pkg)
         return applicable_errata
 
 
@@ -497,7 +515,7 @@ class InstallPackages(AgentTask):
     @type packages: [str,..]
     """
 
-    def __init__(self, consumerid, packages, errata=()):
+    def __init__(self, consumerid, packages, errata=(), reboot_suggested=False, assumeyes=False):
         """
         @param consumerid: The consumer ID.
         @type consumerid: str
@@ -509,6 +527,8 @@ class InstallPackages(AgentTask):
         self.consumerid = consumerid
         self.packages = packages
         self.errata = errata
+        self.reboot_suggested = reboot_suggested
+        self.assumeyes = assumeyes
         AgentTask.__init__(self, self.install)
         self.enqueue()
 
@@ -518,7 +538,7 @@ class InstallPackages(AgentTask):
         """
         agent = AsyncAgent(self.consumerid)
         packages = agent.Packages(self)
-        packages.install(self.packages)
+        packages.install(self.packages, self.reboot_suggested, self.assumeyes)
 
     def succeeded(self, sn, result):
         """

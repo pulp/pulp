@@ -646,6 +646,16 @@ class RepoApi(BaseApi):
                 log.debug("Delete package %s at %s" % (p, pkg_packages_path))
                 os.remove(pkg_packages_path)
 
+    def remove_packages(self, repoid, pkgobjs=[]):
+        """
+         Remove one or more packages from a repository
+        """
+        if not pkgobjs:
+            # Nothing to perform, return
+            return
+        for pkg in pkgobjs:
+            self.remove_package(repoid, pkg)
+
     def find_repos_by_package(self, pkgid):
         """
         Return repos that contain passed in package id
@@ -679,6 +689,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         self._add_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
+        self._update_errata_packages(repoid, [erratumid], action='add')
         updateinfo.generate_updateinfo(repo)
         
     def add_errata(self, repoid, errataids=()):
@@ -689,28 +700,37 @@ class RepoApi(BaseApi):
         for erratumid in errataids:
             self._add_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
-        self._update_errata_packages(repoid, errataids)
+        self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
         
-    def _update_errata_packages(self, repoid, errataids=()):
+    def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
+        addids = []
+        rmids = []
         for erratumid in errataids:
             erratum = self.errataapi.erratum(erratumid)
             if erratum is None:
                 log.info("No Erratum with id: %s found" % erratumid)
                 continue
             
-            packageids = []
             for pkg in erratum['pkglist']:
                 for pinfo in pkg['packages']:
+                    if pinfo['epoch'] in ['None', None]:
+                        epoch = '0'
+                    else:
+                        epoch = pinfo['epoch'] 
                     epkg = self.packageapi.package_by_ivera(pinfo['name'], 
                                                             pinfo['version'], 
-                                                            pinfo['epoch'], 
+                                                            epoch, 
                                                             pinfo['release'], 
                                                             pinfo['arch'])
                     if epkg:
-                        packageids.append(epkg['id'])
-        self.add_package(repo['id'], packageids)
+                        addids.append(epkg['id'])
+                        rmids.append(epkg)
+        if action == 'add':
+           self.add_package(repo['id'], addids)
+        elif action == 'delete':
+           self.remove_packages(repo['id'], rmids)
 
     def _add_erratum(self, repo, erratumid):
         """
@@ -739,6 +759,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         self._delete_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
+        self._update_errata_packages(repoid, [erratumid], action='delete')
         updateinfo.generate_updateinfo(repo)
         
     def delete_errata(self, repoid, errataids):
@@ -749,6 +770,7 @@ class RepoApi(BaseApi):
         for erratumid in errataids:
             self._delete_erratum(repo, erratumid)
         self.objectdb.save(repo, safe=True)
+        self._update_errata_packages(repoid, errataids, action='delete')
         updateinfo.generate_updateinfo(repo)
 
     def _delete_erratum(self, repo, erratumid):

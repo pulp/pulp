@@ -14,20 +14,33 @@
 # in this software or its documentation.
 
 # Python
+import datetime
 import logging
+import sys
+import traceback
 
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
-from pulp.server.cds.dispatcher import GoferDispatcher
+from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
+                                       CdsCommunicationsException, CdsMethodException, CdsDispatcherException
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDS
 from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
+
+REPO_FIELDS = [
+    'id',
+    'source',
+    'name',
+    'arch',
+    'relative_path',
+    'publish',
+]
 
 
 class CdsApi(BaseApi):
@@ -76,7 +89,19 @@ class CdsApi(BaseApi):
         cds = CDS(hostname, name, description)
 
         # Add call here to fire off initialize call to the CDS
-        self.dispatcher.init_cds(cds)
+        try:
+            self.dispatcher.init_cds(cds)
+        except CdsTimeoutException:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Timeout occurred attempting to initialize CDS [%s]' % hostname), None, exc_traceback
+        except CdsCommunicationsException:
+            log.exception('Communications exception occurred initializing CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Communications error while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+        except CdsMethodException:
+            log.exception('CDS error encountered while attempting to initialize CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('CDS error encountered while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
 
         self.insert(cds)
 
@@ -132,6 +157,7 @@ class CdsApi(BaseApi):
         '''
         return list(self.objectdb.find())
 
+    @audit()
     def associate_repo(self, cds_hostname, repo_id):
         '''
         Associates a repo with a CDS. All data in an associated repo will be kept synchronized
@@ -165,6 +191,7 @@ class CdsApi(BaseApi):
             self.objectdb.save(cds, safe=True)
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
 
+    @audit()
     def unassociate_repo(self, cds_hostname, repo_id):
         '''
         Removes an existing association between a CDS and a repo. This call will not cause
@@ -191,7 +218,8 @@ class CdsApi(BaseApi):
             cds['repo_ids'].remove(repo_id)
             self.objectdb.save(cds, safe=True)
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
-       
+
+    @audit()
     def sync(self, cds_hostname):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
@@ -199,20 +227,70 @@ class CdsApi(BaseApi):
         speed with all repos it is currently associated with, including deleting repos that
         are no longer associated with the CDS.
 
+        This call is synchronous and potentially long running. Any threading of this call
+        must already be in place.
+
         @param cds_hostname: identifies the CDS
         @type  cds_hostname: string; may not be None
 
         @raise PulpException: if the CDS does not exist
         '''
 
+        log.info('Synchronizing CDS [%s]' % cds_hostname)
+
         # Entity load and sanity check on the arguments
         cds = self.cds(cds_hostname)
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
-        # Call out to dispatcher to trigger sync
-        # Dispatcher will do the history additions since the call will be async
-               
+        # Load the repo objects to send to the CDS with the call
+        repos = []
+        for repo_id in cds['repo_ids']:
+            repo = self.repo_api.repository(repo_id, fields=REPO_FIELDS)
+            repos.append(repo)
+
+        # Call out to dispatcher to trigger sync, adding the appropriate history entries
+        self.cds_history_api.sync_started(cds_hostname)
+
+        # Catch any exception so thed sync_finished call is still made; can't add a
+        # finally block when an except is in place in python 2.4, otherwise this would
+        # be simpler.
+        sync_error_msg = None
+        sync_traceback = None
+        try:
+            self.dispatcher.sync(cds, repos)
+        except CdsTimeoutException:
+            log.exception('Timeout occurred during sync to CDS [%s]' % cds_hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Timeout occurred during sync'
+        except CdsCommunicationsException:
+            log.exception('Communications error during sync to CDS [%s]' % cds_hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Unknown communications error during sync'
+        except CdsMethodException:
+            log.exception('CDS threw an error during sync to CDS [%s]' % cds_hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Error on the CDS during sync'
+        except Exception, e:
+            log.exception('Non-CdsDispatcherException error caught on sync invocation for CDS [%s]' % cds['hostname'])
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Unknown error during sync'
+
+        self.cds_history_api.sync_finished(cds_hostname, error=sync_error_msg)
+
+        # Update the CDS to indicate the last sync time
+        cds['last_sync'] = datetime.datetime.now()
+        self.objectdb.save(cds, safe=True)
+
+        # Make sure the caller gets the error like normal (after the event logging) if
+        # one occurred
+        if sync_error_msg is not None:
+            raise PulpException('%s; check the server log for more information' % sync_error_msg), None, sync_traceback
+
 # -- internal only api ---------------------------------------------------------------------
 
     def unassociate_all_from_repo(self, repo_id):

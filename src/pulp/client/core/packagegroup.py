@@ -354,6 +354,7 @@ class InstallCategory(PackageGroupAction):
         repoid = self.get_required_option('repoid')
         task = self.cconn.installpackagegroupcategories(consumerid, 
                 repoid, categoryid)
+        print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']
         while state not in ('finished', 'error', 'canceled', 'timed_out'):

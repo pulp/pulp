@@ -30,10 +30,74 @@ sys.path.insert(0, commondir)
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.cds.dispatcher import CdsTimeoutException
 from pulp.server.db.model import CDSHistoryEventType
 from pulp.server.pexceptions import PulpException
 
 import testutil
+
+class MockCdsDispatcher(object):
+
+    # Strings to add to the call_log so the test can verify that the correct calls
+    # were made into the dispatcher
+    INIT = 'init'
+    SYNC = 'sync'
+
+    def __init__(self, error_to_throw=None):
+        '''
+        Creates a new mock dispatcher that should be added to any CDS classes that
+        make dispatcher calls (likely just the CdsApi class). All method calls on
+        this object will be added to a running list called call_log. All entries in
+        that list will follow the format provided by the call_log_message method.
+
+        @param error_to_throw: if this is specified, any calls into this object will
+                               throw the given error, otherwise the method will appear
+                               to execute correctly; defaults to None
+        @type  error_to_throw: L{Exception} or subclass
+        '''
+        self.error_to_throw = error_to_throw
+        self.call_log = []
+
+        # Stores the values that were passed into calls
+        self.cds = None
+        self.repos = None
+
+    def init_cds(self, cds):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.INIT, cds))
+        self.cds = cds
+
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def sync(self, cds, repos):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.SYNC, cds))
+        self.cds = cds
+        self.repos = repos
+
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def call_log_message(self, type, cds):
+        '''
+        Generates the message that will be logged to call_log when a method is invoked.
+        This is largely to ease the comparison between what's put in the log against
+        what the test case wants to verify.
+
+        @param type: string identifying the method called; will be a constant in this class
+        @type  type: string
+
+        @param cds: CDS domain object that was passed to the invoked method
+        @type  cds: L{CDS}
+        '''
+        return type + '-' + cds['hostname']
+
+    def clear(self):
+        '''
+        Resets the state of the dispatcher to as if it were never called.
+        '''
+        self.cds = None
+        self.repos = None
+        self.call_log = []
 
 class TestCdsApi(unittest.TestCase):
 
@@ -44,9 +108,14 @@ class TestCdsApi(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
+
+        self.dispatcher = MockCdsDispatcher()
         self.cds_api = CdsApi()
+        self.cds_api.dispatcher = self.dispatcher
+
         self.cds_history_api = CdsHistoryApi()
         self.repo_api = RepoApi()
+
         self.clean()
 
     def tearDown(self):
@@ -72,6 +141,9 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history))
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
+        self.assertEqual(1, len(self.dispatcher.call_log))
+        self.assertEqual(self.dispatcher.call_log[0], self.dispatcher.call_log_message(MockCdsDispatcher.INIT, cds))
+
     def test_register_full_attributes(self):
         '''
         Tests the register call specifying a value for all optional arguments.
@@ -92,6 +164,9 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history))
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
+        self.assertEqual(1, len(self.dispatcher.call_log))
+        self.assertEqual(self.dispatcher.call_log[0], self.dispatcher.call_log_message(MockCdsDispatcher.INIT, cds))
+
     def test_register_no_hostname(self):
         '''
         Tests the error condition where register is called without a hostname.
@@ -103,6 +178,8 @@ class TestCdsApi(unittest.TestCase):
         # Verify
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(0, len(history))
+
+        self.assertEqual(0, len(self.dispatcher.call_log))
 
     def test_register_already_exists(self):
         '''
@@ -119,6 +196,22 @@ class TestCdsApi(unittest.TestCase):
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(1, len(history)) # from the first register call, not the second
 
+        self.assertEqual(1, len(self.dispatcher.call_log)) # only from the original register
+
+    def test_register_init_error(self):
+        '''
+        Tests attempting to register a CDS when the init call to the CDS fails.
+        '''
+
+        # Setup
+        self.dispatcher.error_to_throw = CdsTimeoutException(None)
+
+        # Test
+        self.assertRaises(PulpException, self.cds_api.register, 'cds.example.com')
+
+        # Verify
+        self.assertTrue(self.cds_api.cds('cds.example.com') is None)
+        
     def test_unregister(self):
         '''
         Tests the basic case where unregister is successful.
@@ -431,3 +524,78 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         # The call above should not have thrown an error
+
+    def test_sync(self):
+        '''
+        Tests sync under normal circumstances.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        self.cds_api.register('cds.example.com')
+        self.cds_api.associate_repo('cds.example.com', repo['id'])
+
+        #   Clear the dispatcher from what was called during register
+        self.dispatcher.clear()
+
+        # Test
+        self.cds_api.sync('cds.example.com')
+
+        # Verify
+        self.assertEqual(1, len(self.dispatcher.call_log)) # the call to sync
+        self.assertEqual('cds.example.com', self.dispatcher.cds['hostname'])
+        self.assertEqual(1, len(self.dispatcher.repos))
+        self.assertEqual('cds-test-repo', self.dispatcher.repos[0]['id'])
+
+        history = self.cds_history_api.query(cds_hostname='cds.example.com')
+        self.assertEqual(4, len(history))
+        self.assertEqual(CDSHistoryEventType.SYNC_FINISHED, history[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
+
+        cds = self.cds_api.cds('cds.example.com')
+        self.assertTrue(cds['last_sync'] is not None)
+
+    def test_sync_invalid_cds(self):
+        '''
+        Tests attempting to sync a CDS that doesn't exist.
+        '''
+
+        # Test
+        self.assertRaises(PulpException, self.cds_api.sync, 'foo.example.com')
+
+    def test_sync_error(self):
+        '''
+        Tests sync when an error occurs. The error should be logged in the CDS history
+        as well as returned to the caller.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        self.cds_api.register('cds.example.com')
+        self.cds_api.associate_repo('cds.example.com', repo['id'])
+
+        #   Clear the dispatcher from what was called during register
+        self.dispatcher.clear()
+
+        #   Configure the dispatcher to throw an error
+        self.dispatcher.error_to_throw = CdsTimeoutException(None)
+
+        # Test
+        self.assertRaises(PulpException, self.cds_api.sync, 'cds.example.com')
+
+        # Verify
+        self.assertEqual(1, len(self.dispatcher.call_log)) # the call to sync
+        self.assertEqual('cds.example.com', self.dispatcher.cds['hostname'])
+        self.assertEqual(1, len(self.dispatcher.repos))
+        self.assertEqual('cds-test-repo', self.dispatcher.repos[0]['id'])
+
+        history = self.cds_history_api.query(cds_hostname='cds.example.com')
+        self.assertEqual(4, len(history))
+        self.assertEqual(CDSHistoryEventType.SYNC_FINISHED, history[0]['type_name'])
+        self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
+
+        #   Verify the history event contains the exception
+        self.assertTrue(history[0]['details']['error'] is not None)
+
+        cds = self.cds_api.cds('cds.example.com')
+        self.assertTrue(cds['last_sync'] is not None)

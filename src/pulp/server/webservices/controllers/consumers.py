@@ -417,7 +417,8 @@ class ConsumerActions(AsyncController):
         data = self.params()
         eids = data.get('errataids', [])
         types = data.get('types', [])
-        task = consumer_api.installerrata(id, eids, types)
+        assumeyes = data.get('assumeyes', False)
+        task = consumer_api.installerrata(id, eids, types, assumeyes)
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
         taskdict = self._task_to_dict(task)

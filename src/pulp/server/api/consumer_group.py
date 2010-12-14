@@ -289,11 +289,15 @@ class ConsumerGroupApi(BaseApi):
             raise PulpException("No Consumer Group with id: %s found" % id)
         items = []
         for consumerid in consumergroup['consumerids']:
-            items.append((consumerid, packagenames))
+            install_data = {"consumerid" : consumerid,
+                            "packages"   : packagenames,
+                            "reboot_suggested" : False,
+                            "assumeyes"  : False}
+            items.append(install_data)
         task = InstallPackages(items)
         return task
     
-    def installerrata(self, id, errataids=[], types=[]):
+    def installerrata(self, id, errataids=[], types=[], assumeyes=False):
         """
         Install errata on a consumer group.
         @param id: A consumergroup id.
@@ -311,12 +315,18 @@ class ConsumerGroupApi(BaseApi):
         for consumerid in consumerids:
             consumer = self.consumerApi.consumer(consumerid)
             pkgs = []
+            reboot_suggested = False
             if errataids:
                 applicable_errata = self.consumerApi._applicable_errata(consumer, types)
+                rlist = []
                 for eid in errataids:
-                    for pobj in applicable_errata[eid]:
+                    for pobj in applicable_errata[eid]['packages']:
                         if pobj["arch"] != "src":
                             pkgs.append(pobj["name"]) # + "." + pobj["arch"])
+                    rlist.append(applicable_errata[eid]['reboot_suggested'])
+                if True in rlist:
+                    # if there is atleast one reboot_suggested=True, we trigger a reboot.
+                    reboot_suggested = True
             else:
                 #apply all updates
                 pkgobjs = self.consumerApi.list_package_updates(id, types)
@@ -324,7 +334,11 @@ class ConsumerGroupApi(BaseApi):
                     if pobj["arch"] != "src":
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
             log.error("Foe consumer id %s Packages to install %s" % (consumerid, pkgs))
-            items.append((consumerid, pkgs))
+            install_data = {"consumerid" : consumerid,
+                            "packages"   : pkgs,
+                            "reboot_suggested" : reboot_suggested,
+                            "assumeyes"  : assumeyes}
+            items.append(install_data)
         task = InstallErrata(items)
         return task
 
@@ -361,11 +375,11 @@ class InstallPackages(AgentTask):
         """
         Perform the RMI to the agent to install packages.
         """
-        for id, pkglist in self.items:
-            agent = AsyncAgent(id)
-            packages = agent.Packages(self)
-            sn = packages.install(pkglist)
-            self.serials[sn] = id
+        for item in self.items:
+             agent = AsyncAgent(item['consumerid'])
+             packages = agent.Packages(self)
+             sn = packages.install(item['packages'], item['reboot_suggested'], item['assumeyes'])
+             self.serials[sn] = item['consumerid']
 
     def succeeded(self, sn, result):
         """
