@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.114
+Version:        0.0.115
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -238,6 +238,8 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Tue Dec 14 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.115-1
+- Test build for CDS RPM changes
 * Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1
 - Update the last sync timestamp on the CDS at a sync.
   (jason.dobies@redhat.com)
