@@ -31,7 +31,7 @@ from pymongo import json_util
 
 from pulp.server import async
 from pulp.server.auth.authentication import (
-    check_username_password, cert_authentication)
+    check_username_password, check_ssl_cert, check_oauth)
 from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.tasking.task import task_complete_states
@@ -63,10 +63,20 @@ class JSONController(object):
         return report_error
 
     @staticmethod
-    def auth_required(operation=None):
+    def auth_required(operation=None, super_user_only=False):
         """
+        Static controller method wrapper that authenticates users based on
+        various credentials and then checks their authorization before allowing
+        the controller to be accessed.
+        @type operation: int or Nont
+        @param operation: the operation a user needs permission for
+        @type super_user_only: bool
+        @param super_user_only: only authorize a user if they are a super user
         """
-        def _auth_required(method, super_user_only=False):
+        def _auth_required(method):
+            """
+            Closure method for decorator.
+            """
             authen_fail_msg = _('Authorization failed. Check your username and password or your certificate')
             author_fail_msg = _('Authorization failed. You do not have permission on this resource.')
 
@@ -82,12 +92,23 @@ class JSONController(object):
                 # second, try user certificate authentication
                 if user is None:
                     cert_pem = http.ssl_client_cert()
-                    if cert_pem is None:
-                        return self.unauthorized(authen_fail_msg)
-                    user = cert_authentication(cert_pem)
-                    if user is None:
-                        return self.unauthorized(authen_fail_msg)
-                # third, check authorization
+                    if cert_pem is not None:
+                        user = check_ssl_cert(cert_pem)
+                        if user is None:
+                            return self.unauthorized(authen_fail_msg)
+                # third, check oauth
+                if user is None:
+                    auth = http.http_authorization()
+                    username = http.request_info('HTTP_PULP_USER')
+                    if None not in (auth, username):
+                        meth = http.request_info('REQUEST_METHOD')
+                        url = http.request_url()
+                        query = http.request_info('QUERY_STRING')
+                        user = check_oauth(username, meth, url, auth, query)
+                # authorization has failed
+                if user is None:
+                    return self.unauthorized(authen_fail_msg)
+                # forth, check authorization
                 if super_user_only and not is_superuser(user):
                     return self.unauthorized(author_fail_msg)
                 elif not is_authorized(http.resource_path(), user, operation):
