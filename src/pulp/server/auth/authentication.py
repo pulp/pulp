@@ -19,7 +19,8 @@ Utility functions to manage user credentials in pulp.
 """
 
 import logging
-from gettext import gettext as _
+
+import oauth2
 
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
@@ -27,11 +28,9 @@ from pulp.server.api.user import UserApi
 from pulp.server.auth import cert_generator
 from pulp.server.auth.certificate import Certificate
 from pulp.server.auth.password_util import check_password
-from pulp.server.auth.principal import get_principal
 from pulp.server.config import config
 from pulp.server.db.model import User
 from pulp.server.LDAPConnection import LDAPConnection
-from pulp.server.pexceptions import PulpException
 
 
 _consumer_api = ConsumerApi()
@@ -41,11 +40,28 @@ _user_api = UserApi()
 _log = logging.getLogger(__name__)
 
 
+# username:password authentication --------------------------------------------
+
 def _using_ldap():
+    """
+    Detects if pulp is configured for ldap
+    @rtype: bool
+    @return: True if using ldap, False otherwise
+    """
     return config.has_section('ldap')
 
 
 def _check_username_password_ldap(username, password):
+    """
+    Check a username and password against the ldap server.
+    Return None if the username and password are not valid
+    @type username: str
+    @param username: the login of the user
+    @type password: str or None
+    @param password: password of the user, None => do not validate the password
+    @rtype: L{pulp.server.db.model.User} instance or None
+    @return: user corresponding to the credentials
+    """
     ldap_uri = "ldap://localhost"
     if config.has_option('ldap', 'uri'):
         ldap_uri = config.get("ldap", "uri")
@@ -69,6 +85,16 @@ def _check_username_password_ldap(username, password):
 
 
 def _check_username_password_local(username, password):
+    """
+    Check a username and password against the local database.
+    Return None if the username and password are not valid
+    @type username: str
+    @param username: the login of the user
+    @type password: str or None
+    @param password: password of the user, None => do not validate the password
+    @rtype: L{pulp.server.db.model.User} instance or None
+    @return: user corresponding to the credentials
+    """
     user = _user_api.user(username)
     if user is None:
         _log.error('User [%s] specified in certificate was not found in the system' %
@@ -82,12 +108,31 @@ def _check_username_password_local(username, password):
 
 
 def check_username_password(username, password=None):
+    """
+    Check a username and password.
+    Return None if the username and password are not valid
+    @type username: str
+    @param username: the login of the user
+    @type password: str or None
+    @param password: password of the user, None => do not validate the password
+    @rtype: L{pulp.server.db.model.User} instance or None
+    @return: user corresponding to the credentials
+    """
     if _using_ldap():
         return _check_username_password_ldap(username, password)
     return _check_username_password_local(username, password)
 
+# ssl cert authentication -----------------------------------------------------
 
-def cert_authentication(cert_pem):
+def check_ssl_cert(cert_pem):
+    """
+    Check a client ssl certificate.
+    Return None if the certificate is not valid
+    @type cert_pem: str
+    @param cert_pem: pem encoded ssl certificate
+    @rtype: L{pulp.server.db.model.User} instance or None
+    @return: user corresponding to the credentials
+    """
     cert = Certificate(content=cert_pem)
     subject = cert.subject()
     encoded_user = subject.get('CN', None)
@@ -99,3 +144,43 @@ def cert_authentication(cert_pem):
         return None
     username, id = cert_generator.decode_admin_user(encoded_user)
     return check_username_password(username)
+
+# oauth authentication --------------------------------------------------------
+
+def check_oauth(username, method, url, auth, query):
+    """
+    Check OAuth header credentials.
+    Return None if the credentials are invalid
+    @type username: str
+    @param username: username corresponding to credentials
+    @type method: str
+    @param method: http method
+    @type url: str
+    @param url: request url
+    @type auth: str
+    @param auth: http authorization header value
+    @type query: str
+    @param query: http request query string
+    @rtype: L{pulp.server.db.model.User} instance or None
+    @return: user corresponding to the credentials
+    """
+    headers = {'Authorization': auth}
+    req = oauth2.Request.from_request(method, url, headers, query_string=query)
+    if not req:
+        return None
+    if not (config.has_option('security', 'oauth_key') and
+            config.has_option('security', 'oauth_secret')):
+        _log.error("Attempting OAuth authentication and you do not have oauth_key and oauth_secret in pulp.conf")
+        return None
+    key = config.get('security', 'oauth_key')
+    secret = config.get('security', 'oauth_secret')
+    consumer = oauth2.Consumer(key=key, secret=secret)
+    server = oauth2.Server()
+    server.add_signature_method(oauth2.SignatureMethod_HMAC_SHA1())
+    try:
+        # this call has a return value, but failures are noted by the exception
+        server.verify_request(req, consumer, None)
+    except oauth2.Error, e:
+        _log.error('error verifying OAuth signature: %s' % e)
+        return None
+    return _check_username_password_local(username)
