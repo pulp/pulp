@@ -30,7 +30,9 @@ import web
 from pymongo import json_util
 
 from pulp.server import async
-from pulp.server.auth.authorization import is_authorized
+from pulp.server.auth.authentication import (
+    check_username_password, cert_authentication)
+from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import http
@@ -64,24 +66,38 @@ class JSONController(object):
     def auth_required(operation=None):
         """
         """
-        def _auth_required(method):
+        def _auth_required(method, super_user_only=False):
+            authen_fail_msg = _('Authorization failed. Check your username and password or your certificate')
+            author_fail_msg = _('Authorization failed. You do not have permission on this resource.')
+
             @functools.wraps(method)
             def _auth_decorator(self, *args, **kwargs):
-                user = None # XXX remove me
-                login_pass = http.http_username_password()
-                if login_pass:
-                    login, password = login_pass
-                #user = auth.authenticate()
-                #if not user:
-                #    msg = _('Authorization failed. Check your username and password or your certificate')
-                #    return self.unauthorized(msg)
-                #if operation is not None and not is_authorized(None, user, operation):
-                #    msg = _('Authorization failed. You do not have permission to access this resource')
-                #    return self.unauthorized(msg)
+                user = None
+                # first, try username:password authentication
+                username, password = http.username_password()
+                if username is not None:
+                    user = check_username_password(username, password)
+                    if user is None:
+                        return self.unauthorized(authen_fail_msg)
+                # second, try user certificate authentication
+                if user is None:
+                    cert_pem = http.ssl_client_cert()
+                    if cert_pem is None:
+                        return self.unauthorized(authen_fail_msg)
+                    user = cert_authentication(cert_pem)
+                    if user is None:
+                        return self.unauthorized(authen_fail_msg)
+                # third, check authorization
+                if super_user_only and not is_superuser(user):
+                    return self.unauthorized(author_fail_msg)
+                elif not is_authorized(http.resource_path(), user, operation):
+                    return self.unauthorized(author_fail_msg)
+                # everything ok, manage the principal and call the method
                 set_principal(user)
                 value = method(self, *args, **kwargs)
                 clear_principal()
                 return value
+
             return _auth_decorator
         return _auth_required
 
