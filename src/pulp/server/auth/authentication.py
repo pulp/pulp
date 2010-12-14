@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from pulp.server.auth.cert_generator import verify_cert
 
 # Copyright © 2010 Red Hat, Inc.
 #
@@ -28,6 +29,7 @@ from pulp.server.auth.certificate import Certificate
 from pulp.server.auth.password_util import check_password
 from pulp.server.auth.principal import get_principal
 from pulp.server.config import config
+from pulp.server.db.model import User
 from pulp.server.LDAPConnection import LDAPConnection
 from pulp.server.pexceptions import PulpException
 
@@ -39,8 +41,50 @@ _user_api = UserApi()
 _log = logging.getLogger(__name__)
 
 
-def _check_username(username):
-    return None
+def _using_ldap():
+    return config.has_section('ldap')
+
+
+def _check_username_password_ldap(username, password):
+    ldap_uri = "ldap://localhost"
+    if config.has_option('ldap', 'uri'):
+        ldap_uri = config.get("ldap", "uri")
+    else:
+        _log.info("No valid server found, default to localhost")
+    ldap_base = "dc=localhost"
+    if config.has_option('ldap', 'base'):
+        ldap_base = config.get('ldap', 'base')
+    else:
+        _log.info("No valid base found, default to localhost")
+    ldap_server = LDAPConnection(ldap_uri)
+    ldap_server.connect()
+    status = None
+    if password is not None:
+        status = ldap_server.authenticate_user(ldap_base, username, password)
+    else:
+        status = ldap_server.lookup_user(ldap_base, username)
+    if status is None:
+        return None
+    return User(username, username, password, username)
+
+
+def _check_username_password_local(username, password):
+    user = _user_api.user(username)
+    if user is None:
+        _log.error('User [%s] specified in certificate was not found in the system' %
+                   username)
+        return None
+    if password is not None:
+        if not check_password(user['password'], password):
+            _log.error('Password for user [%s] was incorrect' % username)
+            return None
+    return user
+
+
+def check_username_password(username, password=None):
+    if _using_ldap():
+        return _check_username_password_ldap(username, password)
+    return _check_username_password_local(username, password)
 
 
 def cert_authentication(cert_pem):
@@ -49,5 +93,9 @@ def cert_authentication(cert_pem):
     encoded_user = subject.get('CN', None)
     if not encoded_user:
         return None
+    if not verify_cert(cert_pem):
+        _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
+                   encoded_user)
+        return None
     username, id = cert_generator.decode_admin_user(encoded_user)
-    return _check_username(username)
+    return check_username_password(username)
