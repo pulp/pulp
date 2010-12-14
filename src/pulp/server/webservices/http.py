@@ -28,6 +28,31 @@ import web
 
 # request methods -------------------------------------------------------------
 
+def request_info(key):
+    """
+    Get information from the request.
+    Returns the value corresponding the given key.
+    Returns None if the key isn't found.
+    @type key: str
+    @param key: lookup key in the request information
+    @rtype: str or None
+    @return: request value
+    """
+    return web.ctx.environ.get(key, None)
+
+
+def request_url():
+    """
+    Rebuild the full request url from the request information.
+    @rtype: str
+    @return: full request url
+    """
+    scheme = request_info('wsgi.url_scheme') or 'https'
+    host = request_info('HTTP_HOST') or 'localhost'
+    uri = request_info('REQUEST_URI') or ''
+    return '%s://%s%s' % (scheme, host, uri)
+
+
 def query_parameters(valid):
     """
     @type valid: list of str's
@@ -60,7 +85,7 @@ def http_authorization():
     @return: str representing the http authorization credentials if found,
              None otherwise
     """
-    return web.ctx.environ.get('HTTP_AUTHORIZATION', None)
+    return request_info('HTTP_AUTHORIZATION')
 
 
 def _is_basic_auth(credentials):
@@ -116,10 +141,8 @@ def username_password():
     """
     Return a the username, password tuple from the http authorization header
     Return a tuple of Nones if the header isn't found
-    Raises an exception if the authorization scheme cannot be determined
     @rtype: tuple of str's or Nones
     @return: username, password tuple
-    @raise L{HTTPAuthError} instance: if authorization cannot be determined
     """
     credentials = http_authorization()
     if credentials is None:
@@ -128,7 +151,7 @@ def username_password():
         return _basic_username_password(credentials)
     if _is_digest_auth(credentials):
         return _digest_username_password(credentials)
-    raise HTTPAuthError('Unrecognized HTTP Authorization')
+    return (None, None)
 
 # ssl methods -----------------------------------------------------------------
 
