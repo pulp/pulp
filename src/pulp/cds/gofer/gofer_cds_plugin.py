@@ -55,11 +55,16 @@ class CdsGoferReceiver(object):
         log.info('Received initialize call')
 
     @remote
-    def sync(self, repos):
+    def sync(self, base_url, repos):
         '''
         Synchronizes the given repos to this CDS. This list is the definitive list of what
         should be present on the CDS if this call succeeds. That includes removing any
         repos that were previously synchronized but are no longer in the given list of repos.
+
+        @param base_url: location of the base URL where repos are hosted, the url
+                         should end in a trailing / but is not required to;
+                         example: https://pulp.example.com/
+        @type  base_url: string
 
         @param repos: list of repos that should be on the CDS following synchronization
         @type  repos: list of dict, where each dict describes a repo that should be present
@@ -69,17 +74,21 @@ class CdsGoferReceiver(object):
         # This call simply wraps the actual logic so that any errors that occur are logged
         # on the CDS itself before they are re-raised to the pulp server.
         try:
-            self._sync(repos)
+            self._sync(base_url, repos)
         except Exception, e:
             log.exception('Error performing sync')
             raise e
 
-    def _sync(self, repos):
+    def _sync(self, base_url, repos):
+        '''
+        Does the actual logic of the sync method. This is extracted out for cleanliness in
+        catching any errors that may arise and logging them before re-raising them. See the
+        sync method for documentation.
+        '''
 
         log.info('Received sync call')
         log.info(repos)
 
-        pulp_server_hostname = '192.168.0.201'
         num_threads = config.cds.sync_threads
         packages_location = config.cds.packages_dir
 
@@ -88,7 +97,8 @@ class CdsGoferReceiver(object):
         # Synchronize all repos that were specified
         for repo in repos:
 
-            url = 'https://%s/pulp/repos/%s' % (pulp_server_hostname, repo['relative_path'])
+            url = '%s/%s' % (base_url, repo['relative_path'])
+            log.debug('Synchronizing repo at [%s]' % url)
             repo_path = packages_location + repo['relative_path']
 
             if not os.path.exists(repo_path):
