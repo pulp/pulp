@@ -46,10 +46,6 @@ from pulp.server.db.model import User
 # globals ---------------------------------------------------------------------
 
 LOG = logging.getLogger(__name__)
-USER_API = UserApi()
-CONSUMER_API = ConsumerApi()
-ROLE_API = RoleApi()
-REPO_API = RepoApi()
 
 # decorator--------------------------------------------------------------------
 
@@ -65,7 +61,9 @@ class RoleCheck(object):
         '''The decorator arguments are passed here. Save them for runtime.'''
         self.dec_args = dec_args
         self.dec_kw = dec_kw
-        
+        self.user_api = UserApi()
+        self.consumer_api = ConsumerApi()
+
     def __call__(self, f):
         def check_roles(*fargs, **kw):
             '''
@@ -367,7 +365,7 @@ class RoleCheck(object):
         return user
     
     def _validate_user_exists(self, username):
-        user = USER_API.user(username)
+        user = self.user_api.user(username)
         if user is None:
             LOG.error('User [%s] specified in certificate was not found in the system' %
                       username)
@@ -413,7 +411,7 @@ class RoleCheck(object):
             return None
 
         # Check that it is a valid consumer in our DB
-        consumer = CONSUMER_API.consumer(consumer_cert_uid)
+        consumer = self.consumer_api.consumer(consumer_cert_uid)
         if not consumer:
             LOG.error("Consumer with id [%s] does not exist" % consumer_cert_uid)
             return None
