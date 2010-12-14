@@ -363,22 +363,63 @@ def list_users_in_role(role_name):
     role = _get_role(role_name)
     return _get_users_belonging_to_role(role)
 
-# super user role -------------------------------------------------------------
+# built in roles --------------------------------------------------------------
 
 super_user_role = 'SuperUsers'
 
-def check_for_super_user_role():
+def _check_for_super_user_role():
+    """
+    Assure the super user role exists.
+    """
     role = _role_api.role(super_user_role)
     if role is None:
         role = _role_api.create(super_user_role)
 
+
+consumer_users_role = 'ConsumerUsers'
+
+def _check_for_consumer_user_role():
+    """
+    Assure the consumer role exists.
+    """
+    role = _role_api.role(consumer_users_role)
+    if role is None:
+        role = _role_api.create(consumer_users_role)
+
+
+def check_builtin_roles():
+    """
+    Assure the roles required for pulp's operation are in the database.
+    """
+    _check_for_super_user_role()
+    _check_for_consumer_user_role()
+
 # authorization api -----------------------------------------------------------
 
 def is_superuser(user):
+    """
+    Return True if the user is a super user
+    @type user: L{pulp.server.db.model.User} instance
+    @param user: user to check
+    @rtype: bool
+    @return: True if the user is a super user, False otherwise
+    """
     return super_user_role in user.roles
 
 
 def is_authorized(resource, user, operation):
+    """
+    Check to see if a user is authorized to perform an operation on a resource
+    @type resource: str
+    @param resource: pulp resource path
+    @type user: L{pulp.server.db.model.User} instance
+    @param user: user to check permissions for
+    @type operation: int
+    @param operation: operation to be performed on resource
+    @rtype: bool
+    @return: True if the user is authorized for the operation on the resource,
+             False otherwise
+    """
     if is_superuser(user):
         return True
     login = user['login']
