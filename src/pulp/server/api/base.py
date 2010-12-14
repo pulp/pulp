@@ -20,9 +20,14 @@ from pulp.server import async
 class BaseApi(object):
 
     def __init__(self):
-        self.objectdb = self._getcollection()
+        pass
+        #self.objectdb = self._getcollection()
 
     # db indexes
+
+    @property
+    def objectdb(self):
+        return self._getcollection()
 
     @property
     def _unique_indexes(self):
