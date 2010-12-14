@@ -63,7 +63,7 @@ def http_authorization():
     return web.ctx.environ.get('HTTP_AUTHORIZATION', None)
 
 
-def _is_http_basic_auth(credentials):
+def _is_basic_auth(credentials):
     """
     Check if the credentials are for http basic authorization
     @type credentials: str
@@ -77,7 +77,7 @@ def _is_http_basic_auth(credentials):
     return type == 'basic'
 
 
-def _http_basic_username_password(credentials):
+def _basic_username_password(credentials):
     """
     Get the username and password from http basic authorization credentials
     """
@@ -91,7 +91,7 @@ def _http_basic_username_password(credentials):
     return decoded_str.split(':', 1)
 
 
-def _is_http_digest_auth(credentials):
+def _is_digest_auth(credentials):
     """
     Check if the credentials are for http digest authorization
     @type credentials: str
@@ -105,29 +105,29 @@ def _is_http_digest_auth(credentials):
     return type == 'digest'
 
 
-def _http_digest_username_password(credentials):
+def _digest_username_password(credentials):
     """
     Get the username and password from http digest authorization credentials
     """
     raise NotImplementedError('HTTP Digest Authorization not yet implemented')
 
 
-def http_username_password():
+def username_password():
     """
     Return a the username, password tuple from the http authorization header
-    Return None if the header isn't found
+    Return a tuple of Nones if the header isn't found
     Raises an exception if the authorization scheme cannot be determined
-    @rtype: tuple of str's or None
-    @return: username, password tuple or None
+    @rtype: tuple of str's or Nones
+    @return: username, password tuple
     @raise L{HTTPAuthError} instance: if authorization cannot be determined
     """
     credentials = http_authorization()
     if credentials is None:
-        return None
-    if _is_http_basic_auth(credentials):
-        return _http_basic_username_password(credentials)
-    if _is_http_digest_auth(credentials):
-        return _http_digest_username_password(credentials)
+        return (None, None)
+    if _is_basic_auth(credentials):
+        return _basic_username_password(credentials)
+    if _is_digest_auth(credentials):
+        return _digest_username_password(credentials)
     raise HTTPAuthError('Unrecognized HTTP Authorization')
 
 # ssl methods -----------------------------------------------------------------
