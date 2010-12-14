@@ -31,13 +31,9 @@ import pulp.server.auth.auth as principal
 from pulp.server import config
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.role import RoleApi
-from pulp.server.api.repo import RepoApi
 from pulp.server.auth.certificate import Certificate
 import pulp.server.auth.password_util as password_util
 import pulp.server.auth.cert_generator as cert_generator
-from pulp.server.db.model import RoleActionType
-from pulp.server.db.model import RoleResourceType
 from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.LDAPConnection import LDAPConnection
@@ -79,8 +75,7 @@ class RoleCheck(object):
             # default the current principal to be sure it's not
             # left over from the last call.
             principal.clear_principal()
-            
-            
+
             for k in web.ctx.environ.keys():
                 val = web.ctx.environ[k]
                 LOG.error("env var: {%s:\'%s\'}" % (k, val))
@@ -156,9 +151,6 @@ class RoleCheck(object):
         '''
 
         return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
-                
-    
-    
 
     def check_admin_cert(self, *fargs):
         '''
@@ -320,12 +312,12 @@ class RoleCheck(object):
         try:
             ldapserver = config.config.get("ldap", "uri")
         except:
-            log.info("No valid server found, default to localhost")
+            LOG.info("No valid server found, default to localhost")
             ldapserver = "ldap://localhost"
         try:
             base = config.config.get("ldap", "base")
         except:
-            log.info("No valid base found, default to localhost")
+            LOG.info("No valid base found, default to localhost")
             base = "dc=localhost"
         ldapserv = LDAPConnection(ldapserver)
         ldapserv.connect()
