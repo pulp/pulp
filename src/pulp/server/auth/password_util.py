@@ -17,8 +17,11 @@
 """
 Taken from stackoverflow.com : http://tinyurl.com/2f6gx7s
 """
-
-from hashlib import sha256
+import sys
+if sys.version_info < (2,5):
+    import sha as digestmod
+else:
+    from hashlib import sha256 as digestmod
 from hmac import HMAC
 import random
 
@@ -32,7 +35,7 @@ def random_bytes(num_bytes):
 def pbkdf_sha256(password, salt, iterations):
     result = password
     for i in xrange(iterations):
-        result = HMAC(result, salt, sha256).digest() # use HMAC to apply the salt
+        result = HMAC(result, salt, digestmod).digest() # use HMAC to apply the salt
     return result
 
 
