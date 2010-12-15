@@ -21,10 +21,9 @@ import unittest
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
-
 sys.path.insert(0, srcdir)
-commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.server.api.cds import CdsApi
