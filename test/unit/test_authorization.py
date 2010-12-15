@@ -26,21 +26,22 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import testutil
+
+config = testutil.load_test_config()
+
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
 from pulp.server.auth import authentication, authorization, principal
 
-import testutil
-
 
 class TestAuthorization(unittest.TestCase):
 
     def setUp(self):
-        prinicpal.set_principal(auth.SystemPrincipal())
+        #prinicpal.set_principal(auth.SystemPrincipal())
         authorization.check_builtin_roles()
-        self.config = testutil.load_test_config()
         self.perm_api = PermissionAPI()
         self.role_api = RoleAPI()
         self.user_api = UserApi()
@@ -55,18 +56,18 @@ class TestAuthorization(unittest.TestCase):
     # test data generation
 
     def _create_user(self):
-        username = random.sample(self.alhpa_num, random.randint(6, 10))
-        password = random.sample(self.alhpa_num, random.randint(6, 10))
+        username = ''.join(random.sample(self.alhpa_num, random.randint(6, 10)))
+        password = ''.join(random.sample(self.alhpa_num, random.randint(6, 10)))
         return self.user_api.create(username, password, username, username)
 
     def _create_role(self):
-        name = random.sample(self.alhpa_num, random.randint(6, 10))
+        name = ''.join(random.sample(self.alhpa_num, random.randint(6, 10)))
         return self.role_api.create(name)
 
     def _create_resource(self):
-        return '/%s/' % '/'.join(random.sample(self.alhpa_num,
-                                               random.randint(6, 10))
-                                 for i in random.randint(1, 4))
+        return '/%s/' % '/'.join(''.join(random.sample(self.alhpa_num,
+                                                       random.randint(6, 10)))
+                                 for i in range(random.randint(1, 4)))
 
     # test individual user permissions
 
@@ -153,7 +154,8 @@ class TestAuthorization(unittest.TestCase):
     def test_parent_permissions(self):
         u = self._create_user()
         r = self._create_resource()
-        p = r.rsplit('/', 1) + '/'
+        p = r.rsplit('/', 1)[0] + '/'
+        o = authorization.READ
         n = authorization.operation_to_name(o)
         authorization.grant_permission_to_user(p, u['login'], [n])
         self.assertTrue(authorization.is_authorized(r, u, o))
@@ -161,6 +163,7 @@ class TestAuthorization(unittest.TestCase):
     def test_root_permissions(self):
         u = self._create_user()
         r = self._create_resource()
+        o = authorization.READ
         n = authorization.operation_to_name(o)
         authorization.grant_permission_to_user('/', u['login'], [n])
         self.assertTrue(authorization.is_authorized(r, u, o))

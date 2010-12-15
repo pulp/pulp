@@ -28,15 +28,16 @@ class PermissionAPI(BaseApi):
 
     # base class methods overridden for implementation
 
-    def _get_collection(self):
+    def _getcollection(self):
         return get_object_db('permissions',
-                             self._unique_indexes(),
-                             self._indexes())
+                             self._unique_indexes,
+                             self._indexes)
 
+    @property
     def _unique_indexes(self):
         return ['resource']
 
-    @audit
+    @audit()
     def create(self, resource):
         if self.permission(resource) is not None:
             raise PulpException('permission for %s already exists' % resource)
@@ -46,11 +47,11 @@ class PermissionAPI(BaseApi):
 
     # base class methods overridden for auditing
 
-    @audit
+    @audit()
     def delete(self, permission):
         super(PermissionAPI, self).delete(resource=permission['resource'])
 
-    @audit
+    @audit()
     def clean(self):
         super(PermissionAPI, self).clean()
 
@@ -71,7 +72,7 @@ class PermissionAPI(BaseApi):
     def permissions(self, spec=None, fields=None):
         return list(self.objectdb.find(spec=spec, fields=fields))
 
-    @audit
+    @audit()
     def grant(self, resource, user, operations):
         """
         Grant permission on a resource for a user and a set of operations.
@@ -83,14 +84,14 @@ class PermissionAPI(BaseApi):
         @param operations:list of allowed operations being granted 
         """
         permission = self._get_or_create(resource)
-        current_ops = permission['users'].setdefault(user, [])
+        current_ops = permission['users'].setdefault(user['login'], [])
         for o in operations:
             if o in current_ops:
                 continue
             current_ops.append(o)
         self.update(permission)
 
-    @audit
+    @audit()
     def revoke(self, resource, user, operations):
         """
         Revoke permission on a resource for a user and a set of operations.
@@ -104,7 +105,7 @@ class PermissionAPI(BaseApi):
         permission = self.permission(resource)
         if permission is None:
             return
-        current_ops = permission['users'].get(user, [])
+        current_ops = permission['users'].get(user['login'], [])
         if not current_ops:
             return
         for o in operations:
@@ -113,7 +114,7 @@ class PermissionAPI(BaseApi):
             current_ops.remove(o)
         # delete the user if there are no more allowed operations
         if not current_ops:
-            del permission['users'][user]
+            del permission['users'][user['login']]
         # delete the permission if there are no more users
         if not permission['users']:
             self.delete(permission)

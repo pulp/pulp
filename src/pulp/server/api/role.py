@@ -27,29 +27,31 @@ class RoleAPI(BaseApi):
 
     # base class methods overridden for implementation
 
-    def _get_collection(self):
+    def _getcollection(self):
         return get_object_db('roles',
-                             self._unique_indexes(),
-                             self._indexes())
+                             self._unique_indexes,
+                             self._indexes)
 
+    @property
     def _unique_indexes(self):
         return ['name']
 
-    @audit
+    @audit()
     def create(self, name):
         role = self.role(name)
         if role is not None:
             raise PulpException('role %s already exists' % name)
         role = Role(name)
         self.insert(role)
+        return role
 
     # base class methods overridden for auditing
 
-    @audit
+    @audit()
     def delete(self, role):
         super(RoleAPI, self).delete(name=role['name'])
 
-    @audit
+    @audit()
     def clean(self):
         super(RoleAPI, self).clean()
 
@@ -64,7 +66,7 @@ class RoleAPI(BaseApi):
     def roles(self, spec=None, fields=None):
         return list(self.objectdb.find(spec=spec, fields=fields))
 
-    @audit
+    @audit()
     def add_permissions(self, role, resource, operations):
         current_ops = role['permissions'].setdefault(resource, [])
         for o in operations:
@@ -73,7 +75,7 @@ class RoleAPI(BaseApi):
             current_ops.append(o)
         self.update(role)
 
-    @audit
+    @audit()
     def remove_permissions(self, role, resource, operations):
         current_ops = role['permissions'].get(resource, [])
         if not current_ops:

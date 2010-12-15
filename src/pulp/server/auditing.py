@@ -34,7 +34,7 @@ except:
     from bson.son import SON
 
 from pulp.server import config
-from pulp.server.auth import principal
+from pulp.server.auth.principal import get_principal
 from pulp.server.api.base import BaseApi
 from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
@@ -186,7 +186,7 @@ def audit(params=None, record_result=False):
                            param_values_str))
 
             # build up the data to record
-            principal = principal.get_principal()
+            principal = get_principal()
             api = inspector.api_name(args)
             param_values = inspector.param_values(args, kwargs)
             param_values_str = ', '.join('%s: %s' % (p, v) for p, v in param_values)

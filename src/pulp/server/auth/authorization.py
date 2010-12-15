@@ -284,8 +284,8 @@ def create_role(role_name):
     @rtype: bool
     @return: True on success
     """
-    _role_api.create(role_name)
-    return True
+    return _role_api.create(role_name)
+    #return True
 
 
 def delete_role(role_name):
@@ -324,7 +324,7 @@ def add_user_to_role(role_name, user_name):
     """
     role = _get_role(role_name)
     user = _get_user(user_name)
-    for resource, operations in role['premissions'].items():
+    for resource, operations in role['permissions'].items():
         _permission_api.grant(resource, user, operations)
     return True
 
