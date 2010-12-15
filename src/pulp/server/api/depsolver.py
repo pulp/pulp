@@ -18,30 +18,34 @@ from yum.packageSack import ListPackageSack
 
 from pulp.server import util
 from yum.misc import prco_tuple_to_string
+from yum.repos import RepoStorage
 
 CACHE_DIR = "/var/lib/pulp/cache/"
 
 class DepSolver:
-    def __init__(self, repo, pkgs=[]):
+    def __init__(self, repos, pkgs=[]):
         self.pkgs = pkgs
-        self.repo  = repo
+        self.repos  = repos
+        self._repostore = RepoStorage(self)
         self.setup()
         self.loadPackages()
 
     def setup(self):
-        self.yrepo = yum.yumRepo.YumRepository(self.repo['id'])
-        self.yrepo.baseurl = ["file://%s/%s" % (str(util.top_repos_location()), str(self.repo['relative_path']))]
-        self.yrepo.basecachedir = CACHE_DIR
+        for repo in self.repos:
+            self.yrepo = yum.yumRepo.YumRepository(repo['id'])
+            self.yrepo.baseurl = ["file://%s/%s" % (str(util.top_repos_location()), str(repo['relative_path']))]
+            self.yrepo.basecachedir = CACHE_DIR
+            self._repostore.add(self.yrepo)
 
     def loadPackages(self):
-        self.sack = self.yrepo.getPackageSack()
-        self.sack.populate(self.yrepo, 'metadata', None, 0)
+        self._repostore._setup = True
+        self._repostore.populateSack(which='all')
         
     def cleanup(self):
         shutil.rmtree(self.yrepo.cachedir)
 
     def getDependencylist(self):
-        ematch, match, unmatch = self.sack.matchPackageNames(self.pkgs)
+        ematch, match, unmatch = self._repostore.pkgSack.matchPackageNames(self.pkgs)
         pkgs = []
         for po in ematch + match:
             pkgs.append(po)
@@ -66,7 +70,7 @@ class DepSolver:
         return results
 
     def whatProvides(self, name, flags, version):
-        return ListPackageSack(self.sack.searchProvides((name, flags, version)))
+        return ListPackageSack(self._repostore.pkgSack.searchProvides((name, flags, version)))
 
     def processResults(self, results):
         reqlist = []
@@ -108,7 +112,7 @@ if __name__=='__main__':
     if len(sys.argv) < 3:
         print "USAGE: python depsolver.py <repoid> <pkgname> <pkgname> ..."
         sys.exit(0)
-    repo = sys.argv[1]
+    repo = [sys.argv[1]]
     pkgs = sys.argv[2:]
     dsolve = DepSolver(repo, pkgs)
     results =  dsolve.getDependencylist()

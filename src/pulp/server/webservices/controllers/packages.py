@@ -115,7 +115,18 @@ class PackageActions(JSONController):
 
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
+    'list_dependency',
     )
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def list_dependency(self, id):
+        """
+         Get list of available dependencies required \
+         for a specified package per repo.
+        """
+        data = self.params()
+        return self.ok(api.package_dependency(id, data['repoids']))    
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -140,7 +151,7 @@ URLS = (
     '/$', 'Packages',
     '/([^/]+)/$', 'Package',
     #'/([^/]+)/(%s)/$' % '|'.join(PackageDeferredFields.exposed_fields), 'PackageDeferredFields',
-    #'/([^/]+)/(%s)/$' % '|'.join(PackageActions.exposed_actions), 'PackageActions',
+    '/([^/]+)/(%s)/$' % '|'.join(PackageActions.exposed_actions), 'PackageActions',
     '/([^/]+)/([^/]+)/([^/]+)/([^/]+)/([^/]+)/', 'Versions',
 )
 

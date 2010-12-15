@@ -22,7 +22,8 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client.connection import RepoConnection, ConsumerConnection, ConsumerGroupConnection, SearchConnection
+from pulp.client.connection import RepoConnection, ConsumerConnection, ConsumerGroupConnection, SearchConnection,\
+    PackageConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -36,6 +37,7 @@ class PackageAction(Action):
         self.rconn = RepoConnection()
         self.cconn = ConsumerConnection()
         self.cgconn = ConsumerGroupConnection()
+        self.pconn = PackageConnection()
 
 # package actions -------------------------------------------------------------
 
@@ -173,26 +175,28 @@ class DependencyList(PackageAction):
     description = _('List available dependencies')
     
     def setup_parser(self):
-        self.parser.add_option("-n", "--name", action="append", dest="pnames",
-                               help=_("packages to lookup dependencies; to specify multiple packages use multiple -n"))
-        self.parser.add_option("--repoid", dest="repoid",
-                               help=_("repository label (required)"))
+        self.parser.add_option("-n", "--name", dest="pname",
+                               help=_("package to lookup dependencies"))
+        self.parser.add_option("-r", "--repoid", action="append", dest="repoid",
+                               help=_("repository labels; to specify multiple packages use multiple -r"))
 
     def run(self):
-        pnames = self.opts.pnames
-        if not pnames:
+        if not self.opts.pname:
             system_exit(os.EX_DATAERR, \
-                        _("Atleast one package needs to be specified to lookup dependencies."))
-        repoid = self.get_required_option('repoid')
-        deps = self.rconn.get_package_dependency(repoid, pnames)
+                        _("package name is required to lookup dependencies."))
+        if not self.opts.repoid:
+            system_exit(os.EX_DATAERR, \
+                        _("Atleast one repoid is required to lookup dependencies."))
+        repoid = self.opts.repoid
+        pname = self.opts.pname
+        deps = self.pconn.package_dependency(pname, repoid)
         if not deps['dependency_list']:
             system_exit(os.EX_OK, _("No dependencies available for Package(s) [%s] in repo [%s]") %
-                        (pnames, repoid))
-        print_header(_("Dependencies for package(s) [%s]" % pnames))
-#        for dep in deps['dependency_list']:
-#            print str(dep)
+                        (pname, repoid))
+        print_header(_("Dependencies for package(s) [%s]" % pname))
+
         print deps['dependency_list']
-        print_header(_("Available Packages satisfying the dependencies in Repo [%s]" % repoid))
+        print_header(_("Suggested Packages in Repo [%s]" % repoid))
         if not deps['available_packages']:
             system_exit(os.EX_OK, _("None"))
         for pkg in deps['available_packages']:

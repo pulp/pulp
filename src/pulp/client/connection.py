@@ -380,11 +380,6 @@ class RepoConnection(PulpConnection):
     def update_publish(self, id, state):
         method = "/repositories/%s/update_publish/" % id
         return self.conn.request_post(method, params={"state":state})
-    
-    def get_package_dependency(self, id, pnames):
-        params = {'pkgnames' : pnames }
-        method = "/repositories/%s/get_package_dependency/" % id
-        return self.conn.request_post(method, params=params)
         
 
 class ConsumerConnection(PulpConnection):
@@ -613,6 +608,11 @@ class PackageConnection(PulpConnection):
     def package_by_ivera(self, name, version, release, epoch, arch):
         method = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
         return self.conn.request_get(method)
+    
+    def package_dependency(self, id, repoids):
+        params = {'repoids' : repoids }
+        method = "/packages/%s/list_dependency/" % id
+        return self.conn.request_post(method, params=params)
 
 class PackageGroupConnection(PulpConnection):
 

@@ -259,7 +259,6 @@ class RepositoryActions(AsyncController):
         'add_package',
         'delete_package',
         'get_package',
-        'get_package_dependency',
         'add_packages_to_group',
         'delete_package_from_group',
         'delete_packagegroup',
@@ -595,18 +594,7 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         return self.ok(api.get_package_by_filename(id, data['filename']))
-    
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def get_package_dependency(self, id):
-        """
-         Get list of available dependencies required \
-         for a specified package per repo.
-        """
-        data = self.params()
-        return self.ok(api.get_package_dependency(id, data['pkgnames']))
          
-
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def rmkeys(self, id):
