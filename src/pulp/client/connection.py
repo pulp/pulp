@@ -380,6 +380,12 @@ class RepoConnection(PulpConnection):
     def update_publish(self, id, state):
         method = "/repositories/%s/update_publish/" % id
         return self.conn.request_post(method, params={"state":state})
+    
+    def get_package_dependency(self, id, pnames):
+        params = {'pkgnames' : pnames }
+        method = "/repositories/%s/get_package_dependency/" % id
+        return self.conn.request_post(method, params=params)
+        
 
 class ConsumerConnection(PulpConnection):
     """

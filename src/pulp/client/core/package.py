@@ -167,6 +167,37 @@ class Search(PackageAction):
             if len(test_string) > largest_item_length:
                 largest_item_length = len(test_string)
         return largest_item_length
+    
+class DependencyList(PackageAction):
+
+    description = _('List available dependencies')
+    
+    def setup_parser(self):
+        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                               help=_("packages to lookup dependencies; to specify multiple packages use multiple -n"))
+        self.parser.add_option("--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+
+    def run(self):
+        pnames = self.opts.pnames
+        if not pnames:
+            system_exit(os.EX_DATAERR, \
+                        _("Atleast one package needs to be specified to lookup dependencies."))
+        repoid = self.get_required_option('repoid')
+        deps = self.rconn.get_package_dependency(repoid, pnames)
+        if not deps:
+            system_exit(os.EX_OK, _("No dependencies available for Package(s) [%s] in repo [%s]") %
+                        (pnames, repoid))
+        print_header(_("Dependencies for package(s) [%s]" % pnames))
+#        for dep in deps['dependency_list']:
+#            print str(dep)
+        print deps['dependency_list']
+        print_header(_("Available Packages satisfying the dependencies in Repo [%s]" % repoid))
+        for pkg in deps['available_packages']:
+            print str(pkg['filename'])
+            
+         
+    
 
 # package command -------------------------------------------------------------
 

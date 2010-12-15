@@ -46,6 +46,7 @@ import pulp.server.util
 from pulp.server.agent import Agent
 from pulp.server.api.distribution import DistributionApi
 from pulp.server import updateinfo 
+from pulp.server.api.depsolver import DepSolver
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
@@ -1306,6 +1307,31 @@ class RepoApi(BaseApi):
         for distro in repo['distributionid']:
             distributions.append(self.distroapi.distribution(distro))
         return distributions
+    
+    def get_package_dependency(self, repoid, pkgnames=[]):
+        '''
+         Get list of available dependencies for a given package in
+         a specific repo
+         @param repoid: The repo id
+         @type repoid: str
+         @param pkgnames: list of package names
+         @type pkgnames: list
+         @return list: nvera of dependencies
+        '''
+        repo = self._get_existing_repo(repoid)
+        dsolve = DepSolver(repo, pkgnames)
+        results =  dsolve.getDependencylist()
+        deps = dsolve.processResults(results)
+        pkgs = []
+        for dep in deps:
+            name, version, epoch, release, arch = dep
+            epkg = self.packageapi.package_by_ivera(name, version, epoch, release, arch)
+            if not epkg:
+                continue
+            pkgs.append(epkg)
+        return {'dependency_list' : dsolve.printable_result(results), 
+                'available_packages' :pkgs}
+
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
