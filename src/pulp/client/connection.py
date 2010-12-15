@@ -608,11 +608,6 @@ class PackageConnection(PulpConnection):
     def package_by_ivera(self, name, version, release, epoch, arch):
         method = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
         return self.conn.request_get(method)
-    
-    def package_dependency(self, id, repoids):
-        params = {'repoids' : repoids }
-        method = "/packages/%s/list_dependency/" % id
-        return self.conn.request_post(method, params=params)
 
 class PackageGroupConnection(PulpConnection):
 
@@ -778,6 +773,16 @@ class CdsConnection(PulpConnection):
     def sync_list(self, hostname):
         method = '/cds/%s/sync/' % hostname
         return self.conn.request_get(method)
+    
+class ServicesConnection(PulpConnection):
+    '''
+    Connection class to the services handler
+    '''
+    def dependencies(self, pkgnames, repoids):
+        params = {'repoids' : repoids,
+                   'pkgnames' : pkgnames}
+        method = "/services/dependencies/"
+        return self.conn.request_put(method, params=params)
 
 if __name__ == '__main__':
     rconn = RepoConnection()

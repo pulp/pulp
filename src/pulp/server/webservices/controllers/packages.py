@@ -115,18 +115,7 @@ class PackageActions(JSONController):
 
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
-    'list_dependency',
-    )
-    
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def list_dependency(self, id):
-        """
-         Get list of available dependencies required \
-         for a specified package per repo.
-        """
-        data = self.params()
-        return self.ok(api.package_dependency(id, data['repoids']))    
+    )  
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

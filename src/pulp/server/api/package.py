@@ -144,7 +144,7 @@ class PackageApi(BaseApi):
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
         return list(self.objectdb.find(spec, ['id', 'name', 'description']))
     
-    def package_dependency(self, pkgname, repoids=[]):
+    def package_dependency(self, pkgnames=[], repoids=[]):
         '''
          Get list of available dependencies for a given package in
          a specific repo
@@ -159,7 +159,7 @@ class PackageApi(BaseApi):
         repos = []
         for rid in repoids:
             repos.append(rapi.repository(rid))
-        dsolve = DepSolver(repos, [pkgname])
+        dsolve = DepSolver(repos, pkgnames)
         results =  dsolve.getDependencylist()
         deps = dsolve.processResults(results)
         pkgs = []

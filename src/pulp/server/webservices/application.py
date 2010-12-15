@@ -28,7 +28,7 @@ from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, errata, packages, 
-    repositories, search, users, roles, distribution)
+    repositories, search, users, roles, distribution, services)
 
 
 urls = (
@@ -43,6 +43,7 @@ urls = (
     '/errata', errata.application,
     '/roles', roles.application,
     '/distribution', distribution.application,
+    '/services', services.application,
 )
 
 
