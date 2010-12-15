@@ -77,8 +77,7 @@ class RoleCheck(object):
             # default the current principal to be sure it's not
             # left over from the last call.
             principal.clear_principal()
-            
-            
+
             for k in web.ctx.environ.keys():
                 val = web.ctx.environ[k]
                 LOG.error("env var: {%s:\'%s\'}" % (k, val))
@@ -154,9 +153,6 @@ class RoleCheck(object):
         '''
 
         return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
-
-
-
 
     def check_admin_cert(self, *fargs):
         '''

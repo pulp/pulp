@@ -50,14 +50,14 @@ class DRLock(object):
         return repr(self.__lock)
 
     def acquire(self, blocking=1):
-        _log.debug('Thread %s called acquire' % threading.current_thread())
+        _log.debug('Thread %s called acquire' % threading.currentThread())
         if not self.__lock.acquire(blocking):
             return False
         _log.debug('Lock %s ACQUIRED' % repr(self))
         return True
 
     def release(self):
-        _log.debug('Thread %s called release' % threading.current_thread())
+        _log.debug('Thread %s called release' % threading.currentThread())
         self.__lock.release()
         _log.debug('Lock %s RELEASED' % repr(self))
 
@@ -79,7 +79,7 @@ class TrackedThread(_Thread):
         """
         Start execution in a separate thread of control.
         """
-        parent = threading.current_thread()
+        parent = threading.currentThread()
         _thread_tree.setdefault(parent, []).append(weakref.ref(self))
         return super(TrackedThread, self).start()
 

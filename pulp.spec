@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.114
+Version:        0.0.115
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -25,6 +25,7 @@ Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson
 Requires: python-oauth2
+Requires: python-httplib2
 Requires: grinder >= 0.0.59
 Requires: httpd
 Requires: mod_wsgi
@@ -103,6 +104,18 @@ BuildRequires:  rpm-python
 Requires:       gofer >= 0.7
 Requires:       grinder
 Requires:       httpd
+Requires:       mod_ssl
+
+%if 14%{?fedora} < 13
+Requires: qpidd
+Requires: qpidd-ssl
+Requires: rhm-cpp-server-store
+%else:
+Requires: qpid-cpp-server
+Requires: qpid-cpp-server-ssl
+Requires: qpid-cpp-server-store
+%endif
+
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
@@ -172,10 +185,12 @@ rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 mkdir -p %{buildroot}/etc/yum.repos.d
 touch %{buildroot}/etc/yum.repos.d/pulp.repo
 
-%install cds
-
+# Pulp CDS
 # This should match what's in gofer_cds_plugin.conf and pulp-cds.conf
 mkdir -p %{buildroot}/var/lib/pulp-cds
+
+# Pulp CDS Logging
+mkdir -p %{buildroot}/var/log/pulp-cds
 
 # Apache Configuration
 mkdir -p %{buildroot}/etc/httpd/conf.d/
@@ -235,8 +250,13 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{_sysconfdir}/gofer/plugins/gofer_cds_plugin.conf
 %{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
+/var/lib/pulp-cds
+/var/log/pulp-cds
+
 
 %changelog
+* Tue Dec 14 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.115-1
+- Test build for CDS RPM changes
 * Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1
 - Update the last sync timestamp on the CDS at a sync.
   (jason.dobies@redhat.com)

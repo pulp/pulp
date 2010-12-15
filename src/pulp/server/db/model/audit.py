@@ -25,7 +25,7 @@ class Event(Base):
     def __init__(self, principal, action, api=None, method=None, params=[]):
         super(Event, self).__init__()
         self.timestamp = datetime.datetime.now()
-        self.principal_type = unicode(type(principal))
+        self.principal_type = unicode(str(type(principal)))
         self.principal = unicode(principal)
         self.action = action
         self.api = api

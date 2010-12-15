@@ -229,7 +229,7 @@ class ConsumerDeferredFields(JSONController):
         @type id: str
         @param id: consumer id
         """
-        return self.ok(consumer_api.list_package_updates(id))
+        return self.ok(consumer_api.list_package_updates(id)['packages'])
 
     @JSONController.error_handler
     def GET(self, id, field_name):

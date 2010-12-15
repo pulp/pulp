@@ -15,13 +15,15 @@
 
 import re
 import pymongo
-
+import logging
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
+from pulp.server.api.depsolver import DepSolver
 
+log = logging.getLogger(__name__)
 
 package_fields = model.Package(None, None, None, None, None, None, None, None, None).keys()
 
@@ -141,4 +143,34 @@ class PackageApi(BaseApi):
         '''
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
         return list(self.objectdb.find(spec, ['id', 'name', 'description']))
+    
+    def package_dependency(self, pkgname, repoids=[]):
+        '''
+         Get list of available dependencies for a given package in
+         a specific repo
+         @param repoid: The repo id
+         @type repoid: str
+         @param pkgnames: list of package names
+         @type pkgnames: list
+         @return list: nvera of dependencies
+        '''
+        from pulp.server.api.repo import RepoApi
+        rapi = RepoApi()
+        repos = []
+        for rid in repoids:
+            repos.append(rapi.repository(rid))
+        dsolve = DepSolver(repos, [pkgname])
+        results =  dsolve.getDependencylist()
+        deps = dsolve.processResults(results)
+        pkgs = []
+        log.info(" results from depsolver %s" % results)
+        for dep in deps:
+            name, version, epoch, release, arch = dep
+            epkg = self.package_by_ivera(name, version, epoch, release, arch)
+            if not epkg:
+                continue
+            pkgs.append(epkg)
+        log.info("deps packages suggested %s" % deps)
+        return {'dependency_list' : dsolve.printable_result(results), 
+                'available_packages' :pkgs}
 
