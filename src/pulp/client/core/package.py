@@ -185,7 +185,7 @@ class DependencyList(PackageAction):
                         _("Atleast one package needs to be specified to lookup dependencies."))
         repoid = self.get_required_option('repoid')
         deps = self.rconn.get_package_dependency(repoid, pnames)
-        if not deps:
+        if not deps['dependency_list']:
             system_exit(os.EX_OK, _("No dependencies available for Package(s) [%s] in repo [%s]") %
                         (pnames, repoid))
         print_header(_("Dependencies for package(s) [%s]" % pnames))
@@ -193,12 +193,11 @@ class DependencyList(PackageAction):
 #            print str(dep)
         print deps['dependency_list']
         print_header(_("Available Packages satisfying the dependencies in Repo [%s]" % repoid))
+        if not deps['available_packages']:
+            system_exit(os.EX_OK, _("None"))
         for pkg in deps['available_packages']:
             print str(pkg['filename'])
             
-         
-    
-
 # package command -------------------------------------------------------------
 
 class Package(Command):
