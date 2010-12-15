@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.115
+Version:        0.0.116
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,17 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Dec 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.116-1
+- Added delete old repo functionality on CDS sync. (jason.dobies@redhat.com)
+- Assemble the path correctly when saving repos. (jason.dobies@redhat.com)
+- Support for Dependency Resolution List. This commit includes: * Dependency
+  resolver module * API/WS changes to support deplist * CLI changes to support
+  pulp-admin package deplist (pkilambi@redhat.com)
+- fixing the updates to send back package info (pkilambi@redhat.com)
+- Send the server URL information from pulp server to CDS.
+  (jason.dobies@redhat.com)
+- python-oauth2 has a dependency on python-httplib2 (jason.dobies@redhat.com)
+
 * Tue Dec 14 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.115-1
 - Test build for CDS RPM changes
 * Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1
