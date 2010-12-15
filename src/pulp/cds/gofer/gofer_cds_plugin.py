@@ -99,7 +99,7 @@ class CdsGoferReceiver(object):
 
             url = '%s/%s' % (base_url, repo['relative_path'])
             log.debug('Synchronizing repo at [%s]' % url)
-            repo_path = packages_location + repo['relative_path']
+            repo_path = os.path.join(packages_location, repo['relative_path'])
 
             if not os.path.exists(repo_path):
                 os.makedirs(repo_path)
