@@ -28,19 +28,18 @@ sys.path.insert(0, commondir)
 
 import testutil
 
-config = testutil.load_test_config()
+testutil.load_test_config()
 
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
-from pulp.server.auth import authentication, authorization, principal
+from pulp.server.auth import authentication, authorization
 
 
 class TestAuthorization(unittest.TestCase):
 
     def setUp(self):
-        #prinicpal.set_principal(auth.SystemPrincipal())
         authorization.check_builtin_roles()
         self.perm_api = PermissionAPI()
         self.role_api = RoleAPI()
@@ -67,7 +66,7 @@ class TestAuthorization(unittest.TestCase):
     def _create_resource(self):
         return '/%s/' % '/'.join(''.join(random.sample(self.alhpa_num,
                                                        random.randint(6, 10)))
-                                 for i in range(random.randint(1, 4)))
+                                 for i in range(random.randint(2, 4)))
 
     # test individual user permissions
 
@@ -154,7 +153,7 @@ class TestAuthorization(unittest.TestCase):
     def test_parent_permissions(self):
         u = self._create_user()
         r = self._create_resource()
-        p = r.rsplit('/', 1)[0] + '/'
+        p = r.rsplit('/', 2)[0] + '/'
         o = authorization.READ
         n = authorization.operation_to_name(o)
         authorization.grant_permission_to_user(p, u['login'], [n])
@@ -261,6 +260,23 @@ class TestAuthorization(unittest.TestCase):
         self.assertTrue(authorization.is_authorized(s, u1, o))
         self.assertFalse(authorization.is_authorized(s, u2, o))
 
+    def test_role_order_of_permission_grant(self):
+        u1 = self._create_user()
+        u2 = self._create_user()
+        r1 = self._create_role()
+        r2 = self._create_role()
+        s = self._create_resource()
+        o = authorization.READ
+        n = authorization.operation_to_name(o)
+        # add first, grant second
+        authorization.add_user_to_role(r1['name'], u1['name'])
+        authorization.grant_permission_to_role(s, r1['name'], [n])
+        self.assertTrue(authorization.is_authorized(s, u1, o))
+        # grant first, add second
+        authorization.grant_permission_to_role(s, r2['name'], [n])
+        authorization.add_user_to_role(r2['name'], u2['name'])
+        self.assertTrue(authorization.is_authorized(s, u2, o))
+
     def test_role_permission_revoke(self):
         u = self._create_user()
         r = self._create_role()
@@ -270,7 +286,7 @@ class TestAuthorization(unittest.TestCase):
         authorization.add_user_to_role(r['name'], u['login'])
         authorization.grant_permission_to_role(s, r['name'], [n])
         self.assertTrue(authorization.is_authorized(s, u, o))
-        authorization.revoke_permissions_from_role(s, r['name'], [n])
+        authorization.revoke_permission_from_role(s, r['name'], [n])
         self.assertFalse(authorization.is_authorized(s, u, o))
 
     # test multi-role/permission interaction
@@ -287,7 +303,7 @@ class TestAuthorization(unittest.TestCase):
         authorization.grant_permission_to_role(s, r1['name'], [n])
         authorization.grant_permission_to_role(s, r2['name'], [n])
         self.assertTrue(authorization.is_authorized(s, u, o))
-        authorization.revoke_permissions_from_role(s, r1['name'], [n])
+        authorization.revoke_permission_from_role(s, r1['name'], [n])
         self.assertTrue(authorization.is_authorized(s, u, o))
 
     def test_non_unique_permission_remove(self):
@@ -303,6 +319,21 @@ class TestAuthorization(unittest.TestCase):
         authorization.grant_permission_to_role(s, r2['name'], [n])
         self.assertTrue(authorization.is_authorized(s, u, o))
         authorization.remove_user_from_role(r1['name'], u['login'])
+        self.assertTrue(authorization.is_authorized(s, u, o))
+
+    def test_non_unique_permission_delete(self):
+        u = self._create_user()
+        r1 = self._create_role()
+        r2 = self._create_role()
+        s = self._create_resource()
+        o = authorization.READ
+        n = authorization.operation_to_name(o)
+        authorization.add_user_to_role(r1['name'], u['login'])
+        authorization.add_user_to_role(r2['name'], u['login'])
+        authorization.grant_permission_to_role(s, r1['name'], [n])
+        authorization.grant_permission_to_role(s, r2['name'], [n])
+        self.assertTrue(authorization.is_authorized(s, u, o))
+        authorization.delete_role(r1['name'])
         self.assertTrue(authorization.is_authorized(s, u, o))
 
 
