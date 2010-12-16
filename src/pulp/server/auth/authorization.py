@@ -233,12 +233,20 @@ def grant_permission_to_role(resource, role_name, operation_names):
     role = _get_role(role_name)
     users = _get_users_belonging_to_role(role)
     operations = _get_operations(operation_names)
+    current_ops = role['permissions'].setdefault(resource, [])
+    new_ops = []
+    for op in operations:
+        if op in current_ops:
+            continue
+        new_ops.append(op)
+    role['permissions'][resource].extend(new_ops)
+    _role_api.update(role)
     for user in users:
         _permission_api.grant(resource, user, operations)
     return True
 
 
-def revoke_permissions_from_role(resource, role_name, operations_name):
+def revoke_permission_from_role(resource, role_name, operation_names):
     """
     Revoke the operations on the resource from the users in the given role
     @type resource: str
@@ -251,6 +259,8 @@ def revoke_permissions_from_role(resource, role_name, operations_name):
     @return: True on success
     """
     role = _get_role(role_name)
+    if resource not in role['permissions']:
+        return False
     users = _get_users_belonging_to_role(role)
     operations = _get_operations(operation_names)
     for user in users:
@@ -285,7 +295,6 @@ def create_role(role_name):
     @return: True on success
     """
     return _role_api.create(role_name)
-    #return True
 
 
 def delete_role(role_name):
@@ -324,6 +333,10 @@ def add_user_to_role(role_name, user_name):
     """
     role = _get_role(role_name)
     user = _get_user(user_name)
+    if role_name in user['roles']:
+        return False
+    user['roles'].append(role_name)
+    _user_api.update(user)
     for resource, operations in role['permissions'].items():
         _permission_api.grant(resource, user, operations)
     return True
@@ -343,6 +356,10 @@ def remove_user_from_role(role_name, user_name):
     """
     role = _get_role(role_name)
     user = _get_user(user_name)
+    if role_name not in user['roles']:
+        return False
+    user['roles'].remove(role_name)
+    _user_api.update(user)
     for resource, operations in role['permissions'].items():
         other_roles = _get_other_roles(role, user['roles'])
         user_ops = _operations_not_granted_by_roles(resource,
