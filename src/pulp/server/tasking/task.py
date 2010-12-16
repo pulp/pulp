@@ -98,6 +98,7 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
+        self.scheduled_time = 0
 
     def _exception_delivered(self):
         """

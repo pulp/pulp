@@ -80,6 +80,7 @@ class VolatileStorage(object):
         @param task: task to add
         """
         self.__waiting_tasks.append(task)
+        self.__waiting_tasks.sort(cmp=lambda a, b: cmp(a.scheduled_time, b.scheduled_time))
 
     def add_running_task(self, task):
         """
@@ -138,3 +139,7 @@ class VolatileStorage(object):
             if matches == num_criteria:
                 tasks.append(task)
         return tasks
+
+    def compare_tasks(a, b):
+        return cmp(a["schedule_time"], b["schedule_time"])
+

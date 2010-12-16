@@ -462,20 +462,19 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
 
-
-    def installpackages(self, id, packagenames):
+    def installpackages(self, id, packagenames, when=None):
         method = "/consumers/%s/installpackages/" % id
-        body = dict(packagenames=packagenames)
+        body = dict(packagenames=packagenames, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
-    def installpackagegroups(self, id, packageids):
+    def installpackagegroups(self, id, packageids, when=None):
         method = "/consumers/%s/installpackagegroups/" % id
-        body = dict(packageids=packageids)
+        body = dict(packageids=packageids, scheduled_time=when)
         return self.conn.request_post(method, params=body)
     
-    def installpackagegroupcategories(self, id, repoid, categoryids):
+    def installpackagegroupcategories(self, id, repoid, categoryids, when=None):
         method = "/consumers/%s/installpackagegroupcategories/" % id
-        body = dict(categoryids=categoryids, repoid=repoid)
+        body = dict(categoryids=categoryids, repoid=repoid, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
     def errata(self, id, types=None):
@@ -487,11 +486,12 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/package_updates/" % id
         return self.conn.request_get(method)
 
-    def installerrata(self, id, errataids, assumeyes=False, types=()):
+    def installerrata(self, id, errataids, assumeyes=False, types=(), when=None):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types,
-                      'assumeyes' : assumeyes}
+                      'assumeyes' : assumeyes,
+                      'scheduled_time' : when}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -560,16 +560,17 @@ class ConsumerGroupConnection(PulpConnection):
         method = "/consumergroups/%s/update_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
 
-    def installpackages(self, id, packagenames):
+    def installpackages(self, id, packagenames, when=None):
         method = "/consumergroups/%s/installpackages/" % id
-        body = dict(packagenames=packagenames)
+        body = dict(packagenames=packagenames, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
     def installerrata(self, id, errataids, types=[], assumeyes=False):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types,
-                      'assumeyes' : assumeyes,}
+                      'assumeyes' : assumeyes,
+                      'scheduled_time': when,}
         method = "/consumergroups/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 

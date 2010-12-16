@@ -200,6 +200,18 @@ class FIFOQueueTester(QueueTester):
         self.queue.enqueue(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_finished)
+    
+    def test_task_dispatch_with_scheduled_time(self):
+        task = Task(noop)
+        delay_seconds = 10 
+        task.scheduled_time = time.time() + delay_seconds
+        self.queue.enqueue(task)
+        start_time = time.time()
+        self._wait_for_task(task, timeout=timedelta(seconds=2*delay_seconds))
+        end_time = time.time()
+        self.assertTrue(task.state == task_finished)
+        self.assertTrue(end_time - start_time > delay_seconds)
+
 
     def test_task_find(self):
         task1 = Task(noop)

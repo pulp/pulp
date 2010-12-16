@@ -15,6 +15,7 @@
 
 import os
 import sys
+import time
 from gettext import gettext as _
 from optparse import OptionParser
 from M2Crypto import SSL
@@ -186,6 +187,24 @@ class Action(object):
         Setup the connections required by this action
         """
         pass
+
+    def add_scheduled_time_option(self):
+        """
+        Adds a --when scheduled time option to the option parser
+        """
+        self.parser.add_option("--when", dest="when", default=None, \
+                help=_("Format: 'Year-Month-Day Hour:Min' specifies when to execute task"))
+
+    def parse_scheduled_time_option(self):
+        fmt = "%Y-%m-%d %H:%M"
+        when = self.opts.when
+        if when:
+            try:
+                when = time.strptime(when, fmt)
+                when = time.mktime(when)
+            except:
+                system_exit(-1, _("Unable to parse scheduled time of: %s. Format needs to be in: %s") % (self.opts.when, fmt)) 
+        return when
 
     def run(self):
         """

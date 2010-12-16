@@ -15,6 +15,7 @@
 # in this software or its documentation.
 #
 
+from datetime import datetime
 import os
 import string
 import sys
@@ -77,6 +78,7 @@ class Install(PackageAction):
         id_group.add_option("--consumergroupid", dest="consumergroupid",
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
+        self.add_scheduled_time_option()
 
     def run(self):
         consumerid = self.opts.consumerid
@@ -87,11 +89,14 @@ class Install(PackageAction):
         pnames = self.opts.pnames
         if not pnames:
             system_exit(os.EX_DATAERR, _("Nothing to upload."))
+        when = self.parse_scheduled_time_option()
         if consumergroupid:
-            task = self.cgconn.installpackages(consumergroupid, pnames)
+            task = self.cgconn.installpackages(consumergroupid, pnames, when=when)
         else:
-            task = self.cconn.installpackages(consumerid, pnames)
+            task = self.cconn.installpackages(consumerid, pnames, when=when)
         print _('Created task id: %s') % task['id']
+        print _('Task is scheduled for: %s') % \
+                time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
         state = None
         spath = task['status_path']
         while state not in ('finished', 'error', 'canceled', 'timed_out'):

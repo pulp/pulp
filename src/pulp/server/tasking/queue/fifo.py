@@ -17,6 +17,7 @@
 import logging
 import sys
 import threading
+import time
 import traceback
 from datetime import datetime, timedelta
 
@@ -91,8 +92,12 @@ class FIFOTaskQueue(TaskQueue):
         """
         Get the next 'n' tasks to run, where is max - currently running tasks
         """
+        ready_tasks = []
         num_tasks = self.max_running - self.__running_count
-        return self.__storage.waiting_tasks()[:num_tasks]
+        for t in self.__storage.waiting_tasks()[:num_tasks]:
+            if t.scheduled_time < time.time():
+                ready_tasks.append(t)
+        return ready_tasks
 
     def _cancel_tasks(self):
         """

@@ -360,6 +360,8 @@ class ConsumerActions(AsyncController):
         data = self.params()
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -375,6 +377,8 @@ class ConsumerActions(AsyncController):
         data = self.params()
         ids = data.get('packageids', [])
         task = consumer_api.installpackagegroups(id, ids)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -401,6 +405,8 @@ class ConsumerActions(AsyncController):
         if not group_ids:
             return self.conflict('Given category ids [%s] contain no groups to install' % categoryids)
         task = consumer_api.installpackagegroups(id, group_ids)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -421,6 +427,8 @@ class ConsumerActions(AsyncController):
         task = consumer_api.installerrata(id, eids, types, assumeyes)
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
