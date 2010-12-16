@@ -29,6 +29,10 @@ _permission_api = PermissionAPI()
 _role_api = RoleAPI()
 _user_api = UserApi()
 
+
+class PulpAuthorizationError(PulpException):
+    pass
+
 # operations api --------------------------------------------------------------
 
 CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
@@ -88,11 +92,11 @@ def _get_user(user_name):
     @param user_name: user's login
     @rtype: L{pulp.server.db.model.User} instance
     @return: user instance
-    @raise L{PulpException}: if no user with name exists
+    @raise L{PulpAuthorizationError}: if no user with name exists
     """
     user = _user_api.user(user_name)
     if user is None:
-        raise PulpException(_('no such user: %s') % user_name)
+        raise PulpAuthorizationError(_('no such user: %s') % user_name)
     return user
 
 
@@ -104,11 +108,11 @@ def _get_role(role_name):
     @param role_name: role's name
     @rtype: L{pulp.server.db.model.Role} instance
     @return: role instance
-    @raise L{PulpException}: if no user with role exists
+    @raise L{PulpAuthorizationError}: if no user with role exists
     """
     role = _role_api.role(role_name)
     if role is None:
-        raise PulpException(_('no such role: %s') % role_name)
+        raise PulpAuthorizationError(_('no such role: %s') % role_name)
     return role
 
 
@@ -120,11 +124,11 @@ def _get_operations(operation_names):
     @param operation_names: list of operation names
     @rtype: list of int's
     @return: list of operation values
-    @raise L{PulpException}: on any invalid names
+    @raise L{PulpAuthorizationError}: on any invalid names
     """
     operations = names_to_operations(operation_names)
     if operations is None:
-        raise PulpException(_('invalid operation name or names: %s') %
+        raise PulpAuthorizationError(_('invalid operation name or names: %s') %
                             ', '.join(operation_names))
     return operations
 
@@ -391,6 +395,26 @@ def _check_for_super_user_role():
     role = _role_api.role(super_user_role)
     if role is None:
         role = _role_api.create(super_user_role)
+
+
+def is_last_super_user(user):
+    """
+    Check to see if a user is the last super user
+    @type user: L{pulp.server.db.model.User} instace
+    @param user: user to check
+    @rtype: bool
+    @return: True if the user is the last super user, False otherwise
+    @raise PulpException: if no super users are found
+    """
+    if super_user_role not in user['roles']:
+        return False
+    role = _role_api.role(super_user_role)
+    users = _get_users_belonging_to_role(role)
+    if not users:
+        raise PulpException(_('no super users defined'))
+    if len(users) >= 2:
+        return False
+    return users[0]['_id'] == user['_id'] # this should be True
 
 
 consumer_users_role = 'ConsumerUsers'
