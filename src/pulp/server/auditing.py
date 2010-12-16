@@ -15,7 +15,6 @@
 # in this software or its documentation.
 
 import datetime
-import functools
 import inspect
 import logging
 import os
@@ -39,6 +38,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.crontab import CronTab
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Event
+from pulp.server.compat import wraps
 import pulp.server.logs
 
 
@@ -172,7 +172,7 @@ def audit(params=None, record_result=False):
 
         inspector = MethodInspector(method, params)
 
-        @functools.wraps(method)
+        @wraps(method)
         def _audit(*args, **kwargs):
 
             # convenience function for recording events

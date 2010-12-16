@@ -14,7 +14,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import functools
 import logging
 import sys
 import traceback
@@ -32,6 +31,7 @@ from pulp.server import async
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import auth
 from pulp.server.webservices import http
+from pulp.server.compat import wraps
 
 
 _log = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class JSONController(object):
         Static controller method wrapper that catches internal errors and
         reports them as JSON serialized trace back strings
         """
-        @functools.wraps(method)
+        @wraps(method)
         def report_error(self, *args, **kwargs):
             try:
                 return method(self, *args, **kwargs)
@@ -64,7 +64,7 @@ class JSONController(object):
         Static Controller method to check user permissions on web service calls
         """
         def _user_auth_required(method):
-            @functools.wraps(method)
+            @wraps(method)
             def check_user_auth(self, *args, **kwargs):
                 if not auth.check_roles(roles):
                     return self.unauthorized('You do not have permission for this URI')
