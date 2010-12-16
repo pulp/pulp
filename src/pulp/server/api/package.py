@@ -129,6 +129,12 @@ class PackageApi(BaseApi):
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
 
+    def package_filenames(self, spec=None):
+        """
+         Returns a list of all file names matching the spec
+        """
+        return list(self.objectdb.find(spec, fields=['filename']))
+
     def package_by_ivera(self, name, version, epoch, release, arch):
         """
         Returns the package version identified by the given package and VERA.

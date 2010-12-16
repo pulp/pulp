@@ -190,7 +190,7 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
         repo = api.repository(id, ['id', 'packages'])
-        packages = [pkg_api.package(p) for p in repo['packages']]
+        packages = pkg_api.package_filenames(spec={'id': {'$in': [p for p in repo['packages']]}})
         if repo is None:
             return self.not_found('No repository %s' % id)
         filtered_packages = self.filter_results(packages, filters)
