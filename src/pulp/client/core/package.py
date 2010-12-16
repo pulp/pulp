@@ -22,8 +22,8 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client.connection import RepoConnection, ConsumerConnection, ConsumerGroupConnection, SearchConnection,\
-    ServicesConnection
+from pulp.client.connection import RepoConnection, ConsumerConnection, \
+                                   ConsumerGroupConnection, ServicesConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -33,7 +33,6 @@ class PackageAction(Action):
 
     def setup_connections(self):
 
-        self.sconn = SearchConnection()
         self.rconn = RepoConnection()
         self.cconn = ConsumerConnection()
         self.cgconn = ConsumerGroupConnection()
@@ -132,7 +131,7 @@ class Search(PackageAction):
         name = self.opts.name
         release = self.opts.release
         version = self.opts.version
-        pkgs = self.sconn.packages(name=name, epoch=epoch, version=version,
+        pkgs = self.sconn.search_packages(name=name, epoch=epoch, version=version,
                 release=release, arch=arch, filename=filename)
         if not pkgs:
            system_exit(os.EX_DATAERR, _("No packages found."))

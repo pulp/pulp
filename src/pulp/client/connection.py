@@ -693,27 +693,6 @@ class DistributionConnection(PulpConnection):
         method = '/distribution/%s/' % str(id)
         return self.conn.request_get(method)
 
-class SearchConnection(PulpConnection):
-    """
-    Connection class to access search related calls
-    """
-    def packages(self, name=None, epoch=None, version=None, release=None, arch=None, filename=None):
-        data = {}
-        if name:
-            data["name"] = name
-        if epoch:
-            data["epoch"] = epoch
-        if version:
-            data["version"] = version
-        if release:
-            data["release"] = release
-        if arch:
-            data["arch"] = arch
-        if filename:
-            data["filename"] = filename
-        method = "/search/packages/"
-        return self.conn.request_put(method, params=data)
-
 class CdsConnection(PulpConnection):
     '''
     Connection class to the CDS APIs.
@@ -778,6 +757,28 @@ class ServicesConnection(PulpConnection):
     '''
     Connection class to the services handler
     '''
+
+    """
+    Connection class to access search related calls
+    """
+    def search_packages(self, name=None, epoch=None, version=None, release=None, arch=None, filename=None):
+        data = {}
+        if name:
+            data["name"] = name
+        if epoch:
+            data["epoch"] = epoch
+        if version:
+            data["version"] = version
+        if release:
+            data["release"] = release
+        if arch:
+            data["arch"] = arch
+        if filename:
+            data["filename"] = filename
+        method = "/services/search/packages/"
+        return self.conn.request_put(method, params=data)
+
+
     def dependencies(self, pkgnames, repoids):
         params = {'repoids' : repoids,
                    'pkgnames' : pkgnames}
