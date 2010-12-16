@@ -61,7 +61,7 @@ class FIFOTaskQueue(TaskQueue):
 
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
-        self.__dispatcher.daemon = True
+        self.__dispatcher.setDaemon(True)
         self.__dispatcher.start()
 
     # protected methods: scheduling
@@ -72,19 +72,20 @@ class FIFOTaskQueue(TaskQueue):
         """
         self.__lock.acquire()
         try:
-            while True:
-                self.__condition.wait(self.__dispatcher_timeout)
-                for task in self._get_tasks():
-                    self.run(task)
-                self._cancel_tasks()
-                self._timeout_tasks()
-                self._cull_tasks()
-        except Exception:
-            _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
-                          ''.join(traceback.format_exception(*sys.exc_info())))
-            raise
-        #finally:
-        self.__lock.release()
+            try:
+                while True:
+                    self.__condition.wait(self.__dispatcher_timeout)
+                    for task in self._get_tasks():
+                        self.run(task)
+                    self._cancel_tasks()
+                    self._timeout_tasks()
+                    self._cull_tasks()
+            except Exception:
+                _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
+                              ''.join(traceback.format_exception(*sys.exc_info())))
+                raise
+        finally:
+            self.__lock.release()
 
     def _get_tasks(self):
         """
