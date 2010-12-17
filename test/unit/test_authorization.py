@@ -34,7 +34,7 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
-from pulp.server.auth import authentication, authorization
+from pulp.server.auth import authorization
 
 
 class TestAuthorization(unittest.TestCase):
@@ -287,6 +287,30 @@ class TestAuthorization(unittest.TestCase):
         authorization.grant_permission_to_role(s, r['name'], [n])
         self.assertTrue(authorization.is_authorized(s, u, o))
         authorization.revoke_permission_from_role(s, r['name'], [n])
+        self.assertFalse(authorization.is_authorized(s, u, o))
+
+    def test_role_permission_remove(self):
+        u = self._create_user()
+        r = self._create_role()
+        s = self._create_resource()
+        o = authorization.READ
+        n = authorization.operation_to_name(o)
+        authorization.add_user_to_role(r['name'], u['login'])
+        authorization.grant_permission_to_role(s, r['name'], [n])
+        self.assertTrue(authorization.is_authorized(s, u, o))
+        authorization.remove_user_from_role(r['name'], u['login'])
+        self.assertFalse(authorization.is_authorized(s, u, o))
+
+    def test_role_permission_delete(self):
+        u = self._create_user()
+        r = self._create_role()
+        s = self._create_resource()
+        o = authorization.READ
+        n = authorization.operation_to_name(o)
+        authorization.add_user_to_role(r['name'], u['login'])
+        authorization.grant_permission_to_role(s, r['name'], [n])
+        self.assertTrue(authorization.is_authorized(s, u, o))
+        authorization.delete_role(r['name'])
         self.assertFalse(authorization.is_authorized(s, u, o))
 
     # test multi-role/permission interaction
