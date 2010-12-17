@@ -18,6 +18,7 @@ import web
 
 from pulp.server import config # unused here, but initializes configuration
 from pulp.server import auditing
+from pulp.server.auth.authorization import assure_builtin_roles
 from pulp.server.db import connection
 # We need to initialize the db connection and auditing prior to any other 
 # imports, since some of the imports will invoke setup methods
@@ -54,4 +55,5 @@ def wsgi_application():
     application = web.subdir_application(urls)
     start_logging()
     check_version()
+    assure_builtin_roles()
     return application.wsgifunc()
