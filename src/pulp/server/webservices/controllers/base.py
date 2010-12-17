@@ -77,8 +77,11 @@ class JSONController(object):
             """
             Closure method for decorator.
             """
-            authen_fail_msg = _('Authorization failed. Check your username and password or your certificate')
-            author_fail_msg = _('Authorization failed. You do not have permission on this resource.')
+            user_pass_fail_msg = _('Invalid username or password')
+            cert_fail_msg = _('Invalid ssl certificate')
+            oauth_fail_msg = _('Invalid OAuth credentials')
+            authen_fail_msg = _('Authentication required.')
+            author_fail_msg = _('Permission denied.')
 
             @functools.wraps(method)
             def _auth_decorator(self, *args, **kwargs):
@@ -88,15 +91,15 @@ class JSONController(object):
                 if username is not None:
                     user = check_username_password(username, password)
                     if user is None:
-                        return self.unauthorized(authen_fail_msg)
+                        return self.unauthorized(user_pass_fail_msg)
                 # second, try user certificate authentication
                 if user is None:
                     cert_pem = http.ssl_client_cert()
                     if cert_pem is not None:
                         user = check_ssl_cert(cert_pem)
                         if user is None:
-                            return self.unauthorized(authen_fail_msg)
-                # third, check oauth
+                            return self.unauthorized(cert_fail_msg)
+                # third, check oauth credentials
                 if user is None:
                     auth = http.http_authorization()
                     username = http.request_info('HTTP_PULP_USER')
@@ -105,7 +108,9 @@ class JSONController(object):
                         url = http.request_url()
                         query = http.request_info('QUERY_STRING')
                         user = check_oauth(username, meth, url, auth, query)
-                # authorization has failed
+                        if user is None:
+                            return self.unauthorized(oauth_fail_msg)
+                # authentication has failed
                 if user is None:
                     return self.unauthorized(authen_fail_msg)
                 # forth, check authorization
