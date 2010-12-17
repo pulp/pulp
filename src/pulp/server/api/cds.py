@@ -148,6 +148,21 @@ class CdsApi(BaseApi):
         else:
             return matching_cds[0]
 
+    def cds_with_repo(self, repo_id):
+        '''
+        Returns a list of all CDS instances that are associated with the given repo.
+
+        @param repo_id: identifies the repo to search for associations; if this does not
+                        represent a valid repo it will be treated as if there were no matching
+                        results
+        @type  repo_id: string
+
+        @return: list of all matching CDS instances if any match; empty list otherwise
+        @rtype:  list of L{CDS} instances
+        '''
+        cursor = self.objectdb.find({'repo_ids' : repo_id})
+        return list(cursor)
+
     def list(self):
         '''
         Lists all CDS instances.
@@ -304,7 +319,7 @@ class CdsApi(BaseApi):
         '''
 
         # Find all CDS instances associated with the given repo
-        cds_list = self.objectdb.find({'repo_ids': {'$exists': True}})
+        cds_list = self.cds_with_repo(repo_id)
 
         # Queue calls to the CDS to unassociate
 
