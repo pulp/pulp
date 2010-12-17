@@ -20,7 +20,6 @@ import random
 import string
 import sys
 import unittest
-from pulp.server.auth.authorization import _role_api
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
@@ -340,7 +339,7 @@ class TestAuthorization(unittest.TestCase):
     # test built in roles
 
     def test_super_users(self):
-        role = _role_api.role(authorization.super_user_role)
+        role = self.role_api.role(authorization.super_user_role)
         self.assertFalse(role is None)
 
     def test_super_users_grant(self):
@@ -348,21 +347,21 @@ class TestAuthorization(unittest.TestCase):
         n = authorization.operation_to_name(authorization.READ)
         self.assertRaises(authorization.PulpAuthorizationError,
                           authorization.grant_permission_to_role,
-                          (s, authorization.super_user_role, [n]))
+                          s, authorization.super_user_role, [n])
 
     def test_super_users_revoke(self):
         s = self._create_resource()
         n = authorization.operation_to_name(authorization.READ)
         self.assertRaises(authorization.PulpAuthorizationError,
                           authorization.revoke_permission_from_role,
-                          (s, authorization.super_user_role, [n]))
+                          s, authorization.super_user_role, [n])
 
     def test_super_users_remove(self):
         u = self._create_user()
         authorization.add_user_to_role(authorization.super_user_role, u['name'])
         self.assertRaises(authorization.PulpAuthorizationError,
                           authorization.remove_user_from_role,
-                          (authorization.super_user_role, u['name']))
+                          authorization.super_user_role, u['name'])
 
     def test_super_user_permissions(self):
         u = self._create_user()
@@ -376,7 +375,7 @@ class TestAuthorization(unittest.TestCase):
         self.assertTrue(authorization.is_authorized(s, u, authorization.EXECUTE))
 
     def test_consumer_users(self):
-        role = _role_api.role(authorization.consumer_users_role)
+        role = self.role_api.role(authorization.consumer_users_role)
         self.assertFalse(role is None)
 
     def test_consumer_users_grant(self):
@@ -384,14 +383,14 @@ class TestAuthorization(unittest.TestCase):
         n = authorization.operation_to_name(authorization.READ)
         self.assertRaises(authorization.PulpAuthorizationError,
                           authorization.grant_permission_to_role,
-                          (s, authorization.consumer_users_role, [n]))
+                          s, authorization.consumer_users_role, [n])
 
     def test_consumer_users_revoke(self):
         s = self._create_resource()
         n = authorization.operation_to_name(authorization.READ)
         self.assertRaises(authorization.PulpAuthorizationError,
                           authorization.revoke_permission_from_role,
-                          (s, authorization.consumer_users_role, [n]))
+                          s, authorization.consumer_users_role, [n])
 
     def test_consumer_user_permissions(self):
         u = self._create_user()
