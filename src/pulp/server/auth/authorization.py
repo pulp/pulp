@@ -365,7 +365,7 @@ def remove_user_from_role(role_name, user_name):
     user = _get_user(user_name)
     if role_name == super_user_role and is_last_super_user(user):
         raise PulpAuthorizationError(_('%s cannot be empty, and %s is the last member') %
-                                     super_user_role, user_name)
+                                     (super_user_role, user_name))
     if role_name not in user['roles']:
         return False
     user['roles'].remove(role_name)
