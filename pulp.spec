@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.116
+Version:        0.0.117
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,17 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Fri Dec 17 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.117-1
+- update consumergroup package install for allowing a schedule time
+  (jmatthews@redhat.com)
+- Adding ability to schedule package installs for a specfied time in future
+  (jmatthews@redhat.com)
+- improving the package filename fetch query to do a batch lookup to be more
+  performant (pkilambi@redhat.com)
+- Fix interpreter hang on exit (python 2.4). (jortel@redhat.com)
+- Moving search into /services/ handler (pkilambi@redhat.com)
+- moving oauth configs to proper section in config file (mmccune@redhat.com)
+
 * Wed Dec 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.116-1
 - Added delete old repo functionality on CDS sync. (jason.dobies@redhat.com)
 - Assemble the path correctly when saving repos. (jason.dobies@redhat.com)
