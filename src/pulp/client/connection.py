@@ -485,6 +485,10 @@ class ConsumerConnection(PulpConnection):
     def package_updates(self, id):
         method = "/consumers/%s/package_updates/" % id
         return self.conn.request_get(method)
+    
+    def errata_package_updates(self, id):
+        method = "/consumers/%s/errata_package_updates/" % id
+        return self.conn.request_get(method)
 
     def installerrata(self, id, errataids, assumeyes=False, types=(), when=None):
         erratainfo = {'consumerid' : id,
@@ -565,7 +569,7 @@ class ConsumerGroupConnection(PulpConnection):
         body = dict(packagenames=packagenames, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
-    def installerrata(self, id, errataids, types=[], assumeyes=False):
+    def installerrata(self, id, errataids, types=[], assumeyes=False, when=None):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types,

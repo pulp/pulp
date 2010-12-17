@@ -165,6 +165,7 @@ class ConsumerDeferredFields(JSONController):
         'certificate',
         'keyvalues',
         'package_updates',
+        'errata_package_updates'
     )
     @RoleCheck(consumer_id=True, admin=True)
     def package_profile(self, id):
@@ -230,6 +231,16 @@ class ConsumerDeferredFields(JSONController):
         @param id: consumer id
         """
         return self.ok(consumer_api.list_package_updates(id)['packages'])
+    
+    @JSONController.error_handler
+    @RoleCheck(consumer_id=True, admin=True)
+    def errata_package_updates(self, id):
+        """
+        Return applicable errata and package updates for a given consumerid.
+        @type id: str
+        @param id: consumer id
+        """
+        return self.ok(consumer_api.list_errata_package(id))
 
     @JSONController.error_handler
     def GET(self, id, field_name):

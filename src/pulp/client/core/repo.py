@@ -149,7 +149,8 @@ class Content(RepoAction):
         files = repo['files']
         if self.opts.updates:
             consumerid = self.opts.consumerid
-            pkg_updates = self.cconn.package_updates(consumerid)
+            errata_pkg_updates = self.cconn.errata_package_updates(consumerid)
+            pkg_updates = errata_pkg_updates['packages']
             pkgs = []
             for p in pkg_updates:
                 #limit updates to repo packages
@@ -157,7 +158,7 @@ class Content(RepoAction):
                     pkgs.append(p['filename'])
             pnames = pkgs
             # limit errata to repo
-            cerrata = self.cconn.errata(consumerid)
+            cerrata = errata_pkg_updates['errata']
             applicable_errata = []
             for e in cerrata:
                 if e in all_errata:
