@@ -209,9 +209,9 @@ class RepoConnection(PulpConnection):
                 "feed"          : feed,
                 "relative_path" : relative_path,
                 "groupid"       : groupid,
-                "timeout"       : timeout}           
+                "timeout"       : timeout}
         return self.conn.request_post(method, params=data)
-    
+
 
     def repositories(self):
         method = "/repositories/"
@@ -258,14 +258,14 @@ class RepoConnection(PulpConnection):
 
     def remove_package(self, repoid, pkgobj=[]):
         rminfo = {'repoid' : repoid,
-                  'package' : pkgobj,}
+                  'package' : pkgobj, }
         method = "/repositories/%s/delete_package/" % repoid
         return self.conn.request_post(method, params=rminfo)
 
     def get_package(self, repoid, pkg_name):
         method = "/repositories/%s/get_package/" % repoid
         return self.conn.request_post(method, params=pkg_name)
-    
+
     def find_package_by_nvrea(self, id, name, version, release, epoch, arch):
         method = "/repositories/%s/get_package_by_nvrea/" % id
         return self.conn.request_post(method, params={'name' : name,
@@ -274,7 +274,7 @@ class RepoConnection(PulpConnection):
                                                       'epoch'   : epoch,
                                                       'arch'    : arch})
     def get_package_by_filename(self, id, filename):
-        method = "/repositories/%s/get_package_by_filename/" % id 
+        method = "/repositories/%s/get_package_by_filename/" % id
         return self.conn.request_post(method, params={'filename' : filename})
 
     def packages(self, repoid):
@@ -288,7 +288,7 @@ class RepoConnection(PulpConnection):
     def packagegroupcategories(self, repoid):
         method = "/repositories/%s/packagegroupcategories/" % repoid
         return self.conn.request_get(method)
-    
+
     def distribution(self, id):
         method = "/repositories/%s/distribution/" % id
         return self.conn.request_get(method)
@@ -376,11 +376,11 @@ class RepoConnection(PulpConnection):
     def listkeys(self, id):
         method = "/repositories/%s/listkeys/" % id
         return self.conn.request_post(method, params=dict(x=1))
-    
+
     def update_publish(self, id, state):
         method = "/repositories/%s/update_publish/" % id
         return self.conn.request_post(method, params={"state":state})
-        
+
 
 class ConsumerConnection(PulpConnection):
     """
@@ -472,7 +472,7 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/installpackagegroups/" % id
         body = dict(packageids=packageids)
         return self.conn.request_post(method, params=body)
-    
+
     def installpackagegroupcategories(self, id, repoid, categoryids):
         method = "/consumers/%s/installpackagegroupcategories/" % id
         body = dict(categoryids=categoryids, repoid=repoid)
@@ -482,7 +482,7 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/listerrata/" % id
         body = dict(types=types)
         return self.conn.request_post(method, params=body)
-    
+
     def package_updates(self, id):
         method = "/consumers/%s/package_updates/" % id
         return self.conn.request_get(method)
@@ -569,7 +569,7 @@ class ConsumerGroupConnection(PulpConnection):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types,
-                      'assumeyes' : assumeyes,}
+                      'assumeyes' : assumeyes, }
         method = "/consumergroups/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -608,7 +608,7 @@ class PackageConnection(PulpConnection):
     def package_by_ivera(self, name, version, release, epoch, arch):
         method = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
         return self.conn.request_get(method)
-    
+
     def package_dependency(self, id, repoids):
         params = {'repoids' : repoids }
         method = "/packages/%s/list_dependency/" % id
@@ -682,18 +682,18 @@ class ErrataConnection(PulpConnection):
             release=None, type=None, status=None, updated=None, issued=None,
             pushcount=None, from_str=None, reboot_suggested=None):
         pass
-    
+
 class DistributionConnection(PulpConnection):
     """
     Connection class to access distribution related calls
     """
     def clean(self):
         pass
-    
+
     def distributions(self):
         method = '/distribution/'
         return self.conn.request_get(method)
-    
+
     def distribution(self, id):
         method = '/distribution/%s/' % str(id)
         return self.conn.request_get(method)
@@ -726,11 +726,11 @@ class CdsConnection(PulpConnection):
     def cds(self, hostname):
         method = '/cds/%s/' % hostname
         return self.conn.request_get(method)
-    
+
     def register(self, hostname, name=None, description=None):
         data = {'hostname'    : hostname,
                 'name'        : name,
-                'description' : description,}
+                'description' : description, }
         method = '/cds/'
         return self.conn.request_put(method, params=data)
 
@@ -778,6 +778,100 @@ class CdsConnection(PulpConnection):
     def sync_list(self, hostname):
         method = '/cds/%s/sync/' % hostname
         return self.conn.request_get(method)
+
+
+class PermissionConnection(PulpConnection):
+
+    def grant_permission_to_user(self, resource, username, operations):
+        method = '/permissions/user/grant/'
+        params = {'username': username,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+    def revoke_permission_from_user(self, resource, username, operations):
+        method = '/permissions/user/revoke/'
+        params = {'username': username,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+    def grant_permission_to_role(self, resource, rolename, operations):
+        method = '/permissions/role/grant/'
+        params = {'rolename': rolename,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+    def revoke_permission_from_role(self, resource, rolename, operations):
+        method = '/permissions/role/revoke/'
+        params = {'rolename': rolename,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+
+class RoleConnection(PulpConnection):
+
+    def list(self):
+        method = '/roles/'
+        return self.conn.request_get(method)
+
+    def info(self, rolename):
+        method = '/roles/%s/' % rolename
+        return self.conn.request_get(method)
+
+    def create(self, rolename):
+        method = '/roles/'
+        params = {'rolename': rolename}
+        try:
+            return self.conn.request_put(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+    def delete(self, rolename):
+        method = '/roles/%s/' % rolename
+        try:
+            return self.conn.request_delete(method)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+    def add_user(self, rolename, username):
+        method = '/roles/%s/add/'
+        params = {'username': username}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
+    def remove_user(self, rolename, username):
+        method = '/roles/%s/remove/'
+        params = {'username': username}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.args[1]
+            return False
+
 
 if __name__ == '__main__':
     rconn = RepoConnection()
