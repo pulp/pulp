@@ -42,7 +42,7 @@ urls = (
     '/packages', packages.application,
     '/permissions', permissions.application,
     '/repositories', repositories.application,
-    'roles', roles.application,
+    '/roles', roles.application,
     '/search', search.application,
     '/users', users.application,
 )
