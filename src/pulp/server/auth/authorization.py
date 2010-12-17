@@ -234,6 +234,7 @@ def grant_permission_to_role(resource, role_name, operation_names):
     @rtype: bool
     @return: True on success
     """
+    check_builtin_roles(role_name)
     role = _get_role(role_name)
     users = _get_users_belonging_to_role(role)
     operations = _get_operations(operation_names)
@@ -262,6 +263,7 @@ def revoke_permission_from_role(resource, role_name, operation_names):
     @rtype: bool
     @return: True on success
     """
+    check_builtin_roles(role_name)
     role = _get_role(role_name)
     if resource not in role['permissions']:
         return False
@@ -311,6 +313,7 @@ def delete_role(role_name):
     @rtype: bool
     @return: True on success
     """
+    check_builtin_roles(role_name)
     role = _get_role(role_name)
     users = _get_users_belonging_to_role(role)
     for resource, operations in role['permissions'].items():
@@ -360,6 +363,9 @@ def remove_user_from_role(role_name, user_name):
     """
     role = _get_role(role_name)
     user = _get_user(user_name)
+    if role_name == super_user_role and is_last_super_user(user):
+        raise PulpAuthorizationError(_('%s cannot be empty, and %s is the last member') %
+                                     super_user_role, user_name)
     if role_name not in user['roles']:
         return False
     user['roles'].remove(role_name)
@@ -387,14 +393,7 @@ def list_users_in_role(role_name):
 # built in roles --------------------------------------------------------------
 
 super_user_role = 'SuperUsers'
-
-def _check_for_super_user_role():
-    """
-    Assure the super user role exists.
-    """
-    role = _role_api.role(super_user_role)
-    if role is None:
-        role = _role_api.create(super_user_role)
+consumer_users_role = 'ConsumerUsers'
 
 
 def is_last_super_user(user):
@@ -417,23 +416,47 @@ def is_last_super_user(user):
     return users[0]['_id'] == user['_id'] # this should be True
 
 
-consumer_users_role = 'ConsumerUsers'
+def check_builtin_roles(role_name):
+    """
+    Check to see if a role name corresponds to a built in role, and raise an
+    exception if it does
+    @type role_name: str
+    @param role_name: name of role to check
+    @raise L{PulpAuthorizationError}: if the role name matches a built in role
+    """
+    if role_name not in (super_user_role, consumer_users_role):
+        return
+    raise PulpAuthorizationError(_('role %s cannot be changed') % role_name)
 
-def _check_for_consumer_user_role():
+
+def _assure_super_user_role():
+    """
+    Assure the super user role exists.
+    """
+    role = _role_api.role(super_user_role)
+    if role is None:
+        role = _role_api.create(super_user_role)
+        role['permissions']['/'] = [CREATE, READ, UPDATE, DELETE, EXECUTE]
+        _role_api.update(role)
+
+
+def _assure_consumer_user_role():
     """
     Assure the consumer role exists.
     """
     role = _role_api.role(consumer_users_role)
     if role is None:
         role = _role_api.create(consumer_users_role)
+        role['permissions']['/consumers/'] = [CREATE, READ]
+        _role_api.update(role)
 
 
-def check_builtin_roles():
+def assure_builtin_roles():
     """
     Assure the roles required for pulp's operation are in the database.
     """
-    _check_for_super_user_role()
-    _check_for_consumer_user_role()
+    _assure_super_user_role()
+    _assure_consumer_user_role()
 
 # authorization api -----------------------------------------------------------
 
