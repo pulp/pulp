@@ -116,7 +116,9 @@ class JSONController(object):
                 # forth, check authorization
                 if super_user_only and not is_superuser(user):
                     return self.unauthorized(author_fail_msg)
-                elif not is_authorized(http.resource_path(), user, operation):
+                # if the operation is None, don't check authorization
+                elif operation is not None and \
+                     not is_authorized(http.resource_path(), user, operation):
                     return self.unauthorized(author_fail_msg)
                 # everything ok, manage the principal and call the method
                 set_principal(user)
