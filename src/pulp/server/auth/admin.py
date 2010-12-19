@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+
+# Copyright © 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+from pulp.server import config
+from pulp.server.api.user import UserApi
+from pulp.server.auth import authorization
+
+
+def ensure_admin():
+    """
+    This function ensures that there is at least one super user for the system.
+    If no super users are found, the default admin user (from the pulp config)
+    is looked up or created and added to the super users role.
+    """
+    super_users = authorization._get_users_belonging_to_role(
+        authorization._get_role(authorization.super_user_role))
+    if super_users:
+        return
+    default_login = config.config.get('server', 'default_login')
+    user_api = UserApi()
+    admin = user_api.user(default_login)
+    if admin is None:
+        default_password = config.config.get('server', 'default_password')
+        admin = user_api.create(default_login, default_password)
+    authorization.add_user_to_role(authorization.super_user_role, default_login)

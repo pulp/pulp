@@ -30,18 +30,11 @@ class UserApi(BaseApi):
     def __init__(self):
         BaseApi.__init__(self)
         self.default_login = config.config.get('server', 'default_login')
-        self._ensure_default_admin()
 
     def _getcollection(self):
         return get_object_db('users',
                              self._unique_indexes,
                              self._indexes)
-
-    def _ensure_default_admin(self):
-        admin = self.user(self.default_login)
-        if (admin is None):
-            default_password = config.config.get('server', 'default_password')
-            self.create(self.default_login, password=default_password)
 
     @audit(params=['login'])
     def create(self, login, password=None, name=None, id=None):
