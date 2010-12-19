@@ -469,7 +469,7 @@ def is_superuser(user):
     @rtype: bool
     @return: True if the user is a super user, False otherwise
     """
-    return super_user_role in user.roles
+    return super_user_role in user['roles']
 
 
 def is_authorized(resource, user, operation):
