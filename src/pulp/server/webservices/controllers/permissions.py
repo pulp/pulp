@@ -18,11 +18,31 @@ from gettext import gettext as _
 import web
 
 from pulp.server.auth import authorization
+from pulp.server.db.model import Permission
 from pulp.server.webservices.controllers.base import JSONController
 
 # permissions controller ------------------------------------------------------
 
 class Permissions(JSONController):
+
+    def POST(self):
+        try:
+            resource = self.params()['resource']
+        except KeyError:
+            msg = _('expected parameter: resource')
+            return self.bad_request(msg)
+        else:
+            perms = authorization.show_permissions(resource)
+            if perms is None:
+                perms = Permission(resource)
+            else:
+                users = perms['users']
+                for user, ops in users.items():
+                    users[user] = [authorization.operation_to_name(o) for o in ops]
+            return self.ok(perms)
+
+
+class PermissionActions(JSONController):
 
     user_target = 'user'
     role_target = 'role'
@@ -95,7 +115,8 @@ class Permissions(JSONController):
 # web.py application ----------------------------------------------------------
 
 urls = (
-    '/(user|role)/(grant|revoke)/$', Permissions,
+    '/show/', Permissions,
+    '/(user|role)/(grant|revoke)/$', PermissionActions,
 )
 
 application = web.application(urls, globals())

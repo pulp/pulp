@@ -126,6 +126,7 @@ def setup_admin(admin):
     admin.add_command('distribution', distro_cmd)
 
     perm_cmd = permission.Permission()
+    perm_cmd.add_action('show', permission.Show())
     perm_cmd.add_action('grant', permission.Grant())
     perm_cmd.add_action('revoke', permission.Revoke())
     admin.add_command('permission', perm_cmd)

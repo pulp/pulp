@@ -782,6 +782,15 @@ class CdsConnection(PulpConnection):
 
 class PermissionConnection(PulpConnection):
 
+    def show_permissions(self, resource):
+        method = '/permissions/show/'
+        params = {'resource': resource}
+        try:
+            return self.conn.request_post(method, params)
+        except RestlibException, e:
+            print e.msg
+            return None
+
     def grant_permission_to_user(self, resource, username, operations):
         method = '/permissions/user/grant/'
         params = {'username': username,

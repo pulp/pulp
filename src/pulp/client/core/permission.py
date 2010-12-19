@@ -13,10 +13,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import os
 from gettext import gettext as _
 
 from pulp.client.connection import PermissionConnection
 from pulp.client.core.base import Action, Command
+from pulp.client.core.utils import print_header, system_exit
 
 # base permission action class ------------------------------------------------
 
@@ -37,6 +39,24 @@ class PermissionAction(Action):
                                help=_('operations for resource'))
 
 # permission actions ----------------------------------------------------------
+
+class Show(PermissionAction):
+
+    description = _('show permissions for a resource')
+
+    def setup_parser(self):
+        self.parser.add_option('--resource', dest='resource',
+                               help=_('pulp resource'))
+
+    def run(self):
+        resource = self.get_required_option('resource')
+        perms = self.perm_conn.show_permissions(resource)
+        if perms is None:
+            system_exit(os.EX_SOFTWARE)
+        print_header(_('Permissions for %') % resource)
+        for user, operations in perms['users'].items():
+            print '  %s                \t%-25s' % (user, ', '.join(operations))
+
 
 class Grant(PermissionAction):
 
@@ -78,7 +98,7 @@ class Revoke(PermissionAction):
                                                                  operations)
             if not success:
                 continue
-            print _('Operations %s granted to user [%s] on resource [%s]') % \
+            print _('Operations %s revoked from user [%s] on resource [%s]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
             success = self.perm_conn.revoke_permission_from_role(resource,
@@ -86,7 +106,7 @@ class Revoke(PermissionAction):
                                                                  operations)
             if not success:
                 continue
-            print _('Operations %s granted to role [%s] on resource [%s]') % \
+            print _('Operations %s revoked from role [%s] on resource [%s]') % \
                     (str(operations), role, resource)
 
 # permission command ----------------------------------------------------------
