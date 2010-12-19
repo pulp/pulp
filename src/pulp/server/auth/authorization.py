@@ -19,6 +19,7 @@ Utility functions to manage permissions and roles in pulp.
 
 from gettext import gettext as _
 
+from pulp.server import config
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
@@ -429,7 +430,7 @@ def check_builtin_roles(role_name):
     raise PulpAuthorizationError(_('role %s cannot be changed') % role_name)
 
 
-def _assure_super_user_role():
+def _ensure_super_user_role():
     """
     Assure the super user role exists.
     """
@@ -440,7 +441,7 @@ def _assure_super_user_role():
         _role_api.update(role)
 
 
-def _assure_consumer_user_role():
+def _ensure_consumer_user_role():
     """
     Assure the consumer role exists.
     """
@@ -451,12 +452,12 @@ def _assure_consumer_user_role():
         _role_api.update(role)
 
 
-def assure_builtin_roles():
+def ensure_builtin_roles():
     """
     Assure the roles required for pulp's operation are in the database.
     """
-    _assure_super_user_role()
-    _assure_consumer_user_role()
+    _ensure_super_user_role()
+    _ensure_consumer_user_role()
 
 # authorization api -----------------------------------------------------------
 
