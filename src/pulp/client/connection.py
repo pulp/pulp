@@ -790,7 +790,7 @@ class PermissionConnection(PulpConnection):
         try:
             return self.conn.request_post(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
     def revoke_permission_from_user(self, resource, username, operations):
@@ -801,7 +801,7 @@ class PermissionConnection(PulpConnection):
         try:
             return self.conn.request_post(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
     def grant_permission_to_role(self, resource, rolename, operations):
@@ -812,7 +812,7 @@ class PermissionConnection(PulpConnection):
         try:
             return self.conn.request_post(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
     def revoke_permission_from_role(self, resource, rolename, operations):
@@ -823,7 +823,7 @@ class PermissionConnection(PulpConnection):
         try:
             return self.conn.request_post(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
 
@@ -843,7 +843,7 @@ class RoleConnection(PulpConnection):
         try:
             return self.conn.request_put(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
     def delete(self, rolename):
@@ -851,25 +851,25 @@ class RoleConnection(PulpConnection):
         try:
             return self.conn.request_delete(method)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
     def add_user(self, rolename, username):
-        method = '/roles/%s/add/'
+        method = '/roles/%s/add/' % rolename
         params = {'username': username}
         try:
             return self.conn.request_post(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
     def remove_user(self, rolename, username):
-        method = '/roles/%s/remove/'
+        method = '/roles/%s/remove/' % rolename
         params = {'username': username}
         try:
             return self.conn.request_post(method, params)
         except RestlibException, e:
-            print e.args[1]
+            print e.msg
             return False
 
 
