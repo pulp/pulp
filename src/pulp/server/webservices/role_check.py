@@ -22,12 +22,11 @@ except ImportError:
     import simplejson as json
 
 import pymongo.json_util
-import oauth2 as oauth 
+import oauth2 as oauth
 import web
 
 from ConfigParser import NoOptionError
 
-import pulp.server.auth.auth as principal
 from pulp.server import config
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
@@ -81,7 +80,7 @@ class RoleCheck(object):
             for k in web.ctx.environ.keys():
                 val = web.ctx.environ[k]
                 LOG.error("env var: {%s:\'%s\'}" % (k, val))
-                
+
             # Determine which roles will be checked by this instance of the decorator
             roles = {'consumer': None, 'admin': None, 'consumer_id': None}
             for key in self.dec_kw.keys():
@@ -103,12 +102,12 @@ class RoleCheck(object):
             # Consumer role checking
             if not user and (roles['consumer'] or roles['consumer_id']):
                 user = self.check_consumer(roles['consumer_id'], *fargs)
-                
+
             # Last check for OAuth authentication
             if not user:
                 user = self.check_oauth(*fargs)
                 LOG.info("User from oauth check: %s" % user)
-                
+
             # Check the Roles assigned to the User. Demo code
             # repo = REPO_API.repository(fargs[1])
             # LOG.error("REPO: %s" % repo)
@@ -117,7 +116,7 @@ class RoleCheck(object):
             #                               RoleActionType.READ)):
             #    LOG.error("Failed check!")
             #    user = None
-            
+
             # Process the results of the auth checks
             if not user:
                 http.status_unauthorized()
@@ -225,22 +224,22 @@ class RoleCheck(object):
         auth_string = environment.get('HTTP_AUTHORIZATION', None)
         if not auth_string:
             return None
-        
+
         scheme = environment.get('wsgi.url_scheme', None)
         host = environment.get('HTTP_HOST', None)
         uri = environment.get('REQUEST_URI', None)
-        request_url = "%s://%s%s" % (scheme,host,uri)
+        request_url = "%s://%s%s" % (scheme, host, uri)
         query_string = environment.get('QUERY_STRING', None)
         request_method = environment.get('REQUEST_METHOD', None)
-        pulp_user =  environment.get('HTTP_PULP_USER', None)
+        pulp_user = environment.get('HTTP_PULP_USER', None)
         LOG.info("Pulp User      : %s" % pulp_user)
         headers = {"Authorization": auth_string}
-        
+
         LOG.info("Request_method : %s" % request_method)
         LOG.info("request_url    : %s" % request_url)
         LOG.info("headers        : %s" % headers)
         LOG.info("query_string   : %s" % query_string)
-        oauth_request = oauth.Request.from_request(request_method, request_url, 
+        oauth_request = oauth.Request.from_request(request_method, request_url,
                                        headers=headers, query_string=query_string)
         if oauth_request:
             try:
@@ -250,7 +249,7 @@ class RoleCheck(object):
                 LOG.error(noe)
                 LOG.error("Attempting OAuth authentication and you do not have oauth_key and oauth_secret in pulp.conf")
                 return None
-                
+
             consumer = oauth.Consumer(key=key, secret=secret)
             # token = oauth.Token(key, secret)
             # print "Token: %s" % token
@@ -263,7 +262,7 @@ class RoleCheck(object):
                 LOG.error("error verifying OAuth signature : %s" % e)
                 return None
             user = self._validate_user_exists(pulp_user)
-            
+
         LOG.info("user from OAuth request: %s" % user)
         return user
 
@@ -357,7 +356,7 @@ class RoleCheck(object):
                 return None
 
         return user
-    
+
     def _validate_user_exists(self, username):
         user = self.user_api.user(username)
         if user is None:
@@ -365,7 +364,7 @@ class RoleCheck(object):
                       username)
             return None
         return user
-            
+
     def check_consumer(self, check_id=False, *fargs):
         '''
         Determines if the certificate in the request represents a valid consumer certificate.
