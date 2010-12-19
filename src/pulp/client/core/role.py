@@ -53,10 +53,11 @@ class Info(RoleAction):
             system_exit(os.EX_DATAERR)
         print_header(_('Role Information for %s') % rolename)
         print 'Name                \t%-25s' % info['name']
-        print 'Users               \t%-25s' % str(info['users'])
+        print 'Users               \t%-25s' % ', '.join(u for u in info['users'])
         print 'Permissions:'
-        for resource, operations in info['permissions']:
-            print '  %s                \t%-25s' % (resource, str(operations))
+        for resource, operations in info['permissions'].items():
+            op_list = ', '.join(operations)
+            print '  %s                \t%-25s' % (resource, op_list)
 
 
 class Create(RoleAction):
