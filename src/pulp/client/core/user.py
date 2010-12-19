@@ -31,7 +31,7 @@ class UserAction(Action):
 
     def setup_connections(self):
         self.userconn = UserConnection()
-        
+
     def get_user(self, username):
         user = self.userconn.user(login=username)
         if not user:
@@ -52,7 +52,9 @@ class List(UserAction):
             system_exit(os.EX_OK, _("No users available to list"))
         print_header(_('Available Users'))
         for user in users:
-            print constants.AVAILABLE_USERS_LIST % (user["login"], user["name"])
+            print constants.AVAILABLE_USERS_LIST % (user["login"],
+                                                    user["name"],
+                                                    ', '.join(r for r in user['roles']))
 
 
 class Create(UserAction):
@@ -89,7 +91,7 @@ class Update(UserAction):
     def run(self):
         username = self.get_required_option('username')
         name = self.opts.name
-        
+
         user = self.get_user(username)
         user['name'] = name
         if self.opts.password:

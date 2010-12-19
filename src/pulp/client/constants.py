@@ -74,6 +74,7 @@ Groups              \t%-25s
 AVAILABLE_USERS_LIST = """
 Login :               \t%-25s    
 Name  :               \t%-25s
+Roles :               \t%-25s
 """
 
 ERRATA_INFO = """
