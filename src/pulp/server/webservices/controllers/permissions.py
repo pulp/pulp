@@ -95,7 +95,7 @@ class Permissions(JSONController):
 # web.py application ----------------------------------------------------------
 
 urls = (
-    '/(user|role)/(grant|revoke)$', Permissions,
+    '/(user|role)/(grant|revoke)/$', Permissions,
 )
 
 application = web.application(urls, globals())
