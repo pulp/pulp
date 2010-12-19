@@ -60,9 +60,11 @@ class Role(JSONController):
         role = _role_api.role(role_name)
         if role is None:
             return self.not_found(_('no such role: %s') % role_name)
-        # XXX should this be in a deferred field?
         role['users'] = [u['login'] for u in
                          authorization._get_users_belonging_to_role(role)]
+        for resource, operations in role['permissions'].items():
+            role['permissions'][resource] = [authorization.operation_to_name(o)
+                                             for o in operations]
         return self.ok(role)
 
     @JSONController.error_handler
