@@ -46,8 +46,12 @@ repository_deferred_fields = ['packages', 'packagegroups', 'packagegroupcategori
 
 class RestlibException(Exception):
     def __init__(self, code, msg=""):
+        super(RestlibException, self).__init__(code, msg)
         self.code = code
-        self.msg = msg
+        try:
+            self.msg = json.loads(msg)
+        except json.JSONDecodeError:
+            self.msg = msg
 
     def __str__(self):
         return '%s: %s' % (str(self.code), self.msg)
