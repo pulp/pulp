@@ -68,7 +68,11 @@ class JSONController(object):
         Static controller method wrapper that authenticates users based on
         various credentials and then checks their authorization before allowing
         the controller to be accessed.
-        @type operation: int or Nont
+        A None for the operation means not to check authorization, only check
+        authentication.
+        The super_user_only flag set to True means that only members of the
+        built in SuperUsers role are authorized.
+        @type operation: int or None
         @param operation: the operation a user needs permission for
         @type super_user_only: bool
         @param super_user_only: only authorize a user if they are a super user
@@ -78,10 +82,10 @@ class JSONController(object):
             Closure method for decorator.
             """
             user_pass_fail_msg = _('Invalid username or password')
-            cert_fail_msg = _('Invalid ssl certificate')
-            oauth_fail_msg = _('Invalid OAuth credentials')
-            authen_fail_msg = _('Authentication required.')
-            author_fail_msg = _('Permission denied.')
+            cert_fail_msg = _('Invalid SSL Certificate')
+            oauth_fail_msg = _('Invalid OAuth Credentials')
+            authen_fail_msg = _('Authentication Required')
+            author_fail_msg = _('Permission Denied')
 
             @functools.wraps(method)
             def _auth_decorator(self, *args, **kwargs):
