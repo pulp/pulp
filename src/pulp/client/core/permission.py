@@ -53,9 +53,9 @@ class Show(PermissionAction):
         perms = self.perm_conn.show_permissions(resource)
         if perms is None:
             system_exit(os.EX_SOFTWARE)
-        print_header(_('Permissions for %') % resource)
+        print_header(_('Permissions for %s') % resource)
         for user, operations in perms['users'].items():
-            print '  %s                \t%-25s' % (user, ', '.join(operations))
+            print '%s                  \t%-25s' % (user, ', '.join(operations))
 
 
 class Grant(PermissionAction):
