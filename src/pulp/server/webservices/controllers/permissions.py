@@ -31,15 +31,14 @@ class Permissions(JSONController):
         except KeyError:
             msg = _('expected parameter: resource')
             return self.bad_request(msg)
+        perms = authorization.show_permissions(resource)
+        if perms is None:
+            perms = Permission(resource)
         else:
-            perms = authorization.show_permissions(resource)
-            if perms is None:
-                perms = Permission(resource)
-            else:
-                users = perms['users']
-                for user, ops in users.items():
-                    users[user] = [authorization.operation_to_name(o) for o in ops]
-            return self.ok(perms)
+            users = perms['users']
+            for user, ops in users.items():
+                users[user] = [authorization.operation_to_name(o) for o in ops]
+        return self.ok(perms)
 
 
 class PermissionActions(JSONController):
@@ -58,9 +57,8 @@ class PermissionActions(JSONController):
         except KeyError:
             msg = _('expected parameters: username, resource, operations')
             return self.bad_request(msg)
-        else:
-            val = authorization.grant_permission_to_user(resource, user, ops)
-            return self.ok(val)
+        val = authorization.grant_permission_to_user(resource, user, ops)
+        return self.ok(val)
 
     def _revoke_from_user(self, data):
         try:
@@ -70,9 +68,8 @@ class PermissionActions(JSONController):
         except KeyError:
             msg = _('expected parameters: username, resource, operations')
             return self.bad_request(msg)
-        else:
-            val = authorization.revoke_permission_from_user(resource, user, ops)
-            return self.ok(val)
+        val = authorization.revoke_permission_from_user(resource, user, ops)
+        return self.ok(val)
 
     def _grant_to_role(self, data):
         try:
@@ -82,9 +79,8 @@ class PermissionActions(JSONController):
         except KeyError:
             msg = _('expected parameters: rolename, resource, operations')
             return self.bad_request(msg)
-        else:
-            val = authorization.grant_permission_to_role(resource, role, ops)
-            return self.ok(val)
+        val = authorization.grant_permission_to_role(resource, role, ops)
+        return self.ok(val)
 
     def _revoke_from_role(self, data):
         try:
@@ -94,9 +90,8 @@ class PermissionActions(JSONController):
         except KeyError:
             msg = _('expected parameters: rolename, resource, operations')
             return self.bad_request(msg)
-        else:
-            val = authorization.revoke_permission_from_role(resource, role, ops)
-            return self.ok(val)
+        val = authorization.revoke_permission_from_role(resource, role, ops)
+        return self.ok(val)
 
     @JSONController.error_handler
     @JSONController.auth_required(super_user_only=True)
@@ -111,6 +106,8 @@ class PermissionActions(JSONController):
         except KeyError:
             msg = _('no permissions handler for target: %s; action: %s')
             return self.internal_server_error(msg % (target, action))
+        except authorization.PulpAuthorizationError, e:
+            return self.bad_request(e.args[0])
 
 # web.py application ----------------------------------------------------------
 
