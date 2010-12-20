@@ -67,8 +67,12 @@ class Register(Action):
         name = self.opts.name
         description = self.opts.description
 
-        self.cds_conn.register(hostname, name, description)
-        print(_('Successfully registered CDS [%s]' % hostname))
+        try:
+            self.cds_conn.register(hostname, name, description)
+            print(_('Successfully registered CDS [%s]' % hostname))
+        except:
+            print(_('Error attempting to register CDS [%s]' % hostname))
+            print(_('Check that the CDS packages have been installed on the CDS and have been started'))
 
 class Unregister(Action):
 
