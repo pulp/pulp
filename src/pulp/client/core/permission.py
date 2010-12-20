@@ -55,7 +55,7 @@ class Show(PermissionAction):
             system_exit(os.EX_SOFTWARE)
         print_header(_('Permissions for %s') % resource)
         for user, operations in perms['users'].items():
-            print '%s                  \t%-25s' % (user, ', '.join(operations))
+            print '  %s                \t%-25s' % (user, ', '.join(operations))
 
 
 class Grant(PermissionAction):
@@ -72,7 +72,7 @@ class Grant(PermissionAction):
                                                               operations)
             if not success:
                 continue
-            print _('Operations %s granted to user [%s] on resource [%s]') % \
+            print _('Operations %s granted to user [ %s ] on resource [ %s ]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
             success = self.perm_conn.grant_permission_to_role(resource,
@@ -80,7 +80,7 @@ class Grant(PermissionAction):
                                                               operations)
             if not success:
                 continue
-            print _('Operations %s granted to role [%s] on resource [%s]') % \
+            print _('Operations %s granted to role [ %s ] on resource [ %s ]') % \
                     (str(operations), role, resource)
 
 
@@ -93,12 +93,12 @@ class Revoke(PermissionAction):
         operations = self.get_required_option('operations', 'operation')
         operations = [o.upper() for o in operations]
         for user in self.opts.users:
-            success = self.perm_conn.revoke_permission_form_user(resource,
+            success = self.perm_conn.revoke_permission_from_user(resource,
                                                                  user,
                                                                  operations)
             if not success:
                 continue
-            print _('Operations %s revoked from user [%s] on resource [%s]') % \
+            print _('Operations %s revoked from user [ %s ] on resource [ %s ]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
             success = self.perm_conn.revoke_permission_from_role(resource,
@@ -106,7 +106,7 @@ class Revoke(PermissionAction):
                                                                  operations)
             if not success:
                 continue
-            print _('Operations %s revoked from role [%s] on resource [%s]') % \
+            print _('Operations %s revoked from role [ %s ] on resource [ %s ]') % \
                     (str(operations), role, resource)
 
 # permission command ----------------------------------------------------------

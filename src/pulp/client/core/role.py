@@ -36,7 +36,7 @@ class List(RoleAction):
     def run(self):
         print_header(_('Available Roles'))
         for role in self.role_conn.list():
-            print '\t%s' % role
+            print '  %s' % role
 
 
 class Info(RoleAction):
@@ -70,7 +70,7 @@ class Create(RoleAction):
     def run(self):
         rolename = self.get_required_option('role')
         if self.role_conn.create(rolename):
-            print _('Role [%s] created') % rolename
+            print _('Role [ %s ] created') % rolename
 
 
 class Delete(RoleAction):
@@ -83,7 +83,7 @@ class Delete(RoleAction):
     def run(self):
         rolename = self.get_required_option('role')
         if self.role_conn.delete(rolename):
-            print _('Role [%s] deleted') % rolename
+            print _('Role [ %s ] deleted') % rolename
 
 
 class Add(RoleAction):
@@ -98,7 +98,7 @@ class Add(RoleAction):
         rolename = self.get_required_option('role')
         username = self.get_required_option('user')
         if self.role_conn.add_user(rolename, username):
-            print _('[%s] added to role [%s]') % (username, rolename)
+            print _('[ %s ] added to role [ %s ]') % (username, rolename)
 
 
 class Remove(RoleAction):
@@ -113,7 +113,7 @@ class Remove(RoleAction):
         rolename = self.get_required_option('role')
         username = self.get_required_option('user')
         if self.role_conn.remove_user(rolename, username):
-            print _('[%s] removed from role [%s]') % (username, rolename)
+            print _('[ %s ] removed from role [ %s ]') % (username, rolename)
 
 # role command ----------------------------------------------------------------
 
