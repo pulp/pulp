@@ -20,6 +20,7 @@ class PulpException(Exception):
     Base exception class for pulp with C-like printf syntax for the message.
     """
     def __init__(self, value, *args):
+        super(PulpException, self).__init__(value, *args)
         self.value = value % args
 
     def __str__(self):
