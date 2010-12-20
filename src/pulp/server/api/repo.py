@@ -33,6 +33,7 @@ from pulp.server import upload
 from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
+from pulp.server.api.cds import CdsApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
@@ -60,6 +61,7 @@ class RepoApi(BaseApi):
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.distroapi = DistributionApi()
+        self.cdsapi = CdsApi()
         self.localStoragePath = config.config.get('paths', 'local_storage')
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
@@ -412,6 +414,17 @@ class RepoApi(BaseApi):
     def delete(self, id):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
+
+        # Ensure the repo is not currently associated with a CDS. If it is, the user
+        # will have to explicitly remove that association first. This is to prevent the
+        # case where a user needs the repo to be immediately removed from being served,
+        # but may forget it's currently on a CDS.
+        associated_cds_instances = self.cdsapi.cds_with_repo(id)
+        if len(associated_cds_instances) != 0:
+            hostnames = [c['hostname'] for c in associated_cds_instances]
+            log.error('Attempted to delete repo [%s] but it is associated with CDS instances [%s]' % (id, ', '.join(hostnames)))
+            raise PulpException('Repo [%s] cannot be deleted until it is unassociated from the CDS instances [%s]' % (id, ', '.join(hostnames)))
+
         #update feed of clones of this repo to None unless they point to origin feed
         for clone_id in repo['clone_ids']:
             cloned_repo = self._get_existing_repo(clone_id)
@@ -1307,7 +1320,6 @@ class RepoApi(BaseApi):
             distributions.append(self.distroapi.distribution(distro))
         return distributions
 
-
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':
@@ -1327,3 +1339,4 @@ if __name__ == '__main__':
         log.info('Running scheduled sync for repo [%s]' % options.repo_id)
         repo_api = RepoApi()
         repo_api._sync(options.repo_id)
+

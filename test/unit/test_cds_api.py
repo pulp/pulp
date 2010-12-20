@@ -101,9 +101,9 @@ class MockCdsDispatcher(object):
 class TestCdsApi(unittest.TestCase):
 
     def clean(self):
-        self.repo_api.clean()
         self.cds_history_api.clean()
         self.cds_api.clean()
+        self.repo_api.clean()
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -658,8 +658,17 @@ class TestCdsApi(unittest.TestCase):
 
     def test_delete_repo_with_associated(self):
         '''
-        Tests the RepoApi call to delete a repo that is currently associated with at least
-        one CDS. The delete should not be allowed and the user informed to explicitly
+        Tests the RepoApi call to delete a repo that is currently associated with at least one CDS.
+        The delete should not be allowed and the user informed to explicitly
         unassociate the repo from all CDS instances first.
         '''
-        pass
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        self.cds_api.register('cds1.example.com')
+
+        self.cds_api.associate_repo('cds1.example.com', repo['id'])
+
+        # Test
+        self.assertRaises(PulpException, self.repo_api.delete, repo['id'])
+        
