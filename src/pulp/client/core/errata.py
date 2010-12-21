@@ -131,6 +131,24 @@ class Install(ErrataAction):
         assumeyes = False
         if self.opts.assumeyes:
             assumeyes =  True
+        else:
+            reboot_sugg = []
+            for eid in errataids:
+                eobj = self.econn.erratum(eid)
+                if eobj:
+                    reboot_sugg.append(eobj['reboot_suggested'])
+            if True in reboot_sugg:
+                ask_reboot = ''
+                while ask_reboot.lower() not in ['y', 'n', 'q']:
+                    ask_reboot = raw_input(_("\nOne or more errata provided requires a system reboot. Would you like to perform a reboot if the errata is applicable and successfully installed(Y/N/Q):"))
+                    if ask_reboot.strip().lower() == 'y':
+                        assumeyes = True
+                    elif ask_reboot.strip().lower() == 'n':
+                        assumeyes = False
+                    elif ask_reboot.strip().lower() == 'q':
+                        system_exit(os.EX_OK, _("Errata install aborted upon user request."))
+                    else:
+                        continue
 
         if self.opts.consumerid:
             task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
