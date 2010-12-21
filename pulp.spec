@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.117
+Version:        0.0.118
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,15 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Tue Dec 21 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.118-1
+- Better formatting for registration errors. (jason.dobies@redhat.com)
+- Added check when deleting a repo to ensure it's not deployed to any CDS
+  instances. (jason.dobies@redhat.com)
+- Added query for all CDS instances associated with a given repo.
+  (jason.dobies@redhat.com)
+- Adding a call to pull in both errata and package info in one call
+  (pkilambi@redhat.com)
+
 * Fri Dec 17 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.117-1
 - update consumergroup package install for allowing a schedule time
   (jmatthews@redhat.com)
