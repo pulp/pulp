@@ -100,7 +100,7 @@ class Info(ErrataAction):
                                        errata['issued'], errata['updated'],
                                        errata['version'], errata['release'],
                                        errata['status'], ",\n\t\t\t".join(effected_pkgs),
-                                       ref) #errata['references'])
+                                       errata['reboot_suggested'], ref)
 
 
 class Install(ErrataAction):

@@ -87,6 +87,7 @@ Version               \t%-25s
 Release               \t%-25s
 Status                \t%-25s
 Packages Effected     \t%-25s
+Reboot Suggested      \t%-25s
 References            \t%-25s
 """
 
