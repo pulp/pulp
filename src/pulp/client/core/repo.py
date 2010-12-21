@@ -679,7 +679,7 @@ class RemovePackages(RepoAction):
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
-                help=_("Package filename to remove to this repository"))
+                help=_("Package filename to remove from this repository"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -727,7 +727,7 @@ class RemoveErrata(RepoAction):
     def setup_parser(self):
         super(RemoveErrata, self).setup_parser()
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
-                help=_("Errata Id to delete to this repository"))
+                help=_("Errata Id to delete from this repository"))
 
     def run(self):
         id = self.get_required_option('id')
