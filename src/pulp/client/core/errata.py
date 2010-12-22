@@ -112,6 +112,8 @@ class Install(ErrataAction):
     description = _('install errata on a consumer')
 
     def setup_parser(self):
+        self.parser.add_option("-e", "--erratum", action="append", dest="enames",
+                               help=_("erratum to be installed; to specify multiple erratum id use multiple -e"))
         id_group = OptionGroup(self.parser, _('Consumer or Consumer Group id (one is required)'))
         id_group.add_option("--consumerid", dest="consumerid",
                             help=_("consumer id"))
@@ -122,7 +124,7 @@ class Install(ErrataAction):
                             help=_("Assume yes; assume that install performs all the suggested actions such as reboot on successful install."))
 
     def run(self):
-        errataids = self.args
+        errataids = self.opts.enames
 
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
@@ -130,7 +132,7 @@ class Install(ErrataAction):
             self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
 
         if not errataids:
-            system_exit(os.EX_USAGE, _("Specify an errata id to install"))
+            system_exit(os.EX_USAGE, _("Specify an erratum id to perform install"))
 
         assumeyes = False
         if self.opts.assumeyes:
@@ -144,7 +146,7 @@ class Install(ErrataAction):
             if True in reboot_sugg:
                 ask_reboot = ''
                 while ask_reboot.lower() not in ['y', 'n', 'q']:
-                    ask_reboot = raw_input(_("\nOne or more errata provided requires a system reboot. Would you like to perform a reboot if the errata is applicable and successfully installed(Y/N/Q):"))
+                    ask_reboot = raw_input(_("\nOne or more erratum provided requires a system reboot. Would you like to perform a reboot if the errata is applicable and successfully installed(Y/N/Q):"))
                     if ask_reboot.strip().lower() == 'y':
                         assumeyes = True
                     elif ask_reboot.strip().lower() == 'n':
@@ -153,12 +155,13 @@ class Install(ErrataAction):
                         system_exit(os.EX_OK, _("Errata install aborted upon user request."))
                     else:
                         continue
-
-        if self.opts.consumerid:
-            task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
-        elif self.opts.consumergroupid:
-            task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
-
+        try:
+            if self.opts.consumerid:
+                task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
+            elif self.opts.consumergroupid:
+                task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
+        except:
+            system_exit(os.EX_DATAERR, _("Unable to schedule an errata install task."))
         if not task:
             system_exit(os.EX_DATAERR, 
                 _("The requested errataids %s are not applicable for your system" % errataids))

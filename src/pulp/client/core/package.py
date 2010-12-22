@@ -91,7 +91,7 @@ class Install(PackageAction):
                         _("Consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            system_exit(os.EX_DATAERR, _("Nothing to upload."))
+            system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
         when = self.parse_scheduled_time_option()
         if consumergroupid:
             task = self.cgconn.installpackages(consumergroupid, pnames, when=when)
