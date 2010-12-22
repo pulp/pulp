@@ -198,7 +198,7 @@ class Create(RepoAction):
         self.parser.add_option("--arch", dest="arch",
                                help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
-                               help=_("url feed to populate the repository"))
+                               help=_("url feed to populate the repository; feed format is type:url, where supported types include yum,rhn or local "))
         self.parser.add_option("--cacert", dest="cacert",
                                help=_("path location to ca certificate"))
         self.parser.add_option("--cert", dest="cert",
