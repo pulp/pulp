@@ -1287,6 +1287,7 @@ class RepoApi(BaseApi):
         if distroid in repo['distributionid']:
             del repo['distributionid'][repo['distributionid'].index(distroid)]
             self.objectdb.save(repo, safe=True)
+            self.distroapi.delete(distroid)
             self._delete_ks_link(repo)
             log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
         else:
