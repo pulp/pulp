@@ -674,7 +674,7 @@ class AddPackages(RepoAction):
         print _("Successfully added packages %s to repo [%s]." %(self.opts.pkgname, id))
 
 class RemovePackages(RepoAction):
-    description = _('Remove specific package(s) from the source repository.')
+    description = _('Remove package(s) from the repository.')
 
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
@@ -722,7 +722,7 @@ class AddErrata(RepoAction):
         print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
 
 class RemoveErrata(RepoAction):
-    description = _('Remove specific errata from the source repository')
+    description = _('Remove errata from the repository')
 
     def setup_parser(self):
         super(RemoveErrata, self).setup_parser()
@@ -738,7 +738,7 @@ class RemoveErrata(RepoAction):
             self.pconn.delete_errata(id, errataids)
         except Exception:
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
-        print _("Successfully removed Errata %s to repo [%s]." %(errataids, id))
+        print _("Successfully removed Errata %s from repo [%s]." %(errataids, id))
 
 
 
