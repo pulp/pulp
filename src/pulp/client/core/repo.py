@@ -217,7 +217,7 @@ class Create(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
-        self.parser.add_option("--keys", dest="keys",
+        self.parser.add_option("--gpgkeys", dest="keys",
                                help=_("a ',' separated list of directories and/or files contining GPG keys"))
 
     def _get_cert_options(self):
