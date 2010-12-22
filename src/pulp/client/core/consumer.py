@@ -156,8 +156,12 @@ class Delete(ConsumerAction):
     description = _('delete the consumer')
 
     def run(self):
+        myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         self.cconn.delete(consumerid)
+        if myid and myid == consumerid:
+            bundle = ConsumerBundle()
+            bundle.delete()
         print _("Successfully deleted consumer [%s]") % consumerid
 
 
@@ -166,10 +170,15 @@ class Update(ConsumerAction):
     description = _('update consumer profile')
 
     def run(self):
-        consumer_id = self.get_required_option('id')
+        myid = self.getconsumerid()
+        if not myid:
+            system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
         pkginfo = PackageProfile().getPackageList()
-        self.cconn.profile(consumer_id, pkginfo)
-        print _("Successfully updated consumer [%s] profile") % consumer_id
+        try:
+            self.cconn.profile(consumer_id, pkginfo)
+            print _("Successfully updated consumer [%s] profile") % consumer_id
+        except:
+            system_exit(os.EX_DATAERR, _("Error updating consumer [%s]." % consumer_id))
 
 
 class Bind(ConsumerAction):
