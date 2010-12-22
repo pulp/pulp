@@ -184,7 +184,7 @@ class Content(RepoAction):
             print _(' none')
         else:
             print '\n'.join(errata[:])
-        print _('\nfiles in %s: \n') % id
+        print _('\nFiles in %s: \n') % id
         if not files:
             print _(' none')
         else:
