@@ -25,6 +25,7 @@ from pulp.client.connection import RepoConnection, ConsumerConnection, ErrataCon
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
+from pulp.client.credentials import CredentialError
 
 # repo command errors ---------------------------------------------------------
 
@@ -42,9 +43,12 @@ class CloneError(Exception):
 class RepoAction(Action):
 
     def setup_connections(self):
-        self.pconn = RepoConnection()
-        self.cconn = ConsumerConnection()
-        self.econn = ErrataConnection()
+        try:
+            self.pconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+            self.econn = ErrataConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("repository id (required)"))

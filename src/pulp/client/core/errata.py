@@ -28,16 +28,20 @@ from pulp.client.connection import (
     ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit, print_header
+from pulp.client.credentials import CredentialError
 
 # errata action base class ----------------------------------------------------
 
 class ErrataAction(Action):
 
     def setup_connections(self):
-        self.econn = ErrataConnection()
-        self.rconn = RepoConnection()
-        self.cconn = ConsumerConnection()
-        self.cgconn = ConsumerGroupConnection()
+        try:
+            self.econn = ErrataConnection()
+            self.rconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+            self.cgconn = ConsumerGroupConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
 # errata actions --------------------------------------------------------------
 

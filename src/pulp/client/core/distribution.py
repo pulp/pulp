@@ -25,6 +25,7 @@ from pulp.client.connection import (DistributionConnection, RepoConnection)
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit, print_header
 from pulp.client.config import Config
+from pulp.client.credentials import CredentialError
 
 _cfg = Config()
 # distribution action base class ----------------------------------------------------
@@ -32,8 +33,11 @@ _cfg = Config()
 class DistributionAction(Action):
 
     def setup_connections(self):
-        self.rconn = RepoConnection()
-        self.dconn = DistributionConnection()
+        try:
+            self.rconn = RepoConnection()
+            self.dconn = DistributionConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
 # errata actions --------------------------------------------------------------
 

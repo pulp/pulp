@@ -27,17 +27,20 @@ from pulp.client.connection import RepoConnection, ConsumerConnection, \
                                    ConsumerGroupConnection, ServicesConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
+from pulp.client.credentials import CredentialError
 
 # package action base class ---------------------------------------------------
 
 class PackageAction(Action):
 
     def setup_connections(self):
-
-        self.rconn = RepoConnection()
-        self.cconn = ConsumerConnection()
-        self.cgconn = ConsumerGroupConnection()
-        self.sconn = ServicesConnection()
+        try:
+            self.rconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+            self.cgconn = ConsumerGroupConnection()
+            self.sconn = ServicesConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
 # package actions -------------------------------------------------------------
 
