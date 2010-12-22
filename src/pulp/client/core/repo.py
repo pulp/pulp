@@ -88,11 +88,12 @@ class List(RepoAction):
             if repo['source']:
                 feedUrl = repo['source']['url']
                 feedType = repo['source']['type']
+
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'])
+                    repo['publish'], repo['clone_ids'], repo['groupid'] or None)
 
 
 class Status(RepoAction):
