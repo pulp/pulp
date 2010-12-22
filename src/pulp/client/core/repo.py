@@ -258,7 +258,7 @@ class Clone(RepoAction):
     def setup_parser(self):
         super(Clone, self).setup_parser()
         self.parser.add_option("--clone_id", dest="clone_id",
-                               help=_("id of cloned repo"))
+                               help=_("id of cloned repo (required)"))
         self.parser.add_option("--clone_name", dest="clone_name",
                                help=_("common repository name for cloned repo"))
         self.parser.add_option("--feed", dest="feed",
@@ -328,7 +328,7 @@ class Clone(RepoAction):
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for parent repository %s already in progress') % id
             return tasks[0]
-        clone_id = self.opts.clone_id
+        clone_id = self.get_required_option('clone_id')
         clone_name = self.opts.clone_name or clone_id
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
