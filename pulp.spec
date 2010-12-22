@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.118
+Version:        0.0.119
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,29 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Dec 22 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.119-1
+- 663107 - trimming errata install options to be consistant with package
+  installs (pkilambi@redhat.com)
+- 663033 - Capitalization mismatch for repo content output
+  (pkilambi@redhat.com)
+- 662681 - clean up distributions as part of repo delete (pkilambi@redhat.com)
+- 662668 - renaming keys to gpgkeys for clarity (pkilambi@redhat.com)
+- 662247 - making clone_id a required option (pkilambi@redhat.com)
+- 658613 - catch the credentials error (pkilambi@redhat.com)
+- bump grinder requires version (pkilambi@redhat.com)
+- 634283 - This commit includes, * fix to clean up consumer certificate upon
+  consumer delete * raise a message if consumer doesnt exist on consumer update
+  (pkilambi@redhat.com)
+- 651926 - change the feed help to be more explicit (pkilambi@redhat.com)
+- 649025 - Adding group info to repo list (pkilambi@redhat.com)
+- 664557 - fixing typos in add/delete help menu (pkilambi@redhat.com)
+- replace functools.wraps usage with (fixed) compat.wraps for python 2.4
+  compat. (jortel@redhat.com)
+- Fixing typos in the help text (pkilambi@redhat.com)
+- Adding reboot suggested to errata info (pkilambi@redhat.com)
+- Adding support for user input if provided errata during errata install
+  requires a system reboot. (pkilambi@redhat.com)
+
 * Tue Dec 21 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.118-1
 - Better formatting for registration errors. (jason.dobies@redhat.com)
 - Added check when deleting a repo to ensure it's not deployed to any CDS
