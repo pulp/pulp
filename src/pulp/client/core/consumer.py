@@ -174,8 +174,8 @@ class Update(ConsumerAction):
     description = _('update consumer profile')
 
     def run(self):
-        myid = self.getconsumerid()
-        if not myid:
+        consumer_id = self.getconsumerid()
+        if not consumer_id:
             system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
         pkginfo = PackageProfile().getPackageList()
         try:
