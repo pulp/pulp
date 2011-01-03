@@ -28,6 +28,7 @@ from pulp.client.connection import ConsumerConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.credentials import Consumer as ConsumerBundle
+from pulp.client.credentials import CredentialError
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
 
@@ -44,7 +45,10 @@ class ConsumerAction(Action):
         self.repolib = RepoLib()
 
     def setup_connections(self):
-        self.cconn = ConsumerConnection()
+        try:
+            self.cconn = ConsumerConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
@@ -156,8 +160,12 @@ class Delete(ConsumerAction):
     description = _('delete the consumer')
 
     def run(self):
+        myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         self.cconn.delete(consumerid)
+        if myid and myid == consumerid:
+            bundle = ConsumerBundle()
+            bundle.delete()
         print _("Successfully deleted consumer [%s]") % consumerid
 
 
@@ -166,10 +174,15 @@ class Update(ConsumerAction):
     description = _('update consumer profile')
 
     def run(self):
-        consumer_id = self.get_required_option('id')
+        myid = self.getconsumerid()
+        if not myid:
+            system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
         pkginfo = PackageProfile().getPackageList()
-        self.cconn.profile(consumer_id, pkginfo)
-        print _("Successfully updated consumer [%s] profile") % consumer_id
+        try:
+            self.cconn.profile(consumer_id, pkginfo)
+            print _("Successfully updated consumer [%s] profile") % consumer_id
+        except:
+            system_exit(os.EX_DATAERR, _("Error updating consumer [%s]." % consumer_id))
 
 
 class Bind(ConsumerAction):

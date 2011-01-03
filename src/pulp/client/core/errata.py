@@ -28,16 +28,20 @@ from pulp.client.connection import (
     ConsumerGroupConnection)
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit, print_header
+from pulp.client.credentials import CredentialError
 
 # errata action base class ----------------------------------------------------
 
 class ErrataAction(Action):
 
     def setup_connections(self):
-        self.econn = ErrataConnection()
-        self.rconn = RepoConnection()
-        self.cconn = ConsumerConnection()
-        self.cgconn = ConsumerGroupConnection()
+        try:
+            self.econn = ErrataConnection()
+            self.rconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+            self.cgconn = ConsumerGroupConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
 # errata actions --------------------------------------------------------------
 
@@ -100,7 +104,7 @@ class Info(ErrataAction):
                                        errata['issued'], errata['updated'],
                                        errata['version'], errata['release'],
                                        errata['status'], ",\n\t\t\t".join(effected_pkgs),
-                                       ref) #errata['references'])
+                                       errata['reboot_suggested'], ref)
 
 
 class Install(ErrataAction):
@@ -108,6 +112,8 @@ class Install(ErrataAction):
     description = _('install errata on a consumer')
 
     def setup_parser(self):
+        self.parser.add_option("-e", "--erratum", action="append", dest="enames",
+                               help=_("erratum to be installed; to specify multiple erratum id use multiple -e"))
         id_group = OptionGroup(self.parser, _('Consumer or Consumer Group id (one is required)'))
         id_group.add_option("--consumerid", dest="consumerid",
                             help=_("consumer id"))
@@ -118,7 +124,7 @@ class Install(ErrataAction):
                             help=_("Assume yes; assume that install performs all the suggested actions such as reboot on successful install."))
 
     def run(self):
-        errataids = self.args
+        errataids = self.opts.enames
 
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
@@ -126,17 +132,36 @@ class Install(ErrataAction):
             self.parser.error(_("A consumerid or a consumergroupid is required to perform an install"))
 
         if not errataids:
-            system_exit(os.EX_USAGE, _("Specify an errata id to install"))
+            system_exit(os.EX_USAGE, _("Specify an erratum id to perform install"))
 
         assumeyes = False
         if self.opts.assumeyes:
             assumeyes =  True
-
-        if self.opts.consumerid:
-            task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
-        elif self.opts.consumergroupid:
-            task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
-
+        else:
+            reboot_sugg = []
+            for eid in errataids:
+                eobj = self.econn.erratum(eid)
+                if eobj:
+                    reboot_sugg.append(eobj['reboot_suggested'])
+            if True in reboot_sugg:
+                ask_reboot = ''
+                while ask_reboot.lower() not in ['y', 'n', 'q']:
+                    ask_reboot = raw_input(_("\nOne or more erratum provided requires a system reboot. Would you like to perform a reboot if the errata is applicable and successfully installed(Y/N/Q):"))
+                    if ask_reboot.strip().lower() == 'y':
+                        assumeyes = True
+                    elif ask_reboot.strip().lower() == 'n':
+                        assumeyes = False
+                    elif ask_reboot.strip().lower() == 'q':
+                        system_exit(os.EX_OK, _("Errata install aborted upon user request."))
+                    else:
+                        continue
+        try:
+            if self.opts.consumerid:
+                task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
+            elif self.opts.consumergroupid:
+                task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
+        except:
+            system_exit(os.EX_DATAERR, _("Unable to schedule an errata install task."))
         if not task:
             system_exit(os.EX_DATAERR, 
                 _("The requested errataids %s are not applicable for your system" % errataids))

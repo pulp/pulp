@@ -29,8 +29,8 @@ auditing.initialize()
 from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
-    audit, cds, consumergroups, consumers, distribution, errata, packages,
-    permissions, repositories, roles, search, users)
+    audit, cds, consumergroups, consumers, errata, packages, 
+    permissions, repositories, users, roles, distribution, services)
 
 
 urls = (
@@ -44,8 +44,8 @@ urls = (
     '/permissions', permissions.application,
     '/repositories', repositories.application,
     '/roles', roles.application,
-    '/search', search.application,
     '/users', users.application,
+    '/services', services.application,
 )
 
 

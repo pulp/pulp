@@ -101,9 +101,9 @@ class MockCdsDispatcher(object):
 class TestCdsApi(unittest.TestCase):
 
     def clean(self):
-        self.repo_api.clean()
         self.cds_history_api.clean()
         self.cds_api.clean()
+        self.repo_api.clean()
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -598,3 +598,77 @@ class TestCdsApi(unittest.TestCase):
 
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds['last_sync'] is not None)
+
+    def test_cds_with_repo(self):
+        '''
+        Tests searching for CDS instances by a repo ID when there is at least one association
+        to the given repo.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        self.cds_api.register('cds1.example.com')
+        self.cds_api.register('cds2.example.com')
+        self.cds_api.register('cds3.example.com')
+
+        self.cds_api.associate_repo('cds1.example.com', repo['id'])
+        self.cds_api.associate_repo('cds2.example.com', repo['id'])
+
+        # Test
+        results = self.cds_api.cds_with_repo(repo['id'])
+
+        self.assertEqual(2, len(results))
+        for cds in results:
+            self.assertTrue(cds['hostname'] in 'cds1.example.com cds2.example.com'.split())
+
+    def test_cds_with_repo_no_cds(self):
+        '''
+        Tests searching for CDS instances associated with a valid repo but there are no
+        instances associated.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        self.cds_api.register('cds1.example.com')
+        self.cds_api.register('cds2.example.com')
+        self.cds_api.register('cds3.example.com')
+
+        # Test
+        results = self.cds_api.cds_with_repo(repo['id'])
+
+        # Verify
+        self.assertEqual(0, len(results))
+
+    def test_cds_with_repo_invalid_repo(self):
+        '''
+        Tests that searching for associated CDS instances with a repo that doesn't exist
+        doesn't throw an error.
+        '''
+
+        # Setup
+        self.cds_api.register('cds1.example.com')
+        self.cds_api.register('cds2.example.com')
+        self.cds_api.register('cds3.example.com')
+
+        # Test
+        results = self.cds_api.cds_with_repo('foo')
+
+        # Verify
+        self.assertEqual(0, len(results))
+
+    def test_delete_repo_with_associated(self):
+        '''
+        Tests the RepoApi call to delete a repo that is currently associated with at least one CDS.
+        The delete should not be allowed and the user informed to explicitly
+        unassociate the repo from all CDS instances first.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
+        self.cds_api.register('cds1.example.com')
+
+        self.cds_api.associate_repo('cds1.example.com', repo['id'])
+
+        # Test
+        self.assertRaises(PulpException, self.repo_api.delete, repo['id'])
+        

@@ -455,6 +455,15 @@ class ConsumerApi(BaseApi):
         return {'packages' : pkglist,
                 'reboot_required' : self.check_reboot_required(applicable_errata)}
         
+    def list_errata_package(self, id, types=()):
+        consumer = self.consumer(id)
+        applicable_errata = self._applicable_errata(consumer, types)
+        pkglist = [ item for etype in applicable_errata.values() \
+                                    for item in etype['packages'] ]
+        elist = applicable_errata.keys()
+        return {'packages' : pkglist,
+                'errata'  : elist}
+        
     def check_reboot_required(self, applicable_errata):
         reboot_suggested = False
         if True in [item['reboot_suggested'] for item in applicable_errata.values()]:

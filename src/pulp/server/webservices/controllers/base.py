@@ -14,7 +14,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import functools
 import logging
 import sys
 import traceback
@@ -36,6 +35,7 @@ from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import http
+from pulp.server.compat import wraps
 
 
 _log = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class JSONController(object):
         Static controller method wrapper that catches internal errors and
         reports them as JSON serialized trace back strings
         """
-        @functools.wraps(method)
+        @wraps(method)
         def report_error(self, *args, **kwargs):
             try:
                 return method(self, *args, **kwargs)
@@ -308,7 +308,7 @@ class AsyncController(JSONController):
         @return dict representing task
         """
         fields = ('id', 'method_name', 'state', 'start_time', 'finish_time',
-                 'result', 'exception', 'traceback', 'progress')
+                 'result', 'exception', 'traceback', 'progress', 'scheduled_time')
         return dict((f, getattr(task, f)) for f in fields)
 
     def _status_path(self, id):

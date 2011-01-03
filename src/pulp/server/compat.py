@@ -21,7 +21,7 @@ interpreter.
 # functools wraps decorator ---------------------------------------------------
 
 try:
-    import functools
+    import xfunctools
     wraps = functools.wraps
 
 except ImportError:
@@ -34,16 +34,15 @@ except ImportError:
 
     def wraps(orig):
         def _wraps(decorator):
-            def _decorator(method):
-                _method = decorator(method)
-                return _update_wrapper(orig, _method)
+            def _decorator(*args,**kwargs):
+                return decorator(*args,**kwargs)
             return _update_wrapper(decorator, _decorator)
         return _wraps
 
 # stdlib json serialization ---------------------------------------------------
 
 try:
-    import json
+    import xjson
 
 except ImportError:
     import simplejson as json

@@ -19,6 +19,7 @@ from pulp.client.connection import ConsumerGroupConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.repolib import RepoLib
+from pulp.client.credentials import CredentialError
 
 # consumer group base action --------------------------------------------------
 
@@ -29,7 +30,10 @@ class ConsumerGroupAction(Action):
         self.repolib = RepoLib()
 
     def setup_connections(self):
-        self.cgconn = ConsumerGroupConnection()
+        try:
+            self.cgconn = ConsumerGroupConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",

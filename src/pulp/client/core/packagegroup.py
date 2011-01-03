@@ -27,6 +27,7 @@ from pulp.client.connection import ConsumerConnection, RepoConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.logutil import getLogger
+from pulp.client.credentials import CredentialError
 
 # base package group action class ---------------------------------------------
 
@@ -35,8 +36,11 @@ _log = getLogger(__name__)
 class PackageGroupAction(Action):
 
     def setup_connections(self):
-        self.pconn = RepoConnection()
-        self.cconn = ConsumerConnection()
+        try:
+            self.pconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",

@@ -124,6 +124,8 @@ class TestDistribution(unittest.TestCase):
     def test_remove_distro_from_repo(self):
         distroid = 'test_repo_distro'
         distro = self.dapi.create(distroid, None, None, [])
+        found = self.dapi.distribution(distroid)
+        self.assertTrue(found is not None)
         
         repoid = 'test-repodist'
         self.rapi.create(repoid, 'some name', 'i386', 'yum:http://example.com/test/path')
@@ -133,5 +135,8 @@ class TestDistribution(unittest.TestCase):
         
         self.rapi.remove_distribution(repoid, distroid)
         repo = self.rapi.repository(repoid)
+        found = self.dapi.distribution(distroid)
+        self.assertTrue(found is None)
         assert(distroid not in repo['distributionid'])
-        
+         
+         

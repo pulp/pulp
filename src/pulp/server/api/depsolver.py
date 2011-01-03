@@ -42,7 +42,8 @@ class DepSolver:
         self._repostore.populateSack(which='all')
         
     def cleanup(self):
-        shutil.rmtree(self.yrepo.cachedir)
+        for repo in self._repostore.repos:
+            shutil.rmtree(repo.cachedir)
 
     def getDependencylist(self):
         ematch, match, unmatch = self._repostore.pkgSack.matchPackageNames(self.pkgs)

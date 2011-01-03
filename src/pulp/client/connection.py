@@ -466,20 +466,19 @@ class ConsumerConnection(PulpConnection):
         method = "/consumers/%s/profile/" % id
         return self.conn.request_post(method, params=profile)
 
-
-    def installpackages(self, id, packagenames):
+    def installpackages(self, id, packagenames, when=None):
         method = "/consumers/%s/installpackages/" % id
-        body = dict(packagenames=packagenames)
+        body = dict(packagenames=packagenames, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
-    def installpackagegroups(self, id, packageids):
+    def installpackagegroups(self, id, packageids, when=None):
         method = "/consumers/%s/installpackagegroups/" % id
-        body = dict(packageids=packageids)
+        body = dict(packageids=packageids, scheduled_time=when)
         return self.conn.request_post(method, params=body)
-
-    def installpackagegroupcategories(self, id, repoid, categoryids):
+    
+    def installpackagegroupcategories(self, id, repoid, categoryids, when=None):
         method = "/consumers/%s/installpackagegroupcategories/" % id
-        body = dict(categoryids=categoryids, repoid=repoid)
+        body = dict(categoryids=categoryids, repoid=repoid, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
     def errata(self, id, types=None):
@@ -490,12 +489,17 @@ class ConsumerConnection(PulpConnection):
     def package_updates(self, id):
         method = "/consumers/%s/package_updates/" % id
         return self.conn.request_get(method)
+    
+    def errata_package_updates(self, id):
+        method = "/consumers/%s/errata_package_updates/" % id
+        return self.conn.request_get(method)
 
-    def installerrata(self, id, errataids, assumeyes=False, types=()):
+    def installerrata(self, id, errataids, assumeyes=False, types=(), when=None):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types,
-                      'assumeyes' : assumeyes}
+                      'assumeyes' : assumeyes,
+                      'scheduled_time' : when}
         method = "/consumers/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -564,16 +568,17 @@ class ConsumerGroupConnection(PulpConnection):
         method = "/consumergroups/%s/update_key_value_pair/" % id
         return self.conn.request_post(method, params=key_value_dict)
 
-    def installpackages(self, id, packagenames):
+    def installpackages(self, id, packagenames, when=None):
         method = "/consumergroups/%s/installpackages/" % id
-        body = dict(packagenames=packagenames)
+        body = dict(packagenames=packagenames, scheduled_time=when)
         return self.conn.request_post(method, params=body)
 
-    def installerrata(self, id, errataids, types=[], assumeyes=False):
+    def installerrata(self, id, errataids, types=[], assumeyes=False, when=None):
         erratainfo = {'consumerid' : id,
                       'errataids' : errataids,
                       'types'    :   types,
-                      'assumeyes' : assumeyes, }
+                      'assumeyes' : assumeyes,
+                      'scheduled_time': when,}
         method = "/consumergroups/%s/installerrata/" % id
         return self.conn.request_post(method, params=erratainfo)
 
@@ -612,11 +617,6 @@ class PackageConnection(PulpConnection):
     def package_by_ivera(self, name, version, release, epoch, arch):
         method = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
         return self.conn.request_get(method)
-
-    def package_dependency(self, id, repoids):
-        params = {'repoids' : repoids }
-        method = "/packages/%s/list_dependency/" % id
-        return self.conn.request_post(method, params=params)
 
 class PackageGroupConnection(PulpConnection):
 
@@ -702,27 +702,6 @@ class DistributionConnection(PulpConnection):
         method = '/distribution/%s/' % str(id)
         return self.conn.request_get(method)
 
-class SearchConnection(PulpConnection):
-    """
-    Connection class to access search related calls
-    """
-    def packages(self, name=None, epoch=None, version=None, release=None, arch=None, filename=None):
-        data = {}
-        if name:
-            data["name"] = name
-        if epoch:
-            data["epoch"] = epoch
-        if version:
-            data["version"] = version
-        if release:
-            data["release"] = release
-        if arch:
-            data["arch"] = arch
-        if filename:
-            data["filename"] = filename
-        method = "/search/packages/"
-        return self.conn.request_put(method, params=data)
-
 class CdsConnection(PulpConnection):
     '''
     Connection class to the CDS APIs.
@@ -782,6 +761,38 @@ class CdsConnection(PulpConnection):
     def sync_list(self, hostname):
         method = '/cds/%s/sync/' % hostname
         return self.conn.request_get(method)
+    
+class ServicesConnection(PulpConnection):
+    '''
+    Connection class to the services handler
+    '''
+
+    """
+    Connection class to access search related calls
+    """
+    def search_packages(self, name=None, epoch=None, version=None, release=None, arch=None, filename=None):
+        data = {}
+        if name:
+            data["name"] = name
+        if epoch:
+            data["epoch"] = epoch
+        if version:
+            data["version"] = version
+        if release:
+            data["release"] = release
+        if arch:
+            data["arch"] = arch
+        if filename:
+            data["filename"] = filename
+        method = "/services/search/packages/"
+        return self.conn.request_put(method, params=data)
+
+
+    def dependencies(self, pkgnames, repoids):
+        params = {'repoids' : repoids,
+                   'pkgnames' : pkgnames}
+        method = "/services/dependencies/"
+        return self.conn.request_put(method, params=params)
 
 
 class PermissionConnection(PulpConnection):

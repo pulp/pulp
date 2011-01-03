@@ -187,6 +187,8 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         names = data.get('packagenames', [])
         task = api.installpackages(id, names)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -203,6 +205,8 @@ class ConsumerGroupActions(AsyncController):
         task = api.installerrata(id, errataids, types=types, assumeyes=assumeyes)
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)

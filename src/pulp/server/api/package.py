@@ -129,6 +129,12 @@ class PackageApi(BaseApi):
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
 
+    def package_filenames(self, spec=None):
+        """
+         Returns a list of all file names matching the spec
+        """
+        return list(self.objectdb.find(spec, fields=['filename']))
+
     def package_by_ivera(self, name, version, epoch, release, arch):
         """
         Returns the package version identified by the given package and VERA.
@@ -144,7 +150,7 @@ class PackageApi(BaseApi):
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
         return list(self.objectdb.find(spec, ['id', 'name', 'description']))
     
-    def package_dependency(self, pkgname, repoids=[]):
+    def package_dependency(self, pkgnames=[], repoids=[]):
         '''
          Get list of available dependencies for a given package in
          a specific repo
@@ -159,7 +165,7 @@ class PackageApi(BaseApi):
         repos = []
         for rid in repoids:
             repos.append(rapi.repository(rid))
-        dsolve = DepSolver(repos, [pkgname])
+        dsolve = DepSolver(repos, pkgnames)
         results =  dsolve.getDependencylist()
         deps = dsolve.processResults(results)
         pkgs = []

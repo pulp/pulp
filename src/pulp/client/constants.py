@@ -28,6 +28,7 @@ Files              \t%-25s
 Distributions      \t%-25s
 Publish            \t%-25s
 Clones             \t%-25s
+Groups             \t%-25s
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """
@@ -88,6 +89,7 @@ Version               \t%-25s
 Release               \t%-25s
 Status                \t%-25s
 Packages Effected     \t%-25s
+Reboot Suggested      \t%-25s
 References            \t%-25s
 """
 

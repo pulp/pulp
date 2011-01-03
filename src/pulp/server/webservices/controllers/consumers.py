@@ -165,6 +165,7 @@ class ConsumerDeferredFields(JSONController):
         'certificate',
         'keyvalues',
         'package_updates',
+        'errata_package_updates'
     )
     @RoleCheck(consumer_id=True, admin=True)
     def package_profile(self, id):
@@ -230,6 +231,16 @@ class ConsumerDeferredFields(JSONController):
         @param id: consumer id
         """
         return self.ok(consumer_api.list_package_updates(id)['packages'])
+    
+    @JSONController.error_handler
+    @RoleCheck(consumer_id=True, admin=True)
+    def errata_package_updates(self, id):
+        """
+        Return applicable errata and package updates for a given consumerid.
+        @type id: str
+        @param id: consumer id
+        """
+        return self.ok(consumer_api.list_errata_package(id))
 
     @JSONController.error_handler
     def GET(self, id, field_name):
@@ -360,6 +371,8 @@ class ConsumerActions(AsyncController):
         data = self.params()
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -375,6 +388,8 @@ class ConsumerActions(AsyncController):
         data = self.params()
         ids = data.get('packageids', [])
         task = consumer_api.installpackagegroups(id, ids)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -401,6 +416,8 @@ class ConsumerActions(AsyncController):
         if not group_ids:
             return self.conflict('Given category ids [%s] contain no groups to install' % categoryids)
         task = consumer_api.installpackagegroups(id, group_ids)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -421,6 +438,8 @@ class ConsumerActions(AsyncController):
         task = consumer_api.installerrata(id, eids, types, assumeyes)
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
+        if data.has_key("scheduled_time"):
+            task.scheduled_time = data["scheduled_time"]
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)

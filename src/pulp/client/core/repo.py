@@ -25,6 +25,7 @@ from pulp.client.connection import RepoConnection, ConsumerConnection, ErrataCon
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
+from pulp.client.credentials import CredentialError
 
 # repo command errors ---------------------------------------------------------
 
@@ -42,9 +43,12 @@ class CloneError(Exception):
 class RepoAction(Action):
 
     def setup_connections(self):
-        self.pconn = RepoConnection()
-        self.cconn = ConsumerConnection()
-        self.econn = ErrataConnection()
+        try:
+            self.pconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+            self.econn = ErrataConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("repository id (required)"))
@@ -88,11 +92,12 @@ class List(RepoAction):
             if repo['source']:
                 feedUrl = repo['source']['url']
                 feedType = repo['source']['type']
+
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'])
+                    repo['publish'], repo['clone_ids'], repo['groupid'] or None)
 
 
 class Status(RepoAction):
@@ -149,7 +154,8 @@ class Content(RepoAction):
         files = repo['files']
         if self.opts.updates:
             consumerid = self.opts.consumerid
-            pkg_updates = self.cconn.package_updates(consumerid)
+            errata_pkg_updates = self.cconn.errata_package_updates(consumerid)
+            pkg_updates = errata_pkg_updates['packages']
             pkgs = []
             for p in pkg_updates:
                 #limit updates to repo packages
@@ -157,7 +163,7 @@ class Content(RepoAction):
                     pkgs.append(p['filename'])
             pnames = pkgs
             # limit errata to repo
-            cerrata = self.cconn.errata(consumerid)
+            cerrata = errata_pkg_updates['errata']
             applicable_errata = []
             for e in cerrata:
                 if e in all_errata:
@@ -178,7 +184,7 @@ class Content(RepoAction):
             print _(' none')
         else:
             print '\n'.join(errata[:])
-        print _('\nfiles in %s: \n') % id
+        print _('\nFiles in %s: \n') % id
         if not files:
             print _(' none')
         else:
@@ -196,7 +202,7 @@ class Create(RepoAction):
         self.parser.add_option("--arch", dest="arch",
                                help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
-                               help=_("url feed to populate the repository"))
+                               help=_("url feed to populate the repository; feed format is type:url, where supported types include yum,rhn or local "))
         self.parser.add_option("--cacert", dest="cacert",
                                help=_("path location to ca certificate"))
         self.parser.add_option("--cert", dest="cert",
@@ -211,7 +217,7 @@ class Create(RepoAction):
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
         self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
-        self.parser.add_option("--keys", dest="keys",
+        self.parser.add_option("--gpgkeys", dest="keys",
                                help=_("a ',' separated list of directories and/or files contining GPG keys"))
 
     def _get_cert_options(self):
@@ -252,7 +258,7 @@ class Clone(RepoAction):
     def setup_parser(self):
         super(Clone, self).setup_parser()
         self.parser.add_option("--clone_id", dest="clone_id",
-                               help=_("id of cloned repo"))
+                               help=_("id of cloned repo (required)"))
         self.parser.add_option("--clone_name", dest="clone_name",
                                help=_("common repository name for cloned repo"))
         self.parser.add_option("--feed", dest="feed",
@@ -322,7 +328,7 @@ class Clone(RepoAction):
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for parent repository %s already in progress') % id
             return tasks[0]
-        clone_id = self.opts.clone_id
+        clone_id = self.get_required_option('clone_id')
         clone_name = self.opts.clone_name or clone_id
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
@@ -673,12 +679,12 @@ class AddPackages(RepoAction):
         print _("Successfully added packages %s to repo [%s]." %(self.opts.pkgname, id))
 
 class RemovePackages(RepoAction):
-    description = _('Remove specific package(s) from the source repository.')
+    description = _('Remove package(s) from the repository.')
 
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
-                help=_("Package filename to remove to this repository"))
+                help=_("Package filename to remove from this repository"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -721,12 +727,12 @@ class AddErrata(RepoAction):
         print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
 
 class RemoveErrata(RepoAction):
-    description = _('Remove specific errata from the source repository')
+    description = _('Remove errata from the repository')
 
     def setup_parser(self):
         super(RemoveErrata, self).setup_parser()
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
-                help=_("Errata Id to delete to this repository"))
+                help=_("Errata Id to delete from this repository"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -737,7 +743,7 @@ class RemoveErrata(RepoAction):
             self.pconn.delete_errata(id, errataids)
         except Exception:
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
-        print _("Successfully removed Errata %s to repo [%s]." %(errataids, id))
+        print _("Successfully removed Errata %s from repo [%s]." %(errataids, id))
 
 
 

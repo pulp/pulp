@@ -15,6 +15,7 @@
 # in this software or its documentation.
 #
 
+from datetime import datetime
 import os
 import string
 import sys
@@ -22,22 +23,24 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client.connection import RepoConnection, ConsumerConnection, ConsumerGroupConnection, SearchConnection,\
-    PackageConnection
+from pulp.client.connection import RepoConnection, ConsumerConnection, \
+                                   ConsumerGroupConnection, ServicesConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
+from pulp.client.credentials import CredentialError
 
 # package action base class ---------------------------------------------------
 
 class PackageAction(Action):
 
     def setup_connections(self):
-
-        self.sconn = SearchConnection()
-        self.rconn = RepoConnection()
-        self.cconn = ConsumerConnection()
-        self.cgconn = ConsumerGroupConnection()
-        self.pconn = PackageConnection()
+        try:
+            self.rconn = RepoConnection()
+            self.cconn = ConsumerConnection()
+            self.cgconn = ConsumerGroupConnection()
+            self.sconn = ServicesConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
 
 # package actions -------------------------------------------------------------
 
@@ -78,6 +81,7 @@ class Install(PackageAction):
         id_group.add_option("--consumergroupid", dest="consumergroupid",
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
+        self.add_scheduled_time_option()
 
     def run(self):
         consumerid = self.opts.consumerid
@@ -87,12 +91,15 @@ class Install(PackageAction):
                         _("Consumer or consumer group id required. try --help"))
         pnames = self.opts.pnames
         if not pnames:
-            system_exit(os.EX_DATAERR, _("Nothing to upload."))
+            system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
+        when = self.parse_scheduled_time_option()
         if consumergroupid:
-            task = self.cgconn.installpackages(consumergroupid, pnames)
+            task = self.cgconn.installpackages(consumergroupid, pnames, when=when)
         else:
-            task = self.cconn.installpackages(consumerid, pnames)
+            task = self.cconn.installpackages(consumerid, pnames, when=when)
         print _('Created task id: %s') % task['id']
+        print _('Task is scheduled for: %s') % \
+                time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
         state = None
         spath = task['status_path']
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
@@ -132,7 +139,7 @@ class Search(PackageAction):
         name = self.opts.name
         release = self.opts.release
         version = self.opts.version
-        pkgs = self.sconn.packages(name=name, epoch=epoch, version=version,
+        pkgs = self.sconn.search_packages(name=name, epoch=epoch, version=version,
                 release=release, arch=arch, filename=filename)
         if not pkgs:
            system_exit(os.EX_DATAERR, _("No packages found."))
@@ -175,25 +182,25 @@ class DependencyList(PackageAction):
     description = _('List available dependencies')
     
     def setup_parser(self):
-        self.parser.add_option("-n", "--name", dest="pname",
-                               help=_("package to lookup dependencies"))
+        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+                               help=_("package to lookup dependencies; to specify multiple packages use multiple -n"))
         self.parser.add_option("-r", "--repoid", action="append", dest="repoid",
                                help=_("repository labels; to specify multiple packages use multiple -r"))
 
     def run(self):
-        if not self.opts.pname:
+        if not self.opts.pnames:
             system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
         if not self.opts.repoid:
             system_exit(os.EX_DATAERR, \
                         _("Atleast one repoid is required to lookup dependencies."))
         repoid = self.opts.repoid
-        pname = self.opts.pname
-        deps = self.pconn.package_dependency(pname, repoid)
+        pnames = self.opts.pnames
+        deps = self.sconn.dependencies(pnames, repoid)
         if not deps['dependency_list']:
             system_exit(os.EX_OK, _("No dependencies available for Package(s) [%s] in repo [%s]") %
-                        (pname, repoid))
-        print_header(_("Dependencies for package(s) [%s]" % pname))
+                        (pnames, repoid))
+        print_header(_("Dependencies for package(s) [%s]" % pnames))
 
         print deps['dependency_list']
         print_header(_("Suggested Packages in Repo [%s]" % repoid))

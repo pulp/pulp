@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.115
+Version:        0.0.119
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -26,7 +26,7 @@ Requires: python-webpy
 Requires: python-simplejson
 Requires: python-oauth2
 Requires: python-httplib2
-Requires: grinder >= 0.0.59
+Requires: grinder >= 0.0.66
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_python
@@ -255,6 +255,60 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Dec 22 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.119-1
+- 663107 - trimming errata install options to be consistant with package
+  installs (pkilambi@redhat.com)
+- 663033 - Capitalization mismatch for repo content output
+  (pkilambi@redhat.com)
+- 662681 - clean up distributions as part of repo delete (pkilambi@redhat.com)
+- 662668 - renaming keys to gpgkeys for clarity (pkilambi@redhat.com)
+- 662247 - making clone_id a required option (pkilambi@redhat.com)
+- 658613 - catch the credentials error (pkilambi@redhat.com)
+- bump grinder requires version (pkilambi@redhat.com)
+- 634283 - This commit includes, * fix to clean up consumer certificate upon
+  consumer delete * raise a message if consumer doesnt exist on consumer update
+  (pkilambi@redhat.com)
+- 651926 - change the feed help to be more explicit (pkilambi@redhat.com)
+- 649025 - Adding group info to repo list (pkilambi@redhat.com)
+- 664557 - fixing typos in add/delete help menu (pkilambi@redhat.com)
+- replace functools.wraps usage with (fixed) compat.wraps for python 2.4
+  compat. (jortel@redhat.com)
+- Fixing typos in the help text (pkilambi@redhat.com)
+- Adding reboot suggested to errata info (pkilambi@redhat.com)
+- Adding support for user input if provided errata during errata install
+  requires a system reboot. (pkilambi@redhat.com)
+
+* Tue Dec 21 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.118-1
+- Better formatting for registration errors. (jason.dobies@redhat.com)
+- Added check when deleting a repo to ensure it's not deployed to any CDS
+  instances. (jason.dobies@redhat.com)
+- Added query for all CDS instances associated with a given repo.
+  (jason.dobies@redhat.com)
+- Adding a call to pull in both errata and package info in one call
+  (pkilambi@redhat.com)
+
+* Fri Dec 17 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.117-1
+- update consumergroup package install for allowing a schedule time
+  (jmatthews@redhat.com)
+- Adding ability to schedule package installs for a specfied time in future
+  (jmatthews@redhat.com)
+- improving the package filename fetch query to do a batch lookup to be more
+  performant (pkilambi@redhat.com)
+- Fix interpreter hang on exit (python 2.4). (jortel@redhat.com)
+- Moving search into /services/ handler (pkilambi@redhat.com)
+- moving oauth configs to proper section in config file (mmccune@redhat.com)
+
+* Wed Dec 15 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.116-1
+- Added delete old repo functionality on CDS sync. (jason.dobies@redhat.com)
+- Assemble the path correctly when saving repos. (jason.dobies@redhat.com)
+- Support for Dependency Resolution List. This commit includes: * Dependency
+  resolver module * API/WS changes to support deplist * CLI changes to support
+  pulp-admin package deplist (pkilambi@redhat.com)
+- fixing the updates to send back package info (pkilambi@redhat.com)
+- Send the server URL information from pulp server to CDS.
+  (jason.dobies@redhat.com)
+- python-oauth2 has a dependency on python-httplib2 (jason.dobies@redhat.com)
+
 * Tue Dec 14 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.115-1
 - Test build for CDS RPM changes
 * Fri Dec 10 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.114-1

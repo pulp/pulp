@@ -190,7 +190,7 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('name', 'arch')
         filters = self.filters(valid_filters)
         repo = api.repository(id, ['id', 'packages'])
-        packages = [pkg_api.package(p) for p in repo['packages']]
+        packages = pkg_api.package_filenames(spec={'id': {'$in': [p for p in repo['packages']]}})
         if repo is None:
             return self.not_found('No repository %s' % id)
         filtered_packages = self.filter_results(packages, filters)
@@ -292,6 +292,8 @@ class RepositoryActions(AsyncController):
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
+        if repo['source'] is None:
+            return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
         if repo['source'] is not None and repo['source']['type'] in ('yum', 'rhn'):
             task.set_progress('progress_callback', yum_rhn_progress_callback)
         task_info = self._task_to_dict(task)

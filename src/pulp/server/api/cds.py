@@ -17,15 +17,13 @@
 import datetime
 import logging
 import sys
-import traceback
 
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
-from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
-                                       CdsCommunicationsException, CdsMethodException, CdsDispatcherException
+                                       CdsCommunicationsException, CdsMethodException
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDS
 from pulp.server.pexceptions import PulpException
@@ -47,12 +45,21 @@ class CdsApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.repo_api = RepoApi()
         self.cds_history_api = CdsHistoryApi()
         self.dispatcher = GoferDispatcher()
 
     def _getcollection(self):
         return get_object_db('cds', ['hostname'], self._indexes)
+
+    def _repocollection(self):
+        '''
+        Returns the repo collection. This isn't the best approach; we need a more general
+        refactoring of DB access methods away from the logic APIs, in which case this method
+        will go away.
+        '''
+        unique_indexes = ["id"]
+        indexes = ["packages", "packagegroups", "packagegroupcategories"]
+        return get_object_db('repos', unique_indexes, indexes)
 
 # -- public api ---------------------------------------------------------------------
 
@@ -148,6 +155,21 @@ class CdsApi(BaseApi):
         else:
             return matching_cds[0]
 
+    def cds_with_repo(self, repo_id):
+        '''
+        Returns a list of all CDS instances that are associated with the given repo.
+
+        @param repo_id: identifies the repo to search for associations; if this does not
+                        represent a valid repo it will be treated as if there were no matching
+                        results
+        @type  repo_id: string
+
+        @return: list of all matching CDS instances if any match; empty list otherwise
+        @rtype:  list of L{CDS} instances
+        '''
+        cursor = self.objectdb.find({'repo_ids' : repo_id})
+        return list(cursor)
+
     def list(self):
         '''
         Lists all CDS instances.
@@ -182,7 +204,7 @@ class CdsApi(BaseApi):
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
-        repo = self.repo_api.repository(repo_id)
+        repo = self._repocollection().find_one({'id' : repo_id})
         if repo is None:
             raise PulpException('Repository with ID [%s] could not be found' % repo_id)
 
@@ -246,7 +268,7 @@ class CdsApi(BaseApi):
         # Load the repo objects to send to the CDS with the call
         repos = []
         for repo_id in cds['repo_ids']:
-            repo = self.repo_api.repository(repo_id, fields=REPO_FIELDS)
+            repo = self._repocollection().find_one({'id' : repo_id}, fields=REPO_FIELDS)
             repos.append(repo)
 
         # Call out to dispatcher to trigger sync, adding the appropriate history entries
@@ -274,7 +296,7 @@ class CdsApi(BaseApi):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_traceback = exc_traceback
             sync_error_msg = 'Error on the CDS during sync'
-        except Exception, e:
+        except Exception:
             log.exception('Non-CdsDispatcherException error caught on sync invocation for CDS [%s]' % cds['hostname'])
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_traceback = exc_traceback
@@ -304,7 +326,7 @@ class CdsApi(BaseApi):
         '''
 
         # Find all CDS instances associated with the given repo
-        cds_list = self.objectdb.find({'repo_ids': {'$exists': True}})
+        cds_list = self.cds_with_repo(repo_id)
 
         # Queue calls to the CDS to unassociate
 

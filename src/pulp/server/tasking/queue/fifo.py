@@ -17,6 +17,7 @@
 import logging
 import sys
 import threading
+import time
 import traceback
 from datetime import datetime, timedelta
 
@@ -61,7 +62,7 @@ class FIFOTaskQueue(TaskQueue):
 
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
-        self.__dispatcher.daemon = True
+        self.__dispatcher.setDaemon(True)
         self.__dispatcher.start()
 
     # protected methods: scheduling
@@ -72,26 +73,31 @@ class FIFOTaskQueue(TaskQueue):
         """
         self.__lock.acquire()
         try:
-            while True:
-                self.__condition.wait(self.__dispatcher_timeout)
-                for task in self._get_tasks():
-                    self.run(task)
-                self._cancel_tasks()
-                self._timeout_tasks()
-                self._cull_tasks()
-        except Exception:
-            _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
-                          ''.join(traceback.format_exception(*sys.exc_info())))
-            raise
-        #finally:
-        self.__lock.release()
+            try:
+                while True:
+                    self.__condition.wait(self.__dispatcher_timeout)
+                    for task in self._get_tasks():
+                        self.run(task)
+                    self._cancel_tasks()
+                    self._timeout_tasks()
+                    self._cull_tasks()
+            except Exception:
+                _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
+                              ''.join(traceback.format_exception(*sys.exc_info())))
+                raise
+        finally:
+            self.__lock.release()
 
     def _get_tasks(self):
         """
         Get the next 'n' tasks to run, where is max - currently running tasks
         """
+        ready_tasks = []
         num_tasks = self.max_running - self.__running_count
-        return self.__storage.waiting_tasks()[:num_tasks]
+        for t in self.__storage.waiting_tasks()[:num_tasks]:
+            if t.scheduled_time < time.time():
+                ready_tasks.append(t)
+        return ready_tasks
 
     def _cancel_tasks(self):
         """

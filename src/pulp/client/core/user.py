@@ -24,14 +24,18 @@ from pulp.client import constants
 from pulp.client.connection import UserConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
+from pulp.client.credentials import CredentialError
 
 # base user action class ------------------------------------------------------
 
 class UserAction(Action):
 
     def setup_connections(self):
-        self.userconn = UserConnection()
-
+        try:
+            self.userconn = UserConnection()
+        except CredentialError, ce:
+            system_exit(-1, ce.message)
+        
     def get_user(self, username):
         user = self.userconn.user(login=username)
         if not user:
