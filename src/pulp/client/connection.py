@@ -143,12 +143,12 @@ class PulpConnection:
     PORT = cfg.server.port
 
     def __init__(self, host=HOST, port=PORT):
-        self.host = host
         self.port = port
         self.handler = self.HANDLER
         self.conn = None
         credentials = Credentials()
-        userid, password, key, crt = credentials.best()
+        userid, password, key, crt, uhost = credentials.best()
+        self.host = uhost or cfg.server.host
         self.username = userid
         self.password = password
         self.key_file = key
