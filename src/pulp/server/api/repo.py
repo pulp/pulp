@@ -221,9 +221,14 @@ class RepoApi(BaseApi):
 
         REPOS_LOCATION = "%s/%s/" % (config.config.get('paths', 'local_storage'), "repos")
         parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
+        cert_data = {}
+        if repo['ca'] and repo['cert'] and repo['key']:
+            cert_data = {'ca' : open(repo['ca'], "rb").read(),
+                         'cert' : open(repo['cert'], "rb").read(),
+                         'key'  : open(repo['key'], "rb").read()}
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
         self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
-                        relative_path=relative_path)
+                        relative_path=relative_path, cert_data=cert_data)
         # Sync from parent repo
         try:
             self._sync(clone_id)
