@@ -520,10 +520,10 @@ class RHNSynchronizer(BaseSynchronizer):
 
         # Perform the sync
         dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
-        if not skip_dict('packages') or skip_dict['packages'] != 1:
+        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
             s.syncPackages(channel, savePath=dest_dir, callback=progress_callback)
             s.createRepo(dest_dir)
-        if not skip_dict('errata') or skip_dict['errata'] != 1:
+        if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
             updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
             if os.path.isfile(updateinfo_path):
                 log.info("updateinfo_path is found, calling updateRepo")
