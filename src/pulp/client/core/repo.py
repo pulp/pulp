@@ -120,7 +120,7 @@ class Status(RepoAction):
         if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
             if syncs and syncs[0]['state'] in ('error'):
                 print _("Last Error: %s\n%s") % \
-                        (str(parse_date(syncs[0]['finish_time'])), 
+                        (str(parse_date(syncs[0]['finish_time'])),
                                 syncs[0]['traceback'][-1])
             return
         print _('Currently syncing:'),
@@ -139,7 +139,7 @@ class Status(RepoAction):
 class Content(RepoAction):
 
     description = _('list the contents of a repository')
-    
+
     def setup_parser(self):
         super(Content, self).setup_parser()
         opt_group = self.parser.add_option_group("Updates Only")
@@ -177,7 +177,7 @@ class Content(RepoAction):
             pnames = all_pnames
             errata = all_errata
         print_header(_('Contents of %s') % id)
-        
+
         print _('\nPackages in %s: \n') % id
         if not pnames:
             print _(' none')
@@ -471,7 +471,10 @@ class Sync(RepoAction):
         # calculate the progress
         done = float(progress['size_total']) - float(progress['size_left'])
         total = float(progress['size_total'])
-        portion = done / total
+        if total > 0.0:
+            portion = done / total
+        else:
+            portion = 1.0
         percent = str(int(100 * portion))
         pkgs_done = str(progress['items_total'] - progress['items_left'])
         pkgs_total = str(progress['items_total'])
@@ -516,7 +519,7 @@ class Sync(RepoAction):
         if self.opts.nopackages:
 	    skip['packages'] = 1
             # skip errata as well, no point of errata without pkgs
-            skip['errata']  = 1
+            skip['errata'] = 1
         if self.opts.noerrata:
             skip['errata'] = 1
         if self.opts.nodistro:
@@ -668,7 +671,7 @@ class AddPackages(RepoAction):
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
-        pids = [] 
+        pids = []
         for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
             pids.append(pinfo['id'])
@@ -680,7 +683,7 @@ class AddPackages(RepoAction):
         except Exception:
             raise
             print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
-        print _("Successfully added packages %s to repo [%s]." %(self.opts.pkgname, id))
+        print _("Successfully added packages %s to repo [%s]." % (self.opts.pkgname, id))
 
 class RemovePackages(RepoAction):
     description = _('Remove package(s) from the repository.')
@@ -700,12 +703,12 @@ class RemovePackages(RepoAction):
             try:
                 if pinfo:
                     self.pconn.remove_package(id, [pinfo])
-                    print _("Successfully removed package %s from repo [%s]." %(pkg, id))
+                    print _("Successfully removed package %s from repo [%s]." % (pkg, id))
                 else:
                     print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
             except Exception:
                 print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
-                
+
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
@@ -728,7 +731,7 @@ class AddErrata(RepoAction):
             self.pconn.add_errata(id, errataids)
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
-        print _("Successfully added Errata %s to repo [%s]." %(errataids, id))
+        print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
 
 class RemoveErrata(RepoAction):
     description = _('Remove errata from the repository')
@@ -747,7 +750,7 @@ class RemoveErrata(RepoAction):
             self.pconn.delete_errata(id, errataids)
         except Exception:
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
-        print _("Successfully removed Errata %s from repo [%s]." %(errataids, id))
+        print _("Successfully removed Errata %s from repo [%s]." % (errataids, id))
 
 
 
