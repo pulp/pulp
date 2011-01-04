@@ -343,7 +343,7 @@ def add_user_to_role(role_name, user_name):
     user = _get_user(user_name)
     if role_name in user['roles']:
         return False
-    user['roles'][role_name] = role
+    user['roles'].append(role_name)
     _user_api.update(user)
     for resource, operations in role['permissions'].items():
         _permission_api.grant(resource, user, operations)
