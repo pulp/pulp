@@ -28,7 +28,7 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.user import UserApi
-import pulp.server.auth.auth as principal
+from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.certificate import Certificate
 import testutil

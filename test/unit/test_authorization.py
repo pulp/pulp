@@ -40,7 +40,7 @@ from pulp.server.auth import authorization
 class TestAuthorization(unittest.TestCase):
 
     def setUp(self):
-        authorization.assure_builtin_roles()
+        authorization.ensure_builtin_roles()
         self.perm_api = PermissionAPI()
         self.role_api = RoleAPI()
         self.user_api = UserApi()

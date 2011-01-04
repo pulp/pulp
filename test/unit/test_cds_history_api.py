@@ -30,7 +30,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.server.api.cds_history import CdsHistoryApi
-import pulp.server.auth.auth as auth
+from pulp.server.auth import principal
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent, User
 from pulp.server.pexceptions import PulpException
 import testutil
@@ -43,7 +43,7 @@ class TestCDSHistoryApi(unittest.TestCase):
         self.cds_history_api.clean()
 
         self.user = User('cds_admin', '12345', 'password', 'CDS User')
-        auth.set_principal(self.user)
+        principal.set_principal(self.user)
 
     def tearDown(self):
         self.cds_history_api.clean()
@@ -260,7 +260,7 @@ class TestCDSHistoryApi(unittest.TestCase):
         '''
 
         # Test
-        self.assertRaises(PulpException, self.cds_history_api.query, limit=-1)
+        self.assertRaises(PulpException, self.cds_history_api.query, limit= -1)
 
     def test_query_zero_limit(self):
         '''
@@ -433,7 +433,7 @@ class TestCDSHistoryApi(unittest.TestCase):
         self.assertEqual(2, len(results))
         self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, results[0]['type_name'])
         self.assertEqual(CDSHistoryEventType.REGISTERED, results[1]['type_name'])
-        
+
 # -- test utilities -----------------------------------------------------------------------
 
     def _populate_for_queries(self):

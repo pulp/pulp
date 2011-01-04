@@ -34,7 +34,7 @@ sys.path.insert(0, commondir)
 from pulp.server import config as pulp_config
 from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
-import pulp.server.auth.auth as auth
+from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.certificate import Certificate
 from pulp.server.webservices.role_check import RoleCheck
@@ -48,7 +48,7 @@ class TestRoleCheck(unittest.TestCase):
         self.capi = ConsumerApi()
 
         # Make sure to reset the principal between tests
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
 
     def tearDown(self):
         self.uapi.clean()
@@ -176,7 +176,7 @@ class TestRoleCheck(unittest.TestCase):
 
         retval = self.admin_only('somevalue', 'baz')
         self.assertEquals(retval, 'baz')
-    
+
     def test_oauth(self):
         web.ctx['headers'] = []
         web.ctx['environ'] = dict()
@@ -185,14 +185,14 @@ class TestRoleCheck(unittest.TestCase):
         login = "test_auth"
         password = "some password"
         self.uapi.create(login, password=password)
-        
+
         key = self.config.get('security', 'oauth_key')
         secret = self.config.get('security', 'oauth_secret')
         scheme = "https"
         host = "localhost.example.com"
         path = "/blah/blippy"
-        url = "%s://%s%s" % (scheme,host,path)
-        
+        url = "%s://%s%s" % (scheme, host, path)
+
         oauth_string = self._create_oauth_signature(key, secret, url)
 
         web.ctx.environ['wsgi.url_scheme'] = scheme
@@ -201,7 +201,7 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['REQUEST_METHOD'] = "GET"
         web.ctx.environ['HTTP_AUTHORIZATION'] = "OAuth %s" % oauth_string
         web.ctx.environ['HTTP_PULP_USER'] = login
-        
+
         # Check for good oauth signature
         retval = self.admin_only('somevalue', 'baz')
         self.assertEquals(retval, 'baz')
@@ -211,26 +211,26 @@ class TestRoleCheck(unittest.TestCase):
         web.ctx.environ['HTTP_AUTHORIZATION'] = "OAuth %s" % oauth_string
         retval = self.admin_only('somevalue', 'baz')
         self.assertNotEquals(retval, 'baz')
-        
-    
+
+
     def _create_oauth_signature(self, key, secret, url):
         consumer = oauth.Consumer(key=key, secret=secret)
         token = oauth.Token(key, secret)
         #    def from_consumer_and_token(cls, consumer, token=None,
         #    http_method=HTTP_METHOD, http_url=None, parameters=None):
 
-        request = oauth.Request.from_consumer_and_token(consumer, 
+        request = oauth.Request.from_consumer_and_token(consumer,
                                                         http_method="GET",
                                                         http_url=url)
-        
+
         request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, None)
         oauth_string = ""
         for key in request.keys():
             print "k,v: (%s,%s)" % (key, request[key])
-            oauth_string = ("%s=\"%s\", " % (key,request[key])) + oauth_string 
+            oauth_string = ("%s=\"%s\", " % (key, request[key])) + oauth_string
         oauth_string = oauth_string[:-2]
         return oauth_string
-        
+
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

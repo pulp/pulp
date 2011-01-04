@@ -32,7 +32,7 @@ sys.path.insert(0, commondir)
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 import pulp.server.api.consumer_history as consumer_history
-import pulp.server.auth.auth as auth
+from pulp.server.principal.import principal
 from pulp.server.db.model import ConsumerHistoryEvent, User
 from pulp.server.pexceptions import PulpException
 import testutil
@@ -50,7 +50,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.clean()
 
         self.user = User('admin', '12345', 'admin', 'Admin')
-        auth.set_principal(self.user)
+        principal.set_principal(self.user)
 
     def tearDown(self):
         self.clean()
@@ -60,7 +60,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         self.consumer_history_api.consumer_created(123)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.consumer_created(123)
 
         # Verify
@@ -75,7 +75,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_CREATED)
         self.assertTrue(entry['timestamp'] is not None)
 
@@ -83,7 +83,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         self.consumer_history_api.consumer_deleted(123)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.consumer_deleted(123)
 
         # Verify
@@ -98,7 +98,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_CONSUMER_DELETED)
         self.assertTrue(entry['timestamp'] is not None)
 
@@ -106,7 +106,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         self.consumer_history_api.repo_bound(123, 456)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.repo_bound(123, 789)
 
         # Verify
@@ -122,7 +122,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_REPO_BOUND)
         self.assertTrue(entry['timestamp'] is not None)
         self.assertEqual(entry['details']['repo_id'], 789)
@@ -131,7 +131,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         self.consumer_history_api.repo_unbound(123, 456)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.repo_unbound(123, 789)
 
         # Verify
@@ -147,7 +147,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_REPO_UNBOUND)
         self.assertTrue(entry['timestamp'] is not None)
         self.assertEqual(entry['details']['repo_id'], 789)
@@ -157,7 +157,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
         self.consumer_history_api.packages_installed(123, packages)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.packages_installed(123, 'zombie-1.0')
 
         # Verify
@@ -174,7 +174,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_PACKAGE_INSTALLED)
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
@@ -186,7 +186,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         errata_titles = ['err123', 'err456']
         self.consumer_history_api.packages_installed(123, packages, errata_titles=errata_titles)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.packages_installed(123, 'zombie-1.0', errata_titles=errata_titles)
 
         # Verify
@@ -204,19 +204,19 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_ERRATA_INSTALLED)
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
         self.assertTrue(len(package_list), 1)
         self.assertEqual(entry['details']['errata_titles'], errata_titles)
-        
+
     def test_packages_removed(self):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
         self.consumer_history_api.packages_removed(123, packages)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.packages_removed(123, 'zombie-1.0')
 
         # Verify
@@ -233,7 +233,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_PACKAGE_UNINSTALLED)
         self.assertTrue(entry['timestamp'] is not None)
         package_list = entry['details']['package_nveras']
@@ -262,7 +262,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         self.consumer_history_api.profile_updated(123, profile)
         time.sleep(.1)
-        auth.set_principal(auth.SystemPrincipal())
+        principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.profile_updated(123, profile)
 
         # Verify
@@ -279,7 +279,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
 
         entry = entries[0]
         self.assertEqual(entry['consumer_id'], 123)
-        self.assertEqual(entry['originator'], auth.SystemPrincipal.LOGIN)
+        self.assertEqual(entry['originator'], principal.SystemPrincipal.LOGIN)
         self.assertEqual(entry['type_name'], consumer_history.TYPE_PROFILE_CHANGED)
         self.assertTrue(entry['timestamp'] is not None)
         self.assertTrue(entry['details']['package_profile'] is not None)
