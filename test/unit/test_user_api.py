@@ -57,14 +57,6 @@ class TestUsers(unittest.TestCase):
         self.assertTrue(user is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
 
-    def test_default_admin(self):
-        """
-        Check to make sure we always have an admin user
-        """
-        default_login = self.config.get('server', 'default_login')
-        admin = self.uapi.user(default_login)
-        self.assertTrue(admin is not None)
-
     def test_duplicate(self):
         id = uuid.uuid4()
         login = 'dupe-test'
@@ -78,13 +70,13 @@ class TestUsers(unittest.TestCase):
     def test_user_list(self):
         user = self.uapi.create('login-test')
         users = self.uapi.users()
-        assert(len(users) == 2)
+        assert(len(users) == 1)
 
     def test_clean(self):
         user = self.uapi.create('login-test')
         self.uapi.clean()
         users = self.uapi.users()
-        assert(len(users) == 1)
+        assert(len(users) == 0)
 
     def test_delete(self):
         login = 'some-login'
@@ -92,20 +84,20 @@ class TestUsers(unittest.TestCase):
         self.uapi.delete(login=login)
         user = self.uapi.user(login)
         assert(user is None)
-        
+
     def test_update_password(self):
         login = 'some-login'
         clear_txt_pass = 'some password'
         user = self.uapi.create(login)
         user['password'] = clear_txt_pass
         user = self.uapi.update(user)
-        
+
         # Lookup user again and verify password is hashed
         user = self.uapi.user(login)
         self.assertTrue(user is not None)
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
-        
+
         # Verify an update with existing password doesn't double-hash the
         # password.
         user = self.uapi.user(login)
@@ -113,7 +105,7 @@ class TestUsers(unittest.TestCase):
         updated = self.uapi.update(user)
         self.assertEqual(updated['password'], existing_password)
 
-        
+
 
 
 if __name__ == '__main__':
