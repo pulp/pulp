@@ -30,8 +30,9 @@ broker.cacert = config.get('messaging', 'cacert')
 broker.clientcert = config.get('messaging', 'clientcert')
 
 # start the event dispatcher
-dispatcher = EventDispatcher()
-dispatcher.start()
+if config.getboolean('events', 'recv_enabled'):
+    dispatcher = EventDispatcher()
+    dispatcher.start()
 
 # start async task reply handler
 replyHandler = ReplyHandler()

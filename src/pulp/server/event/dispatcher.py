@@ -25,6 +25,7 @@ import inspect
 from pulp.server.event import *
 from pulp.server.event.consumer import EventConsumer
 from threading import RLock as Mutex
+from pulp.server.config import config
 import pulp.server.event.handler as hpx
 from logging import getLogger
 
@@ -83,7 +84,10 @@ def event(subject):
                     EventDispatcher.handler(entity, outbound=action)
                 method(inst, *args, **kwargs)
             return retval
-        return call
+        if config.getboolean('events', 'send_enabled'):
+            return call
+        else:
+            return fn
     return decorator
 
 

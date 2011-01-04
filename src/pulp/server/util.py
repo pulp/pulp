@@ -19,7 +19,9 @@ import hashlib # 3rd party on RHEL 5
 import logging
 import os
 import random
+import shutil
 import string
+import tempfile
 import time
 
 import rpm
@@ -153,12 +155,15 @@ def get_repomd_filetypes(repomd_path):
         return rmd.fileTypes()
 
 
-def _get_yum_repomd(path):
+def _get_yum_repomd(path, temp_path=None):
     """
     @param path: path to repo
+    @param temp_path: optional parameter to specify temporary path
     @return yum.yumRepo.YumRepository object initialized for querying repodata
     """
-    r = yum.yumRepo.YumRepository("/tmp/temp_repo-%s" % (time.time()))
+    if not temp_path:
+        temp_path = "/tmp/temp_repo-%s" % (time.time())
+    r = yum.yumRepo.YumRepository(temp_path)
     r.baseurl = "file://%s" % (path.encode("ascii", "ignore"))
     r.basecachedir = path.encode("ascii", "ignore")
     r.baseurlSetup()
@@ -188,11 +193,20 @@ def get_repo_packages(path):
     expects a path/repodata underneath this path)
     @return: List of available packages objects in the repo.  
     """
-    r = _get_yum_repomd(path)
-    if not r:
-        return []
-    r.sack.populate(r, 'metadata', None, 0)
-    return r.getPackageSack().returnPackages()
+    temp_path = tempfile.mkdtemp(prefix="temp_pulp_repo")
+    try:
+        r = _get_yum_repomd(path, temp_path=temp_path)
+        if not r:
+            return []
+        r.sack.populate(r, 'metadata', None, 0)
+        return r.getPackageSack().returnPackages()
+    finally:
+        try:
+            shutil.rmtree(temp_path)
+        except Exception, e:
+            log.warning("Unable to remove temporary directory: %s" % (temp_path))
+            log.warning(e)
+
 
 def get_repomd_filetype_path(path, filetype):
     """

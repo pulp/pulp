@@ -92,8 +92,7 @@ class PulpCLI(object):
         if command is None:
             self.parser.error(_('Invalid command; please see --help'))
         if opts.server is not None:
-            _cfg._sections['server'].__setitem__('host', opts.server)
-            _cfg.write()
+            Credentials.setserver(opts.server)
         Credentials.setuser(opts.username, opts.password)
         Credentials.setcert(opts.key_file, opts.cert_file)
         command.main(args[1:])

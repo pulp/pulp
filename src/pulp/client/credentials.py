@@ -209,6 +209,7 @@ class Credentials:
 
     __userid = None
     __password = None
+    __server   = None
 
     @classmethod
     def setuser(cls, userid=None, password=None):
@@ -232,6 +233,15 @@ class Credentials:
         @type crtpath: str
         """
         Manual.set(keypath, crtpath)
+        
+    @classmethod    
+    def setserver(cls, server=None):
+        """
+        Overrides certificate server url
+        @param server: server url
+        @type server: str
+        """
+        cls.__server = server 
 
     def best(self):
         """
@@ -243,7 +253,7 @@ class Credentials:
             key, crt = self.__bestbundle()
         else:
             key, crt = (None, None)
-        credentials = (self.__userid, self.__password, key, crt)
+        credentials = (self.__userid, self.__password, key, crt, self.__server)
         self.validate(credentials)
         return credentials
 
@@ -253,7 +263,7 @@ class Credentials:
         Must have either valid userid/password OR valid key,crt.
         @raise CredentialsError: When credentials insufficient.
         """
-        userid, password, key, crt = credentials
+        userid, password, key, crt, server = credentials
         if userid and password:
             return
         if key and crt:
