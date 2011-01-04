@@ -87,7 +87,7 @@ class JSONController(object):
             authen_fail_msg = _('Authentication Required')
             author_fail_msg = _('Permission Denied')
 
-            @functools.wraps(method)
+            @wraps(method)
             def _auth_decorator(self, *args, **kwargs):
                 user = None
                 # first, try username:password authentication
