@@ -50,7 +50,7 @@ class RestlibException(Exception):
         self.code = code
         try:
             self.msg = json.loads(msg)
-        except json.JSONDecodeError:
+        except ValueError:
             self.msg = msg
 
     def __str__(self):
