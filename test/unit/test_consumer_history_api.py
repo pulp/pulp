@@ -32,7 +32,7 @@ sys.path.insert(0, commondir)
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 import pulp.server.api.consumer_history as consumer_history
-from pulp.server.principal.import principal
+from pulp.server.auth import principal
 from pulp.server.db.model import ConsumerHistoryEvent, User
 from pulp.server.pexceptions import PulpException
 import testutil
