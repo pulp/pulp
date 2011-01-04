@@ -118,6 +118,10 @@ class Status(RepoAction):
             last_sync = str(parse_date(last_sync))
         print _('Last Sync: %s') % last_sync
         if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
+            if syncs and syncs[0]['state'] in ('error'):
+                print _("Last Error: %s\n%s") % \
+                        (str(parse_date(syncs[0]['finish_time'])), 
+                                syncs[0]['traceback'][-1])
             return
         print _('Currently syncing:'),
         if syncs[0]['progress'] is None:
