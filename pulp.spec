@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.120
+Version:        0.0.121
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,10 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Jan 05 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.121-1
+- Revert "650330 - pulp-migrate script not migrating db from %post of rpm"
+  (jmatthews@redhat.com)
+
 * Wed Jan 05 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.120-1
 - Replace deprecated @identity function with %{hostname} macro in descriptor.
   This is for compatibility with gofer 0.12. (jortel@redhat.com)
