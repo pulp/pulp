@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.119
+Version:        0.0.120
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -256,6 +256,29 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Jan 05 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.120-1
+- Replace deprecated @identity function with %{hostname} macro in descriptor.
+  This is for compatibility with gofer 0.12. (jortel@redhat.com)
+- 655195 - remove consumer cert on client when consumer is deleted gofer plugin
+  updated to replace deprecated @identity function with action.
+  (jortel@redhat.com)
+- Disable amqp events out-of-the-box. (jortel@redhat.com)
+- 662680 - Fixing division by 0 error when total packages is 0
+  (jconnor@redhat.com)
+- 650330 - pulp-migrate script not migrating db from %post of rpm
+  (jmatthews@redhat.com)
+- 608672 - Fixing RHN syncs to work and catch the exceptions appropriately
+  (pkilambi@redhat.com)
+- 662769 - Repo Cloning with Origin Feed sets the cert,ca and key to cloone
+  repo (pkilambi@redhat.com)
+- 636852 - Status of a failed sync is not being reported when you run repo
+  status (jmatthews@redhat.com)
+- 636072 - Pulp repo sync not cleaning up the temp_repo directories that are in
+  the sync directories (jmatthews@redhat.com)
+- 633988, 658162 - server option enhancements: (pkilambi@redhat.com)
+- 666959 - undefined variable error (pkilambi@redhat.com)
+- 623911 - Raise a meaningful exception when user tries to sync a feedless repo
+  (pkilambi@redhat.com)
 * Wed Dec 22 2010 Jay Dobies <jason.dobies@redhat.com> 0.0.119-1
 - 663107 - trimming errata install options to be consistant with package
   installs (pkilambi@redhat.com)
