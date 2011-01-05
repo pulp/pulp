@@ -19,7 +19,7 @@ import socket
 
 # 3rd Party
 from gofer.agent.plugin import Plugin
-from gofer.decorators import remote, identity
+from gofer.decorators import remote
 from grinder.RepoFetch import YumRepoGrinder
 
 
@@ -34,16 +34,6 @@ config = plugin.cfg()
 REPO_LIST_FILENAME = 'cds_repo_list'
 
 class CdsGoferReceiver(object):
-
-    @identity
-    def getuuid(self):
-        '''
-        Returns the bus ID on which this plugin will receive messages.
-
-        @return: bus name used by gofer
-        @rtype:  string
-        '''
-        return 'cds-%s' % socket.gethostname()
 
     @remote
     def initialize(self):
