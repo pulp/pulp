@@ -102,6 +102,9 @@ class ConsumerApi(BaseApi):
                 
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
+        agent = Agent(id, async=True)
+        consumer = agent.Consumer()
+        consumer.deleted()
 
 
     def find_consumergroup_with_conflicting_keyvalues(self, id, key, value):

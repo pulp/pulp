@@ -23,14 +23,49 @@ from pulp.client.connection import ConsumerConnection, RestlibException
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 from pulp.client.repolib import RepoLib
-from pulp.client.credentials import Consumer
+from pulp.client.credentials import Consumer as ConsumerBundle
+from gofer.agent.plugin import Plugin
 from gofer.decorators import *
 from yum import YumBase
 
 from logging import getLogger
 
 log = getLogger(__name__)
+plugin = Plugin.find(__name__)
 cfg = Config()
+
+
+class IdentityAction:
+    """
+    Detect changes in (pulp) registration status.
+    """
+    
+    last = (0,0)
+    
+    @action(seconds=1)
+    def perform(self):
+        """
+        Update the plugin's UUID.
+        """
+        bundle = ConsumerBundle()
+        keymod = self.mtime(bundle.keypath())
+        crtmod = self.mtime(bundle.crtpath())
+        current = (keymod, crtmod)
+        if current != self.last:
+            plugin.setuuid(bundle.getid())
+            self.last = current
+    
+    def mtime(self, path):
+        """
+        Get the modification time for the file at path.
+        @param path: A file path
+        @type path: str
+        @return: The mtime or 0.
+        """
+        try:
+            return os.path.getmtime(path)
+        except OSError:
+            return 0
 
 
 class ProfileUpdateAction:
@@ -45,7 +80,7 @@ class ProfileUpdateAction:
         Looks up the consumer id and latest pkg profile info and cals
         the api to update the consumer profile
         """
-        bundle = Consumer()
+        bundle = ConsumerBundle()
         cid = bundle.getid()
         if not cid:
             log.error("Not Registered")
@@ -60,6 +95,22 @@ class ProfileUpdateAction:
             log.error("Error: %s" % re)
         except Exception, e:
             log.error("Error: %s" % e)
+            
+            
+class Consumer:
+    """
+    Pulp Consumer.
+    """
+    
+    @remote
+    def deleted(self):
+        """
+        Notification that the consumer has been deleted.
+        Clean up associated artifacts.
+        """
+        bundle = ConsumerBundle()
+        bundle.delete()
+        log.info('Artifacts deleted')
 
 
 class Repo:
@@ -162,11 +213,3 @@ class Shell:
             return f.read()
         finally:
             f.close()
-
-
-class PulpIdentity:
-
-    @identity
-    def getuuid(self):
-        bundle = Consumer()
-        return bundle.getid()
