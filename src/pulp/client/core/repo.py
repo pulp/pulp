@@ -222,7 +222,7 @@ class Create(RepoAction):
         self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--gpgkeys", dest="keys",
-                               help=_("a ',' separated list of directories and/or files contining GPG keys"))
+                               help=_("a ',' separated list of directories and/or files containing GPG keys"))
 
     def _get_cert_options(self):
         cacert = self.opts.cacert
@@ -394,7 +394,7 @@ class Update(RepoAction):
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--addkeys", dest="addkeys",
-                               help=_("a ',' separated list of directories and/or files contining GPG keys"))
+                               help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
     def run(self):
