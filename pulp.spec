@@ -202,8 +202,7 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
-/sbin/service pulp-server init
-/sbin/service pulp-server restart
+
 
 %files
 %defattr(-,root,root,-)
