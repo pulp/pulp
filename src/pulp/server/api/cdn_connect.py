@@ -22,6 +22,9 @@ import os
 
 log = logging.getLogger(__name__)
 
+class InvalidRedirectError(Exception):
+    pass
+
 class CDNConnection:
     def __init__(self, hostname, port=443, cacert=None, cert=None, key=None):
         self.hostname = hostname
@@ -47,11 +50,24 @@ class CDNConnection:
          @param URI: relative url for the listings file
          @type  URI: str (ex: "/content/dist/rhel/server/listing")
         """
-        self.httpServ.request('GET', URI)
-        response = self.httpServ.getresponse()
-        if response.status != 200:
-            log.error("status code: %s" % str(response.status))
-            raise Exception(response.status, response.read())
+        while 1:
+            self.httpServ.request('GET', URI)
+            response = self.httpServ.getresponse()
+            if response.status == 200:
+                break
+            elif response.status in [301, 302]:
+                # Handle redirects from server
+                headers = response.msg
+                redirected = headers['Location']
+                log.info("%s redirected to %s" % (self.hostname, redirected))
+                proto, uri = urllib.splittype(redirected)
+                if proto and proto.lower() not in ("http", "https"):
+                    raise InvalidRedirectError("Redirected to unsupported protocol %s" % proto)
+                self.hostname, URI = urllib.splithost(uri)
+                continue
+            else:
+                log.error("status code: %s" % str(response.status))
+                raise Exception(response.status, response.read())
         return response.read()
     
     def fetch_listing(self, content_sets):
