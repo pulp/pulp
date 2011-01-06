@@ -493,6 +493,11 @@ class Sync(RepoAction):
         self.print_sync_progress(progress)
         print ''
         print _('Sync: %s') % state.title()
+        if type(progress) == type({}) and progress['num_error'] > 0:
+            # Check for progress being a dict can be removed after we have
+            # addressed progress for local syncs.  Currently local syncs
+            # aren't sending back a dict for progress
+            print _("Warning: %s errors occurred" % (progress['num_error']))
 
     def sync_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')

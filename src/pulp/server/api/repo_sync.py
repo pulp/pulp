@@ -49,7 +49,10 @@ def yum_rhn_progress_callback(info):
               'items_left',
               'items_total',
               'size_left',
-              'size_total')
+              'size_total',
+              'num_error',
+              'num_success',
+              'num_download')
     values = tuple(getattr(info, f) for f in fields)
     #log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
@@ -351,8 +354,9 @@ class YumSynchronizer(BaseSynchronizer):
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
         else:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
-        yfetch.fetchYumRepo(store_path, callback=progress_callback)
-
+        report = yfetch.fetchYumRepo(store_path, callback=progress_callback)
+        log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
+                % (report.successes, report.downloads, report.errors))
         return store_path
 
 
