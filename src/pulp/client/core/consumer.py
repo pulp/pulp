@@ -305,7 +305,8 @@ class History(ConsumerAction):
     def setup_parser(self):
         super(History, self).setup_parser()
         self.parser.add_option('--event_type', dest='event_type',
-                               help=_('limits displayed history entries to the given type'))
+                               help=_('limits displayed history entries to the given type; \
+                                       supported types: ("consumer_created", "consumer_deleted", "repo_bound", "repo_unbound", "package_installed", "package_uninstalled")'))
         self.parser.add_option('--limit', dest='limit',
                                help=_('limits displayed history entries to the given amount (must be greater than zero)'))
         self.parser.add_option('--sort', dest='sort',
