@@ -84,6 +84,7 @@ class Task(object):
         self.kwargs = kwargs
         self._progress_callback = None
         self.timeout = timeout
+        self.cancel_attempts = 0
 
         # resources managed by the task queue to deliver events
         self.complete_callback = None

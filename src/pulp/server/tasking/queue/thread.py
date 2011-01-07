@@ -128,21 +128,35 @@ class _ThreadInterruptionError(Exception):
     """
     pass
 
+class ThreadStateError(Exception):
+    '''
+    Exception class used to indicate one or more child threads is in a state that cannot
+    currently be cancelled.
+    '''
+    pass
 
 def _tid(thread):
     """
-    Determine a thread's id.
+    Checks if the given thread is available to be cancelled. There are three possible outcomes
+    to this call:
+
+    1. If the thread reports it is not alive, it has finished executing and there is no further
+       action that needs to take place. In this case, None is returned.
+    2. If the thread is capable of being cancelled, its thread ID is returned.
+    3. If the thread object that was passed into the call exists however the underlying kernel
+       thread has not yet been started, the thread cannot be cancelled at this time.
     """
     if not thread.is_alive():
-        raise _ThreadInterruptionError('Thread is not active')
+        return None
+
     if hasattr(thread, '_thread_id'):
         return thread._thread_id
     for tid, tobj in threading._active.items():
         if tobj is thread:
             thread._thread_id = tid
             return tid
-    raise _ThreadInterruptionError('Could not determine thread id')
 
+    raise ThreadStateError()
 
 def _raise_exception_in_thread(tid, exc_type):
     """
@@ -156,8 +170,10 @@ def _raise_exception_in_thread(tid, exc_type):
     num = ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, exc_ptr)
     if num == 1:
         return
-    if num == 0:
-        raise _ThreadInterruptionError('Invalid thread id')
+
+    # We used to have a check in here to throw an error if num == 0. This doesn't represent
+    # an error condition; the net effect is still that the thread is ended.
+
     # NOTE if it returns a number greater than one, we're in trouble, and
     # should call it again with exc=NULL to revert the effect
     null_ptr = ctypes.py_object()

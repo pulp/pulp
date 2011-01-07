@@ -22,7 +22,7 @@ import traceback
 from datetime import datetime, timedelta
 
 from pulp.server.tasking.queue.base import TaskQueue
-from pulp.server.tasking.queue.thread import  DRLock, TaskThread
+from pulp.server.tasking.queue.thread import  DRLock, TaskThread, ThreadStateError
 from pulp.server.tasking.queue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states
 
@@ -109,8 +109,19 @@ class FIFOTaskQueue(TaskQueue):
                 continue
             if task.thread is None:
                 continue
-            task.thread.cancel()
-            self.__canceled_tasks.remove(task)
+
+            # If the cancel call indicates that the thread is not in a cancellable state,
+            # leave it on the queue so we attempt to cancel it again the next time the
+            # dispatcher runs a cancel.
+            try:
+                task.thread.cancel()
+                self.__canceled_tasks.remove(task)
+            except ThreadStateError:
+                task.cancel_attempts += 1
+                _log.warn('Attempt to cancel task for method [%s] was unable to complete at this time. ' % task.method_name +
+                          'This is the [%s] attempt to cancel the task. The task will be resubmitted ' % task.cancel_attempts +
+                          'for cancellation. This does not represent an error but is logged so ' +
+                          'we can get metrics on the regularity at which this occurs.')
 
     def _timeout_tasks(self):
         """
