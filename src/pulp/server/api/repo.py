@@ -1325,7 +1325,21 @@ class RepoApi(BaseApi):
         for distro in repo['distributionid']:
             distributions.append(self.distroapi.distribution(distro))
         return distributions
-
+    
+    def get_file_checksums(self, data):
+        '''
+        Fetch the package checksums and filesizes
+        @param data: {"repo_id1": ["file_name", ...], "repo_id2": [], ...}
+        @return  {"repo_id1": {"file_name": {'checksum':...},...}, "repo_id2": {..}} 
+        '''
+        result = {}
+        for repoid, filenames in data.items():
+            repo = self._get_existing_repo(repoid)
+            fchecksum = {}
+            for fname in filenames:
+                fchecksum[fname] = self.packageapi.package_checksum(fname)[0]['checksum']
+            result[repoid] = fchecksum
+        return result
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':

@@ -179,4 +179,11 @@ class PackageApi(BaseApi):
         log.info("deps packages suggested %s" % deps)
         return {'dependency_list' : dsolve.printable_result(results), 
                 'available_packages' :pkgs}
+        
+    def package_checksum(self, filename):
+        """
+         Returns a list of checksum info for names matching the spec
+        """
+        spec = {'filename' : filename}
+        return list(self.objectdb.find(spec, fields=['checksum']))
 
