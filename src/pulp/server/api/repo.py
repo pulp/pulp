@@ -1141,7 +1141,10 @@ class RepoApi(BaseApi):
             log.warn("Traceback: %s" % (traceback.format_exc()))
             return False
 
-    def _sync(self, id, skip_dict={}, progress_callback=None):
+    def get_synchronizer(self, source_type):
+        return repo_sync.get_synchronizer(source_type)
+
+    def _sync(self, id, skip_dict={}, progress_callback=None, synchronizer=None):
         """
         Sync a repo from the URL contained in the feed
         """
@@ -1149,7 +1152,13 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        sync_packages, sync_errataids = repo_sync.sync(repo, repo_source, skip_dict, progress_callback)
+        sync_packages, sync_errataids = \
+                repo_sync.sync(
+                    repo, 
+                    repo_source, 
+                    skip_dict, 
+                    progress_callback, 
+                    synchronizer)
         log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
             len(sync_errataids)))
         # We need to update the repo object in Mongo to account for
@@ -1192,7 +1201,7 @@ class RepoApi(BaseApi):
         return self.run_async(self._sync,
                               [id, skip],
                               {'progress_callback': progress_callback},
-                              timeout=timeout)
+                              timeout=timeout, task_type=RepoSyncTask)
 
     def list_syncs(self, id):
         """

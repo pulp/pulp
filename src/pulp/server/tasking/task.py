@@ -226,6 +226,9 @@ class Task(object):
         except Exception, e:
             _log.exception(e)
 
+    def stop(self):
+        if self.thread:
+            self.thread.cancel()
 
 class AsyncTask(Task):
     """
@@ -244,3 +247,27 @@ class AsyncTask(Task):
         by external processing.
         """
         pass
+
+class RepoSyncTask(AsyncTask):
+    """
+    Repository Synchronization Task
+    This task is responsible for implementing stop logic for a 
+    repository synchronization 
+    """
+    def __init__(self, callable, args=[], kwargs={}, timeout=None):
+        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
+        self.synchronizer = None
+
+    def set_synchronizer(self, sync_obj):
+        self.synchronizer = sync_obj
+        self.kwargs['synchronizer'] = self.synchronizer
+
+    def stop(self):
+        _log.info("RepoSyncTask stop invoked")
+        if self.synchronizer:
+            self.synchronizer.stop()
+            # All synchronization work should be stopped
+            # when this returns.  Will pass through to 
+            # default stop behavior as a backup in case
+            # something didn't stop
+        super(RepoSyncTask, self).stop()

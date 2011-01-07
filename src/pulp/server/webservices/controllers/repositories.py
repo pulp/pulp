@@ -23,6 +23,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import yum_rhn_progress_callback
 from pulp.server.async import find_async
+from pulp.server.tasking.task import RepoSyncTask
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -288,7 +289,8 @@ class RepositoryActions(AsyncController):
         """
         repo_params = self.params()
         timeout = self.timeout(repo_params)
-        task = self.start_task(api._sync, [id, repo_params['skip']], timeout=timeout, unique=True)
+        task = self.start_task(api._sync, [id, repo_params['skip']], 
+                timeout=timeout, unique=True, task_type=RepoSyncTask)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
@@ -296,6 +298,8 @@ class RepositoryActions(AsyncController):
             return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
         if repo['source'] is not None and repo['source']['type'] in ('yum', 'rhn'):
             task.set_progress('progress_callback', yum_rhn_progress_callback)
+            sync_obj = api.get_synchronizer(repo['source']['type'])
+            task.set_synchronizer(sync_obj)
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)

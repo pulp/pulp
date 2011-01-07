@@ -330,15 +330,18 @@ class AsyncController(JSONController):
                    args=[],
                    kwargs={},
                    timeout=None,
-                   unique=False):
+                   unique=False,
+                   task_type=None):
         """
         Execute the function and its arguments as an asynchronous task.
         @param func: python callable
         @param args: positional arguments for func
         @param kwargs: key word arguments for func
+        @param task_type: optional parm to allow a specific Task class
+                          instance to be used
         @return: dict representing the task
         """
-        return async.run_async(func, args, kwargs, timeout, unique)
+        return async.run_async(func, args, kwargs, timeout, unique, task_type)
 
     def cancel_task(self, task):
         """

@@ -34,7 +34,6 @@ find_async = _queue.find
 
 cancel_async = _queue.cancel
 
-
 def enqueue(task, unique=True):
     """
     Enqueue a task.
@@ -47,7 +46,7 @@ def enqueue(task, unique=True):
         return task
 
 
-def run_async(method, args, kwargs, timeout=None, unique=True):
+def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
     """
     Make a python call asynchronously.
     @type method: callable
@@ -63,7 +62,9 @@ def run_async(method, args, kwargs, timeout=None, unique=True):
     @rtype: L{Task} instance or None
     @return: L{Task} instance on success, None otherwise
     """
-    task = Task(method, args, kwargs, timeout)
+    if not task_type:
+        task_type = Task
+    task = task_type(method, args, kwargs, timeout)
     return enqueue(task, unique)
 
 

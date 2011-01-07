@@ -57,8 +57,22 @@ def yum_rhn_progress_callback(info):
     #log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
 
+def get_synchronizer(source_type):
+    '''
+    Returns an instance of a Synchronizer object which can be used for 
+    repository synchronization
 
-def sync(repo, repo_source, skip_dict={}, progress_callback=None):
+    @param source_type: repository source type
+    @type source_type: string
+
+    Returns an instance of a pulp.server.api.repo_sync.BaseSynchronizer object
+    '''
+    if source_type not in type_classes:
+        raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
+    synchronizer = type_classes[source_type]()
+    return synchronizer
+
+def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None):
     '''
     Synchronizes content for the given RepoSource.
 
@@ -68,13 +82,10 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None):
     @param repo_source: indicates the source from which the repo data will be syncced; may not be None
     @type  repo_source: L{pulp.model.RepoSource}
     '''
-    source_type = repo_source['type']
-    if source_type not in type_classes:
-        raise PulpException('Could not find synchronizer for repo type [%s]', source_type)
-    synchronizer = type_classes[source_type]()
+    if not synchronizer: 
+        synchronizer = get_synchronizer(repo_source['type'])
     repo_dir = synchronizer.sync(repo, repo_source, skip_dict, progress_callback)
     return synchronizer.add_packages_from_dir(repo_dir, repo, skip_dict)
-
 
 def update_schedule(repo):
     '''
@@ -143,6 +154,9 @@ class BaseSynchronizer(object):
         self.package_api = PackageApi()
         self.errata_api = ErrataApi()
         self.distro_api = DistributionApi()
+
+    def stop(self):
+        pass
 
     def add_packages_from_dir(self, dir, repo, skip={}):
         added_packages = {}
@@ -334,6 +348,10 @@ class BaseSynchronizer(object):
 
 class YumSynchronizer(BaseSynchronizer):
 
+    def __init__(self):
+        super(YumSynchronizer, self).__init__()
+        self.yum_repo_grinder = None
+
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         cacert = clicert = clikey = None
         if repo['ca'] and repo['cert'] and repo['key']:
@@ -344,7 +362,7 @@ class YumSynchronizer(BaseSynchronizer):
         num_threads = config.config.getint('yum', 'threads')
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
         num_old_pkgs_keep   = config.config.getint('yum', 'num_old_pkgs_keep')
-        yfetch = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
+        self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert,
                                 clikey=clikey,
                                 packages_location=pulp.server.util.top_package_location(),
@@ -354,11 +372,15 @@ class YumSynchronizer(BaseSynchronizer):
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
         else:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
-        report = yfetch.fetchYumRepo(store_path, callback=progress_callback)
+        report = self.yum_repo_grinder.fetchYumRepo(store_path, callback=progress_callback)
         log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
                 % (report.successes, report.downloads, report.errors))
         return store_path
 
+    def stop(self):
+        log.debug("YumSynchronizer attempting to stop grinder threads")
+        if self.yum_repo_grinder:
+            self.yum_repo_grinder.stop()
 
 class LocalSynchronizer(BaseSynchronizer):
     """
@@ -497,7 +519,7 @@ class LocalSynchronizer(BaseSynchronizer):
             log.error("Unable to create repo directory %s" % dst_repo_dir)
             raise
         return dst_repo_dir
-
+    
 class RHNSynchronizer(BaseSynchronizer):
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
@@ -534,6 +556,7 @@ class RHNSynchronizer(BaseSynchronizer):
                 s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
 
         return dest_dir
+    
 
 # synchronization type map ----------------------------------------------------
 
