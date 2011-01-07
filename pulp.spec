@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.121
+Version:        0.0.122
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,19 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Fri Jan 07 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.122-1
+- 636564 - Adding get_file_checksum api support to lookup file checksums
+  (pkilambi@redhat.com)
+- 645580 - Reworked thread logic to take into account the three state
+  possibilities. (jason.dobies@redhat.com)
+- 662760 - Failed repo sync still shows success (jmatthews@redhat.com)
+- 642687 - Adding 301/302 redirects in pulp while fetching listings and gpg
+  keys (pkilambi@redhat.com)
+- 633954 - include supported types in help (pkilambi@redhat.com)
+- 639993 - format the key-value pair info in consumer list
+  (pkilambi@redhat.com)
+- 659006 - corrected spelling in --help. (jortel@redhat.com)
+
 * Wed Jan 05 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.121-1
 - Revert "650330 - pulp-migrate script not migrating db from %post of rpm"
   (jmatthews@redhat.com)
