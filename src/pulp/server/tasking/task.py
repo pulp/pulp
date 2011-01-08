@@ -209,7 +209,7 @@ class Task(object):
     def invoked(self, result):
         """
         Post I{method} invoked behavior.
-        For synchronous I{methods}, we sinply call I{succeeded()}
+        For synchronous I{methods}, we simply call I{succeeded()}
         @param result: The object returned by the I{method}.
         @type result: object.
         """
@@ -248,7 +248,9 @@ class AsyncTask(Task):
         """
         pass
 
-class RepoSyncTask(AsyncTask):
+# Note: We want the "invoked" from Task, so we are not inheriting from
+# AsyncTask
+class RepoSyncTask(Task):
     """
     Repository Synchronization Task
     This task is responsible for implementing stop logic for a 
