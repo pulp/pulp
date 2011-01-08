@@ -79,7 +79,7 @@ class RoleCheck(object):
 
             for k in web.ctx.environ.keys():
                 val = web.ctx.environ[k]
-                LOG.error("env var: {%s:\'%s\'}" % (k, val))
+                #LOG.error("env var: {%s:\'%s\'}" % (k, val))
 
             # Determine which roles will be checked by this instance of the decorator
             roles = {'consumer': None, 'admin': None, 'consumer_id': None}
@@ -93,7 +93,7 @@ class RoleCheck(object):
                 try:
                     user = self.check_admin(*fargs)
                     principal.set_principal(user)
-                    LOG.info("User: %s" % user)
+                    #LOG.info("User: %s" % user)
                 except PulpException, pe:
                     http.status_unauthorized()
                     http.header('Content-Type', 'application/json')
