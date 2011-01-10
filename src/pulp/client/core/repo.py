@@ -511,7 +511,8 @@ class Sync(RepoAction):
             return
         self.print_sync_finish(task['state'], task['progress'])
         if task['state'] == 'error':
-            system_exit(-1, task['traceback'][-1])
+            if task['traceback']:
+                system_exit(-1, task['traceback'][-1])
 
     def get_task(self):
         id = self.get_required_option('id')

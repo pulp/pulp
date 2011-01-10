@@ -229,6 +229,9 @@ class Task(object):
     def stop(self):
         if self.thread:
             self.thread.cancel()
+        self.state = task_canceled
+        self.finish_time = datetime.datetime.now()
+        self.__complete()
 
 class AsyncTask(Task):
     """

@@ -234,7 +234,7 @@ class TaskThread(TrackedThread):
         """
         # embedded methods to reduce code duplication
         def test_exception_event():
-            return not self.__exception_event.is_set()
+            return self.is_alive() and not self.__exception_event.is_set()
 
         def deliver_exception(thread, test, wait):
             _log.debug('Trying to deliver exception %s to thread[%s]' %

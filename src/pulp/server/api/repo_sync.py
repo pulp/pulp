@@ -381,6 +381,7 @@ class YumSynchronizer(BaseSynchronizer):
         log.debug("YumSynchronizer attempting to stop grinder threads")
         if self.yum_repo_grinder:
             self.yum_repo_grinder.stop()
+        log.debug("YumSynchronizer grinder threads have been stopped.")
 
 class LocalSynchronizer(BaseSynchronizer):
     """
