@@ -34,7 +34,7 @@ Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: gofer-lib >= 0.7
+Requires: gofer-lib >= 0.12
 Requires: crontabs
 Requires: acl
 
@@ -77,7 +77,7 @@ BuildRequires:  rpm-python
 Requires: python-simplejson
 Requires: m2crypto
 Requires: %{name}-common = %{version}
-Requires: gofer >= 0.7
+Requires: gofer >= 0.12
 
 %if 0%{?rhel} > 5
 Requires: python-hashlib
@@ -101,7 +101,7 @@ A collection of resources that are common between the pulp server and client.
 Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
-Requires:       gofer >= 0.7
+Requires:       gofer >= 0.12
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
