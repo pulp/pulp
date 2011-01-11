@@ -57,5 +57,8 @@ number of notable differences exist between this code and its forefathers:
 %{python_sitelib}/oauth2-%{version}-*.egg-info/
 
 %changelog
+* Tue Jan 11 2011 Mike McCune <mmccune@redhat.com> 1.2.1-1
+- new package built with tito
+
 * Fri Oct 22 2010 Tom "spot" Callaway <tcallawa@redhat.com> - 1.2.1-1
 - Initial package for Fedora
