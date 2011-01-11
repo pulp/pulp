@@ -82,7 +82,7 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=N
     @param repo_source: indicates the source from which the repo data will be syncced; may not be None
     @type  repo_source: L{pulp.model.RepoSource}
     '''
-    if not synchronizer: 
+    if not synchronizer:
         synchronizer = get_synchronizer(repo_source['type'])
     repo_dir = synchronizer.sync(repo, repo_source, skip_dict, progress_callback)
     return synchronizer.add_packages_from_dir(repo_dir, repo, skip_dict)
@@ -179,7 +179,7 @@ class BaseSynchronizer(object):
             # process kickstart files/images part of the repo
             self._process_repo_images(dir, repo)
         else:
-	    log.info("skipping distribution imports from sync process")
+            log.info("skipping distribution imports from sync process")
         # Import groups metadata if present
         repomd_xml_path = os.path.join(dir.encode("ascii", "ignore"), 'repodata/repomd.xml')
         if os.path.isfile(repomd_xml_path):
@@ -215,7 +215,7 @@ class BaseSynchronizer(object):
             else:
                 log.info("Skipping errata imports from sync process")
         return added_packages, added_errataids
-    
+
     def _process_repo_images(self, repodir, repo):
         log.debug("Processing any images synced as part of the repo")
         images_dir = os.path.join(repodir, "images")
@@ -224,7 +224,7 @@ class BaseSynchronizer(object):
             return
         # Handle distributions that are part of repo syncs
         files = pulp.server.util.listdir(images_dir) or []
-        id = description = "ks-" + repo['id'] + "-" + repo['arch'] 
+        id = description = "ks-" + repo['id'] + "-" + repo['arch']
         distro = self.distro_api.create(id, description, repo["relative_path"], files)
         if distro['id'] not in repo['distributionid']:
             repo['distributionid'].append(distro['id'])
@@ -235,7 +235,7 @@ class BaseSynchronizer(object):
         distro_path = os.path.join(config.config.get('paths', 'local_storage'), "published", "ks")
         if not os.path.isdir(distro_path):
             os.mkdir(distro_path)
-        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+        source_path = os.path.join(pulp.server.util.top_repos_location(),
                 repo["relative_path"])
         link_path = os.path.join(distro_path, repo["relative_path"])
         pulp.server.util.create_symlinks(source_path, link_path)
@@ -361,7 +361,7 @@ class YumSynchronizer(BaseSynchronizer):
 
         num_threads = config.config.getint('yum', 'threads')
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
-        num_old_pkgs_keep   = config.config.getint('yum', 'num_old_pkgs_keep')
+        num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert,
                                 clikey=clikey,
@@ -387,11 +387,28 @@ class LocalSynchronizer(BaseSynchronizer):
     """
     Sync class to synchronize a directory of rpms from a local filer
     """
-    def _sync_rpms(self, dst_repo_dir, src_repo_dir):
+
+    def _calculate_bytes(self, dir, pkglist):
+        bytes = 0
+        for pkg in pkglist:
+            bytes += os.stat(os.path.join(dir, pkg))[6]
+        return bytes
+
+
+    def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
         # Compute and import packages
         pkglist = pulp.server.util.listdir(src_repo_dir)
         pkglist = filter(lambda x: x.endswith(".rpm"), pkglist)
         log.info("Found %s packages in %s" % (len(pkglist), src_repo_dir))
+        total_bytes = self._calculate_bytes(src_repo_dir, pkglist)
+        total_pkgs = len(pkglist)
+        progress = {
+            'size_total': total_bytes,
+            'size_left': total_bytes,
+            'items_total': total_pkgs,
+            'items_left': total_pkgs }
+        if progress_callback is not None:
+            progress_callback(progress)
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.debug("Working on %s/%s" % (count, len(pkglist)))
@@ -415,6 +432,10 @@ class LocalSynchronizer(BaseSynchronizer):
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                 if not os.path.islink(repo_pkg_path):
                     os.symlink(pkg_location, repo_pkg_path)
+            progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
+            progress['items_left'] -= 1
+            if progress_callback is not None:
+                progress_callback(progress)
         # Remove rpms which are no longer in source
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
@@ -436,11 +457,18 @@ class LocalSynchronizer(BaseSynchronizer):
             if repo['use_symlinks']:
                 log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
                 os.symlink(src_repo_dir, dst_repo_dir)
+                if progress_callback is not None:
+                    progress = {
+                        'size_total': 0,
+                        'size_left': 0,
+                        'items_total': 0,
+                        'items_left': 0 }
+                    progress_callback(progress)
             else:
                 if not os.path.exists(dst_repo_dir):
                     os.makedirs(dst_repo_dir)
                 if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-                    self._sync_rpms(dst_repo_dir, src_repo_dir)
+                    self._sync_rpms(dst_repo_dir, src_repo_dir, progress_callback)
                 else:
                     log.info("Skipping package imports from sync process")
                 # compute and import repo image files            
@@ -520,7 +548,7 @@ class LocalSynchronizer(BaseSynchronizer):
             log.error("Unable to create repo directory %s" % dst_repo_dir)
             raise
         return dst_repo_dir
-    
+
 class RHNSynchronizer(BaseSynchronizer):
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
@@ -557,7 +585,7 @@ class RHNSynchronizer(BaseSynchronizer):
                 s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
 
         return dest_dir
-    
+
 
 # synchronization type map ----------------------------------------------------
 
