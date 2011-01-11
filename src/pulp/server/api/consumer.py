@@ -324,7 +324,7 @@ class ConsumerApi(BaseApi):
         repoids.append(repoid)
         self.update(consumer)
         agent = Agent(id, async=True)
-        repolib = agent.RepoLib()
+        repolib = agent.Repo()
         repolib.update()
         self.consumer_history_api.repo_bound(id, repoid)
     
@@ -348,7 +348,7 @@ class ConsumerApi(BaseApi):
         repoids.remove(repoid)
         self.update(consumer)
         agent = Agent(id, async=True)
-        repolib = agent.RepoLib()
+        repolib = agent.Repo()
         repolib.update()
         self.consumer_history_api.repo_unbound(id, repoid)
         

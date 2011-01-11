@@ -1264,7 +1264,7 @@ class RepoApi(BaseApi):
         capi = ConsumerApi()
         cids = [str(c['id']) for c in capi.findsubscribed(repoid)]
         agent = Agent(cids, async=True)
-        repolib = agent.RepoLib()
+        repolib = agent.Repo()
         repolib.update()
 
     def all_schedules(self):
