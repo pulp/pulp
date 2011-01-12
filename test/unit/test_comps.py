@@ -19,11 +19,12 @@ import sys
 import os
 import unittest
 import logging
-import tempfile
 import yum
 import shutil
 import xml.dom
 import time
+import random
+from tempfile import gettempdir
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.append(srcdir)
@@ -45,6 +46,15 @@ qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
 log = logging.getLogger('pulp.test.testcomps')
+
+def tmpfile():
+    # used instead of tempfile.NamedTemporaryFile(delete=True)
+    # for python 2.4 compat.  (delete=True) not supported in 2.4.
+    n = random.randint(0 ,0xFFFF)
+    fn = hex(n)[2:].upper()
+    path = os.path.join(gettempdir(), fn)
+    return open(path, 'w')
+
 
 class TestComps(unittest.TestCase):
 
@@ -286,7 +296,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(xml.find("<category>"))
         # Verify the XML we produced can be parsed to get back valid
         # yum Groups/Categories
-        f = tempfile.NamedTemporaryFile(delete=False)
+        f = tmpfile()
         f_name = f.name
         log.debug("Writing comps xml to %s" % (f_name))
         f.write(xml.encode('utf-8'))
@@ -329,8 +339,8 @@ class TestComps(unittest.TestCase):
         comps_path = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         repomd_path = os.path.join(self.data_path, "rhel-i386-server-5/repomd.xml")
         # In case the test fails, we want the temp files left over for debugging
-        f_comps = tempfile.NamedTemporaryFile(delete=False)
-        f_repomd = tempfile.NamedTemporaryFile(delete=False)
+        f_comps = tmpfile()
+        f_repomd = tmpfile()
         f_repomd.close()
         tmp_comps_path = f_comps.name
         tmp_repomd_path = f_repomd.name
