@@ -34,7 +34,6 @@ from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.distribution import DistributionApi
-from pulp.server.api.keystore import KeyStore
 from pulp.server import config
 from pulp.server.pexceptions import PulpException
 
@@ -57,6 +56,11 @@ def yum_rhn_progress_callback(info):
     #log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
 
+
+def local_progress_callback(synchronizer):
+    return synchronizer.progress
+
+
 def get_synchronizer(source_type):
     '''
     Returns an instance of a Synchronizer object which can be used for 
@@ -72,6 +76,7 @@ def get_synchronizer(source_type):
     synchronizer = type_classes[source_type]()
     return synchronizer
 
+
 def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None):
     '''
     Synchronizes content for the given RepoSource.
@@ -86,6 +91,7 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=N
         synchronizer = get_synchronizer(repo_source['type'])
     repo_dir = synchronizer.sync(repo, repo_source, skip_dict, progress_callback)
     return synchronizer.add_packages_from_dir(repo_dir, repo, skip_dict)
+
 
 def update_schedule(repo):
     '''
@@ -130,6 +136,7 @@ def delete_schedule(repo):
     else:
         log.debug('No existing cron entry for repo [%s]' % repo['id'])
 
+
 def _cron_command_script():
     '''
     Returns the full python command for invoking the repo sync script. This is missing
@@ -138,6 +145,7 @@ def _cron_command_script():
     '''
     script = os.path.join(os.path.dirname(__file__), 'repo.py')
     return str('python %s' % script)
+
 
 def _cron_command(repo):
     return str('%s --repoid=%s' % (_cron_command_script(), repo['id']))
@@ -346,6 +354,7 @@ class BaseSynchronizer(object):
             return []
         return eids
 
+
 class YumSynchronizer(BaseSynchronizer):
 
     def __init__(self):
@@ -383,17 +392,30 @@ class YumSynchronizer(BaseSynchronizer):
             self.yum_repo_grinder.stop()
         log.debug("YumSynchronizer grinder threads have been stopped.")
 
+
 class LocalSynchronizer(BaseSynchronizer):
     """
     Sync class to synchronize a directory of rpms from a local filer
     """
+    def __init__(self):
+        super(LocalSynchronizer, self).__init__()
+        self.progress = {
+            'status': 'running',
+            'item_name': None,
+            'items_total': 0,
+            'items_remaining': 0,
+            'size_total': 0,
+            'size_left': 0,
+            'num_error': 0,
+            'num_success': 0,
+            'num_downloaded': 0,
+        }
 
     def _calculate_bytes(self, dir, pkglist):
         bytes = 0
         for pkg in pkglist:
             bytes += os.stat(os.path.join(dir, pkg))[6]
         return bytes
-
 
     def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
         # Compute and import packages
@@ -402,13 +424,10 @@ class LocalSynchronizer(BaseSynchronizer):
         log.info("Found %s packages in %s" % (len(pkglist), src_repo_dir))
         total_bytes = self._calculate_bytes(src_repo_dir, pkglist)
         total_pkgs = len(pkglist)
-        progress = {
-            'size_total': total_bytes,
-            'size_left': total_bytes,
-            'items_total': total_pkgs,
-            'items_left': total_pkgs }
+        self.progress['size_total'] = self.progress['size_left'] = total_bytes
+        self.progress['items_total'] = self.progress['items_left'] = total_pkgs
         if progress_callback is not None:
-            progress_callback(progress)
+            progress_callback(self)
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.debug("Working on %s/%s" % (count, len(pkglist)))
@@ -432,10 +451,10 @@ class LocalSynchronizer(BaseSynchronizer):
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                 if not os.path.islink(repo_pkg_path):
                     os.symlink(pkg_location, repo_pkg_path)
-            progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
-            progress['items_left'] -= 1
+            self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
+            self.progress['items_left'] -= 1
             if progress_callback is not None:
-                progress_callback(progress)
+                progress_callback(self)
         # Remove rpms which are no longer in source
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
@@ -548,6 +567,7 @@ class LocalSynchronizer(BaseSynchronizer):
             log.error("Unable to create repo directory %s" % dst_repo_dir)
             raise
         return dst_repo_dir
+
 
 class RHNSynchronizer(BaseSynchronizer):
 
