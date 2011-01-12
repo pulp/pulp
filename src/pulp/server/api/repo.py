@@ -18,6 +18,7 @@
 from datetime import datetime
 import logging
 import gzip
+from itertools import chain
 from optparse import OptionParser
 import os
 import shutil
@@ -25,28 +26,31 @@ import traceback
 from urlparse import urlparse
 
 # Pulp
+import pulp.server.logs
+import pulp.server.util
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
+from pulp.server import updateinfo
 from pulp.server import upload
+from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
+from pulp.server.async import run_async
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.event.dispatcher import event
-import pulp.server.logs
 from pulp.server.pexceptions import PulpException
-import pulp.server.util
-from pulp.server.agent import Agent
-from pulp.server.api.distribution import DistributionApi
-from pulp.server import updateinfo
-from pulp.server.compat import chain
+from pulp.server.tasking.task import RepoSyncTask
+
+
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
@@ -139,11 +143,11 @@ class RepoApi(BaseApi):
                 else:
                     # For none product repos, default to repoid
                     url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse[2] or r['id']
+                    r['relative_path'] = url_parse.path or r['id']
             else:
                 r['relative_path'] = r['id']
                 # There is no repo source, allow package uploads
-                r['allow_upload']  = 1
+                r['allow_upload'] = 1
         else:
             r['relative_path'] = relative_path
         # Remove leading "/", they will interfere with symlink
@@ -199,7 +203,7 @@ class RepoApi(BaseApi):
     def _create_published_link(self, repo):
         if not os.path.isdir(self.published_path):
             os.makedirs(self.published_path)
-        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+        source_path = os.path.join(pulp.server.util.top_repos_location(),
                 repo["relative_path"])
         link_path = os.path.join(self.published_path, repo["relative_path"])
         pulp.server.util.create_symlinks(source_path, link_path)
@@ -217,7 +221,7 @@ class RepoApi(BaseApi):
             raise PulpException("A Repo with id %s does not exist" % id)
         cloned_repo = self.repository(clone_id)
         if cloned_repo is not None:
-            raise PulpException("A Repo with id %s exists. Choose a different id." % clone_id)   
+            raise PulpException("A Repo with id %s exists. Choose a different id." % clone_id)
 
         REPOS_LOCATION = "%s/%s/" % (config.config.get('paths', 'local_storage'), "repos")
         parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
@@ -227,28 +231,28 @@ class RepoApi(BaseApi):
                          'cert' : open(repo['cert'], "rb").read(),
                          'key'  : open(repo['key'], "rb").read()}
         log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
-        self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid, 
+        self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
                         relative_path=relative_path, cert_data=cert_data)
         # Sync from parent repo
         try:
             self._sync(clone_id)
         except:
             raise PulpException("Repo cloning of [%s] failed" % id)
-        
+
         # Update feed type for cloned repo if "origin" or "feedless"
         cloned_repo = self.repository(clone_id)
         if feed == "origin":
             cloned_repo['source'] = repo['source']
         elif feed == "none":
             cloned_repo['source'] = None
-        self.update(cloned_repo)    
-            
+        self.update(cloned_repo)
+
         # Update clone_ids for parent repo
         clone_ids = repo['clone_ids']
         clone_ids.append(clone_id)
         repo['clone_ids'] = clone_ids
-        self.update(repo)   
-        
+        self.update(repo)
+
         # Update gpg keys from parent repo
         keylist = []
         key_paths = self.listkeys(id)
@@ -260,17 +264,17 @@ class RepoApi(BaseApi):
             keylist.append((fn, content))
             f.close()
         self.addkeys(clone_id, keylist)
-        
+
     @audit()
     def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None, progress_callback=None, timeout=None):
         """
         Run a repo clone asynchronously.
         """
-        return self.run_async(self._clone,
-                              [id, clone_id, clone_name, feed, groupid, relative_path],
-                              {'progress_callback': progress_callback},
-                              timeout=timeout)
- 
+        return run_async(self._clone,
+                         [id, clone_id, clone_name, feed, groupid, relative_path],
+                         {'progress_callback': progress_callback},
+                         timeout=timeout)
+
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
         cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)
@@ -309,7 +313,7 @@ class RepoApi(BaseApi):
             return
         cert_files = self._write_certs_to_disk(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
-        CDN_HOST = urlparse(CDN_URL)[1]
+        CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
@@ -329,7 +333,7 @@ class RepoApi(BaseApi):
                 continue
 
         serv.disconnect()
-       
+
     @audit(params=['groupid', 'content_set'])
     def update_product_repo(self, content_set, cert_data, groupid=None, gpg_keys=[]):
         """
@@ -349,12 +353,12 @@ class RepoApi(BaseApi):
             return
         cert_files = self._write_certs_to_disk(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
-        CDN_HOST = urlparse(CDN_URL)[1]
+        CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
         repo_info = serv.fetch_listing(content_set)
-        gkeys  = self._get_gpg_keys(serv, gpg_keys)
+        gkeys = self._get_gpg_keys(serv, gpg_keys)
         for label, uri in repo_info.items():
             try:
                 repo = self._get_existing_repo(label)
@@ -376,15 +380,15 @@ class RepoApi(BaseApi):
                 continue
 
         serv.disconnect()
-        
+
     def _get_gpg_keys(self, serv, gpg_key_list):
         gpg_keys = []
         for gpgkey in gpg_key_list:
             label = gpgkey['gpg_key_label']
-            uri   = str(gpgkey['gpg_key_url'])
+            uri = str(gpgkey['gpg_key_url'])
             try:
                 if uri.startswith("file://"):
-                    key_path = urlparse(uri)[2].encode('ascii', 'ignore')
+                    key_path = urlparse(uri).path.encode('ascii', 'ignore')
                     ginfo = open(key_path, "rb").read()
                 else:
                     ginfo = serv.fetch_gpgkeys(uri)
@@ -393,7 +397,7 @@ class RepoApi(BaseApi):
                 raise
                 log.error("Unable to fetch the gpg key info for %s" % uri)
         return gpg_keys
-         
+
     def delete_product_repo(self, groupid=None):
         """
          delete repos associated to a product. Usually through an event raised
@@ -404,7 +408,7 @@ class RepoApi(BaseApi):
         if not groupid:
             # Nothing further can be done, exit
             return
-        
+
         repos = self.repositories(spec={"groupid" : groupid})
         log.error("List of repos to be deleted %s" % repos)
         for repo in repos:
@@ -413,7 +417,7 @@ class RepoApi(BaseApi):
             except:
                 log.error("Error deleting repo %s for product %s" % (repo['id'], groupid))
                 continue
-    
+
     @event(subject='repo.deleted')
     @audit()
     def delete(self, id):
@@ -436,7 +440,7 @@ class RepoApi(BaseApi):
             if cloned_repo['source'] != repo['source']:
                 cloned_repo['source'] = None
                 self.update(cloned_repo)
-        
+
         #update clone_ids of its parent repo        
         parent_repos = self.repositories({'clone_ids' : id})
         if len(parent_repos) == 1:
@@ -448,18 +452,18 @@ class RepoApi(BaseApi):
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
-        
+
         # delete gpg key links
         path = repo['relative_path']
         ks = KeyStore(path)
         ks.clean(True)
-        
+
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
-        from pulp.server.api.consumer import ConsumerApi 
+        from pulp.server.api.consumer import ConsumerApi
         capi = ConsumerApi()
         bound_consumers = capi.findsubscribed(repo['id'])
         for consumer in bound_consumers:
@@ -470,14 +474,14 @@ class RepoApi(BaseApi):
                 log.error("failed to unbind repoid %s from consumer %s moving on.." % \
                           (repo['id'], consumer['id']))
                 continue
-        
+
         repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
             if field == 'relative_path' and repo[field]:
                 fpath = os.path.join(repo_location, repo[field])
             else:
-                fpath =  repo[field]
+                fpath = repo[field]
             if fpath and os.path.exists(fpath):
                 try:
                     if os.path.isfile(fpath):
@@ -493,7 +497,7 @@ class RepoApi(BaseApi):
 
         # delete the object
         self.objectdb.remove({'id' : id}, safe=True)
-        
+
     @audit()
     def update(self, repo_data):
         repo = self._get_existing_repo(repo_data['id'])
@@ -564,7 +568,7 @@ class RepoApi(BaseApi):
         if not packages:
             return None
         return packages[0]
-    
+
     def get_package_by_nvrea(self, id, name, version, release, epoch, arch):
         """
          CHeck if package exists or not in this repo for given nvrea
@@ -612,8 +616,8 @@ class RepoApi(BaseApi):
             # TODO:  We might want to restrict Packages we add to only
             #        allow 1 NEVRA per repo and require filename to be unique
             self._add_package(repo, package)
-            shared_pkg =  pulp.server.util.get_shared_package_path(
-                    package['name'], package['version'], package['release'], 
+            shared_pkg = pulp.server.util.get_shared_package_path(
+                    package['name'], package['version'], package['release'],
 		    package['arch'], package["filename"], package['checksum'])
             pkg_repo_path = pulp.server.util.get_repo_package_path(
                     repo['relative_path'], package["filename"])
@@ -635,7 +639,7 @@ class RepoApi(BaseApi):
             return
         packages[p['id']] = p
         # increment the package count
-        repo['package_count'] = repo['package_count'] + 1 
+        repo['package_count'] = repo['package_count'] + 1
 
     @audit()
     def remove_package(self, repoid, p):
@@ -709,7 +713,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         self._update_errata_packages(repoid, [erratumid], action='add')
         updateinfo.generate_updateinfo(repo)
-        
+
     def add_errata(self, repoid, errataids=()):
         """
          Adds a list of errata to this repo
@@ -720,7 +724,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
-        
+
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
         addids = []
@@ -730,17 +734,17 @@ class RepoApi(BaseApi):
             if erratum is None:
                 log.info("No Erratum with id: %s found" % erratumid)
                 continue
-            
+
             for pkg in erratum['pkglist']:
                 for pinfo in pkg['packages']:
                     if pinfo['epoch'] in ['None', None]:
                         epoch = '0'
                     else:
-                        epoch = pinfo['epoch'] 
-                    epkg = self.packageapi.package_by_ivera(pinfo['name'], 
-                                                            pinfo['version'], 
-                                                            epoch, 
-                                                            pinfo['release'], 
+                        epoch = pinfo['epoch']
+                    epkg = self.packageapi.package_by_ivera(pinfo['name'],
+                                                            pinfo['version'],
+                                                            epoch,
+                                                            pinfo['release'],
                                                             pinfo['arch'])
                     if epkg:
                         addids.append(epkg['id'])
@@ -767,7 +771,7 @@ class RepoApi(BaseApi):
             errata[erratum['type']] = []
 
         errata[erratum['type']].append(erratum['id'])
-        
+
 
     @audit()
     def delete_erratum(self, repoid, erratumid):
@@ -779,7 +783,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         self._update_errata_packages(repoid, [erratumid], action='delete')
         updateinfo.generate_updateinfo(repo)
-        
+
     def delete_errata(self, repoid, errataids):
         """
         delete list of errata from this repo
@@ -916,7 +920,7 @@ class RepoApi(BaseApi):
 
 
     @audit()
-    def add_packages_to_group(self, repoid, groupid, pkg_names=(), 
+    def add_packages_to_group(self, repoid, groupid, pkg_names=(),
             gtype="default", requires=None):
         """
         @param repoid: repository id
@@ -1154,10 +1158,10 @@ class RepoApi(BaseApi):
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         sync_packages, sync_errataids = \
                 repo_sync.sync(
-                    repo, 
-                    repo_source, 
-                    skip_dict, 
-                    progress_callback, 
+                    repo,
+                    repo_source,
+                    skip_dict,
+                    progress_callback,
                     synchronizer)
         log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
             len(sync_errataids)))
@@ -1198,10 +1202,11 @@ class RepoApi(BaseApi):
         """
         Run a repo sync asynchronously.
         """
-        return self.run_async(self._sync,
-                              [id, skip],
-                              {'progress_callback': progress_callback},
-                              timeout=timeout, task_type=RepoSyncTask)
+        return run_async(self._sync,
+                         [id, skip],
+                         {'progress_callback': progress_callback},
+                         timeout=timeout,
+                         task_type=RepoSyncTask)
 
     def list_syncs(self, id):
         """
@@ -1275,7 +1280,7 @@ class RepoApi(BaseApi):
         @return: key - repo name, value - sync schedule
         '''
         return dict((r['id'], r['sync_schedule']) for r in self.repositories())
-    
+
     def add_distribution(self, repoid, distroid):
         '''
          Associate a distribution to a given repo
@@ -1290,7 +1295,7 @@ class RepoApi(BaseApi):
         if repo['publish']:
             self._create_ks_link(repo)
         log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
-        
+
     def remove_distribution(self, repoid, distroid):
         '''
          Delete a distribution from a given repo
@@ -1306,23 +1311,23 @@ class RepoApi(BaseApi):
             log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
         else:
             log.error("No Distribution with ID %s associated to this repo" % distroid)
-            
+
     def _create_ks_link(self, repo):
         if not os.path.isdir(self.distro_path):
             os.mkdir(self.distro_path)
-        source_path = os.path.join(pulp.server.util.top_repos_location(), 
+        source_path = os.path.join(pulp.server.util.top_repos_location(),
                 repo["relative_path"])
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Linking %s" % link_path)
         pulp.server.util.create_symlinks(source_path, link_path)
-    
+
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Unlinking %s" % link_path)
         if os.path.lexists(link_path):
             # need to use lexists so we will return True even for broken links
             os.unlink(link_path)
-            
+
     def list_distributions(self, repoid):
         '''
          List distribution in a given repo
@@ -1334,7 +1339,7 @@ class RepoApi(BaseApi):
         for distro in repo['distributionid']:
             distributions.append(self.distroapi.distribution(distro))
         return distributions
-    
+
     def get_file_checksums(self, data):
         '''
         Fetch the package checksums and filesizes

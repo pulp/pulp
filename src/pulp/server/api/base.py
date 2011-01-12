@@ -13,7 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server import async
 
 # base api class --------------------------------------------------------------
 
@@ -70,14 +69,3 @@ class BaseApi(object):
         Protected method to get the db collection corresponding to this api.
         """
         raise NotImplementedError()
-
-    # async methods
-
-    def run_async(self, method, args, kwargs={}, timeout=None):
-        return async.run_async(method, args, kwargs, timeout)
-
-    def find_async(self, **kwargs):
-        return async.find_async(**kwargs)
-
-    def cancel_async(self, task):
-        return async.cancel_async(task)
