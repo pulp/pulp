@@ -492,12 +492,14 @@ class Sync(RepoAction):
     def print_sync_finish(self, state, progress):
         self.print_sync_progress(progress)
         print ''
-        if progress and progress.has_key("num_download") \
-                and progress.has_key("items_total"):
-            print _('%s/%s new items downloaded') % \
-                (progress['num_download'], progress['items_total'])
-            print _('%s/%s existing items verified') % \
-                ((progress['items_total'] - progress['num_download']), progress['items_total'])
+        if state.title() in ('Finished'):
+            if progress \
+                    and progress.has_key("num_download") \
+                    and progress.has_key("items_total"):
+                print _('%s/%s new items downloaded') % \
+                    (progress['num_download'], progress['items_total'])
+                print _('%s/%s existing items verified') % \
+                    ((progress['items_total'] - progress['num_download']), progress['items_total'])
         print _('Sync: %s') % state.title()
         if type(progress) == type({}) and progress['num_error'] > 0:
             # Check for progress being a dict can be removed after we have
