@@ -25,7 +25,7 @@ start_logging()
 
 # configure AMQP broker
 url = config.get('messaging', 'url')
-broker = Broker.get(url)
+broker = Broker(url)
 broker.cacert = config.get('messaging', 'cacert')
 broker.clientcert = config.get('messaging', 'clientcert')
 
