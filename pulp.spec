@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.122
+Version:        0.0.123
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,39 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Jan 12 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.123-1
+- 668541 - Changed Label from repo list result to Id for consistency
+  (skarmark@redhat.com)
+- 668555 - user cannot have or be updated to blank password
+  (skarmark@redhat.com)
+- 668556 - user create and update now re-verifies password and makes sure both
+  are the same (skarmark@redhat.com)
+- Align with gofer 0.13 which contains py 2.4 compat updates.
+  (jortel@redhat.com)
+- py 2.4 compat, urlparse returns tuple. (jortel@redhat.com)
+- Check if progress report contains info on num d/l versus total items before
+  printing (jmatthews@redhat.com)
+- 663729,644909 - Match remote class RepoLib renamed to Repo.
+  (jortel@redhat.com)
+- 668000 - Repo with spaces in the ID cannot be deleted (jmatthews@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (mmccune@redhat.com)
+- Automatic commit of package [python-oauth2] release [1.2.1-1].
+  (mmccune@redhat.com)
+- Initialized to use tito. (mmccune@redhat.com)
+- python-oauth2 for rhel builds (mmccune@redhat.com)
+- 662741 - Sync progress indicator needs to only show content stats for
+  downloaded content (jmatthews@redhat.com)
+- Fix for canceling a yum repo sync immediately after it was issued
+  (jmatthews@redhat.com)
+- Require gofer 0.12. (jortel@redhat.com)
+- require grinder 0.70 (latest as of today) (jmatthews@redhat.com)
+- Fix so RepoSyncTask will mark a task as finished when done
+  (jmatthews@redhat.com)
+- quietting logs (jmatthews@redhat.com)
+- Adding a RepoSyncTask type which will issue a stop to grinder on cancel of a
+  repo sync (jmatthews@redhat.com)
+
 * Fri Jan 07 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.122-1
 - 636564 - Adding get_file_checksum api support to lookup file checksums
   (pkilambi@redhat.com)
