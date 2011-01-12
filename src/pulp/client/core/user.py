@@ -68,12 +68,18 @@ class Create(UserAction):
     def setup_parser(self):
         self.parser.add_option("--username", dest="username",
                                help=_("new username to create (required)"))
-        self.parser.add_option("--name", dest="name", default='',
+        self.parser.add_option("--name", dest="name", default=None,
                                help=_("name of user for display purposes"))
 
     def run(self):
         newusername = self.get_required_option('username')
-        newpassword = getpass.getpass("Enter password for user %s: " % newusername)
+        while True:
+            newpassword = getpass.getpass("Enter password for user %s: " % newusername)
+            newpassword_confirm = getpass.getpass("Re-enter password for user %s: " % newusername)
+            if newpassword == newpassword_confirm:
+                break
+            else:
+                print _("\nPasswords do not match\n")
         name = self.opts.name
         user = self.userconn.create(newusername, newpassword, name)
         print _("Successfully created user [ %s ] with name [ %s ]") % \
@@ -99,7 +105,13 @@ class Update(UserAction):
         user = self.get_user(username)
         user['name'] = name
         if self.opts.password:
-            newpassword = getpass.getpass("Enter new password for user %s: " % username)
+            while True:
+                newpassword = getpass.getpass("Enter new password for user %s: " % username)
+                newpassword_confirm = getpass.getpass("Re-enter new password for user %s: " % username)
+                if newpassword == newpassword_confirm:
+                    break
+                else:
+                    print _("\nPasswords do not match\n")
             user['password'] = newpassword
         self.userconn.update(user)
         print _("Successfully updated [ %s ] with name [ %s ]") % \
