@@ -397,8 +397,8 @@ class LocalSynchronizer(BaseSynchronizer):
                 log.debug("Working on %s/%s" % (count, len(pkglist)))
             pkg_info = pulp.server.util.get_rpm_information(pkg)
             pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
-            pkg_location = pulp.server.util.get_shared_package_path(pkg_info.name,
-                    pkg_info.version, pkg_info.release, pkg_info.arch,
+            pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
+                    pkg_info['version'], pkg_info['release'], pkg_info['arch'],
                     os.path.basename(pkg), pkg_checksum)
             log.debug('Expected Package Location: %s' % pkg_location)
             if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
