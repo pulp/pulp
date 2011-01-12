@@ -49,11 +49,14 @@ from pulp.server.db.connection import get_object_db
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.task import RepoSyncTask
+from pulp.server.api.repo_sync import yum_rhn_progress_callback, \
+    local_progress_callback
 
 
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
+
 
 class RepoApi(BaseApi):
     """
@@ -750,9 +753,9 @@ class RepoApi(BaseApi):
                         addids.append(epkg['id'])
                         rmids.append(epkg)
         if action == 'add':
-           self.add_package(repo['id'], addids)
+            self.add_package(repo['id'], addids)
         elif action == 'delete':
-           self.remove_packages(repo['id'], rmids)
+            self.remove_packages(repo['id'], rmids)
 
     def _add_erratum(self, repo, erratumid):
         """
@@ -1198,15 +1201,26 @@ class RepoApi(BaseApi):
         self.update(repo)
 
     @audit()
-    def sync(self, id, progress_callback=None, timeout=None, skip=None):
+    def sync(self, id, timeout=None, skip=None):
         """
         Run a repo sync asynchronously.
         """
-        return run_async(self._sync,
+        repo = self.repository(id)
+        task = run_async(self._sync,
                          [id, skip],
-                         {'progress_callback': progress_callback},
                          timeout=timeout,
                          task_type=RepoSyncTask)
+        if repo['source'] is not None:
+            source_type = repo['source']['type']
+            if source_type in ('yum', 'rhn'):
+                task.set_progress('progress_callback',
+                                  yum_rhn_progress_callback)
+            elif source_type in ('local'):
+                task.set_progress('progress_callback',
+                                  local_progress_callback)
+            synchronizer = self.get_synchronizer(source_type)
+            task.set_synchronizer(synchronizer)
+        return task
 
     def list_syncs(self, id):
         """

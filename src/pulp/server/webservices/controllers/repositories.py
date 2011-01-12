@@ -220,7 +220,7 @@ class RepositoryDeferredFields(JSONController):
         valid_filters = ('type')
         types = self.filters(valid_filters)['type']
         return self.ok(api.errata(id, types))
-    
+
     @JSONController.error_handler
     def distribution(self, id):
         """
@@ -287,19 +287,15 @@ class RepositoryActions(AsyncController):
         @param id: repository id
         @return: True on successful sync of repository from feed
         """
-        repo_params = self.params()
-        timeout = self.timeout(repo_params)
-        task = self.start_task(api._sync, [id, repo_params['skip']], 
-                timeout=timeout, unique=True, task_type=RepoSyncTask)
-        if not task:
-            return self.conflict('Sync already in process for repo [%s]' % id)
         repo = api.repository(id, fields=['source'])
         if repo['source'] is None:
             return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
-        if repo['source'] is not None and repo['source']['type'] in ('yum', 'rhn'):
-            task.set_progress('progress_callback', yum_rhn_progress_callback)
-            sync_obj = api.get_synchronizer(repo['source']['type'])
-            task.set_synchronizer(sync_obj)
+        repo_params = self.params()
+        timeout = self.timeout(repo_params)
+        skip = repo_params['skip']
+        task = api.sync(id, timeout, skip)
+        if not task:
+            return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
@@ -600,7 +596,7 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         return self.ok(api.get_package_by_filename(id, data['filename']))
-         
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def rmkeys(self, id):

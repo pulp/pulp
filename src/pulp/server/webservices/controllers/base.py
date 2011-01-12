@@ -334,6 +334,8 @@ class AsyncController(JSONController):
                    task_type=None):
         """
         Execute the function and its arguments as an asynchronous task.
+        @deprecated: this method's functionality is usually implemented in the
+                     api's themselves
         @param func: python callable
         @param args: positional arguments for func
         @param kwargs: key word arguments for func
