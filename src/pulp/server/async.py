@@ -44,6 +44,7 @@ def enqueue(task, unique=True):
     """
     if _queue.enqueue(task, unique):
         return task
+    return None
 
 
 def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
