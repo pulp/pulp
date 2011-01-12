@@ -16,10 +16,10 @@
 import os
 import sys
 import logging
-from itertools import chain
 from yum.update_md import UpdateMetadata, UpdateNotice
 from pulp.server.db.model import Errata
 from pulp.server.api.errata import ErrataApi
+from pulp.server.compat import chain
 import pulp.server.util
 
 log = logging.getLogger(__name__)
