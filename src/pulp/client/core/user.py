@@ -76,7 +76,9 @@ class Create(UserAction):
         while True:
             newpassword = getpass.getpass("Enter password for user %s: " % newusername)
             newpassword_confirm = getpass.getpass("Re-enter password for user %s: " % newusername)
-            if newpassword == newpassword_confirm:
+            if newpassword == "" or newpassword_confirm == "":
+                print _("\nUser password cannot be empty\n")
+            elif newpassword == newpassword_confirm:
                 break
             else:
                 print _("\nPasswords do not match\n")
@@ -108,7 +110,9 @@ class Update(UserAction):
             while True:
                 newpassword = getpass.getpass("Enter new password for user %s: " % username)
                 newpassword_confirm = getpass.getpass("Re-enter new password for user %s: " % username)
-                if newpassword == newpassword_confirm:
+                if newpassword == "" or newpassword_confirm == "":
+                    print _("\nUser password cannot be empty\n")
+                elif newpassword == newpassword_confirm:
                     break
                 else:
                     print _("\nPasswords do not match\n")
