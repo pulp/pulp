@@ -18,7 +18,6 @@
 from datetime import datetime
 import logging
 import gzip
-from itertools import chain
 from optparse import OptionParser
 import os
 import shutil
@@ -46,7 +45,8 @@ from pulp.server.pexceptions import PulpException
 import pulp.server.util
 from pulp.server.agent import Agent
 from pulp.server.api.distribution import DistributionApi
-from pulp.server import updateinfo 
+from pulp.server import updateinfo
+from pulp.server.compat import chain
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()

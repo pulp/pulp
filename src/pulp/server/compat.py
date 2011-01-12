@@ -18,6 +18,8 @@ standard library since version 2.4, while allowing pulp to run in a 2.4
 interpreter.
 """
 
+import itertools
+
 # functools wraps decorator ---------------------------------------------------
 
 try:
@@ -46,3 +48,15 @@ try:
 
 except ImportError:
     import simplejson as json
+
+
+# itertools.chain --------------------------------------------------------------
+
+class chain(itertools.chain):
+
+    @classmethod
+    def from_iterable(cls, iterables):
+        # chain.from_iterable(['ABC', 'DEF']) --> A B C D E F
+        for it in iterables:
+            for element in it:
+                yield element
