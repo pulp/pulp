@@ -17,8 +17,9 @@
 #
 
 import logging
+import urllib
+
 from M2Crypto import SSL, httpslib
-import os
 
 log = logging.getLogger(__name__)
 
@@ -69,12 +70,12 @@ class CDNConnection:
                 log.error("status code: %s" % str(response.status))
                 raise Exception(response.status, response.read())
         return response.read()
-    
+
     def fetch_listing(self, content_sets):
         version_arch_urls = {}
         for content_set in content_sets:
             label = content_set['content_set_label']
-            uri   = str(content_set['content_rel_url'])
+            uri = str(content_set['content_rel_url'])
             try:
                 versions = self._request_get(uri[:uri.find("$releasever")] + "/listing").split('\n')
                 log.error("GETting %s" % uri[:uri.find("$releasever")] + "listing")
@@ -89,10 +90,10 @@ class CDNConnection:
             except Exception:
                 log.error("Unable to fetch the listings file for relative url %s" % uri)
         return version_arch_urls
-    
+
     def fetch_gpgkeys(self, gpg_key_uri):
         return self._request_get(gpg_key_uri)
-    
+
     def disconnect(self):
         self.httpServ.close()
-        
+
