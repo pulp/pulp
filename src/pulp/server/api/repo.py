@@ -139,7 +139,7 @@ class RepoApi(BaseApi):
                 else:
                     # For none product repos, default to repoid
                     url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse.path or r['id']
+                    r['relative_path'] = url_parse[2] or r['id']
             else:
                 r['relative_path'] = r['id']
                 # There is no repo source, allow package uploads
@@ -309,7 +309,7 @@ class RepoApi(BaseApi):
             return
         cert_files = self._write_certs_to_disk(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
-        CDN_HOST = urlparse(CDN_URL).hostname
+        CDN_HOST = urlparse(CDN_URL)[1]
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
@@ -349,7 +349,7 @@ class RepoApi(BaseApi):
             return
         cert_files = self._write_certs_to_disk(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
-        CDN_HOST = urlparse(CDN_URL).hostname
+        CDN_HOST = urlparse(CDN_URL)[1]
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
                                      cert=cert_files['cert'], key=cert_files['key'])
         serv.connect()
@@ -384,7 +384,7 @@ class RepoApi(BaseApi):
             uri   = str(gpgkey['gpg_key_url'])
             try:
                 if uri.startswith("file://"):
-                    key_path = urlparse(uri).path.encode('ascii', 'ignore')
+                    key_path = urlparse(uri)[2].encode('ascii', 'ignore')
                     ginfo = open(key_path, "rb").read()
                 else:
                     ginfo = serv.fetch_gpgkeys(uri)

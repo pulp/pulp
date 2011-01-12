@@ -427,7 +427,7 @@ class LocalSynchronizer(BaseSynchronizer):
                 os.remove(os.path.join(dst_repo_dir, epkg))
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
-        src_repo_dir = urlparse(repo_source['url']).path.encode('ascii', 'ignore')
+        src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         try:
             dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
