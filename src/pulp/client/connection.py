@@ -20,6 +20,7 @@ import httplib
 import locale
 import sys
 import os
+import urllib
 
 from gettext import gettext as _
 
@@ -88,7 +89,7 @@ class Restlib(object):
     def _request(self, request_type, method, info=None):
         # Convert the method (path) into a string so we dont 
         # have any unicode characters in the URL
-        handler = str(method)
+        handler = urllib.quote(str(method))
         if not handler.startswith(self.apihandler):
             #handler = self.apihandler + handler
             handler = '/'.join((self.apihandler, handler))
