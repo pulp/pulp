@@ -17,7 +17,7 @@
 #
 
 AVAILABLE_REPOS_LIST = """
-Label              \t%-25s
+Id                 \t%-25s
 Name               \t%-25s
 FeedURL            \t%-25s
 FeedType           \t%-25s
