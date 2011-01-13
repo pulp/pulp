@@ -1176,7 +1176,6 @@ class RepoApi(BaseApi):
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
             # Remove packages that are no longer in source repo
             for pid in repo["packages"]:
-                log.info("%%%%%%%%%%%% %s : %s " % (pid, repo['id']))
                 pkg = self.packageapi.package(pid)
                 if pid not in sync_packages and pkg["repo_defined"]:
                     # Only remove packages that are defined by the repo
