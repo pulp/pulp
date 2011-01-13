@@ -146,7 +146,7 @@ class RepoApi(BaseApi):
                 else:
                     # For none product repos, default to repoid
                     url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse.path or r['id']
+                    r['relative_path'] = url_parse[2] or r['id']
             else:
                 r['relative_path'] = r['id']
                 # There is no repo source, allow package uploads
