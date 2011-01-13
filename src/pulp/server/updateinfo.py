@@ -16,6 +16,7 @@
 import os
 import sys
 import logging
+import yum
 from yum.update_md import UpdateMetadata, UpdateNotice
 from pulp.server.db.model import Errata
 from pulp.server.api.errata import ErrataApi
@@ -23,6 +24,25 @@ from pulp.server.compat import chain
 import pulp.server.util
 
 log = logging.getLogger(__name__)
+
+#
+# yum 3.2.22 compat:  UpdateMetadata.add_notice() not
+# supported in 3.2.22.
+# 
+if yum.__version__ < (3,2,28):
+    def add_notice(self, un):
+        if not un or not un["update_id"] or un['update_id'] in self._notices:
+            return
+        self._notices[un['update_id']] = un
+        for pkg in un['pkglist']:
+            for filedata in pkg['packages']:
+                self._cache['%s-%s-%s' % (filedata['name'],
+                                          filedata['version'],
+                                          filedata['release'])] = un
+                no = self._no_cache.setdefault(filedata['name'], set())
+                no.add(un)
+    UpdateMetadata.add_notice = add_notice
+
 
 def get_update_notices(path_to_updateinfo):
     """
