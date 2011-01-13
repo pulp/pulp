@@ -277,7 +277,7 @@ class RepoApi(BaseApi):
                          [id, clone_id, clone_name, feed, groupid, relative_path],
                          {},
                          timeout=timeout)
-        task.set_progress(local_progress_callback)
+        task.set_progress('progress_callback', local_progress_callback)
         return task
 
     def _write_certs_to_disk(self, repoid, cert_data):
