@@ -18,7 +18,6 @@
 from datetime import datetime
 import logging
 import gzip
-from itertools import chain
 from optparse import OptionParser
 import os
 import shutil
@@ -33,6 +32,7 @@ from pulp.server import config
 from pulp.server import crontab
 from pulp.server import updateinfo
 from pulp.server import upload
+from pulp.server.compat import chain
 from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
