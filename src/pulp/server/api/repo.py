@@ -238,7 +238,7 @@ class RepoApi(BaseApi):
                         relative_path=relative_path, cert_data=cert_data)
         # Sync from parent repo
         try:
-            self._sync(clone_id)
+            self._sync(clone_id, progress_callback=progress_callback)
         except:
             raise PulpException("Repo cloning of [%s] failed" % id)
 
@@ -273,10 +273,12 @@ class RepoApi(BaseApi):
         """
         Run a repo clone asynchronously.
         """
-        return run_async(self._clone,
+        task = run_async(self._clone,
                          [id, clone_id, clone_name, feed, groupid, relative_path],
-                         {'progress_callback': progress_callback},
+                         {},
                          timeout=timeout)
+        task.set_progress(local_progress_callback)
+        return task
 
     def _write_certs_to_disk(self, repoid, cert_data):
         CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
