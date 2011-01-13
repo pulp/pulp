@@ -1208,6 +1208,7 @@ class RepoApi(BaseApi):
         repo = self.repository(id)
         task = run_async(self._sync,
                          [id, skip],
+                         {},
                          timeout=timeout,
                          task_type=RepoSyncTask)
         if repo['source'] is not None:
