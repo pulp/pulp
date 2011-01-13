@@ -138,7 +138,7 @@ class Bind(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.cgconn.bind(groupid, self.options.repoid)
+        self.cgconn.bind(groupid, repoid)
         self.repolib.update()
         print _("Successfully subscribed consumer group [%s] to repo [%s]") % \
                 (groupid, repoid)
@@ -156,7 +156,7 @@ class Unbind(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.cgconn.unbind(groupid, self.options.repoid)
+        self.cgconn.unbind(groupid, repoid)
         self.repolib.update()
         print _("Successfully unsubscribed consumer group [%s] from repo [%s]") % \
                 (groupid, repoid)
