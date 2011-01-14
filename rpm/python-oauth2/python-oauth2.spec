@@ -5,12 +5,13 @@
 Name:			python-oauth2
 Summary:		Python support for improved oauth
 Version:		1.2.1
-Release:		1%{?dist}
+Release:		2%{?dist}
 License:		MIT
 Group:			System Environment/Libraries
 Source0:		http://pypi.python.org/packages/source/o/oauth2/oauth2-%{oldversion}.tar.gz
 # Upstream can't seem to manage to put out newer tarballs, just newer git tagged revisions.
 Patch0:			python-oauth2-1.1.3-1.2.1.patch
+Patch1:			python-oauth2-1.1.3-el5.patch
 URL:			http://pypi.python.org/pypi/oauth2/
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
@@ -38,6 +39,7 @@ number of notable differences exist between this code and its forefathers:
 %prep
 %setup -q -n oauth2-%{oldversion}
 %patch0 -p1 -b .121
+%patch1 -p1 -b .el5
 
 %build
 %{__python} setup.py build
