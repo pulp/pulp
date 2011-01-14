@@ -464,7 +464,7 @@ class Sync(RepoAction):
             delattr(self, '_previous_progress')
         # handle the initial None case
         if progress is None:
-            self._previous_progress = '[' + ' ' * 53 + '] 0%'
+            self._previous_progress = '[' + ' ' * 28 + '] 0%'
             sys.stdout.write(self._previous_progress)
             sys.stdout.flush()
             return
@@ -479,13 +479,22 @@ class Sync(RepoAction):
         pkgs_done = str(progress['items_total'] - progress['items_left'])
         pkgs_total = str(progress['items_total'])
         # create the progress bar
-        bar_width = 50
+        bar_width = 25
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
         # set the previous progress and print
-        self._previous_progress = '%s %s%% (%s of %s pkgs)' % \
+        self._previous_progress = _('%s %s%% Total: %s/%s items (') % \
             (bar, percent, pkgs_done, pkgs_total)
+        for item_type in progress["details"]:
+            item_details = progress["details"][item_type]
+            if item_details.has_key("items_left") and \
+                item_details.has_key("total_count"):
+                self._previous_progress += "%s/%s<%ss> " % \
+                    ((item_details["total_count"] - item_details["items_left"]), \
+                    item_details["total_count"], \
+                    item_type)
+        self._previous_progress += "\b)"
         sys.stdout.write(self._previous_progress)
         sys.stdout.flush()
 
@@ -501,11 +510,12 @@ class Sync(RepoAction):
                 print _('%s/%s existing items verified') % \
                     ((progress['items_total'] - progress['num_download']), progress['items_total'])
         print _('Sync: %s') % state.title()
-        if type(progress) == type({}) and progress['num_error'] > 0:
-            # Check for progress being a dict can be removed after we have
-            # addressed progress for local syncs.  Currently local syncs
-            # aren't sending back a dict for progress
-            print _("Warning: %s errors occurred" % (progress['num_error']))
+        if type(progress) == type({}):
+            if progress['num_error'] > 0:
+                # Check for progress being a dict can be removed after we have
+                # addressed progress for local syncs.  Currently local syncs
+                # aren't sending back a dict for progress
+                print _("Warning: %s errors occurred" % (progress['num_error']))
 
     def sync_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')

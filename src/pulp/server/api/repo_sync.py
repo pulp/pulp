@@ -51,7 +51,8 @@ def yum_rhn_progress_callback(info):
               'size_total',
               'num_error',
               'num_success',
-              'num_download')
+              'num_download',
+              'details')
     values = tuple(getattr(info, f) for f in fields)
     #log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
@@ -409,6 +410,7 @@ class LocalSynchronizer(BaseSynchronizer):
             'num_error': 0,
             'num_success': 0,
             'num_downloaded': 0,
+            'details':{}
         }
 
     def _calculate_bytes(self, dir, pkglist):
