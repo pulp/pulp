@@ -83,7 +83,8 @@ class List(ConsumerAction):
             print_header(_("Consumer Information"))
             for con in cons:
                 kvpair = []
-                for k,v in con["key_value_pairs"].items():
+                key_value_pairs = self.cconn.get_keyvalues(con["id"])
+                for k,v in key_value_pairs.items():
                     kvpair.append("%s  :  %s," % (str(k), str(v)))
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], \
