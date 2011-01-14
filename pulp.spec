@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.123
+Version:        0.0.124
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,47 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Fri Jan 14 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.124-1
+- 669372 - Consumer group key-value pairs inherited by a consumer are now
+  displayed when viewing a consumer (skarmark@redhat.com)
+- 669220 669221 - fixed cli options when binding and unbinding consumergroup to
+  a repo (skarmark@redhat.com)
+- Removing debugging info log from previous commit (skarmark@redhat.com)
+- 668071 - origin clone sync bug fix for the keyerror (skarmark@redhat.com)
+- yum 3.2.22 compat: UpdateMetadata.add_notice() not supported.
+  (jortel@redhat.com)
+- py 2.4 compat: httplib.responses addd in py 2.5. (jortel@redhat.com)
+- py 2.4 compat: itertools.chain.from_iterable() not supported in 2.4.
+  (jortel@redhat.com)
+- py 2.4 compat: rpm.hdr subscript instead of object attributes.
+  (jortel@redhat.com)
+- forgot to pass in the keyword argument name (jconnor@redhat.com)
+- converted the clone to use the new local sync progress (jconnor@redhat.com)
+- added required kwargs arguments (jconnor@redhat.com)
+- augmented repo api sync to load correct synchronization classes and progress
+  callbacks moved async functionality completely out of webservices and into
+  api (jconnor@redhat.com)
+- explicit return of None when task enqueue fails (jconnor@redhat.com)
+- moved progress informaiton into class state added local progress callback
+  that returns synchronizer progress (jconnor@redhat.com)
+- fixed missing urllib import (jconnor@redhat.com)
+- removed async methods from base class in lieu of calling the async module
+  directly fixed import error for passed in task type in sync method
+  (jconnor@redhat.com)
+- first pass at saving sync progress for local syncs (jconnor@redhat.com)
+- py 2.4 compat: itertools.chain.from_iterable() not supported in 2.4.
+  (jortel@redhat.com)
+- py 2.4 compat: itertools.chain.from_iterable() not supported in 2.4.
+  (jortel@redhat.com)
+- py 2.4 compat: tempfile.NamedTemporaryFile(delete=False) not supported.
+  (jortel@redhat.com)
+- Fix __init__ recurson. (jortel@redhat.com)
+- py 2.4 compat: super() only works w/ new-style classes. (jortel@redhat.com)
+- Only display num downloaded/verified on a successful repo sync finish
+  (jmatthews@redhat.com)
+- py 2.4 compat: rpm.hdr subscript instead of object attributes.
+  (jortel@redhat.com)
+
 * Wed Jan 12 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.123-1
 - 668541 - Changed Label from repo list result to Id for consistency
   (skarmark@redhat.com)
