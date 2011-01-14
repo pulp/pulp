@@ -120,10 +120,14 @@ class Info(ConsumerAction):
     def run(self):
         id = self.get_required_option('id')
         cons = self.cconn.consumer(id)
+        kvpair = []
+        key_value_pairs = self.cconn.get_keyvalues(cons["id"])
+        for k,v in key_value_pairs.items():
+            kvpair.append("%s  :  %s," % (str(k), str(v)))
         
         print_header(_("Consumer Information"))
         print constants.AVAILABLE_CONSUMER_INFO % \
-                (cons["id"], cons["description"], cons["repoids"].keys(), cons['key_value_pairs'])
+                (cons["id"], cons["description"], cons["repoids"].keys(), '\n \t\t\t'.join(kvpair[:]))
         if not self.opts.show_profile:
             system_exit(os.EX_OK)
         # Construct package profile list
