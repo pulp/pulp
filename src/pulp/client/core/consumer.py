@@ -88,7 +88,7 @@ class List(ConsumerAction):
                     kvpair.append("%s  :  %s," % (str(k), str(v)))
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], \
-                         con["repoids"],'\n \t\t\t'.join(kvpair[:]))
+                         con["repoids"].keys(),'\n \t\t\t'.join(kvpair[:]))
             system_exit(os.EX_OK)
 
         if value is None:

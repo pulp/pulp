@@ -431,7 +431,12 @@ class ConsumerConnection(PulpConnection):
 
     def consumers(self):
         method = "/consumers/"
-        return self.conn.request_get(method)
+        consumers = self.conn.request_get(method)
+        for c in consumers:
+            for field in consumer_deferred_fields:
+                consumer_link = "/consumers/%s/" % str(c["id"])
+                c[field] = self.conn.request_get('%s%s/' % (consumer_link, field))
+        return consumers
 
     def consumers_with_package_name(self, name):
         method = '/consumers/?package_name=%s' % name
