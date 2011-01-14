@@ -26,13 +26,13 @@ log = getLogger(__name__)
 
 # async execution queue -------------------------------------------------------
 
-_queue = FIFOTaskQueue()
+_queue = None
 
 # async api -------------------------------------------------------------------
 
-find_async = _queue.find
+find_async = None
 
-cancel_async = _queue.cancel
+cancel_async = None
 
 def enqueue(task, unique=True):
     """
@@ -68,6 +68,28 @@ def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
     task = task_type(method, args, kwargs, timeout)
     return enqueue(task, unique)
 
+# async system initialization/finalization ------------------------------------
+
+def initialize():
+    """
+    Explicitly start-up the asynchronous sub-system
+    """
+    global _queue, find_async, cancel_async
+    _queue = FIFOTaskQueue()
+    find_async = _queue.find
+    cancel_async = _queue.cancel
+
+
+def finalize():
+    """
+    Explicitly shut-down the asynchronous sub-system
+    """
+    global _queue, find_async, cancel_async
+    q = _queue
+    _queue = find_async = cancel_async = None
+    del q
+
+# agent classes ---------------------------------------------------------------
 
 class AsyncAgent:
     """

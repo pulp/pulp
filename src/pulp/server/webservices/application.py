@@ -14,8 +14,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import atexit
 import web
 
+from pulp.server import async
 from pulp.server import config # unused here, but initializes configuration
 from pulp.server import auditing
 from pulp.server.auth.admin import ensure_admin
@@ -29,7 +31,7 @@ auditing.initialize()
 from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
-    audit, cds, consumergroups, consumers, errata, packages, 
+    audit, cds, consumergroups, consumers, errata, packages,
     permissions, repositories, users, roles, distribution, services)
 
 
@@ -56,8 +58,12 @@ def wsgi_application():
     @return: wsgi application callable
     """
     application = web.subdir_application(urls)
+    # pulp initialization methods
     start_logging()
     check_version()
     ensure_builtin_roles()
     ensure_admin()
+    async.initialize()
+    # pulp finalization methods, registered via 'atexit'
+    atexit.register(async.finalize)
     return application.wsgifunc()

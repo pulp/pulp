@@ -59,11 +59,21 @@ class FIFOTaskQueue(TaskQueue):
         self.__running_count = 0
         self.__storage = VolatileStorage()
         self.__canceled_tasks = []
+        self.__exit = False
 
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
-        self.__dispatcher.setDaemon(True)
         self.__dispatcher.start()
+
+    def __del__(self):
+        """
+        Cleanly shutdown the dispatcher thread
+        """
+        self.__lock.acquire()
+        self.__exit = True
+        self.__condition.notify()
+        self.__lock.release()
+        self.__dispatcher.join()
 
     # protected methods: scheduling
 
@@ -74,7 +84,7 @@ class FIFOTaskQueue(TaskQueue):
         self.__lock.acquire()
         try:
             try:
-                while True:
+                while not self.__exit:
                     self.__condition.wait(self.__dispatcher_timeout)
                     for task in self._get_tasks():
                         self.run(task)
