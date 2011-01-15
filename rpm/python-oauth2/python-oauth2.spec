@@ -59,6 +59,9 @@ number of notable differences exist between this code and its forefathers:
 %{python_sitelib}/oauth2-%{version}-*.egg-info/
 
 %changelog
+* Fri Jan 14 2011 Jeff Ortel <jortel@redhat.com> 1.2.1-2
+- Patch oauth2 to work on rhel5. (jortel@redhat.com)
+
 * Tue Jan 11 2011 Mike McCune <mmccune@redhat.com> 1.2.1-1
 - new package built with tito
 
