@@ -131,6 +131,10 @@ def _make_index(source_dir):
     shutil.copy(user_guide, index)
 
 if __name__ == '__main__':
+
+    # Eventually this script will accept a different temporary directory as an argument,
+    # I just need to add in the optparse code.
+
     _download_user_guide(TMP_DIR)
     _rebrand_all(TMP_DIR)
     _make_index(TMP_DIR)
