@@ -1,0 +1,223 @@
+<?php @ require_once ('header.inc'); ?>
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Repositories">Repositories</h1>
+<p>
+In Pulp, a repository (or <i>repo</i> for short) is a collection of packages, errata, and distributions. The packages can be synchronized into Pulp from an external <i>feed</i> (yum, RHN, etc.) or manually uploaded and maintained by a Pulp admin. For feed-based repositories, the repo can be configured to keep itself updated from the source at scheduled intervals.
+</p>
+<p>
+Through Pulp, clients (or <i>consumers</i> in Pulp terminology) are <i>bound</i> to a repository, enabling them to retrieve that repository's content. This binding is covered in the <a class="wiki" href="UGConsumers.html#bind">Consumer Bind</a> section of the user guide.
+</p>
+<p>
+The <tt>pulp-admin</tt> script provides ways to manipulate repositories in Pulp. The following sections describe the repository-related features that are provided.
+</p>
+<hr />
+<h2 id="crud">Creation, Removal, Display</h2>
+<h3 id="Creation">Creation</h3>
+<p>
+The first step when working with repositories is to create one. Repository creation is done through the <tt>repo create</tt> command in the <tt>pulp-admin</tt> script. For example, to create a repository that will synchronize packages from the Pulp Fedora 14 x86_64 repository, the following command would be used:
+</p>
+<pre class="wiki">$ pulp-admin repo create --id example --feed yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64
+Successfully created repository [ example ]
+</pre><p>
+The following attributes can be specified at repo creation time (all attributes are optional unless otherwise specified).
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Required. Uniquely identifies the repository within the Pulp server. This ID is used when calling operations on a repo. 
+</td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Display name used to better describe the content and purpose of the repo. 
+</td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Indicates the architecture of packages that will be found in the repo. 
+</td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Indicates where packages should be synchronized from when populating the repo. See the section below on feeds for more information. 
+</td></tr><tr><td> Schedule </td><td> <tt>--schedule</tt> </td><td> Cron syntax describing the interval at which the repository should be automatically synchronized. 
+</td></tr><tr><td> CA Certificate </td><td> <tt>--cacert</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Entitlement Certificate </td><td> <tt>--cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Entitlement Private Key </td><td> <tt>--key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
+</td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> If specified, the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
+</td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
+</td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
+</td></tr><tr><td> GPG Keys </td><td> <tt>--gpgkeys</tt> </td><td> A comma-separated list of GPG public key files that can be used to verify the packages found within the repository. 
+</td></tr></table>
+<h4 id="Feeds">Feeds</h4>
+<p>
+The following feed types are supported:
+</p>
+<ul><li>yum
+</li><li>rhn
+</li><li>local
+</li></ul><p>
+The feed URL must be prefixed with one of these types when creating the repository. For example:
+</p>
+<pre class="wiki">$ pulp-admin repo create --id example --feed yum:http://example.com/repos
+</pre><h3 id="Removal">Removal</h3>
+<p>
+Removing a repository from Pulp is as simple as running the <tt>repo delete</tt> command.
+</p>
+<pre class="wiki">$ pulp-admin repo delete --id example
+</pre><h3 id="Display">Display</h3>
+<h4 id="RepositoryList">Repository List</h4>
+<p>
+The list of all repositories in the Pulp server can be retrieved with the <tt>repo list</tt> command.
+</p>
+<pre class="wiki">$ pulp-admin repo list
++------------------------------------------+
+       List of Available Repositories
++------------------------------------------+
+
+Label              	example                  
+Name               	example                  
+FeedURL            	http://example.com/repos 
+FeedType           	yum                      
+Arch               	noarch                   
+Sync Schedule      	None                     
+Packages           	0                        
+Files              	0                        
+Distributions      	None                     
+Publish            	True                     
+Clones             	[]                       
+Groups             	None
+</pre><h4 id="Status">Status</h4>
+<p>
+Synchronization status information can be found for an individual repository through the <tt>repo status</tt> command. Since this command is only retrieving information on a specific repository, the <tt>--id</tt> flag is required.
+</p>
+<pre class="wiki">$ pulp-admin repo status --id example
++------------------------------------------+
+             Status for example
++------------------------------------------+
+Repository: example
+Number of Packages: 0
+Last Sync: never
+</pre><h4 id="Contents">Contents</h4>
+<p>
+The list of items in a repository can be displayed with the <tt>repo content</tt> command. Again, the <tt>--id</tt> flag is required to indicate the repository being queried.
+</p>
+<pre class="wiki">$ pulp-admin repo content --id pulp-f14-64
++------------------------------------------+
+           Contents of pulp-f14-64
++------------------------------------------+
+
+Packages in pulp-f14-64: 
+
+python-pymongo-1.6-5.fc14.x86_64.rpm
+pulp-client-0.0.117-1.fc14.noarch.rpm
+grinder-0.0.67-1.fc14.noarch.rpm
+gofer-lib-0.10-1.fc14.noarch.rpm
+pulp-common-0.0.117-1.fc14.noarch.rpm
+pulp-cds-0.0.117-1.fc14.noarch.rpm
+pulp-0.0.117-1.fc14.noarch.rpm
+python-webpy-0.32-6.fc14.noarch.rpm
+gofer-0.10-1.fc14.noarch.rpm
+python-qpid-0.7.946106-1.fc14.noarch.rpm
+
+Errata in pulp-f14-64: 
+
+ none
+
+Files in pulp-f14-64: 
+
+ none
+</pre><hr />
+<h2 id="sync">Synchronization</h2>
+<p>
+If a repository is configured with a feed, content can be downloaded from that feed into the Pulp server. This synchronization can occur either through a manual command in the <tt>pulp-admin</tt> script or configured to automatically run at a set time (for more information on scheduling repo synchronization, see the <a class="wiki" href="UGRepo.html#crud">repo creation</a> section of this guide). 
+</p>
+<p>
+The simplest syntax for synchronizing a repository is as follows:
+</p>
+<pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64
+</pre><p>
+By default, the sync runs asynchronously. In other words, the <tt>repo sync</tt> command will immediately return, however the actual download will proceed on the server. The status of the sync can be found with the <tt>repo status</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin repo status --id pulp-f14-64
++------------------------------------------+
+           Status for pulp-f14-64
++------------------------------------------+
+Repository: pulp-f14-64
+Number of Packages: 10
+Last Sync: 2011-01-07 15:36:45.161000
+Currently syncing: 50% done (5 of 10 packages downloaded)
+</pre><p>
+Alternatively, the sync can be run in the foreground by passing the <tt>-F</tt> flag to the sync call:
+</p>
+<pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64 -F
+Sync for repository pulp-f14-64 started
+You can safely CTRL+C this current command and it will continue
+[=================                        ] 50% (5 of 10 pkgs)
+</pre><p>
+In addition to the <tt>-F</tt> flag, the following options are available to the <tt>repo sync</tt> call. These are only available when running a manual sync using <tt>pulp-admin repo sync</tt> and are not supported for scheduled sync jobs.
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Timeout </td><td> <tt>--timeout</tt> </td><td> Time for the sync to run before being timed out. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines.
+</td></tr><tr><td> Skip Packages </td><td> <tt>--no-packages</tt> </td><td> If specified, packages found in the feed that are not part of an errata will not be synchronized. If errata are still downloaded as part of the sync, their associated packages will still be downloaded. 
+</td></tr><tr><td> Skip Errata </td><td> <tt>--no-errata</tt> </td><td> If specified, errata found in the feed will not be synchronized. 
+</td></tr><tr><td> Skip Distributions </td><td> <tt>--no-distribution</tt> </td><td> If specified, distributions found in the feed will not be synchronized. 
+</td></tr></table>
+<hr />
+<h2 id="errata">Errata</h2>
+<p>
+<i>Placeholder</i>
+</p>
+<hr />
+<h2 id="cloning">Cloning</h2>
+<p>
+Repository cloning is a simple way to create a new repository seeded with content from an existing Pulp repository. 
+</p>
+<p>
+For example, given a spacewalk repository on Pulp server, a clone of this repository can be created as follows:
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone
+</pre><p>
+In this case, the feed of the cloned repo will point to contents of parent repo on the pulp server. 
+</p>
+<p>
+There are two more types of of repository clones: 
+</p>
+<h4 id="ClonewithOriginFeed">Clone with Origin Feed</h4>
+<p>
+In this case, the feed of the cloned repository will be the same as that of parent repository.  
+</p>
+<pre class="wiki"> $ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone-origin --feed origin -F
+</pre><h4 id="ClonewithoutParentOriginFeed">Clone without Parent/Origin Feed</h4>
+<p>
+This is also known as a <i>feedless</i> clone. In this case, the feed of the the cloned repository is 'None'.
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id spacewalk --clone_id spacewalk-clone-feedless --feed none -F
+</pre><p>
+Note that in all of the above cases, immediately after the cloning operation is finished, both parent and clone have same content (packages, errata, distributions). In case of the default cloning with parent feed and cloning with origin feed, a sync operation can performed at any time on cloned repo using the <tt>repo sync</tt> command. In feedless clone, a sync cannot be performed but packages can be uploaded manually (see the <a class="wiki" href="UGPackages.html#upload">Packages - Upload</a> section for more information).
+</p>
+<p>
+Depending upon the content of the origin repository, the cloning operation can take a long time. Similar to <tt>repo sync</tt>, the clone operation runs asynchronously by default.
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id example --clone_id clone_example
+Repository [example] is being cloned as [clone_example]
+Use "repo status" to check on the progress
+</pre><p>
+The status of the sync can be viewed with the <tt>repo status</tt> command specifying the ID of the cloned repo. Alternatively, the clone operation can be run in the foreground by passing the <tt>-F</tt> flag. 
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id example --clone_id clone_example -F
+Repository [example] is being cloned as [clone_example]
+You can safely CTRL+C this current command and it will continue
+[==================================================] 100% (10 of 10 pkgs)
+Clone: Finished
+</pre><hr />
+<h2 id="distributions">Distributions</h2>
+<p>
+<i>Placeholder</i>
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+<?php @ require_once ('footer.inc'); ?>

@@ -1,0 +1,48 @@
+<?php @ require_once ('header.inc'); ?>
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="PulpGeneralReference">Pulp General Reference</h1>
+<h2 id="id">ID Restrictions</h2>
+<p>
+For many entities in Pulp, an ID is used to uniquely identify one instance from another. These IDs are later used in CLI commands and URLs. As such, there are some restrictions on their values. The following are valid characters in an ID:
+</p>
+<ul><li>Letters
+</li><li>Numbers
+</li><li>Underscore <tt>_</tt>
+</li><li>Hyphen <tt>-</tt>
+</li><li>Period <tt>.</tt>
+</li></ul><h2 id="timeunits">Time Units</h2>
+<p>
+Time units, like those used in timeout arguments, allow for the following units:
+</p>
+<ul><li>weeks
+</li><li>days
+</li><li>hours
+</li><li>minutes
+</li><li>seconds
+</li></ul><p>
+The values are specified in the format <tt>units:length</tt>, where <tt>units</tt> is one of the above time units (case insensitive) and length is an integer greater than 1. For example:
+</p>
+<pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64 --timeout minutes:20
+</pre><h2 id="dateunits">Date Units</h2>
+<p>
+Dates are specified to both <tt>pulp-admin</tt> and <tt>pulp-client</tt> using a <tt>yyyy-mm-dd</tt> format. For example:
+</p>
+<pre class="wiki">$ pulp-client consumer history --start_date 2010-01-01
+</pre></div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+<?php @ require_once ('footer.inc'); ?>

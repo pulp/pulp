@@ -1,0 +1,125 @@
+<?php @ require_once ('header.inc'); ?>
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="PulpUsers">Pulp Users</h1>
+<p>
+It is important to not confuse users with <i>consumers</i>. A consumer represents a client system connecting to and retrieving content from a Pulp server. Users, on the other hand, are used for two purposes:
+</p>
+<ul><li>Running administrative commands using <tt>pulp-admin</tt>
+</li><li>Registering new consumers using <tt>pulp-client</tt>
+</li></ul><p>
+All <tt>pulp-admin</tt> commands accept two parameters to capture authentication credentials:
+</p>
+<ul><li>Username: <tt>-u</tt> or <tt>--username</tt>
+</li><li>Password: <tt>-p</tt> or <tt>--password</tt>
+</li></ul><p>
+These arguments are passed to the <tt>pulp-admin</tt> script itself and not the command being executed:
+</p>
+<pre class="wiki"># Correct
+$ pulp-admin -u admin -p admin repo list
+
+# Incorrect
+$ pulp-admin repo list -u admin -p admin
+</pre><hr />
+<h2 id="login">Logging In</h2>
+<h3 id="LogIn">Log In</h3>
+<p>
+Rather than specifying the credentials on each call to <tt>pulp-admin</tt>, a user can <i>log in</i> to the Pulp server. Logging in stores a user credentials certificate at <tt>~/.pulp/user-cert.pem</tt>. Logging in is done through the <tt>auth login</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin -u admin -p admin auth login
+User credentials successfully stored at [/home/pulp-user/.pulp]
+</pre><p>
+Subsequent commands to <tt>pulp-admin</tt> will no longer require the username/password arguments and will instead use the user certificate.
+</p>
+<h3 id="LogOut">Log Out</h3>
+<p>
+To log out of a Pulp server, the <tt>auth logout</tt> command is used. Subsequent calls to <tt>pulp-admin</tt> will require either the username/password arguments or for <tt>auth login</tt> to be run again:
+</p>
+<pre class="wiki">$ pulp-admin auth logout
+User credentials removed from [/home/pulp-user/.pulp]
+</pre><hr />
+<h2 id="mgmt">User Management</h2>
+<p>
+The <tt>pulp-admin</tt> script provides basic user manipulation functionality. The first step in a new Pulp installation should be to use the <tt>user update</tt> command to change the default admin password.
+</p>
+<h3 id="Create">Create</h3>
+<p>
+Pulp stores a limited set of information about its users. The only required piece of information is the username which must be unique in a given Pulp server:
+</p>
+<pre class="wiki">$ pulp-admin user create --username hal
+Enter password for user hal: 
+Successfully created user [ hal ] with name [  ]
+</pre><p>
+The following attributes can be specified at user creation:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Username </td><td> <tt>--username</tt> </td><td> Required. Username that will be used when logging into the Pulp server. This must be unique for each user in the system. 
+</td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Optional display name to further identify the user. 
+</td></tr></table>
+<p>
+Immediately after calling the <tt>user create</tt> command, a non-echo prompt is used to securely request the user's initial password.
+</p>
+<p>
+A more complete example of creating a user is as follows:
+</p>
+<pre class="wiki">$ pulp-admin user create --username hal --name "Hal Jordan"
+Enter password for user hal: 
+Successfully created user [ hal ] with name [ Hal Jordan ]
+</pre><h3 id="Delete">Delete</h3>
+<p>
+Users are removed from the Pulp server through the <tt>user delete</tt> command. The only argument is the username of the user being deleted:
+</p>
+<pre class="wiki">$ pulp-admin user delete --username hal
+Successfully deleted User [ hal ]
+</pre><h3 id="Update">Update</h3>
+<p>
+Once in the Pulp server, certain user information can be updated. Depending on the data being updated, the flow is slightly different:
+</p>
+<h4 id="Name">Name</h4>
+<p>
+The display name for the user can be changed by passing the new value to the <tt>--name</tt> argument, having identified the user using <tt>--username</tt>:
+</p>
+<pre class="wiki">$ pulp-admin user update --username hal --name "Hal Jordan"
+Successfully updated [ hal ] with name [ Hal Jordan ]
+</pre><h4 id="Password">Password</h4>
+<p>
+As in the user creation, the password is entered through a non-echo prompt. As such, the <tt>--password</tt> argument does not accept a value. The prompt will appear once the command is entered:
+</p>
+<pre class="wiki">$ pulp-admin user update --username hal --password
+Enter new password for user hal: 
+Successfully updated [ hal ] with name [ Hal Jordan ]
+</pre><h3 id="List">List</h3>
+<p>
+The list of all users in the Pulp server can be retrieved with the <tt>user list</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin user list
++------------------------------------------+
+               Available Users
++------------------------------------------+
+
+Login :               	admin                        
+Name  :               	None                     
+Roles :               	SuperUsers               
+
+
+Login :               	hal                          
+Name  :               	Hal Jordan               
+Roles :               	                         
+</pre></div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+<?php @ require_once ('footer.inc'); ?>

@@ -1,0 +1,83 @@
+a {
+  text-decoration: underline;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+body {
+  background: #B5D6F7 url('../images/pulp-page-bg.png') no-repeat top left;
+  color: #111;
+  font: 10pt/16pt "Droid Sans",sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3 {
+  font-weight: bold;
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.7em;
+  line-height: 1.7em;
+}
+
+h2 {
+  font-size: 1.3em;
+  line-height: 1.3em;
+}
+
+h3 {
+  font-size: 1em;
+  line-height: 1em;
+}
+
+.larger h3 {
+  margin-top:10px;
+}
+
+li {
+  padding-bottom: 2px;
+}
+
+p {
+  margin: 0;
+  padding-bottom: 15px;
+}
+
+ul {
+  margin: 0;
+}
+
+.wikipage {
+  margin-top: 20px;
+  margin-left: 40px;
+  margin-right: 40px;
+  margin-bottom: 100px;
+  padding: 15px;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  background-color: #fff;
+}
+
+#header {
+  height: 210px;
+}
+
+#logo {
+  width: 298px;
+  height: 220px;
+  margin-left: 0px;
+  background: url('../images/pulp-logo.png') no-repeat left top;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+}
+
+.invisible {
+  display: none;
+}
+

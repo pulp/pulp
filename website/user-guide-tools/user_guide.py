@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+# -- imports ------------------------------------------------------------------
+
+import fnmatch
+import os
+import shutil
+import subprocess
+
+# -- constants/defaults -------------------------------------------------------
+
+GUIDE_URL = 'https://fedorahosted.org/pulp/wiki/UserGuide'
+TMP_DIR = '/tmp/pulp-ug-tmp'
+
+# -- exceptions ---------------------------------------------------------------
+
+class DownloadError(Exception):
+    pass
+
+# -- private ------------------------------------------------------------------
+
+def _download_user_guide(dest_dir=TMP_DIR):
+    '''
+    Downloads the user guide from the wiki into the destination directory. If the directory
+    does not exist it will be created. If it contains files, they will be erased.
+
+    @param dest_dir: directory into which to save the user guide
+    @type  dest_dir: string
+    '''
+
+    # Clean up the destination directory first
+    if os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
+    os.makedirs(dest_dir)
+            
+    # Download the guide
+    cmd = 'wget -r -np --convert-links --html-extension --domains fedorahosted.org -A \'UG*,UserGuide*\' %s' % GUIDE_URL
+
+    p = subprocess.Popen(cmd, shell=True, cwd=dest_dir)
+    p.wait()
+    if p.returncode != 0:
+        raise DownloadError('Error while downloading guide [%d]' % p.returncode)
+
+    # For each file downloaded, do one of two things:
+    # 1. Delete files with parameters; those are wiki links that are followed, we only want
+    # normal HTML files
+    # 2. Collapse the hierarchy into a single directory (dest_dir)
+    html_dir = os.path.join(dest_dir, 'fedorahosted.org', 'pulp', 'wiki')
+    for file in os.listdir(html_dir):
+        if fnmatch.fnmatch(file, '*=*'):
+            print('Deleting [%s]' % file)
+            os.remove(os.path.join(html_dir, file))
+        else:
+            print('Moving [%s]' % file)
+            os.rename(os.path.join(html_dir, file), os.path.join(dest_dir, file))
+
+    # Last cleanup of the downloaded directory structure
+    doomed = os.path.join(dest_dir, 'fedorahosted.org')
+    print('Deleting [%s]' % doomed)
+    shutil.rmtree(doomed)
+
+def _rebrand_file(filename):
+    '''
+    Strips the wiki header/footer off the downloaded HTML file and replaces it with
+    a simple PHP import for the standard user guide.
+
+    @param filename: full path name to the file to rebrand
+    @type  filename: string
+    '''
+
+    # Read in the file
+    fin = open(filename, 'r')
+    contents = fin.read()
+    fin.close()
+
+    # Strip out the header fluff. The best approach I could find it to look for the
+    # <div id="content" class="wiki"> tag and take everything after it.
+    content_start = contents.index('<div id="content" class="wiki">')
+
+    # Strip out the footer fluff. This one is a bit trickier. I think we can rely on the tag:
+    # <script type="text/javascript">searchHighlight()</script>
+    content_end = contents.index('<script type="text/javascript">searchHighlight()</script>')
+
+    clean_contents = contents[content_start:content_end]
+
+    # Overwrite the dirty ones, inserting the PHP imports
+    fout = open(filename, 'w')
+
+    fout.write('<?php @ require_once (\'header.inc\'); ?>\n')
+    fout.write(clean_contents)
+    fout.write('<?php @ require_once (\'footer.inc\'); ?>\n')
+
+    fout.close()
+
+def _rebrand_all(source_dir):
+    '''
+    Rebrands all downloaded user guide files in the given directory.
+
+    @param source_dir: directory in which the user guide files were downloaded
+    @type  source_dir: string
+    '''
+
+    for file in os.listdir(source_dir):
+        print('Rebranding [%s]' % file)
+        _rebrand_file(os.path.join(source_dir, file))
+
+def _make_index(source_dir):
+    '''
+    Creates index.php for the user guide.
+
+    @param source_dir: directory in which the user guide files were downloaded
+    @type  source_dir: string
+    '''
+
+    user_guide = os.path.join(source_dir, 'UserGuide.html')
+    index = os.path.join(source_dir, 'index.html')
+    shutil.copy(user_guide, index)
+
+if __name__ == '__main__':
+    _download_user_guide(TMP_DIR)
+    _rebrand_all(TMP_DIR)
+    _make_index(TMP_DIR)
+
+    print('HTML User Guide can be found at [%s]' % TMP_DIR)
+    
