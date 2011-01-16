@@ -1,0 +1,235 @@
+<?php @ require_once ('header.inc'); ?>
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><p>
+<div class='wiki-toc'>
+<h4>Table of Contents</h4>
+<ol><li class="active"><a href="UGFAQ.html#WhydoIgetSSLWrongHosterrorswhenrunningtheclient">Why do I get "SSL WrongHost" errors when running the client?</a></li><li class="active">
+<a href="UGFAQ.html#CanIoverridesettingsinetcpulpclient.confonaperuserbasis">Can I override settings in /etc/pulp/client.conf on a per user basis?</a></li><li class="active">
+<a href="UGFAQ.html#Whyispulptimingouthanging">Why is pulp timing out/hanging?</a></li><li class="active">
+<a href="UGFAQ.html#Whyarepackageinstallsgettingrequesttimeouts">Why are package installs getting request timeouts?</a></li><li class="active">
+<a href="UGFAQ.html#Ivejustupgradedwhyaremycredentialsfailing">I've just upgraded, why are my credentials failing?</a></li><li class="active">
+<a href="UGFAQ.html#Igetatracebackusingadmincertswithpulp-adminonfedora-14">I get a traceback using admin certs with pulp-admin on fedora-14</a></li><li class="active">
+<a href="UGFAQ.html#Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</a></li><li class="active">
+<a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a></li><li class="active">
+<a href="UGFAQ.html#mongoshellthrowsaconnectfailed">mongo shell throws a connect failed</a></li></ol></li></ol></div>
+
+</p>
+<h1 id="FrequentlyAskedQuestions">Frequently Asked Questions</h1>
+<hr />
+<h2 id="WhydoIgetSSLWrongHosterrorswhenrunningtheclient">Why do I get "SSL WrongHost" errors when running the client?</h2>
+<p>
+A common error new users run into when running the client is an error similar to the following:
+</p>
+<pre class="wiki">M2Crypto.SSL.Checker.WrongHost: Peer certificate commonName does not match host, expected localhost.localdomain, got mycomputer.example.com
+</pre><p>
+The issue revolves around the default SSL certificates that the Apache installation generates. The CN of this certificate must match the hostname being requested against the server; if not, M2Crypto will throw an error. The hostname expected by the certificate can be found by running:
+</p>
+<pre class="wiki">sudo openssl x509 -text -in /etc/pki/tls/certs/localhost.crt | less
+</pre><p>
+Look for the line that starts with "Subject:". The CN in that field will indicate the hostname of the server. For example:
+</p>
+<pre class="wiki">Subject: C=--, ST=SomeState, L=SomeCity, O=SomeOrganization, OU=SomeOrganizationalUnit, CN=guardian/emailAddress=root@guardian
+</pre><p>
+In that example, "guardian" is the name of the pulp server:
+</p>
+<pre class="wiki">-&gt; hostname
+guardian
+</pre><p>
+The pulp client must be configured to use that hostname when making connections to the server. This is done in /etc/pulp/client.conf:
+</p>
+<pre class="wiki">[server]
+host = guardian
+</pre><p>
+Also keep in mind that your client machine must be able to resolve that hostname, so make sure there is an entry in /etc/hosts:
+</p>
+<pre class="wiki"> -&gt; cat /etc/hosts
+# hostname guardian added to /etc/hosts by anaconda
+127.0.0.1   localhost guardian
+</pre><hr />
+<h2 id="CanIoverridesettingsinetcpulpclient.confonaperuserbasis">Can I override settings in /etc/pulp/client.conf on a per user basis?</h2>
+<p>
+When the pulp client runs, it will automatically look in ~/.pulp for a file named client.conf. If this file exists, any values it specifies will override those used in /etc/pulp/client.conf.
+</p>
+<hr />
+<h2 id="Whyispulptimingouthanging">Why is pulp timing out/hanging?</h2>
+<p>
+This is most likely because qpidd isn't running. This may manifest itself in either hanging unit tests or timeouts when accessing the API. Make sure qpidd is running by executing:
+</p>
+<pre class="wiki">service qpidd start
+</pre><p>
+To ensure qpidd starts automatically when the server starts:
+</p>
+<pre class="wiki"># chkconfig qpidd on
+# chkconfig --list qpidd
+qpidd          	0:off	1:off	2:on	3:on	4:on	5:on	6:off
+</pre><hr />
+<h2 id="Whyarepackageinstallsgettingrequesttimeouts">Why are package installs getting request timeouts?</h2>
+<p>
+This is usually a configuration issue. Most likely candidates to check are,
+</p>
+<p>
+Make sure pulpd and qpidd are running
+</p>
+<pre class="wiki"> service qpidd start
+ service pulpd start
+</pre><p>
+make sure client.conf is pointing to your pulp server, defaults to localhost. So if you client is not on same box as pulp server then make sure to update
+</p>
+<pre class="wiki">[server]
+host = &lt;pulp-server&gt;
+
+[messaging]
+url = tcp://&lt;pulp-server&gt;:5672
+</pre><hr />
+<h2 id="Ivejustupgradedwhyaremycredentialsfailing">I've just upgraded, why are my credentials failing?</h2>
+<p>
+This is common if you've been trying out a development version and then upgraded to a release. In a recent development version, we were (briefly) storing the passwords in plain text in the database. The traceback should be:
+</p>
+<pre class="wiki">Traceback (most recent call last):
+  File "/usr/lib/python2.6/site-packages/pulp/server/webservices/controllers/base.py", line 51, in report_error
+    return method(self, *args, **kwargs)
+  File "/usr/lib/python2.6/site-packages/pulp/server/webservices/role_check.py", line 80, in check_roles
+    user = self.check_admin(*fargs)
+  File "/usr/lib/python2.6/site-packages/pulp/server/webservices/role_check.py", line 128, in check_admin
+    return self.check_admin_cert(*fargs) or self.check_username_pass(*fargs)
+  File "/usr/lib/python2.6/site-packages/pulp/server/webservices/role_check.py", line 214, in check_username_pass
+    good_password = password_util.check_password(user['password'], password)
+  File "/usr/lib/python2.6/site-packages/pulp/server/auth/password_util.py", line 46, in check_password
+    salt, hashed_password = saved_password_entry.split(",")
+ValueError: need more than 1 value to unpack
+</pre><p>
+The easiest way to correct this, is to blow away the pulp database. <strong><i>WARNING:</i></strong> This will delete any existing data you have stored.
+</p>
+<pre class="wiki"># sudo service mongod stop
+# sudo rm -rf /var/lib/mongo/* ; on f14 -&gt; sudo rm -rf /var/lib/mongodb/*
+# sudo service mongod start
+# sudo service httpd restart
+</pre><p>
+If you need to correct this, but need to keep your existing database, currently the only way is with a python interpreter:
+</p>
+<pre class="wiki"># python
+&gt;&gt;&gt; from pulp.server.api.user import UserApi
+&gt;&gt;&gt; api = UserApi()
+&gt;&gt;&gt; api.default_login = 'foo'
+&gt;&gt;&gt; api.clean()
+&gt;&gt;&gt; api.create('admin', 'admin')
+</pre><p>
+<strong>NOTE</strong> this last solution is convoluted and nearly as extreme as the previous. It will get rid of all users on the system (unless you happen to have a user named 'foo') and then re-create the default admin user. We are currently working on better solutions.
+</p>
+<hr />
+<h2 id="Igetatracebackusingadmincertswithpulp-adminonfedora-14">I get a traceback using admin certs with pulp-admin on fedora-14</h2>
+<blockquote>
+<p>
+If you see the following traceback on f14, its a bug in py2.7 httplib and is fixed. The patch needs to make it into f14.
+</p>
+<pre class="wiki">Traceback (most recent call last):
+  File "/usr/bin/pulp-admin", line 5, in &lt;module&gt;
+    pkg_resources.run_script('pulp==0.0.79', 'pulp-admin')
+  File "/usr/lib/python2.7/site-packages/pkg_resources.py", line 467, in run_script
+    self.require(requires)[0].run_script(script_name, ns)
+  File "/usr/lib/python2.7/site-packages/pkg_resources.py", line 1200, in run_script
+    execfile(script_filename, namespace, namespace)
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/EGG-INFO/scripts/pulp-admin", line 104, in &lt;module&gt;
+    admin.main()
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/cli/base.py", line 106, in main
+    command.main(args[1:])
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/core/base.py", line 116, in main
+    action.main(args[1:])
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/core/base.py", line 200, in main
+    self.run()
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/core/consumer.py", line 73, in run
+    cons = self.cconn.consumers()
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/connection.py", line 415, in consumers
+    return self.conn.request_get(method)
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/connection.py", line 145, in request_get
+    return self._request("GET", method)
+  File "/usr/lib/python2.7/site-packages/pulp-0.0.79-py2.7.egg/pulp/client/connection.py", line 128, in _request
+    headers=self.headers)
+  File "/usr/lib64/python2.7/httplib.py", line 946, in request
+    self._send_request(method, url, body, headers)
+  File "/usr/lib64/python2.7/httplib.py", line 986, in _send_request
+    self.putheader(hdr, value)
+  File "/usr/lib64/python2.7/httplib.py", line 924, in putheader
+    str = '%s: %s' % (header, '\r\n\t'.join(values))
+TypeError: sequence item 0: expected string, NoneType found
+</pre></blockquote>
+<blockquote>
+<p>
+<strong>Solution: </strong>
+</p>
+</blockquote>
+<ul><li>You must be running older pulp version. Please upgrade to atleast pulp-0.0.80. 
+</li></ul><ul><li>Alternately, The issue is documented here: <a class="ext-link" href="http://bugs.python.org/issue10012"><span class="icon">http://bugs.python.org/issue10012</span></a> . Apply the following patch to your /usr/lib64/python2.7/httplib.py or /usr/lib/python2.7/httplib.py
+<pre class="wiki">$ diff -u /usr/lib64/python2.7/httplib.py /usr/lib64/python2.7/httplib.py.new 
+--- /usr/lib64/python2.7/httplib.py	2010-11-05 14:55:57.564804997 -0400
++++ /usr/lib64/python2.7/httplib.py.new	2010-11-05 14:56:16.146805019 -0400
+@@ -921,8 +921,8 @@
+         if self.__state != _CS_REQ_STARTED:
+             raise CannotSendHeader()
+ 
+-        str = '%s: %s' % (header, '\r\n\t'.join(values))
+-        self._output(str)
++        hdr = '%s: %s' % (header, '\r\n\t'.join([str(v) for v in values]))
++        self._output(hdr)
+ 
+     def endheaders(self, message_body=None):
+         """Indicate that the last header line has been sent to the server.
+
+</pre></li></ul><hr />
+<h2 id="Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</h2>
+<p>
+Actually, we don't know. But we do know how to fix it:
+</p>
+<pre class="wiki">rm /var/lock/subsys/mongod
+</pre><p>
+For example:
+</p>
+<pre class="wiki"># sudo service mongod status
+mongod dead but subsys locked
+# sudo rm /var/lock/subsys/mongod
+# sudo service mongod status
+mongod is stopped
+</pre><hr />
+<h2 id="MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</h2>
+<p>
+This applies to mongo 1.6 installed from EL5.  On start it writes
+"exception in initAndListen std::exception: dbpath (/var/lib/mongodb) does not exist" in the log.  This seems to be a deficiency in the rpm .spec
+where is does not create /var/lib/mongodb directory and set ower/group to user <i>mongodb</i>.  When <i>mongod</i> starts, I does not have permissions
+to write the database in that directory.
+</p>
+<p>
+The fix (as root or sudo):
+</p>
+<pre class="wiki"># mkdir /var/lib/mongodb
+# chown mongodb /var/lib/mongodb
+# chgrp mongodb /var/lib/mongodb
+</pre><hr />
+<h2 id="mongoshellthrowsaconnectfailed">mongo shell throws a connect failed</h2>
+<pre class="wiki">$ mongo
+MongoDB shell version: 1.6.3
+connecting to: test
+Tue Dec 14 16:01:38 Error: couldn't connect to server 127.0.0.1 (anon):1137
+exception: connect failed
+</pre><p>
+The fix is to remove the lock:
+</p>
+<pre class="wiki">$ rm -f /var/lib/mongodb/mongod.lock
+$ /etc/init.d/mongod restart
+</pre></div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+<?php @ require_once ('footer.inc'); ?>

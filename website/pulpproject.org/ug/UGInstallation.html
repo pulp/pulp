@@ -1,0 +1,121 @@
+<?php @ require_once ('header.inc'); ?>
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Installation">Installation</h1>
+<h2 id="latest">Latest Release</h2>
+<p>
+<strong>Community Release 5</strong>
+</p>
+<table class="wiki">
+<tr><td> <strong>Pulp Build</strong> </td><td> 0.117 
+</td></tr><tr><td> <strong>Released</strong> </td><td> December 20th, 2010 
+</td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 13 (i386, x86_64) and Fedora 14 (i386, x86_64) 
+</td></tr></table>
+<p>
+<strong>Repository:</strong> <tt>http://repos.fedorapeople.org/repos/pulp/pulp/</tt>
+</p>
+<hr />
+<h2 id="prereqs">Prerequisites</h2>
+<ul><li>Pulp does not currently work with SELinux, so it needs to be set to Permissive or Disabled.
+</li><li>The following ports must be open into the server:
+<ul><li>443 for API and package retrieval
+</li><li>5672 for non-ssl or 5674 for SSL message bus connections
+</li></ul></li><li>The following ports must be open into consumer systems:
+<ul><li>5672 for non-ssl or 5674 for SSL message bus connections
+</li></ul></li></ul><hr />
+<h2 id="server">Server</h2>
+<p>
+1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
+</p>
+<pre class="wiki">$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+</pre><p>
+2. Install Pulp and its dependencies:
+</p>
+<pre class="wiki">$ yum install pulp
+</pre><p>
+3. Update <tt>/etc/pulp/pulp.conf</tt> to change the <tt>base_url</tt> attribute to reflect the hostname of the Pulp server.
+</p>
+<p>
+4. Initialize Pulp, which starts and configures database:
+</p>
+<pre class="wiki">$ service pulp-server init
+</pre><p>
+5. Start Pulp, which starts the database, message bus broker, and web server:
+</p>
+<pre class="wiki">$ service pulp-server start
+</pre><p>
+6. (optional) Configure Pulp to automatically start system startup:
+</p>
+<pre class="wiki">$ chkconfig pulp-server on
+</pre><h4 id="InstallationNotes">Installation Notes</h4>
+<ul><li>The default user is <strong>admin</strong> with the password <strong>admin</strong>.
+</li></ul><hr />
+<h2 id="adminclient">Admin Client</h2>
+<p>
+The Pulp Admin Client is used for administrative commands on the Pulp server, such as the manipulation of repositories and content. The Pulp Admin Client can be run on any machine that can access the Pulp server, including the server itself. It is not a requirement that the admin client be run on a machine that is configured as a Pulp consumer.
+</p>
+<p>
+Pulp admin commands are accessed through the <tt>pulp-admin</tt> script.
+</p>
+<p>
+1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
+</p>
+<pre class="wiki">$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+</pre><p>
+2. Install the Pulp client packages:
+</p>
+<pre class="wiki">$ yum install pulp-client
+</pre><p>
+3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">UGFAQ</a> page. This change must be done in the following places:
+</p>
+<ul><li>host
+</li></ul><pre class="wiki">$ vi /etc/pulp/client.conf
+</pre><hr />
+<h2 id="consumerclient">Consumer Client</h2>
+<p>
+The Pulp Consumer Client is present on all systems that wish to act as a consumer of a Pulp server. The Pulp Consumer Client provides the means for a system to register and configure itself with a Pulp server. Additionally, the Pulp Consumer Client runs an agent that will receive messages and commands from the Pulp server.
+</p>
+<p>
+Pulp consumer commands are accessed through the <tt>pulp-client</tt> script. This script must be run as <tt>root</tt> to permit access to add references to the Pulp server's repositories. More information can be found in the Pulp Client User Guide.
+</p>
+<p>
+1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
+</p>
+<pre class="wiki">$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+</pre><p>
+2. Install the Pulp client packages:
+</p>
+<pre class="wiki">$ yum install pulp-client
+</pre><p>
+3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">UGFAQ</a> page. This change must be done in four places:
+</p>
+<ul><li>host
+</li><li>baseurl
+</li><li>keyurl
+</li><li>ksurl
+</li></ul><pre class="wiki">$ vi /etc/pulp/client.conf
+</pre><p>
+4. Update <tt>/etc/gofer/agent.conf</tt> to point the <i>agent</i> at the broker running on the pulp server. Replace <tt>localhost</tt> in the <tt>url</tt> property with the hostname or IP of the pulp server as needed.
+</p>
+<pre class="wiki">$ vi /etc/gofer/agent.conf
+</pre><p>
+5. Start the agent (it runs within goferd):
+</p>
+<pre class="wiki">$ service goferd start
+</pre></div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+<?php @ require_once ('footer.inc'); ?>
