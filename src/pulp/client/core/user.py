@@ -97,7 +97,7 @@ class Update(UserAction):
                                help=_("username of user you wish to edit. Not editable (required)"))
         self.parser.add_option("-P", "--password", dest="password", action='store_true', default=False,
                                help=_('change user password'))
-        self.parser.add_option("--name", dest="name", default='',
+        self.parser.add_option("--name", dest="name", default=None,
                                help=_("updated name of user for display purposes"))
 
     def run(self):
@@ -105,7 +105,8 @@ class Update(UserAction):
         name = self.opts.name
 
         user = self.get_user(username)
-        user['name'] = name
+        if name is not None:
+            user['name'] = name
         if self.opts.password:
             while True:
                 newpassword = getpass.getpass("Enter new password for user %s: " % username)
