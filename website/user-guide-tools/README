@@ -1,0 +1,16 @@
+Just a quick note on usage. The following command can be run to pull
+down the latest from the wiki and drop the updated HTML directly into
+the git codebase. Once it's checked in, talk to jdob about getting the
+new files pushed out to the production site.
+
+python user_guide.py -d ../pulpproject.org/ug/
+
+
+Alternatively, to run the site locally:
+- Copy the contents of the pulpproject.org directory into somewhere in
+  your httpd installation (for example, /var/www/html/pulp)
+- Run the generate script specifying the location from above
+  (don't forget to specify the ug subdirectory)
+
+python user_guide.py -d /var/www/html/pulp/ug
+
