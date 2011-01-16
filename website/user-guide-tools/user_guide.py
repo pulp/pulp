@@ -17,6 +17,7 @@
 # -- imports ------------------------------------------------------------------
 
 import fnmatch
+import optparse
 import os
 import shutil
 import subprocess
@@ -42,10 +43,9 @@ def _download_user_guide(dest_dir=TMP_DIR):
     @type  dest_dir: string
     '''
 
-    # Clean up the destination directory first
-    if os.path.exists(dest_dir):
-        shutil.rmtree(dest_dir)
-    os.makedirs(dest_dir)
+    # Make sure the destination directory exists
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
             
     # Download the guide
     cmd = 'wget -r -np --convert-links --html-extension --domains fedorahosted.org -A \'UG*,UserGuide*\' %s' % GUIDE_URL
@@ -115,8 +115,9 @@ def _rebrand_all(source_dir):
     '''
 
     for file in os.listdir(source_dir):
-        print('Rebranding [%s]' % file)
-        _rebrand_file(os.path.join(source_dir, file))
+        if fnmatch.fnmatch(file, 'UG*.html') or fnmatch.fnmatch(file, 'UserGuide*.html'):
+            print('Rebranding [%s]' % file)
+            _rebrand_file(os.path.join(source_dir, file))
 
 def _make_index(source_dir):
     '''
@@ -128,16 +129,27 @@ def _make_index(source_dir):
 
     user_guide = os.path.join(source_dir, 'UserGuide.html')
     index = os.path.join(source_dir, 'index.html')
+
+    # Delete the index.html if it already exists
+    if os.path.exists(index):
+        os.remove(index)
+
     shutil.copy(user_guide, index)
 
 if __name__ == '__main__':
 
-    # Eventually this script will accept a different temporary directory as an argument,
-    # I just need to add in the optparse code.
+    parser = optparse.OptionParser()
+    parser.add_option('-d', dest='dest_dir', action='store',
+                      help='full path to save the generated HTML files')
 
-    _download_user_guide(TMP_DIR)
-    _rebrand_all(TMP_DIR)
-    _make_index(TMP_DIR)
+    options, args = parser.parse_args()
 
-    print('HTML User Guide can be found at [%s]' % TMP_DIR)
+    dest_dir = options.dest_dir or TMP_DIR
+    print(options.dest_dir)
+    
+    _download_user_guide(dest_dir)
+    _rebrand_all(dest_dir)
+    _make_index(dest_dir)
+
+    print('HTML User Guide can be found at [%s]' % dest_dir)
     
