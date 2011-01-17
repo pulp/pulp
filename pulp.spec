@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.124
+Version:        0.0.125
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,19 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Mon Jan 17 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.125-1
+- 668603 - Added a couple of missing event types in bash: consumer: command not
+  found help (skarmark@redhat.com)
+- 668557 - Changing the password of a user should not reset its name
+  (skarmark@redhat.com)
+- Automatic commit of package [python-oauth2] release [1.2.1-2].
+  (jortel@redhat.com)
+- 669372 - updating consumer info to show inherited key-value attributes as
+  well (skarmark@redhat.com)
+- bumping grinder to 0.71 (jmatthews@redhat.com)
+- 662744 - [RFE] Sync progress indicator need to show stats for all content
+  types (pkgs, errata, files, distros, etc) (jmatthews@redhat.com)
+
 * Fri Jan 14 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.124-1
 - 669372 - Consumer group key-value pairs inherited by a consumer are now
   displayed when viewing a consumer (skarmark@redhat.com)
