@@ -30,10 +30,6 @@ _queue = None
 
 # async api -------------------------------------------------------------------
 
-find_async = None
-
-cancel_async = None
-
 def enqueue(task, unique=True):
     """
     Enqueue a task.
@@ -68,25 +64,31 @@ def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):
     task = task_type(method, args, kwargs, timeout)
     return enqueue(task, unique)
 
+
+def find_async(**kwargs):
+    return _queue.find(**kwargs)
+
+
+def cancel_async(task):
+    return _queue.cancel(task)
+
 # async system initialization/finalization ------------------------------------
 
 def initialize():
     """
     Explicitly start-up the asynchronous sub-system
     """
-    global _queue, find_async, cancel_async
+    global _queue
     _queue = FIFOTaskQueue()
-    find_async = _queue.find
-    cancel_async = _queue.cancel
 
 
 def finalize():
     """
     Explicitly shut-down the asynchronous sub-system
     """
-    global _queue, find_async, cancel_async
+    global _queue
     q = _queue
-    _queue = find_async = cancel_async = None
+    _queue = None
     del q
 
 # agent classes ---------------------------------------------------------------
