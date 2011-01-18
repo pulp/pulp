@@ -1368,7 +1368,11 @@ class RepoApi(BaseApi):
             repo = self._get_existing_repo(repoid)
             fchecksum = {}
             for fname in filenames:
-                fchecksum[fname] = self.packageapi.package_checksum(fname)[0]['checksum']
+                filedata = self.packageapi.package_checksum(fname)
+                if filedata:
+                    fchecksum[fname] = filedata[0]['checksum']
+                else:
+                    fchecksum[fname] = None
             result[repoid] = fchecksum
         return result
 # The crontab entry will call this module, so the following is used to trigger the
