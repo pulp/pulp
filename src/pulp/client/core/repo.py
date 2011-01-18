@@ -69,6 +69,51 @@ class RepoAction(Action):
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         return repo
 
+
+class RepoProgressAction(RepoAction):
+
+    def print_progress(self, progress):
+        # erase the previous progress
+        if hasattr(self, '_previous_progress'):
+            sys.stdout.write('\b' * (len(self._previous_progress)))
+            sys.stdout.flush()
+            delattr(self, '_previous_progress')
+        # handle the initial None case
+        if progress is None:
+            self._previous_progress = '[' + ' ' * 28 + '] 0%'
+            sys.stdout.write(self._previous_progress)
+            sys.stdout.flush()
+            return
+        # calculate the progress
+        done = float(progress['size_total']) - float(progress['size_left'])
+        total = float(progress['size_total'])
+        if total > 0.0:
+            portion = done / total
+        else:
+            portion = 1.0
+        percent = str(int(100 * portion))
+        pkgs_done = str(progress['items_total'] - progress['items_left'])
+        pkgs_total = str(progress['items_total'])
+        # create the progress bar
+        bar_width = 25
+        bar_ticks = '=' * int(bar_width * portion)
+        bar_spaces = ' ' * (bar_width - len(bar_ticks))
+        bar = '[' + bar_ticks + bar_spaces + ']'
+        # set the previous progress and print
+        self._previous_progress = _('%s %s%% Total: %s/%s items (') % \
+                (bar, percent, pkgs_done, pkgs_total)
+        for item_type in progress["details"]:
+            item_details = progress["details"][item_type]
+            if item_details.has_key("items_left") and \
+                item_details.has_key("total_count"):
+                self._previous_progress += "%s/%s<%ss> " % \
+                        ((item_details["total_count"] - item_details["items_left"]),
+                         ["total_count"],
+                         item_type)
+        self._previous_progress += "\b)"
+        sys.stdout.write(self._previous_progress)
+        sys.stdout.flush()
+
 # repo actions ----------------------------------------------------------------
 
 class List(RepoAction):
@@ -255,7 +300,7 @@ class Create(RepoAction):
                                  gpgkeys=keylist)
         print _("Successfully created repository [ %s ]") % repo['id']
 
-class Clone(RepoAction):
+class Clone(RepoProgressAction):
 
     description = _('clone a repository')
 
@@ -275,39 +320,8 @@ class Clone(RepoAction):
                                action='store_true', default=False,
                                help=_('clone repository in the foreground'))
 
-
-    def print_clone_progress(self, progress):
-        # erase the previous progress
-        if hasattr(self, '_previous_progress'):
-            sys.stdout.write('\b' * (len(self._previous_progress)))
-            sys.stdout.flush()
-            delattr(self, '_previous_progress')
-        # handle the initial None case
-        if progress is None:
-            self._previous_progress = '[' + ' ' * 53 + '] 0%'
-            sys.stdout.write(self._previous_progress)
-            sys.stdout.flush()
-            return
-        # calculate the progress
-        done = float(progress['size_total']) - float(progress['size_left'])
-        total = float(progress['size_total'])
-        portion = done / total
-        percent = str(int(100 * portion))
-        pkgs_done = str(progress['items_total'] - progress['items_left'])
-        pkgs_total = str(progress['items_total'])
-        # create the progress bar
-        bar_width = 50
-        bar_ticks = '=' * int(bar_width * portion)
-        bar_spaces = ' ' * (bar_width - len(bar_ticks))
-        bar = '[' + bar_ticks + bar_spaces + ']'
-        # set the previous progress and print
-        self._previous_progress = '%s %s%% (%s of %s pkgs)' % \
-            (bar, percent, pkgs_done, pkgs_total)
-        sys.stdout.write(self._previous_progress)
-        sys.stdout.flush()
-
     def print_clone_finish(self, state, progress):
-        self.print_clone_progress(progress)
+        self.print_progress(progress)
         print ''
         print _('Clone: %s') % state.title()
 
@@ -315,7 +329,7 @@ class Clone(RepoAction):
         print _('You can safely CTRL+C this current command and it will continue')
         try:
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
-                self.print_clone_progress(task['progress'])
+                self.print_progress(task['progress'])
                 time.sleep(0.25)
                 task = self.pconn.sync_status(task['status_path'])
         except KeyboardInterrupt:
@@ -438,7 +452,7 @@ class Update(RepoAction):
         keylist = keylist.split(',')
         self.pconn.rmkeys(id, keylist)
 
-class Sync(RepoAction):
+class Sync(RepoProgressAction):
 
     description = _('synchronize data to a repository from its feed')
 
@@ -456,50 +470,8 @@ class Sync(RepoAction):
                                action='store_true', default=False,
                                help=_('synchronize repository in the foreground'))
 
-    def print_sync_progress(self, progress):
-        # erase the previous progress
-        if hasattr(self, '_previous_progress'):
-            sys.stdout.write('\b' * (len(self._previous_progress)))
-            sys.stdout.flush()
-            delattr(self, '_previous_progress')
-        # handle the initial None case
-        if progress is None:
-            self._previous_progress = '[' + ' ' * 28 + '] 0%'
-            sys.stdout.write(self._previous_progress)
-            sys.stdout.flush()
-            return
-        # calculate the progress
-        done = float(progress['size_total']) - float(progress['size_left'])
-        total = float(progress['size_total'])
-        if total > 0.0:
-            portion = done / total
-        else:
-            portion = 1.0
-        percent = str(int(100 * portion))
-        pkgs_done = str(progress['items_total'] - progress['items_left'])
-        pkgs_total = str(progress['items_total'])
-        # create the progress bar
-        bar_width = 25
-        bar_ticks = '=' * int(bar_width * portion)
-        bar_spaces = ' ' * (bar_width - len(bar_ticks))
-        bar = '[' + bar_ticks + bar_spaces + ']'
-        # set the previous progress and print
-        self._previous_progress = _('%s %s%% Total: %s/%s items (') % \
-            (bar, percent, pkgs_done, pkgs_total)
-        for item_type in progress["details"]:
-            item_details = progress["details"][item_type]
-            if item_details.has_key("items_left") and \
-                item_details.has_key("total_count"):
-                self._previous_progress += "%s/%s<%ss> " % \
-                    ((item_details["total_count"] - item_details["items_left"]), \
-                    item_details["total_count"], \
-                    item_type)
-        self._previous_progress += "\b)"
-        sys.stdout.write(self._previous_progress)
-        sys.stdout.flush()
-
     def print_sync_finish(self, state, progress):
-        self.print_sync_progress(progress)
+        self.print_progress(progress)
         print ''
         if state.title() in ('Finished'):
             if progress \
@@ -521,7 +493,7 @@ class Sync(RepoAction):
         print _('You can safely CTRL+C this current command and it will continue')
         try:
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
-                self.print_sync_progress(task['progress'])
+                self.print_progress(task['progress'])
                 time.sleep(0.25)
                 task = self.pconn.sync_status(task['status_path'])
         except KeyboardInterrupt:
@@ -541,7 +513,7 @@ class Sync(RepoAction):
             return tasks[0]
         skip = {}
         if self.opts.nopackages:
-	    skip['packages'] = 1
+            skip['packages'] = 1
             # skip errata as well, no point of errata without pkgs
             skip['errata'] = 1
         if self.opts.noerrata:
@@ -687,7 +659,7 @@ class AddPackages(RepoAction):
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-	        help=_("Source repository with specified packages to perform add"))
+            help=_("Source repository with specified packages to perform add"))
 
     def run(self):
         id = self.get_required_option('id')
