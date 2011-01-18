@@ -59,6 +59,9 @@ Removing a repository from Pulp is as simple as running the <tt>repo delete</tt>
 </p>
 <pre class="wiki">$ pulp-admin repo delete --id example
 </pre><h3 id="Display">Display</h3>
+<p>
+There are a number of different views into a repository's contents.
+</p>
 <h4 id="RepositoryList">Repository List</h4>
 <p>
 The list of all repositories in the Pulp server can be retrieved with the <tt>repo list</tt> command.
@@ -68,7 +71,7 @@ The list of all repositories in the Pulp server can be retrieved with the <tt>re
        List of Available Repositories
 +------------------------------------------+
 
-Label              	example                  
+Id              	example                  
 Name               	example                  
 FeedURL            	http://example.com/repos 
 FeedType           	yum                      
@@ -80,7 +83,25 @@ Distributions      	None
 Publish            	True                     
 Clones             	[]                       
 Groups             	None
-</pre><h4 id="Status">Status</h4>
+</pre><p>
+The following fields are displayed for each repository:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> Unique identifier for the repository; used throughout the Pulp interfaces when referring to the repo. 
+</td></tr><tr><td> Name </td><td> User-friendly, descriptive name of the repository. 
+</td></tr><tr><td> Feed URL </td><td> URL of the feed from which this the contents of this repository will be synchronized. 
+</td></tr><tr><td> Feed Type </td><td> Identifies the synchronization scheme used when downloading content from the feed. 
+</td></tr><tr><td> Architecture </td><td> Describes the architecture of packages found within the repository. 
+</td></tr><tr><td> Synchronization Schedule </td><td> Cron syntax describing when (if at all) the repository will automatically be synchronized. 
+</td></tr><tr><td> Packages </td><td> Number of packages in the repository. 
+</td></tr><tr><td> Files </td><td> Number of non-package files in the repository. 
+</td></tr><tr><td> Distributions </td><td> Displays the name of all distributions that are present in the repository. 
+</td></tr><tr><td> Publish </td><td> Indicates if the repository is being served by Pulp. If this is "False", the repository content exists in the Pulp server but is not accessible to consumers. 
+</td></tr><tr><td> Clones </td><td> List of repository IDs of repos cloned from the repo being displayed. 
+</td></tr><tr><td> Groups </td><td> List of group IDs to which the repository belongs. 
+</td></tr></table>
+<h4 id="Status">Status</h4>
 <p>
 Synchronization status information can be found for an individual repository through the <tt>repo status</tt> command. Since this command is only retrieving information on a specific repository, the <tt>--id</tt> flag is required.
 </p>
@@ -160,9 +181,63 @@ In addition to the <tt>-F</tt> flag, the following options are available to the 
 <hr />
 <h2 id="errata">Errata</h2>
 <p>
-<i>Placeholder</i>
+By default, repositories synchronize any errata in the feed repo. Errata information is available for review and installation on consumers.
 </p>
-<hr />
+<h3 id="Display1">Display</h3>
+<p>
+An individual erratum's details are displayed using the <tt>errata info</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin errata info --id=FEDORA-2010-11507
+
+Id                    	FEDORA-2010-11507        
+Title                 	fedora-packager-0.5.1.0-1.fc13
+Description           	Massive updates for dist-git production setup.
+Type                  	enhancement              
+Issued                	2010-07-30 07:44:12      
+Updated               	                         
+Version               	1.4                      
+Release               	Fedora 13                
+Status                	stable                   
+Packages Effected     	['fedora-packager-0.5.1.0-1.fc13.noarch.rpm', 'fedora-packager-0.5.1.0-1.fc13.src.rpm']
+References            	[]              
+</pre><p>
+All errata in a given repository can be found by passing <tt>--repoid</tt> to the <tt>errata list</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin errata list --repoid rhntest
++------------------------------------------+
+     Available Errata in Repo [rhntest]
++------------------------------------------+
+RHBA-2010:0826 , RHBA-2010:0254 , RHBA-2009:1653 , RHBA-2009:1652 , RHBA-2009:1655
+
+# Output trimmed for user guide
+</pre><p>
+The errata applicable to a particular consumer, as determined by the consumer's package profile and repository bindings, can be viewed using the 
+</p>
+<pre class="wiki">$ pulp-admin errata list --consumerid test-consumer
++------------------------------------------+
+     Available Errata in Repo [rhntest]
++------------------------------------------+
+RHBA-2010:0826 , RHBA-2010:0254
+</pre><h3 id="Installation">Installation</h3>
+<p>
+Errata can be installed from the <tt>pulp-admin</tt> script on a remote consumer using the <tt>errata install</tt> command.
+</p>
+<p>
+The <tt>errata install</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Names </td><td> <tt>-e</tt> or <tt>--erratum</tt> </td><td> Name of an erratum to install. Multiple errata can be specified with multiple uses of this flag. 
+</td></tr><tr><td> Automated </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Answers yes to any suggested actions on a successful install, such as rebooting the consumer. If this is not specified, the value will be taken from the consumer's <tt>/etc/pulp/client.conf</tt> file. 
+</td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to install the errata. 
+</td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the errata will be installed. 
+</td></tr>
+</table>
+<p>
+For example:
+</p>
+<pre class="wiki">$ pulp-admin errata install --consumeridtest-consumer RHBA-2010:0826 -y
+</pre><hr />
 <h2 id="cloning">Cloning</h2>
 <p>
 Repository cloning is a simple way to create a new repository seeded with content from an existing Pulp repository. 
@@ -207,7 +282,56 @@ Clone: Finished
 </pre><hr />
 <h2 id="distributions">Distributions</h2>
 <p>
-<i>Placeholder</i>
+As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <i>distribution</i>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
+</p>
+<p>
+Distributions in a Pulp server are retrieved using the <tt>distribution list</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin distribution list
++------------------------------------------+
+       List of Available Distributions
++------------------------------------------+
+
+Id                    	ks-f14-x86_64        
+Description           	Kickstart Trees for f14-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+
+Id                    	ks-f13-x86_64        
+Description           	Kickstart Trees for f13-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-13/GOLD/Fedora/x86_64/os
+</pre><p>
+The list of distributions can be scoped to a particular repository using the <tt>--repoid</tt> argument:
+</p>
+<pre class="wiki">$ pulp-admin distribution list --repoid=f14-x64
++------------------------------------------+
+       List of Available Distributions
++------------------------------------------+
+
+Id                    	ks-f14-x86_64        
+Description           	Kickstart Trees for f14-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+</pre><p>
+More information on a specific distribution is retrieved using the <tt>distribution info</tt> command and specifying the distribution in question with <tt>--id</tt>:
+</p>
+<pre class="wiki">$ pulp-admin distribution info --id=ks-f14-x86_64
++------------------------------------------+
+   Distribution Info for ks-f14-x64-noarch
++------------------------------------------+
+
+Id                    	ks-f14-x86_64        
+Description           	Kickstart Trees for f14-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+Files                 	/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz
+relativepath          	released/F-14/GOLD/Fedora/x86_64/os
+
+NOTE: The url that you see above can be used directly for baremetal kickstarts.
+</pre><p>
+Distribution membership in a repository is also displayed in repository information commands. For more information, see the <a class="wiki" href="UGRepo.html#crud">Repository Display</a> documentation.
 </p>
 </div>
    </div>
