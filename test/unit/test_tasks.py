@@ -14,10 +14,18 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import os
 import pprint
+import sys
 import time
 import unittest
 from datetime import datetime, timedelta
+
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+sys.path.insert(0, srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
 
 from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
@@ -325,13 +333,16 @@ class InterruptFIFOQueueTester(QueueTester):
     def setUp(self):
         self.queue = FIFOTaskQueue()
 
-    def diabled__task_timeout(self):
+    def tearDown(self):
+        del self.queue
+
+    def test_task_timeout(self):
         task = Task(interrupt_me, timeout=timedelta(seconds=1))
         self.queue.enqueue(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_timed_out)
 
-    def disabled__task_cancel(self):
+    def test_task_cancel(self):
         task = Task(interrupt_me)
         self.queue.enqueue(task)
         self.queue.cancel(task)
