@@ -292,7 +292,7 @@ class RepositoryActions(AsyncController):
             return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
         repo_params = self.params()
         timeout = self.timeout(repo_params)
-        skip = repo_params['skip']
+        skip = repo_params.get('skip')
         task = api.sync(id, timeout, skip)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
