@@ -73,7 +73,7 @@ def _download_user_guide(dest_dir=TMP_DIR):
     print('Deleting [%s]' % doomed)
     shutil.rmtree(doomed)
 
-def _rebrand_file(filename):
+def _rebrand_file(filename, use_php_imports=False):
     '''
     Strips the wiki header/footer off the downloaded HTML file and replaces it with
     a simple PHP import for the standard user guide.
@@ -100,9 +100,24 @@ def _rebrand_file(filename):
     # Overwrite the dirty ones, inserting the PHP imports
     fout = open(filename, 'w')
 
-    fout.write('<?php @ require_once (\'header.inc\'); ?>\n')
-    fout.write(clean_contents)
-    fout.write('<?php @ require_once (\'footer.inc\'); ?>\n')
+    if use_php_imports:
+        fout.write('<?php @ require_once (\'header.inc\'); ?>\n')
+        fout.write(clean_contents)
+        fout.write('<?php @ require_once (\'footer.inc\'); ?>\n')
+    else:
+        header_file = open('../pulpproject.org/ug/header.inc')
+        header = header_file.read()
+        header_file.close()
+
+        footer_file = open('../pulpproject.org/ug/footer.inc')
+        footer = footer_file.read()
+        footer_file.close()
+
+        fout.write(header)
+        fout.write('\n')
+        fout.write(clean_contents)
+        fout.write('\n')
+        fout.write(footer)
 
     fout.close()
 
