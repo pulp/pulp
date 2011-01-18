@@ -108,7 +108,7 @@ class RepoProgressAction(RepoAction):
                 item_details.has_key("total_count"):
                 self._previous_progress += "%s/%s<%ss> " % \
                         ((item_details["total_count"] - item_details["items_left"]),
-                         ["total_count"],
+                         item_details["total_count"],
                          item_type)
         self._previous_progress += "\b)"
         sys.stdout.write(self._previous_progress)
