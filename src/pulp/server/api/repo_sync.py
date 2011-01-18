@@ -514,7 +514,6 @@ class LocalSynchronizer(BaseSynchronizer):
                                 os.makedirs(file_dir)
                             shutil.copy(imfile, dst_file_path)
                             log.info("Imported file %s " % dst_file_path)
-                            self._process_repo_images(dst_repo_dir, repo)
                     else:
                         log.info("Skipping distribution imports from sync process")
                 groups_xml_path = None
