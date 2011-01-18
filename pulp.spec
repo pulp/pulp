@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.128
+Version:        0.0.129
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,10 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Tue Jan 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.129-1
+- Fix missing 'item_detail' on foreground progress of repo sync
+  (jmatthews@redhat.com)
+
 * Tue Jan 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.128-1
 - 670327 abstracted progress printing into new base class to avoid duplicate
   bugs in both sync and clone (jconnor@redhat.com)
