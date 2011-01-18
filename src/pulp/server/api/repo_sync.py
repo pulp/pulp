@@ -419,15 +419,56 @@ class LocalSynchronizer(BaseSynchronizer):
             bytes += os.stat(os.path.join(dir, pkg))[6]
         return bytes
 
-    def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
-        # Compute and import packages
+    def list_rpms(self, src_repo_dir):
         pkglist = pulp.server.util.listdir(src_repo_dir)
         pkglist = filter(lambda x: x.endswith(".rpm"), pkglist)
         log.info("Found %s packages in %s" % (len(pkglist), src_repo_dir))
-        total_bytes = self._calculate_bytes(src_repo_dir, pkglist)
-        total_pkgs = len(pkglist)
-        self.progress['size_total'] = self.progress['size_left'] = total_bytes
-        self.progress['items_total'] = self.progress['items_left'] = total_pkgs
+        return pkglist
+    
+    def list_tree_files(self, src_repo_dir):
+        src_images_dir = os.path.join(src_repo_dir, "images")
+        if not os.path.exists(src_images_dir):
+            return []
+        return pulp.server.util.listdir(src_images_dir)
+
+    def __init_progress_details(self, item_type, item_list, src_repo_dir):
+        if not item_list:
+            # Only create a details entry if there is data to report progress on
+            return
+        size_bytes = self._calculate_bytes(src_repo_dir, item_list)
+        num_items = len(item_list)
+        if not self.progress["details"].has_key(item_type):
+            self.progress["details"][item_type] = {}
+        self.progress['size_left'] += size_bytes
+        self.progress['size_total'] += size_bytes
+        self.progress['items_total'] += num_items
+        self.progress['items_left'] += num_items
+        self.progress['details'][item_type]["items_left"] = num_items
+        self.progress['details'][item_type]["total_count"] = num_items
+    
+    def init_progress_details(self, src_repo_dir, skip_dict):
+        if not self.progress.has_key('size_total'):
+            self.progress['size_total'] = 0
+        if not self.progress.has_key('items_total'):
+            self.progress['items_total'] = 0
+        if not self.progress.has_key('size_left'):
+            self.progress['size_left'] = 0
+        if not self.progress.has_key('items_left'):
+            self.progress['items_left'] = 0
+        if not self.progress.has_key("details"):
+            self.progress["details"] = {}
+
+        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+            rpm_list = self.list_rpms(src_repo_dir)
+            self.__init_progress_details("rpm", rpm_list, src_repo_dir)
+        if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
+            tree_files = self.list_tree_files(src_repo_dir)
+            self.__init_progress_details("tree_file", tree_files, src_repo_dir)
+
+    def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
+        # Compute and import packages
+        pkglist = self.list_rpms(src_repo_dir)
+
         if progress_callback is not None:
             progress_callback(self)
         for count, pkg in enumerate(pkglist):
@@ -455,6 +496,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     os.symlink(pkg_location, repo_pkg_path)
             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
             self.progress['items_left'] -= 1
+            self.progress['details']["rpm"]["items_left"] -= 1
             if progress_callback is not None:
                 progress_callback(self)
         # Remove rpms which are no longer in source
@@ -471,6 +513,8 @@ class LocalSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.debug("sync of %s for repo %s" % (src_repo_dir, repo['id']))
+        self.init_progress_details(src_repo_dir, skip_dict)
+        
         try:
             dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
             if not os.path.exists(src_repo_dir):
@@ -483,7 +527,8 @@ class LocalSynchronizer(BaseSynchronizer):
                         'size_total': 0,
                         'size_left': 0,
                         'items_total': 0,
-                        'items_left': 0 }
+                        'items_left': 0,
+                        'details': {}}
                     progress_callback(progress)
             else:
                 if not os.path.exists(dst_repo_dir):
@@ -493,14 +538,14 @@ class LocalSynchronizer(BaseSynchronizer):
                 else:
                     log.info("Skipping package imports from sync process")
                 # compute and import repo image files            
-                src_images_dir = os.path.join(src_repo_dir, "images")
-                if not os.path.exists(src_images_dir):
+                imlist = self.list_tree_files(src_repo_dir)
+                if not imlist:
                     log.info("No image files to import")
                 else:
                     if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
-                        imlist = pulp.server.util.listdir(src_images_dir)
                         dst_images_dir = os.path.join(dst_repo_dir, "images")
                         for imfile in imlist:
+                            skip_copy = False
                             rel_file_path = imfile.split('/images/')[-1]
                             dst_file_path = os.path.join(dst_images_dir, rel_file_path)
                             if os.path.exists(dst_file_path):
@@ -508,12 +553,18 @@ class LocalSynchronizer(BaseSynchronizer):
                                 src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
                                 if src_file_checksum == dst_file_checksum:
                                     log.info("file %s already exists with same checksum. skip import" % rel_file_path)
-                                    continue
-                            file_dir = os.path.dirname(dst_file_path)
-                            if not os.path.exists(file_dir):
-                                os.makedirs(file_dir)
-                            shutil.copy(imfile, dst_file_path)
+                                    skip_copy = True
+                            if not skip_copy:
+                                file_dir = os.path.dirname(dst_file_path)
+                                if not os.path.exists(file_dir):
+                                    os.makedirs(file_dir)
+                                shutil.copy(imfile, dst_file_path)
                             log.info("Imported file %s " % dst_file_path)
+                            self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [imfile])
+                            self.progress['items_left'] -= 1
+                            self.progress['details']["tree_file"]["items_left"] -= 1
+                            if progress_callback is not None:
+                                progress_callback(self)
                     else:
                         log.info("Skipping distribution imports from sync process")
                 groups_xml_path = None
