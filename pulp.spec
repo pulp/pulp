@@ -29,7 +29,6 @@ Requires: python-httplib2
 Requires: grinder >= 0.0.72
 Requires: httpd
 Requires: mod_wsgi
-Requires: mod_python
 Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
