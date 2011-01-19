@@ -63,6 +63,7 @@ class FIFOTaskQueue(TaskQueue):
 
         self.__dispatcher_timeout = 0.5
         self.__dispatcher = threading.Thread(target=self._dispatch)
+        self.__dispatcher.setDaemon(True)
         self.__dispatcher.start()
 
     def __del__(self):
