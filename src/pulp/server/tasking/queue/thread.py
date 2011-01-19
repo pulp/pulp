@@ -146,7 +146,7 @@ def _tid(thread):
     3. If the thread object that was passed into the call exists however the underlying kernel
        thread has not yet been started, the thread cannot be cancelled at this time.
     """
-    if not thread.is_alive():
+    if not thread.isAlive():
         return None
 
     if hasattr(thread, '_thread_id'):
@@ -234,7 +234,7 @@ class TaskThread(TrackedThread):
         """
         # embedded methods to reduce code duplication
         def test_exception_event():
-            return self.is_alive() and not self.__exception_event.is_set()
+            return self.isAlive() and not self.__exception_event.is_set()
 
         def deliver_exception(thread, test, wait):
             _log.debug('Trying to deliver exception %s to thread[%s]' %
@@ -257,7 +257,7 @@ class TaskThread(TrackedThread):
 
         # first, kill off all the descendants
         for thread in get_descendants(self):
-            deliver_exception(thread, thread.is_alive, time.sleep)
+            deliver_exception(thread, thread.isAlive, time.sleep)
         # then kill and wait for the task thread
         deliver_exception(self, test_exception_event, self.__exception_event.wait)
 
