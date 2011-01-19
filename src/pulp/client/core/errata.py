@@ -69,6 +69,10 @@ class List(ErrataAction):
         repoid = self.opts.repoid
         if not (consumerid or repoid):
             system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
+
+        if consumerid and repoid:
+            system_exit(os.EX_USAGE, _('Please select either a consumer or a repository, not both'))
+
         if repoid:
             errata = self.rconn.errata(repoid, self.opts.type)
             if errata:
