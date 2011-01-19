@@ -116,8 +116,8 @@ class Install(ErrataAction):
     description = _('install errata on a consumer')
 
     def setup_parser(self):
-        self.parser.add_option("-e", "--erratum", action="append", dest="enames",
-                               help=_("erratum to be installed; to specify multiple erratum id use multiple -e"))
+        self.parser.add_option("-e", "--erratum", action="append", dest="id",
+                               help=_("ID of the erratum to be installed; to specify multiple erratum use multiple uses of this flag"))
         id_group = OptionGroup(self.parser, _('Consumer or Consumer Group id (one is required)'))
         id_group.add_option("--consumerid", dest="consumerid",
                             help=_("consumer id"))
@@ -128,7 +128,7 @@ class Install(ErrataAction):
                             help=_("Assume yes; assume that install performs all the suggested actions such as reboot on successful install."))
 
     def run(self):
-        errataids = self.opts.enames
+        errataids = self.opts.id
 
         consumerid = self.opts.consumerid
         consumergroupid = self.opts.consumergroupid
