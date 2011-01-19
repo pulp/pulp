@@ -221,7 +221,7 @@ class TaskThread(TrackedThread):
         This needs to be called by the task thread and will unblock the thread
         trying to deliver the exception.
         """
-        _log.debug('Exception event deliverd to thread[%s]' % str(self.ident))
+        _log.debug('Exception event deliverd to thread[%s]' % str(_tid(self)))
         self.__exception_event.set()
 
     def raise_exception(self, exc_type):
@@ -238,7 +238,7 @@ class TaskThread(TrackedThread):
 
         def deliver_exception(thread, test, wait):
             _log.debug('Trying to deliver exception %s to thread[%s]' %
-                       (exc_type.__name__, str(thread.ident)))
+                       (exc_type.__name__, str(_tid(thread))))
             while test():
                 try:
                     _raise_exception_in_thread(_tid(thread), exc_type)
@@ -250,10 +250,10 @@ class TaskThread(TrackedThread):
                     # 3. if the thread is already dead
                     # 4. if the exception was delivered to more than 1 thread at a time
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
-                               (exc_type.__name__, str(thread.ident), e.message))
+                               (exc_type.__name__, str(_tid(thread)), e.message))
                     return
             _log.debug('Succeeded in delivering exception %s to thread[%s]' %
-                       (exc_type.__name__, str(thread.ident)))
+                       (exc_type.__name__, str(_tid(thread))))
 
         # first, kill off all the descendants
         for thread in get_descendants(self):
