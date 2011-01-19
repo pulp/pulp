@@ -233,7 +233,7 @@ class RepoApi(BaseApi):
             cert_data = {'ca' : open(repo['ca'], "rb").read(),
                          'cert' : open(repo['cert'], "rb").read(),
                          'key'  : open(repo['key'], "rb").read()}
-        log.info("Creating repo [%s] cloned from [%s]" % (id, repo))
+        log.info("Creating repo [%s] cloned from [%s]" % (id, repo["id"]))
         self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
                         relative_path=relative_path, cert_data=cert_data)
         # Sync from parent repo
