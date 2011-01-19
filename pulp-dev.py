@@ -103,7 +103,7 @@ def create_dirs(opts):
 def getlinks():
     links = []
     for l in LINKS:
-        if isinstance(l, (list,tuple)):
+        if isinstance(l, (list, tuple)):
             src = l[0]
             dst = l[1]
         else:
@@ -118,10 +118,13 @@ def install(opts):
     currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
         debug(opts, 'creating link: %s' % dst)
-        if os.path.exists(dst):
+        try:
+            os.symlink(os.path.join(currdir, src), dst)
+        except OSError, e:
+            if e.errno != 17:
+                raise
             debug(opts, '%s exists, skipping' % dst)
             continue
-        os.symlink(os.path.join(currdir, src), dst)
 
     # Link between pulp and apache
     if not os.path.exists('/var/www/pub'):

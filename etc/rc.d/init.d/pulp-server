@@ -16,6 +16,12 @@ init_file=/var/lib/pulp/init.flag
 
 
 init() {
+    MONGODIR=/var/lib/mongodb
+    if [ ! -d $MONGODIR ]; then
+        mkdir -p $MONGODIR
+        chmod 755 $MONGODIR
+        chown mongodb:root $MONGODIR
+    fi
     /etc/rc.d/init.d/mongod start
     /usr/bin/pulp-migrate --auto
     RETVAL=$?
