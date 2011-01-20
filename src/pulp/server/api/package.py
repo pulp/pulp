@@ -180,6 +180,25 @@ class PackageApi(BaseApi):
         return {'dependency_list' : dsolve.printable_result(results), 
                 'available_packages' :pkgs}
         
+    def recursive_package_dependency(self, pkgnames=[], repoids=[]):
+        '''
+         Get list of available dependencies for a given package in
+         a specific repo
+         @param repoid: The repo id
+         @type repoid: str
+         @param pkgnames: list of package names
+         @type pkgnames: list
+         @return list: nvera of dependencies
+        '''
+        from pulp.server.api.repo import RepoApi
+        rapi = RepoApi()
+        repos = []
+        for rid in repoids:
+            repos.append(rapi.repository(rid))
+        dsolve = DepSolver(repos, pkgnames)
+        results =  dsolve.getRecursiveDepList()
+        return results
+        
     def package_checksum(self, filename):
         """
          Returns a list of checksum info for names matching the spec

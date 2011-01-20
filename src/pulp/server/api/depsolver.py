@@ -14,11 +14,13 @@
 import sys
 import shutil
 import yum
+import logging
 from yum.packageSack import ListPackageSack
 
 from pulp.server import util
 from yum.misc import prco_tuple_to_string
 from yum.repos import RepoStorage
+log = logging.getLogger(__name__)
 
 CACHE_DIR = "/var/lib/pulp/cache/"
 
@@ -31,6 +33,9 @@ class DepSolver:
         self.loadPackages()
 
     def setup(self):
+        """
+         Load the repos into repostore to query package dependencies
+        """
         for repo in self.repos:
             self.yrepo = yum.yumRepo.YumRepository(repo['id'])
             self.yrepo.baseurl = ["file://%s/%s" % (str(util.top_repos_location()), str(repo['relative_path']))]
@@ -38,22 +43,65 @@ class DepSolver:
             self._repostore.add(self.yrepo)
 
     def loadPackages(self):
+        """
+         populate the repostore with packages
+        """
         self._repostore._setup = True
         self._repostore.populateSack(which='all')
         
     def cleanup(self):
+        """
+         clean up the repo metadata cache from /var/lib/pulp/cache/
+        """
         for repo in self._repostore.repos:
             shutil.rmtree(repo.cachedir)
 
     def getDependencylist(self):
+        """
+         Get dependency list and suggested packages for package names provided.
+         The dependency lookup is only one level in this case.
+         The package name format could be any of the following:
+         name, name.arch, name-ver-rel.arch, name-ver, name-ver-rel,
+         epoch:name-ver-rel.arch, name-epoch:ver-rel.arch
+        """
         ematch, match, unmatch = self._repostore.pkgSack.matchPackageNames(self.pkgs)
         pkgs = []
         for po in ematch + match:
             pkgs.append(po)
-        results = self.locateDeps(pkgs)
+        results = self.__locateDeps(pkgs)
         return results
-
-    def locateDeps(self, pkgs):
+    
+    def getRecursiveDepList(self):
+        """
+         Get dependency list and suggested packages for package names provided.
+         The dependency lookup is recursive. All available packages in the repo
+         are returned matching whatprovides.
+         The package name format could be any of the following:
+         name, name.arch, name-ver-rel.arch, name-ver, name-ver-rel,
+         epoch:name-ver-rel.arch, name-epoch:ver-rel.arch
+         returns a dictionary of {'n-v-r.a' : [n,v,e,r,a],...}
+        """
+        solved = []
+        to_solve = self.pkgs
+        result_dict = {}
+        while to_solve:
+            log.debug("Solving %s \n\n" % to_solve)
+            results = self.getDependencylist()
+            deps = self.processResults(results)
+            solved += to_solve
+            to_solve = []
+            for dep in deps:
+                name, version, epoch, release, arch = dep
+                ndep = "%s-%s-%s.%s" % (name, version, release, arch)
+                result_dict[ndep] = dep
+                solved = list(set(solved))
+                if ndep not in solved:
+                    to_solve.append(ndep)
+            self.pkgs = to_solve
+        log.debug("difference:: %s \n\n" % list(set(to_solve) - set(solved)))
+        return result_dict
+                
+    def __locateDeps(self, pkgs):
         results = {}
         for pkg in pkgs:
             results[pkg] = {} 
@@ -65,12 +113,12 @@ class DepSolver:
                 if r.startswith('rpmlib('):
                     continue
                 satisfiers = []
-                for po in self.whatProvides(r, f, v):
+                for po in self.__whatProvides(r, f, v):
                     satisfiers.append(po)
                 pkgresults[req] = satisfiers
         return results
 
-    def whatProvides(self, name, flags, version):
+    def __whatProvides(self, name, flags, version):
         return ListPackageSack(self._repostore.pkgSack.searchProvides((name, flags, version)))
 
     def processResults(self, results):
