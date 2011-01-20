@@ -14,7 +14,9 @@
 # in this software or its documentation.
 
 import base64
+import math
 import os
+import string
 import sys
 import time
 from gettext import gettext as _
@@ -72,17 +74,58 @@ class RepoAction(Action):
 
 class RepoProgressAction(RepoAction):
 
+    def __init__(self):
+        super(RepoProgressAction, self).__init__()
+        self._previous_progress = None
+
+    def terminal_size(self):
+        import fcntl, termios, struct
+        h, w, hp, wp = struct.unpack('HHHH',
+            fcntl.ioctl(0, termios.TIOCGWINSZ,
+                struct.pack('HHHH', 0, 0, 0, 0)))
+        return w, h
+
+    def count_linewraps(self, data):
+        linewraps = 0
+        width, height = self.terminal_size()
+        for line in data.split('\n'):
+            count = 0
+            for d in line:
+                if d in string.printable:
+                    count += 1
+            linewraps += count/width
+        return linewraps
+
+    def write(self, current, prev=None):
+        """ Use information of number of columns to guess if the terminal
+        will wrap the text, at which point we need to add an extra 'backup line'
+        """
+        lines = 0
+        if prev:
+            lines = prev.count('\n')
+            if prev.rstrip(' ')[-1] != '\n':
+                lines += 1 # Compensate for the newline we inject in this method at end
+            lines += self.count_linewraps(prev)
+        # Move up 'lines' lines and move cursor to left
+        sys.stdout.write('\033[%sF' % (lines))
+        sys.stdout.write('\033[J')  # Clear screen cursor down
+        sys.stdout.write(current)
+        # In order for this to work in various situations
+        # We are requiring a new line to be entered at the end of
+        # the current string being printed.  
+        if current.rstrip(' ')[-1] != '\n':
+            sys.stdout.write("\n")
+        sys.stdout.flush()
+
+
     def print_progress(self, progress):
-        # erase the previous progress
-        if hasattr(self, '_previous_progress'):
-            sys.stdout.write('\b' * (len(self._previous_progress)))
-            sys.stdout.flush()
-            delattr(self, '_previous_progress')
+        bar_width = 25
         # handle the initial None case
         if progress is None:
-            self._previous_progress = '[' + ' ' * 28 + '] 0%'
-            sys.stdout.write(self._previous_progress)
-            sys.stdout.flush()
+            #current = '[' + ' ' * (bar_width + 3) + '] 0%\n'
+            current = '[' + ' ' * (bar_width + 3) + '] 0%'
+            self.write(current, self._previous_progress)
+            self._previous_progress = current
             return
         # calculate the progress
         done = float(progress['size_total']) - float(progress['size_left'])
@@ -95,24 +138,22 @@ class RepoProgressAction(RepoAction):
         pkgs_done = str(progress['items_total'] - progress['items_left'])
         pkgs_total = str(progress['items_total'])
         # create the progress bar
-        bar_width = 25
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
-        # set the previous progress and print
-        self._previous_progress = _('%s %s%% Total: %s/%s items (') % \
+        current = _('%s %s%% Total: %s/%s items (') % \
                 (bar, percent, pkgs_done, pkgs_total)
         for item_type in progress["details"]:
             item_details = progress["details"][item_type]
             if item_details.has_key("items_left") and \
                 item_details.has_key("total_count"):
-                self._previous_progress += "%s/%s<%ss> " % \
+                current += "%s/%s<%ss> " % \
                         ((item_details["total_count"] - item_details["items_left"]),
                          item_details["total_count"],
                          item_type)
-        self._previous_progress += "\b)"
-        sys.stdout.write(self._previous_progress)
-        sys.stdout.flush()
+        current += "\b)"
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
 
 # repo actions ----------------------------------------------------------------
 
