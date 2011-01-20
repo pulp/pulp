@@ -122,8 +122,7 @@ class RepoProgressAction(RepoAction):
         bar_width = 25
         # handle the initial None case
         if progress is None:
-            #current = '[' + ' ' * (bar_width + 3) + '] 0%\n'
-            current = '[' + ' ' * (bar_width + 3) + '] 0%'
+            current = '[' + ' ' * (bar_width + 3) + '] 0%\n'
             self.write(current, self._previous_progress)
             self._previous_progress = current
             return
@@ -135,23 +134,22 @@ class RepoProgressAction(RepoAction):
         else:
             portion = 1.0
         percent = str(int(100 * portion))
-        pkgs_done = str(progress['items_total'] - progress['items_left'])
-        pkgs_total = str(progress['items_total'])
+        items_done = str(progress['items_total'] - progress['items_left'])
+        items_total = str(progress['items_total'])
         # create the progress bar
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
-        current = _('%s %s%% Total: %s/%s items (') % \
-                (bar, percent, pkgs_done, pkgs_total)
+        current = _('%s %s%%\n') % (bar, percent)
         for item_type in progress["details"]:
             item_details = progress["details"][item_type]
             if item_details.has_key("items_left") and \
                 item_details.has_key("total_count"):
-                current += "%s/%s<%ss> " % \
-                        ((item_details["total_count"] - item_details["items_left"]),
-                         item_details["total_count"],
-                         item_type)
-        current += "\b)"
+                    current += _("%s: %s/%s\n") % \
+                        (item_type, 
+                        (item_details["total_count"] - item_details["items_left"]),
+                         item_details["total_count"])
+        current += _("Total: %s/%s items\n") % (items_done, items_total)
         self.write(current, self._previous_progress)
         self._previous_progress = current
 
