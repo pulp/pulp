@@ -75,7 +75,7 @@ class RepoAction(Action):
 class RepoProgressAction(RepoAction):
 
     def __init__(self):
-        super(RepoProgressAction, self).__init__()
+        RepoAction.__init__(self)
         self._previous_progress = None
 
     def terminal_size(self):
