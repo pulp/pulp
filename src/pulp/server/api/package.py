@@ -150,7 +150,7 @@ class PackageApi(BaseApi):
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
         return list(self.objectdb.find(spec, ['id', 'name', 'description']))
     
-    def package_dependency(self, pkgnames=[], repoids=[]):
+    def package_dependency(self, pkgnames=[], repoids=[], recursive=0):
         '''
          Get list of available dependencies for a given package in
          a specific repo
@@ -166,7 +166,10 @@ class PackageApi(BaseApi):
         for rid in repoids:
             repos.append(rapi.repository(rid))
         dsolve = DepSolver(repos, pkgnames)
-        results =  dsolve.getDependencylist()
+        if recursive:
+            results =  dsolve.getRecursiveDepList()
+        else:
+            results =  dsolve.getDependencylist()
         deps = dsolve.processResults(results)
         pkgs = []
         log.info(" results from depsolver %s" % results)
@@ -179,25 +182,6 @@ class PackageApi(BaseApi):
         log.info("deps packages suggested %s" % deps)
         return {'dependency_list' : dsolve.printable_result(results), 
                 'available_packages' :pkgs}
-        
-    def recursive_package_dependency(self, pkgnames=[], repoids=[]):
-        '''
-         Get list of available dependencies for a given package in
-         a specific repo
-         @param repoid: The repo id
-         @type repoid: str
-         @param pkgnames: list of package names
-         @type pkgnames: list
-         @return list: nvera of dependencies
-        '''
-        from pulp.server.api.repo import RepoApi
-        rapi = RepoApi()
-        repos = []
-        for rid in repoids:
-            repos.append(rapi.repository(rid))
-        dsolve = DepSolver(repos, pkgnames)
-        results =  dsolve.getRecursiveDepList()
-        return results
         
     def package_checksum(self, filename):
         """

@@ -83,24 +83,24 @@ class DepSolver:
         """
         solved = []
         to_solve = self.pkgs
-        result_dict = {}
+        all_results = {}
         while to_solve:
             log.debug("Solving %s \n\n" % to_solve)
             results = self.getDependencylist()
+            all_results.update(results)
             deps = self.processResults(results)
             solved += to_solve
             to_solve = []
             for dep in deps:
                 name, version, epoch, release, arch = dep
                 ndep = "%s-%s-%s.%s" % (name, version, release, arch)
-                result_dict[ndep] = dep
                 solved = list(set(solved))
                 if ndep not in solved:
                     to_solve.append(ndep)
             self.pkgs = to_solve
         log.debug("difference:: %s \n\n" % list(set(to_solve) - set(solved)))
-        return result_dict
-                
+        return all_results
+    
     def __locateDeps(self, pkgs):
         results = {}
         for pkg in pkgs:
