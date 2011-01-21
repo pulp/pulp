@@ -87,7 +87,14 @@ class RepoProgressAction(RepoAction):
 
     def count_linewraps(self, data):
         linewraps = 0
-        width, height = self.terminal_size()
+        width = height = 0
+        try:
+            width, height = self.terminal_size()
+        except:
+            # Unable to query terminal for size
+            # so default to 0 and skip this 
+            # functionality
+            return 0
         for line in data.split('\n'):
             count = 0
             for d in line:
