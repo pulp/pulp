@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.129
+Version:        0.0.130
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -254,6 +254,36 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Fri Jan 21 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.130-1
+- Making recusive as a flag to package_deps call to support both cases
+  (pkilambi@redhat.com)
+- Cleanup repo sync CLI foreground status (jmatthews@redhat.com)
+- 670499 - add ability for multi-line progress bar (jmatthews@redhat.com)
+- 670967 - Removed mod_python as a dependency since it will conflict with
+  mod_wsgi. (jason.dobies@redhat.com)
+- 670967 - Temporarily disbled the repo auth checks until we write a mod_wsgi
+  hook for it. (jason.dobies@redhat.com)
+- 670870 - since rhel5 python uses older style class objects, super bails on
+  us. invoke the exception class directly instead (pkilambi@redhat.com)
+- 670308 - Renamed errata ID variable to make the help output read better.
+  (jason.dobies@redhat.com)
+- 670307 - Added a check to ensure either consumer or repo is specified.
+  (jason.dobies@redhat.com)
+- 670876 - Logging too much when cloning a repo (jmatthews@redhat.com)
+- replaced pep 8 enhancements in threading with older api as they exist in
+  python 2.4 (jconnor@redhat.com)
+- replaced pep 8 enhancements in threading with older api as they exist in
+  python 2.4 (jconnor@redhat.com)
+- removed use of Thread.ident, which is not available in python 2.4
+  (jconnor@redhat.com)
+- 670610 - make sure we return empty dict (mmccune@redhat.com)
+- 662744 - update local syncs to display fine grained progress info
+  (jmatthews@redhat.com)
+- added relative paths for import re-enabled interruptable queue tests added
+  tear down to interruptale queue tests (jconnor@redhat.com)
+- 670610 - ensure that parameter dictionary access is key safe
+  (mmccune@redhat.com)
+
 * Tue Jan 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.129-1
 - Fix missing 'item_detail' on foreground progress of repo sync
   (jmatthews@redhat.com)
