@@ -77,6 +77,9 @@ class RepoProgressAction(RepoAction):
     def __init__(self):
         RepoAction.__init__(self)
         self._previous_progress = None
+        self.wait_index = 0
+        self.wait_symbols = "|/-\|/-\\"
+        self._previous_step = None
 
     def terminal_size(self):
         import fcntl, termios, struct
@@ -124,15 +127,47 @@ class RepoProgressAction(RepoAction):
             sys.stdout.write("\n")
         sys.stdout.flush()
 
+    def get_wait_symbol(self):
+        self.wait_index += 1
+        if self.wait_index > len(self.wait_symbols) - 1:
+            self.wait_index = 0
+        return self.wait_symbols[self.wait_index]
 
     def print_progress(self, progress):
-        bar_width = 25
+        current = ""
         # handle the initial None case
-        if progress is None:
-            current = '[' + ' ' * (bar_width + 3) + '] 0%\n'
-            self.write(current, self._previous_progress)
-            self._previous_progress = current
-            return
+        if progress and progress.has_key("step") and progress["step"]:
+            current += _("Step: %s\n") % (progress['step'])
+            if "Metadata" in progress["step"]:
+                current += "Waiting %s\n" % (self.get_wait_symbol())
+            elif "Downloading Items" in progress["step"]:
+                current += self.form_progress_item_downloads(progress)
+            else:
+                current += "Waiting %s\n" % (self.get_wait_symbol())
+            #if progress["step"] != self._previous_step:
+            #    self._previous_progress = None
+            self._previous_step = progress["step"]
+        else:
+            current += "Waiting %s\n" % (self.get_wait_symbol())
+            self._previous_step = None
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
+
+    def form_progress_item_details(self, details):
+        result = ""
+        for item_type in details:
+            item_details = details[item_type]
+            if item_details.has_key("items_left") and \
+                item_details.has_key("total_count"):
+                    result += _("%s: %s/%s\n") % \
+                        (item_type, 
+                        (item_details["total_count"] - item_details["items_left"]),
+                         item_details["total_count"])
+        return result
+
+    def form_progress_item_downloads(self, progress):
+        current = ""
+        bar_width = 25
         # calculate the progress
         done = float(progress['size_total']) - float(progress['size_left'])
         total = float(progress['size_total'])
@@ -147,18 +182,12 @@ class RepoProgressAction(RepoAction):
         bar_ticks = '=' * int(bar_width * portion)
         bar_spaces = ' ' * (bar_width - len(bar_ticks))
         bar = '[' + bar_ticks + bar_spaces + ']'
-        current = _('%s %s%%\n') % (bar, percent)
-        for item_type in progress["details"]:
-            item_details = progress["details"][item_type]
-            if item_details.has_key("items_left") and \
-                item_details.has_key("total_count"):
-                    current += _("%s: %s/%s\n") % \
-                        (item_type, 
-                        (item_details["total_count"] - item_details["items_left"]),
-                         item_details["total_count"])
+        current += _('%s %s%%\n') % (bar, percent)
+        current += self.form_progress_item_details(progress["details"])
         current += _("Total: %s/%s items\n") % (items_done, items_total)
-        self.write(current, self._previous_progress)
-        self._previous_progress = current
+        return current
+
+
 
 # repo actions ----------------------------------------------------------------
 
@@ -518,22 +547,26 @@ class Sync(RepoProgressAction):
 
     def print_sync_finish(self, state, progress):
         self.print_progress(progress)
-        print ''
+        current = ""
+        current += _('Sync: %s\n') % state.title()
         if state.title() in ('Finished'):
             if progress \
                     and progress.has_key("num_download") \
                     and progress.has_key("items_total"):
-                print _('%s/%s new items downloaded') % \
+                current += _('%s/%s new items downloaded\n') % \
                     (progress['num_download'], progress['items_total'])
-                print _('%s/%s existing items verified') % \
+                current += _('%s/%s existing items verified\n') % \
                     ((progress['items_total'] - progress['num_download']), progress['items_total'])
-        print _('Sync: %s') % state.title()
+        current += "Item Details: \n"
+        current += self.form_progress_item_details(progress["details"])
         if type(progress) == type({}):
-            if progress['num_error'] > 0:
+            if progress.has_key("num_error") and progress['num_error'] > 0:
                 # Check for progress being a dict can be removed after we have
                 # addressed progress for local syncs.  Currently local syncs
                 # aren't sending back a dict for progress
-                print _("Warning: %s errors occurred" % (progress['num_error']))
+                current += _("Warning: %s errors occurred\n" % (progress['num_error']))
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
 
     def sync_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')

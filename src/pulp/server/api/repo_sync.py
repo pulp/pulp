@@ -28,6 +28,7 @@ import pulp.server.comps_util
 import pulp.server.crontab
 import pulp.server.upload
 import pulp.server.util
+from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 from pulp.server import updateinfo
@@ -43,6 +44,14 @@ log = logging.getLogger(__name__)
 # sync api --------------------------------------------------------------------
 
 def yum_rhn_progress_callback(info):
+    """
+    This method will take in a GrinderCallback.ProgressReport object and 
+    transform it to a dictionary.
+    """
+    if type(info) == type({}):
+        # if this is already a dictionary than just return it
+        return info
+
     fields = ('status',
               'item_name',
               'items_left',
@@ -52,14 +61,16 @@ def yum_rhn_progress_callback(info):
               'num_error',
               'num_success',
               'num_download',
-              'details')
+              'details', 
+              'step',)
     values = tuple(getattr(info, f) for f in fields)
     #log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
 
 
-def local_progress_callback(synchronizer):
-    return synchronizer.progress
+def local_progress_callback(progress):
+    # Pass through, we don't need to convert anything
+    return progress
 
 
 def get_synchronizer(source_type):
@@ -163,9 +174,35 @@ class BaseSynchronizer(object):
         self.package_api = PackageApi()
         self.errata_api = ErrataApi()
         self.distro_api = DistributionApi()
+        self.progress = {
+            'status': 'running',
+            'item_name': None,
+            'items_total': 0,
+            'items_remaining': 0,
+            'size_total': 0,
+            'size_left': 0,
+            'num_error': 0,
+            'num_success': 0,
+            'num_downloaded': 0,
+            'details':{},
+            'step': "STARTING",
+        }
 
     def stop(self):
         pass
+
+    def set_callback(self, callback):
+        self.callback = callback
+
+    def progress_callback(self, **kwargs):
+        """
+        Callback called to update the pulp task's progress
+        """
+        if not self.callback:
+            return
+        for key in kwargs:
+            self.progress[key] = kwargs[key]
+        self.callback(self.progress)
 
     def add_packages_from_dir(self, dir, repo, skip={}):
         added_packages = {}
@@ -383,6 +420,7 @@ class YumSynchronizer(BaseSynchronizer):
         else:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
         report = self.yum_repo_grinder.fetchYumRepo(store_path, callback=progress_callback)
+        self.progress = yum_rhn_progress_callback(report.last_progress)
         log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
                 % (report.successes, report.downloads, report.errors))
         return store_path
@@ -400,18 +438,6 @@ class LocalSynchronizer(BaseSynchronizer):
     """
     def __init__(self):
         super(LocalSynchronizer, self).__init__()
-        self.progress = {
-            'status': 'running',
-            'item_name': None,
-            'items_total': 0,
-            'items_remaining': 0,
-            'size_total': 0,
-            'size_left': 0,
-            'num_error': 0,
-            'num_success': 0,
-            'num_downloaded': 0,
-            'details':{}
-        }
 
     def _calculate_bytes(self, dir, pkglist):
         bytes = 0
@@ -470,7 +496,8 @@ class LocalSynchronizer(BaseSynchronizer):
         pkglist = self.list_rpms(src_repo_dir)
 
         if progress_callback is not None:
-            progress_callback(self)
+            self.progress['step'] = ProgressReport.DownloadItems
+            progress_callback(self.progress)
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.debug("Working on %s/%s" % (count, len(pkglist)))
@@ -494,17 +521,20 @@ class LocalSynchronizer(BaseSynchronizer):
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                 if not os.path.islink(repo_pkg_path):
                     os.symlink(pkg_location, repo_pkg_path)
+            self.progress["step"] = ProgressReport.DownloadItems
             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
             self.progress['items_left'] -= 1
             self.progress['details']["rpm"]["items_left"] -= 1
             if progress_callback is not None:
-                progress_callback(self)
+                progress_callback(self.progress)
         # Remove rpms which are no longer in source
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
         existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
-        log.debug("existing_pkgs = %s" % (existing_pkgs))
         source_pkgs = [os.path.basename(p) for p in pkglist]
+        if progress_callback is not None:
+            self.progress["step"] = ProgressReport.PurgeOrphanedPackages
+            progress_callback(self.progress)
         for epkg in existing_pkgs:
             if epkg not in source_pkgs:
                 log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
@@ -523,13 +553,13 @@ class LocalSynchronizer(BaseSynchronizer):
                 log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
                 os.symlink(src_repo_dir, dst_repo_dir)
                 if progress_callback is not None:
-                    progress = {
-                        'size_total': 0,
-                        'size_left': 0,
-                        'items_total': 0,
-                        'items_left': 0,
-                        'details': {}}
-                    progress_callback(progress)
+                    self.progress['size_total'] = 0
+                    self.progress['size_left'] = 0
+                    self.progress['items_total'] = 0
+                    self.progress['items_left'] = 0
+                    self.progress['details'] = {}
+                    self.progress['step'] = ProgressReport.DownloadItems
+                    progress_callback(self.progress)
             else:
                 if not os.path.exists(dst_repo_dir):
                     os.makedirs(dst_repo_dir)
@@ -560,11 +590,12 @@ class LocalSynchronizer(BaseSynchronizer):
                                     os.makedirs(file_dir)
                                 shutil.copy(imfile, dst_file_path)
                             log.info("Imported file %s " % dst_file_path)
+                            self.progress['step'] = ProgressReport.DownloadItems
                             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [imfile])
                             self.progress['items_left'] -= 1
                             self.progress['details']["tree_file"]["items_left"] -= 1
                             if progress_callback is not None:
-                                progress_callback(self)
+                                progress_callback(self.progress)
                     else:
                         log.info("Skipping distribution imports from sync process")
                 groups_xml_path = None
@@ -603,6 +634,9 @@ class LocalSynchronizer(BaseSynchronizer):
                             updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
                     else:
                         log.info("Skipping errata imports from sync process")
+                if progress_callback is not None:
+                    self.progress["step"] = "Updating Metadata"
+                    progress_callback(self.progress)
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
                 pulp.server.upload.create_repo(dst_repo_dir, groups=groups_xml_path)

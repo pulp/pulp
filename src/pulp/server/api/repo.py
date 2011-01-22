@@ -1161,6 +1161,9 @@ class RepoApi(BaseApi):
         repo_source = repo['source']
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
+        if not synchronizer:
+            synchronizer = repo_sync.get_synchronizer(repo_source)
+        synchronizer.set_callback(progress_callback)
         sync_packages, sync_errataids = \
                 repo_sync.sync(
                     repo,
@@ -1174,6 +1177,8 @@ class RepoApi(BaseApi):
         # package_group info added in sync call
         self.update(repo)
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+            synchronizer.progress["step"] = "Removing Old Packages"
+            synchronizer.progress_callback()
             # Remove packages that are no longer in source repo
             for pid in repo["packages"]:
                 pkg = self.packageapi.package(pid)
@@ -1190,6 +1195,7 @@ class RepoApi(BaseApi):
             self.update(repo)
         if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
             # Determine removed errata
+            synchronizer.progress_callback(step="Processing Errata")
             log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
             for eid in self.errata(id):
                 if eid not in sync_errataids:
