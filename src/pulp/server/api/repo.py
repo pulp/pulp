@@ -239,7 +239,9 @@ class RepoApi(BaseApi):
         # Sync from parent repo
         try:
             self._sync(clone_id, progress_callback=progress_callback)
-        except:
+        except Exception, e:
+            log.error(e)
+            log.warn("Traceback: %s" % (traceback.format_exc()))
             raise PulpException("Repo cloning of [%s] failed" % id)
 
         # Update feed type for cloned repo if "origin" or "feedless"
@@ -1162,7 +1164,7 @@ class RepoApi(BaseApi):
         if not repo_source:
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         if not synchronizer:
-            synchronizer = repo_sync.get_synchronizer(repo_source)
+            synchronizer = repo_sync.get_synchronizer(repo_source["type"])
         synchronizer.set_callback(progress_callback)
         sync_packages, sync_errataids = \
                 repo_sync.sync(

@@ -392,8 +392,15 @@ class Clone(RepoProgressAction):
 
     def print_clone_finish(self, state, progress):
         self.print_progress(progress)
-        print ''
-        print _('Clone: %s') % state.title()
+        current = ""
+        current += "Clone: %s\n" % (state.title())
+        current += "Item Details: \n"
+        current += self.form_progress_item_details(progress["details"])
+        if type(progress) == type({}):
+            if progress.has_key("num_error") and progress['num_error'] > 0:
+                current += _("Warning: %s errors occurred\n" % (progress['num_error']))
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
 
     def clone_foreground(self, task):
         print _('You can safely CTRL+C this current command and it will continue')
@@ -543,7 +550,7 @@ class Sync(RepoProgressAction):
     def print_sync_finish(self, state, progress):
         self.print_progress(progress)
         current = ""
-        current += _('Sync: %s\n') % state.title()
+        current += _('Sync: %s\n') % (state.title())
         if state.title() in ('Finished'):
             if progress \
                     and progress.has_key("num_download") \
