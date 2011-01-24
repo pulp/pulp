@@ -36,33 +36,21 @@ Requires: python-ldap
 Requires: gofer-lib >= 0.13
 Requires: crontabs
 Requires: acl
-
-%if 14%{?fedora} < 13
-Requires: qpidd
-Requires: qpidd-ssl
-Requires: rhm-cpp-server-store
-Requires: mongo
-Requires: mongo-server
-%else:
+Requires: mongodb
+Requires: mongodb-server
 Requires: qpid-cpp-server
 Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
-Requires: mongodb
-Requires: mongodb-server
-%endif
-%if 0%{?rhel} >= 5
+%if !0%{?fedora}
+# RHEL
 Requires: python-uuid
 Requires: python-ssl
 Requires: python-ctypes
+Requires: python-hashlib
 %endif
-
 
 # newer pulp builds should require same client version
 Requires: %{name}-client >= %{version}
-
-%if 0%{?rhel} > 5
-Requires: python-hashlib
-%endif
 
 
 %description
@@ -77,8 +65,8 @@ Requires: python-simplejson
 Requires: m2crypto
 Requires: %{name}-common = %{version}
 Requires: gofer >= 0.13
-
-%if 0%{?rhel} > 5
+%if !0%{?fedora}
+# RHEL
 Requires: python-hashlib
 %endif
 
@@ -104,17 +92,9 @@ Requires:       gofer >= 0.13
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
-
-%if 14%{?fedora} < 13
-Requires: qpidd
-Requires: qpidd-ssl
-Requires: rhm-cpp-server-store
-%else:
 Requires: qpid-cpp-server
 Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
-%endif
-
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
