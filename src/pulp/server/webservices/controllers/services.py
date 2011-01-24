@@ -45,7 +45,7 @@ class DependencyActions(JSONController):
         @return: a dict of printable dependency result and suggested packages
         """
         data = self.params()
-        return self.ok(papi.package_dependency(data['pkgnames'], data['repoids']))
+        return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=data['recursive']))
     
     def POST(self):
         # REST dictates POST to collection, and PUT to specific resource for

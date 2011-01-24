@@ -23,7 +23,7 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import RepoConnection, ConsumerConnection, ErrataConnection
+from pulp.client.connection import RepoConnection, ConsumerConnection, ErrataConnection, ServicesConnection, PackageConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
@@ -49,6 +49,9 @@ class RepoAction(Action):
             self.pconn = RepoConnection()
             self.cconn = ConsumerConnection()
             self.econn = ErrataConnection()
+            self.sconn = ServicesConnection()
+            self.pkgconn = PackageConnection()
+            
         except CredentialError, ce:
             system_exit(-1, ce.message)
     def setup_parser(self):
@@ -70,6 +73,41 @@ class RepoAction(Action):
         if repo is None:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         return repo
+    
+    
+    def handle_dependencies(self, srcrepo, id=None, pkgnames=[], recursive=0, assumeyes=False):
+        deps = self.sconn.dependencies(pkgnames, [srcrepo], recursive)['available_packages']
+        new_deps = []
+        if id:
+            for dep in deps:
+                if not self.pconn.get_package(id, dep['name']):
+                    new_deps.append(dep)
+        else:
+            new_deps = deps
+        if not new_deps:
+            # None relevant, return
+            print(_("No dependencies to process.."))
+            return []
+        if not assumeyes:
+            do_deps = ''
+            while do_deps.lower() not in ['y', 'n', 'q']:
+                do_deps = raw_input(_("\nFollowing dependencies are suggested. %s \nWould you like us to add these?(Y/N/Q):" \
+                                      % [dep['filename'] for dep in new_deps]))
+                if do_deps.strip().lower() == 'y':
+                    assumeyes = True
+                elif do_deps.strip().lower() == 'n':
+                    print(_("Skipping dependencies"))
+                    return []
+                elif do_deps.strip().lower() == 'q':
+                    system_exit(os.EX_OK, _("Operation aborted upon user request."))
+                else:
+                    continue        
+        pkgs = []
+        for dep in new_deps:
+            pinfo = self.pkgconn.package_by_ivera(dep['name'], dep['version'], dep['release'], dep['epoch'], dep['arch'])
+            pkgs.append(pinfo)
+        return pkgs
+
 
 
 class RepoProgressAction(RepoAction):
@@ -738,6 +776,8 @@ class AddPackages(RepoAction):
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified packages to perform add"))
+        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
+                            help=_("Assume yes; automatically process dependencies as part of add operation."))
 
     def run(self):
         id = self.get_required_option('id')
@@ -746,18 +786,32 @@ class AddPackages(RepoAction):
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
         pids = []
+        pnames = []
         for pkg in self.opts.pkgname:
-            pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
-            pids.append(pinfo['id'])
-        try:
-            if pinfo:
-                self.pconn.add_package(id, pids)
+            if not self.pconn.get_package_by_filename(id, pkg):
+                pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
+                if not pinfo:
+                    print _("Package [%s] is not part of the source repository [%s]. Skipping" % (self.opts.pkgname, self.opts.srcrepo))
+                    continue
+                pids.append(pinfo['id'])
+                pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
             else:
-                print _("Package [%s] is not part of the source repository [%s]" % (pkg, self.opts.srcrepo))
+                print (_("Package [%s] are already part of repo [%s]. skipping" % (pkg, id)))
+        if not len(pnames):
+            system_exit(os.EX_DATAERR)
+        # lookup dependencies and let use decide whether to include them
+        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, 1, self.opts.assumeyes)
+        
+        for pdep in pkgdeps:
+            pnames.append("%s-%s-%s.%s" % (pdep['name'], pdep['version'], pdep['release'], pdep['arch']))
+            pids.append(pdep['id'])
+   
+        try:
+            self.pconn.add_package(id, pids)
         except Exception:
-            raise
-            print _("Unable to add package [%s] to repo [%s]" % (pkg, id))
-        print _("Successfully added packages %s to repo [%s]." % (self.opts.pkgname, id))
+            system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
+        print _("Successfully added packages %s to repo [%s]." % (pnames, id))
+
 
 class RemovePackages(RepoAction):
     description = _('Remove package(s) from the repository.')
@@ -766,23 +820,30 @@ class RemovePackages(RepoAction):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to remove from this repository"))
-
+        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
+                            help=_("Assume yes; automatically process dependencies as part of add operation."))
+    
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
-        pids = []
+        pnames = []
         for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(id, pkg)
-            try:
-                if pinfo:
-                    self.pconn.remove_package(id, [pinfo])
-                    print _("Successfully removed package %s from repo [%s]." % (pkg, id))
-                else:
-                    print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
-            except Exception:
-                print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
-
+            if not pinfo:
+                print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
+                continue
+            pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
+        if not pnames:
+            system_exit(os.EX_DATAERR)
+        pkgdeps = self.handle_dependencies(id, None, pnames, 1, self.opts.assumeyes)
+        pinfo = [pinfo] + pkgdeps
+        pkg = [p['filename'] for p in pinfo]
+        try:
+            self.pconn.remove_package(id, pinfo)
+            print _("Successfully removed package %s from repo [%s]." % (pkg, id))
+        except Exception:
+            print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')

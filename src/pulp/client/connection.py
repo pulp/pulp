@@ -793,9 +793,10 @@ class ServicesConnection(PulpConnection):
         return self.conn.request_put(method, params=data)
 
 
-    def dependencies(self, pkgnames, repoids):
+    def dependencies(self, pkgnames, repoids, recursive=0):
         params = {'repoids' : repoids,
-                   'pkgnames' : pkgnames}
+                   'pkgnames' : pkgnames,
+                   'recursive' : recursive}
         method = "/services/dependencies/"
         return self.conn.request_put(method, params=params)
 
