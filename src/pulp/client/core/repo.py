@@ -821,7 +821,7 @@ class RemovePackages(RepoAction):
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to remove from this repository"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; automatically process dependencies as part of add operation."))
+                            help=_("Assume yes; automatically process dependencies as part of remove operation."))
     
     def run(self):
         id = self.get_required_option('id')
