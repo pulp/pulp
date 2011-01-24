@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.130
+Version:        0.0.131
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -234,6 +234,13 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Mon Jan 24 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.131-1
+- Fix spec for RHEL and simplify for fedora. (jortel@redhat.com)
+- fixing the errata list to ignore the consumerid when repoid is specified.
+  Logs a warning to client.log (pkilambi@redhat.com)
+- Fix to allow QE to run foreground syncs in a non standard terminal
+  (jmatthews@redhat.com)
+
 * Fri Jan 21 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.130-1
 - Making recusive as a flag to package_deps call to support both cases
   (pkilambi@redhat.com)
