@@ -183,7 +183,7 @@ class BaseSynchronizer(object):
             'size_left': 0,
             'num_error': 0,
             'num_success': 0,
-            'num_downloaded': 0,
+            'num_download': 0,
             'details':{},
             'step': "STARTING",
         }
@@ -471,6 +471,8 @@ class LocalSynchronizer(BaseSynchronizer):
         self.progress['items_left'] += num_items
         self.progress['details'][item_type]["items_left"] = num_items
         self.progress['details'][item_type]["total_count"] = num_items
+        self.progress['details'][item_type]["num_success"] = 0
+        self.progress['details'][item_type]["num_error"] = 0
     
     def init_progress_details(self, src_repo_dir, skip_dict):
         if not self.progress.has_key('size_total'):
@@ -516,6 +518,7 @@ class LocalSynchronizer(BaseSynchronizer):
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                 if not os.path.islink(repo_pkg_path):
                     os.symlink(pkg_location, repo_pkg_path)
+                self.progress['num_download'] += 1
             else:
                 log.debug("package Already exists in packages location, create symlink under repo")
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
@@ -525,6 +528,7 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
             self.progress['items_left'] -= 1
             self.progress['details']["rpm"]["items_left"] -= 1
+            self.progress['details']["rpm"]["num_success"] += 1
             if progress_callback is not None:
                 progress_callback(self.progress)
         # Remove rpms which are no longer in source
@@ -558,6 +562,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     self.progress['items_total'] = 0
                     self.progress['items_left'] = 0
                     self.progress['details'] = {}
+                    self.progress['num_download'] = 0
                     self.progress['step'] = ProgressReport.DownloadItems
                     progress_callback(self.progress)
             else:
@@ -589,11 +594,13 @@ class LocalSynchronizer(BaseSynchronizer):
                                 if not os.path.exists(file_dir):
                                     os.makedirs(file_dir)
                                 shutil.copy(imfile, dst_file_path)
+                                self.progress['num_download'] += 1
                             log.info("Imported file %s " % dst_file_path)
                             self.progress['step'] = ProgressReport.DownloadItems
                             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [imfile])
                             self.progress['items_left'] -= 1
                             self.progress['details']["tree_file"]["items_left"] -= 1
+                            self.progress['details']["tree_file"]["num_success"] += 1
                             if progress_callback is not None:
                                 progress_callback(self.progress)
                     else:

@@ -135,17 +135,12 @@ class RepoProgressAction(RepoAction):
 
     def print_progress(self, progress):
         current = ""
-        # handle the initial None case
         if progress and progress.has_key("step") and progress["step"]:
             current += _("Step: %s\n") % (progress['step'])
-            if "Metadata" in progress["step"]:
-                current += "Waiting %s\n" % (self.get_wait_symbol())
-            elif "Downloading Items" in progress["step"]:
+            if "Downloading Items" in progress["step"]:
                 current += self.form_progress_item_downloads(progress)
             else:
                 current += "Waiting %s\n" % (self.get_wait_symbol())
-            #if progress["step"] != self._previous_step:
-            #    self._previous_progress = None
             self._previous_step = progress["step"]
         else:
             current += "Waiting %s\n" % (self.get_wait_symbol())
@@ -157,11 +152,11 @@ class RepoProgressAction(RepoAction):
         result = ""
         for item_type in details:
             item_details = details[item_type]
-            if item_details.has_key("items_left") and \
+            if item_details.has_key("num_success") and \
                 item_details.has_key("total_count"):
-                    result += _("%s: %s/%s\n") % \
-                        (item_type, 
-                        (item_details["total_count"] - item_details["items_left"]),
+                    result += _("%ss: %s/%s\n") % \
+                        (item_type.title(), 
+                         item_details["num_success"],
                          item_details["total_count"])
         return result
 
@@ -555,15 +550,12 @@ class Sync(RepoProgressAction):
                     and progress.has_key("items_total"):
                 current += _('%s/%s new items downloaded\n') % \
                     (progress['num_download'], progress['items_total'])
-                current += _('%s/%s existing items verified\n') % \
+                current += _('%s/%s existing items processed\n') % \
                     ((progress['items_total'] - progress['num_download']), progress['items_total'])
-        current += "Item Details: \n"
+        current += "\nItem Details: \n"
         current += self.form_progress_item_details(progress["details"])
         if type(progress) == type({}):
             if progress.has_key("num_error") and progress['num_error'] > 0:
-                # Check for progress being a dict can be removed after we have
-                # addressed progress for local syncs.  Currently local syncs
-                # aren't sending back a dict for progress
                 current += _("Warning: %s errors occurred\n" % (progress['num_error']))
         self.write(current, self._previous_progress)
         self._previous_progress = current
