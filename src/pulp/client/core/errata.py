@@ -29,6 +29,9 @@ from pulp.client.connection import (
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit, print_header
 from pulp.client.credentials import CredentialError
+from pulp.client.logutil import getLogger
+
+log = getLogger(__name__)
 
 # errata action base class ----------------------------------------------------
 
@@ -67,11 +70,14 @@ class List(ErrataAction):
     def run(self):
         consumerid = self.opts.consumerid
         repoid = self.opts.repoid
+        
         if not (consumerid or repoid):
             system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
 
         if consumerid and repoid:
-            system_exit(os.EX_USAGE, _('Please select either a consumer or a repository, not both'))
+            # Warning: Both repoid and consumerid set for lookup. Ignoring consumerid.'
+            log.error('Warning: Both repoid and consumerid set for lookup. Ignoring consumerid.')
+            consumerid = None
 
         if repoid:
             errata = self.rconn.errata(repoid, self.opts.type)
