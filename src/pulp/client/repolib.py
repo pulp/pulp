@@ -183,6 +183,8 @@ class UpdateAction(Action):
             repo['baseurl'] = self.join(baseurl, path)
             repo['enabled'] = self.decode(enabled, True, '1', '0')
             repo['gpgkey'] = self.fmt(keyurl, keys)
+            if keys:
+                repo['gpgcheck'] = '1'
             lst.append(repo)
         return lst
 
@@ -258,6 +260,7 @@ class Repo(dict):
         ('enabled', 0, '1'),
         ('gpgkey', 0, None),
         ('sslverify', 0, '0'),
+        ('gpgcheck', 0, '0')
     )
 
     def __init__(self, id):
