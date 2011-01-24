@@ -828,19 +828,21 @@ class RemovePackages(RepoAction):
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
         pnames = []
+        pobj = []
         for pkg in self.opts.pkgname:
             pinfo = self.pconn.get_package_by_filename(id, pkg)
             if not pinfo:
                 print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
                 continue
             pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
+            pobj.append(pinfo)
         if not pnames:
             system_exit(os.EX_DATAERR)
         pkgdeps = self.handle_dependencies(id, None, pnames, 1, self.opts.assumeyes)
-        pinfo = [pinfo] + pkgdeps
-        pkg = [p['filename'] for p in pinfo]
+        pobj += pkgdeps
+        pkg = list(set([p['filename'] for p in pobj]))
         try:
-            self.pconn.remove_package(id, pinfo)
+            self.pconn.remove_package(id, pobj)
             print _("Successfully removed package %s from repo [%s]." % (pkg, id))
         except Exception:
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
