@@ -765,7 +765,7 @@ class Publish(RepoAction):
             print _("Repository [%s] 'published' has been set to [%s]") % (id, state)
         else:
             print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
-
+        
 
 class AddPackages(RepoAction):
     description = _('Add specific package(s) from the source repository.')
@@ -856,6 +856,8 @@ class AddErrata(RepoAction):
                 help=_("Errata Id to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified packages to perform add"))
+        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
+                            help=_("Assume yes; automatically process dependencies as part of remove operation."))
 
     def run(self):
         id = self.get_required_option('id')
@@ -864,8 +866,30 @@ class AddErrata(RepoAction):
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where erratum exists is required"))
         errataids = self.opts.errataid
+        effected_pkgs = []
+        for eid in errataids:
+            erratum = self.econn.erratum(eid)
+            effected_pkgs += [str(pinfo['filename'])
+                         for pkg in erratum['pkglist']
+                         for pinfo in pkg['packages']]
+        pnames = []
+        for pkg in effected_pkgs:
+            if not self.pconn.get_package_by_filename(id, pkg):
+                pinfo = self.pconn.get_package_by_filename(self.opts.srcrepo, pkg)
+                if not pinfo:
+                    continue
+                pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
+        
+        if not pnames:
+            system_exit(os.EX_DATAERR, "Packages associated with errata [%s] are already in repo [%s]" % (errataids, id))
+        # lookup dependencies and let use decide whether to include them
+        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, 1, self.opts.assumeyes)
+        pids = [pdep['id'] for pdep in pkgdeps]
         try:
             self.pconn.add_errata(id, errataids)
+            if pids:
+                # add dependencies to repo
+                self.pconn.add_package(id, pids)
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
         print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
@@ -877,14 +901,36 @@ class RemoveErrata(RepoAction):
         super(RemoveErrata, self).setup_parser()
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
                 help=_("Errata Id to delete from this repository"))
-
+        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
+                            help=_("Assume yes; automatically process dependencies as part of remove operation."))
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
             system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform a delete."))
         errataids = self.opts.errataid
+        effected_pkgs = []
+        for eid in errataids:
+            erratum = self.econn.erratum(eid)
+            effected_pkgs += [str(pinfo['filename'])
+                         for pkg in erratum['pkglist']
+                         for pinfo in pkg['packages']]
+        pnames = []
+        for pkg in effected_pkgs:
+            pinfo = self.pconn.get_package_by_filename(id, pkg)
+            if not pinfo:
+                print _("Package [%s] does not exist in repository [%s]" % (pkg, id))
+                continue
+            pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
+        if not pnames:
+            system_exit(os.EX_DATAERR, "Packages associated with errata [%s] are not in repo [%s]" % (errataids, id))
+        # lookup dependencies and let use decide whether to include them
+        print pnames
+        pkgdeps = self.handle_dependencies(id, None, pnames, 1, self.opts.assumeyes)
+            
         try:
             self.pconn.delete_errata(id, errataids)
+            if pkgdeps:
+                self.pconn.remove_package(id, pkgdeps)
         except Exception:
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
         print _("Successfully removed Errata %s from repo [%s]." % (errataids, id))
