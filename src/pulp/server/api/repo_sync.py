@@ -409,11 +409,18 @@ class YumSynchronizer(BaseSynchronizer):
         num_threads = config.config.getint('yum', 'threads')
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
         num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
+        # check for proxy settings
+        proxy_url = proxy_port = proxy_user = proxy_pass = None
+        for proxy_cfg in ['proxy_url', 'proxy_port', 'proxy_user', 'proxy_pass']:
+            if (config.config.has_option('yum', proxy_cfg)):
+                vars()[proxy_cfg] = config.config.get('yum', proxy_cfg)
+                
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
-                                num_threads, cacert=cacert, clicert=clicert,
-                                clikey=clikey,
+                                num_threads, cacert=cacert, clicert=clicert, clikey=clikey, 
                                 packages_location=pulp.server.util.top_package_location(),
-				remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict)
+                                remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
+                                proxy_url=proxy_url, proxy_port=proxy_port,
+                                proxy_user=proxy_user, proxy_pass=proxy_pass)
         relative_path = repo['relative_path']
         if relative_path:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
