@@ -165,6 +165,8 @@ class ConsumerGroupActions(AsyncController):
         Add a consumer to the group.
         @param id: consumer group id
         """
+        if api.consumergroup(id) is None:
+            return self.conflict('Consumer group with id: %s, does not exist' % id)
         data = self.params()
         api.add_consumer(id, data)
         return self.ok(True)
