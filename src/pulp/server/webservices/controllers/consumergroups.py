@@ -17,6 +17,8 @@
 import web
 
 from pulp.server.api.consumer_group import ConsumerGroupApi
+from pulp.server.api.consumer import ConsumerApi
+
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.role_check import RoleCheck
 
@@ -165,9 +167,13 @@ class ConsumerGroupActions(AsyncController):
         Add a consumer to the group.
         @param id: consumer group id
         """
+        data = self.params()
         if api.consumergroup(id) is None:
             return self.conflict('Consumer group with id: %s, does not exist' % id)
-        data = self.params()
+        consumerApi = ConsumerApi()
+        if consumerApi.consumer(data) is None:
+            return self.conflict('Consumer with id: %s, does not exist' % id)
+        
         api.add_consumer(id, data)
         return self.ok(True)
 
