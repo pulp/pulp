@@ -102,6 +102,9 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=N
     if not synchronizer:
         synchronizer = get_synchronizer(repo_source['type'])
     repo_dir = synchronizer.sync(repo, repo_source, skip_dict, progress_callback)
+    if progress_callback is not None:
+        synchronizer.progress['step'] = "Importing data into pulp"
+        progress_callback(synchronizer.progress)
     return synchronizer.add_packages_from_dir(repo_dir, repo, skip_dict)
 
 
@@ -515,9 +518,7 @@ class LocalSynchronizer(BaseSynchronizer):
             pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
                     pkg_info['version'], pkg_info['release'], pkg_info['arch'],
                     os.path.basename(pkg), pkg_checksum)
-            log.debug('Expected Package Location: %s' % pkg_location)
             if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
-                log.debug("package doesn't exist. Write the package to packages location: %s" % pkg_location)
                 pkg_dirname = os.path.dirname(pkg_location)
                 if not os.path.exists(pkg_dirname):
                     os.makedirs(pkg_dirname)
@@ -527,7 +528,6 @@ class LocalSynchronizer(BaseSynchronizer):
                     os.symlink(pkg_location, repo_pkg_path)
                 self.progress['num_download'] += 1
             else:
-                log.debug("package Already exists in packages location, create symlink under repo")
                 repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
                 if not os.path.islink(repo_pkg_path):
                     os.symlink(pkg_location, repo_pkg_path)
@@ -538,6 +538,7 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['details']["rpm"]["num_success"] += 1
             if progress_callback is not None:
                 progress_callback(self.progress)
+        log.debug("Finished copying %s packages" % (len(pkglist)))
         # Remove rpms which are no longer in source
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
@@ -649,7 +650,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     else:
                         log.info("Skipping errata imports from sync process")
                 if progress_callback is not None:
-                    self.progress["step"] = "Updating Metadata"
+                    self.progress["step"] = "Running Createrepo"
                     progress_callback(self.progress)
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
@@ -658,6 +659,9 @@ class LocalSynchronizer(BaseSynchronizer):
                 log.info("Createrepo finished in %s seconds" % (end - start))
                 if updateinfo_path:
                     log.debug("Modifying repo for updateinfo")
+                    if progress_callback is not None:
+                        self.progress["step"] = "Running Modifyrepo"
+                        progress_callback(self.progress)
                     pulp.server.upload.modify_repo(os.path.join(dst_repo_dir, "repodata"),
                             updateinfo_path)
         except InvalidPathError:

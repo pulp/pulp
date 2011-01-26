@@ -65,7 +65,6 @@ def get_rpm_information(rpm_path):
 
     @param rpm_path: Full path to the RPM to inspect
     """
-    log.debug("rpm_path: %s" % rpm_path)
     ts = rpm.ts()
     ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES) 
     file_descriptor_number = os.open(rpm_path, os.O_RDONLY)
