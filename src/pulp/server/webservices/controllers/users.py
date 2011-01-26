@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2010 Red Hat, Inc.
@@ -18,6 +17,8 @@ import web
 
 from pulp.server.api.user import UserApi
 from pulp.server.api.auth import AuthApi
+from pulp.server.auth.authorization import (
+    is_last_super_user, revoke_all_permissions_from_user)
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.role_check import RoleCheck
 
@@ -103,8 +104,15 @@ class User(JSONController):
         @param login: login of user to delete
         @return: True on successful deletion of user
         """
-        if auth_api.isadmin(login):
-            return self.ok(False)
+        user = api.user(login)
+        if user is None:
+            return self.not_found('No such user: %s' % login)
+        # XXX this logic should be in the api layer, but because persistence
+        # and logic is mashed together, it causes cyclic depenedencies
+        if is_last_super_user(user):
+            return self.bad_request(
+                'Cannot delete %s, they are the last super user')
+        revoke_all_permissions_from_user(user)
         api.delete(login=login)
         return self.ok(True)
 

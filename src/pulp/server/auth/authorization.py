@@ -223,6 +223,22 @@ def revoke_permission_from_user(resource, user_name, operation_names):
     return True
 
 
+def revoke_all_permissions_from_user(user):
+    """
+    Revoke all the permissions from a given user
+    @type user: L{pulp.server.db.model.User} instace
+    @param user: user to revoke permissions from
+    @rtype: bool
+    @return: True on success
+    """
+    for permission in _permission_api._getcollection().find():
+        if user['id'] not in permission['users']:
+            continue
+        del permission['users'][user['id']]
+        _permission_api.update(permission)
+    return True
+
+
 def grant_permission_to_role(resource, role_name, operation_names):
     """
     Grant the operations on the resource to the users in the given role
