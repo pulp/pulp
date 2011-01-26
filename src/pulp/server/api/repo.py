@@ -21,6 +21,7 @@ import gzip
 from optparse import OptionParser
 import os
 import shutil
+import time
 import traceback
 from urlparse import urlparse
 
@@ -1168,6 +1169,7 @@ class RepoApi(BaseApi):
         if not synchronizer:
             synchronizer = repo_sync.get_synchronizer(repo_source["type"])
         synchronizer.set_callback(progress_callback)
+        start_sync_items = time.time()
         sync_packages, sync_errataids = \
                 repo_sync.sync(
                     repo,
@@ -1175,26 +1177,32 @@ class RepoApi(BaseApi):
                     skip_dict,
                     progress_callback,
                     synchronizer)
-        log.info("Sync returned %s packages, %s errata" % (len(sync_packages),
-            len(sync_errataids)))
+        end_sync_items = time.time()
+        log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
+            len(sync_errataids), (end_sync_items - start_sync_items)))
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call
         self.update(repo)
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-            synchronizer.progress["step"] = "Removing Old Packages"
-            synchronizer.progress_callback()
+            old_pkgs = list(set(repo["packages"].keys()).difference(set(sync_packages.keys())))
+            old_pkgs = map(self.packageapi.package, old_pkgs)
+            old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
+            new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"].keys())))
+            new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
+            log.debug("%s old packages to process, %s new packages to process" % \
+                (len(old_pkgs), len(new_pkgs)))
+            synchronizer.progress_callback(step="Removing %s packages" % (len(old_pkgs)))
             # Remove packages that are no longer in source repo
-            for pid in repo["packages"]:
-                pkg = self.packageapi.package(pid)
-                if pid not in sync_packages and pkg["repo_defined"]:
-                    # Only remove packages that are defined by the repo
-                    # Example: don't delete uploaded packages
-                    log.info("Removing package <%s> from repo <%s>" % (repo["packages"][pid], repo["id"]))
-                    self.remove_package(repo["id"], repo["packages"][pid])
+            for pkg in old_pkgs:
+                log.info("Removing package %s-%s-%s:%s.%s <%s> from repo <%s>" % \
+                        (pkg["name"], pkg["version"], pkg["release"], \
+                            pkg["epoch"], pkg["arch"], pkg["filename"], repo["id"]))
+                self.remove_package(repo["id"], pkg)
             # Refresh repo object since we may have deleted some packages
+            synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
             repo = self._get_existing_repo(id)
-            for p in sync_packages.values():
-                self._add_package(repo, p)
+            for pkg in new_pkgs:
+                self._add_package(repo, pkg)
             # Update repo for package additions
             self.update(repo)
         if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
