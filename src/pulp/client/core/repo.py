@@ -284,7 +284,9 @@ class Status(RepoAction):
             pkgs_total = syncs[0]['progress']['items_total']
             bytes_left = float(syncs[0]['progress']['size_left'])
             bytes_total = float(syncs[0]['progress']['size_total'])
-            percent = (bytes_total - bytes_left) / bytes_total
+            percent = 100.0
+            if bytes_total > 0:
+                percent = ((bytes_total - bytes_left) / bytes_total) * 100.0
             print _('%d%% done (%d of %d packages downloaded)') % \
                     (int(percent), (pkgs_total - pkgs_left), pkgs_total)
 
