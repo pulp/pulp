@@ -23,6 +23,9 @@ import web
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.user import UserApi
+from pulp.server.auth.authorization import (
+    revoke_all_permissions_from_user, grant_permission_to_user)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -33,6 +36,7 @@ from pulp.server.webservices.role_check import RoleCheck
 consumer_api = ConsumerApi()
 history_api = ConsumerHistoryApi()
 repo_api = RepoApi()
+user_api = UserApi()
 log = logging.getLogger('pulp')
 
 # default fields for consumers being sent to a client
@@ -76,10 +80,18 @@ class Consumers(JSONController):
         id = consumer_data['id']
         consumer = consumer_api.consumer(id)
         if consumer is not None:
-            return self.conflict('Consumer with id: %s, already exists' % id)
+            return self.conflict('Consumer with id: %s already exists' % id)
+        user = user_api.user(id)
+        if user is not None:
+            return self.conflict(
+                'Cannot create corresponding auth credentials: user with id %s alreay exists' % id)
         consumer = consumer_api.create(id, consumer_data['description'],
                                        consumer_data['key_value_pairs'])
-        path = http.extend_uri_path(consumer.id)
+        user_api.create(id) # create corresponding user for auth credentials
+        path = http.extend_uri_path(consumer.id) # path for consumer resource
+        # grant the appropriate permissions to the user
+        grant_permission_to_user(path, id,
+                                 ('READ', 'UPDATE', 'DELETE', 'EXECUTE'))
         return self.created(path, consumer)
 
     def POST(self):
@@ -152,6 +164,13 @@ class Consumer(JSONController):
         @param id: consumer id
         @return: True on successful deletion of consumer
         """
+        consumer = consumer_api.consumer(id)
+        if consumer is None:
+            return self.not_found('No such consumer: %s' % id)
+        user = user_api.user(id)
+        if user is not None:
+            revoke_all_permissions_from_user(user)
+            user_api.delete(login=id)
         consumer_api.delete(id=id)
         return self.ok(True)
 
