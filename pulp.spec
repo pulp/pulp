@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.131
+Version:        0.0.132
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -234,6 +234,31 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Jan 26 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.132-1
+- 672171 - Pulp server cannot process a repo with name encoded in unicode
+  (lzap+git@redhat.com)
+- 672573 - fixed division by zero error when total bytes to download is 0
+  (jconnor@redhat.com)
+- 669197 - Cleaner error message when adding invalid consumer to a group
+  (skarmark@redhat.com)
+- 669198 - Cleaner error message when adding a consumer to invalid group
+  (skarmark@redhat.com)
+- INtegrate deplist lookup into errata operations (pkilambi@redhat.com)
+- Proxy support: Made some improvements and applying the patch contributed by
+  Christian Maspust<christian.masopust@siemens.com> (pkilambi@redhat.com)
+- requiring grinder 0.75 to fix unit test error when no callback is specified
+  in sync (jmatthews@redhat.com)
+- uniquify package removals (pkilambi@redhat.com)
+- INtegrating depsolver into package add and remove operations
+  (pkilambi@redhat.com)
+- Fixes while testing repo cloning (jmatthews@redhat.com)
+- Updates for adding more info to repo sync cli foreground progress
+  (jmatthews@redhat.com)
+- 670526 - Add more information to progress reporting of repo syncs: Remove
+  Obsolete items and Metadata Update (jmatthews@redhat.com)
+- 669756 - Added gpgcheck option based on whether gpg keys are defined for the
+  repo. (jortel@redhat.com)
+
 * Mon Jan 24 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.131-1
 - Fix spec for RHEL and simplify for fedora. (jortel@redhat.com)
 - fixing the errata list to ignore the consumerid when repoid is specified.
