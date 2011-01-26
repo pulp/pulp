@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Packages">Packages</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Packages.html#ListAllAvailablePackages">List All Available Packages</a></li><li class="active">
+<a href="UGREST-Packages.html#Create">Create</a></li><li class="active">
+<a href="UGREST-Packages.html#InformationbyPackageID">Information by Package ID</a></li><li class="active">
+<a href="UGREST-Packages.html#InformationbyPackageNVREA">Information by Package NVREA</a></li><li class="active">
+<a href="UGREST-Packages.html#DeleteaPackage">Delete a Package</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Once you get a repository created you can start managing packages. Packages can be created on their own or created as members of a repository
+</p>
+<p>
+Base URL Path: <strong>/packages/</strong>
+</p>
+<hr />
+<h2 id="ListAllAvailablePackages">List All Available Packages</h2>
+<p>
+List all available packages
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/packages/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
+  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'Test package.  Nothing to see here.'</span></b>,
+  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'pulp-test-package'</span></b>},
+ {<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span></b>,
+  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
+  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>}]
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Create">Create</h2>
+<p>
+Create a new package
+</p>
+<p>
+Status: <strong>partial</strong> - location header not properly filled in
+</p>
+<p>
+Path: <strong>/packages/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>name: package name
+</li><li>epoch: package epoch
+</li><li>version: package version
+</li><li>release: package release
+</li><li>arch: package architecture
+</li><li>description: package description
+</li><li>checksum_type: type of package checksum
+</li><li>checksum: package checksum
+</li><li>filename: package filename
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>201 Created</strong>
+</p>
+<p>
+Headers:
+</p>
+<ul><li>location - path to package resource
+<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'noarch'</span></b>,
+ <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'md5'</span></b>: <B><span class="code-string">'41be1e70179ddf079ceda621df818341'</span></b>},
+ <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
+ <B><span class="code-string">'epoch'</span></b>: <B><span class="code-string">'0'</span></b>,
+ <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'my_package.pkg'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span></b>,
+ <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>,
+ <B><span class="code-string">'provides'</span></b>: [],
+ <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'2'</span></b>,
+ <B><span class="code-string">'requires'</span></b>: [],
+ <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1'</span></b>}
+</pre></div></li></ul><p>
+Error: <strong>409 Conflict</strong> if there is a package with the same: name, version, revision, epoch, arch, and checksum
+</p>
+<hr />
+<h2 id="InformationbyPackageID">Information by Package ID</h2>
+<p>
+Get package information, given a package id
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/packages/&lt;package id&gt;/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'noarch'</span></b>,
+ <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'md5'</span></b>: <B><span class="code-string">'41be1e70179ddf079ceda621df818341'</span></b>},
+ <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
+ <B><span class="code-string">'epoch'</span></b>: <B><span class="code-string">'0'</span></b>,
+ <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'my_package.pkg'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span></b>,
+ <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>,
+ <B><span class="code-string">'provides'</span></b>: [],
+ <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'2'</span></b>,
+ <B><span class="code-string">'requires'</span></b>: [],
+ <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1'</span></b>}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such package
+</p>
+<hr />
+<h2 id="InformationbyPackageNVREA">Information by Package NVREA</h2>
+<p>
+Get package information, given a package name, version, release, epoch, and arch
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/packages/&lt;name&gt;/&lt;version&gt;/&lt;release&gt;/&lt;epoch&gt;/&lt;arch&gt;/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'noarch'</span></b>,
+ <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'md5'</span></b>: <B><span class="code-string">'41be1e70179ddf079ceda621df818341'</span></b>},
+ <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
+ <B><span class="code-string">'epoch'</span></b>: <B><span class="code-string">'0'</span></b>,
+ <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'my_package.pkg'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'12d14ebe-3ea7-43d2-9119-d278d2552c09'</span></b>,
+ <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my_package'</span></b>,
+ <B><span class="code-string">'provides'</span></b>: [],
+ <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'2'</span></b>,
+ <B><span class="code-string">'requires'</span></b>: [],
+ <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1'</span></b>}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such package
+</p>
+<hr />
+<h2 id="DeleteaPackage">Delete a Package</h2>
+<p>
+Delete a single package
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/packages/&lt;package id&gt;/</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such package
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

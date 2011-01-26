@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="AuditingEvents">Auditing Events</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Audit.html#EventList">Event List</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Pulp supports security auditing on a number of its API calls by recording the associated events in its database. This webservices API allows read-only access to those events.
+</p>
+<hr />
+<h2 id="EventList">Event List</h2>
+<p>
+List all events
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/events/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<ul><li>principal (str) - the caller of an api method
+</li><li>api (str) - the api name
+</li><li>method (str) - the method name
+</li><li>field (str) - which fields are returned for each event
+</li><li>limit (int) - limit the number of events returned
+</li><li>show=errors_only - only show events that have a traceback associated with them
+</li></ul><p>
+Response: <strong>200 OK</strong><br />
+/events/?limit=20&amp;field=timestamp&amp;field=api&amp;field=method
+</p>
+<div class="code"><pre>[{u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'adc059bb-85f9-43f5-bb1e-e7c1b6c3e558'</span></b>,
+  u<B><span class="code-string">'api'</span></b>: u<B><span class="code-string">'RepoApi'</span></b>,
+  u<B><span class="code-string">'method'</span></b>: u<B><span class="code-string">'update'</span></b>,
+  u<B><span class="code-string">'timestamp'</span></b>: {u<B><span class="code-string">'$date'</span></b>: 1280403834329}},
+ {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'0c2154b0-2667-4b0b-b5fc-b2df4a14edd6'</span></b>,
+  u<B><span class="code-string">'api'</span></b>: u<B><span class="code-string">'RepoApi'</span></b>,
+  u<B><span class="code-string">'method'</span></b>: u<B><span class="code-string">'sync'</span></b>,
+  u<B><span class="code-string">'timestamp'</span></b>: {u<B><span class="code-string">'$date'</span></b>: 1280403833483}},
+ {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'91da9877-d825-433c-bf39-9d23cca5cfec'</span></b>,
+  u<B><span class="code-string">'api'</span></b>: u<B><span class="code-string">'RepoApi'</span></b>,
+  u<B><span class="code-string">'method'</span></b>: u<B><span class="code-string">'update'</span></b>,
+  u<B><span class="code-string">'timestamp'</span></b>: {u<B><span class="code-string">'$date'</span></b>: 1280403833471}},
+ {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'b9a67f60-6ec7-4664-80ed-edf8554cf8f0'</span></b>,
+ ...
+</pre></div></div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

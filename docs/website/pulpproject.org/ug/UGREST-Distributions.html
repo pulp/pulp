@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Distributions">Distributions</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Distributions.html#ListAllAvailableDistributions">List All Available Distributions</a></li><li class="active">
+<a href="UGREST-Distributions.html#ListDistributionsbyRepository">List Distributions by Repository</a></li><li class="active">
+<a href="UGREST-Distributions.html#Information">Information</a></li></ol></li></ol></div>
+
+</p>
+<p>
+A distribution is an entity in pulp representing kickstart tree metadata/files associated to a repo.   
+</p>
+<p>
+Base URL Path: <strong>/distribution/</strong>
+</p>
+<hr />
+<h2 id="ListAllAvailableDistributions">List All Available Distributions</h2>
+<p>
+List all available Distributions.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/distributions/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'ks-f14-i386'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'distribution'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'ks-f14-i386'</span></b>,
+ <B><span class="code-string">'files'</span></b>: [<B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz'</span></b>],
+ <B><span class="code-string">'relativepath'</span></b> : <B><span class="code-string">'released/F-14/GOLD/Fedora/x86_64/os'</span></b>},
+{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'ks-f13-i386'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'distribution'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'ks-f13-i386'</span></b>,
+ <B><span class="code-string">'files'</span></b>: [<B><span class="code-string">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/install.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/efiboot.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/boot.iso'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/efidisk.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz'</span></b>],
+ <B><span class="code-string">'relativepath'</span></b> : <B><span class="code-string">'released/F-13/GOLD/Fedora/x86_64/os'</span></b>},] 
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="ListDistributionsbyRepository">List Distributions by Repository</h2>
+<p>
+List available distribution for a given repo. This will return a list of all distributions associated to that specific repoid. The list is empty if no distributions are found.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;id&gt;/list_distribution</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters: 
+</p>
+<blockquote>
+<p>
+repoid : repo id for which distribution is queried
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'ks-f14-i386'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'distribution'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'ks-f14-i386'</span></b>,
+ <B><span class="code-string">'files'</span></b>: [<B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz'</span></b>],
+ <B><span class="code-string">'relativepath'</span></b> : <B><span class="code-string">'released/F-14/GOLD/Fedora/x86_64/os'</span></b>}] 
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Information">Information</h2>
+<p>
+Get the information on a single distribution
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/distribution/&lt;distribution id&gt;/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'ks-f14-i386'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'distribution'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'ks-f14-i386'</span></b>,
+ <B><span class="code-string">'files'</span></b>: [<B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img'</span></b>,
+           <B><span class="code-string">'/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz'</span></b>],
+ <B><span class="code-string">'relativepath'</span></b> : <B><span class="code-string">'released/F-14/GOLD/Fedora/x86_64/os'</span></b>}] 
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such distribution
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Development">Development</h1>
+<p>
+The following page describes the steps necessary to configure your local environment for Pulp development.
+</p>
+<hr />
+<h2 id="source">Source Code</h2>
+<p>
+The Pulp repositories are accessed through git at the following URLs based on the level of access required:
+</p>
+<h3 id="Anonymous">Anonymous</h3>
+<pre class="wiki">$ git clone git://git.fedorahosted.org/git/pulp.git/
+</pre><h3 id="Commit">Commit</h3>
+<pre class="wiki">$ git clone ssh://git.fedorahosted.org/git/pulp.git/
+</pre><p>
+If you have been approved for git commit access to the Pulp git repository, the following steps are necessary:
+</p>
+<ul><li>Upload your SSH RSA key into the Fedora accounts system (note: use your login name): <a class="ext-link" href="https://admin.fedoraproject.org/accounts/user/edit/USERNAME"><span class="icon">https://admin.fedoraproject.org/accounts/user/edit/USERNAME</span></a>
+</li><li>Request membership to the Pulp group: <a class="ext-link" href="https://admin.fedoraproject.org/accounts/group/view/gitpulp"><span class="icon">https://admin.fedoraproject.org/accounts/group/view/gitpulp</span></a>  
+</li></ul><hr />
+<h2 id="dependencies">Dependencies</h2>
+<p>
+The easiest way to download the dependencies is to install Pulp through yum, which will pull in the latest dependencies according to the spec file. 
+</p>
+<p>
+1. Follow the instructions for your platform on the <a class="wiki" href="UGInstallation.html">UGInstallation</a> page, using the testing repositories for the most recent updates. Make sure to enable the <strong>Testing Build</strong> repository as described in those instructions; it is possible that the current code base uses newer versions of dependencies than the previous community release did.
+</p>
+<p>
+2. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked out code.
+</p>
+<pre class="wiki">$ rpm -e pulp pulp-client pulp-common
+</pre><p>
+The only caveat to this approach is that these dependencies will need to be maintained after this initial setup. Leaving the testing builds repository enabled will cause them to be automatically updated on subsequent <tt>yum update</tt> calls. Messages are sent to the Pulp mailing list when these dependencies are updated as well to serve as a reminder to update before the next code update.
+</p>
+<hr />
+<h2 id="installation">Installation</h2>
+<p>
+Pulp can be installed to run directly from the checked out code base through the <tt>setup.py</tt> script. Running this script requires the <tt>python-setuptools</tt> package to be installed. Additionally, it is also recommended to install <tt>python-pip</tt> for access to additional setup-related features.
+</p>
+<p>
+This method of installation links the git repositories as the locally deployed libraries and scripts. Any changes made in the working copy will be immediately deployed in the site-packages libraries and installed scripts.
+</p>
+<pre class="wiki">$ cd $PULP_ROOT/src
+$ sudo python ./setup.py develop
+</pre><p>
+Additionally, Pulp specific files such as configuration and package directories must be linked to the checked out code base. These additions are not performed by <tt>setup.py</tt> but rather by the Pulp specific script <tt>pulp-dev.py</tt>. 
+</p>
+<pre class="wiki">$ cd $PULP_ROOT
+$ sudo python ./pulp-dev.py --install --debug
+</pre><h4 id="Uninstallation">Uninstallation</h4>
+<p>
+The <tt>setup.py</tt> script does not handle uninstallation. Rather, pip is used to undo the changes made by <tt>setup.py</tt>. The <tt>pulp-dev.py</tt> script can be run with the <tt>--uninstall</tt> flag to remove its changes.
+</p>
+<pre class="wiki">$ cd $PULP_ROOT
+$ sudo pip uninstall pulp
+$ sudo ./pulp-dev.py --uninstall --debug
+</pre><hr />
+<h2 id="permissions">Permissions</h2>
+<p>
+The <tt>pulp-dev.py</tt> script links Pulp's WSGI application into the checked out code base. In many cases, Apache will not have the required permissions to serve the applications (for instance, if the code is checked out into a user's home directory.
+</p>
+<p>
+For example:
+</p>
+<pre class="wiki">$ ls -l /srv/pulp/
+lrwxrwxrwx  1 root   root   50 Aug 11 20:05 webservices.wsgi -&gt; /home/jdob/code/pulp/srv/pulp/webservices.wsgi
+</pre><p>
+One solution, if your system supports it, is to use ACLs to grant Apache the required permissions. 
+</p>
+<p>
+For example, assuming the Pulp source was checked out to <tt>~/code/pulp</tt>, the following series of commands would grant Apache the required access:
+</p>
+<pre class="wiki">$ cd $HOME
+$ setfacl -m user:apache:rwx .
+$ cd code
+$ setfacl -m user:apache:rwx .
+$ cd pulp
+$ setfacl -m user:apache:rwx .
+</pre><hr />
+<h2 id="init">Initialize and Start</h2>
+<p>
+At this point, the <a class="wiki" href="UGInstallation.html#fserver">Server Installation</a> guide can be followed to initialize and start Pulp.
+</p>
+<p>
+Keep in mind that code changes will often require Apache to be restarted to load the changes.
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

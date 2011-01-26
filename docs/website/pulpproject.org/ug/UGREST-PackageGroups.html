@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="PackageGroups">Package Groups</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-PackageGroups.html#List">List</a></li><li class="active">
+<a href="UGREST-PackageGroups.html#Create">Create</a></li><li class="active">
+<a href="UGREST-PackageGroups.html#Delete">Delete</a></li><li class="active">
+<a href="UGREST-PackageGroups.html#AddPackage">Add Package</a></li><li class="active">
+<a href="UGREST-PackageGroups.html#DeletePackage">Delete Package</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Once you get a tepository created you can start managing package groups. Package groups exist as members of a repository.
+</p>
+<p>
+Base URL Path: <strong>/repositories/&lt;repoid&gt;/packagegroups/</strong>
+</p>
+<hr />
+<h2 id="List">List</h2>
+<p>
+List the package groups under a repository
+</p>
+<p>
+Status: <strong>complete</strong> 
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/packagegroups/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+<strong>200 OK</strong>
+</p>
+<div class="code"><pre>{
+u<B><span class="code-string">'demo'</span></b>: {
+  u<B><span class="code-string">'mandatory_package_names'</span></b>: [], 
+  u<B><span class="code-string">'description'</span></b>: u<B><span class="code-string">''</span></b>, 
+  u<B><span class="code-string">'repo_defined'</span></b>: False, 
+  u<B><span class="code-string">'default'</span></b>: True, 
+  u<B><span class="code-string">'display_order'</span></b>: 1024, 
+  u<B><span class="code-string">'immutable'</span></b>: False, 
+  u<B><span class="code-string">'user_visible'</span></b>: True, 
+  u<B><span class="code-string">'translated_name'</span></b>: {}, 
+  u<B><span class="code-string">'translated_description'</span></b>: {}, 
+  u<B><span class="code-string">'conditional_package_names'</span></b>: {}, 
+  u<B><span class="code-string">'default_package_names'</span></b>: [u<B><span class="code-string">'zsh'</span></b>, u<B><span class="code-string">'zsh-html'</span></b>], 
+  u<B><span class="code-string">'optional_package_names'</span></b>: [], 
+  u<B><span class="code-string">'langonly'</span></b>: None, 
+  u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'demo'</span></b>, 
+  u<B><span class="code-string">'id'</span></b>: u<B><span class="code-string">'demo'</span></b>, 
+  u<B><span class="code-string">'name'</span></b>: u<B><span class="code-string">'demo_name'</span></b>}
+}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no repository
+</p>
+<hr />
+<h2 id="Create">Create</h2>
+<p>
+Create a new package group
+</p>
+<p>
+Status: <strong>partial</strong> - location header not properly filled in
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/create_packagegroup/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>groupid: package group id
+</li><li>groupname: package group name
+</li><li>description: package group description
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>201 Created</strong>
+</p>
+<p>
+Error: <strong>409 Conflict</strong> if there is a packagegroup with the same: id
+</p>
+<hr />
+<h2 id="Delete">Delete</h2>
+<p>
+Delete a single packagegroup
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/delete_packagegroup/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>groupid: package group id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such package
+</p>
+<hr />
+<h2 id="AddPackage">Add Package</h2>
+<p>
+Add a package to a package group
+</p>
+<p>
+Status: <strong>complete</strong> 
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/add_package_to_group/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>groupid: package group id
+</li><li>name: package name
+</li><li>type: package list type, example: {mandatory, default, optional}
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such repository
+</p>
+<hr />
+<h2 id="DeletePackage">Delete Package</h2>
+<p>
+Delete a package from a package group
+</p>
+<p>
+Status: <strong>complete</strong> 
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/delete_package_from_group/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>groupid: package group id
+</li><li>name: package name
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+ 
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such repository
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

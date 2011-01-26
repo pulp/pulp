@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="PackageGroupCategories">Package Group Categories</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-PackageGroupCategories.html#List">List</a></li><li class="active">
+<a href="UGREST-PackageGroupCategories.html#Create">Create</a></li><li class="active">
+<a href="UGREST-PackageGroupCategories.html#Delete">Delete</a></li><li class="active">
+<a href="UGREST-PackageGroupCategories.html#AddaPackageGroup">Add a Package Group</a></li><li class="active">
+<a href="UGREST-PackageGroupCategories.html#DeleteaPackageGroup">Delete a Package Group</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Once you get a repository created you can start managing package group categories. Package group categories exist as members of a repository.
+</p>
+<p>
+A package group category is a collection of package group ids
+</p>
+<p>
+Base URL Path: <strong>/repositories/&lt;repoid&gt;/</strong>
+</p>
+<blockquote>
+<p>
+Note: PackageGroupCategory operations are served from the repository controller
+</p>
+</blockquote>
+<hr />
+<h2 id="List">List</h2>
+<p>
+List the package group categories under a repository
+</p>
+<p>
+Status: <strong>complete</strong> 
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/packagegroupcategories/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+<strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">&quot;multimedia&quot;</span></b>: 
+  {<B><span class="code-string">&quot;description&quot;</span></b>: <B><span class="code-string">&quot;multimedia created from package kit group data&quot;</span></b>, <B><span class="code-string">&quot;repo_defined&quot;</span></b>: false, <B><span class="code-string">&quot;display_order&quot;</span></b>: 99, <B><span class="code-string">&quot;immutable&quot;</span></b>: false, <B><span class="code-string">&quot;translated_name&quot;</span></b>: {}, <B><span class="code-string">&quot;packagegroupids&quot;</span></b>: [<B><span class="code-string">&quot;sound-and-video&quot;</span></b>], <B><span class="code-string">&quot;translated_description&quot;</span></b>: {}, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;multimedia&quot;</span></b>, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;multimedia&quot;</span></b>, <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;multimedia&quot;</span></b>}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no repository
+</p>
+<hr />
+<h2 id="Create">Create</h2>
+<p>
+Create a new packagegroup
+</p>
+<p>
+Status: <strong>partial</strong> - location header not properly filled in
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/create_packagegroupcategory/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>categoryid: package group category id
+</li><li>categoryname: package group category name
+</li><li>description: package group category description
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>201 Created</strong>
+</p>
+<p>
+Error: <strong>409 Conflict</strong> if there is a packagegroupcategory with the same: id
+</p>
+<hr />
+<h2 id="Delete">Delete</h2>
+<p>
+Delete a single package group category
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/delete_packagegroupcategory/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>categoryid: package group category id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such package
+</p>
+<hr />
+<h2 id="AddaPackageGroup">Add a Package Group</h2>
+<p>
+Add a package group to a package group category
+</p>
+<p>
+Status: <strong>complete</strong> 
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/add_packagegroup_to_category/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>categoryid: package group category id
+</li><li>groupid: package group id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such repository
+</p>
+<hr />
+<h2 id="DeleteaPackageGroup">Delete a Package Group</h2>
+<p>
+Delete a package group from a package group category
+</p>
+<p>
+Status: <strong>complete</strong> 
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/delete_packagegroup_from_category/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>categoryid: package group category id
+</li><li>groupid: package group id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+ 
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such repository
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

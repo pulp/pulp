@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Services">Services</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Services.html#DependencyResolution">Dependency Resolution</a></li><li class="active">
+<a href="UGREST-Services.html#PackageSearch">Package Search</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Pulp exposes a services API to perform one-off operations such as dependency resolution, search etc.
+</p>
+<ul><li>dependency resolution on multiple packages
+</li></ul><p>
+ 
+Eventually all API methods with have a specification on which level of access is required to call them.
+</p>
+<p>
+Base URL Path: <strong>/services/</strong>
+</p>
+<hr />
+<h2 id="DependencyResolution">Dependency Resolution</h2>
+<p>
+resolve dependencies for a given set of packages and provide suggested packages from specified repos.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/dependencies/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+{'pkgnames' : ['pkgname1', 'pkgname2'], 'repoids' : ['repoid1', 'repoid2']}
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'dependency_list'</span></b>: <B><span class="code-string">'\n dependency: libstdc++.so.6()(64bit) \n   provider: libstdc++.x86_64 4.4.5-2.fc13\n
+                      \n dependency: libc.so.6()(64bit) \n   provider: glibc.x86_64 2.12.1-4\n
+                      \n dependency: rtld(GNU_HASH) \n   provider: glibc.x86_64 2.12.1-4\n   provider: glibc.i686 2.12.1-4\n'</span></b> ,
+<B><span class="code-string">'available_packages'</span></b>: [<B><span class="code-string">'libstdc++-4.4.5-2.fc13.x86_64.rpm'</span></b>,<B><span class="code-string">'glibc-2.12.1-4.x86_64.rpm'</span></b>,<B><span class="code-string">'libgcc-4.4.5-2.fc13.x86_64.rpm]'</span></b>
+}
+
+</pre></div><hr />
+<h2 id="PackageSearch">Package Search</h2>
+<p>
+Search all packages under all repositories.  Return a list of packages matching search criteria, along with the repositories each package belongs to.
+The list is empty if no matches were found.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/search/packages/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+name
+epoch
+version
+release
+arch 
+filename
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;Virtualization-as-IN&quot;</span></b>, 
+   <B><span class="code-string">&quot;filename&quot;</span></b>: <B><span class="code-string">&quot;Virtualization-as-IN-5.0.0-7.noarch.rpm&quot;</span></b>, 
+   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;0&quot;</span></b>, 
+   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;5.0.0&quot;</span></b>, 
+   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;7&quot;</span></b>, 
+   <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
+   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;noarch&quot;</span></b>, 
+   <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
+   <B><span class="code-string">&quot;repos&quot;</span></b>: [<B><span class="code-string">&quot;vt_i386&quot;</span></b>, <B><span class="code-string">&quot;vt_i386_dup&quot;</span></b>, <B><span class="code-string">&quot;vt_x86_64_dup&quot;</span></b>, <B><span class="code-string">&quot;vt_x86_64&quot;</span></b>]}]
+</pre></div><p>
+Error: None
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

@@ -50,6 +50,16 @@
 <p>
 <strong>Repository:</strong> <tt>http://repos.fedorapeople.org/repos/pulp/pulp/</tt>
 </p>
+<p>
+<em>The Red Hat Enterprise Linux installation instructions do not apply to Community Release 6. RHEL support is currently only in the testing repository and will be in the next community release.</em>
+</p>
+<h3 id="TestingBuilds">Testing Builds</h3>
+<p>
+Community Releases are built and tested at the end of each Pulp sprint (roughly every three weeks). Testing builds are created more frequently (currently every Wednesday and Friday afternoon) and contain in progress features and bug fixes. While it is recommended that users try to stick with the Community Releases, there may be times where a feature or bug fix is desired before a CR is built.
+</p>
+<p>
+The repo files for <a class="ext-link" href="http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo"><span class="icon">Fedora</span></a> and <a class="ext-link" href="http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo"><span class="icon">RHEL</span></a> contain definitions for both the community releases and our testing build repository, however the latter is disabled by default. To install or update to a testing build, simply edit the Pulp repo file and set the testing repo's <tt>enabled</tt> flag to <tt>1</tt>. The next time yum downloads Pulp, it will use the testing build.
+</p>
 <hr />
 <h2 id="prereqs">Prerequisites</h2>
 <ul><li>Pulp does not currently work with SELinux, so it needs to be set to Permissive or Disabled.
@@ -59,18 +69,57 @@
 </li></ul></li><li>The following ports must be open into consumer systems:
 <ul><li>5672 for non-ssl or 5674 for SSL message bus connections
 </li></ul></li></ul><hr />
-<h2 id="server">Server</h2>
+<h2 id="installation">Installation</h2>
+<h3 id="fserver">Server</h3>
 <p>
-1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
+1. Download the necessary repository configuration files:
 </p>
-<pre class="wiki">$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
-</pre><p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #0000bb; background: #ddddff; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #0000bb">
+Fedora
+</span>
+<pre class="wiki" style="background: #ccccee; border: 1px solid #0000bb; border-radius: 10px; -moz-border-radius: 10px">
+$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+</pre>
+</div>
+<p>
+<br />
+</p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #bb0000">
+Red Hat Enterprise Linux
+</span>
+<br /><br />
+Pulp Repository
+<pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
+$ wget /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+</pre>
+
+Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a>
+<pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
+$ rpm -Uvh http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-4.noarch.rpm
+</pre>
+
+Subscribe the Pulp server to the RHN channels:
+<ul>
+<li>MRG Messaging v. 1</li>
+<li>MRG Messaging Base v. 1</li>
+</ul>
+</div>
+<p>
 2. Install Pulp and its dependencies:
 </p>
 <pre class="wiki">$ yum install pulp
 </pre><p>
 3. Update <tt>/etc/pulp/pulp.conf</tt> to change the <tt>base_url</tt> attribute to reflect the hostname of the Pulp server.
 </p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #bb0000">
+Red Hat Enterprise Linux
+</span>
+<br /><br />
+The RHEL WSGI installation does not automatically enable the Apache module. This must be explicitly done by editing the <tt>/etc/httpd/conf.d/wsgi.conf</tt> file and uncommenting the <tt>LoadModule</tt> line. If Apache is already running when this change is made, it will need to be restarted. If it is not running, the <tt>pulp-server start</tt> script will start it automatically.
+</div>
 <p>
 4. Initialize Pulp, which starts and configures database:
 </p>
@@ -86,7 +135,7 @@
 </pre><h4 id="InstallationNotes">Installation Notes</h4>
 <ul><li>The default user is <strong>admin</strong> with the password <strong>admin</strong>.
 </li></ul><hr />
-<h2 id="adminclient">Admin Client</h2>
+<h3 id="fadminclient">Admin Client</h3>
 <p>
 The Pulp Admin Client is used for administrative commands on the Pulp server, such as the manipulation of repositories and content. The Pulp Admin Client can be run on any machine that can access the Pulp server, including the server itself. It is not a requirement that the admin client be run on a machine that is configured as a Pulp consumer.
 </p>
@@ -102,12 +151,12 @@ Pulp admin commands are accessed through the <tt>pulp-admin</tt> script.
 </p>
 <pre class="wiki">$ yum install pulp-client
 </pre><p>
-3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">UGFAQ</a> page. This change must be done in the following places:
+3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in the following places:
 </p>
 <ul><li>host
 </li></ul><pre class="wiki">$ vi /etc/pulp/client.conf
 </pre><hr />
-<h2 id="consumerclient">Consumer Client</h2>
+<h3 id="fconsumerclient">Consumer Client</h3>
 <p>
 The Pulp Consumer Client is present on all systems that wish to act as a consumer of a Pulp server. The Pulp Consumer Client provides the means for a system to register and configure itself with a Pulp server. Additionally, the Pulp Consumer Client runs an agent that will receive messages and commands from the Pulp server.
 </p>
@@ -123,7 +172,7 @@ Pulp consumer commands are accessed through the <tt>pulp-client</tt> script. Thi
 </p>
 <pre class="wiki">$ yum install pulp-client
 </pre><p>
-3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">UGFAQ</a> page. This change must be done in four places:
+3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in four places:
 </p>
 <ul><li>host
 </li><li>baseurl

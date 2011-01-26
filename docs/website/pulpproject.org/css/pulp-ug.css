@@ -126,3 +126,12 @@ hr {
   margin-top: 20px;
   margin-bottom: 20px;
 }
+
+/* API Table of Contents */
+.wiki-toc ol {
+  line-height: 1.2em;
+  list-style-type: circle;
+  list-style-type: circle;
+  margin-top: -10px;
+}
+

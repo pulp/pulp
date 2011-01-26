@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Errata">Errata</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Errata.html#ListAllAvailableErrata">List All Available Errata</a></li><li class="active">
+<a href="UGREST-Errata.html#ListErratabyRepository">List Errata by Repository</a></li><li class="active">
+<a href="UGREST-Errata.html#ListErratabyConsumer">List Errata by Consumer</a></li><li class="active">
+<a href="UGREST-Errata.html#Create">Create</a></li><li class="active">
+<a href="UGREST-Errata.html#Delete">Delete</a></li><li class="active">
+<a href="UGREST-Errata.html#Information">Information</a></li><li class="active">
+<a href="UGREST-Errata.html#InstallErrataonConsumers">Install Errata on Consumers</a></li><li class="active">
+<a href="UGREST-Errata.html#InstallErrataonConsumerGroups">Install Errata on Consumer Groups</a></li></ol></li></ol></div>
+
+</p>
+<p>
+An erratum is an entity in pulp representing update metadata information for a given package update. Errata usually has associations with Packages, Repo and Consumers.   
+</p>
+<p>
+Base URL Path: <strong>/errata/</strong>
+</p>
+<hr />
+<h2 id="ListAllAvailableErrata">List All Available Errata</h2>
+<p>
+List all available Errata.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/errata/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'immutable'</span></b>: True,
+ <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
+ <B><span class="code-string">'pkglist'</span></b>: [],
+ <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'reboot_suggested'</span></b>: False,
+ <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
+                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
+                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
+                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
+ <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
+ <B><span class="code-string">'repo_defined'</span></b>: True,
+ <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
+ <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
+ <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
+ <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>},{...]
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="ListErratabyRepository">List Errata by Repository</h2>
+<p>
+List available errata for a given repo. This will return a list of all errata on associated to that specific repoid. The list is empty if no repositories are found.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;id&gt;/list_errata</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters: 
+</p>
+<blockquote>
+<p>
+repoid : repo id for which errata is queried
+types  : optional ['bugzilla', 'enhancement', 'security']
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'immutable'</span></b>: True,
+ <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
+ <B><span class="code-string">'pkglist'</span></b>: [],
+ <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'reboot_suggested'</span></b>: False,
+ <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
+                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
+                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
+                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
+ <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
+ <B><span class="code-string">'repo_defined'</span></b>: True,
+ <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
+ <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
+ <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
+ <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>}
+
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="ListErratabyConsumer">List Errata by Consumer</h2>
+<p>
+List available errata for a given repo. This will return a list of all errata on associated to that specific repoid. The list is empty if no repositories are found.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;id&gt;/listerrata</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters: 
+</p>
+<blockquote>
+<p>
+consumerid : consumer id for which errata is queried
+types      : optional ['bugzilla', 'enhancement', 'security']
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'immutable'</span></b>: True,
+ <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
+ <B><span class="code-string">'pkglist'</span></b>: [],
+ <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'reboot_suggested'</span></b>: False,
+ <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
+                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
+                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
+                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
+ <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
+ <B><span class="code-string">'repo_defined'</span></b>: True,
+ <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
+ <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
+ <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
+ <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>}
+
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Create">Create</h2>
+<p>
+Create a new errata given the passed info in the metadata.
+</p>
+<p>
+Status: <strong>partial</strong> - updateinfo xml needs to be updated appropriately for new errata
+</p>
+<p>
+Path: <strong>/errata/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>id: unique identifier
+</li><li>title: human-readable title for erratum
+</li><li>description: errata description
+</li><li>version: erratum version
+</li><li>release: erratum release
+</li><li>type   : type of errata (currently supports: ['bugzilla', 'enhancement', 'security'])
+</li><li>status : Erratum status information (optional)
+</li><li>updated : updated erratum date (optional)
+</li><li>issued  : Erratum issued date (optional)
+</li><li>from_str : who issued the erratum (optional)
+</li><li>reboot_suggested : if errataum requires a reboot upon applying (optional)
+</li><li>references : includes bugzilla id info, CVE info for security errata etc (optional)
+</li><li>pkglist  : packages effected by this erratum  
+</li><li>immutable : can this erratum be modified (optional)
+</li><li>repo_defined: should this errata added as part of a repo vs custom (optional)
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>201 Created</strong>
+</p>
+<p>
+Headers:
+</p>
+<ul><li>location: '/errata/test-errata/'
+<div class="code"><pre>
+{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'test-errata'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@example.org'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'TEST-ERRATA-2010-12094'</span></b>,
+ <B><span class="code-string">'immutable'</span></b>: True,
+ <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
+ <B><span class="code-string">'pkglist'</span></b>: [],
+ <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'reboot_suggested'</span></b>: False,
+ <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=xxxxxx'</span></b>), 
+                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
+                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'xxxxxx'</span></b>,
+                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add test info mode to desktop menu'</span></b>)}],
+ <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'Fedora 13'</span></b>,
+ <B><span class="code-string">'repo_defined'</span></b>: True,
+ <B><span class="code-string">'status'</span></b>: <B><span class="code-string">'stable'</span></b>,
+ <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'test-rpm-23.2-4.fc13'</span></b>,
+ <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'bugfix'</span></b>,
+ <B><span class="code-string">'updated'</span></b>: <B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'1.4'</span></b>}
+
+</pre></div></li></ul><p>
+Error: <strong>409 Conflict</strong> if there is an existing errata with the same id
+</p>
+<hr />
+<h2 id="Delete">Delete</h2>
+<p>
+Remove all repositories under pulp
+</p>
+<p>
+Status: <strong>partial</strong> - updateinfo xml needs to be updated appropriately for deleted errata
+</p>
+<p>
+Path: <strong>/errata/&gt;errata id&gt;</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters: None
+</p>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Information">Information</h2>
+<p>
+Get the information on a single erratum
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/erratum/&lt;erratum id&gt;/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>
+{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
+ <B><span class="code-string">'description'</span></b>: None,
+ <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
+ <B><span class="code-string">'immutable'</span></b>: True,
+ <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
+ <B><span class="code-string">'pkglist'</span></b>: [],
+ <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'reboot_suggested'</span></b>: False,
+ <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
+                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
+                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
+                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
+ <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
+ <B><span class="code-string">'repo_defined'</span></b>: True,
+ <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
+ <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
+ <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
+ <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
+ <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>}
+
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such repository
+</p>
+<hr />
+<h2 id="InstallErrataonConsumers">Install Errata on Consumers</h2>
+<ul><li>Install errata on specific consumer Ids. 
+</li><li>If no errata id specified, installs all applicable errata
+</li><li>If type specified, only installs errata of that types
+</li></ul><p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/installerrata/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>errataids : list of errata ids to perform installs 
+</li><li>types:      type of errata to perform install
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[<B><span class="code-string">'fedora-packager'</span></b>, <B><span class="code-string">'zsh'</span></b>]
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="InstallErrataonConsumerGroups">Install Errata on Consumer Groups</h2>
+<ul><li>Install errata on specific consumer Ids. 
+</li><li>If no errata id specified, installs all applicable errata
+</li><li>If type specified, only installs errata of that types
+</li></ul><p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumergroup id&gt;/installerrata/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>errataids : list of errata ids to perform installs 
+</li><li>types:      type of errata to perform install
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters: None
+</p>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[<B><span class="code-string">'fedora-packager'</span></b>, <B><span class="code-string">'zsh'</span></b>]
+</pre></div><p>
+Error: None
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

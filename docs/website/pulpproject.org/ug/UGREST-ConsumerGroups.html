@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="ConsumerGroups">Consumer Groups</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-ConsumerGroups.html#List">List</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#Delete">Delete</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#Create">Create</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#Information">Information</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#Remove">Remove</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#AddaConsumer">Add a Consumer</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#RemoveaConsumer">Remove a Consumer</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#BindConsumers">Bind Consumers</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#Unbind">Unbind</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#AddKey-ValuePair">Add Key-Value Pair</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#UpdateKey-ValuePair">Update Key-Value Pair</a></li><li class="active">
+<a href="UGREST-ConsumerGroups.html#DeleteKey-ValuePair">Delete Key-Value Pair</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Base URL Path: <strong>/consumergroups/</strong>
+</p>
+<hr />
+<h2 id="List">List</h2>
+<p>
+List all consumer groups
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumergroup'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
+  <B><span class="code-string">'consumerids'</span></b>: [<B><span class="code-string">'consumer1'</span></b>,<B><span class="code-string">'consumer2'</span></b>]}]
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Delete">Delete</h2>
+<p>
+Delete all the consumergroups
+</p>
+<p>
+Status: <strong>partial</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass 
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Create">Create</h2>
+<p>
+Create a consumer group
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>id: consumer id
+</li><li>description: consumer description (optional)
+</li><li>consumerids: consumer ids to be associated with this group (optional)
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass 
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>201 Created</strong>
+</p>
+<p>
+Headers:
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer group'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
+  <B><span class="code-string">'consumerids'</span></b>: []}]
+</pre></div><p>
+Error: <strong>409 Conflict</strong> if there is an existing consumer group with the same id
+</p>
+<hr />
+<h2 id="Information">Information</h2>
+<p>
+Get information of a consumer group, given the consumer group id
+</p>
+<p>
+Status: <strong>partial</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumergroup id&gt;/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass 
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer group'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'mygroup'</span></b>,
+ <B><span class="code-string">'repoids'</span></b>: [<B><span class="code-string">'consumer1'</span></b>, <B><span class="code-string">'consumer2'</span></b>]}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="Remove">Remove</h2>
+<p>
+Remove a single consumer
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumer group id&gt;/</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="AddaConsumer">Add a Consumer</h2>
+<p>
+Add a consumer to this consumer group
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumer group id&gt;/add/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>consumerid: consumer id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="RemoveaConsumer">Remove a Consumer</h2>
+<p>
+Remove a consumer from a consumer group
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumer group id&gt;/remove/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+*consumerid: consumer id
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="BindConsumers">Bind Consumers</h2>
+<p>
+Bind a repository to all consumers in this consumer group.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;group id&gt;/bind/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>repoid: repository id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="Unbind">Unbind</h2>
+<p>
+Unbind a repository from all consumers belonging to a consumer group
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;group id&gt;/unbind/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+*repoid: repository id
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="AddKey-ValuePair">Add Key-Value Pair</h2>
+<p>
+Add a key value to this consumergroup
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumergroup id&gt;/add_key_value_pair/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<pre class="wiki">{ 'key' : "test-key",
+  'value' : "test-value"
+}
+</pre><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="UpdateKey-ValuePair">Update Key-Value Pair</h2>
+<p>
+Update a key value for this consumergroup
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumergroup id&gt;/update_key_value_pair/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<pre class="wiki">{ 'key' : "test-key",
+  'value' : "test-value"
+}
+</pre><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+<hr />
+<h2 id="DeleteKey-ValuePair">Delete Key-Value Pair</h2>
+<p>
+Delete a key value for this consumergroup.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumergroups/&lt;consumergroup id&gt;/delete_key_value_pair/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+* key
+</p>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer group
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

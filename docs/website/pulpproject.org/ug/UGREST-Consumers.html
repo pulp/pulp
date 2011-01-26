@@ -1,0 +1,855 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Consumers">Consumers</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Consumers.html#List">List</a></li><li class="active">
+<a href="UGREST-Consumers.html#Delete">Delete</a></li><li class="active">
+<a href="UGREST-Consumers.html#Create">Create</a></li><li class="active">
+<a href="UGREST-Consumers.html#Information">Information</a></li><li class="active">
+<a href="UGREST-Consumers.html#PackagesList">Packages List</a></li><li class="active">
+<a href="UGREST-Consumers.html#CertificateGeneration">Certificate Generation</a></li><li class="active">
+<a href="UGREST-Consumers.html#Update">Update</a></li><li class="active">
+<a href="UGREST-Consumers.html#Delete1">Delete</a></li><li class="active">
+<a href="UGREST-Consumers.html#Bind">Bind</a></li><li class="active">
+<a href="UGREST-Consumers.html#Unbind">Unbind</a></li><li class="active">
+<a href="UGREST-Consumers.html#UploadProfile">Upload Profile</a></li><li class="active">
+<a href="UGREST-Consumers.html#ViewHistory">View History</a></li><li class="active">
+<a href="UGREST-Consumers.html#AddKey-ValuePair">Add Key-Value Pair</a></li><li class="active">
+<a href="UGREST-Consumers.html#UpdateKey-ValuePair">Update Key-Value Pair</a></li><li class="active">
+<a href="UGREST-Consumers.html#DeleteKey-ValuePair">Delete Key-Value Pair</a></li><li class="active">
+<a href="UGREST-Consumers.html#RetrieveKey-ValuePairs">Retrieve Key-Value Pairs</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Base URL Path: <strong>/consumers/</strong>
+</p>
+<hr />
+<h2 id="List">List</h2>
+<p>
+List all consumers
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<ul><li>package_name : Will fetch all Consumer objects who have an package with specified name associated with them
+</li></ul><p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'me'</span></b>,
+  <B><span class="code-string">'package_profile'</span></b>: {},
+  <B><span class="code-string">'repoids'</span></b>: []}]
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Delete">Delete</h2>
+<p>
+Delete all the consumers
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: None
+</p>
+<hr />
+<h2 id="Create">Create</h2>
+<p>
+Create a consumer
+</p>
+<p>
+Status: <strong>partial</strong> - location header not filled in
+</p>
+<p>
+Path: <strong>/consumers/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>id: consumer id
+</li><li>description: consumer description
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass 
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>201 Created</strong>
+</p>
+<p>
+Headers:
+</p>
+<ul><li>location - path to consumer resource
+<div class="code"><pre>[{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'me'</span></b>,
+  <B><span class="code-string">'package_profile'</span></b>: {<B><span class="code-string">'href'</span></b>},
+  <B><span class="code-string">'repoids'</span></b>: []}]
+</pre></div></li></ul><p>
+Error: <strong>409 Conflict</strong> if there is an existing consumer with the same id
+</p>
+<hr />
+<h2 id="Information">Information</h2>
+<p>
+Get a consumers's information, given the consumer id
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test consumer'</span></b>,
+ <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'me'</span></b>,
+ <B><span class="code-string">'package_profile'</span></b>: {},
+ <B><span class="code-string">'packageids'</span></b>: [],
+ <B><span class="code-string">'repoids'</span></b>: []
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="PackagesList">Packages List</h2>
+<p>
+Get a consumers's set of installed packages.  This is a large document and is only returned when asked for.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/packages/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{
+ <B><span class="code-string">&quot;GConf2&quot;</span></b>: [
+  {
+   <B><span class="code-string">&quot;OS&quot;</span></b>: <B><span class="code-string">&quot;linux&quot;</span></b>, 
+   <B><span class="code-string">&quot;Platform&quot;</span></b>: <B><span class="code-string">&quot;x86_64-redhat-linux-gnu&quot;</span></b>, 
+   <B><span class="code-string">&quot;Size&quot;</span></b>: 5986194, 
+   <B><span class="code-string">&quot;URL&quot;</span></b>: <B><span class="code-string">&quot;http://projects.gnome.org/gconf/&quot;</span></b>, 
+   <B><span class="code-string">&quot;Vendor&quot;</span></b>: <B><span class="code-string">&quot;Fedora Project&quot;</span></b>, 
+   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;x86_64&quot;</span></b>, 
+   <B><span class="code-string">&quot;description&quot;</span></b>: <B><span class="code-string">&quot;GConf is a process-transparent configuration database API used to\nstore user preferences. It has pluggable backends and features to\nsupport workgroup administration.&quot;</span></b>, 
+   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>, 
+   <B><span class="code-string">&quot;fileName&quot;</span></b>: <B><span class="code-string">&quot;GConf2-2.26.2-1.fc11.2.x86_64&quot;</span></b>, 
+   <B><span class="code-string">&quot;group&quot;</span></b>: <B><span class="code-string">&quot;System Environment/Base&quot;</span></b>, 
+   <B><span class="code-string">&quot;installtime&quot;</span></b>: 1272900387, 
+   <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;GConf2&quot;</span></b>, 
+   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;1.fc11.2&quot;</span></b>, 
+   <B><span class="code-string">&quot;summary&quot;</span></b>: <B><span class="code-string">&quot;A process-transparent configuration system&quot;</span></b>, 
+   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;2.26.2&quot;</span></b>
+  }
+ ], 
+ <B><span class="code-string">&quot;GConf2-devel&quot;</span></b>: [
+  {
+   <B><span class="code-string">&quot;OS&quot;</span></b>: <B><span class="code-string">&quot;linux&quot;</span></b>, 
+   <B><span class="code-string">&quot;Platform&quot;</span></b>: <B><span class="code-string">&quot;x86_64-redhat-linux-gnu&quot;</span></b>, 
+   <B><span class="code-string">&quot;Size&quot;</span></b>: 854255, 
+   <B><span class="code-string">&quot;URL&quot;</span></b>: <B><span class="code-string">&quot;http://projects.gnome.org/gconf/&quot;</span></b>, 
+   <B><span class="code-string">&quot;Vendor&quot;</span></b>: <B><span class="code-string">&quot;Fedora Project&quot;</span></b>, 
+   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;x86_64&quot;</span></b>, 
+   <B><span class="code-string">&quot;description&quot;</span></b>: <B><span class="code-string">&quot;GConf development package. Contains files needed for doing\ndevelopment using GConf.&quot;</span></b>, 
+   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>, 
+   <B><span class="code-string">&quot;fileName&quot;</span></b>: <B><span class="code-string">&quot;GConf2-devel-2.26.2-1.fc11.2.x86_64&quot;</span></b>, 
+   <B><span class="code-string">&quot;group&quot;</span></b>: <B><span class="code-string">&quot;Development/Libraries&quot;</span></b>, 
+   <B><span class="code-string">&quot;installtime&quot;</span></b>: 1272900476, 
+   <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;GConf2-devel&quot;</span></b>, 
+   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;1.fc11.2&quot;</span></b>, 
+   <B><span class="code-string">&quot;summary&quot;</span></b>: <B><span class="code-string">&quot;Headers and libraries for GConf development&quot;</span></b>, 
+   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;2.26.2&quot;</span></b>
+  }
+ ], 
+...
+}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="CertificateGeneration">Certificate Generation</h2>
+<p>
+Generate an x509 Certificate to represent this Consumer.  This Certificate is signed by the Pulp server using the SSL CA Cert configured in apache's /etc/httpd/conf.d/pulp.conf configuration file.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/certificate/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{
+ <B><span class="code-string">&quot;certificate&quot;</span></b>: 
+ <B><span class="code-string">&quot;-----BEGIN CERTIFICATE-----
+MIICGTCCAQECAQEwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0
+MB4XDTEwMDgxMzE5MzYyMloXDTIwMDgxMDE5MzYyMlowFTETMBEGA1UEAxMKMTI4
+MTcyODE4MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArUSjsf/dJvJH79sv
+G7D9bsxR74cKmrQUKKbD+Ij5W9hKMrf5Fo1evd2phCkXf+Oup+Y+I9DAJCvKAWCe
+aEKZP5zqLmQlsB87YXp9fyK4Gitgl3v0HOEeRFPDG3pZQJ0vwcMY1S/CcCoamQ7v
+oseGTfQT8HvWjI09wp3e9MJnIJECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEATm0+
+7JzT8dChDwPFUOEhxGUtPmfTgPoZWYvspy2xtNZ1DgJ2T16TD5MotdU1DAYNdKE0
+ye7+tadKFVy/yYgt2YBgHZeNs95yeGeB+1fAhNZDgBTiLoMhNMAk0XqqvCj1R07P
+bfKQfcqKzF8s9HpYA4sigee5VYZbLqbZxWt1NZitxneL9Hb5NGFC7tG+SoYt9Su2
+y90OR83QjF+fqRTtnqAHqUmeqA8xCRyaWgGvHCXmmhIUMSnMgHC2XK6CQWbSOA3G
+Nq5GdPADF5exjxRqoX+9IV27FTAu+3LZgq9dfeuCY/BZSp+BUTsb3fAmuWMiPThe
+8pJWO1s+EUSGwkg8qw==
+-----END CERTIFICATE-----&quot;</span></b>, 
+ <B><span class="code-string">&quot;key&quot;</span></b>: 
+ <B><span class="code-string">&quot;-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQCtRKOx/90m8kfv2y8bsP1uzFHvhwqatBQopsP4iPlb2Eoyt/kW
+jV693amEKRd/466n5j4j0MAkK8oBYJ5oQpk/nOouZCWwHzthen1/IrgaK2CXe/Qc
+4R5EU8MbellAnS/BwxjVL8JwKhqZDu+ix4ZN9BPwe9aMjT3Cnd70wmcgkQIDAQAB
+AoGBAJDugEqs7izcrmWonq/4DRU33TWRbMJY7R/P1s62rHYx5makUruVhvEkT95X
+jOuR5I9W3RWSUJYw9qjOS9KEGrCl1nEIKzE01eWO15WsvW3ZRwCdse3fRN4g319J
+bReHgiYazIWN6MXpfB20y0Q9jU52VdaSptMyIW2PA9x7SE1RAkEA0zp9ngCsY575
+g7B7vH8RGkwvw0urBi1sFplcdJR+5kZojCwvoWWC6WcxKjX4djKXDLycYN0Q803s
+/b/QsU4axQJBANH+X9/OAfZ77M4/I44Ih+vvl70hFHmHEbxxo4W48lqABmrPEz2z
+5TlU4GV1/R7q2y0znj4dIQTqwBmKx7MsO10CQQCu7JRUwdgBVAjr/r4p1szSC1/O
+ip5iKkGF4ZFIViVVC9/OnVUAgrFMGxIDE9jkAXdHq/aQ3OIJq3HknfH0s2rFAkAv
+FsOZBDEcfJ2VgkMOzorsNUXpe0mEFu27PCBXFCoEcUD/IoBGDdkRCh9noRWpoTCU
+6kZJ125YE+wPzjcJzplhAkBe+SBjwZyWpkaTXI69tnarRTPj1/8Rdssv8J2frSfY
+fHtXVkM+JakzknrCIHOJEXVeA30sX/0Vscs37KlQ0V9N
+-----END RSA PRIVATE KEY-----&quot;</span></b>
+}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="Update">Update</h2>
+<p>
+Update a consumer
+</p>
+<p>
+Status: <strong>partial</strong> - invalid filed update not checked for
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>consumer: consumer object with changes
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer<br />
+Error: <strong>400 Bad Request</strong> if there is a change to the consumer id
+</p>
+<hr />
+<h2 id="Delete1">Delete</h2>
+<p>
+Delete a single consumer
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="Bind">Bind</h2>
+<p>
+Bind a repository to this consumer
+</p>
+<p>
+Status: <strong>partial</strong> - no error checking for already bound repository
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/bind/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>repoid: repository id
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="Unbind">Unbind</h2>
+<p>
+Unbind a repository from a consumer
+</p>
+<p>
+Status: <strong>partial</strong> - no error checking for unbound repository
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/unbind/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+*repoid: repository id
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="UploadProfile">Upload Profile</h2>
+<p>
+Upload a consumer's package profile
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/profile/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>list of packages
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="ViewHistory">View History</h2>
+<p>
+Retrieve the history of events that occurred on a consumer
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/history/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters (all are optional):
+</p>
+<ul><li>event_type: type of events to retrieve
+</li><li>limit: maximum number of results to retrieve
+</li><li>sort: direction of sort by event timestamp; possible values: 'ascending', 'descending'
+</li><li>start_date: earliest date of events that will be retrieved; format: yyyy-mm-dd
+</li><li>end_date: latest date of events that will be retrieved; format: yyyy-mm-dd
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+Consumer Certificate
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[
+{<B><span class="code-string">&quot;originator&quot;</span></b>: <B><span class="code-string">&quot;consumer&quot;</span></b>, <B><span class="code-string">&quot;timestamp&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1283519842366}, <B><span class="code-string">&quot;type_name&quot;</span></b>: <B><span class="code-string">&quot;consumer_created&quot;</span></b>, <B><span class="code-string">&quot;consumer_id&quot;</span></b>: <B><span class="code-string">&quot;jdob&quot;</span></b>, <B><span class="code-string">&quot;details&quot;</span></b>: null, <B><span class="code-string">&quot;_ns&quot;</span></b>: <B><span class="code-string">&quot;consumer_history&quot;</span></b>, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;9b81254d-cbb3-463d-a7ba-59106e78a5fe&quot;</span></b>, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;9b81254d-cbb3-463d-a7ba-59106e78a5fe&quot;</span></b>},
+{<B><span class="code-string">&quot;originator&quot;</span></b>: <B><span class="code-string">&quot;consumer&quot;</span></b>, <B><span class="code-string">&quot;timestamp&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1283519842366}, <B><span class="code-string">&quot;type_name&quot;</span></b>: <B><span class="code-string">&quot;repo_bound&quot;</span></b>, <B><span class="code-string">&quot;consumer_id&quot;</span></b>: <B><span class="code-string">&quot;jdob&quot;</span></b>, <B><span class="code-string">&quot;details&quot;</span></b>: {<B><span class="code-string">&quot;repo_id&quot;</span></b>: <B><span class="code-string">&quot;repo1&quot;</span></b>}, <B><span class="code-string">&quot;_ns&quot;</span></b>: <B><span class="code-string">&quot;consumer_history&quot;</span></b>, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;53dd60e5-ca4b-47b0-8f90-325aeb0da17a&quot;</span></b>, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;53dd60e5-ca4b-47b0-8f90-325aeb0da17a&quot;</span></b>}
+]
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="AddKey-ValuePair">Add Key-Value Pair</h2>
+<p>
+Add a key value to this consumer
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/add_key_value_pair/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<pre class="wiki">{ 'key' : "test-key",
+  'value' : "test-value"
+}
+</pre><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="UpdateKey-ValuePair">Update Key-Value Pair</h2>
+<p>
+Update a key value for this consumer
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/update_key_value_pair/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<pre class="wiki">{ 'key' : "test-key",
+  'value' : "test-value"
+}
+</pre><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="DeleteKey-ValuePair">Delete Key-Value Pair</h2>
+<p>
+Delete a key value for this consumer
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/delete_key_value_pair/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+* key
+</p>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+<hr />
+<h2 id="RetrieveKey-ValuePairs">Retrieve Key-Value Pairs</h2>
+<p>
+Get all key-value pairs for this consumer. 
+This also includes key-values inherited from consumergroups that this consumer belongs.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/consumers/&lt;consumer id&gt;/keyvalues/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass or Consumer Certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<pre class="wiki">{u'key1': u'value1', u'key2': u'value2', u'key3': u'value3'}
+</pre><p>
+Error: <strong>404 Not Found</strong> if there is no such consumer
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+
