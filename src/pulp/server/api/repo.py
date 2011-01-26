@@ -592,17 +592,19 @@ class RepoApi(BaseApi):
                     return p
         return {}
 
-    def get_package_by_filename(self, id, filename):
+    def get_package_by_filename(self, id, filenames = []):
         """
           Return matching Package object in this Repo by filename
         """
-        log.info('looking up pkg filename [%s] in repo [%s]' % (filename, id))
+        log.info('looking up pkg filename [%s] in repo [%s]' % (filenames, id))
         repo = self._get_existing_repo(id)
-        packages = repo['packages']
-        for p in packages.values():
-            if filename == p['filename']:
-                return p
-        return {}
+        packages = repo['packages'].values()
+        pkgmatch = {}
+        for filename in filenames:
+            for p in packages:
+                if filename == p['filename']:
+                    pkgmatch[filename] = p
+        return pkgmatch
 
     @audit()
     def add_package(self, repoid, packageids=[]):
@@ -731,7 +733,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
-
+        
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
         addids = []
