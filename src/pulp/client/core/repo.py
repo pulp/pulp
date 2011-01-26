@@ -618,7 +618,8 @@ class Sync(RepoProgressAction):
                 current += _('%s/%s existing items processed\n') % \
                     ((progress['items_total'] - progress['num_download']), progress['items_total'])
         current += "\nItem Details: \n"
-        current += self.form_progress_item_details(progress["details"])
+        if progress and progress.has_key("details"):
+            current += self.form_progress_item_details(progress["details"])
         if type(progress) == type({}):
             if progress.has_key("num_error") and progress['num_error'] > 0:
                 current += _("Warning: %s errors occurred\n" % (progress['num_error']))
