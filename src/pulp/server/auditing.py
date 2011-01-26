@@ -60,13 +60,16 @@ def initialize():
 def audit_repr(value):
     """
     Return an audit-friendly representation of a value.
+    Non-ASCII chars in unicode strings are replaced with '?'.
     @type value: any
     @param value: parameter value
     @rtype: str
     @return: string representing the value
     """
-    if isinstance(value, basestring):
-        return value.decode("utf-8", "replace")
+    if isinstance(value, str):
+	return value.decode("utf-8").encode("ascii", "replace")
+    if isinstance(value, unicode):
+	return value.encode("ascii", "replace")
     if not isinstance(value, (dict, BSON, SON)):
         return repr(value)
     if 'id' in value:
