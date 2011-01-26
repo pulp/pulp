@@ -712,7 +712,7 @@ class Upload(RepoAction):
             pkgstream = base64.b64encode(open(frpm).read())
             status = self.pconn.upload(id, pkginfo, pkgstream)
             if status:
-                print _("Successful uploaded [%s] to repo [ %s ]") % \
+                print _("Successfully uploaded [%s] to repo [ %s ]") % \
                         (pkginfo['pkgname'], id)
             else:
                 print _("Failed to upload [%s] to repo [ %s ]") % \
