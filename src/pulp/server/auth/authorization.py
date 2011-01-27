@@ -232,7 +232,7 @@ def revoke_all_permissions_from_user(user):
     @return: True on success
     """
     for permission in _permission_api._getcollection().find():
-        if user['id'] not in permission['users']:
+        if user['login'] not in permission['users']:
             continue
         del permission['users'][user['id']]
         _permission_api.update(permission)
