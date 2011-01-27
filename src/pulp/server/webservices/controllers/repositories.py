@@ -580,12 +580,8 @@ class RepositoryActions(AsyncController):
         @return A package object if exists in repo and filesystem
         """
         data = self.params()
-        return self.ok(api.get_package_by_nvrea(id,
-                                                data['name'],
-                                                data['version'],
-                                                data['release'],
-                                                data['epoch'],
-                                                data['arch'],))
+        return self.ok(api.get_package_by_nvrea(id, data['nvrea']))
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def get_package_by_filename(self, id):

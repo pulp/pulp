@@ -77,19 +77,22 @@ class RepoAction(Action):
     
     def handle_dependencies(self, srcrepo, tgtrepo=None, pkgnames=[], recursive=0, assumeyes=False):
         deps = self.sconn.dependencies(pkgnames, [srcrepo], recursive)['available_packages']
+        deplist = [{'name'    :   dep['name'], 
+                    'version' : dep['version'], 
+                    'release' : dep['release'], 
+                    'epoch'   : dep['epoch'], 
+                    'arch'    : dep['arch']} for dep in deps]
+        avail_deps = self.pconn.find_package_by_nvrea(tgtrepo or srcrepo, deplist)
         new_deps = []
         if tgtrepo:
-            # for adds
             for dep in deps:
-                if not self.pconn.find_package_by_nvrea(tgtrepo, dep['name'], dep['version'], \
-                                                        dep['release'], dep['epoch'], dep['arch']):
+                if dep['filename'] not in avail_deps:
                     new_deps.append(dep)
         else:
-            # for removals
             for dep in deps:
-                if self.pconn.find_package_by_nvrea(srcrepo, dep['name'], dep['version'], \
-                                                    dep['release'], dep['epoch'], dep['arch']):
+                if dep['filename'] in avail_deps:
                     new_deps.append(dep)
+        
         if not new_deps:
             # None relevant, return
             print(_("No dependencies to process.."))
@@ -108,11 +111,7 @@ class RepoAction(Action):
                     system_exit(os.EX_OK, _("Operation aborted upon user request."))
                 else:
                     continue        
-        pkgs = []
-        for dep in new_deps:
-            pinfo = self.pkgconn.package_by_ivera(dep['name'], dep['version'], dep['release'], dep['epoch'], dep['arch'])
-            pkgs.append(pinfo)
-        return pkgs
+        return new_deps
 
 class RepoProgressAction(RepoAction):
 
@@ -851,7 +850,7 @@ class RemovePackages(RepoAction):
         pobj = []
         pkgobjs = self.pconn.get_package_by_filename(id, self.opts.pkgname)
         if not pkgobjs:
-            system_exit(os.EX_DATAERR, "Packages associated with errata [%s] are not in repo [%s]" % (errataids, id))
+            system_exit(os.EX_DATAERR, "Package %s could not be found in the source repo [%s]" % (self.opts.pkgname, id))
         for fname, pinfo in pkgobjs.items():
             if not pinfo:
                 print _("Package [%s] does not exist in repository [%s]" % (fname, id))
