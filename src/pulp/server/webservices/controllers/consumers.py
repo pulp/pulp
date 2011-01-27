@@ -89,7 +89,7 @@ class Consumers(JSONController):
         consumer = consumer_api.create(id, consumer_data['description'],
                                        consumer_data['key_value_pairs'])
         # create corresponding user for auth credentials
-        user_api.create(id)
+        user = user_api.create(id)
         add_user_to_role(consumer_users_role, user['login'])
         # grant the appropriate permissions to the user
         path = http.extend_uri_path(consumer.id) # path for consumer resource
