@@ -1181,6 +1181,7 @@ class RepoApi(BaseApi):
         if not synchronizer:
             synchronizer = repo_sync.get_synchronizer(repo_source["type"])
         synchronizer.set_callback(progress_callback)
+        log.info("Sync of %s starting, skip_dict = %s" % (id, skip_dict))
         start_sync_items = time.time()
         sync_packages, sync_errataids = \
                 repo_sync.sync(
@@ -1217,13 +1218,15 @@ class RepoApi(BaseApi):
             # Determine removed errata
             synchronizer.progress_callback(step="Processing Errata")
             log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
-            for eid in self.errata(id):
-                if eid not in sync_errataids:
-                    log.info("Removing errata %s from repo %s" % (eid, id))
-                    self.delete_erratum(id, eid)
-            # Add in all errata, existing errata will be skipped
+            repo_errata = self.errata(id)
+            old_errata = list(set(repo_errata).difference(set(sync_errataids)))
+            new_errata = list(set(sync_errataids).difference(set(repo_errata)))
+            log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
+            self.delete_errata(id, old_errata) 
+            # Refresh repo object 
             repo = self._get_existing_repo(id) #repo object must be refreshed
-            for eid in sync_errataids:
+            log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
+            for eid in new_errata:
                 self._add_erratum(repo, eid)
         repo['last_sync'] = datetime.now()
         self.update(repo)
