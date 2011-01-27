@@ -16,9 +16,32 @@
 
 import logging
 import os
+import sys
 from logging import handlers
 
 from pulp.server import config
+
+
+TIME = '%(asctime)s'
+LEVEL = ' [%(levelname)s]'
+THREAD = '[%(threadName)s]'
+FUNCTION = ' %(funcName)s()'
+FILE = ' @ %(filename)s'
+LINE = ':%(lineno)d'
+MSG = ' - %(message)s'
+
+if sys.version_info < (2,5):
+    FUNCTION = ''
+
+FMT = \
+    ''.join((TIME,
+            LEVEL,
+            THREAD,
+            FUNCTION,
+            FILE,
+            LINE,
+            MSG,))
+
 
 # logging configuration -------------------------------------------------------
 
@@ -44,8 +67,7 @@ def configure_pulp_grinder_logging():
     level = getattr(logging, level_name, logging.INFO)
     max_size = config.config.getint('logs', 'max_size')
     backups = config.config.getint('logs', 'backups')
-    fmt = '%(asctime)s [%(levelname)s][%(threadName)s] %(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
-    formatter = logging.Formatter(fmt)
+    formatter = logging.Formatter(FMT)
 
     #
     # Pulp (pulp, qpid, gopher)
