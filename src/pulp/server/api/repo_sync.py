@@ -512,7 +512,7 @@ class LocalSynchronizer(BaseSynchronizer):
             progress_callback(self.progress)
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
-                log.debug("Working on %s/%s" % (count, len(pkglist)))
+                log.info("Working on %s/%s" % (count, len(pkglist)))
             pkg_info = pulp.server.util.get_rpm_information(pkg)
             pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
             pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
@@ -538,7 +538,7 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['details']["rpm"]["num_success"] += 1
             if progress_callback is not None:
                 progress_callback(self.progress)
-        log.debug("Finished copying %s packages" % (len(pkglist)))
+        log.info("Finished copying %s packages" % (len(pkglist)))
         # Remove rpms which are no longer in source
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
@@ -554,7 +554,7 @@ class LocalSynchronizer(BaseSynchronizer):
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
-        log.debug("sync of %s for repo %s" % (src_repo_dir, repo['id']))
+        log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict)
         
         try:
@@ -603,7 +603,7 @@ class LocalSynchronizer(BaseSynchronizer):
                                     os.makedirs(file_dir)
                                 shutil.copy(imfile, dst_file_path)
                                 self.progress['num_download'] += 1
-                            log.info("Imported file %s " % dst_file_path)
+                            log.debug("Imported file %s " % dst_file_path)
                             self.progress['step'] = ProgressReport.DownloadItems
                             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [imfile])
                             self.progress['items_left'] -= 1

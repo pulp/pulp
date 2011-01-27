@@ -656,37 +656,47 @@ class RepoApi(BaseApi):
         """Note: This method does not update repo metadata.
         It is assumed metadata has already been updated.
         """
-        repo = self._get_existing_repo(repoid)
-        # this won't fail even if the package is not in the repo's packages
-        repo['packages'].pop(p['id'], None)
-        repo['package_count'] = repo['package_count'] - 1
-        self.objectdb.save(repo, safe=True)
-        # Remove package from repo location on file system
-        pkg_repo_path = pulp.server.util.get_repo_package_path(
-                repo['relative_path'], p["filename"])
-        if os.path.exists(pkg_repo_path):
-            log.debug("Delete package %s at %s" % (p, pkg_repo_path))
-            os.remove(pkg_repo_path)
-
-        repos_with_pkg = self.find_repos_by_package(p["id"])
-        if len(repos_with_pkg) == 0:
-            self.packageapi.delete(p["id"])
-            pkg_packages_path = pulp.server.util.get_shared_package_path(
-                    p["name"], p["version"], p["release"], p["arch"],
-                    p["filename"], p["checksum"])
-            if os.path.exists(pkg_packages_path):
-                log.debug("Delete package %s at %s" % (p, pkg_packages_path))
-                os.remove(pkg_packages_path)
+        return self.remove_packages(repoid, [p])
 
     def remove_packages(self, repoid, pkgobjs=[]):
         """
          Remove one or more packages from a repository
+         Note: This method does not update repo metadata.
+         It is assumed metadata has already been updated.
         """
         if not pkgobjs:
+            log.debug("remove_packages invoked on %s with no packages" % (repoid))
             # Nothing to perform, return
             return
+        repo = self._get_existing_repo(repoid)
         for pkg in pkgobjs:
-            self.remove_package(repoid, pkg)
+            # this won't fail even if the package is not in the repo's packages
+            removed_pkg = repo['packages'].pop(pkg['id'], None)
+            if not removed_pkg:
+                log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"],repoid))
+                continue
+            repo['package_count'] = repo['package_count'] - 1
+            # Remove package from repo location on file system
+            pkg_repo_path = pulp.server.util.get_repo_package_path(
+                repo['relative_path'], pkg["filename"])
+            if os.path.exists(pkg_repo_path):
+                log.debug("Delete package %s at %s" % (pkg["filename"], pkg_repo_path))
+                os.remove(pkg_repo_path)
+            repos_with_pkg = self.find_repos_by_package(pkg["id"])
+            if len(repos_with_pkg) == 1 and repoid in repos_with_pkg:
+                # NOTE:  We haven't saved the repo object yet, so mongo still
+                # thinks that this pkg is associated to repoid.  Therefore if mongo
+                # returns this as the only repo associated we are free to delete this
+                # package and update mongo at the end of this loop
+                self.packageapi.delete(pkg["id"])
+                pkg_packages_path = pulp.server.util.get_shared_package_path(
+                    pkg["name"], pkg["version"], pkg["release"], pkg["arch"],
+                    pkg["filename"], pkg["checksum"])
+                if os.path.exists(pkg_packages_path):
+                    log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
+                    os.remove(pkg_packages_path)
+        self.objectdb.save(repo, safe=True)
+
 
     def find_repos_by_package(self, pkgid):
         """
@@ -1189,18 +1199,14 @@ class RepoApi(BaseApi):
             old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
             new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"].keys())))
             new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
-            log.debug("%s old packages to process, %s new packages to process" % \
+            log.info("%s old packages to process, %s new packages to process" % \
                 (len(old_pkgs), len(new_pkgs)))
             synchronizer.progress_callback(step="Removing %s packages" % (len(old_pkgs)))
             # Remove packages that are no longer in source repo
-            for pkg in old_pkgs:
-                log.info("Removing package %s-%s-%s:%s.%s <%s> from repo <%s>" % \
-                        (pkg["name"], pkg["version"], pkg["release"], \
-                            pkg["epoch"], pkg["arch"], pkg["filename"], repo["id"]))
-                self.remove_package(repo["id"], pkg)
+            self.remove_packages(repo["id"], old_pkgs)
             # Refresh repo object since we may have deleted some packages
-            synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
             repo = self._get_existing_repo(id)
+            synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
             for pkg in new_pkgs:
                 self._add_package(repo, pkg)
             # Update repo for package additions
