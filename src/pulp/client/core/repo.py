@@ -784,6 +784,8 @@ class AddPackages(RepoAction):
             help=_("Source repository with specified packages to perform add"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of add operation."))
+        self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
+                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
 
     def run(self):
         id = self.get_required_option('id')
@@ -817,7 +819,7 @@ class AddPackages(RepoAction):
             system_exit(os.EX_DATAERR)        
 
         # lookup dependencies and let use decide whether to include them
-        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, 1, self.opts.assumeyes)
+        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
         
         for pdep in pkgdeps:
             pnames.append("%s-%s-%s.%s" % (pdep['name'], pdep['version'], pdep['release'], pdep['arch']))
@@ -839,6 +841,8 @@ class RemovePackages(RepoAction):
                 help=_("Package filename to remove from this repository"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
+        self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
+                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
     
     def run(self):
         id = self.get_required_option('id')
@@ -857,7 +861,7 @@ class RemovePackages(RepoAction):
             pobj.append(pinfo)
         if not pnames:
             system_exit(os.EX_DATAERR)
-        pkgdeps = self.handle_dependencies(id, None, pnames, 1, self.opts.assumeyes)
+        pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
         pobj += pkgdeps
         pkg = list(set([p['filename'] for p in pobj]))
         try:
@@ -877,6 +881,8 @@ class AddErrata(RepoAction):
             help=_("Source repository with specified packages to perform add"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
+        self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
+                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
 
     def run(self):
         id = self.get_required_option('id')
@@ -907,7 +913,7 @@ class AddErrata(RepoAction):
             pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
     
         # lookup dependencies and let use decide whether to include them
-        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, 1, self.opts.assumeyes)
+        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
         pids = [pdep['id'] for pdep in pkgdeps]
         try:
             self.pconn.add_errata(id, errataids)
@@ -927,6 +933,9 @@ class RemoveErrata(RepoAction):
                 help=_("Errata Id to delete from this repository"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
+        self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
+                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
+        
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
@@ -953,7 +962,7 @@ class RemoveErrata(RepoAction):
                 continue
             pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
         # lookup dependencies and let use decide whether to include them
-        pkgdeps = self.handle_dependencies(id, None, pnames, 1, self.opts.assumeyes)
+        pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
         try:
             self.pconn.delete_errata(id, errataids)
             if pkgdeps:
