@@ -25,7 +25,8 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (
-    revoke_all_permissions_from_user, grant_permission_to_user)
+    revoke_all_permissions_from_user, grant_permission_to_user, 
+    add_user_to_role, consumer_users_role)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -87,9 +88,11 @@ class Consumers(JSONController):
                 'Cannot create corresponding auth credentials: user with id %s alreay exists' % id)
         consumer = consumer_api.create(id, consumer_data['description'],
                                        consumer_data['key_value_pairs'])
-        user_api.create(id) # create corresponding user for auth credentials
-        path = http.extend_uri_path(consumer.id) # path for consumer resource
+        # create corresponding user for auth credentials
+        user_api.create(id)
+        add_user_to_role(consumer_users_role, user['login'])
         # grant the appropriate permissions to the user
+        path = http.extend_uri_path(consumer.id) # path for consumer resource
         grant_permission_to_user(path, id,
                                  ('READ', 'UPDATE', 'DELETE', 'EXECUTE'))
         return self.created(path, consumer)
