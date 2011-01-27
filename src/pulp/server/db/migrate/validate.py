@@ -17,7 +17,7 @@ from logging import getLogger
 from uuid import UUID
 
 from pulp.server.api import (
-    consumer_group, consumer_history, consumer, errata, package, repo, user)
+    consumer_group, consumer_history, consumer, errata, package, repo, user, permission, role)
 from pulp.server.auditing import _objdb as auditing_objectdb
 from pulp.server.db import model
 from pulp.server.db import version

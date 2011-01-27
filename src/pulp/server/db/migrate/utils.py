@@ -14,7 +14,6 @@
 # in this software or its documentation.
 
 
-
 def add_field_with_default_value(objectdb, field, default=None):
     """
     Add a new field to all instances of a model in the passed in collection and

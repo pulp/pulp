@@ -28,6 +28,7 @@ connection.initialize()
 auditing.initialize()
 
 from pulp.server.db.migrate import one
+from pulp.server.db.migrate import two
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
     VERSION, get_version_in_use, is_validated, set_validated)
@@ -60,6 +61,9 @@ def migrate_to_one():
     one.migrate()
     one.set_version()
 
+def migrate_to_two():
+    two.migrate()
+    two.set_version()
 
 def main():
     options = parse_args()
@@ -71,6 +75,7 @@ def main():
     if version == VERSION:
         print 'data model in use matches the current version'
     while version < VERSION:
+        migrate_to_two()
         # ADD MIGRATION CALLS HERE
         if version is None:
             migrate_to_one()
