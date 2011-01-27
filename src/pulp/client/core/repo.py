@@ -794,20 +794,18 @@ class AddPackages(RepoAction):
         
         # lookup requested pkgs in the source repository
         src_pkgobjs = self.pconn.get_package_by_filename(self.opts.srcrepo, self.opts.pkgname)
-        if not src_pkgobjs:
-            system_exit(os.EX_DATAERR, "Package %s could not be found in the source repo [%s]" % (self.opts.pkgname, self.opts.srcrepo))
         for pkg in self.opts.pkgname:
             if pkg not in src_pkgobjs:
                 print(_("Package %s could not be found skipping" % pkg))
         # lookup requested pkgs in the target repository
         if src_pkgobjs:
             tgt_pkgobjs = self.pconn.get_package_by_filename(id, src_pkgobjs.keys())
+        else:
+            #no packages available to proceed
+            system_exit(os.EX_DATAERR, "Package %s could not be found in the source repo [%s]" % (self.opts.pkgname, self.opts.srcrepo))
         pnames = []
         pids = []
         for filename, pinfo in src_pkgobjs.items():
-            if not pinfo:
-                print(_("Package [%s] is not part of the source repository [%s]. Skipping" % (filename, self.opts.srcrepo)))
-                continue
             if tgt_pkgobjs == None or not tgt_pkgobjs.has_key(filename):
                 name = "%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch'])
                 pnames.append(name)
