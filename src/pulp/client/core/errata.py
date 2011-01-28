@@ -44,7 +44,7 @@ class ErrataAction(Action):
             self.cconn = ConsumerConnection()
             self.cgconn = ConsumerGroupConnection()
         except CredentialError, ce:
-            system_exit(-1, ce.message)
+            system_exit(-1, str(ce))
 
 # errata actions --------------------------------------------------------------
 

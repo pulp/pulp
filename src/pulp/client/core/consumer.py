@@ -48,7 +48,7 @@ class ConsumerAction(Action):
         try:
             self.cconn = ConsumerConnection()
         except CredentialError, ce:
-            system_exit(-1, ce.message)
+            system_exit(-1, str(ce))
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")

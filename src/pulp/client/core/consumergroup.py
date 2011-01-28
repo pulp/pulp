@@ -33,7 +33,7 @@ class ConsumerGroupAction(Action):
         try:
             self.cgconn = ConsumerGroupConnection()
         except CredentialError, ce:
-            system_exit(-1, ce.message)
+            system_exit(-1, str(ce))
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",

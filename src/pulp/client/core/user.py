@@ -34,7 +34,7 @@ class UserAction(Action):
         try:
             self.userconn = UserConnection()
         except CredentialError, ce:
-            system_exit(-1, ce.message)
+            system_exit(-1, str(ce))
         
     def get_user(self, username):
         user = self.userconn.user(login=username)

@@ -40,7 +40,7 @@ class PackageGroupAction(Action):
             self.pconn = RepoConnection()
             self.cconn = ConsumerConnection()
         except CredentialError, ce:
-            system_exit(-1, ce.message)
+            system_exit(-1, str(ce))
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
