@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
-# Copyright © 2010 Red Hat, Inc.
+#
+# Copyright © 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -14,46 +14,40 @@
 # in this software or its documentation.
 
 import logging
-import traceback
-import sys
 
-from pulp.server.db import version
-from pulp.server.db.migrate import utils
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.user import UserApi
 
-from pulp.server.api import (repo, user)
 
 _log = logging.getLogger('pulp')
 
-repoApi = repo.RepoApi()
-userApi = user.UserApi()
-repo_db = repoApi._getcollection()
-user_db = userApi._getcollection()
+# migration module conventions ------------------------------------------------
 
-def get_repo_package_count():
-    repoApi = repo.RepoApi()
-    return lambda m: repoApi.package_count(m[id])
+version = 2
+
+def _migrate_repo_model():
+    api = RepoApi()
+    for repo in api._getcollection().find():
+        modified = False
+        if 'package_count' not in repo:
+            repo['package_count'] = len(repo['packages'])
+            modified = True
+        if 'distributionid' not in repo:
+            repo['distributionid'] = []
+            modified = True
+        if modified:
+            api.update(repo)
+
+def _migrate_user_model():
+    api = UserApi()
+    for user in api._getcollection().find():
+        if 'roles' not in user or \
+           not isinstance(user['roles'], list):
+            user['roles'] = []
+            api.update(user)
 
 def migrate():
-    _log.info('migration to data model version 2 starting')
-
-    try:
-        # Repo model migration
-        utils.add_field_with_calculated_value(repo_db, "package_count", get_repo_package_count)
-        utils.add_field_with_default_value(repo_db, "distributionid", [])
-
-        # User model migration
-        utils.add_field_with_default_value(user_db, "roles", [])
-        utils.change_field_type_with_default_value(user_db, "roles", list, [])
-
-
-    except Exception, e:
-        _log.critical(str(e))
-        _log.critical(''.join(traceback.format_exception(*sys.exc_info())))
-        _log.critical('migration to data model version 2 failed')
-        raise
-
+    _log.info('migration to data model version 2 started')
+    _migrate_repo_model()
+    _migrate_user_model()
     _log.info('migration to data model version 2 complete')
-
-
-def set_version():
-    version.set_version(2)

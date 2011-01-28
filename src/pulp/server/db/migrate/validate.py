@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -17,7 +17,8 @@ from logging import getLogger
 from uuid import UUID
 
 from pulp.server.api import (
-    consumer_group, consumer_history, consumer, errata, package, repo, user, permission, role)
+    consumer_group, consumer_history, consumer, errata, package, permission,
+    repo, role, user)
 from pulp.server.auditing import _objdb as auditing_objectdb
 from pulp.server.db import model
 from pulp.server.db import version
@@ -29,7 +30,6 @@ _log = getLogger('pulp')
 
 def _base_id(reference):
     reference._id = reference.id = None
-
 
 # general model validation ----------------------------------------------------
 
@@ -51,7 +51,7 @@ def _validate_model(model_name, objectdb, reference):
         for field, value in reference.items():
             vtype = type(value)
             # a default value of None really can't be automatically validated, 
-            # should be validated in the individual validation method
+            # and should be validated in the individual validation method
             if field in model and (value is None or
                                    isinstance(model[field], vtype)):
                 continue
@@ -207,6 +207,17 @@ def _validate_package_group_category():
     return num_errors
 
 
+def _validate_permission():
+    """
+    Validate the Permission model
+    @rtype: int
+    @return: number of errors found during validation
+    """
+    objectdb = permission.PermissionAPI()._getcollection()
+    reference = model.Permission(u'')
+    return _validate_model(model.Permission.__name__, objectdb, reference)
+
+
 def _validate_repo():
     """
     Validate the Repo model
@@ -244,6 +255,17 @@ def _validate_repo_source():
     return num_errors
 
 
+def _validate_role():
+    """
+    Validate the Role model
+    @rtype: int
+    @return: number of errors found during validation
+    """
+    objectdb = role.RoleAPI()._getcollection()
+    reference = model.Role(u'')
+    return _validate_model(model.Role.__name__, objectdb, reference)
+
+
 def _validate_user():
     """
     Validate the User model
@@ -273,6 +295,8 @@ def validate():
     num_errors += _validate_package_group()
     num_errors += _validate_package_group_category()
     num_errors += _validate_repo()
+    num_errors += _validate_permission()
     num_errors += _validate_repo_source()
+    num_errors += _validate_role()
     num_errors += _validate_user()
     return num_errors

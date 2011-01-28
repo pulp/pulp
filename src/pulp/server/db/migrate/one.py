@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -14,28 +14,22 @@
 # in this software or its documentation.
 
 
-# This is an example migration module. Each version of the database should
-# provide a module that contains the code necessary to migrate the database to
-# that version. We leave the developer to decide how best to implement this
-# module. There is no set conventions. This module will be imported into and
-# used directly by the script module.
+# This is an example migration module.
+# Each migration module must implement the following members:
+# 1. version - integer representing the version the module migrates to
+# 2. migrate() - function with no arguments that performs the migration
 
 import logging
 
-from pulp.server.db import version
-
-
 _log = logging.getLogger('pulp')
 
+
+version = 1
 
 def migrate():
     # There's a bit of the chicken and the egg problem here, since versioning
     # wasn't built into pulp from the beginning, we just have to bite the
     # bullet and call some initial state of the data model 'version 1'.
     # So this function is essentially a no-op.
-    _log.info('migration to data model version 1 starting')
+    _log.info('migration to data model version 1 started')
     _log.info('migration to data model version 1 complete')
-
-
-def set_version():
-    version.set_version(1)
