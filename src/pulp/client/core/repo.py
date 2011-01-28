@@ -28,6 +28,9 @@ from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
 from pulp.client.credentials import CredentialError
+from pulp.client.logutil import getLogger
+
+log = getLogger(__name__)
 
 # repo command errors ---------------------------------------------------------
 
@@ -82,17 +85,14 @@ class RepoAction(Action):
                     'release' : dep['release'], 
                     'epoch'   : dep['epoch'], 
                     'arch'    : dep['arch']} for dep in deps]
-        avail_deps = self.pconn.find_package_by_nvrea(tgtrepo or srcrepo, deplist)
         new_deps = []
         if tgtrepo:
+            avail_deps = self.pconn.find_package_by_nvrea(tgtrepo, deplist) or []
             for dep in deps:
                 if dep['filename'] not in avail_deps:
                     new_deps.append(dep)
         else:
-            for dep in deps:
-                if dep['filename'] in avail_deps:
-                    new_deps.append(dep)
-        
+            new_deps = deps
         if not new_deps:
             # None relevant, return
             print(_("No dependencies to process.."))
@@ -112,6 +112,15 @@ class RepoAction(Action):
                 else:
                     continue        
         return new_deps
+    
+    def lookup_repo_packages(self, filename, repoid):
+        pkgobj = self.sconn.search_packages(filename=filename)
+        for pkg in pkgobj:
+            pkg_repos = pkg["repos"]
+            if repoid in pkg_repos:
+                return pkg
+        return None
+            
 
 class RepoProgressAction(RepoAction):
 
@@ -795,32 +804,27 @@ class AddPackages(RepoAction):
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
         
         # lookup requested pkgs in the source repository
-        src_pkgobjs = self.pconn.get_package_by_filename(self.opts.srcrepo, self.opts.pkgname)
-        for pkg in self.opts.pkgname:
-            if pkg not in src_pkgobjs:
-                print(_("Package %s could not be found skipping" % pkg))
-        # lookup requested pkgs in the target repository
-        if src_pkgobjs:
-            tgt_pkgobjs = self.pconn.get_package_by_filename(id, src_pkgobjs.keys())
-        else:
-            #no packages available to proceed
-            system_exit(os.EX_DATAERR, "Package %s could not be found in the source repo [%s]" % (self.opts.pkgname, self.opts.srcrepo))
-        pnames = []
+        pnames =[]
         pids = []
-        for filename, pinfo in src_pkgobjs.items():
-            if tgt_pkgobjs == None or not tgt_pkgobjs.has_key(filename):
-                name = "%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch'])
-                pnames.append(name)
-                pids.append(pinfo['id'])
-            else:
+        for pkg in self.opts.pkgname:
+            src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
+            if not src_pkgobj: # not in src_pkgobjs:
+                print(_("Package %s could not be found skipping" % pkg))
+                continue
+            tgt_pkgobj = self.lookup_repo_packages(pkg, id)
+            if tgt_pkgobj:
                 print (_("Package [%s] are already part of repo [%s]. skipping" % (pkg, id)))
-#        pkgobjs = self.lookup_packages(self.opts.srcrepo, id, self.opts.pkgname)
+                continue
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+                                    src_pkgobj['release'], src_pkgobj['arch'])
+            pnames.append(name)
+            pids.append(src_pkgobj['id'])
+        print pnames, pids
         if not pnames:
             system_exit(os.EX_DATAERR)        
 
         # lookup dependencies and let use decide whether to include them
         pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
-        
         for pdep in pkgdeps:
             pnames.append("%s-%s-%s.%s" % (pdep['name'], pdep['version'], pdep['release'], pdep['arch']))
             pids.append(pdep['id'])
@@ -850,15 +854,16 @@ class RemovePackages(RepoAction):
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
         pnames = []
         pobj = []
-        pkgobjs = self.pconn.get_package_by_filename(id, self.opts.pkgname)
-        if not pkgobjs:
-            system_exit(os.EX_DATAERR, "Package %s could not be found in the source repo [%s]" % (self.opts.pkgname, id))
-        for fname, pinfo in pkgobjs.items():
-            if not pinfo:
-                print _("Package [%s] does not exist in repository [%s]" % (fname, id))
+        for pkg in self.opts.pkgname:
+            src_pkgobj = self.lookup_repo_packages(pkg, id)
+            if not src_pkgobj:
+                print(_("Package %s could not be found skipping" % pkg))
                 continue
-            pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
-            pobj.append(pinfo)
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+                                    src_pkgobj['release'], src_pkgobj['arch'])
+            pnames.append(name)
+            pobj.append(src_pkgobj)
+        print pnames, pobj
         if not pnames:
             system_exit(os.EX_DATAERR)
         pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
@@ -901,17 +906,19 @@ class AddErrata(RepoAction):
                          for pkg in erratum['pkglist']
                          for pinfo in pkg['packages']]
         if not effected_pkgs:
-            system_exit(os.EX_DATAERR)
-        pkgobjs = self.pconn.get_package_by_filename(self.opts.srcrepo, effected_pkgs)
-        if not pkgobjs:
-            system_exit(os.EX_DATAERR, "Packages associated with errata [%s] are not in repo [%s]" % (errataids, self.opts.srcrepo))
-        pnames = []
-        for fname, pinfo in pkgobjs.items():
-            if not pinfo:
-                print _("Package [%s] does not exist in repository [%s]" % (fname, id))
+            system_exit(os.EX_DATAERR, \
+                        _("Associated Errata packages for id [%s] are not in the repo." % errataids))
+            
+        pnames =[]
+        for pkg in effected_pkgs:
+            src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
+            if not src_pkgobj: # not in src_pkgobjs:
+                log.info("Errata Package %s could not be found in source repo. skipping" % pkg)
                 continue
-            pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
-    
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+                                    src_pkgobj['release'], src_pkgobj['arch'])
+            pnames.append(name)
+
         # lookup dependencies and let use decide whether to include them
         pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
         pids = [pdep['id'] for pdep in pkgdeps]
@@ -952,15 +959,21 @@ class RemoveErrata(RepoAction):
                          for pinfo in pkg['packages']]
         if not effected_pkgs:
             system_exit(os.EX_DATAERR)
+        pobj = []
         pnames = []
-        pkgobjs = self.pconn.get_package_by_filename(id, effected_pkgs)
-        if not pkgobjs:
-            system_exit(os.EX_DATAERR, "Packages associated with errata [%s] are not in repo [%s]" % (errataids, id))
-        for fname, pinfo in pkgobjs.items():
-            if not pinfo:
-                print _("Package [%s] does not exist in repository [%s]" % (fname, id))
+        for pkg in effected_pkgs:
+            src_pkgobj = self.lookup_repo_packages(pkg, id)
+            if not src_pkgobj: # not in src_pkgobjs:
+                log.info("Package %s could not be found skipping" % pkg)
                 continue
-            pnames.append("%s-%s-%s.%s" % (pinfo['name'], pinfo['version'], pinfo['release'], pinfo['arch']))
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+                                    src_pkgobj['release'], src_pkgobj['arch'])
+            pnames.append(name)
+            pobj.append(src_pkgobj)
+        if not pnames:
+            system_exit(os.EX_DATAERR, \
+                        _("Associated Errata packages for id [%s] are not in the repo." % errataids))
+            
         # lookup dependencies and let use decide whether to include them
         pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
         try:
