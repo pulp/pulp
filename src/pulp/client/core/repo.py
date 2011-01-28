@@ -803,11 +803,14 @@ class AddPackages(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
+        
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
-        
+        # check if repos are valid
+        self.get_repo(id)
+        self.get_repo(self.opts.srcrepo)
         # lookup requested pkgs in the source repository
         pnames =[]
         pids = []
@@ -824,7 +827,6 @@ class AddPackages(RepoAction):
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pids.append(src_pkgobj['id'])
-        print pnames, pids
         if not pnames:
             system_exit(os.EX_DATAERR)        
 
@@ -857,6 +859,8 @@ class RemovePackages(RepoAction):
         id = self.get_required_option('id')
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
+        # check if repo is valid
+        self.get_repo(id)
         pnames = []
         pobj = []
         for pkg in self.opts.pkgname:
@@ -900,6 +904,9 @@ class AddErrata(RepoAction):
             system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform an add."))
         if not self.opts.srcrepo:
             system_exit(os.EX_USAGE, _("Error, a source respository where erratum exists is required"))
+        # check if repos are valid
+        self.get_repo(id)
+        self.get_repo(self.opts.srcrepo)
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
@@ -932,9 +939,10 @@ class AddErrata(RepoAction):
             if pids:
                 # add dependencies to repo
                 self.pconn.add_package(id, pids)
+            print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
-        print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
+        
 
 class RemoveErrata(RepoAction):
     description = _('Remove errata from the repository')
@@ -950,6 +958,8 @@ class RemoveErrata(RepoAction):
         
     def run(self):
         id = self.get_required_option('id')
+        # check if repo is valid
+        self.get_repo(id)
         if not self.opts.errataid:
             system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform a delete."))
         errataids = self.opts.errataid
