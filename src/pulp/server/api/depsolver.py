@@ -133,10 +133,11 @@ class DepSolver:
                     continue
                 reqlist.append(rlist)
         deps = []
-        for res in reqlist:
-            dep = [res[0].name, res[0].version, res[0].epoch, res[0].release, res[0].arch]
-            if dep not in deps:
-                deps.append(dep)
+        for req in reqlist:
+            for r in req:
+                dep = [r.name, r.version, r.epoch, r.release, r.arch]
+                if dep not in deps:
+                    deps.append(dep)
         return deps
     
     def printable_result(self, results):
