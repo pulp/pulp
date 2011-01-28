@@ -164,6 +164,8 @@ class Action(object):
         value = getattr(self.opts, opt, None)
         if value is None:
             self.parser.error(_('Option %s is required; please see --help') % flag)
+        if value is "":
+            self.parser.error(_('Please provide a value for Option %s; see --help') % flag)
         return value
 
     def getconsumerid(self):
