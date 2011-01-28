@@ -16,7 +16,6 @@
 import logging
 import traceback
 import sys
-import pymongo
 
 from pulp.server.db import version
 from pulp.server.db.migrate import utils
@@ -25,8 +24,10 @@ from pulp.server.api import (repo, user)
 
 _log = logging.getLogger('pulp')
 
-repo_db = repo.RepoApi._getcollection()
-user_db = user.UserApi._getcollection()
+repoApi = repo.RepoApi()
+userApi = user.UserApi()
+repo_db = repoApi._getcollection()
+user_db = userApi._getcollection()
 
 def get_repo_package_count():
     repoApi = repo.RepoApi()
@@ -42,10 +43,8 @@ def migrate():
 
         # User model migration
         utils.add_field_with_default_value(user_db, "roles", [])
+        utils.change_field_type_with_default_value(user_db, "roles", list, [])
 
-        permissions_db = pymongo.collection.Collection("_database", "permissions")
-
-        roles_db = pymongo.collection.Collection("_database", "roles")
 
     except Exception, e:
         _log.critical(str(e))

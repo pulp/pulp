@@ -23,7 +23,7 @@ from pulp.server.db.model import Base
 
 # current data model version of the code base
 # increment this if you change the data model
-VERSION = 1
+VERSION = 2
 
 # this isn't anything
 _version_db = None

@@ -26,8 +26,29 @@ def add_field_with_default_value(objectdb, field, default=None):
     @param default: default value to set new field to
     """
     for model in objectdb.find():
-        model[field] = default
-        objectdb.save(model, safe=True)
+        if field not in model:
+            model[field] = default
+            objectdb.save(model, safe=True)
+
+
+def change_field_type_with_default_value(objectdb, field, new_type, default_value):
+    """
+    Change type of the field for all instances of a model in the passed in collection and
+    set the value of the field to the default_value.
+    @type objectdb: pymongo.collection.Collection instance
+    @param objectdb: collection of models to change field type
+    @type field: str
+    @param field: name of the field to update type
+    @type new_type: str
+    @param new_type: new type of the field
+    @type default_value: any
+    @param default_value: default value to set the field to
+    """
+    for model in objectdb.find():
+            if not isinstance(model[field], new_type):
+                model[field] = default_value
+                objectdb.save(model, safe=True)
+
 
 
 def add_field_with_calculated_value(objectdb, field, callback=lambda m: None):
@@ -44,8 +65,9 @@ def add_field_with_calculated_value(objectdb, field, callback=lambda m: None):
                      the value for the new field
     """
     for model in objectdb.find():
-        model[field] = callback(model)
-        objectdb.save(model, safe=True)
+        if field not in model:
+            model[field] = callback(model)
+            objectdb.save(model, safe=True)
 
 
 def delete_field(objectdb, field):
