@@ -215,6 +215,7 @@ def _validate_permission():
     """
     objectdb = permission.PermissionAPI()._getcollection()
     reference = model.Permission(u'')
+    _base_id(reference)
     return _validate_model(model.Permission.__name__, objectdb, reference)
 
 
