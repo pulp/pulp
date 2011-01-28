@@ -103,13 +103,21 @@ class Consumer:
     """
     
     @remote
-    def deleted(self):
+    def deleted(self, credentials):
         """
         Notification that the consumer has been deleted.
         Clean up associated artifacts.
+        @param credentials: The associated x.509 credentials.
+        @type credentials: tuple (key,crt)
         """
         bundle = ConsumerBundle()
+        found = bundle.read()
+        expected = tuple(credentials)
+        if found != expected:
+            return
         bundle.delete()
+        repo = Repo()
+        repo.delete()
         log.info('Artifacts deleted')
 
 
@@ -127,6 +135,14 @@ class Repo:
         log.info('updating yum repo')
         rlib = RepoLib()
         rlib.update()
+
+    @remote
+    def delete(self):
+        """
+        Delete the .repo file.
+        """
+        rlib = RepoLib()
+        rlib.delete()
 
 
 class Packages:

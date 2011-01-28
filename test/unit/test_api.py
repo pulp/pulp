@@ -51,11 +51,15 @@ from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
+from pulp.server.auth import cert_generator
 import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
+
+cert_generator.CERTDATPATH = '/tmp/sn.dat'
+
 
 class TestApi(unittest.TestCase):
 

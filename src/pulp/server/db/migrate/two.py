@@ -17,6 +17,7 @@ import logging
 
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.user import UserApi
+from pulp.server.api.consumer import ConsumerApi
 
 
 _log = logging.getLogger('pulp')
@@ -46,8 +47,17 @@ def _migrate_user_model():
             user['roles'] = []
             api.update(user)
 
+def _migrate_consumer_model():
+    api = ConsumerApi()
+    for consumer in api._getcollection().find():
+        key = 'credentials'
+        if key not in consumer:
+            consumer[key] = None
+            api.update(consumer)
+
 def migrate():
     _log.info('migration to data model version 2 started')
     _migrate_repo_model()
     _migrate_user_model()
+    _migrate_consumer_model()
     _log.info('migration to data model version 2 complete')

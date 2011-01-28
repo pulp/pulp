@@ -172,6 +172,7 @@ class Delete(ConsumerAction):
         consumerid = self.get_required_option('id')
         self.cconn.delete(consumerid)
         if myid and myid == consumerid:
+            self.repolib.delete()
             bundle = ConsumerBundle()
             bundle.delete()
         print _("Successfully deleted consumer [%s]") % consumerid

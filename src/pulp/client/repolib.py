@@ -68,6 +68,18 @@ class RepoLib:
         finally:
             lock.release()
 
+    def delete(self):
+        """
+        Delete the repo file.
+        """
+        lock = self.lock
+        lock.acquire()
+        try:
+            action = DeleteAction()
+            return action.perform()
+        finally:
+            lock.release()
+
 
 class Pulp:
     """
@@ -242,6 +254,14 @@ class UpdateAction(Action):
         return '/'.join((base, url))
 
 
+class DeleteAction(Action):
+    """
+    Delete the yum repo file.
+    """
+    def perform(self):
+        RepoFile.unlink()
+
+
 class Repo(dict):
     """
     A yum repo (content set).
@@ -335,29 +355,35 @@ class RepoFile(Parser):
     @type PATH: str
     """
 
-    PATH = '/etc/yum.repos.d/'
+    PATH = '/etc/yum.repos.d/pulp.repo'
 
-    def __init__(self, name='pulp.repo'):
+    @classmethod
+    def unlink(cls):
+        try:
+            os.unlink(cls.PATH)
+        except:
+            pass
+
+    def __init__(self):
         """
         @param name: The .repo file name.
         @type name: str
         """
         Parser.__init__(self)
-        self.path = os.path.join(self.PATH, name)
         self.create()
 
     def read(self):
         """
         Read and parse the file.
         """
-        r = Reader(self.path)
+        r = Reader(self.PATH)
         Parser.readfp(self, r)
 
     def write(self):
         """
         Write the file.
         """
-        f = open(self.path, 'w')
+        f = open(self.PATH, 'w')
         Parser.write(self, f)
         f.close()
 
@@ -422,9 +448,9 @@ class RepoFile(Parser):
         Create the .repo file with appropriate header/footer
         if it does not already exist.
         """
-        if os.path.exists(self.path):
+        if os.path.exists(self.PATH):
             return
-        f = open(self.path, 'w')
+        f = open(self.PATH, 'w')
         s = []
         s.append('#')
         s.append('# Pulp Repositories')

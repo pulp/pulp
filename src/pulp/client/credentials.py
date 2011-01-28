@@ -71,6 +71,24 @@ class Bundle:
         validcrt = os.path.exists(self.crtpath())
         return ( validkey and validcrt )
 
+    def read(self):
+        """
+        Read and return the bundle contents.
+        @return: A tuple containing the PEM encoded key & cert.
+        @rtype: tuple
+        """
+        if self.valid():
+            f = open(self.keypath(), 'r')
+            key = f.read()
+            f.close()
+            f = open(self.crtpath(), 'r')
+            crt = f.read()
+            f.close()
+        else:
+            key = None
+            crt = None
+        return (key, crt)
+
     def write(self, key, crt):
         """
         Write the specified I{key} & I{crt} bundle.

@@ -102,9 +102,10 @@ class ConsumerApi(BaseApi):
                 
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
+        creds = consumer['credentials']
         agent = Agent(id, async=True)
         consumer = agent.Consumer()
-        consumer.deleted()
+        consumer.deleted(creds)
 
 
     def find_consumergroup_with_conflicting_keyvalues(self, id, key, value):
@@ -255,8 +256,12 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] not found', id)
-        private_key, cert = cert_generator.make_cert(id)
-        return (private_key, cert) 
+        bundle = consumer.get('credentials')
+        if not bundle:
+            bundle = cert_generator.make_cert(id)
+            consumer['credentials'] = bundle
+            self.update(consumer)
+        return bundle
         
     @audit()
     def bulkcreate(self, consumers):

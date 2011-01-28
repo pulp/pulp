@@ -15,6 +15,9 @@
 # in this software or its documentation.
 
 import logging
+import sys
+import os
+import fcntl
 from M2Crypto import X509, EVP, RSA, ASN1, util
 import subprocess
 
@@ -25,6 +28,31 @@ log = logging.getLogger(__name__)
 
 ADMIN_PREFIX = 'admin:'
 ADMIN_SPLITTER = ':'
+CERTDATPATH = '/var/lib/pulp/sn.dat'
+
+
+def next_serial():
+    """
+    Get the next serial#
+    @return: The next serial#
+    @rtype: int
+    """
+    fp = open(CERTDATPATH, 'a+')
+    fd = fp.fileno()
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    try:
+        try:
+            sn = int(fp.read())
+            sn = sn + 1
+        except:
+            sn = 1
+        fp.seek(0)
+        fp.truncate(0)
+        fp.write(str(sn))
+        fp.close()
+        return sn
+    finally:
+        fp.close()
 
 def make_admin_user_cert(user):
     '''
@@ -72,7 +100,7 @@ def make_cert(uid):
     ca_cert = config.config.get('security', 'cacert')
     ca_key = config.config.get('security', 'cakey')
 
-    serial = '01'
+    serial = next_serial()
     cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days 3650' % \
           (ca_cert, ca_key, serial)
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, 
