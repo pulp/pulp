@@ -716,7 +716,12 @@ class Upload(RepoAction):
                 print _("Package %s is not an rpm; skipping") % frpm
                 continue
             name, version, release, epoch, arch = pkginfo['nvrea']
-            pkg_on_server = self.pconn.find_package_by_nvrea(id, name, version, release, epoch, arch)
+            nvrea = [{'name' : name,
+                     'version' : version,
+                     'release' : release, 
+                     'epoch'   : epoch,
+                     'arch'    : arch}]
+            pkg_on_server = self.pconn.find_package_by_nvrea(id, nvrea)
             if pkg_on_server:
                 print _("Package [%s] already exists on the server with checksum [%s] in repo %s") % \
                         (pkginfo['pkgname'], pkg_on_server['checksum'], id)
@@ -963,7 +968,7 @@ class RemoveErrata(RepoAction):
         pnames = []
         for pkg in effected_pkgs:
             src_pkgobj = self.lookup_repo_packages(pkg, id)
-            if not src_pkgobj: # not in src_pkgobjs:
+            if not src_pkgobj:
                 log.info("Package %s could not be found skipping" % pkg)
                 continue
             name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
