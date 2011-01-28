@@ -295,6 +295,13 @@ class ConsumerActions(AsyncController):
         'history',
     )
 
+
+    def validate_consumer(self, id):
+        if not consumer_api.consumer(id):
+            return False
+        else:
+            return True
+
     @RoleCheck(consumer_id=True, admin=True)
     def bind(self, id):
         """
@@ -327,8 +334,6 @@ class ConsumerActions(AsyncController):
         """
         data = self.params()
         consumer = consumer_api.consumer(id)
-        if not consumer:
-            return self.conflict('Consumer [%s] does not exist' % id)
         key_value_pairs = consumer['key_value_pairs']
         if data['key'] in key_value_pairs.keys():
             return self.conflict('Given key [%s] already exist' % data['key'])
@@ -345,8 +350,6 @@ class ConsumerActions(AsyncController):
         """
         data = self.params()
         consumer = consumer_api.consumer(id)
-        if not consumer:
-            return self.conflict('Consumer [%s] does not exist' % id)
         key_value_pairs = consumer['key_value_pairs']
         if data not in key_value_pairs.keys():
             return self.conflict('Given key [%s] does not exist' % data)
@@ -363,8 +366,6 @@ class ConsumerActions(AsyncController):
         """
         data = self.params()
         consumer = consumer_api.consumer(id)
-        if not consumer:
-            return self.conflict('Consumer [%s] does not exist' % id)
         key_value_pairs = consumer['key_value_pairs']
         if data['key'] not in key_value_pairs.keys():
             return self.conflict('Given key [%s] does not exist' % data['key'])
@@ -486,7 +487,6 @@ class ConsumerActions(AsyncController):
         @param id: consumer id
         """
         data = self.params()
-
         event_type = data.get('event_type', None)
         limit = data.get('limit', None)
         sort = data.get('sort', None)
@@ -523,6 +523,8 @@ class ConsumerActions(AsyncController):
         log.debug("consumers.py POST.  Action: %s" % action_name)
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
+        if not self.validate_consumer(id):
+            return self.conflict('Consumer [%s] does not exist' % id)
         return action(id)
 
 

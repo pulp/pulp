@@ -117,6 +117,12 @@ class ConsumerGroupActions(AsyncController):
         'installerrata',
     )
 
+    def validate_consumergroup(self, id):
+        if not api.consumergroup(id):
+            return False
+        else:
+            return True
+
     def bind(self, id):
         """
         Bind (subscribe) all the consumers in a consumergroup to a repository.
@@ -168,12 +174,9 @@ class ConsumerGroupActions(AsyncController):
         @param id: consumer group id
         """
         data = self.params()
-        if api.consumergroup(id) is None:
-            return self.conflict('Consumer group with id: %s, does not exist' % id)
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
             return self.conflict('Consumer with id: %s, does not exist' % id)
-        
         api.add_consumer(id, data)
         return self.ok(True)
 
@@ -183,6 +186,9 @@ class ConsumerGroupActions(AsyncController):
         @param id: consumer group id
         """
         data = self.params()
+        consumerApi = ConsumerApi()
+        if consumerApi.consumer(data) is None:
+            return self.conflict('Consumer with id: %s, does not exist' % id)
         api.delete_consumer(id, data)
         return self.ok(None)
 
@@ -232,6 +238,8 @@ class ConsumerGroupActions(AsyncController):
         action = getattr(self, action_name, None)
         if action is None:
             return self.internal_server_error('No implementation for %s found' % action_name)
+        if not self.validate_consumergroup(id):
+            return self.conflict('Consumer Group [%s] does not exist' % id)
         return action(id)
 
 
