@@ -117,7 +117,7 @@ def check_version():
         return
     if v is None or v['version'] != VERSION:
         msg = 'data model version mismatch: %s in use, but needs to be %s' % \
-                (v and v.version, VERSION)
+                (v and v['version'], VERSION)
     else:
         msg = 'data model version is up to date, but has not been validated'
     log = logging.getLogger('pulp')
