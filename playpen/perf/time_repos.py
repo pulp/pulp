@@ -86,16 +86,16 @@ class TimeRepos:
             repo = self.rapi._get_existing_repo(repo_id)
             repo_json = json.dumps(repo, default=pymongo.json_util.default)
             end = time.time()
-            log.critical("Length: %s _get_existing_repo(%s) took %s seconds" % \
-                    (len(repo_json), repo_id, (end - start)))
+            log.critical("Packages: %s Length: %s _get_existing_repo(%s) took %s seconds" % \
+                    (len(repo["packages"]), len(repo_json), repo_id, (end - start)))
         
         for repo_id in self.get_available_repoids():
             start = time.time()
-            fields = ["id", "packages", "package_count", "relative_path"]
+            fields = ["id", "package_count", "relative_path"]
             repo = self.rapi._get_existing_repo(repo_id, fields=fields)
             repo_json = json.dumps(repo, default=pymongo.json_util.default)
             end = time.time()
-            log.critical("B Length: %s _get_existing_repo(%s) took %s seconds" % \
+            log.critical("Shortened fetch<no packages>: Length: %s _get_existing_repo(%s) took %s seconds" % \
                     (len(repo_json), repo_id, (end - start)))
 
 

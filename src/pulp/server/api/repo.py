@@ -97,12 +97,12 @@ class RepoApi(BaseApi):
             if not item.is_valid():
                 raise PulpException('Invalid sync schedule specified [%s]' % sync_schedule)
 
-    def _get_existing_repo(self, id):
+    def _get_existing_repo(self, id, fields=None):
         """
         Protected helper function to look up a repository by id and raise a
         PulpException if it is not found.
         """
-        repo = self.repository(id)
+        repo = self.repository(id, fields)
         if repo is None:
             raise PulpException("No Repo with id: %s found" % id)
         return repo
