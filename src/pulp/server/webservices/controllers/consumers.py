@@ -310,6 +310,8 @@ class ConsumerActions(AsyncController):
         @param id: consumer id
         """
         data = self.params()
+        if not repo_api.repository(data):
+            return self.conflict('Repo [%s] does not exist' % data)
         consumer_api.bind(id, data)
         return self.ok(True)
 
@@ -321,6 +323,8 @@ class ConsumerActions(AsyncController):
         @param id: consumer id
         """
         data = self.params()
+        if not repo_api.repository(data):
+            return self.conflict('Repo [%s] does not exist' % data)
         consumer_api.unbind(id, data)
         return self.ok(None)
 
