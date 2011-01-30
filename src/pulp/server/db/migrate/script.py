@@ -60,8 +60,8 @@ def get_migration_modules():
     # ADD YOUR MIGRATION MODULES HERE
     # modules that perform the datamodel migration for each version
     from pulp.server.db.migrate import one, two
-    # NOTE these are ordered from the smallest to largest (oldest to newest)
-    return (one, two)
+    modules = (one, two)
+    return sorted(modules, cmp=lambda x, y: cmp(x.version, y.version))
 
 
 def datamodel_migration(options):
