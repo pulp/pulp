@@ -32,7 +32,7 @@ _default_values = {
         'lifetime': '180', # in days
     },
     'database': {
-        'auto_upgrade': 'true',
+        'auto_migrate': 'true',
         'name': '_database',
         'seeds': 'localhost:27017',
     },
