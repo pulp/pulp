@@ -143,7 +143,7 @@ def is_validated():
     @return: True if the data model has been validated, False otherwise
     """
     v = _get_latest_version()
-    return v['validated']
+    return v['versoin'] == VERSION and v['validated']
 
 
 def set_validated():
