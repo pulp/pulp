@@ -39,7 +39,11 @@ from pulp.server.db.version import (
 def parse_args():
     parser = OptionParser()
     parser.add_option('--force', action='store_true', dest='force',
-                      default=False, help='force migration to run, ignoring "version" in db')
+                      default=False,
+                      help='force migration to run, ignoring "version" in db')
+    parser.add_option('--test', action='store_true', dest='test',
+                      default=False, 
+                      help='run migration, but do not update version')
     parser.add_option('--log-file', dest='log_file',
                       default='/var/log/pulp/db.log',
                       help='file for log messages')
@@ -96,7 +100,8 @@ def datamodel_migration(options):
                     'migration to version %d failed, see %s for details' % \
                     (mod.version, options.log_file)
             return os.EX_SOFTWARE
-        set_version(mod.version)
+        if not options.test:
+            set_version(mod.version)
         version = mod.version
     if version < VERSION:
         return os.EX_DATAERR
@@ -111,7 +116,8 @@ def datamodel_validation(options):
         print >> sys.stderr, '%d errors on validation, see %s for details' % \
                 (errors, options.log_file)
         return os.EX_DATAERR
-    set_validated()
+    if not options.test:
+        set_validated()
     return os.EX_OK
 
 
