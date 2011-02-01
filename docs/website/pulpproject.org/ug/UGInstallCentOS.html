@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="CentOS">CentOS</h1>
+<h2 id="BuildingDependencies">Building Dependencies</h2>
+<p>
+The process of building the QPID RPMs on CentOS is relatively straight forward.  There are a few packages that must be installed for satisfy both specified and missing <tt>!BuildRequires</tt>.  Also, the <tt>amqp</tt> and <tt>python-qpid</tt> packages must be installed before building the <tt>qpidc</tt> RPM. There are automated tests that run as part of the <tt>%build</tt> that will fail unless they are installed.
+</p>
+<p>
+These instructions outline the approach of installing and building the source rpms rather than downloading them and rebuilding as 'rpmbuild --rebuild &lt;srpm&gt;'. However, either method should work equally.
+</p>
+<p>
+In order to get all of the dependencies needed, the <i>Extra Packages for Enterprise Linux</i> version 5 (EPEL5) repository is required. Instructions on how to do so can be found <a class="ext-link" href="http://fedoraproject.org/wiki/EPEL/FAQ#Using_EPEL"><span class="icon">here</span></a>.
+</p>
+<p>
+Steps:
+</p>
+<p>
+1. Install <tt>rpmbuild</tt>:
+</p>
+<pre class="wiki">$ yum install rpm-build
+</pre><p>
+2. Create a <tt>mockbuild</tt> user:
+</p>
+<pre class="wiki">$ adduser mockbuild
+</pre><p>
+3. Install the source RPMs (get the latest <a class="ext-link" href="ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/"><span class="icon">here</span></a>):
+</p>
+<pre class="wiki">$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/qpidc-0.5.752581-17.el5.src.rpm
+$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/amqp-1.0.750054-1.el5.src.rpm
+$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/python-qpid-0.5.752581-3.el5.src.rpm
+</pre><p>
+4. Install extra dependencies:
+</p>
+<pre class="wiki">$ yum install gcc-c++ boost-devel doxygen e2fsprogs-devel libtool ruby cyrus-sasl-devel \
+              libibverbs-devel librdmacm-devel nss-devel nspr-devel xqilla-devel xerces-c-devel \
+              openais-devel cman-devel python-devel
+</pre><p>
+5. Build the <tt>amqp</tt> and <tt>python-qpid</tt> RPMs:
+</p>
+<pre class="wiki">$ cd /usr/src/redhat
+$ rpmbuild -bb SPECS/amqp.spec
+$ rpmbuild -bb SPECS/python-qpid.spec
+</pre><p>
+6. Install the <tt>python-qpid</tt> and <tt>amqp</tt> RPMs which used by the automated tests when building the <tt>qpidc</tt> RPM:
+</p>
+<pre class="wiki">$ cd RPMS/noarch
+$ rpm -i amqp-1.0.750054-1.noarch.rpm python-qpid-0.5.752581-3.noarch.rpm
+$ cd ../../
+</pre><p>
+7. Build the <tt>qpidc</tt> RPMs:
+</p>
+<pre class="wiki">$ rpmbuild -bb SPECS/qpidc.spec
+</pre></div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

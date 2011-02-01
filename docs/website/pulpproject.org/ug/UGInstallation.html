@@ -109,6 +109,13 @@ Subscribe the Pulp server to the RHN channels:
 <p>
 2. Install Pulp and its dependencies:
 </p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #009900">
+CentOS
+</span>
+<br /><br />
+QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
+</div>
 <pre class="wiki">$ yum install pulp
 </pre><p>
 3. Update <tt>/etc/pulp/pulp.conf</tt> to change the <tt>base_url</tt> attribute to reflect the hostname of the Pulp server.
@@ -149,6 +156,13 @@ Pulp admin commands are accessed through the <tt>pulp-admin</tt> script.
 </pre><p>
 2. Install the Pulp client packages:
 </p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #009900">
+CentOS
+</span>
+<br /><br />
+QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
+</div>
 <pre class="wiki">$ yum install pulp-client
 </pre><p>
 3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in the following places:
@@ -170,6 +184,13 @@ Pulp consumer commands are accessed through the <tt>pulp-client</tt> script. Thi
 </pre><p>
 2. Install the Pulp client packages:
 </p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #009900">
+CentOS
+</span>
+<br /><br />
+QPID RPMs are not available in the default CentOS repositories. Instructions on building those RPMs can be found <a href="UGInstallCentOS.html">here</a>.
+</div>
 <pre class="wiki">$ yum install pulp-client
 </pre><p>
 3. Update the client configuration to point to the Pulp server. Keep in mind that because of the SSL verification, this should be the fully qualified name of the server, even if it is the same machine (localhost will not work with the default apache generated SSL certificate). For more information see the <a class="wiki" href="UGFAQ.html">FAQ</a> page. This change must be done in four places:
