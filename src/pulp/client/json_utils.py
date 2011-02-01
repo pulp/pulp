@@ -21,18 +21,12 @@ from datetime import datetime
 
 def parse_date(date_string):
     '''
-    Parses the pymongo.json_util encoding of a datetime instance. The instance is
-    encoded as a 64-bit unsigned integer for milliseconds since epoch, according to
-    JSON strict mode. This method also assumes the strict mode packaging of a dict
-    using $date as the key for this integer.
+    Parses the unit timestamp string
 
-    Example:
-    { "$date" : 1283505509571}
-
-    @param date_string: JSON encoded datetime instance
+    @param date_string: unix timestamp string
     @type  date_string: dict with the date integer stored at $date
 
     @return: python object representing the date
     @rtype:  L{datetime.datetime} instance
     '''
-    return datetime.utcfromtimestamp(float(date_string["date"]))
+    return datetime.utcfromtimestamp(float(date_string))
