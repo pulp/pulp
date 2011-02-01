@@ -30,8 +30,12 @@ from pulp.server.api.auth import AuthApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
 import testutil
+
+SerialNumber.PATH = '/tmp/sn.dat'
+
 
 
 class TestAuthApi(unittest.TestCase):
@@ -45,6 +49,8 @@ class TestAuthApi(unittest.TestCase):
         self.auth_api = AuthApi()
         self.user_api = UserApi()
         self.clean()
+        sn = SerialNumber()
+        sn.reset()
 
     def tearDown(self):
         self.clean()

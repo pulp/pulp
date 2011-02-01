@@ -24,7 +24,12 @@ srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
 from pulp.server.auth.certificate import Certificate
+from pulp.server.auth.cert_generator import SerialNumber
 import pulp.server.auth.cert_generator as cert_generator
+
+SerialNumber.PATH = '/tmp/sn.dat'
+sn = SerialNumber()
+sn.reset()
 
 
 # The following certificate was signed by the pulp CA

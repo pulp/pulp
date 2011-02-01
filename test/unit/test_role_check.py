@@ -36,9 +36,13 @@ from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
 from pulp.server.webservices.role_check import RoleCheck
 import testutil
+
+SerialNumber.PATH = '/tmp/sn.dat'
+
 
 class TestRoleCheck(unittest.TestCase):
 
@@ -46,6 +50,8 @@ class TestRoleCheck(unittest.TestCase):
         self.config = testutil.load_test_config()
         self.uapi = UserApi()
         self.capi = ConsumerApi()
+        sn = SerialNumber()
+        sn.reset()
 
         # Make sure to reset the principal between tests
         principal.set_principal(principal.SystemPrincipal())
