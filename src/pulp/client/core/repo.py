@@ -910,7 +910,7 @@ class AddErrata(RepoAction):
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
-            e_repos = self.econn.find_repos(eid)
+            e_repos = self.econn.find_repos(eid) or []
             if id in e_repos:
                 print(_("Errata Id [%s] is already in target repo [%s]. skipping" % (eid, id)))
                 continue
