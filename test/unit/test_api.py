@@ -52,13 +52,14 @@ from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
 from pulp.server.auth import cert_generator
+from pulp.server.auth.cert_generator import SerialNumber
 import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-cert_generator.CERTDATPATH = '/tmp/sn.dat'
+SerialNumber.PATH = '/tmp/sn.dat'
 
 
 class TestApi(unittest.TestCase):
@@ -70,6 +71,8 @@ class TestApi(unittest.TestCase):
         self.cgapi.clean()
         self.eapi.clean()
         testutil.common_cleanup()
+        sn = SerialNumber()
+        sn.reset()
 
     def setUp(self):
         self.config = testutil.load_test_config()
