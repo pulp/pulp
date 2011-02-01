@@ -188,7 +188,7 @@ class Repo(Base):
         self.publish = False
         self.clone_ids = []
         self.distributionid = []
-        self.size = None
+#        self.size = None
 
     def get_repo_source(self):
         if not self.source:
