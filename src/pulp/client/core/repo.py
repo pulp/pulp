@@ -910,6 +910,13 @@ class AddErrata(RepoAction):
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
+            e_repos = self.econn.find_repos(eid)
+            if id in e_repos:
+                print(_("Errata Id [%s] is already in target repo [%s]. skipping" % (eid, id)))
+                continue
+            if self.opts.srcrepo not in e_repos:
+                print(_("Errata Id [%s] is not in source repo [%s]. skipping" % (eid, self.opts.srcrepo)))
+                continue
             erratum = self.econn.erratum(eid)
             if not erratum:
                 print(_("Errata Id [%s] could not be found. skipping" % eid))
@@ -917,9 +924,9 @@ class AddErrata(RepoAction):
             effected_pkgs += [str(pinfo['filename'])
                          for pkg in erratum['pkglist']
                          for pinfo in pkg['packages']]
+
         if not effected_pkgs:
-            system_exit(os.EX_DATAERR, \
-                        _("Associated Errata packages for id [%s] are not in the repo." % errataids))
+            system_exit(os.EX_DATAERR)
             
         pnames =[]
         for pkg in effected_pkgs:
@@ -965,6 +972,11 @@ class RemoveErrata(RepoAction):
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
+            e_repos = self.econn.find_repos(eid)
+
+            if id not in e_repos:
+                print(_("Errata Id [%s] is not in the repo [%s]. skipping" % (eid, id)))
+                continue
             erratum = self.econn.erratum(eid)
             if not erratum:
                 print(_("Errata Id [%s] could not be found. skipping" % eid))

@@ -98,7 +98,7 @@ class DepSolver:
                 if ndep not in solved:
                     to_solve.append(ndep)
             self.pkgs = to_solve
-        log.debug("difference:: %s \n\n" % list(set(to_solve) - set(solved)))
+#        log.debug("difference:: %s \n\n" % list(set(to_solve) - set(solved)))
         return all_results
     
     def __locateDeps(self, pkgs):

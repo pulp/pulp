@@ -19,14 +19,17 @@ import logging
 import web
 
 from pulp.server.api.errata import ErrataApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.base import JSONController,\
+    AsyncController
 from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
 api = ErrataApi()
+rapi = RepoApi()
 log = logging.getLogger('pulp')
 
 class Errata(JSONController):
@@ -106,11 +109,61 @@ class Erratum(JSONController):
         """
         api.delete(id=id)
         return self.ok(True)
+    
+class ErrataActions(AsyncController):
+
+    # All actions have been gathered here into one controller class for both
+    # convenience and automatically generate the regular expression that will
+    # map valid actions to this class. This also provides a single point for
+    # querying existing tasks.
+    #
+    # There are two steps to implementing a new action:
+    # 1. The action name must be added to the tuple of exposed_actions
+    # 2. You must add a method to this class with the same name as the action
+    #    that takes two positional arguments: 'self' and 'id' where id is the
+    #    the repository id. Additional parameters from the body can be
+    #    fetched and de-serialized via the self.params() call.
+
+    # NOTE the intersection of exposed_actions and exposed_fields must be empty
+    exposed_actions = (
+        'get_repos',
+    )
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def get_repos(self, id):
+        """
+         Return repoids with available errata
+         @param id: errata id
+         @return List of repoids which have specified errata id
+        """
+        return self.ok(rapi.find_repos_by_errata(id))
+    
+    @JSONController.error_handler
+    def POST(self, id, action_name):
+        """
+        Action dispatcher. This method checks to see if the action is exposed,
+        and if so, implemented. It then calls the corresponding method (named
+        the same as the action) to handle the request.
+        @type id: str
+        @param id: errata id
+        @type action_name: str
+        @param action_name: name of the action
+        @return: http response
+        """
+        errata = api.errata(id)
+        if not errata:
+            return self.not_found('No errata with id %s found' % id)
+        action = getattr(self, action_name, None)
+        if action is None:
+            return self.internal_server_error('No implementation for %s found' % action_name)
+        return action(id)
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/$', 'Errata',
     '/([^/]+)/$', 'Erratum',
+    '/([^/]+)/(%s)/$' % '|'.join(ErrataActions.exposed_actions),
+    'ErrataActions',
 )
 
 application = web.application(URLS, globals())

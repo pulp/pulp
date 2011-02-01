@@ -688,6 +688,10 @@ class ErrataConnection(PulpConnection):
             release=None, type=None, status=None, updated=None, issued=None,
             pushcount=None, from_str=None, reboot_suggested=None):
         pass
+    
+    def find_repos(self, id):
+        method = "/errata/%s/get_repos/" % id
+        return self.conn.request_post(method)
 
 class DistributionConnection(PulpConnection):
     """

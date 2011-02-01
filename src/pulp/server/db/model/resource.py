@@ -181,13 +181,14 @@ class Repo(Base):
         self.cert = None
         self.key = None
         self.errata = {}
-        self.groupid = [] # this is productid in kalpana terms
+        self.groupid = []
         self.relative_path = None
         self.files = []
         self.allow_upload = 0
         self.publish = False
         self.clone_ids = []
         self.distributionid = []
+        self.size = None
 
     def get_repo_source(self):
         if not self.source:
