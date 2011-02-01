@@ -32,6 +32,7 @@ auditing.initialize()
 _log = logging.getLogger('pulp')
 
 from pulp.server.db.migrate.validate import validate
+from pulp.server.db.migrate.versions import get_migration_modules
 from pulp.server.db.version import (
     VERSION, get_version_in_use, set_version, is_validated, set_validated, 
     clean_db)
@@ -61,14 +62,6 @@ def start_logging(options):
     logger.setLevel(level)
     handler = logging.FileHandler(options.log_file)
     logger.addHandler(handler)
-
-
-def get_migration_modules():
-    # ADD YOUR MIGRATION MODULES HERE
-    # modules that perform the datamodel migration for each version
-    from pulp.server.db.migrate import one, two
-    modules = (one, two)
-    return sorted(modules, cmp=lambda x, y: cmp(x.version, y.version))
 
 
 def datamodel_migration(options):
