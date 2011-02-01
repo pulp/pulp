@@ -16,7 +16,7 @@
 import logging
 import os
 import sys
-from optparse import OptionParser, SUPPRESS_HELP
+from optparse import OptionParser
 
 from pulp.server import auditing
 from pulp.server.config import config
@@ -35,8 +35,6 @@ from pulp.server.db.version import (
 
 def parse_args():
     parser = OptionParser()
-    parser.add_option('--auto', action='store_true', dest='auto',
-                      default=False, help=SUPPRESS_HELP)
     parser.add_option('--log-file', dest='log_file',
                       default='/var/log/pulp/db.log',
                       help='file for log messages')
@@ -60,8 +58,8 @@ def get_migration_modules():
     # ADD YOUR MIGRATION MODULES HERE
     # modules that perform the datamodel migration for each version
     from pulp.server.db.migrate import one, two
-    # NOTE these are ordered from the smallest to largest (oldest to newest)
-    return (one, two)
+    modules = (one, two)
+    return sorted(modules, cmp=lambda x, y: cmp(x.version, y.version))
 
 
 def datamodel_migration(options):
@@ -115,9 +113,6 @@ def datamodel_validation(options):
 def main():
     options = parse_args()
     start_logging(options)
-    if options.auto and not config.getboolean('database', 'auto_upgrade'):
-        print >> sys.stderr, 'pulp is not configured for auto upgrade'
-        return os.EX_CONFIG
     ret = datamodel_migration(options)
     if ret != os.EX_OK:
         return ret
