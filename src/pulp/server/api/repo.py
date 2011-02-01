@@ -1237,7 +1237,7 @@ class RepoApi(BaseApi):
             log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
             for eid in new_errata:
                 self._add_erratum(repo, eid)
-        repo['last_sync'] = datetime.now()
+        repo['last_sync'] = datetime.now().strftime("%s")
         self.update(repo)
 
     @audit()
