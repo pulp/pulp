@@ -33,7 +33,7 @@ def _base_id(reference):
 
 # general model validation ----------------------------------------------------
 
-def _validate_model(model_name, objectdb, reference):
+def _validate_model(model_name, objectdb, reference, values={}):
     """
     Perform a general validation of field presence and field value type for a
     given collection, and model reference
@@ -43,6 +43,9 @@ def _validate_model(model_name, objectdb, reference):
     @param objectdb: model collection to validate
     @type reference: L{pulp.server.db.model.Base} instance
     @param reference: reference data model instance for comparisons
+    @type values: dict
+    @param values: a dictionar of valid values for fields in the document
+                   {field: [list of valid values],}
     @rtype: int
     @return: number of errors found during validation
     """
@@ -54,15 +57,21 @@ def _validate_model(model_name, objectdb, reference):
             # and should be validated in the individual validation method
             if field in model and (value is None or
                                    isinstance(model[field], vtype)):
-                continue
+                if field not in values:
+                    continue
+                elif value in values[field]:
+                    continue
             num_errors += 1
             error_prefix = 'model validation failure in %s for model %s:' % \
                     (model_name, str(model['_id']))
             if field not in model:
                 _log.error(error_prefix + ' field %s is not present' % field)
+            elif not isinstance(model[field], vtype):
+                error_msg = error_prefix + ' field %s is not a %s'
+                _log.error(error_msg % (field, vtype))
             else:
-                _log.error(error_prefix + ' field %s is not a %s' %
-                           (field, vtype))
+                error_msg = error_prefix + ' field %s value is not: %s'
+                _log.error(error_msg % (field, ','.join(values[field])))
     return num_errors
 
 # individual model validation -------------------------------------------------
