@@ -182,28 +182,38 @@ class DependencyList(PackageAction):
     description = _('List available dependencies')
     
     def setup_parser(self):
-        self.parser.add_option("-n", "--name", action="append", dest="pnames",
+        self.parser.add_option("-n", "--name", action="append", dest="pnames", type="string",
                                help=_("package to lookup dependencies; to specify multiple packages use multiple -n"))
-        self.parser.add_option("-r", "--repoid", action="append", dest="repoid",
+        self.parser.add_option("-r", "--repoid", action="append", dest="repoid", type="string",
                                help=_("repository labels; to specify multiple packages use multiple -r"))
 
+
     def run(self):
-        if not self.opts.pnames:
+        pnames = [ p for p in self.opts.pnames or [] if len(p) ]
+        if not self.opts.pnames or not pnames:
             system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
-        if not self.opts.repoid:
+        repoid = [ r for r in self.opts.repoid or [] if len(r)]
+        if not self.opts.repoid or not repoid:
             system_exit(os.EX_DATAERR, \
                         _("Atleast one repoid is required to lookup dependencies."))
-        repoid = self.opts.repoid
-        pnames = self.opts.pnames
-        deps = self.sconn.dependencies(pnames, repoid)
+        repos = []    
+        for rid in repoid:
+            repo = self.rconn.repository(rid)
+            if repo is None:
+                print(_("Repository with id: [%s] not found. skipping" % rid))
+                continue
+            repos.append(rid)
+        if not repos:
+            system_exit(os.EX_DATAERR)
+        deps = self.sconn.dependencies(pnames, repos)
         if not deps['dependency_list']:
-            system_exit(os.EX_OK, _("No dependencies available for Package(s) [%s] in repo [%s]") %
-                        (pnames, repoid))
+            system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
+                        (pnames, repos))
         print_header(_("Dependencies for package(s) [%s]" % pnames))
 
         print deps['dependency_list']
-        print_header(_("Suggested Packages in Repo [%s]" % repoid))
+        print_header(_("Suggested Packages in Repo [%s]" % repos))
         if not deps['available_packages']:
             system_exit(os.EX_OK, _("None"))
         for pkg in deps['available_packages']:

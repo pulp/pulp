@@ -185,7 +185,10 @@ class PackageApi(BaseApi):
         rapi = RepoApi()
         repos = []
         for rid in repoids:
-            repos.append(rapi.repository(rid))
+            repoid = rapi.repository(rid)
+            if not repoid:
+                continue
+            repos.append(repoid)
         dsolve = DepSolver(repos, pkgnames)
         if recursive:
             results =  dsolve.getRecursiveDepList()
