@@ -402,7 +402,6 @@ class RepoApi(BaseApi):
                     ginfo = serv.fetch_gpgkeys(uri)
                 gpg_keys.append((label, ginfo))
             except Exception:
-                raise
                 log.error("Unable to fetch the gpg key info for %s" % uri)
         return gpg_keys
 
@@ -499,7 +498,6 @@ class RepoApi(BaseApi):
                     log.info("removing repo files .... %s" % fpath)
                 except:
                     #file removal failed
-                    raise
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
 
