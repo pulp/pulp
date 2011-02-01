@@ -35,4 +35,4 @@ def parse_date(date_string):
     @return: python object representing the date
     @rtype:  L{datetime.datetime} instance
     '''
-    return datetime.utcfromtimestamp(float(date_string["$date"]) / 1000.0)
+    return datetime.utcfromtimestamp(float(date_string["date"]))
