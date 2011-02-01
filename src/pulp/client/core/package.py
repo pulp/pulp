@@ -202,9 +202,7 @@ class DependencyList(PackageAction):
 
         repos = []    
         for rid in repoid:
-            print rid
             repo = self.rconn.repository(rid)
-            print repo
             if repo is None:
                 print(_("Repository with id: [%s] not found. skipping" % rid))
                 continue
