@@ -36,6 +36,9 @@ def _migrate_repo_model():
         if 'distributionid' not in repo:
             repo['distributionid'] = []
             modified = True
+        if type(repo["packages"]) != type([]):
+            repo["packages"] = [pkg_id for pkg_id in repo["packages"]]
+            modified = True
         if modified:
             api.update(repo)
 
