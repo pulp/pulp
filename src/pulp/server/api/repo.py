@@ -709,7 +709,7 @@ class RepoApi(BaseApi):
         found = list(self.objectdb.find({key: {"$exists": True}}, fields=["id"]))
         return [r["id"] for r in found]
     
-    def find_repos_by_errata(self, eid):
+    def find_repos_by_errataid(self, eid):
         """
         Return repos that contain passed in eid id
         @param eid: errata id

@@ -136,7 +136,7 @@ class ErrataActions(AsyncController):
          @param id: errata id
          @return List of repoids which have specified errata id
         """
-        return self.ok(rapi.find_repos_by_errata(id))
+        return self.ok(rapi.find_repos_by_errataid(id))
     
     @JSONController.error_handler
     def POST(self, id, action_name):
