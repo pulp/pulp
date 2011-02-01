@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import logging
+import sha as SHA
 
 # Pulp
 from pulp.server.agent import Agent
@@ -102,10 +103,13 @@ class ConsumerApi(BaseApi):
                 
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
-        creds = consumer['credentials']
+        credentials = consumer.get('credentials', ())
+        sha = SHA.new()
+        for s in credentials:
+            sha.update(s)
         agent = Agent(id, async=True)
         consumer = agent.Consumer()
-        consumer.deleted(creds)
+        consumer.deleted(sha.hexdigest())
 
 
     def find_consumergroup_with_conflicting_keyvalues(self, id, key, value):

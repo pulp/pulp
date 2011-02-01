@@ -103,21 +103,21 @@ class Consumer:
     """
     
     @remote
-    def deleted(self, credentials):
+    def deleted(self, digest):
         """
         Notification that the consumer has been deleted.
         Clean up associated artifacts.
-        @param credentials: The associated x.509 credentials.
-        @type credentials: tuple (key,crt)
+        @param digest: The SHA-1 of the associated x.509 credentials.
+        @type digest: str
         """
         bundle = ConsumerBundle()
-        found = bundle.read()
-        expected = tuple(credentials)
-        if found != expected:
+        found = bundle.digest()
+        if found != digest:
+            log.warn('Artifacts NOT deleted')
             return
-        bundle.delete()
         repo = Repo()
         repo.delete()
+        bundle.delete()
         log.info('Artifacts deleted')
 
 

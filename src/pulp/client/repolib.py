@@ -120,15 +120,16 @@ class Action:
     """
     Action base class.
     """
-
-    def __init__(self, ):
-        self.pulp = Pulp()
+    pass
 
 
 class UpdateAction(Action):
     """
     Update the yum repositores based on pulp bindings (subscription).
     """
+
+    def __init__(self):
+        self.pulp = Pulp()
 
     def perform(self):
         """
@@ -260,6 +261,7 @@ class DeleteAction(Action):
     """
     def perform(self):
         RepoFile.unlink()
+        log.info('%s, deleted', RepoFile.PATH)
 
 
 class Repo(dict):
