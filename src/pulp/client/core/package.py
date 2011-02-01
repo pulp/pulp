@@ -189,17 +189,22 @@ class DependencyList(PackageAction):
 
 
     def run(self):
-        pnames = [ p for p in self.opts.pnames or [] if len(p) ]
-        if not self.opts.pnames or not pnames:
+        
+        if not self.opts.pnames:
             system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
+
         repoid = [ r for r in self.opts.repoid or [] if len(r)]
         if not self.opts.repoid or not repoid:
             system_exit(os.EX_DATAERR, \
                         _("Atleast one repoid is required to lookup dependencies."))
+        pnames = self.opts.pnames
+
         repos = []    
         for rid in repoid:
+            print rid
             repo = self.rconn.repository(rid)
+            print repo
             if repo is None:
                 print(_("Repository with id: [%s] not found. skipping" % rid))
                 continue
