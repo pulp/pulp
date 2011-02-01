@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import logging
+import traceback
 import os
 import sys
 from optparse import OptionParser, SUPPRESS_HELP
@@ -27,6 +28,8 @@ from pulp.server.db import connection
 # db/auditing to be setup
 connection.initialize()
 auditing.initialize()
+
+_log = logging.getLogger('pulp')
 
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
