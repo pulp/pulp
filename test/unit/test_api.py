@@ -235,7 +235,7 @@ class TestApi(unittest.TestCase):
         found = self.rapi.repository('some-id')
         packages = found['packages']
         assert(packages is not None)
-        assert(packages[p['id']] is not None)
+        assert(p['id'] in packages)
 
     def test_repo_package_count(self):
         repo = self.rapi.create('some-id', 'some name', \
@@ -391,15 +391,6 @@ class TestApi(unittest.TestCase):
 
         pkguplist = self.capi.list_package_updates(c['id'])['packages']
         assert(len(pkguplist) == 1)
-
-    def test_repo_package_by_name(self):
-        repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
-        p = testutil.create_package(self.papi, 'test_pkg_by_name')
-        self.rapi.add_package(repo["id"], [p['id']])
-
-        pkg = self.rapi.get_package(repo['id'], p['name'])
-        assert(pkg is not None)
 
     def test_repo_package_groups(self):
         repo = self.rapi.create('some-id', 'some name', \
@@ -600,18 +591,22 @@ class TestApi(unittest.TestCase):
 
         # Verify each repo has the test package synced
         found_a_pid = None
-        for p in found_a["packages"].values():
+        for pkg_id in found_a["packages"]:
+            p = self.papi.package(pkg_id)
             if (p['name'].index(test_pkg_name) >= 0):
                 found_a_pid = p['id']
         assert(found_a_pid is not None)
 
         found_b_pid = None
-        for p in found_b["packages"].values():
+        for pkg_id in found_b["packages"]:
+            p = self.papi.package(pkg_id)
             if (p['name'].index(test_pkg_name) >= 0):
                 found_b_pid = p['id']
         assert(found_b_pid is not None)
-        packagea = found_a["packages"][found_a_pid]
-        packageb = found_b["packages"][found_b_pid]
+
+
+        packagea = self.papi.package(found_a_pid)
+        packageb = self.papi.package(found_b_pid)
 
         # Grab the associated package version (there should only be 1)
         # Ensure that the package versions have different checksums, but all other
@@ -647,18 +642,20 @@ class TestApi(unittest.TestCase):
         # Verify each repo has the test package synced
         # Verify each repo has the test package synced
         found_a_pid = None
-        for p in found_a["packages"].values():
+        for pkg_id in found_a["packages"]:
+            p = self.papi.package(pkg_id)
             if (p['name'].index(test_pkg_name) >= 0):
                 found_a_pid = p['id']
         assert(found_a_pid is not None)
 
         found_b_pid = None
-        for p in found_b["packages"].values():
+        for pkg_id in found_b["packages"]:
+            p = self.papi.package(pkg_id)
             if (p['name'].index(test_pkg_name) >= 0):
                 found_b_pid = p['id']
         assert(found_b_pid is not None)
-        packagea = found_a["packages"][found_a_pid]
-        packageb = found_b["packages"][found_b_pid]
+        packagea = self.papi.package(found_a_pid)
+        packageb = self.papi.package(found_b_pid)
 
         # Ensure that the 2 Package instances actually point 
         # to the same single instance
@@ -705,7 +702,8 @@ class TestApi(unittest.TestCase):
                 "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"]
         for ep in expected_packages:
             found = False
-            for p in r["packages"].values():
+            for pkg_id in r["packages"]:
+                p = self.papi.package(pkg_id)
                 if p["filename"] == ep:
                     found = True
             self.assertTrue(found)
@@ -723,11 +721,13 @@ class TestApi(unittest.TestCase):
                 "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"]
         for ep in expected_packages:
             found = False
-            for p in r["packages"].values():
+            for pkg_id in r["packages"]:
+                p = self.papi.package(pkg_id)
                 if p["filename"] == ep:
                     found = True
             self.assertTrue(found)
-        for p in r["packages"].values():
+        for pkg_id in r["packages"]:
+            p = self.papi.package(pkg_id)
             self.assertTrue(p["filename"] != removed_package)
 
     def disabled_resync_removes_deleted_package_with_two_pkgs_same_nevra(self):
@@ -756,15 +756,13 @@ class TestApi(unittest.TestCase):
         datadir = my_dir + "/data/"
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'local:file://%s' % datadir)
-        print "Repo: %s" % repo
 
         self.rapi._sync(repo['id'])
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         assert(packages is not None)
         assert(len(packages) > 0)
-        print packages
-        p = packages.values()[0]
+        p = packages[0]
         assert(p is not None)
         # versions = p['versions']
 
@@ -801,15 +799,116 @@ class TestApi(unittest.TestCase):
         # Test for known pkgid
         self.assertTrue(len(r["packages"]) == 1)
         self.assertTrue(len(r2["packages"]) == 1)
-        pkgid1 = r["packages"].keys()[0]
-        pkgid2 = r2["packages"].keys()[0]
+        pkgid1 = r["packages"][0]
+        pkgid2 = r2["packages"][0]
 
         found = self.rapi.find_repos_by_package(pkgid1)
         self.assertTrue(len(found) == 1)
-        self.assertTrue(found[0] == r["id"])
+        self.assertTrue(r["id"] in found)
         found = self.rapi.find_repos_by_package(pkgid2)
         self.assertTrue(len(found) == 1)
-        self.assertTrue(found[0] == r2["id"])
+        self.assertTrue(r2["id"] in found)
+    
+    def test_repo_package_by_name(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com')
+        p = testutil.create_package(self.papi, 'test_pkg_by_name', version="1")
+        self.rapi.add_package(repo["id"], [p['id']])
+        
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name', version="2")
+        self.rapi.add_package(repo["id"], [p2['id']])
+
+        pkgs = self.rapi.get_packages_by_name(repo['id'], p['name'])
+        self.assertTrue(len(pkgs) == 2)
+        self.assertTrue(p["id"] in pkgs)
+        self.assertTrue(p2["id"] in pkgs)
+        
+        pkgs = self.rapi.get_packages_by_name(repo['id'], "bad_name")
+        self.assertTrue(len(pkgs) == 0)
+
+
+    def test_get_packages_by_id(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com')
+        repo2 = self.rapi.create('some-id-2', 'some name 2', \
+            'i386', 'yum:http://example.com-2')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name')
+        self.rapi.add_package(repo["id"], [p1['id']])
+
+        p2 = testutil.create_package(self.papi, 'test_pkg2_by_name')
+        self.rapi.add_package(repo2["id"], [p2['id']])
+
+        pkgs = self.rapi.get_packages_by_id(repo['id'], [p1['id']])
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(p1["id"] in pkgs)
+
+        pkgs = self.rapi.get_packages_by_id(repo2['id'], [p2['id']])
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(p2["id"] in pkgs)
+
+        pkgs = self.rapi.get_packages_by_id(repo2['id'], [p1['id']])
+        self.assertTrue(len(pkgs) == 0)
+
+    def test_get_packages_by_filename(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com')
+        repo2 = self.rapi.create('some-id-2', 'some name 2', \
+            'i386', 'yum:http://example.com-2')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm")
+        self.rapi.add_package(repo["id"], [p1['id']])
+
+        p2 = testutil.create_package(self.papi, 'test_pkg2_by_name', filename="test02.rpm")
+        self.rapi.add_package(repo2["id"], [p2['id']])
+        
+        pkgs = self.rapi.get_packages_by_filename(repo['id'], [p1['filename']])
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(p1["id"] in pkgs)
+
+        pkgs = self.rapi.get_packages_by_filename(repo2['id'], [p2['filename']])
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(p2["id"] in pkgs)
+        
+        pkgs = self.rapi.get_packages_by_filename(repo2['id'], [p1['filename']])
+        self.assertTrue(len(pkgs) == 0)
+
+        pkgs = self.rapi.get_packages_by_id(repo2['id'], [])
+        self.assertTrue(len(pkgs) == 0)
+        
+        pkgs = self.rapi.get_packages_by_id(repo2['id'], ["bad_name"])
+        self.assertTrue(len(pkgs) == 0)
+        
+    def test_packages(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm")
+        self.rapi.add_package(repo["id"], [p1['id']])
+
+        p2 = testutil.create_package(self.papi, 'test_pkg2_by_name', filename="test02.rpm")
+        self.rapi.add_package(repo["id"], [p2['id']])
+       
+        #Create a similar package but dont add to repo
+        p3 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test03.rpm")
+        
+        pkgs = self.rapi.packages(repo['id'])
+        self.assertTrue(len(pkgs) == 2)
+        self.assertTrue(p1["id"] in pkgs)
+        self.assertTrue(p2["id"] in pkgs)
+        
+        pkgs = self.rapi.packages(repo['id'], name=p1['name'])
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(p1["id"] in pkgs)
+        
+        pkgs = self.rapi.packages(repo['id'], filename=p2['filename'])
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(p2["id"] in pkgs)
+        
+        pkgs = self.rapi.packages(repo['id'], version=p1['version'])
+        self.assertTrue(len(pkgs) == 2)
+        self.assertTrue(p1["id"] in pkgs)
+        self.assertTrue(p2["id"] in pkgs)
+        
+        pkgs = self.rapi.packages(repo['id'], name="bad_name")
+        self.assertTrue(len(pkgs) == 0)
 
 if __name__ == '__main__':
     unittest.main()

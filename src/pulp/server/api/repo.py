@@ -541,22 +541,23 @@ class RepoApi(BaseApi):
             return None
         return repos[0]
 
-    def packages(self, id, name=None):
+    def packages(self, repo_id, **kwargs):
         """
         Return list of Package objects in this Repo
-        @type id: str
-        @param id: repository id
-        @type name: str
-        @param name: package name
+        @type repo_id: str
+        @param repo_id: repository id
+        @type kwargs: variable keyword arguments accepted
+        @param kwargs: keyword arguments will be passed into package lookup query
         @rtype: list
         @return: package objects belonging to this repository
         """
-        repo = self._get_existing_repo(id)
-        repo_packages = repo['packages']
-        packages = [self.packageapi.package(p) for p in repo_packages.keys()]
-        if name is not None:
-            packages = [p for p in packages if p['name'].find(name) >= 0]
-        return packages
+        repo = self._get_existing_repo(repo_id)
+        if not kwargs:
+            return self.packageapi.packages_by_id(repo["packages"])
+        search_dict = {}
+        for key in kwargs:
+            search_dict[key] = kwargs[key]
+        return self.packageapi.packages_by_id(repo["packages"], **search_dict)
 
     def package_count(self, id):
         """
@@ -568,46 +569,56 @@ class RepoApi(BaseApi):
         """
         return self.repository(id, fields=["package_count"])['package_count']
 
-    def get_package(self, id, name):
-        """
-        Return matching Package object in this Repo
-        """
-        packages = self.packages(id, name)
-        if not packages:
-            return None
-        return packages[0]
+    def get_package(self, repo_id, name):
+        return self.get_packages_by_name(repo_id, name)
 
-    def get_package_by_nvrea(self, id, nvreas = []):
+    def get_packages_by_id(self, repo_id, pkg_ids):
+        """
+        Return package objects for the passed in pkg_ids that are in repo_id
+        @type repo_id: string
+        @param repo_id: repository id
+        @type pkg_ids: list of strings
+        @param pkg_ids: list of package ids
+        """
+        repo = self._get_existing_repo(repo_id)
+        #Restrict id's to only those that are in this repository
+        ids = list(set(pkg_ids).intersection(repo["packages"]))
+        return self.packageapi.packages_by_id(ids)
+
+    def get_packages_by_name(self, repo_id, name):
+        """
+        Return matching Package objects in this Repo
+        """
+        repo = self._get_existing_repo(repo_id)
+        return self.packageapi.packages_by_id(repo["packages"], name=name)
+
+    def get_packages_by_nvrea(self, repo_id, nvreas = []):
         """
          CHeck if package exists or not in this repo for given nvrea
         """
-        log.error('looking up pkg [%s] in repo [%s]' % (nvreas, id))
-        repo = self._get_existing_repo(id)
-        repo_packages  = repo['packages'].values()
+        log.error('looking up pkg [%s] in repo [%s]' % (nvreas, repo_id))
+        #TODO: Potential to make this call quicker and pass more of the checks into mongo
+        repo = self._get_existing_repo(repo_id)
+        repo_packages = repo['packages']
         pkgs = {}
         for nvrea in nvreas:
-            for p in repo_packages:
-	        if (nvrea['name'], nvrea['version'], nvrea['release'], nvrea['epoch'], nvrea['arch']) == \
-			 (p['name'], p['version'], p['release'], p['epoch'], p['arch']):
-                    pkg_repo_path = pulp.server.util.get_repo_package_path(
-                                         repo['relative_path'], p['filename'])
-                    if os.path.exists(pkg_repo_path):
-                        pkgs[p['filename']] = p
+            for pkg_id in repo_packages:
+                p = self.packageapi.package(pkg_id)
+                if (nvrea['name'], nvrea['version'], nvrea['release'], nvrea['epoch'], nvrea['arch']) == \
+                    (p['name'], p['version'], p['release'], p['epoch'], p['arch']):
+                        pkg_repo_path = pulp.server.util.get_repo_package_path(
+                                             repo['relative_path'], p['filename'])
+                        if os.path.exists(pkg_repo_path):
+                            pkgs[p['filename']] = p
         return pkgs
 
-    def get_package_by_filename(self, id, filenames = []):
+    def get_packages_by_filename(self, repo_id, filenames = []):
         """
           Return matching Package object in this Repo by filename
         """
-        log.info('looking up pkg filename [%s] in repo [%s]' % (filenames, id))
-        repo = self._get_existing_repo(id)
-        packages = repo['packages'].values()
-        pkgmatch = {}
-        for filename in filenames:
-            for p in packages:
-                if filename == p['filename']:
-                    pkgmatch[filename] = p
-        return pkgmatch
+        log.info('looking up pkg filename [%s] in repo [%s]' % (filenames, repo_id))
+        repo = self._get_existing_repo(repo_id)
+        return self.packageapi.packages_by_id(repo["packages"], filename={"$in":filenames})
 
     @audit()
     def add_package(self, repoid, packageids=[]):
@@ -626,8 +637,9 @@ class RepoApi(BaseApi):
                 log.error("No Package with id: %s found" % pid)
                 continue
             # TODO:  We might want to restrict Packages we add to only
-            #        allow 1 NEVRA per repo and require filename to be unique
+            #        allow 1 NEVRA per repo
             self._add_package(repo, package)
+            log.info("Added: %s to repo: %s" % (package, repo))
             shared_pkg = pulp.server.util.get_shared_package_path(
                     package['name'], package['version'], package['release'],
 		    package['arch'], package["filename"], package['checksum'])
@@ -645,13 +657,15 @@ class RepoApi(BaseApi):
         """
         Responsible for properly associating a Package to a Repo
         """
-        packages = repo['packages']
-        if p['id'] in packages:
-            # No need to update repo, this Package is already under this repo
-            return
-        packages[p['id']] = p
-        # increment the package count
-        repo['package_count'] = repo['package_count'] + 1
+        pkgid = p
+        try:
+            pkgid = p["id"]
+        except:
+            # Attempt to access as a SON or a Dictionary, Fall back to a regular package id
+            pass
+        if pkgid not in repo['packages']:
+            repo['packages'].append(pkgid)
+            repo['package_count'] = repo['package_count'] + 1
 
     @audit()
     def remove_package(self, repoid, p):
@@ -673,10 +687,11 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         for pkg in pkgobjs:
             # this won't fail even if the package is not in the repo's packages
-            removed_pkg = repo['packages'].pop(pkg['id'], None)
-            if not removed_pkg:
+            #removed_pkg = repo['packages'].pop(pkg['id'], None)
+            if pkg['id'] not in repo['packages']:
                 log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"],repoid))
                 continue
+            repo['packages'].remove(pkg['id'])
             repo['package_count'] = repo['package_count'] - 1
             # Remove package from repo location on file system
             pkg_repo_path = pulp.server.util.get_repo_package_path(
@@ -705,8 +720,7 @@ class RepoApi(BaseApi):
         Return repos that contain passed in package id
         @param pkgid: package id
         """
-        key = "packages.%s" % pkgid
-        found = list(self.objectdb.find({key: {"$exists": True}}, fields=["id"]))
+        found = self.objectdb.find({"packages":pkgid}, fields=["id"])
         return [r["id"] for r in found]
     
     def find_repos_by_errataid(self, eid):
@@ -1206,10 +1220,10 @@ class RepoApi(BaseApi):
         # package_group info added in sync call
         self.update(repo)
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-            old_pkgs = list(set(repo["packages"].keys()).difference(set(sync_packages.keys())))
+            old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
             old_pkgs = map(self.packageapi.package, old_pkgs)
             old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
-            new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"].keys())))
+            new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"])))
             new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
             log.info("%s old packages to process, %s new packages to process" % \
                 (len(old_pkgs), len(new_pkgs)))

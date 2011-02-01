@@ -167,7 +167,7 @@ class Repo(Base):
         self.name = name
         self.arch = arch
         self.release = None
-        self.packages = dict()
+        self.packages = []
         self.package_count = 0
         self.packagegroups = dict()
         self.packagegroupcategories = dict()

@@ -110,10 +110,10 @@ class TestApi(unittest.TestCase):
         self.rapi.add_package(repo["id"],[p['id']])
         # Lookup repo and confirm new package version was added
         repo = self.rapi.repository(repo["id"])
-        self.assertTrue(repo["packages"].has_key(p['id']))
+        self.assertTrue(p['id'] in repo["packages"])
         packageid = p['id']
-        self.assertTrue(len(repo["packages"][p['id']]) is not None)
-        saved_pkg = repo["packages"][packageid]
+        saved_pkg = self.papi.package(p['id'])
+        self.assertTrue(saved_pkg)
         self.assertTrue(saved_pkg['name'] == test_pkg_name)
         self.assertTrue(saved_pkg['epoch'] == test_epoch)
         self.assertTrue(saved_pkg['version'] == test_version)
@@ -124,15 +124,15 @@ class TestApi(unittest.TestCase):
         self.assertTrue(saved_pkg['checksum'][test_checksum_type] == test_checksum)
         self.assertTrue(saved_pkg['filename'] == test_filename)
         # Verify we can find this package version through repo api calls
-        pkgs = self.rapi.packages(repo['id'], test_pkg_name)
+        pkgs = self.rapi.packages(repo['id'], name=test_pkg_name)
         self.assertTrue(len(pkgs) == 1)
-        self.assertTrue(pkgs[0]['id'] == packageid)
-        self.assertTrue(pkgs[0]['filename'] == test_filename)
+        self.assertTrue(pkgs[packageid]["id"] == packageid)
+        self.assertTrue(pkgs[packageid]['filename'] == test_filename)
 
         # Remove package from repo
         self.rapi.remove_package(repo['id'], p)
         repo = self.rapi.repository(repo['id'])
-        self.assertTrue(not repo["packages"].has_key(test_pkg_name))
+        self.assertTrue(p['id'] not in repo["packages"])
         # Verify package has been removed from repo and since
         # no other repos were referencing it, the package has been removed
         # from the package collection as well

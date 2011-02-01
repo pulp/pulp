@@ -128,6 +128,27 @@ class PackageApi(BaseApi):
             return list(self.objectdb.find(fields=fields))
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
+    
+    def packages_by_id(self, pkg_ids, **kwargs):
+        """
+        @param pkg_ids list of package ids
+        @type dictionary of package objects, key is package id
+        @type kwargs: variable number of named keyword arguments
+        @param kwargs: a variable number of arguments can be passed into 
+                       the search query, example: name="pkg_name1", filename="file1.rpm"
+
+        One use of this method is to query for a particular package inside of a repo. 
+        First restrict the search to only ids in the repo, then refine to match the 
+        desired query
+        """
+        search_dict = {"id":{"$in":pkg_ids}}
+        for key in kwargs:
+            search_dict[key] = kwargs[key]
+        ret_data = {}
+        tmp_data = self.objectdb.find(search_dict)
+        for pkg in tmp_data:
+            ret_data[pkg["id"]] = pkg
+        return ret_data
 
     def package_filenames(self, spec=None):
         """

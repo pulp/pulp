@@ -46,17 +46,12 @@ def setup():
     start_logging()
     connection.initialize()
     auditing.initialize()
-    # setup logging for this file
     log.setLevel(logging.DEBUG)
-    # create console handler and set level to debug
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-    # create formatter
-    fmt = '%(asctime)s [%(levelname)s][%(threadName)s] %(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
+    fmt = '%(funcName)s() @ %(filename)s:%(lineno)d - %(message)s'
     formatter = logging.Formatter(fmt)
-    # add formatter to ch
     ch.setFormatter(formatter)
-    # add ch to logger
     log.addHandler(ch)
     return config.config
 
@@ -84,26 +79,50 @@ class TimeRepos:
         for repo_id in self.get_available_repoids():
             start = time.time()
             repo = self.rapi._get_existing_repo(repo_id)
-            repo_json = json.dumps(repo, default=pymongo.json_util.default)
             end = time.time()
-            log.critical("Packages: %s Length: %s _get_existing_repo(%s) took %s seconds" % \
+            repo_json = json.dumps(repo, default=pymongo.json_util.default)
+            log.critical("All fields.  Packages: %s Length: %s _get_existing_repo(%s) took %s seconds" % \
                     (len(repo["packages"]), len(repo_json), repo_id, (end - start)))
         
         for repo_id in self.get_available_repoids():
             start = time.time()
             fields = ["id", "package_count", "relative_path"]
             repo = self.rapi._get_existing_repo(repo_id, fields=fields)
-            repo_json = json.dumps(repo, default=pymongo.json_util.default)
             end = time.time()
-            log.critical("Shortened fetch<no packages>: Length: %s _get_existing_repo(%s) took %s seconds" % \
+            repo_json = json.dumps(repo, default=pymongo.json_util.default)
+            log.critical("Limited fields: Shortened fetch<no packages>: Length: %s _get_existing_repo(%s) took %s seconds" % \
                     (len(repo_json), repo_id, (end - start)))
 
+    def time_package_lookups_simple(self):
+        start = time.time()
+        for repo_id in self.get_available_repoids():
+            repo = self.rapi._get_existing_repo(repo_id)
+            packages = {}
+            for pkg_id in repo["packages"]:
+                pkg = self.papi.package(pkg_id)
+                packages[pkg_id] = pkg
+            end = time.time()
+            repo_json = json.dumps(repo, default=pymongo.json_util.default)
+            packages_json = json.dumps(packages, default=pymongo.json_util.default)
+            log.critical("Full retrieval of Repo %s and %s packages took %s seconds." % (repo_id, len(repo["packages"]), (end - start)))
+
+    def time_package_lookups_batched(self):
+        start = time.time()
+        for repo_id in self.get_available_repoids():
+            start = time.time()
+            repo = self.rapi._get_existing_repo(repo_id)
+            packages = self.rapi.get_packages_by_id(repo_id, repo["packages"])
+            end = time.time()
+            repo_json = json.dumps(repo, default=pymongo.json_util.default)
+            packages_json = json.dumps(packages, default=pymongo.json_util.default)
+            log.critical("Full retrieval <batched> of Repo<%s> %s and %s packages<%s> took %s seconds." % (len(repo_json), \
+                    repo_id, len(repo["packages"]), len(packages_json), (end - start)))
 
 if __name__ == "__main__":
-    #start_logging()
     setup()
     tr = TimeRepos()
     tr.time_get_available_repoids()
     tr.time_get_existing_repo()
-
+    #tr.time_package_lookups_simple()
+    tr.time_package_lookups_batched()
 

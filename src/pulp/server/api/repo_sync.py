@@ -545,6 +545,7 @@ class LocalSynchronizer(BaseSynchronizer):
         existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
         source_pkgs = [os.path.basename(p) for p in pkglist]
         if progress_callback is not None:
+            log.debug("Updating progress to %s" % (ProgressReport.PurgeOrphanedPackages))
             self.progress["step"] = ProgressReport.PurgeOrphanedPackages
             progress_callback(self.progress)
         for epkg in existing_pkgs:
@@ -577,7 +578,9 @@ class LocalSynchronizer(BaseSynchronizer):
                 if not os.path.exists(dst_repo_dir):
                     os.makedirs(dst_repo_dir)
                 if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+                    log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
                     self._sync_rpms(dst_repo_dir, src_repo_dir, progress_callback)
+                    log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
                 else:
                     log.info("Skipping package imports from sync process")
                 # compute and import repo image files            
