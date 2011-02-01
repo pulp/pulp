@@ -31,12 +31,14 @@ auditing.initialize()
 from pulp.server.db.migrate.validate import validate
 from pulp.server.db.version import (
     VERSION, get_version_in_use, set_version, is_validated, set_validated)
-
+from pulp.server.db.version import clean_db as clean_versions
 
 def parse_args():
     parser = OptionParser()
     parser.add_option('--auto', action='store_true', dest='auto',
                       default=False, help=SUPPRESS_HELP)
+    parser.add_option('--force', action='store_true', dest='force',
+                      default=False, help='force migration to run, ignoring "version" in db')
     parser.add_option('--log-file', dest='log_file',
                       default='/var/log/pulp/db.log',
                       help='file for log messages')
@@ -118,6 +120,9 @@ def main():
     if options.auto and not config.getboolean('database', 'auto_upgrade'):
         print >> sys.stderr, 'pulp is not configured for auto upgrade'
         return os.EX_CONFIG
+    if options.force:
+        print 'Cleaning previous versions'
+        clean_versions()
     ret = datamodel_migration(options)
     if ret != os.EX_OK:
         return ret

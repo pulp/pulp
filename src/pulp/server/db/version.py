@@ -58,6 +58,15 @@ def _init_db():
         return
     _version_db = get_object_db('data_model', ['version'])
 
+def clean_db():
+    """
+    Removes the version collection from our database in mongo
+    """
+    _init_db()
+    global _version_db
+    if _version_db is not None:
+        _version_db.remove(safe=True)
+        _version_db = None
 
 def _get_latest_version():
     """
@@ -91,6 +100,15 @@ def _update_version(version):
     """
     _init_db()
     _version_db.update({'_id': version['_id']}, version, safe=True)
+
+def _remove_version(version):
+    """
+    Utility function to remove a version in the database.
+    @type version: L{DataModelVersion} instance
+    @param version: the version to update
+    """
+    _init_db()
+    _version_db.remove({'_id': version['_id']}, safe=True)
 
 # data model version api ------------------------------------------------------
 
