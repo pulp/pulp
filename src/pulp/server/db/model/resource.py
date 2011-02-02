@@ -47,7 +47,7 @@ class ConsumerHistoryEvent(Base):
         self.originator = originator
         self.type_name = type_name
         self.details = details
-        self.timestamp = datetime.datetime.now()
+        self.timestamp = datetime.datetime.now().strftime("%s")
 
 # distribution model ----------------------------------------------------------
 
