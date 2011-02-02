@@ -661,6 +661,7 @@ class LocalSynchronizer(BaseSynchronizer):
                         log.info("Skipping distribution imports from sync process")
                 groups_xml_path = None
                 updateinfo_path = None
+                prestodelta_path = None
                 src_repomd_xml = os.path.join(src_repo_dir, "repodata/repomd.xml")
                 if os.path.isfile(src_repomd_xml):
                     ftypes = pulp.server.util.get_repomd_filetypes(src_repomd_xml)
