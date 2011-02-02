@@ -21,10 +21,13 @@ from datetime import datetime
 
 def parse_date(date_string):
     '''
-    Parses the unit timestamp string
+    Parses a unix timestamp string. Valid dates generated on the server should
+    be created with:
+
+    datetime.now().strftime("%s")
 
     @param date_string: unix timestamp string
-    @type  date_string: dict with the date integer stored at $date
+    @type  date_string: str
 
     @return: python object representing the date
     @rtype:  L{datetime.datetime} instance
