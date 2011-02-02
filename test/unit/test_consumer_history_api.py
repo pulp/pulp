@@ -59,7 +59,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_consumer_created(self):
         # Test
         self.consumer_history_api.consumer_created(123)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.consumer_created(123)
 
@@ -82,7 +82,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_consumer_deleted(self):
         # Test
         self.consumer_history_api.consumer_deleted(123)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.consumer_deleted(123)
 
@@ -105,7 +105,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_repo_bound(self):
         # Test
         self.consumer_history_api.repo_bound(123, 456)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.repo_bound(123, 789)
 
@@ -130,7 +130,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_repo_unbound(self):
         # Test
         self.consumer_history_api.repo_unbound(123, 456)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.repo_unbound(123, 789)
 
@@ -156,7 +156,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
         self.consumer_history_api.packages_installed(123, packages)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.packages_installed(123, 'zombie-1.0')
 
@@ -185,7 +185,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
         errata_titles = ['err123', 'err456']
         self.consumer_history_api.packages_installed(123, packages, errata_titles=errata_titles)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.packages_installed(123, 'zombie-1.0', errata_titles=errata_titles)
 
@@ -215,7 +215,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         # Test
         packages = ['foo-1.0', 'bar-2.0', 'baz-3.0']
         self.consumer_history_api.packages_removed(123, packages)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.packages_removed(123, 'zombie-1.0')
 
@@ -261,7 +261,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
                         'version': '2.4'}}
 
         self.consumer_history_api.profile_updated(123, profile)
-        time.sleep(.1)
+        time.sleep(1)
         principal.set_principal(principal.SystemPrincipal())
         self.consumer_history_api.profile_updated(123, profile)
 
