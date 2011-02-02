@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.133
+Version:        0.0.134
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -234,6 +234,9 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Feb 02 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.134-1
+- no more auto option (jconnor@redhat.com)
+
 * Wed Feb 02 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.133-1
 - 670666 - DeltaRPM sync support for local syncs (pkilambi@redhat.com)
 - 674591 - Changed how timestamps are stored. (jason.dobies@redhat.com)
