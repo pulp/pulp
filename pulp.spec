@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.132
+Version:        0.0.133
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -234,6 +234,36 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Wed Feb 02 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.133-1
+- 670666 - DeltaRPM sync support for local syncs (pkilambi@redhat.com)
+- 674591 - Changed how timestamps are stored. (jason.dobies@redhat.com)
+- 673518 - pass sha1 instead of pem strings. (jortel@redhat.com)
+- 658284 - clean up as much as possible since we can't rollback on error.
+  (jortel@redhat.com)
+- 674067 - validate the inputs to deplist calls and lookup repos before
+  processing (pkilambi@redhat.com)
+- 674067 - validate the inputs to deplist calls and lookup repos before
+  processing (pkilambi@redhat.com)
+- 673535 - Change repo["packages"] to a list of package ids
+  (jmatthews@redhat.com)
+- 672687 - consumer bind and unbind should check if the repo is actually
+  existing or not (skarmark@redhat.com)
+- 669760 - consumer id and consumer group id validations added to the POST
+  action function of ConsumerActions and ConsumerGroupActions. That way all
+  these actions will validate ids before proceeding (skarmark@redhat.com)
+- 672881 - pulp cli required options should not accept empty values
+  (skarmark@redhat.com)
+- 670900 - python 2.4 compat: Exception.message not supported in 2.4.
+  (jortel@redhat.com)
+- 672859 - Fix logging on python 2.4. %(funcName)s() not supported on python
+  2.4.  Changed logging format to only use it when python >= 2.5.
+  (jortel@redhat.com)
+- 670532 - address repo re-sync errata removal performance issue
+  (jmatthews@redhat.com)
+- 670532 - addressing performance issues with removing packages during repo re-
+  sync (jmatthews@redhat.com)
+- 669796 - Grammar fix. (jason.dobies@redhat.com)
+
 * Wed Jan 26 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.132-1
 - 672171 - Pulp server cannot process a repo with name encoded in unicode
   (lzap+git@redhat.com)
