@@ -23,7 +23,7 @@ init() {
         chown mongodb:root $MONGODIR
     fi
     /etc/rc.d/init.d/mongod start
-    /usr/bin/pulp-migrate --auto
+    /usr/bin/pulp-migrate
     RETVAL=$?
     [ $RETVAL = 0 ] && touch ${init_file}
     return $RETVAL
