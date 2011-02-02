@@ -580,7 +580,7 @@ class RepositoryActions(AsyncController):
         @return A package object if exists in repo and filesystem
         """
         data = self.params()
-        return self.ok(api.get_package_by_nvrea(id, data['nvrea']))
+        return self.ok(api.get_packages_by_nvrea(id, data['nvrea']))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -591,7 +591,7 @@ class RepositoryActions(AsyncController):
         @return A package object if exists in repo
         """
         data = self.params()
-        return self.ok(api.get_package_by_filename(id, data['filename']))
+        return self.ok(api.get_packages_by_filename(id, data['filename']))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
