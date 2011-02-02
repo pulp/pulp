@@ -18,7 +18,7 @@ Module containing classes to manage client credentials.
 """
 
 import os
-import sha as SHA
+import hashlib
 from pulp.client.config import Config
 from gettext import gettext as _
 from M2Crypto import X509
@@ -96,7 +96,7 @@ class Bundle:
         @return: hex digest
         @rtype: str
         """
-        sha = SHA.new()
+        sha = hashlib.sha256()
         for s in self.read():
             sha.update(s)
         return sha.hexdigest()

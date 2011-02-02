@@ -14,7 +14,7 @@
 # in this software or its documentation.
 
 import logging
-import sha as SHA
+import hashlib
 
 # Pulp
 from pulp.server.agent import Agent
@@ -105,7 +105,7 @@ class ConsumerApi(BaseApi):
         self.consumer_history_api.consumer_deleted(id)
         credentials = consumer.get('credentials')
         if credentials:
-            sha = SHA.new()
+            sha = hashlib.sha256()
             for s in credentials:
                 sha.update(s)
             agent = Agent(id, async=True)
