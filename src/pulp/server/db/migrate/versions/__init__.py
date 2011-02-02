@@ -17,7 +17,7 @@ import os
 import re
 
 
-_mod_regex = re.compile(r'(!__init__)\.py$')
+_mod_regex = re.compile(r'(?!__init__).*\.py$')
 
 
 def _import_module(name):
@@ -31,16 +31,22 @@ def _import_module(name):
 
 
 def _get_migration_module_names():
-    #package = 'pulp.server.db.migrate.versions'
     package = __name__
     mod_dir = os.path.dirname(__file__)
-    names = ['.'.join((packge, n.rsplit('.', 1)))
+    # create a list of module names by joining the package name with the
+    # name of python modules in this directory, except this one, sans the
+    # .py[co] suffixes
+    names = ['.'.join((package, n.rsplit('.', 1)[0]))
              for n in os.listdir(mod_dir)
              if _mod_regex.match(n)]
     return names
 
 
 def get_migration_modules():
+    # 1. auto-discover the migration modules in this package
+    # 2. import the modules
+    # 3. ensure that they have the necessary attributes to perform a migration
+    # 4. order the modules by the version they migrate to
     modules = []
     for name in _get_migration_module_names():
         mod = _import_module(name)
