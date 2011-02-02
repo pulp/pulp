@@ -466,6 +466,12 @@ class LocalSynchronizer(BaseSynchronizer):
         if not os.path.exists(src_images_dir):
             return []
         return pulp.server.util.listdir(src_images_dir)
+    
+    def list_drpms(self, src_repo_dir):
+        dpkglist = pulp.server.util.listdir(src_repo_dir)
+        dpkglist = filter(lambda x: x.endswith(".drpm"), dpkglist)
+        log.info("Found %s delta rpm packages in %s" % (len(dpkglist), src_repo_dir))
+        return dpkglist
 
     def __init_progress_details(self, item_type, item_list, src_repo_dir):
         if not item_list:
@@ -499,6 +505,8 @@ class LocalSynchronizer(BaseSynchronizer):
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
             rpm_list = self.list_rpms(src_repo_dir)
             self.__init_progress_details("rpm", rpm_list, src_repo_dir)
+            drpm_list = self.list_drpms(src_repo_dir)
+            self.__init_progress_details("drpm", drpm_list, src_repo_dir)
         if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
             tree_files = self.list_tree_files(src_repo_dir)
             self.__init_progress_details("tree_file", tree_files, src_repo_dir)
@@ -552,7 +560,38 @@ class LocalSynchronizer(BaseSynchronizer):
             if epkg not in source_pkgs:
                 log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
                 os.remove(os.path.join(dst_repo_dir, epkg))
-
+                
+    def _sync_drpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
+        # Compute and import delta rpms
+        dpkglist = self.list_drpms(src_repo_dir)
+        if progress_callback is not None:
+            self.progress['step'] = ProgressReport.DownloadItems
+            progress_callback(self.progress)
+        dst_drpms_dir = os.path.join(dst_repo_dir, "drpms")
+        if not os.path.exists(dst_drpms_dir):
+            os.makedirs(dst_drpms_dir)
+        for count, pkg in enumerate(dpkglist):
+            skip_copy = False
+            log.debug("Processing drpm %s" % pkg)
+            if count % 500 == 0:
+                log.info("Working on %s/%s" % (count, len(dpkglist)))
+            src_drpm_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+            dst_drpm_path = os.path.join(dst_drpms_dir, os.path.basename(pkg))
+            if not pulp.server.util.check_package_exists(dst_drpm_path, src_drpm_checksum):
+                shutil.copy(pkg, dst_drpm_path)
+                self.progress['num_download'] += 1
+            else:
+                log.info("delta rpm %s already exists with same checksum. skip import" % os.path.basename(pkg))
+                skip_copy = True
+            log.debug("Imported delta rpm %s " % dst_drpm_path)
+            self.progress['step'] = ProgressReport.DownloadItems
+            self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
+            self.progress['items_left'] -= 1
+            self.progress['details']["drpm"]["items_left"] -= 1
+            self.progress['details']["drpm"]["num_success"] += 1
+            if progress_callback is not None:
+                progress_callback(self.progress)
+            
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
@@ -581,8 +620,12 @@ class LocalSynchronizer(BaseSynchronizer):
                     log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
                     self._sync_rpms(dst_repo_dir, src_repo_dir, progress_callback)
                     log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
+                    log.debug("Starting _sync_drpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
+                    self._sync_drpms(dst_repo_dir, src_repo_dir, progress_callback)
+                    log.debug("Completed _sync_drpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
                 else:
                     log.info("Skipping package imports from sync process")
+
                 # compute and import repo image files            
                 imlist = self.list_tree_files(src_repo_dir)
                 if not imlist:
@@ -652,6 +695,16 @@ class LocalSynchronizer(BaseSynchronizer):
                             updateinfo_path = os.path.join(dst_repo_dir, "updateinfo.xml")
                     else:
                         log.info("Skipping errata imports from sync process")
+                    if "prestodelta" in ftypes and (not skip_dict.has_key('packages') or skip_dict['packages'] != 1):
+                        drpm_meta = pulp.server.util.get_repomd_filetype_path(src_repomd_xml, "prestodelta")
+                        src_presto_path = os.path.join(src_repo_dir, drpm_meta)
+                        if os.path.isfile(src_presto_path):
+                            f = src_presto_path.endswith('.gz') and gzip.open(src_presto_path) \
+                                    or open(src_presto_path, 'rt')
+                            shutil.copyfileobj(f, open(
+                                os.path.join(dst_repo_dir, "prestodelta.xml"), "wt"))
+                            log.debug("Copied %s to %s" % (src_presto_path, dst_repo_dir))
+                            prestodelta_path = os.path.join(dst_repo_dir, "prestodelta.xml")
                 if progress_callback is not None:
                     self.progress["step"] = "Running Createrepo"
                     progress_callback(self.progress)
@@ -660,10 +713,17 @@ class LocalSynchronizer(BaseSynchronizer):
                 pulp.server.upload.create_repo(dst_repo_dir, groups=groups_xml_path)
                 end = time.time()
                 log.info("Createrepo finished in %s seconds" % (end - start))
+                if prestodelta_path:
+                    log.debug("Modifying repo for prestodelta")
+                    if progress_callback is not None:
+                        self.progress["step"] = "Running Modifyrepo for prestodelta metadata"
+                        progress_callback(self.progress)
+                    pulp.server.upload.modify_repo(os.path.join(dst_repo_dir, "repodata"),
+                            prestodelta_path)
                 if updateinfo_path:
                     log.debug("Modifying repo for updateinfo")
                     if progress_callback is not None:
-                        self.progress["step"] = "Running Modifyrepo"
+                        self.progress["step"] = "Running Modifyrepo for updateinfo metadata"
                         progress_callback(self.progress)
                     pulp.server.upload.modify_repo(os.path.join(dst_repo_dir, "repodata"),
                             updateinfo_path)
