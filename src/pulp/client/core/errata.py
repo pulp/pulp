@@ -52,12 +52,19 @@ class List(ErrataAction):
 
     description = _('list applicable errata')
 
+    def __init__(self, is_consumer_client=False):
+        Action.__init__(self)
+        self.is_consumer_client = is_consumer_client
+
     def setup_parser(self):
         default = None
         consumerid = self.getconsumerid()
-        if consumerid is not None:
+
+        # Only want to default the consumer ID when running the consumer client
+        if consumerid is not None and self.is_consumer_client:
             default = consumerid
             help = SUPPRESS_HELP
+
         self.parser.add_option("--consumerid",
                                dest="consumerid",
                                default=default,
@@ -74,9 +81,12 @@ class List(ErrataAction):
         if not (consumerid or repoid):
             system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
 
-        if consumerid and repoid:
-            # Warning: Both repoid and consumerid set for lookup. Ignoring consumerid.'
-            log.error('Warning: Both repoid and consumerid set for lookup. Ignoring consumerid.')
+        # Only do the double argument check when not running the consumer client
+        if not self.is_consumer_client and (consumerid and repoid):
+            system_exit(os.EX_USAGE, _('Please select either a consumer or a repository, not both'))
+
+        # If running the consumer client, let the repo ID override the consumer's retrieved ID
+        if self.is_consumer_client and repoid:
             consumerid = None
 
         if repoid:

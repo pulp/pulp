@@ -45,7 +45,7 @@ def setup_client(client):
     client.add_command('consumer', consumer_cmd)
 
     errata_cmd = errata.Errata()
-    errata_cmd.add_action('list', errata.List())
+    errata_cmd.add_action('list', errata.List(is_consumer_client=True))
     client.add_command('errata', errata_cmd)
 
     repo_cmd = repo.Repo()
