@@ -154,9 +154,9 @@ class ConsumerHistoryApi(BaseApi):
         # Add in date range limits if specified
         date_range = {}
         if start_date:
-            date_range['$gte'] = start_date
+            date_range['$gte'] = start_date.strftime('%s')
         if end_date:
-            date_range['$lte'] = end_date
+            date_range['$lte'] = end_date.strftime('%s')
 
         if len(date_range) > 0:
             search_params['timestamp'] = date_range
@@ -314,7 +314,8 @@ class ConsumerHistoryApi(BaseApi):
         @type  lifetime: L{datetime.timedelta}
         '''
         now = datetime.datetime.now()
-        spec = {'timestamp': {'$lt': now - lifetime}}
+        limit = (now - lifetime).strftime('%s')
+        spec = {'timestamp': {'$lt': limit}}
         self.objectdb.remove(spec, safe=False)
 
     def _get_lifetime(self):
