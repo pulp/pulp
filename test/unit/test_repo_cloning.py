@@ -32,6 +32,8 @@ import pulp.server.crontab
 import testutil
 from pulp.server import constants
 
+constants.LOCAL_STORAGE="/tmp/pulp/"
+
 class TestRepoSyncSchedule(unittest.TestCase):
 
     def setUp(self):

@@ -53,6 +53,7 @@ from pulp.client.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
 from pulp.server.auth import cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
+from pulp.server import constants
 import testutil
 
 logging.root.setLevel(logging.ERROR)
@@ -60,7 +61,7 @@ qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
 SerialNumber.PATH = '/tmp/sn.dat'
-
+constants.LOCAL_STORAGE="/tmp/pulp/"
 
 class TestApi(unittest.TestCase):
 
