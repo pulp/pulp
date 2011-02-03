@@ -28,8 +28,8 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
-REPOS_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
-PACKAGE_LOCATION = "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
+REPOS_LOCATION = util.top_repos_location()
+PACKAGE_LOCATION = util.top_package_location()
 
 class PackageUpload:
     def __init__(self, repo, pkginfo, payload):

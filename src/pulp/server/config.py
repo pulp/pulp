@@ -49,9 +49,6 @@ _default_values = {
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
     },
-    'paths': {
-        'local_storage': '/var/lib/pulp',
-    },
     'repos': {
         'content_url': 'https://cdn.redhat.com/',
         'content_cert_location': '/etc/pki/content',
