@@ -503,11 +503,16 @@ class ConsumerActions(AsyncController):
         if limit:
             limit = int(limit)
 
+        # The date inputs only specify to the day, but in order to appropriately describe
+        # the full day we need to set the start/end times to the start and end of the days.
+        # This is more relevant in the end_date case, which will omit that day if this
+        # step isn't taken (see BZ 638715).
+
         if start_date:
-            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            start_date = datetime.datetime.strptime(start_date + '-00-00-00', '%Y-%m-%d-%H-%M-%S')
 
         if end_date:
-            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+            end_date = datetime.datetime.strptime(end_date + '-23-59-59', '%Y-%m-%d-%H-%M-%S')
 
         results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
                                     sort=sort, start_date=start_date, end_date=end_date)
