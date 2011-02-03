@@ -318,7 +318,7 @@ class BaseSynchronizer(object):
                     retval.requires.append(dep[0])
                 for prov in package.provides:
                     retval.provides.append(prov[0])
-                retval.download_url = config.config.get('server', 'base_url') + "/" + \
+                retval.download_url = "https://" + config.config.get('server', 'server_name') + "/" + \
                                       config.config.get('server', 'relative_url') + "/" + \
                                       repo["id"] + "/" + file_name
                 self.package_api.update(retval)

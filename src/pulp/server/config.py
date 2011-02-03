@@ -70,7 +70,7 @@ _default_values = {
         'cakey': '/etc/pki/pulp/ca.key',
     },
     'server': {
-        'base_url': 'http://localhost',
+        'server_name': 'localhost',
         'relative_url': '/pub',
         'default_login': 'admin',
         'default_password': 'admin',
