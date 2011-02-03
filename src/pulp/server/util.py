@@ -27,20 +27,21 @@ import time
 import rpm
 import yum
 
-from pulp.server import config, constants
+from pulp.server import config
 from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
 
 def top_repos_location():
-    return "%s/%s" % (constants.LOCAL_STORAGE, "repos")
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
 
 def top_gpg_location():
-    return os.path.join(constants.LOCAL_STORAGE, 'published', 'gpg')
+    base = config.config.get('paths', 'local_storage')
+    return os.path.join(base, 'published', 'gpg')
 
 def top_package_location():
-    return "%s/%s" % (constants.LOCAL_STORAGE, "packages")
+    return "%s/%s" % (config.config.get('paths', 'local_storage'), "packages")
 
 def relative_repo_path(path):
     """

@@ -26,7 +26,7 @@ from gofer.messaging.dispatcher import DispatchError
 from gofer.messaging.policy import RequestTimeout
 
 # Pulp
-from pulp.server import config, constants
+from pulp.server import config
 from pulp.server.agent import Agent
 
 
@@ -107,7 +107,7 @@ class GoferDispatcher(object):
         # block differentiates and throws the appropriate dispatcher exception.
 
         try:
-            server_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name')
+            server_url = "https://" + config.config.get('server', 'server_name')
             repo_relative_url = config.config.get('server', 'relative_url')
             repo_base_url = '%s/%s' % (server_url, repo_relative_url)
             self._cds_stub(cds).sync(repo_base_url, repos)

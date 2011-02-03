@@ -28,7 +28,6 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.logs
 import pulp.server.util
-from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
@@ -71,7 +70,7 @@ class RepoApi(BaseApi):
         self.errataapi = ErrataApi()
         self.distroapi = DistributionApi()
         self.cdsapi = CdsApi()
-        self.localStoragePath = constants.LOCAL_STORAGE
+        self.localStoragePath = config.config.get('paths', 'local_storage')
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
 
@@ -228,8 +227,8 @@ class RepoApi(BaseApi):
         if cloned_repo is not None:
             raise PulpException("A Repo with id %s exists. Choose a different id." % clone_id)
 
-        REPOS_LOCATION = pulp.server.util.top_repos_location()
-        parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
+        REPOS_LOCATION = "%s/%s/" % (config.config.get('paths', 'local_storage'), "repos")
+        parent_relative_path = "local:file://" + REPOS_LOCATION + repo["relative_path"]
         cert_data = {}
         if repo['ca'] and repo['cert'] and repo['key']:
             cert_data = {'ca' : open(repo['ca'], "rb").read(),
@@ -483,7 +482,7 @@ class RepoApi(BaseApi):
                           (repo['id'], consumer['id']))
                 continue
 
-        repo_location = pulp.server.util.top_repos_location()
+        repo_location = "%s/%s" % (config.config.get('paths', 'local_storage'), "repos")
         #delete any data associated to this repo
         for field in ['relative_path', 'cert', 'key', 'ca']:
             if field == 'relative_path' and repo[field]:
