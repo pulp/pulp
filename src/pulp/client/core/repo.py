@@ -723,6 +723,7 @@ class Upload(RepoAction):
                      'arch'    : arch}]
             pkg_on_server = self.pconn.find_package_by_nvrea(id, nvrea)
             if pkg_on_server:
+                pkg_on_server = pkg_on_server.values()[0]
                 print _("Package [%s] already exists on the server with checksum [%s] in repo %s") % \
                         (pkginfo['pkgname'], pkg_on_server['checksum'], id)
                 continue

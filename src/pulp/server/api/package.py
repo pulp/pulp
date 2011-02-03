@@ -83,7 +83,7 @@ class PackageApi(BaseApi):
 
     def packages(self, name=None, epoch=None, version=None, release=None, arch=None, 
             filename=None, checksum_type=None, checksum=None, regex=False,
-            fields=["id", "name", "epoch", "version", "release", "arch", "filename"]):
+            fields=["id", "name", "epoch", "version", "release", "arch", "filename", "checksum"]):
         """
         Return a list of all package version objects matching search terms
         """

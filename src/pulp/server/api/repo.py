@@ -602,6 +602,8 @@ class RepoApi(BaseApi):
         for nvrea in nvreas:
             for pkg_id in repo_packages:
                 p = self.packageapi.package(pkg_id)
+                if not p:
+                    continue
                 if (nvrea['name'], nvrea['version'], nvrea['release'], nvrea['epoch'], nvrea['arch']) == \
                     (p['name'], p['version'], p['release'], p['epoch'], p['arch']):
                         pkg_repo_path = pulp.server.util.get_repo_package_path(
