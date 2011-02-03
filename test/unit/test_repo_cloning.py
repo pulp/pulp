@@ -30,6 +30,7 @@ import pulp.server.api.repo
 import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
 import testutil
+from pulp.server import constants
 
 class TestRepoSyncSchedule(unittest.TestCase):
 
@@ -51,7 +52,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.rapi._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')   
         
         # Check that local storage has dir and rpms
-        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/repos/' + 'clone-some-id-parent')
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-parent')
         assert(len(dirList) > 0)
         found = self.rapi.repository('clone-some-id-parent')
         packages = found['packages']
@@ -61,7 +62,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Try repo cloning with origin feed
         self.rapi._clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
            # Check that local storage has dir and rpms
-        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/repos/' + 'clone-some-id-origin')
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-origin')
         assert(len(dirList) > 0)
         found = self.rapi.repository('clone-some-id-origin')
         packages = found['packages']
@@ -71,7 +72,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         # Try repo cloning with no feed
         self.rapi._clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
            # Check that local storage has dir and rpms
-        dirList = os.listdir(self.config.get('paths', 'local_storage') + '/repos/' + 'clone-some-id-none')
+        dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-none')
         assert(len(dirList) > 0)
         found = self.rapi.repository('clone-some-id-none')
         packages = found['packages']

@@ -35,7 +35,7 @@ from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.distribution import DistributionApi
-from pulp.server import config
+from pulp.server import config, constants
 from pulp.server.pexceptions import PulpException
 
 
@@ -281,7 +281,7 @@ class BaseSynchronizer(object):
         if not repo['publish']:
             # the repo is not published, dont expose the repo yet
             return
-        distro_path = os.path.join(config.config.get('paths', 'local_storage'), "published", "ks")
+        distro_path = os.path.join(constants.LOCAL_STORAGE, "published", "ks")
         if not os.path.isdir(distro_path):
             os.mkdir(distro_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
@@ -318,7 +318,7 @@ class BaseSynchronizer(object):
                     retval.requires.append(dep[0])
                 for prov in package.provides:
                     retval.provides.append(prov[0])
-                retval.download_url = "https://" + config.config.get('server', 'server_name') + "/" + \
+                retval.download_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name') + "/" + \
                                       config.config.get('server', 'relative_url') + "/" + \
                                       repo["id"] + "/" + file_name
                 self.package_api.update(retval)
@@ -762,7 +762,7 @@ class RHNSynchronizer(BaseSynchronizer):
         s.systemidFile = config.config.get('rhn', 'systemid_file')
 
         # Perform the sync
-        dest_dir = '%s/%s/' % (config.config.get('paths', 'local_storage'), repo['id'])
+        dest_dir = '%s/%s/' % (constants.LOCAL_STORAGE, repo['id'])
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
             s.syncPackages(channel, savePath=dest_dir, callback=progress_callback)
             s.createRepo(dest_dir)
