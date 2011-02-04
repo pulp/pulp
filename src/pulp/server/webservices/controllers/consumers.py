@@ -169,7 +169,7 @@ class Consumer(JSONController):
         """
         consumer = consumer_api.consumer(id)
         if consumer is None:
-            return self.not_found('No such consumer: %s' % id)
+            return self.conflict('Consumer [%s] does not exist' % id)
         user = user_api.user(id)
         if user is not None:
             revoke_all_permissions_from_user(user)
