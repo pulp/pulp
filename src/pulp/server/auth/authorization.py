@@ -213,9 +213,10 @@ def grant_auto_permissions_for_created_resource(resource):
     @rtype: bool
     @return: True on success, False otherwise
     """
-    if is_system_principal():
-        return False
     user = get_principal()
+    if is_system_principal():
+        raise RuntimeError(_('cannot grant auto permission on %s to %s') %
+                           (resource, user))
     operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
     _permission_api.grant(resource, user, operations)
     return True
