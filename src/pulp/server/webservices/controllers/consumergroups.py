@@ -176,7 +176,7 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
-            return self.conflict('Consumer with id: %s, does not exist' % id)
+            return self.conflict('Consumer [%s] does not exist' % data)
         api.add_consumer(id, data)
         return self.ok(True)
 
@@ -188,7 +188,7 @@ class ConsumerGroupActions(AsyncController):
         data = self.params()
         consumerApi = ConsumerApi()
         if consumerApi.consumer(data) is None:
-            return self.conflict('Consumer with id: %s, does not exist' % id)
+            return self.conflict('Consumer [%s] does not exist' % data)
         api.delete_consumer(id, data)
         return self.ok(None)
 
