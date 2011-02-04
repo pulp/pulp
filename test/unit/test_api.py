@@ -726,7 +726,6 @@ class TestApi(unittest.TestCase):
         assert(packages is not None)
         assert(len(packages) > 0)
 
-    # Sprint 15 will revist package removal during re-syncs
     def resync_removes_deleted_package(self):
         # Since a repo with 3 packages, simulate the repo source deleted 1 package
         # Re-sync ensure we delete the removed package
@@ -807,18 +806,35 @@ class TestApi(unittest.TestCase):
         assert(p is not None)
         # versions = p['versions']
 
-    # Meant to make sure we can create a repo with 5000+ packages without BSON
-    # size errors
-    def disabled_sync_large_repo(self):
-        repo = self.rapi.create('large-sync', 'some name', 'i386')
-        numpacks = 5000
-        for x in range(numpacks):
-            self.rapi._add_package(repo, testutil.create_random_package(self.papi))
-            if (x % 100 == 0):
-                print "Created [%s] packages" % x
-        print "Updating repo"
-        self.rapi.update(repo)
-        self.assertTrue(numpacks, self.rapi.packages(repo['id']))
+
+    def test_local_sync_with_exception(self):
+        # We need report to be accesible for writing by the callback
+        global report
+        report = None
+        def callback(r):
+            global report
+            report = r
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = my_dir + "/data/repo_with_bad_read_perms/"
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'local:file://%s' % datadir)
+        self.rapi._sync(repo['id'], progress_callback=callback)
+        found = self.rapi.repository(repo['id'])
+        packages = found['packages']
+        self.assertTrue(packages is not None)
+        self.assertTrue(len(packages) == 2)
+        self.assertTrue(report["items_total"] - report["num_success"] == 2)
+        self.assertTrue(report["num_error"] == 2)
+        self.assertTrue(report["error_details"] is not None)
+        self.assertTrue(len(report["error_details"]) == 2)
+        #error_details is a list of tuples
+        #Packages are processed first, so [0] will be the package error and [1] with be the tree error
+        #tuple[0] is the item info dictionary
+        #tuple[1] is the error info dictionary
+        self.assertTrue("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" in report["error_details"][0][0]["fileName"])
+        self.assertTrue("Permission denied" in report["error_details"][0][1]["exc_value"])
+        self.assertTrue("file3.img" in report["error_details"][1][0]["fileName"])
+        self.assertTrue("Permission denied" in report["error_details"][1][1]["exc_value"])
 
     def test_find_repos_by_package(self):
         # Goal is to search by errata id and discover the repos

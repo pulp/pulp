@@ -1326,6 +1326,7 @@ class RepoApi(BaseApi):
             for eid in new_errata:
                 self._add_erratum(repo, eid)
         repo['last_sync'] = datetime.now().strftime("%s")
+        synchronizer.progress_callback(step="Finished")
         self.update(repo)
 
     @audit()

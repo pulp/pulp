@@ -232,8 +232,31 @@ class RepoProgressAction(RepoAction):
         current += _("Total: %s/%s items\n") % (items_done, items_total)
         return current
 
-
-
+    def form_error_details(self, progress, num_err_display=5):
+        """
+        progress : dictionary of sync progress info
+        num_err_display: how many errors to display per type, if less than 0 will display all errors
+        """
+        ret_val = ""
+        if not progress.has_key("error_details"):
+            return ret_val
+        error_entry = {}
+        for errors in progress["error_details"]:
+            item_info = errors[0]
+            exc_info = errors[1]
+            if not error_entry.has_key(item_info["item_type"]):
+                error_entry[item_info["item_type"]] = []
+            error_entry[item_info["item_type"]].append(exc_info["exc_value"])
+        for item_type in error_entry:
+            ret_val += _("%s %s Error(s):\n") % (len(error_entry[item_type]), item_type.title())
+            for index, errors in enumerate(error_entry[item_type]):
+                if num_err_display > 0 and index >= num_err_display:
+                    ret_val += _("\t... %s more error(s) occured.  See server logs for all errors.") % \
+                            (len(error_entry[item_type]) - index)
+                    break
+                else:
+                    ret_val += "\t" + errors + "\n"
+        return ret_val
 # repo actions ----------------------------------------------------------------
 
 class List(RepoAction):
@@ -451,6 +474,8 @@ class Clone(RepoProgressAction):
         if type(progress) == type({}):
             if progress.has_key("num_error") and progress['num_error'] > 0:
                 current += _("Warning: %s errors occurred\n" % (progress['num_error']))
+            if progress.has_key("error_details"):
+                current += self.form_error_details(progress)
         self.write(current, self._previous_progress)
         self._previous_progress = current
 
@@ -609,6 +634,8 @@ class Sync(RepoProgressAction):
         if type(progress) == type({}):
             if progress.has_key("num_error") and progress['num_error'] > 0:
                 current += _("Warning: %s errors occurred\n" % (progress['num_error']))
+            if progress.has_key("error_details"):
+                current += self.form_error_details(progress)
         self.write(current, self._previous_progress)
         self._previous_progress = current
 

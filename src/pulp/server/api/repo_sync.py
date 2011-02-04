@@ -61,10 +61,10 @@ def yum_rhn_progress_callback(info):
               'num_error',
               'num_success',
               'num_download',
-              'details', 
+              'details',
+              'error_details',
               'step',)
     values = tuple(getattr(info, f) for f in fields)
-    #log.debug("Progress: %s on <%s>, %s/%s items %s/%s bytes" % values)
     return dict(zip(fields, values))
 
 
@@ -188,6 +188,7 @@ class BaseSynchronizer(object):
             'num_success': 0,
             'num_download': 0,
             'details':{},
+            'error_details':[],
             'step': "STARTING",
         }
 
@@ -511,6 +512,32 @@ class LocalSynchronizer(BaseSynchronizer):
             tree_files = self.list_tree_files(src_repo_dir)
             self.__init_progress_details("tree_file", tree_files, src_repo_dir)
 
+    def _add_error_details(self, file_name, item_type, error_info):
+        entry = ({"fileName":file_name, "item_type":item_type}, error_info)
+        self.progress["error_details"].append(entry)
+        self.progress['details'][item_type]["num_error"] += 1
+        self.progress['num_error'] += 1
+
+    def _process_rpm(self, pkg, dst_repo_dir):
+        pkg_info = pulp.server.util.get_rpm_information(pkg)
+        pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+        pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
+                pkg_info['version'], pkg_info['release'], pkg_info['arch'],
+                os.path.basename(pkg), pkg_checksum)
+        if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
+            pkg_dirname = os.path.dirname(pkg_location)
+            if not os.path.exists(pkg_dirname):
+                os.makedirs(pkg_dirname)
+            shutil.copy(pkg, pkg_location)
+            repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+            if not os.path.islink(repo_pkg_path):
+                os.symlink(pkg_location, repo_pkg_path)
+            self.progress['num_download'] += 1
+        else:
+            repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+            if not os.path.islink(repo_pkg_path):
+                os.symlink(pkg_location, repo_pkg_path)
+
     def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
         # Compute and import packages
         pkglist = self.list_rpms(src_repo_dir)
@@ -521,33 +548,29 @@ class LocalSynchronizer(BaseSynchronizer):
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(pkglist)))
-            pkg_info = pulp.server.util.get_rpm_information(pkg)
-            pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
-            pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
-                    pkg_info['version'], pkg_info['release'], pkg_info['arch'],
-                    os.path.basename(pkg), pkg_checksum)
-            if not pulp.server.util.check_package_exists(pkg_location, pkg_checksum):
-                pkg_dirname = os.path.dirname(pkg_location)
-                if not os.path.exists(pkg_dirname):
-                    os.makedirs(pkg_dirname)
-                shutil.copy(pkg, pkg_location)
-                repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
-                if not os.path.islink(repo_pkg_path):
-                    os.symlink(pkg_location, repo_pkg_path)
-                self.progress['num_download'] += 1
-            else:
-                repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
-                if not os.path.islink(repo_pkg_path):
-                    os.symlink(pkg_location, repo_pkg_path)
+            try:
+                self._process_rpm(pkg, dst_repo_dir)
+                self.progress['details']["rpm"]["num_success"] += 1
+                self.progress["num_success"] += 1
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["exc_type"] = str(exctype)
+                error_info["exc_value"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
+                self._add_error_details(pkg, "rpm", error_info)
             self.progress["step"] = ProgressReport.DownloadItems
             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
             self.progress['items_left'] -= 1
             self.progress['details']["rpm"]["items_left"] -= 1
-            self.progress['details']["rpm"]["num_success"] += 1
             if progress_callback is not None:
                 progress_callback(self.progress)
         log.info("Finished copying %s packages" % (len(pkglist)))
         # Remove rpms which are no longer in source
+        # TODO: Consider removing this purge step
+        # Also remove from grinder, allow repo.py to handle any purge
+        # operations when needed
         existing_pkgs = pulp.server.util.listdir(dst_repo_dir)
         existing_pkgs = filter(lambda x: x.endswith(".rpm"), existing_pkgs)
         existing_pkgs = [os.path.basename(pkg) for pkg in existing_pkgs]
@@ -575,23 +598,33 @@ class LocalSynchronizer(BaseSynchronizer):
             log.debug("Processing drpm %s" % pkg)
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(dpkglist)))
-            src_drpm_checksum = pulp.server.util.get_file_checksum(filename=pkg)
-            dst_drpm_path = os.path.join(dst_drpms_dir, os.path.basename(pkg))
-            if not pulp.server.util.check_package_exists(dst_drpm_path, src_drpm_checksum):
-                shutil.copy(pkg, dst_drpm_path)
-                self.progress['num_download'] += 1
-            else:
-                log.info("delta rpm %s already exists with same checksum. skip import" % os.path.basename(pkg))
-                skip_copy = True
-            log.debug("Imported delta rpm %s " % dst_drpm_path)
+            try:
+                src_drpm_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+                dst_drpm_path = os.path.join(dst_drpms_dir, os.path.basename(pkg))
+                if not pulp.server.util.check_package_exists(dst_drpm_path, src_drpm_checksum):
+                    shutil.copy(pkg, dst_drpm_path)
+                    self.progress['num_download'] += 1
+                else:
+                    log.info("delta rpm %s already exists with same checksum. skip import" % os.path.basename(pkg))
+                    skip_copy = True
+                log.debug("Imported delta rpm %s " % dst_drpm_path)
+                self.progress['details']["drpm"]["num_success"] += 1
+                self.progress["num_success"] += 1
+            except (IOError, OSError):
+                log.error("%s" % (traceback.format_exc()))
+                error_info = {}
+                exctype, value = sys.exc_info()[:2]
+                error_info["exc_type"] = str(exctype)
+                error_info["exc_value"] = str(value)
+                error_info["traceback"] = traceback.format_exc().splitlines()
+                self._add_error_details(pkg, "drpm", error_info)
             self.progress['step'] = ProgressReport.DownloadItems
             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
             self.progress['items_left'] -= 1
             self.progress['details']["drpm"]["items_left"] -= 1
-            self.progress['details']["drpm"]["num_success"] += 1
             if progress_callback is not None:
                 progress_callback(self.progress)
-            
+
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
@@ -634,27 +667,37 @@ class LocalSynchronizer(BaseSynchronizer):
                     if not skip_dict.has_key('distribution') or skip_dict['distribution'] != 1:
                         dst_images_dir = os.path.join(dst_repo_dir, "images")
                         for imfile in imlist:
-                            skip_copy = False
-                            rel_file_path = imfile.split('/images/')[-1]
-                            dst_file_path = os.path.join(dst_images_dir, rel_file_path)
-                            if os.path.exists(dst_file_path):
-                                dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
-                                src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
-                                if src_file_checksum == dst_file_checksum:
-                                    log.info("file %s already exists with same checksum. skip import" % rel_file_path)
-                                    skip_copy = True
-                            if not skip_copy:
-                                file_dir = os.path.dirname(dst_file_path)
-                                if not os.path.exists(file_dir):
-                                    os.makedirs(file_dir)
-                                shutil.copy(imfile, dst_file_path)
-                                self.progress['num_download'] += 1
+                            try:
+                                skip_copy = False
+                                rel_file_path = imfile.split('/images/')[-1]
+                                dst_file_path = os.path.join(dst_images_dir, rel_file_path)
+                                if os.path.exists(dst_file_path):
+                                    dst_file_checksum = pulp.server.util.get_file_checksum(filename=dst_file_path)
+                                    src_file_checksum = pulp.server.util.get_file_checksum(filename=imfile)
+                                    if src_file_checksum == dst_file_checksum:
+                                        log.info("file %s already exists with same checksum. skip import" % rel_file_path)
+                                        skip_copy = True
+                                if not skip_copy:
+                                    file_dir = os.path.dirname(dst_file_path)
+                                    if not os.path.exists(file_dir):
+                                        os.makedirs(file_dir)
+                                    shutil.copy(imfile, dst_file_path)
+                                    self.progress['num_download'] += 1
+                                self.progress['details']["tree_file"]["num_success"] += 1
+                                self.progress["num_success"] += 1
+                            except (IOError, OSError):
+                                log.error("%s" % (traceback.format_exc()))
+                                error_info = {}
+                                exctype, value = sys.exc_info()[:2]
+                                error_info["exc_type"] = str(exctype)
+                                error_info["exc_value"] = str(value)
+                                error_info["traceback"] = traceback.format_exc().splitlines()
+                                self._add_error_details(imfile, "tree_file", error_info)
                             log.debug("Imported file %s " % dst_file_path)
                             self.progress['step'] = ProgressReport.DownloadItems
                             self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [imfile])
                             self.progress['items_left'] -= 1
                             self.progress['details']["tree_file"]["items_left"] -= 1
-                            self.progress['details']["tree_file"]["num_success"] += 1
                             if progress_callback is not None:
                                 progress_callback(self.progress)
                     else:
