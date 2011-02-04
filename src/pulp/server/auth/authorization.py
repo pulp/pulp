@@ -19,7 +19,6 @@ Utility functions to manage permissions and roles in pulp.
 
 from gettext import gettext as _
 
-from pulp.server import config
 from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
