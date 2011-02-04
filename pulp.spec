@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.134
+Version:        0.0.135
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -234,6 +234,30 @@ setfacl -m u:apache:rwx /etc/pki/content/
 
 
 %changelog
+* Fri Feb 04 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.135-1
+- 674600 - replace (sha) with (hashlib). (jortel@redhat.com)
+- 674849 - consumer delete should validate against consumer names
+  (skarmark@redhat.com)
+- 670978 - Fixed repo clone error because of incompatibility between
+  consecutive local sync and yum sync on a repo (skarmark@redhat.com)
+- 669197 - Fixed and also changed error message to make it similar to one for
+  non-existing (skarmark@redhat.com)
+- 663453 - removing local_storage as a configurable option. Bad things can
+  happen if we change this after pulp data is put in default location and
+  content gets scattered all over. Adding a constants file so we can update
+  this value in one central location (pkilambi@redhat.com)
+ 663453 - removing local_storage as a configurable option. Bad things can
+  happen if we change this after pulp data is put in default location and
+  content gets scattered all over. Adding a constants file so we can update
+  this value in one central location (pkilambi@redhat.com)
+- 670307 - Added separation of argument validation between consumer and admin
+  CLIs. (jason.dobies@redhat.com)
+- 638715 - Need to specify the end date's time is end of day.
+  (jason.dobies@redhat.com)
+- 674938 - fixing uploads and package removals (pkilambi@redhat.com)
+- 663453 - changing base_url attribute in pulp.conf to server_name
+  (pkilambi@redhat.com)
+
 * Wed Feb 02 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.134-1
 - no more auto option (jconnor@redhat.com)
 
