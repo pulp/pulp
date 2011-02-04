@@ -131,7 +131,7 @@ class _ThreadInterruptionError(Exception):
 class ThreadStateError(Exception):
     '''
     Exception class used to indicate one or more child threads is in a state that cannot
-    currently be cancelled.
+    currently be canceled.
     '''
     pass
 
