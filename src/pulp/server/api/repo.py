@@ -235,8 +235,13 @@ class RepoApi(BaseApi):
             cert_data = {'ca' : open(repo['ca'], "rb").read(),
                          'cert' : open(repo['cert'], "rb").read(),
                          'key'  : open(repo['key'], "rb").read()}
-        log.info("Creating repo [%s] cloned from [%s]" % (id, repo["id"]))
-        self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
+        log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
+        if feed == 'origin':
+            origin_feed = repo['source']['type'] + ":" + repo['source']['url']
+            self.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
+                        relative_path=clone_id, cert_data=cert_data)
+        else:
+            self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
                         relative_path=relative_path, cert_data=cert_data)
         # Sync from parent repo
         try:
@@ -281,7 +286,10 @@ class RepoApi(BaseApi):
                          [id, clone_id, clone_name, feed, groupid, relative_path],
                          {},
                          timeout=timeout)
-        task.set_progress('progress_callback', local_progress_callback)
+        if feed in ('feedless', 'parent'):
+            task.set_progress('progress_callback', local_progress_callback)
+        else:
+            task.set_progress('progress_callback', yum_rhn_progress_callback)
         return task
 
     def _write_certs_to_disk(self, repoid, cert_data):
