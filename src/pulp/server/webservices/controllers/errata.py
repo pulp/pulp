@@ -20,6 +20,8 @@ import web
 
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.auth.authorization import (
+    grant_auto_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, \
     AsyncController
@@ -67,6 +69,8 @@ class Errata(JSONController):
                           errata_data.get('pkglist', []),
                           errata_data.get('repo_defined', False),
                           errata_data.get('immutable', False))
+        resource = http.extend_uri_path(errata['id'])
+        grant_auto_permissions_for_created_resource(resource)
         return self.created(errata['id'], errata)
 
     def POST(self):

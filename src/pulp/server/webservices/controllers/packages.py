@@ -19,8 +19,10 @@ import logging
 import web
 
 from pulp.server.api.package import PackageApi
+from pulp.server.auth.authorization import grant_auto_permissions_for_created_resource
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.http import extend_uri_path
 from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
@@ -65,6 +67,8 @@ class Packages(JSONController):
         package = api.create(data['name'], data['epoch'], data['version'],
                              data['release'], data['arch'], data['description'],
                              data['checksum_type'], data['checksum'], data['filename'])
+        resource = extend_uri_path(package['id'])
+        grant_auto_permissions_for_created_resource(resource)
         return self.created(None, package)
 
     def POST(self):
@@ -115,7 +119,7 @@ class PackageActions(JSONController):
 
     # NOTE the intersection of exposed_actions and exposed_fields must be empty
     exposed_actions = (
-    )  
+    )
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

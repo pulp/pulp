@@ -23,6 +23,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import yum_rhn_progress_callback
 from pulp.server.async import find_async
+from pulp.server.auth.authorization import grant_auto_permissions_for_created_resource
 from pulp.server.tasking.task import RepoSyncTask
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
@@ -105,6 +106,7 @@ class Repositories(JSONController):
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
+        grant_auto_permissions_for_created_resource(path)
         return self.created(path, repo)
 
     def POST(self):

@@ -26,6 +26,8 @@ from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.async import find_async
+from pulp.server.auth.authorization import (
+    grant_auto_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.role_check import RoleCheck
@@ -69,6 +71,7 @@ class CdsInstances(JSONController):
         cds = cds_api.register(hostname, name, description)
 
         path = http.extend_uri_path(hostname)
+        grant_auto_permissions_for_created_resource(path)
         return self.created(path, cds)
 
 class CdsInstance(JSONController):
@@ -164,7 +167,7 @@ class CdsActions(AsyncController):
         return action(id)
 
 class CdsSyncActions(AsyncController):
-   
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def POST(self, id):
@@ -226,7 +229,7 @@ class CdsSyncTaskStatus(AsyncController):
             return self.not_found('No sync with id [%s] found' % (task_id))
         return self.ok(task_info)
 
-    
+
 # web.py application ----------------------------------------------------------
 
 urls = (

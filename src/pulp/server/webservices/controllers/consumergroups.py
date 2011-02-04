@@ -18,8 +18,10 @@ import web
 
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
-
+from pulp.server.auth.authorization import (
+    grant_auto_permissions_for_created_resource)
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.webservices.http import extend_uri_path
 from pulp.server.webservices.role_check import RoleCheck
 
 # consumers api ---------------------------------------------------------------
@@ -50,6 +52,8 @@ class ConsumerGroups(JSONController):
         consumergroup_data = self.params()
         consumergroup = api.create(consumergroup_data['id'], consumergroup_data['description'],
                                    consumergroup_data['consumerids'])
+        resource = extend_uri_path(consumergroup['id'])
+        grant_auto_permissions_for_created_resource(resource)
         return self.created(consumergroup['id'], consumergroup)
 
     def POST(self):

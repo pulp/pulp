@@ -26,6 +26,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (
     revoke_all_permissions_from_user, grant_permission_to_user,
+    grant_auto_permissions_for_created_resource,
     add_user_to_role, consumer_users_role)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
@@ -95,6 +96,7 @@ class Consumers(JSONController):
         path = http.extend_uri_path(consumer.id) # path for consumer resource
         grant_permission_to_user(path, id,
                                  ('READ', 'UPDATE', 'DELETE', 'EXECUTE'))
+        grant_auto_permissions_for_created_resource(path)
         return self.created(path, consumer)
 
     def POST(self):
