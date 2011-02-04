@@ -21,8 +21,7 @@ import web
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.webservices import http
-from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController,\
+from pulp.server.webservices.controllers.base import JSONController, \
     AsyncController
 from pulp.server.webservices.role_check import RoleCheck
 
@@ -109,7 +108,7 @@ class Erratum(JSONController):
         """
         api.delete(id=id)
         return self.ok(True)
-    
+
 class ErrataActions(AsyncController):
 
     # All actions have been gathered here into one controller class for both
@@ -137,7 +136,7 @@ class ErrataActions(AsyncController):
          @return List of repoids which have specified errata id
         """
         return self.ok(rapi.find_repos_by_errataid(id))
-    
+
     @JSONController.error_handler
     def POST(self, id, action_name):
         """
