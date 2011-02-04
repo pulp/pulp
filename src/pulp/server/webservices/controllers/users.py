@@ -112,7 +112,7 @@ class User(JSONController):
         if is_last_super_user(user):
             return self.bad_request(
                 'Cannot delete %s, they are the last super user')
-        revoke_all_permissions_from_user(user)
+        revoke_all_permissions_from_user(login)
         api.delete(login=login)
         return self.ok(True)
 

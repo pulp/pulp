@@ -25,7 +25,7 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (
-    revoke_all_permissions_from_user, grant_permission_to_user, 
+    revoke_all_permissions_from_user, grant_permission_to_user,
     add_user_to_role, consumer_users_role)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
@@ -172,7 +172,7 @@ class Consumer(JSONController):
             return self.conflict('Consumer [%s] does not exist' % id)
         user = user_api.user(id)
         if user is not None:
-            revoke_all_permissions_from_user(user)
+            revoke_all_permissions_from_user(user['login'])
             user_api.delete(login=id)
         consumer_api.delete(id=id)
         return self.ok(True)
@@ -253,7 +253,7 @@ class ConsumerDeferredFields(JSONController):
         @param id: consumer id
         """
         return self.ok(consumer_api.list_package_updates(id)['packages'])
-    
+
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def errata_package_updates(self, id):
@@ -420,7 +420,7 @@ class ConsumerActions(AsyncController):
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
-    
+
     @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroupcategories(self, id):
         """
@@ -448,7 +448,7 @@ class ConsumerActions(AsyncController):
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
-    
+
     @JSONController.error_handler
     @RoleCheck(consumer_id=True, admin=True)
     def installerrata(self, id):

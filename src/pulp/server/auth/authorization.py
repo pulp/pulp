@@ -239,14 +239,15 @@ def revoke_permission_from_user(resource, user_name, operation_names):
     return True
 
 
-def revoke_all_permissions_from_user(user):
+def revoke_all_permissions_from_user(user_name):
     """
     Revoke all the permissions from a given user
-    @type user: L{pulp.server.db.model.User} instace
-    @param user: user to revoke permissions from
+    @type user_name: str
+    @param user_name: name of the user to revoke all permissions from
     @rtype: bool
     @return: True on success
     """
+    user = _get_user(user_name)
     for permission in _permission_api._getcollection().find():
         if user['login'] not in permission['users']:
             continue
