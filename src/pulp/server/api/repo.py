@@ -108,6 +108,22 @@ class RepoApi(BaseApi):
             raise PulpException("No Repo with id: %s found" % id)
         return repo
 
+    def _hascontent(self, repo):
+        """
+        Get whether the specified repo has content
+        @param repo: A repo.
+        @type repo: dict
+        @return: True if has content
+        @rtype: bool
+        """
+        try:
+            rootdir = pulp.server.util.top_repos_location()
+            relativepath = repo['relative_path']
+            path = os.path.join(rootdir, relativepath)
+            return len(os.listdir(path))
+        except:
+            return 0
+
     @audit()
     def clean(self):
         """
@@ -515,22 +531,71 @@ class RepoApi(BaseApi):
 
     @audit()
     def update(self, repo_data):
-        repo = self._get_existing_repo(repo_data['id'])
-        # make sure we're only updating the fields in the model
-        for field in repo_fields:
-            #default to the existing value if the field isn't in the data
-            repo[field] = repo_data.get(field, repo[field])
-        if repo_data.has_key('feed') and repo_data['feed']:
-            repo['source'] = model.RepoSource(repo_data['feed'])
-        self._validate_schedule(repo['sync_schedule'])
-
-        self.objectdb.save(repo, safe=True)
-
-        if repo['sync_schedule']:
-            repo_sync.update_schedule(repo)
+        id = repo_data['id']
+        repo = self._get_existing_repo(id)
+        prevpath = repo.get('relative_path')
+        newpath = repo_data.get('relative_path')
+        hascontent = self._hascontent(repo)
+        for key,value in repo_data.items():
+            # primary key
+            if key in ('id', '_id'):
+                continue
+            # feed changed
+            if key == 'feed':
+                repo[key] = value
+                if value:
+                    ds = model.RepoSource(value)
+                    repo['source'] = ds
+                    if not newpath:
+                        newpath = urlparse(ds.url)[2]
+                continue
+            # sync_schedule changed
+            if key == 'sync_schedule':
+                repo[key] = value
+                if value:
+                    self._validate_schedule(value)
+                    repo_sync.update_schedule(repo)
+                else:
+                    repo_sync.delete_schedule(repo)
+                continue
+            if key == 'use_symlinks':
+                if hascontent and (value != repo[key]):
+                    raise PulpException(
+                        "Repository has content, symlinks cannot be changed")
+                repo[key] = value
+                continue
+            # blindly updated only if the key is valid
+            if key in repo:
+                repo[key] = value
+            continue
+        # unchanged.
+        if not newpath:
+            newpath = prevpath
         else:
-            repo_sync.delete_schedule(repo)
-
+            newpath = newpath.strip('/')
+        pathchanged = (prevpath != newpath)
+        #
+        # After the repo contains content, the relative path may
+        # not be changed indirectly (feed) or directly (relativepath)
+        #
+        if pathchanged:
+            if not hascontent:
+                rootdir = pulp.server.util.top_repos_location()
+                path = os.path.join(rootdir, prevpath)
+                if os.path.exists(path):
+                    os.rmdir(path)
+                repo['relative_path'] = newpath
+                path = os.path.join(rootdir, newpath)
+                if not os.path.exists(path):
+                    os.makedirs(path)
+            else:
+                raise PulpException(
+                    "Repository has content, relative path cannot be changed")
+        # store changed object
+        self.objectdb.save(repo, safe=True)
+        # update subscribers (after) the object has been saved.
+        if pathchanged:
+            self.update_subscribed(id)
         return repo
 
     def repositories(self, spec=None, fields=None):

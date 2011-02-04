@@ -511,7 +511,6 @@ class Update(RepoAction):
     # specified methods.
     # format (option, method)
     OPTIONS = (
-        ('feed', 'updatefeed'),
         ('addkeys', 'addkeys'),
         ('rmkeys', 'rmkeys'),
     )
@@ -523,17 +522,19 @@ class Update(RepoAction):
         self.parser.add_option("--arch", dest="arch",
                                help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
-                               help=_("url feed to populate the repository"))
-        self.parser.add_option("--cacert", dest="cacert",
+                               help=_("url feed to populate the repository (repository must be empty to change path component of the url)"))
+        self.parser.add_option("--cacert", dest="ca",
                                help=_("path location to ca certificate"))
         self.parser.add_option("--cert", dest="cert",
-                               help=_("path location to entitlement certificate key"))
+                               help=_("path location to an entitlement certificate"))
+        self.parser.add_option("--key", dest="key",
+                               help=_("path location to an entitlement certificate's private key"))
         self.parser.add_option("--schedule", dest="sync_schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
-        self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
-                               help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
-        self.parser.add_option("--relativepath", dest="relativepath",
-                               help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
+        self.parser.add_option("--symlinks", dest="use_symlinks",
+                               help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
+        self.parser.add_option("--relativepath", dest="relative_path",
+                               help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified (repository must be empty)"))
         self.parser.add_option("--groupid", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--addkeys", dest="addkeys",
@@ -542,21 +543,18 @@ class Update(RepoAction):
                                help=_("a ',' separated list of GPG key names"))
     def run(self):
         id = self.get_required_option('id')
-        repo = self.get_repo(id)
+        delta = {}
         optdict = vars(self.opts)
         for k, v in optdict.items():
             if not v:
                 continue
             method = self.find(k)
             if method: # special method
-                stale = method(repo, v)
-                if stale:
-                    repo = self.pconn.repository(id)
-                continue
-            if k in repo:
-                repo[k] = v
-        self.pconn.update(repo)
-        print _("Successfully updated repository [ %s ]") % repo['id']
+                method(id, v)
+            else:
+                delta[k] = v
+        self.pconn.update(delta)
+        print _("Successfully updated repository [ %s ]") % id
 
     def find(self, option):
         """ find option specification """
@@ -564,20 +562,14 @@ class Update(RepoAction):
             if opt == option:
                 return getattr(self, fn)
 
-    def updatefeed(self, repo, feed):
-        """ update the feed """
-        repo['feed'] = feed
-
-    def addkeys(self, repo, keylist):
+    def addkeys(self, id, keylist):
         """ add the GPG keys """
-        id = str(repo['id'])
         reader = KeyReader()
         keylist = reader.expand(keylist)
         self.pconn.addkeys(id, keylist)
 
-    def rmkeys(self, repo, keylist):
+    def rmkeys(self, id, keylist):
         """ add the GPG keys """
-        id = str(repo['id'])
         keylist = keylist.split(',')
         self.pconn.rmkeys(id, keylist)
 

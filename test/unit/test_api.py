@@ -303,6 +303,43 @@ class TestApi(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0], path)
 
+    def test_repo_update(self):
+        id = 'fedora'
+        relativepath = 'f11/i386'
+        feed = 'yum:http://abc.com/%s' % relativepath
+        repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
+        d = dict(id=id, feed='yum:http://xyz.com')
+        repo = self.rapi.update(d)
+        d = dict(id=id, use_symlinks=True)
+        repo = self.rapi.update(d)
+        d = dict(id=id, relative_path='/bla/bla')
+        repo = self.rapi.update(d)
+        root = top_repos_location()
+        # add some phony content and try again
+        path = os.path.join(root, repo['relative_path'])
+        if not os.path.exists(path):
+            os.makedirs(path)
+        f = open(os.path.join(path, 'package'), 'w')
+        f.close()
+        try:
+            d = dict(id=id, feed='yum:http://xyz.com/my/new/path')
+            repo = self.rapi.update(d)
+            self.assertTrue(False, 'should fail')
+        except:
+            pass
+        try:
+            d = dict(id=id, use_symlinks=False)
+            repo = self.rapi.update(d)
+            self.assertTrue(False, 'should fail')
+        except:
+            pass
+        try:
+            d = dict(id=id, relative_path='/bla/bla')
+            repo = self.rapi.update(d)
+            self.assertTrue(False, 'should fail')
+        except:
+            pass
+
     def test_repo_errata(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
