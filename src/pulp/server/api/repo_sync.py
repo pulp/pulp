@@ -556,8 +556,8 @@ class LocalSynchronizer(BaseSynchronizer):
                 log.error("%s" % (traceback.format_exc()))
                 error_info = {}
                 exctype, value = sys.exc_info()[:2]
-                error_info["exc_type"] = str(exctype)
-                error_info["exc_value"] = str(value)
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
                 error_info["traceback"] = traceback.format_exc().splitlines()
                 self._add_error_details(pkg, "rpm", error_info)
             self.progress["step"] = ProgressReport.DownloadItems
@@ -614,8 +614,8 @@ class LocalSynchronizer(BaseSynchronizer):
                 log.error("%s" % (traceback.format_exc()))
                 error_info = {}
                 exctype, value = sys.exc_info()[:2]
-                error_info["exc_type"] = str(exctype)
-                error_info["exc_value"] = str(value)
+                error_info["error_type"] = str(exctype)
+                error_info["error"] = str(value)
                 error_info["traceback"] = traceback.format_exc().splitlines()
                 self._add_error_details(pkg, "drpm", error_info)
             self.progress['step'] = ProgressReport.DownloadItems
@@ -689,8 +689,8 @@ class LocalSynchronizer(BaseSynchronizer):
                                 log.error("%s" % (traceback.format_exc()))
                                 error_info = {}
                                 exctype, value = sys.exc_info()[:2]
-                                error_info["exc_type"] = str(exctype)
-                                error_info["exc_value"] = str(value)
+                                error_info["error_type"] = str(exctype)
+                                error_info["error"] = str(value)
                                 error_info["traceback"] = traceback.format_exc().splitlines()
                                 self._add_error_details(imfile, "tree_file", error_info)
                             log.debug("Imported file %s " % dst_file_path)
