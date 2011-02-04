@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from pulp.server.auth.principal import get_principal, is_system_principal
 
 # Copyright © 2010 Red Hat, Inc.
 #
@@ -200,6 +201,22 @@ def grant_permission_to_user(resource, user_name, operation_names):
     """
     user = _get_user(user_name)
     operations = _get_operations(operation_names)
+    _permission_api.grant(resource, user, operations)
+    return True
+
+
+def grant_auto_permissions_for_created_resource(resource):
+    """
+    Grant CRUDE permissions for a newly created resource to current principal.
+    @type resource: str
+    @param resource: resource path to grant permissions to
+    @rtype: bool
+    @return: True on success, False otherwise
+    """
+    if is_system_principal():
+        return False
+    user = get_principal()
+    operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
     _permission_api.grant(resource, user, operations)
     return True
 
