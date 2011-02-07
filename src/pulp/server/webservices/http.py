@@ -249,8 +249,8 @@ def resource_path(path=None):
     if path is None:
         path = uri_path()
     parts = [p for p in path.split('/') if p]
-    assert parts[:2] == ('pulp', 'api')
-    parts = parts[2:]
+    while parts and parts[0] in ('pulp', 'api'):
+        parts = parts[1:]
     if not parts:
         return '/'
     return '/%s/' % '/'.join(parts)
