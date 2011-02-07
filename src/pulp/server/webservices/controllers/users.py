@@ -21,7 +21,7 @@ from pulp.server.auth.authorization import (
     is_last_super_user, revoke_all_permissions_from_user,
     grant_auto_permissions_for_created_resource)
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.http import extend_uri_path
+from pulp.server.webservices.http import extend_uri_path, resource_path
 from pulp.server.webservices.role_check import RoleCheck
 
 # users api ---------------------------------------------------------------
@@ -58,7 +58,7 @@ class Users(JSONController):
 
         user = api.create(user_data['login'], user_data['password'],
                                    user_data['name'])
-        resource = extend_uri_path(user['login'])
+        resource = resource_path(extend_uri_path(user['login']))
         grant_auto_permissions_for_created_resource(resource)
         return self.created(user['id'], user)
 

@@ -94,9 +94,10 @@ class Consumers(JSONController):
         add_user_to_role(consumer_users_role, user['login'])
         # grant the appropriate permissions to the user
         path = http.extend_uri_path(consumer.id) # path for consumer resource
-        grant_permission_to_user(path, id,
+        resource = http.resource_path(path)
+        grant_permission_to_user(resource, id,
                                  ('READ', 'UPDATE', 'DELETE', 'EXECUTE'))
-        grant_auto_permissions_for_created_resource(path)
+        grant_auto_permissions_for_created_resource(resource)
         return self.created(path, consumer)
 
     def POST(self):

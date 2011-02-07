@@ -71,7 +71,7 @@ class CdsInstances(JSONController):
         cds = cds_api.register(hostname, name, description)
 
         path = http.extend_uri_path(hostname)
-        grant_auto_permissions_for_created_resource(path)
+        grant_auto_permissions_for_created_resource(http.resource_path(path))
         return self.created(path, cds)
 
 class CdsInstance(JSONController):

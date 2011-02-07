@@ -69,7 +69,7 @@ class Errata(JSONController):
                           errata_data.get('pkglist', []),
                           errata_data.get('repo_defined', False),
                           errata_data.get('immutable', False))
-        resource = http.extend_uri_path(errata['id'])
+        resource = http.resource_path(http.extend_uri_path(errata['id']))
         grant_auto_permissions_for_created_resource(resource)
         return self.created(errata['id'], errata)
 

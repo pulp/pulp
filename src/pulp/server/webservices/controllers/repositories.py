@@ -106,7 +106,7 @@ class Repositories(JSONController):
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
-        grant_auto_permissions_for_created_resource(path)
+        grant_auto_permissions_for_created_resource(http.resource_path(path))
         return self.created(path, repo)
 
     def POST(self):
