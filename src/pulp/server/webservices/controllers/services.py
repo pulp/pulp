@@ -37,7 +37,7 @@ class DependencyActions(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         """
         list of available dependencies required \
         for a specified package per repo.
@@ -46,11 +46,12 @@ class DependencyActions(JSONController):
         """
         data = self.params()
         return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=data['recursive']))
-    
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
+
+    # this was not written correctly...
+    def PUT(self):
+        log.debug('deprecated DependencyActions.PUT called')
+        return self.POST()
+
 
 class PackageSearch(JSONController):
 
@@ -70,7 +71,7 @@ class PackageSearch(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         """
         Search for matching packages 
         expects passed in regex search strings from POST data
@@ -107,12 +108,12 @@ class PackageSearch(JSONController):
                     (repo_lookup_time - initial_search_end),
                     (repo_lookup_time - start_time)))
         return self.ok(pkgs)
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
 
-    
+    # this was not written correctly...
+    def PUT(self):
+        log.warning('deprecated DependencyActions.PUT called')
+        return self.POST()
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
