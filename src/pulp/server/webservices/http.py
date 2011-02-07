@@ -237,13 +237,18 @@ def extend_uri_path(suffix):
     return path
 
 
-def resource_path():
+def resource_path(path=None):
     """
     Return the uri path with the /pulp/api prefix stripped off
+    @type path: None or str
+    @param path: The uri path to convert into a resource path,
+                 if the path is None, defaults to the current uri path
     @rtype: str
     @return: uri formatted path
     """
-    parts = [p for p in uri_path().split('/') if p]
+    if path is None:
+        path = uri_path()
+    parts = [p for p in path.split('/') if p]
     assert parts[:2] == ('pulp', 'api')
     parts = parts[2:]
     if not parts:
