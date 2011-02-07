@@ -418,9 +418,9 @@ class YumSynchronizer(BaseSynchronizer):
         for proxy_cfg in ['proxy_url', 'proxy_port', 'proxy_user', 'proxy_pass']:
             if (config.config.has_option('yum', proxy_cfg)):
                 vars()[proxy_cfg] = config.config.get('yum', proxy_cfg)
-                
+
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
-                                num_threads, cacert=cacert, clicert=clicert, clikey=clikey, 
+                                num_threads, cacert=cacert, clicert=clicert, clikey=clikey,
                                 packages_location=pulp.server.util.top_package_location(),
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
                                 proxy_url=proxy_url, proxy_port=proxy_port,
@@ -461,13 +461,13 @@ class LocalSynchronizer(BaseSynchronizer):
         pkglist = filter(lambda x: x.endswith(".rpm"), pkglist)
         log.info("Found %s packages in %s" % (len(pkglist), src_repo_dir))
         return pkglist
-    
+
     def list_tree_files(self, src_repo_dir):
         src_images_dir = os.path.join(src_repo_dir, "images")
         if not os.path.exists(src_images_dir):
             return []
         return pulp.server.util.listdir(src_images_dir)
-    
+
     def list_drpms(self, src_repo_dir):
         dpkglist = pulp.server.util.listdir(src_repo_dir)
         dpkglist = filter(lambda x: x.endswith(".drpm"), dpkglist)
@@ -490,7 +490,7 @@ class LocalSynchronizer(BaseSynchronizer):
         self.progress['details'][item_type]["total_count"] = num_items
         self.progress['details'][item_type]["num_success"] = 0
         self.progress['details'][item_type]["num_error"] = 0
-    
+
     def init_progress_details(self, src_repo_dir, skip_dict):
         if not self.progress.has_key('size_total'):
             self.progress['size_total'] = 0
@@ -583,7 +583,7 @@ class LocalSynchronizer(BaseSynchronizer):
             if epkg not in source_pkgs:
                 log.info("Remove %s from repo %s because it is not in repo_source" % (epkg, dst_repo_dir))
                 os.remove(os.path.join(dst_repo_dir, epkg))
-                
+
     def _sync_drpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
         # Compute and import delta rpms
         dpkglist = self.list_drpms(src_repo_dir)
@@ -629,7 +629,7 @@ class LocalSynchronizer(BaseSynchronizer):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict)
-        
+
         try:
             dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
             if not os.path.exists(src_repo_dir):
