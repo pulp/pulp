@@ -809,6 +809,10 @@ class TestApi(unittest.TestCase):
 
 
     def test_local_sync_with_exception(self):
+        #This test will only run correctly as a non-root user
+        if os.getuid() == 0:
+            return
+
         # We need report to be accesible for writing by the callback
         global report
         report = None
