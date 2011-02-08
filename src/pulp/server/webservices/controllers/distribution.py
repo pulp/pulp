@@ -41,23 +41,19 @@ class Distributions(JSONController):
         distributions = api.distributions()
         return self.ok(distributions)
 
-    @JSONController.error_handler
-    @JSONController.auth_required(CREATE)
-    def POST(self):
-        """
-        Create a new errata
-        @return: errata that was created
-        """
-        distribution_data = self.params()
-        distribution = api.create(distribution_data['id'],
-                                  distribution_data['description'],
-                                  distribution_data['relative_path'],
-                                  distribution_data.get('files', []))
-        return self.created(distribution['id'], distribution)
-
-    def PUT(self):
-        log.warning('deprecated Distributions.PUT called')
-        return self.POST()
+#    @JSONController.error_handler
+#    @JSONController.auth_required(CREATE)
+#    def POST(self):
+#        """
+#        Create a new errata
+#        @return: errata that was created
+#        """
+#        distribution_data = self.params()
+#        distribution = api.create(distribution_data['id'],
+#                                  distribution_data['description'],
+#                                  distribution_data['relative_path'],
+#                                  distribution_data.get('files', []))
+#        return self.created(distribution['id'], distribution)
 
 
 class Distribution(JSONController):
@@ -73,13 +69,14 @@ class Distribution(JSONController):
         # implement filters
         return self.ok(api.distribution(id))
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
-    def DELETE(self, id):
-        """
-        @return: True on successful deletion of distribution
-        """
-        return self.ok(api.delete(id))
+#    @JSONController.error_handler
+#    @JSONController.auth_required(DELETE)
+#    def DELETE(self, id):
+#        """
+#        @return: True on successful deletion of distribution
+#        """
+#        return self.ok(api.delete(id))
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
