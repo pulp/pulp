@@ -233,6 +233,15 @@ setfacl -m u:apache:rwx /etc/pki/content/
 /var/log/pulp-cds
 
 
+%post client
+pushd %{_sysconfdir}/rc.d/init.d
+ln -s goferd pulp-agent
+popd
+
+%postun client
+rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
+
+
 %changelog
 * Fri Feb 04 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.135-1
 - 674600 - replace (sha) with (hashlib). (jortel@redhat.com)
