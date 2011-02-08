@@ -20,7 +20,7 @@ BuildRequires:  python-nose
 BuildRequires:  rpm-python
 
 Requires: %{name}-common = %{version}
-Requires: python-pymongo
+Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-simplejson
