@@ -19,8 +19,8 @@ import logging
 import web
 
 from pulp.server.api.distribution import DistributionApi
+from pulp.server.auth.authorization import CREATE, READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ log = logging.getLogger('pulp')
 class Distributions(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available distributions.
@@ -42,7 +42,7 @@ class Distributions(JSONController):
         return self.ok(distributions)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def PUT(self):
         """
         Create a new errata
@@ -64,7 +64,7 @@ class Distributions(JSONController):
 class Distribution(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         """
         Look up distribution by id.
@@ -75,7 +75,7 @@ class Distribution(JSONController):
         return self.ok(api.distribution(id))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id):
         """
         @return: True on successful deletion of distribution
