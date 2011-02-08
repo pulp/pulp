@@ -13,6 +13,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
+
 import web
 
 from pulp.server.api.user import UserApi
@@ -28,6 +30,7 @@ from pulp.server.webservices.role_check import RoleCheck
 
 api = UserApi()
 auth_api = AuthApi()
+log = logging.getLogger('pulp')
 
 # controllers -----------------------------------------------------------------
 
@@ -45,7 +48,7 @@ class Users(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         """
         Create a new user
         @return: user that was created
@@ -62,10 +65,9 @@ class Users(JSONController):
         grant_auto_permissions_for_created_resource(resource)
         return self.created(user['id'], user)
 
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
+    def PUT(self):
+        log.debug('deprecated Users.PUT method called')
+        return self.POST()
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -112,7 +114,7 @@ class User(JSONController):
         if user is None:
             return self.not_found('No such user: %s' % login)
         # XXX this logic should be in the api layer, but because persistence
-        # and logic is mashed together, it causes cyclic depenedencies
+        # and logic is mashed together, it causes cyclic dependencies
         if is_last_super_user(user):
             return self.bad_request(
                 'Cannot delete %s, they are the last super user')

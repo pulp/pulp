@@ -82,7 +82,7 @@ class Repositories(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         """
         Create a new repository.
         @return: repository meta data on successful creation of repository
@@ -109,10 +109,9 @@ class Repositories(JSONController):
         grant_auto_permissions_for_created_resource(http.resource_path(path))
         return self.created(path, repo)
 
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
+    def PUT(self):
+        _log.debug('deprecated Repositories.PUT method called')
+        return self.POST()
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

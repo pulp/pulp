@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
 from gettext import gettext as _
 
 import web
@@ -22,6 +23,7 @@ from pulp.server.auth import authorization
 from pulp.server.webservices.controllers.base import JSONController
 
 
+_log = logging.getLogger('pulp')
 _role_api = RoleAPI()
 
 # roles collection controller -------------------------------------------------
@@ -48,7 +50,9 @@ class Roles(JSONController):
         except authorization.PulpAuthorizationError, e:
             return self.bad_request(e.args[0])
 
-    PUT = POST
+    def PUT(self):
+        _log.debug('deprecated Roles.PUT method called')
+        return self.POST()
 
 # individual role controller --------------------------------------------------
 

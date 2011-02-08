@@ -58,7 +58,7 @@ class Packages(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         """
         Create a new package.
         @return: package meta data on successful creation of package
@@ -71,10 +71,9 @@ class Packages(JSONController):
         grant_auto_permissions_for_created_resource(resource)
         return self.created(None, package)
 
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
+    def PUT(self):
+        log.debug('deprecated Packages.PUT method called')
+        return self.POST()
 
 
 class Package(JSONController):

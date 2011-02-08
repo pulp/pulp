@@ -51,7 +51,7 @@ class CdsInstances(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         repo_data = self.params()
         hostname = repo_data['hostname']
 
@@ -73,6 +73,11 @@ class CdsInstances(JSONController):
         path = http.extend_uri_path(hostname)
         grant_auto_permissions_for_created_resource(http.resource_path(path))
         return self.created(path, cds)
+
+    def PUT(self):
+        log.debug('deprecated CdsInstances.PUT method called')
+        return self.POST()
+
 
 class CdsInstance(JSONController):
 

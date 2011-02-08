@@ -14,6 +14,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
+
 import web
 
 from pulp.server.api.consumer_group import ConsumerGroupApi
@@ -27,6 +29,7 @@ from pulp.server.webservices.role_check import RoleCheck
 # consumers api ---------------------------------------------------------------
 
 api = ConsumerGroupApi()
+log = logging.getLogger('pulp')
 
 # controllers -----------------------------------------------------------------
 
@@ -44,7 +47,7 @@ class ConsumerGroups(JSONController):
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def PUT(self):
+    def POST(self):
         """
         Create a new consumer group.
         @return: consumer group metadata on successful creation
@@ -56,10 +59,9 @@ class ConsumerGroups(JSONController):
         grant_auto_permissions_for_created_resource(resource)
         return self.created(consumergroup['id'], consumergroup)
 
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
+    def PUT(self):
+        log.debug('deprecated ConsumerGroups.PUT method called')
+        return self.POST()
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
