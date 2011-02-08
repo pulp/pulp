@@ -246,6 +246,11 @@ def resource_path(path=None):
     @rtype: str
     @return: uri formatted path
     """
+    # NOTE this function actually sucks, it makes the assumption that pulp has
+    # been deployed under /pulp/api. A better way would be to grab the urls
+    # from the top-level web.py application, but we can't do that directly as
+    # it causes a circular dependency in the imports.
+    # I wonder if we can inspect the application at runtime via the web module
     if path is None:
         path = uri_path()
     parts = [p for p in path.split('/') if p]
