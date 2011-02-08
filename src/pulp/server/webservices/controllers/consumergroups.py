@@ -20,11 +20,10 @@ import web
 
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.auth.authorization import (
-    grant_auto_permissions_for_created_resource)
+from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
+    EXECUTE, grant_auto_permissions_for_created_resource)
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.http import extend_uri_path, resource_path
-from pulp.server.webservices.role_check import RoleCheck
 
 # consumers api ---------------------------------------------------------------
 
@@ -36,7 +35,7 @@ log = logging.getLogger('pulp')
 class ConsumerGroups(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available consumergroups.
@@ -46,7 +45,7 @@ class ConsumerGroups(JSONController):
         return self.ok(api.consumergroups())
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         """
         Create a new consumer group.
@@ -64,7 +63,7 @@ class ConsumerGroups(JSONController):
         return self.POST()
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self):
         """
         @return: True on successful deletion of all consumer groups
@@ -76,7 +75,7 @@ class ConsumerGroups(JSONController):
 class ConsumerGroup(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         """
         Get a consumergroup's meta data.
@@ -86,7 +85,7 @@ class ConsumerGroup(JSONController):
         return self.ok(api.consumergroup(id))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(UPDATE)
     def PUT(self, id):
         """
         Update consumer group
@@ -97,7 +96,7 @@ class ConsumerGroup(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete a consumer group.
@@ -232,7 +231,7 @@ class ConsumerGroupActions(AsyncController):
         return self.accepted(taskdict)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Consumer action dispatcher
@@ -252,7 +251,7 @@ class ConsumerGroupActions(AsyncController):
 class ConsumerGroupActionStatus(AsyncController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id, action_name, action_id):
         """
         Check the status of a package group install operation.

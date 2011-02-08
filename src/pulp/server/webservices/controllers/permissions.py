@@ -25,6 +25,8 @@ from pulp.server.webservices.controllers.base import JSONController
 
 class Permissions(JSONController):
 
+    @JSONController.error_handler
+    @JSONController.auth_required(super_user_only=True)
     def POST(self):
         try:
             resource = self.params()['resource']

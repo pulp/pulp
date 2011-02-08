@@ -21,10 +21,9 @@ from pulp.server.api.user import UserApi
 from pulp.server.api.auth import AuthApi
 from pulp.server.auth.authorization import (
     is_last_super_user, revoke_all_permissions_from_user,
-    grant_auto_permissions_for_created_resource)
+    grant_auto_permissions_for_created_resource, CREATE, READ, UPDATE, DELETE)
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.http import extend_uri_path, resource_path
-from pulp.server.webservices.role_check import RoleCheck
 
 # users api ---------------------------------------------------------------
 
@@ -37,7 +36,7 @@ log = logging.getLogger('pulp')
 class Users(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available users.
@@ -47,7 +46,7 @@ class Users(JSONController):
         return self.ok(api.users())
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         """
         Create a new user
@@ -70,7 +69,7 @@ class Users(JSONController):
         return self.POST()
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self):
         """
         @return: True on successful deletion of all users
@@ -82,7 +81,7 @@ class Users(JSONController):
 class User(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, login):
         """
         Get a users information
@@ -92,7 +91,7 @@ class User(JSONController):
         return self.ok(api.user(login))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(UPDATE)
     def PUT(self, login):
         """
         Update user
@@ -103,7 +102,7 @@ class User(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, login):
         """
         Delete a user
@@ -122,10 +121,11 @@ class User(JSONController):
         api.delete(login=login)
         return self.ok(True)
 
+
 class AdminAuthCertificates(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         '''
         Creates and returns an authentication certificate for the currently

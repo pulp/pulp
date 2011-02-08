@@ -18,11 +18,11 @@ import time
 
 import web
 
-from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.role_check import RoleCheck
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.auth.authorization import READ, EXECUTE
+from pulp.server.webservices import mongo
+from pulp.server.webservices.controllers.base import JSONController
 
 # globals ---------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ class DependencyActions(JSONController):
 
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
         list of available dependencies required \
@@ -63,7 +63,7 @@ class UploadAction(JSONController):
 class PackageSearch(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List available packages.
@@ -77,7 +77,7 @@ class PackageSearch(JSONController):
 
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
         Search for matching packages 

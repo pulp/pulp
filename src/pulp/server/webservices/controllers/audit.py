@@ -18,16 +18,16 @@ import web
 
 
 from pulp.server.auditing import events
+from pulp.server.auth.authorization import READ
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.role_check import RoleCheck
 
 # audit events controller -----------------------------------------------------
 
 class Events(JSONController):
-    
+
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available events.
@@ -43,23 +43,23 @@ class Events(JSONController):
         """
         valid_filters = ('principal', 'api', 'method', 'field', 'limit', 'show')
         filters = self.filters(valid_filters)
-        
+
         show = filters.pop('show', [])
         errors_only = 'errors_only' in show
-        
+
         limit = filters.pop('limit', None)
         if limit is not None:
             try:
                 limit = int(limit[-1]) # last limit takes precedence
             except ValueError:
                 return self.bad_request('Invalid value for limit parameter')
-        
+
         fields = filters.pop('field', None)
         spec = mongo.filters_to_re_spec(filters)
         return self.ok(events(spec, fields, limit, errors_only))
-    
+
 # web.py application ----------------------------------------------------------
-    
+
 URLS = (
     '/$', Events,
 )

@@ -27,11 +27,11 @@ from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (
     revoke_all_permissions_from_user, grant_permission_to_user,
     grant_auto_permissions_for_created_resource,
-    add_user_to_role, consumer_users_role)
+    add_user_to_role, consumer_users_role,
+    CREATE, READ, UPDATE, DELETE, EXECUTE)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
-from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ default_fields = ['id', 'description', 'key_value_pairs']
 class Consumers(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available consumers.
@@ -72,7 +72,7 @@ class Consumers(JSONController):
         return self.ok(consumers)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         """
         Create a new consumer.
@@ -105,7 +105,7 @@ class Consumers(JSONController):
         return self.POST()
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self):
         """
         Delete all consumers.
@@ -118,7 +118,7 @@ class Consumers(JSONController):
 class Bulk(JSONController):
     # XXX this class breaks the restful practices.... (need a better solution)
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         consumer_api.bulkcreate(self.params())
         return self.ok(True)
@@ -127,7 +127,7 @@ class Bulk(JSONController):
 class Consumer(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         """
         Get a consumer's meta data.
@@ -143,7 +143,7 @@ class Consumer(JSONController):
         return self.ok(consumer)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(UPDATE)
     def PUT(self, id):
         """
         Update consumer
@@ -162,7 +162,7 @@ class Consumer(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete a consumer.
@@ -191,7 +191,7 @@ class ConsumerDeferredFields(JSONController):
         'package_updates',
         'errata_package_updates'
     )
-    @RoleCheck(consumer_id=True, admin=True)
+
     def package_profile(self, id):
         """
         Get a consumer's set of packages
@@ -204,7 +204,6 @@ class ConsumerDeferredFields(JSONController):
         packages = self.filter_results(packages, filters)
         return self.ok(packages)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def repoids(self, id):
         """
         Get the ids of the repositories the consumer is bound to.
@@ -219,7 +218,6 @@ class ConsumerDeferredFields(JSONController):
         repo_data = dict((id, '/repositories/%s/' % id) for id in repoids)
         return self.ok(repo_data)
 
-    @RoleCheck(admin=True)
     def certificate(self, id):
         """
         Get a X509 Certificate for this Consumer.  Useful for uniquely and securely 
@@ -234,7 +232,6 @@ class ConsumerDeferredFields(JSONController):
         certificate = {'certificate': certificate, 'private_key': private_key}
         return self.ok(certificate)
 
-    @RoleCheck(admin=True)
     def keyvalues(self, id):
         """
         Get key-value pairs for this consumer. This also includes attributes
@@ -246,8 +243,6 @@ class ConsumerDeferredFields(JSONController):
         keyvalues = consumer_api.get_keyvalues(id)
         return self.ok(keyvalues)
 
-    @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
     def package_updates(self, id):
         """
         list applicable package updates for a given consumerid.
@@ -256,8 +251,6 @@ class ConsumerDeferredFields(JSONController):
         """
         return self.ok(consumer_api.list_package_updates(id)['packages'])
 
-    @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
     def errata_package_updates(self, id):
         """
         Return applicable errata and package updates for a given consumerid.
@@ -267,6 +260,7 @@ class ConsumerDeferredFields(JSONController):
         return self.ok(consumer_api.list_errata_package(id))
 
     @JSONController.error_handler
+    @JSONController.auth_required(READ)
     def GET(self, id, field_name):
         """
         Deferred field dispatcher.
@@ -304,7 +298,6 @@ class ConsumerActions(AsyncController):
         else:
             return True
 
-    @RoleCheck(consumer_id=True, admin=True)
     def bind(self, id):
         """
         Bind (subscribe) a user to a repository.
@@ -317,7 +310,6 @@ class ConsumerActions(AsyncController):
         consumer_api.bind(id, data)
         return self.ok(True)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def unbind(self, id):
         """
         Unbind (unsubscribe) a user to a repository.
@@ -330,7 +322,6 @@ class ConsumerActions(AsyncController):
         consumer_api.unbind(id, data)
         return self.ok(None)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def add_key_value_pair(self, id):
         """
         Add key-value information to consumer.
@@ -346,7 +337,6 @@ class ConsumerActions(AsyncController):
         consumer_api.add_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def delete_key_value_pair(self, id):
         """
         Delete key-value information from consumer.
@@ -362,7 +352,6 @@ class ConsumerActions(AsyncController):
         consumer_api.delete_key_value_pair(id, data)
         return self.ok(True)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def update_key_value_pair(self, id):
         """
         Update key-value information of a consumer.
@@ -378,7 +367,6 @@ class ConsumerActions(AsyncController):
         consumer_api.update_key_value_pair(id, data['key'], data['value'])
         return self.ok(True)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def profile(self, id):
         """
         update/add Consumer profile information. eg:package, hardware etc
@@ -389,7 +377,6 @@ class ConsumerActions(AsyncController):
         consumer_api.profile_update(id, self.params())
         return self.ok(True)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def installpackages(self, id):
         """
         Install packages.
@@ -406,7 +393,6 @@ class ConsumerActions(AsyncController):
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroups(self, id):
         """
         Install package groups.
@@ -423,7 +409,6 @@ class ConsumerActions(AsyncController):
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
-    @RoleCheck(consumer_id=True, admin=True)
     def installpackagegroupcategories(self, id):
         """
         Install package group categories.
@@ -451,8 +436,6 @@ class ConsumerActions(AsyncController):
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
-    @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
     def installerrata(self, id):
         """
         Install errata
@@ -473,8 +456,6 @@ class ConsumerActions(AsyncController):
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
 
-    @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
     def listerrata(self, id):
         """
         list applicable errata for a given repo.
@@ -485,8 +466,6 @@ class ConsumerActions(AsyncController):
         data = self.params()
         return self.ok(consumer_api.listerrata(id, data['types']))
 
-    @JSONController.error_handler
-    @RoleCheck(consumer_id=True, admin=True)
     def history(self, id):
         """
         @type id: str
@@ -521,6 +500,7 @@ class ConsumerActions(AsyncController):
         return self.ok(results)
 
     @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Consumer action dispatcher
@@ -542,7 +522,7 @@ class ConsumerActions(AsyncController):
 class ConsumerActionStatus(AsyncController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id, action_name, action_id):
         """
         Check the status of a package install operation.

@@ -23,10 +23,10 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import grant_auto_permissions_for_created_resource
+from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
-from pulp.server.webservices.role_check import RoleCheck
 
 # globals ---------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ default_fields = [
 class Repositories(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True, consumer=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available repositories.
@@ -79,7 +79,7 @@ class Repositories(JSONController):
         return self.ok(repositories)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         """
         Create a new repository.
@@ -112,7 +112,7 @@ class Repositories(JSONController):
         return self.POST()
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self):
         """
         @return: True on successful deletion of all repositories
@@ -124,7 +124,7 @@ class Repositories(JSONController):
 class Repository(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(consumer=True, admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         """
         Get information on a single repository.
@@ -142,7 +142,7 @@ class Repository(JSONController):
         return self.ok(repo)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True, consumer=True)
+    @JSONController.auth_required(UPDATE)
     def PUT(self, id):
         """
         Change a repository.
@@ -162,7 +162,7 @@ class Repository(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete a repository.
@@ -184,7 +184,6 @@ class RepositoryDeferredFields(JSONController):
         'distribution',
     )
 
-    @JSONController.error_handler
     def packages(self, id):
         #TODO: Extremely slow for large repos
         valid_filters = ('name', 'arch')
@@ -196,21 +195,18 @@ class RepositoryDeferredFields(JSONController):
         filtered_packages = self.filter_results(packages, filters)
         return self.ok(filtered_packages)
 
-    @JSONController.error_handler
     def packagegroups(self, id):
         repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
             return self.not_found('No repository %s' % id)
         return self.ok(repo.get('packagegroups'))
 
-    @JSONController.error_handler
     def packagegroupcategories(self, id):
         repo = api.repository(id, ['id', 'packagegroupcategories'])
         if repo is None:
             return self.not_found('No repository %s' % id)
         return self.ok(repo.get('packagegroupcategories', []))
 
-    @JSONController.error_handler
     def errata(self, id):
         """
          list applicable errata for a given repo.
@@ -220,7 +216,6 @@ class RepositoryDeferredFields(JSONController):
         types = self.filters(valid_filters)['type']
         return self.ok(api.errata(id, types))
 
-    @JSONController.error_handler
     def distribution(self, id):
         """
          list available distributions in a given repo.
@@ -228,7 +223,7 @@ class RepositoryDeferredFields(JSONController):
         return self.ok(api.list_distributions(id))
 
     @JSONController.error_handler
-    @RoleCheck(consumer=True, admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id, field_name):
         field = getattr(self, field_name, None)
         if field is None:
@@ -255,6 +250,7 @@ class RepositoryActions(AsyncController):
         'sync',
         '_sync',
         'clone',
+        'upload',
         'add_package',
         'delete_package',
         'get_package',
@@ -277,8 +273,6 @@ class RepositoryActions(AsyncController):
         'update_publish',
     )
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def sync(self, id):
         """
         Sync a repository from its feed.
@@ -301,8 +295,6 @@ class RepositoryActions(AsyncController):
     # XXX hack to make the web services unit tests work
     _sync = sync
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def clone(self, id):
         """
         Clone a repository.
@@ -327,8 +319,19 @@ class RepositoryActions(AsyncController):
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
+
+    def upload(self, id):
+        """
+        Upload a package to a repository.
+        @param id: repository id
+        @return: True on successful upload
+        """
+        data = self.params()
+        api.upload(id,
+                   data['pkginfo'],
+                   data['pkgstream'])
+        return self.ok(True)
+
     def add_package(self, id):
         """
         @param id: repository id
@@ -338,8 +341,6 @@ class RepositoryActions(AsyncController):
         api.add_package(id, data['packageid'])
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def delete_package(self, id):
         """
         @param id: repository id
@@ -349,8 +350,7 @@ class RepositoryActions(AsyncController):
         api.remove_packages(id, data['package'])
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
+
     def get_package(self, id):
         """
         Get package info from a repository.
@@ -361,8 +361,6 @@ class RepositoryActions(AsyncController):
         name = self.params()
         return self.ok(api.get_package(id, name))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def add_packages_to_group(self, id):
         """
         Add a package to an existing package group
@@ -384,8 +382,6 @@ class RepositoryActions(AsyncController):
             requires = p["requires"]
         return self.ok(api.add_packages_to_group(id, groupid, pkg_names, gtype, requires))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def delete_package_from_group(self, id):
         """
         Removes a package from an existing package group
@@ -405,8 +401,6 @@ class RepositoryActions(AsyncController):
         requires = None
         return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def create_packagegroup(self, id):
         """
         Creates a packagegroup in the referenced repository
@@ -426,8 +420,6 @@ class RepositoryActions(AsyncController):
         return self.ok(api.create_packagegroup(id, groupid, groupname,
                                                descrp))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def delete_packagegroup(self, id):
         """
         Removes a packagegroup from a repository
@@ -440,8 +432,6 @@ class RepositoryActions(AsyncController):
         groupid = p["groupid"]
         return self.ok(api.delete_packagegroup(id, groupid))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def create_packagegroupcategory(self, id):
         """
         Creates a PackageGroupCategory in a repository
@@ -462,8 +452,6 @@ class RepositoryActions(AsyncController):
         return self.ok(api.create_packagegroupcategory(id, categoryid, categoryname,
                                                descrp))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def delete_packagegroupcategory(self, id):
         """
         Removes a PackageGroupCategory from a repository
@@ -477,8 +465,6 @@ class RepositoryActions(AsyncController):
         categoryid = p["categoryid"]
         return self.ok(api.delete_packagegroupcategory(id, categoryid))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def add_packagegroup_to_category(self, id):
         """
         Add a packagegroup to a category in a repository
@@ -495,8 +481,6 @@ class RepositoryActions(AsyncController):
         categoryid = p["categoryid"]
         return self.ok(api.add_packagegroup_to_category(id, categoryid, groupid))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def delete_packagegroup_from_category(self, id):
         """
         Delete a packagegroup to a category in a repository
@@ -513,8 +497,6 @@ class RepositoryActions(AsyncController):
         categoryid = p["categoryid"]
         return self.ok(api.delete_packagegroup_from_category(id, categoryid, groupid))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def add_errata(self, id):
         """
         @param id: repository id
@@ -524,8 +506,6 @@ class RepositoryActions(AsyncController):
         api.add_errata(id, data['errataid'])
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def delete_errata(self, id):
         """
         @param id: repository id
@@ -535,8 +515,6 @@ class RepositoryActions(AsyncController):
         api.delete_errata(id, data['errataid'])
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def list_errata(self, id):
         """
          list applicable errata for a given repo.
@@ -545,15 +523,11 @@ class RepositoryActions(AsyncController):
         data = self.params()
         return self.ok(api.errata(id, data['types']))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def addkeys(self, id):
         data = self.params()
         api.addkeys(id, data['keylist'])
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def get_package_by_nvrea(self, id):
         """
         Check the repo to see if package with same nvrea exists
@@ -564,8 +538,6 @@ class RepositoryActions(AsyncController):
         data = self.params()
         return self.ok(api.get_packages_by_nvrea(id, data['nvrea']))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def get_package_by_filename(self, id):
         """
         get package from repo with specified rpm filename
@@ -575,21 +547,15 @@ class RepositoryActions(AsyncController):
         data = self.params()
         return self.ok(api.get_packages_by_filename(id, data['filename']))
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def rmkeys(self, id):
         data = self.params()
         api.rmkeys(id, data['keylist'])
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(consumer=True, admin=True)
     def listkeys(self, id):
         keylist = api.listkeys(id)
         return self.ok(keylist)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def update_publish(self, id):
         """
         Alter a repository's 'publish' state.
@@ -602,6 +568,7 @@ class RepositoryActions(AsyncController):
         return self.ok(api.publish(id, bool(data['state'])))
 
     @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,
@@ -622,6 +589,7 @@ class RepositoryActions(AsyncController):
         return action(id)
 
     @JSONController.error_handler
+    @JSONController.auth_required(READ)
     def GET(self, id, action_name):
         """
         Get information on a given action and repository.
@@ -650,7 +618,7 @@ class RepositoryActions(AsyncController):
 class RepositoryActionStatus(AsyncController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id, action_name, action_id):
         """
         Check the status of a sync operation.
@@ -665,7 +633,7 @@ class RepositoryActionStatus(AsyncController):
         return self.ok(task_info)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id, action_name, action_id):
         """
         Cancel an action
@@ -684,7 +652,7 @@ class RepositoryActionStatus(AsyncController):
 class Schedules(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         '''
         Retrieve a map of all repository IDs to their associated synchronization

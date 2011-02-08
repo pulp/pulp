@@ -20,12 +20,11 @@ import web
 
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.auth.authorization import (
-    grant_auto_permissions_for_created_resource)
+from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
+    EXECUTE, grant_auto_permissions_for_created_resource)
 from pulp.server.webservices import http
-from pulp.server.webservices.controllers.base import JSONController, \
-    AsyncController
-from pulp.server.webservices.role_check import RoleCheck
+from pulp.server.webservices.controllers.base import (JSONController,
+    AsyncController)
 
 # globals ---------------------------------------------------------------------
 
@@ -36,7 +35,7 @@ log = logging.getLogger('pulp')
 class Errata(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         """
         List all available errata.
@@ -46,7 +45,7 @@ class Errata(JSONController):
         return self.ok(api.errata())
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         """
         Create a new errata
@@ -81,7 +80,7 @@ class Errata(JSONController):
 class Erratum(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         """
         Get a erratum information
@@ -91,7 +90,7 @@ class Erratum(JSONController):
         return self.ok(api.erratum(id))
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(UPDATE)
     def PUT(self, id):
         """
         Update errata
@@ -102,7 +101,7 @@ class Erratum(JSONController):
         return self.ok(True)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id):
         """
         Delete an errata
@@ -130,8 +129,7 @@ class ErrataActions(AsyncController):
     exposed_actions = (
         'get_repos',
     )
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
+
     def get_repos(self, id):
         """
          Return repoids with available errata
@@ -141,6 +139,7 @@ class ErrataActions(AsyncController):
         return self.ok(rapi.find_repos_by_errataid(id))
 
     @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
     def POST(self, id, action_name):
         """
         Action dispatcher. This method checks to see if the action is exposed,

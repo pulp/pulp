@@ -26,11 +26,10 @@ from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.async import find_async
-from pulp.server.auth.authorization import (
+from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE,
     grant_auto_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
-from pulp.server.webservices.role_check import RoleCheck
 
 
 # globals ---------------------------------------------------------------------
@@ -44,13 +43,13 @@ log = logging.getLogger(__name__)
 class CdsInstances(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self):
         cds_instances = cds_api.list()
         return self.ok(cds_instances)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(CREATE)
     def POST(self):
         repo_data = self.params()
         hostname = repo_data['hostname']
@@ -82,7 +81,7 @@ class CdsInstances(JSONController):
 class CdsInstance(JSONController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         cds = cds_api.cds(id)
         if cds is None:
@@ -91,7 +90,7 @@ class CdsInstance(JSONController):
             return self.ok(cds)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(DELETE)
     def DELETE(self, id):
         cds_api.unregister(id)
         return self.ok(True)
@@ -105,24 +104,18 @@ class CdsActions(AsyncController):
         'history',
     )
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def associate(self, id):
         data = self.params()
         repo_id = data.get('repo_id')
         cds_api.associate_repo(id, repo_id)
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def unassociate(self, id):
         data = self.params()
         repo_id = data.get('repo_id')
         cds_api.unassociate_repo(id, repo_id)
         return self.ok(True)
 
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
     def history(self, id):
         data = self.params()
 
@@ -149,6 +142,7 @@ class CdsActions(AsyncController):
         return self.ok(results)
 
     @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
     def POST(self, id, action_name):
         '''
         Action dispatcher. This method checks to see if the action is exposed,
@@ -174,7 +168,7 @@ class CdsActions(AsyncController):
 class CdsSyncActions(AsyncController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(EXECUTE)
     def POST(self, id):
         '''
         Triggers a sync against the CDS identified by id.
@@ -198,7 +192,7 @@ class CdsSyncActions(AsyncController):
         return self.accepted(task_info)
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id):
         '''
         Returns a list of tasks associated with the CDS identified by id.
@@ -224,7 +218,7 @@ class CdsSyncActions(AsyncController):
 class CdsSyncTaskStatus(AsyncController):
 
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(READ)
     def GET(self, id, task_id):
         '''
         Returns the state of an individual CDS sync task.
