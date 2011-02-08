@@ -39,21 +39,7 @@ class Distributions(JSONController):
         @return: a list of all available distributions
         """
         distributions = api.distributions()
-
         return self.ok(distributions)
-
-class Distribution(JSONController):
-
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def GET(self, id):
-        """
-        Look up distribution by id.
-        @param id: distribution id
-        @return: distribution info
-        """
-        # implement filters
-        return self.ok(api.distribution(id))
 
     @JSONController.error_handler
     @RoleCheck(admin=True)
@@ -74,9 +60,23 @@ class Distribution(JSONController):
         # creation, this is the start of supporting both
         return self.PUT()
 
+
+class Distribution(JSONController):
+
     @JSONController.error_handler
     @RoleCheck(admin=True)
-    def DELETE(self):
+    def GET(self, id):
+        """
+        Look up distribution by id.
+        @param id: distribution id
+        @return: distribution info
+        """
+        # implement filters
+        return self.ok(api.distribution(id))
+
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def DELETE(self, id):
         """
         @return: True on successful deletion of distribution
         """
