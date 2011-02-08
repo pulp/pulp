@@ -20,11 +20,6 @@ import traceback
 from datetime import timedelta
 from gettext import gettext as _
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 import web
 from pymongo import json_util
 
@@ -33,9 +28,9 @@ from pulp.server.auth.authentication import (
     check_username_password, check_ssl_cert, check_oauth)
 from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
+from pulp.server.compat import wraps, json
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import http
-from pulp.server.compat import wraps
 
 
 _log = logging.getLogger(__name__)
