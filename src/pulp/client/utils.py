@@ -33,7 +33,7 @@ PGPHASHALGO = {
 }
 # need this for rpm-pyhon < 4.6 (e.g. on RHEL5)
 rpm.RPMTAG_FILEDIGESTALGO = 5011
-
+RPMTAG_NOSOURCE = 1051
 
 def findSysvArgs(args):
     """
@@ -157,7 +157,7 @@ def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=Non
 class FileError(Exception):
     pass
 
-def processRPM(filename, relativeDir=None, source=None):
+def processRPM(filename, relativeDir=None):
     # Is this a file?
     if not os.access(filename, os.R_OK):
         raise FileError("Could not stat the file %s" % filename)
@@ -171,7 +171,6 @@ def processRPM(filename, relativeDir=None, source=None):
         # Append the relative dir too
         hash["relativePath"] = "%s/%s" % (relativeDir,
             os.path.basename(filename))
-
     # Read the header
     try:
         ts = rpm.TransactionSet()
@@ -179,23 +178,25 @@ def processRPM(filename, relativeDir=None, source=None):
         h = readRpmHeader(ts, filename)
     except:
         return hash
-
     # Get the name, version, release, epoch, arch
-    lh = []
+    nvrea = []
     for k in ['name', 'version', 'release', 'epoch']:
-        lh.append(h[k])
+        nvrea.append(h[k])
     # Fix the epoch
-    if lh[3] is None:
-        lh[3] = str(0)
+    if nvrea[3] is None:
+        nvrea[3] = str(0)
     else:
-        lh[3] = str(lh[3])
+        nvrea[3] = str(lh[3])
 
-    if source:
-        lh.append('src')
+    if h['sourcepackage']:
+        if RPMTAG_NOSOURCE in h.keys():
+            nvrea.append('nosrc')
+        else:
+            nvrea.append('src')
     else:
-        lh.append(h['arch'])
+        nvrea.append(h['arch'])
 
-    hash['nvrea'] = tuple(lh)
+    hash['nvrea'] = tuple(nvrea)
     hash['hashtype'] = getChecksumType(h)
     hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
     hash['pkgname'] = os.path.basename(filename)
