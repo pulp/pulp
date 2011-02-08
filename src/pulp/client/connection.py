@@ -85,6 +85,7 @@ class Restlib(object):
                         "Accept-Language": default_locale}
         self.cert_file = cert_file
         self.key_file = key_file
+        self.conn = None
 
     def _request(self, request_type, method, info=None):
         # Convert the method (path) into a string so we dont 
@@ -99,15 +100,15 @@ class Restlib(object):
             log.info("Using SSLv3 context")
             context = SSL.Context("sslv3")
             context.load_cert(self.cert_file, keyfile=self.key_file)
-            conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
+            self.conn = httpslib.HTTPSConnection(self.host, self.port, ssl_context=context)
         else:
-            conn = httplib.HTTPSConnection(self.host, self.port)
+            self.conn = httplib.HTTPSConnection(self.host, self.port)
         log.debug("Request_type: %s" % request_type)
         log.debug("info: %s" % info)
         log.debug("headers: %s" % self.headers)
-        conn.request(request_type, handler, body=json.dumps(info),
+        self.conn.request(request_type, handler, body=json.dumps(info),
                      headers=self.headers)
-        response = conn.getresponse()
+        response = self.conn.getresponse()
         if response.status == 404:
             log.error("%s %s, %s" % (response.status, handler, response.read()))
             return None
@@ -136,7 +137,10 @@ class Restlib(object):
 
     def request_delete(self, method):
         return self._request("DELETE", method)
-
+    
+    def close(self):
+        self.conn.close()
+        log.info("remote connection closed")
 
 class PulpConnection:
     """
@@ -174,7 +178,6 @@ class PulpConnection:
 
     def shutDown(self):
         self.conn.close()
-        log.info("remote connection closed")
 
 
 class RepoConnection(PulpConnection):
