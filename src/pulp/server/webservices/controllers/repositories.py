@@ -618,7 +618,7 @@ class RepositoryActions(AsyncController):
 class RepositoryActionStatus(AsyncController):
 
     @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @JSONController.auth_required(EXECUTE) # this is checking an execute, not reading a resource
     def GET(self, id, action_name, action_id):
         """
         Check the status of a sync operation.
@@ -633,7 +633,7 @@ class RepositoryActionStatus(AsyncController):
         return self.ok(task_info)
 
     @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
+    @JSONController.auth_required(EXECUTE) # this is stopping an execute, not deleting a resource
     def DELETE(self, id, action_name, action_id):
         """
         Cancel an action
