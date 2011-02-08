@@ -427,8 +427,8 @@ def list_users_in_role(role_name):
 
 # built in roles --------------------------------------------------------------
 
-super_user_role = 'SuperUsers'
-consumer_users_role = 'ConsumerUsers'
+super_user_role = 'super-users'
+consumer_users_role = 'consumer-users'
 
 
 def is_last_super_user(user):
