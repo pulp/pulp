@@ -21,6 +21,7 @@ import web
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.auth.authorization import CREATE, READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.http import extend_uri_path
 
 # globals ---------------------------------------------------------------------
 
@@ -53,7 +54,8 @@ class Distributions(JSONController):
 #                                  distribution_data['description'],
 #                                  distribution_data['relative_path'],
 #                                  distribution_data.get('files', []))
-#        return self.created(distribution['id'], distribution)
+#        path = extend_uri_path(distribution['id'])
+#        return self.created(path, distribution)
 
 
 class Distribution(JSONController):
