@@ -43,7 +43,7 @@ class Distributions(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(CREATE)
-    def PUT(self):
+    def POST(self):
         """
         Create a new errata
         @return: errata that was created
@@ -55,10 +55,9 @@ class Distributions(JSONController):
                                   distribution_data.get('files', []))
         return self.created(distribution['id'], distribution)
 
-    def POST(self):
-        # REST dictates POST to collection, and PUT to specific resource for
-        # creation, this is the start of supporting both
-        return self.PUT()
+    def PUT(self):
+        log.warning('deprecated Distributions.PUT called')
+        return self.POST()
 
 
 class Distribution(JSONController):
