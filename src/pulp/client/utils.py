@@ -188,7 +188,7 @@ def processRPM(filename, relativeDir=None):
     if nvrea[3] is None:
         nvrea[3] = str(0)
     else:
-        nvrea[3] = str(lh[3])
+        nvrea[3] = str(nvrea[3])
 
     if h['sourcepackage']:
         if RPMTAG_NOSOURCE in h.keys():
