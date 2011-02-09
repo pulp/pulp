@@ -55,7 +55,6 @@
 <a href="UGREST-Repositories.html#ViewSyncStatus">View Sync Status</a></li><li class="active">
 <a href="UGREST-Repositories.html#CancelSync">Cancel Sync</a></li><li class="active">
 <a href="UGREST-Repositories.html#CloneaRepository">Clone a Repository</a></li><li class="active">
-<a href="UGREST-Repositories.html#UploadaPackage">Upload a Package</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddPackage">Add Package</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddPackagestoaPackageGroup">Add Packages to a Package Group</a></li><li class="active">
 <a href="UGREST-Repositories.html#RemovePackagefromaPackageGroup">Remove Package from a Package Group</a></li><li class="active">
@@ -858,48 +857,6 @@ Response: <strong>200 OK</strong>
 <div class="code"><pre>True
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="UploadaPackage">Upload a Package</h2>
-<p>
-Upload a package to a repository.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/upload/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>pkginfo: package metadata
-</li><li>pkgstream: package byte stream (file upload)
-</li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>True
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
 <hr />
 <h2 id="AddPackage">Add Package</h2>

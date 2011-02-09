@@ -117,10 +117,12 @@ Repositories that are created without a feed may have packages uploaded into the
 </td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository into which the packages will be uploaded. 
 </td></tr><tr><td> RPM Directory </td><td> <tt>--dir</tt> </td><td> Local path to the directory containing the RPMs to upload. Only RPMs in this directory are uploaded into the repository. 
 </td></tr></table>
-<p>
-For example:
-</p>
+<h4 id="Example:Uploadadirectoryofpackagestopulpserverandassociateittoarepository">Example: Upload a directory of packages to pulp server and associate it to a repository</h4>
 <pre class="wiki">$ pulp-admin repo upload --id cloud --dir /root/cloud-rpms
+</pre><h4 id="Example:Uploadpackagestopulpserverandassociateittoarepository">Example: Upload package(s) to pulp server and associate it to a repository</h4>
+<pre class="wiki">$ pulp-admin package upload --repoid cloud zbar-qt-devel-0.10-6.fc14.i686.rpm
+</pre><h4 id="Example:Uploadpackagestopulpserver">Example: Upload package(s) to pulp server</h4>
+<pre class="wiki">$ pulp-admin package upload zbar-qt-devel-0.10-6.fc14.i686.rpm
 </pre></div>
    </div>
    

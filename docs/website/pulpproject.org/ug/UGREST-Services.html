@@ -41,7 +41,8 @@
 <p>
 <div class='wiki-toc'>
 <ol><li class="active"><a href="UGREST-Services.html#DependencyResolution">Dependency Resolution</a></li><li class="active">
-<a href="UGREST-Services.html#PackageSearch">Package Search</a></li></ol></li></ol></div>
+<a href="UGREST-Services.html#PackageSearch">Package Search</a></li><li class="active">
+<a href="UGREST-Services.html#UploadaPackage">Upload a Package</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -161,6 +162,48 @@ Response: <strong>200 OK</strong>
 </pre></div><p>
 Error: None
 </p>
+<h2 id="UploadaPackage">Upload a Package</h2>
+<p>
+Upload a package to a repository.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/upload/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>pkginfo: package metadata
+</li><li>pkgstream: package byte stream (file upload)
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such package
+</p>
+<hr />
 </div>
    </div>
    
