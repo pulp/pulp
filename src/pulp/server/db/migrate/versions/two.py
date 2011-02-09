@@ -19,6 +19,8 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
+from pulp.server.auth.authorization import (consumer_users_role,
+    add_user_to_role, grant_automatic_permissions_to_consumer_user)
 
 
 _log = logging.getLogger('pulp')
@@ -31,17 +33,25 @@ version = 2
 def _migrate_builtin_roles():
     api = RoleAPI()
     for role in api._getcollection().find():
+        # just delete the roles, the proper ones will get create when pulp starts
         if role['name'] in ('SuperUsers', 'ConsumerUsers'):
             api.delete(role)
 
 
 def _migrate_consumer_model():
     api = ConsumerApi()
+    user_api = UserApi()
     for consumer in api._getcollection().find():
         key = 'credentials'
         if key not in consumer:
             consumer[key] = None
             api.update(consumer)
+        # look for the corresponding consumer user and create it if missing
+        user = user_api.user(consumer['id'])
+        if not user:
+            user = user_api.create(consumer['id'])
+            add_user_to_role(consumer_users_role, user['login'])
+            grant_automatic_permissions_to_consumer_user(user['login'])
 
 
 def _migrate_repo_model():
