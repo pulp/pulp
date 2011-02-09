@@ -20,7 +20,7 @@ import web
 
 from pulp.server.api.package import PackageApi
 from pulp.server.auth.authorization import (CREATE, READ, DELETE,
-    grant_auto_permissions_for_created_resource)
+    grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.http import extend_uri_path, resource_path
@@ -68,7 +68,7 @@ class Packages(JSONController):
                              data['release'], data['arch'], data['description'],
                              data['checksum_type'], data['checksum'], data['filename'])
         resource = resource_path(extend_uri_path(package['id']))
-        grant_auto_permissions_for_created_resource(resource)
+        grant_automatic_permissions_for_created_resource(resource)
         return self.created(None, package)
 
     def PUT(self):

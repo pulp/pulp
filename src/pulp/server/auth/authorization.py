@@ -205,7 +205,7 @@ def grant_permission_to_user(resource, user_name, operation_names):
     return True
 
 
-def grant_auto_permissions_for_created_resource(resource):
+def grant_automatic_permissions_for_created_resource(resource):
     """
     Grant CRUDE permissions for a newly created resource to current principal.
     @type resource: str

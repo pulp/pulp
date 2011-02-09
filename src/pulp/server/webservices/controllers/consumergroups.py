@@ -21,7 +21,7 @@ import web
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
-    EXECUTE, grant_auto_permissions_for_created_resource)
+    EXECUTE, grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.http import extend_uri_path, resource_path
 
@@ -55,7 +55,7 @@ class ConsumerGroups(JSONController):
         consumergroup = api.create(consumergroup_data['id'], consumergroup_data['description'],
                                    consumergroup_data['consumerids'])
         resource = resource_path(extend_uri_path(consumergroup['id']))
-        grant_auto_permissions_for_created_resource(resource)
+        grant_automatic_permissions_for_created_resource(resource)
         return self.created(consumergroup['id'], consumergroup)
 
     def PUT(self):

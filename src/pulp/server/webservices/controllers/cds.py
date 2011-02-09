@@ -27,7 +27,7 @@ import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE,
-    grant_auto_permissions_for_created_resource)
+    grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 
@@ -70,7 +70,7 @@ class CdsInstances(JSONController):
         cds = cds_api.register(hostname, name, description)
 
         path = http.extend_uri_path(hostname)
-        grant_auto_permissions_for_created_resource(http.resource_path(path))
+        grant_automatic_permissions_for_created_resource(http.resource_path(path))
         return self.created(path, cds)
 
     def PUT(self):

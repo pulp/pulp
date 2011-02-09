@@ -22,7 +22,7 @@ import web
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
-from pulp.server.auth.authorization import grant_auto_permissions_for_created_resource
+from pulp.server.auth.authorization import grant_automatic_permissions_for_created_resource
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
@@ -104,7 +104,7 @@ class Repositories(JSONController):
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path
-        grant_auto_permissions_for_created_resource(http.resource_path(path))
+        grant_automatic_permissions_for_created_resource(http.resource_path(path))
         return self.created(path, repo)
 
     def PUT(self):
