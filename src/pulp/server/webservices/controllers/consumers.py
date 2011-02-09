@@ -95,7 +95,7 @@ class Consumers(JSONController):
         # grant the appropriate permissions to the user
         path = http.extend_uri_path(consumer.id) # url path for consumer
         resource = http.resource_path(path) # path for consumer resource
-        grant_automatic_permissions_to_consumer_user(user['login'], resource)
+        grant_automatic_permissions_to_consumer_user(user['login'])
         grant_automatic_permissions_for_created_resource(resource)
         return self.created(path, consumer)
 

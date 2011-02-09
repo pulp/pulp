@@ -223,7 +223,7 @@ def grant_automatic_permissions_for_created_resource(resource):
     return True
 
 
-def grant_automatic_permissions_to_consumer_user(user_name, user_resource):
+def grant_automatic_permissions_to_consumer_user(user_name):
     """
     Grant the permissions required by a consumer user.
     @type user_name: str
@@ -235,9 +235,7 @@ def grant_automatic_permissions_to_consumer_user(user_name, user_resource):
     """
     user = _get_user(user_name)
     user_operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
-    _permission_api.grant(user_resource, user, user_operations)
-    _permission_api.grant('/errata/', user, [READ])
-    _permission_api.grant('/repositories/', user, [READ])
+    _permission_api.grant('/consumers/%s/' % user_name, user, user_operations)
 
 
 def revoke_permission_from_user(resource, user_name, operation_names):
