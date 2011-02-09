@@ -212,6 +212,7 @@ def grant_automatic_permissions_for_created_resource(resource):
     @param resource: resource path to grant permissions to
     @rtype: bool
     @return: True on success, False otherwise
+    @raise RuntimeError: if the system principal has not been set
     """
     user = get_principal()
     if is_system_principal():
