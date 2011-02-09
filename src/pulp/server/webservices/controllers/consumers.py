@@ -92,10 +92,10 @@ class Consumers(JSONController):
         # create corresponding user for auth credentials
         user = user_api.create(id)
         add_user_to_role(consumer_users_role, user['login'])
-        # grant the appropriate permissions to the user
+        grant_automatic_permissions_to_consumer_user(user['login'])
+        # grant the appropriate permissions for the user
         path = http.extend_uri_path(consumer.id) # url path for consumer
         resource = http.resource_path(path) # path for consumer resource
-        grant_automatic_permissions_to_consumer_user(user['login'])
         grant_automatic_permissions_for_created_resource(resource)
         return self.created(path, consumer)
 
