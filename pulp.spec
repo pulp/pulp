@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.136
+Version:        0.0.137
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,14 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Feb 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.137-1
+- ensuring builtin roles to make consumer migration work properly
+  (jconnor@redhat.com)
+- not all conditions are necessarily mutally exclusive (jconnor@redhat.com)
+- chaning the modifyrepo path to utils (pkilambi@redhat.com)
+- no more role check (jconnor@redhat.com)
+- fixing the upload reference (pkilambi@redhat.com)
+
 * Wed Feb 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.136-1
 - New testing build
 * Fri Feb 04 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.135-1
