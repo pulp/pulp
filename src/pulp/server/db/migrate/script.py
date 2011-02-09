@@ -17,7 +17,7 @@ import logging
 import traceback
 import os
 import sys
-from optparse import OptionParser
+from optparse import OptionParser, SUPPRESS_HELP
 
 from pulp.server import auditing
 from pulp.server.config import config
@@ -35,13 +35,14 @@ from pulp.server.db.migrate.validate import validate
 from pulp.server.db.migrate.versions import get_migration_modules
 from pulp.server.db.version import (
     VERSION, get_version_in_use, set_version, is_validated, set_validated, 
-    clean_db)
+    revert_to_version, clean_db)
 
 def parse_args():
     parser = OptionParser()
     parser.add_option('--force', action='store_true', dest='force',
-                      default=False,
-                      help='force migration to run, ignoring "version" in db')
+                      default=False, help=SUPPRESS_HELP)
+    parser.add_option('--from', dest='from', default=None,
+                      help='run the migration starting at the version passed in')
     parser.add_option('--test', action='store_true', dest='test',
                       default=False, 
                       help='run migration, but do not update version')
@@ -51,6 +52,9 @@ def parse_args():
     parser.add_option('--log-level', dest='log_level', default='info',
                       help='level of logging (debug, info, error, critical)')
     options, args = parser.parse_args()
+    if options.from is not None:
+        options.from = int(options.from)
+        assert options.from >= 0
     if args:
         parser.error('unknown arguments: %s' % ', '.join(args))
     return options
@@ -120,6 +124,9 @@ def main():
     if options.force:
         print 'clearing previous versions'
         clean_db()
+    if options.from is not None:
+        print 'reverting db to version %d' % options.from - 1
+        revert_to_version(options.from - 1)
     ret = datamodel_migration(options)
     if ret != os.EX_OK:
         return ret

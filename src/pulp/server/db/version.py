@@ -68,6 +68,19 @@ def clean_db():
         _version_db.remove(safe=True)
         _version_db = None
 
+
+def _get_all_versions():
+    """
+    Utility function to fetch all of the version information from the database.
+    @rtype: list of L{DataModelVersion} instances
+    @return: (potentially empty) list of all data model instances in the db
+    """
+    _init_db
+    versions = _version_db.find()
+    versions.sort('version', pymongo.ASCENDING)
+    return list(versions)
+
+
 def _get_latest_version():
     """
     Utility function to fetch the latest DataModelVersion model from the db.
@@ -153,6 +166,18 @@ def set_version(version):
     v = DataModelVersion(version)
     _set_version(v)
 
+
+def revert_to_version(version):
+    """
+    Set the data model version in the database to the passed in version,
+    removing any subsequent data model version information.
+    @type version: int
+    @param version: data model version
+    """
+    for v in _get_all_versions():
+        if v['version'] <= version:
+            continue
+        _remove_version(v)
 
 def is_validated():
     """
