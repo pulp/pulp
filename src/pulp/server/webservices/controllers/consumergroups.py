@@ -251,7 +251,7 @@ class ConsumerGroupActions(AsyncController):
 class ConsumerGroupActionStatus(AsyncController):
 
     @JSONController.error_handler
-    @JSONController.auth_required(READ)
+    @JSONController.auth_required(EXECUTE) # this is checking an execute, not reading a resource
     def GET(self, id, action_name, action_id):
         """
         Check the status of a package group install operation.
