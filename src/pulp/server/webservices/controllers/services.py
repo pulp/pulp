@@ -34,7 +34,6 @@ log = logging.getLogger('pulp')
 
 class DependencyActions(JSONController):
 
-
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
     def POST(self):
@@ -47,10 +46,11 @@ class DependencyActions(JSONController):
         data = self.params()
         return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=data['recursive']))
 
+
 class UploadAction(JSONController):
-    
+
     @JSONController.error_handler
-    @RoleCheck(admin=True)
+    @JSONController.auth_required(EXECUTE)
     def POST(self):
         """
         upload package(s) to pulp server and optionally associate them to a repo
@@ -59,6 +59,7 @@ class UploadAction(JSONController):
         """
         data = self.params()
         return self.ok(papi.upload(data['pkginfo'], data['pkgstream']))
+
 
 class PackageSearch(JSONController):
 
