@@ -32,23 +32,26 @@ version = 2
 
 
 def _migrate_builtin_roles():
-    api = RoleAPI()
-    for role in api._getcollection().find():
-        # just delete the roles, the proper ones will get create when pulp starts
+    collection = RoleAPI()._getcollection()
+    for role in collection.find():
+        # just delete the roles directly, we need to leave the user permissions
+        # in tact
         if role['name'] in ('SuperUsers', 'ConsumerUsers'):
-            api.delete(role)
+            collection.remove(role)
+    # create the new roles
     ensure_builtin_roles()
 
 
 def _migrate_consumer_model():
-    api = ConsumerApi()
+    collection = ConsumerApi()._getcollection()
     user_api = UserApi()
-    for consumer in api._getcollection().find():
+    for consumer in collection.find():
         key = 'credentials'
         if key not in consumer:
             consumer[key] = None
-            api.update(consumer)
+            collection.save(consumer)
         # look for the corresponding consumer user and create it if missing
+        # NOTE deliberately using the api here for the side-effects
         user = user_api.user(consumer['id'])
         if not user:
             user = user_api.create(consumer['id'])
@@ -57,8 +60,8 @@ def _migrate_consumer_model():
 
 
 def _migrate_repo_model():
-    api = RepoApi()
-    for repo in api._getcollection().find():
+    collection = RepoApi()._getcollection()
+    for repo in collection.find():
         modified = False
         if 'package_count' not in repo:
             repo['package_count'] = len(repo['packages'])
@@ -70,12 +73,12 @@ def _migrate_repo_model():
             repo['packages'] = [pkg_id for pkg_id in repo['packages']]
             modified = True
         if modified:
-            api.update(repo)
+            collection.save(repo)
 
 
 def _migrate_user_model():
-    api = UserApi()
-    for user in api._getcollection().find():
+    collection = UserApi()._getcollection()
+    for user in collection.find():
         modified = False
         if 'roles' not in user or not isinstance(user['roles'], list):
             user['roles'] = []
@@ -89,7 +92,7 @@ def _migrate_user_model():
             user['roles'].append('consumer-users')
             modified = True
         if modified:
-            api.update(user)
+            collection.save(user)
 
 
 def migrate():
