@@ -234,7 +234,7 @@ def grant_automatic_permissions_to_consumer_user(user_name):
     @return: True on success, False otherwise
     """
     user = _get_user(user_name)
-    user_operations = [CREATE, READ, UPDATE, DELETE, EXECUTE]
+    user_operations = [READ, UPDATE, DELETE, EXECUTE]
     _permission_api.grant('/consumers/%s/' % user_name, user, user_operations)
 
 
