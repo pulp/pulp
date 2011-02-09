@@ -15,9 +15,10 @@
 
 import logging
 
-from pulp.server.api.repo import RepoApi
-from pulp.server.api.user import UserApi
 from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.role import RoleAPI
+from pulp.server.api.user import UserApi
 
 
 _log = logging.getLogger('pulp')
@@ -25,6 +26,23 @@ _log = logging.getLogger('pulp')
 # migration module conventions ------------------------------------------------
 
 version = 2
+
+
+def _migrate_builtin_roles():
+    api = RoleAPI()
+    for role in api._getcollection().find():
+        if role['name'] in ('SuperUsers', 'ConsumerUsers'):
+            api.delete(role)
+
+
+def _migrate_consumer_model():
+    api = ConsumerApi()
+    for consumer in api._getcollection().find():
+        key = 'credentials'
+        if key not in consumer:
+            consumer[key] = None
+            api.update(consumer)
+
 
 def _migrate_repo_model():
     api = RepoApi()
@@ -42,25 +60,30 @@ def _migrate_repo_model():
         if modified:
             api.update(repo)
 
+
 def _migrate_user_model():
     api = UserApi()
     for user in api._getcollection().find():
-        if 'roles' not in user or \
-           not isinstance(user['roles'], list):
+        modified = False
+        if 'roles' not in user or not isinstance(user['roles'], list):
             user['roles'] = []
+            modified = True
+        elif 'SuperUsers' in user['roles']:
+            user['roles'].remove('SuperUsers')
+            user['roles'].append('super-users')
+            modified = True
+        elif 'ConsumerUsers' in user['roles']:
+            user['roles'].remove('ConsumerUsers')
+            user['roles'].append('consumer-users')
+            modified = True
+        if modified:
             api.update(user)
 
-def _migrate_consumer_model():
-    api = ConsumerApi()
-    for consumer in api._getcollection().find():
-        key = 'credentials'
-        if key not in consumer:
-            consumer[key] = None
-            api.update(consumer)
 
 def migrate():
     _log.info('migration to data model version 2 started')
+    _migrate_builtin_roles()
+    _migrate_consumer_model()
     _migrate_repo_model()
     _migrate_user_model()
-    _migrate_consumer_model()
     _log.info('migration to data model version 2 complete')
