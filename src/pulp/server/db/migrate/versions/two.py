@@ -78,11 +78,11 @@ def _migrate_user_model():
         if 'roles' not in user or not isinstance(user['roles'], list):
             user['roles'] = []
             modified = True
-        elif 'SuperUsers' in user['roles']:
+        if 'SuperUsers' in user['roles']:
             user['roles'].remove('SuperUsers')
             user['roles'].append('super-users')
             modified = True
-        elif 'ConsumerUsers' in user['roles']:
+        if 'ConsumerUsers' in user['roles']:
             user['roles'].remove('ConsumerUsers')
             user['roles'].append('consumer-users')
             modified = True
