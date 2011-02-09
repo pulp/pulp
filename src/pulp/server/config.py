@@ -33,7 +33,7 @@ _default_values = {
     },
     'database': {
         'auto_migrate': 'true',
-        'name': '_database',
+        'name': 'pulp_database',
         'seeds': 'localhost:27017',
     },
     'logs': {
