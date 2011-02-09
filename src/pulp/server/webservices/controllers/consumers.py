@@ -25,9 +25,9 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (
-    revoke_all_permissions_from_user, grant_permission_to_user,
+    revoke_all_permissions_from_user, add_user_to_role, consumer_users_role,
     grant_automatic_permissions_for_created_resource,
-    add_user_to_role, consumer_users_role,
+    grant_automatic_permissions_to_consumer_user,
     CREATE, READ, UPDATE, DELETE, EXECUTE)
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
@@ -93,10 +93,9 @@ class Consumers(JSONController):
         user = user_api.create(id)
         add_user_to_role(consumer_users_role, user['login'])
         # grant the appropriate permissions to the user
-        path = http.extend_uri_path(consumer.id) # path for consumer resource
-        resource = http.resource_path(path)
-        grant_permission_to_user(resource, id,
-                                 ('READ', 'UPDATE', 'DELETE', 'EXECUTE'))
+        path = http.extend_uri_path(consumer.id) # url path for consumer
+        resource = http.resource_path(path) # path for consumer resource
+        grant_automatic_permissions_to_consumer_user(user['login'], resource)
         grant_automatic_permissions_for_created_resource(resource)
         return self.created(path, consumer)
 
