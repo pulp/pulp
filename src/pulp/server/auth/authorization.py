@@ -500,7 +500,9 @@ def _ensure_consumer_user_role():
     role = _role_api.role(consumer_users_role)
     if role is None:
         role = _role_api.create(consumer_users_role)
-        role['permissions']['/consumers/'] = [CREATE, READ]
+        role['permissions']['/consumers/'] = [CREATE, READ] # XXX not sure this is necessary
+        role['permissions']['/errata/'] = [READ]
+        role['permissions']['/repositories/'] = [READ]
         _role_api.update(role)
 
 
