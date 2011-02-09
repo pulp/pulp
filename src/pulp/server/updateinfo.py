@@ -143,7 +143,7 @@ def generate_updateinfo(repo):
         log.error("Error writing updateinfo.xml to path %s" % updateinfo_path)
     if updateinfo_path:
         log.debug("Modifying repo for updateinfo")
-        pulp.server.upload.modify_repo(os.path.join(repo_dir, "repodata"),
+        pulp.server.util.modify_repo(os.path.join(repo_dir, "repodata"),
                 updateinfo_path)
     
 if __name__ == "__main__":
