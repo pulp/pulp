@@ -26,7 +26,6 @@ import yum
 
 import pulp.server.comps_util
 import pulp.server.crontab
-import pulp.server.upload
 import pulp.server.util
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
@@ -291,7 +290,7 @@ class BaseSynchronizer(object):
         pulp.server.util.create_symlinks(source_path, link_path)
         log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
 
-    def import_package(self, package, repo, repo_defined=False):
+    def import_package(self, package, repo=None, repo_defined=False):
         """
         @param package - package to add to repo
         @param repo - repo to hold package
@@ -319,9 +318,11 @@ class BaseSynchronizer(object):
                     retval.requires.append(dep[0])
                 for prov in package.provides:
                     retval.provides.append(prov[0])
-                retval.download_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name') + "/" + \
-                                      config.config.get('server', 'relative_url') + "/" + \
-                                      repo["id"] + "/" + file_name
+                retval.download_url = None
+                if repo:
+                    retval.download_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name') + "/" + \
+                                          config.config.get('server', 'relative_url') + "/" + \
+                                          repo["id"] + "/" + file_name
                 self.package_api.update(retval)
             return retval
         except Exception, e:
@@ -754,7 +755,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     progress_callback(self.progress)
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
-                pulp.server.upload.create_repo(dst_repo_dir, groups=groups_xml_path)
+                pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path)
                 end = time.time()
                 log.info("Createrepo finished in %s seconds" % (end - start))
                 if prestodelta_path:
@@ -762,14 +763,14 @@ class LocalSynchronizer(BaseSynchronizer):
                     if progress_callback is not None:
                         self.progress["step"] = "Running Modifyrepo for prestodelta metadata"
                         progress_callback(self.progress)
-                    pulp.server.upload.modify_repo(os.path.join(dst_repo_dir, "repodata"),
+                    pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
                             prestodelta_path)
                 if updateinfo_path:
                     log.debug("Modifying repo for updateinfo")
                     if progress_callback is not None:
                         self.progress["step"] = "Running Modifyrepo for updateinfo metadata"
                         progress_callback(self.progress)
-                    pulp.server.upload.modify_repo(os.path.join(dst_repo_dir, "repodata"),
+                    pulp.server.util.modify_repo(os.path.join(dst_repo_dir, "repodata"),
                             updateinfo_path)
         except InvalidPathError:
             log.error("Sync aborted due to invalid source path %s" % (src_repo_dir))

@@ -703,59 +703,7 @@ class CancelSync(RepoAction):
         print _("Sync for repository %s canceled") % id
 
 
-class Upload(RepoAction):
 
-    description = _('upload package(s) to a repository')
-
-    def setup_parser(self):
-        super(Upload, self).setup_parser()
-        self.parser.add_option("--dir", dest="dir",
-                               help=_("process packages from this directory"))
-
-    def run(self):
-        id = self.get_required_option('id')
-        files = self.args
-        dir = self.opts.dir
-        if dir:
-            try:
-                files += utils.processDirectory(dir, "rpm")
-            except Exception, e:
-                system_exit(os.EX_DATAERR, _(str(e)))
-        if not files:
-            system_exit(os.EX_USAGE,
-                        _("Need to provide at least one file to perform upload"))
-        uploadinfo = {}
-        uploadinfo['repo'] = id
-        for frpm in files:
-            try:
-                pkginfo = utils.processRPM(frpm)
-            except FileError, e:
-                print >> sys.stderr, _('error: %s') % e
-                continue
-            if not pkginfo.has_key('nvrea'):
-                print _("Package %s is not an rpm; skipping") % frpm
-                continue
-            name, version, release, epoch, arch = pkginfo['nvrea']
-            nvrea = [{'name' : name,
-                     'version' : version,
-                     'release' : release, 
-                     'epoch'   : epoch,
-                     'arch'    : arch}]
-            pkg_on_server = self.pconn.find_package_by_nvrea(id, nvrea)
-            if pkg_on_server:
-                pkg_on_server = pkg_on_server.values()[0]
-                print _("Package [%s] already exists on the server with checksum [%s] in repo %s") % \
-                        (pkginfo['pkgname'], pkg_on_server['checksum'], id)
-                continue
-
-            pkgstream = base64.b64encode(open(frpm).read())
-            status = self.pconn.upload(id, pkginfo, pkgstream)
-            if status:
-                print _("Successfully uploaded [%s] to repo [ %s ]") % \
-                        (pkginfo['pkgname'], id)
-            else:
-                print _("Failed to upload [%s] to repo [ %s ]") % \
-                        (pkginfo['pkgname'], id)
 
 
 class Schedules(RepoAction):

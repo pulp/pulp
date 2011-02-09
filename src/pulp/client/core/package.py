@@ -15,19 +15,24 @@
 # in this software or its documentation.
 #
 
-from datetime import datetime
+
 import os
 import string
 import sys
 import time
+import base64
 from gettext import gettext as _
 from optparse import OptionGroup
-
+from pulp.client import utils
 from pulp.client.connection import RepoConnection, ConsumerConnection, \
                                    ConsumerGroupConnection, ServicesConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.credentials import CredentialError
+
+# package command errors ---------------------------------------------------------
+class FileError(Exception):
+    pass
 
 # package action base class ---------------------------------------------------
 
@@ -221,6 +226,74 @@ class DependencyList(PackageAction):
             system_exit(os.EX_OK, _("None"))
         for pkg in deps['available_packages']:
             print str(pkg['filename'])
+            
+class Upload(PackageAction):
+
+    description = _('upload package(s) to pulp server;')
+
+    def setup_parser(self):
+        self.parser.add_option("--dir", dest="dir",
+                               help=_("process packages from this directory"))
+        self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
+                               help=_("Optional repoid, to associate the uploaded package"))
+
+    def run(self):
+        files = self.args
+        repoids = [ r for r in self.opts.repoids or [] if len(r)]
+        dir = self.opts.dir
+        if dir:
+            try:
+                files += utils.processDirectory(dir, "rpm")
+            except Exception, e:
+                system_exit(os.EX_DATAERR, _(str(e)))
+        if not files:
+            system_exit(os.EX_USAGE,
+                        _("Need to provide at least one file to perform upload"))
+        print _('STEP: ** Performing Package Uploads to Pulp server **')
+        pids = {}
+        for frpm in files:
+            pkgobj = self.sconn.search_packages(filename=os.path.basename(frpm))
+            if pkgobj:
+                pkgobj = pkgobj[0]
+                print _("Package [%s] already exists on the server with checksum [%s]") % \
+                        (pkgobj['filename'], pkgobj['checksum'])
+                pids[frpm] = pkgobj['id']
+                continue
+            try:
+                pkginfo = utils.processRPM(frpm)
+            except FileError, e:
+                print >> sys.stderr, _('error: %s') % e
+                continue
+            if not pkginfo.has_key('nvrea'):
+                print _("Package %s is not an rpm; skipping") % frpm
+                continue
+            name, version, release, epoch, arch = pkginfo['nvrea']
+            nvrea = [{'name' : name,
+                     'version' : version,
+                     'release' : release, 
+                     'epoch'   : epoch,
+                     'arch'    : arch}]
+
+            pkgstream = base64.b64encode(open(frpm).read())
+            uploaded = self.sconn.upload(pkginfo, pkgstream)
+            if uploaded:
+                pids[frpm] = uploaded['id']
+                print _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
+            else:
+                print _("Failed to upload [%s] to server") % pkginfo['pkgname']
+        if not repoids or not pids:
+            system_exit(os.EX_OK)
+        print _('STEP: ** Performing Repo Associations **')
+        # performing package Repo Association
+        for rid in repoids:
+            repo = self.rconn.repository(rid)
+            if not repo:
+                print _("Repo %s does not exist; skipping") % rid
+                continue
+            self.rconn.add_package(rid, pids.values())
+            print _('Successfully Associated Packages %s to Repo %s' % (pids.keys(), rid))
+
+
             
 # package command -------------------------------------------------------------
 

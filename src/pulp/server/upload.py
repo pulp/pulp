@@ -28,92 +28,60 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
-REPOS_LOCATION = util.top_repos_location()
 PACKAGE_LOCATION = util.top_package_location()
 
 class PackageUpload:
-    def __init__(self, repo, pkginfo, payload):
+    def __init__(self, pkginfo, payload):
         self.pkginfo = pkginfo
         self.stream = payload
         self.pkgname = pkginfo['pkgname']
-        self.repo_dir = "%s/%s/" % (REPOS_LOCATION, repo['relative_path'] or repo['id'])
-        self.repo = repo
-
+        
     def upload(self):
         (name, version, release, epoch, arch) = self.pkginfo['nvrea']
         pkg_path = "%s/%s/%s/%s/%s/%s/%s" % (PACKAGE_LOCATION, self.pkginfo['checksum'][:3], name, version, release, arch, self.pkgname)
-        repo_path = "%s/%s" % (self.repo_dir, self.pkgname)
-        
+
         imp_pkg = None
         try:
             if util.check_package_exists(pkg_path, self.pkginfo['checksum'], self.pkginfo['hashtype']):
                 log.error("Package %s Already Exists on the server skipping upload." % self.pkgname)
             else:
-                store_package(self.stream, pkg_path, repo_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
-            # create symlinks to repo directory
-
-            if not os.path.islink(repo_path):
-                repo_rel_dir = os.path.dirname(repo_path)
-                if not os.path.exists(repo_rel_dir):
-                    os.makedirs(repo_rel_dir)
-                log.info("Create a link in repo directory for the package at %s" % repo_path)
-                os.symlink(pkg_path, repo_path)
-            # update/create the repodata for the repo
-            create_repo(self.repo_dir)
-            imp_pkg = self.bindPackageToRepo(self.repo_dir, pkg_path, self.repo)
+                store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
+            imp_pkg = self.import_package(pkg_path)
         except IOError, e:
             log.error("Error writing file to filesystem %s " % e)
             raise
-        except CreateRepoError, e:
-            log.error("Error running createrepo on repo %s. Error: %s" % (self.repo['id'], e))
-            # XXX do we want to re-raise here?
         except Exception, e:
             log.error("Unexpected Error %s " % e)
             raise
-        return imp_pkg, self.repo
-
-    def bindPackageToRepo(self, repo_path, pkg_path, repo):
-        log.debug("Binding package [%s] to repo [%s]" % (pkg_path, repo))
-        bsync = BaseSynchronizer()
+        return imp_pkg   
+    
+    def import_package(self, pkg_path):
         file_name = os.path.basename(pkg_path)
-        packageInfo = util.get_repo_package(repo_path, file_name)
-        pkg = bsync.import_package(packageInfo, repo)
+        (name, version, release, epoch, arch) = self.pkginfo['nvrea']
+        packageInfo = PackageInfo(name, version, release, epoch, arch,\
+                                  self.pkginfo['description'], 
+                                  self.pkginfo['checksum'], self.pkgname,
+                                  self.pkginfo['requires'], self.pkginfo['provides'])
+        bsync = BaseSynchronizer()
+        pkg = bsync.import_package(packageInfo, repo=None)
         return pkg
+    
+class PackageInfo:
+    def __init__(self, name, version, release, epoch, arch, \
+                 description, checksum, relativepath, 
+                 requires, provides):
+        self.name = name
+        self.version = version
+        self.release = release
+        self.epoch = epoch
+        self.arch = arch
+        self.checksum =  checksum
+        self.relativepath = relativepath
+        self.description = description
+        self.requires = requires
+        self.provides = provides
 
-def create_repo(dir, groups=None):
-    cmd = "createrepo -g %s --update %s" % (groups, dir)
-    if not groups:
-        cmd = "createrepo --update %s" % (dir)
-        repodata_file = os.path.join(dir, "repodata", "repomd.xml")
-        if os.path.isfile(repodata_file):
-            log.info("Checking what metadata types are available: %s" % \
-                    (util.get_repomd_filetypes(repodata_file)))
-            if "group" in util.get_repomd_filetypes(repodata_file):
-                comps_file = util.get_repomd_filetype_path(
-                    repodata_file, "group")
-                comps_file = os.path.join(dir, comps_file)
-                if comps_file and os.path.isfile(comps_file):
-                    cmd = "createrepo -g %s --update %s" % (comps_file, dir)
-    status, out = commands.getstatusoutput(cmd)
-
-    if status != 0:
-        log.error("createrepo on %s failed" % dir)
-        raise CreateRepoError(out)
-    log.info("[%s] on %s finished" % (cmd, dir))
-    return status, out
-
-def modify_repo(dir, new_file):
-    cmd = "modifyrepo %s %s" % (new_file, dir)
-    status, out = commands.getstatusoutput(cmd)
-    if status != 0:
-        log.error("modifyrepo on %s failed" % dir)
-        raise ModifyRepoError(out)
-    log.info("modifyrepo with %s on %s finished" % (new_file, dir))
-    return status, out
-
-
-
-def store_package(pkgstream, pkg_path, repo_path, size, checksum, hashtype, force=None):
+def store_package(pkgstream, pkg_path, size, checksum, hashtype, force=None):
     """
     Write the package stream to a file under repo location
     """

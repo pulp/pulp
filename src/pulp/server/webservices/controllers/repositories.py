@@ -257,7 +257,6 @@ class RepositoryActions(AsyncController):
         'sync',
         '_sync',
         'clone',
-        'upload',
         'add_package',
         'delete_package',
         'get_package',
@@ -330,21 +329,6 @@ class RepositoryActions(AsyncController):
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
-
-    @JSONController.error_handler
-    @RoleCheck(admin=True)
-    def upload(self, id):
-        """
-        Upload a package to a repository.
-        @param id: repository id
-        @return: True on successful upload
-        """
-        data = self.params()
-        api.upload(id,
-                   data['pkginfo'],
-                   data['pkgstream'])
-        return self.ok(True)
-
     @JSONController.error_handler
     @RoleCheck(admin=True)
     def add_package(self, id):
@@ -366,7 +350,6 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.remove_packages(id, data['package'])
         return self.ok(True)
-
 
     @JSONController.error_handler
     @RoleCheck(admin=True)

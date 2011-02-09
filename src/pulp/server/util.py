@@ -23,7 +23,7 @@ import shutil
 import string
 import tempfile
 import time
-
+import commands
 import rpm
 import yum
 
@@ -311,6 +311,37 @@ def create_symlinks(source_path, link_path):
             os.unlink(link_path)
         log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
         os.symlink(source_path, link_path)
+        
+def create_repo(dir, groups=None):
+    cmd = "createrepo -g %s --update %s" % (groups, dir)
+    if not groups:
+        cmd = "createrepo --update %s" % (dir)
+        repodata_file = os.path.join(dir, "repodata", "repomd.xml")
+        if os.path.isfile(repodata_file):
+            log.info("Checking what metadata types are available: %s" % \
+                    (get_repomd_filetypes(repodata_file)))
+            if "group" in get_repomd_filetypes(repodata_file):
+                comps_file = get_repomd_filetype_path(
+                    repodata_file, "group")
+                comps_file = os.path.join(dir, comps_file)
+                if comps_file and os.path.isfile(comps_file):
+                    cmd = "createrepo -g %s --update %s" % (comps_file, dir)
+    status, out = commands.getstatusoutput(cmd)
+
+    if status != 0:
+        log.error("createrepo on %s failed" % dir)
+        raise CreateRepoError(out)
+    log.info("[%s] on %s finished" % (cmd, dir))
+    return status, out
+
+def modify_repo(dir, new_file):
+    cmd = "modifyrepo %s %s" % (new_file, dir)
+    status, out = commands.getstatusoutput(cmd)
+    if status != 0:
+        log.error("modifyrepo on %s failed" % dir)
+        raise ModifyRepoError(out)
+    log.info("modifyrepo with %s on %s finished" % (new_file, dir))
+    return status, out
 
 class Singleton(type):
     """

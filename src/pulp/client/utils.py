@@ -171,6 +171,8 @@ def processRPM(filename, relativeDir=None):
         # Append the relative dir too
         hash["relativePath"] = "%s/%s" % (relativeDir,
             os.path.basename(filename))
+    else:
+        hash["relativePath"] = os.path.basename(filename)
     # Read the header
     try:
         ts = rpm.TransactionSet()
@@ -200,6 +202,9 @@ def processRPM(filename, relativeDir=None):
     hash['hashtype'] = getChecksumType(h)
     hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
     hash['pkgname'] = os.path.basename(filename)
+    hash['description'] = h['description']
+    hash['requires'] = h['requires']
+    hash['provides'] = h['provides']
     return hash
 
 def getChecksumType(header):

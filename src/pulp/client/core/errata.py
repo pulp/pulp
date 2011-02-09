@@ -112,6 +112,8 @@ class Info(ErrataAction):
     def run(self):
         id = self.get_required_option('id')
         errata = self.econn.erratum(id)
+        if not errata:
+            system_exit(os.EX_DATAERR, _("Errata Id %s not found." % id))
         effected_pkgs = [str(pinfo['filename'])
                          for pkg in errata['pkglist']
                          for pinfo in pkg['packages']]
@@ -209,7 +211,7 @@ class Install(ErrataAction):
             print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
         else:
             print("\nErrata install failed")
-
+        
 # errata command --------------------------------------------------------------
 
 class Errata(Command):

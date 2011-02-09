@@ -336,13 +336,6 @@ class RepoConnection(PulpConnection):
         return self.conn.request_post(method,
                 params={"categoryid":categoryid, "groupid":groupid})
 
-    def upload(self, id, pkginfo, pkgstream):
-        uploadinfo = {'repo' : id,
-                      'pkginfo' : pkginfo,
-                      'pkgstream' : pkgstream}
-        method = "/repositories/%s/upload/" % id
-        return self.conn.request_post(method, params=uploadinfo)
-
     def all_schedules(self):
         method = "/repositories/schedules/"
         return self.conn.request_get(method)
@@ -679,10 +672,32 @@ class ErrataConnection(PulpConnection):
 
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", update_id="",
-            from_str="", reboot_suggested="", references=[],
-            pkglist=[]):
-        pass
-
+            from_str="", reboot_suggested="", references=[], pkglist=[]):
+        params = {'id'          : id,
+                  'title'       : title,
+                  'description' : description,
+                  'version'     : version,
+                  'release'     : release,
+                  'type'        : type,
+                  'status'      : status,
+                  'updated'     : updated,
+                  'issued'      : issued,
+                  'pushcount'   : pushcount,
+                  'from_str'    : from_str,
+                  'reboot_suggested' : reboot_suggested,
+                  'references'  : references,
+                  'pkglist'     : pkglist,}
+        method = "/errata/"
+        return self.conn.request_post(method, params=params)
+    
+    def update(self, erratum):
+        method = "/erratum/%s/" % erratum['id']
+        return self.conn.request_put(method, params=erratum)
+    
+    def delete(self, erratumid):
+        method = "/erratum/%s/" % erratumid
+        return self.conn.request_delete(method)
+    
     def erratum(self, id):
         method = "/errata/%s/" % id
         return self.conn.request_get(method)
@@ -802,7 +817,13 @@ class ServicesConnection(PulpConnection):
                    'pkgnames' : pkgnames,
                    'recursive' : recursive}
         method = "/services/dependencies/"
-        return self.conn.request_put(method, params=params)
+        return self.conn.request_post(method, params=params)
+    
+    def upload(self, pkginfo, pkgstream):
+        uploadinfo = {'pkginfo' : pkginfo,
+                      'pkgstream' : pkgstream}
+        method = "/services/upload/"
+        return self.conn.request_post(method, params=uploadinfo)
 
 
 class PermissionConnection(PulpConnection):

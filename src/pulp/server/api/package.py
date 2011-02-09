@@ -23,6 +23,8 @@ from pulp.server.db import model
 from pulp.server.db.connection import get_object_db
 from pulp.server.api.depsolver import DepSolver
 
+from pulp.server.pexceptions import PulpException
+
 log = logging.getLogger(__name__)
 
 package_fields = model.Package(None, None, None, None, None, None, None, None, None).keys()
@@ -213,4 +215,15 @@ class PackageApi(BaseApi):
         """
         spec = {'filename' : filename}
         return list(self.objectdb.find(spec, fields=['checksum']))
+    
+    def upload(self, pkginfo, pkgstream):
+        """
+        Store the uploaded package and associate to this repo
+        """
+        from pulp.server import upload
+        pkg_upload = upload.PackageUpload(pkginfo, pkgstream, None)
+        pkg = pkg_upload.upload()
+        log.info("Upload success %s " % pkg['id'])
+        return pkg
+        
 

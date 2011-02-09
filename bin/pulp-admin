@@ -74,6 +74,7 @@ def setup_admin(admin):
     package_cmd.add_action('install', package.Install())
     package_cmd.add_action('search', package.Search())
     package_cmd.add_action('deplist', package.DependencyList())
+    package_cmd.add_action('upload',  package.Upload())
     admin.add_command('package', package_cmd)
 
     packagegroup_cmd = packagegroup.PackageGroup()
@@ -103,7 +104,6 @@ def setup_admin(admin):
     repo_cmd.add_action('update', repo.Update())
     repo_cmd.add_action('sync', repo.Sync())
     repo_cmd.add_action('cancel_sync', repo.CancelSync())
-    repo_cmd.add_action('upload', repo.Upload())
     repo_cmd.add_action('schedules', repo.Schedules())
     repo_cmd.add_action('listkeys', repo.ListKeys())
     repo_cmd.add_action('publish', repo.Publish())

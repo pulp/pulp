@@ -33,7 +33,6 @@ from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
 from pulp.server import updateinfo
-from pulp.server import upload
 from pulp.server.compat import chain
 from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
@@ -528,7 +527,8 @@ class RepoApi(BaseApi):
 
         # delete the object
         self.objectdb.remove({'id' : id}, safe=True)
-
+    
+    @event(subject='repo.updated')
     @audit()
     def update(self, repo_data):
         id = repo_data['id']
@@ -724,7 +724,7 @@ class RepoApi(BaseApi):
                     os.symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
-        pulp.server.upload.create_repo(repo_path)
+        pulp.server.util.create_repo(repo_path)
         self.objectdb.save(repo, safe=True)
 
     def _add_package(self, repo, p):
@@ -1359,22 +1359,6 @@ class RepoApi(BaseApi):
         return [task
                 for task in self.find_async(method='_sync')
                 if id in task.args]
-
-
-    @audit(params=['id', 'pkginfo'])
-    def upload(self, id, pkginfo, pkgstream):
-        """
-        Store the uploaded package and associate to this repo
-        """
-        repo = self._get_existing_repo(id)
-        if not repo['allow_upload']:
-            raise PulpException('Package Uploads are not allowed to Repo %s' % repo['id'])
-        pkg_upload = upload.PackageUpload(repo, pkginfo, pkgstream)
-        pkg, repo = pkg_upload.upload()
-        self._add_package(repo, pkg)
-        self.objectdb.save(repo, safe=True)
-        log.info("Upload success %s %s" % (pkg['id'], repo['id']))
-        return True
 
     @audit(params=['id', 'keylist'])
     def addkeys(self, id, keylist):

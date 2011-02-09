@@ -47,11 +47,18 @@ class DependencyActions(JSONController):
         data = self.params()
         return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=data['recursive']))
 
-    # this was not written correctly...
-    def PUT(self):
-        log.debug('deprecated DependencyActions.PUT called')
-        return self.POST()
-
+class UploadAction(JSONController):
+    
+    @JSONController.error_handler
+    @RoleCheck(admin=True)
+    def POST(self):
+        """
+        upload package(s) to pulp server and optionally associate them to a repo
+        expects passed in pkgnames, pkg stream and repoids from POST data
+        @return: a dict of printable dependency result and suggested packages
+        """
+        data = self.params()
+        return self.ok(papi.upload(data['pkginfo'], data['pkgstream']))
 
 class PackageSearch(JSONController):
 
@@ -119,6 +126,7 @@ class PackageSearch(JSONController):
 URLS = (
     '/dependencies/$', 'DependencyActions',
     '/search/packages/$', 'PackageSearch',
+    '/upload/$', 'UploadAction',
 )
 
 application = web.application(URLS, globals())
