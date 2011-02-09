@@ -31,5 +31,5 @@ def migrate():
     # wasn't built into pulp from the beginning, we just have to bite the
     # bullet and call some initial state of the data model 'version 1'.
     # So this function is essentially a no-op.
-    _log.info('migration to data model version 1 started')
-    _log.info('migration to data model version 1 complete')
+    _log.info('migration to data model version %d started' % version)
+    _log.info('migration to data model version %d complete' % version)
