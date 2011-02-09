@@ -21,7 +21,7 @@ import sys
 import os
 import time
 import unittest
-import random
+import shutil
 
 try:
     import json
@@ -73,6 +73,7 @@ class TestApi(unittest.TestCase):
         self.cgapi.clean()
         self.eapi.clean()
         testutil.common_cleanup()
+        shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
         sn = SerialNumber()
         sn.reset()
 

@@ -534,7 +534,7 @@ class RepoApi(BaseApi):
         id = repo_data['id']
         repo = self._get_existing_repo(id)
         prevpath = repo.get('relative_path')
-        newpath = repo_data.get('relative_path')
+        newpath = repo_data.pop('relative_path', None)
         hascontent = self._hascontent(repo)
         for key,value in repo_data.items():
             # primary key
@@ -568,11 +568,11 @@ class RepoApi(BaseApi):
             if key in repo:
                 repo[key] = value
             continue
-        # unchanged.
-        if not newpath:
-            newpath = prevpath
-        else:
+        # make sure path is relative.
+        if newpath:
             newpath = newpath.strip('/')
+        else:
+            newpath = prevpath
         pathchanged = (prevpath != newpath)
         #
         # After the repo contains content, the relative path may
