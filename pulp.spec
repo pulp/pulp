@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.135
+Version:        0.0.136
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,8 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Feb 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.136-1
+- New testing build
 * Fri Feb 04 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.135-1
 - 674600 - replace (sha) with (hashlib). (jortel@redhat.com)
 - 674849 - consumer delete should validate against consumer names
