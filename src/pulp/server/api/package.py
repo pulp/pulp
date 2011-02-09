@@ -221,7 +221,7 @@ class PackageApi(BaseApi):
         Store the uploaded package and associate to this repo
         """
         from pulp.server import upload
-        pkg_upload = upload.PackageUpload(pkginfo, pkgstream, None)
+        pkg_upload = upload.PackageUpload(pkginfo, pkgstream)
         pkg = pkg_upload.upload()
         log.info("Upload success %s " % pkg['id'])
         return pkg
