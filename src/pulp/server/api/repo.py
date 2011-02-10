@@ -918,7 +918,7 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
-            repos = self.find_repos_by_errata(erratum['id'])
+            repos = self.find_repos_by_errataid(erratum['id'])
             if repo["id"] in repos and len(repos) == 1:
                 self.errataapi.delete(erratum['id'])
             else:

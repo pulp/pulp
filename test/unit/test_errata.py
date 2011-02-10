@@ -567,11 +567,11 @@ class TestErrata(unittest.TestCase):
         r2 = self.rapi.repository(r2['id'])
         # Test for known errata which should be present
         eid = 'RHSA-2008:0194'
-        found = self.rapi.find_repos_by_errata(eid)
+        found = self.rapi.find_repos_by_errataid(eid)
         self.assertTrue(len(found) == 2)
         self.assertTrue(r['id'] in found)
         self.assertTrue(r2['id'] in found)
         # Test for bad value, should NOT be present
         eid = "BAD-VALUE"
-        found = self.rapi.find_repos_by_errata(eid)
+        found = self.rapi.find_repos_by_errataid(eid)
         self.assertTrue(len(found) == 0)
