@@ -256,7 +256,7 @@ class RepoProgressAction(RepoAction):
                             (len(error_entry[item_type]) - index)
                     break
                 else:
-                    ret_val += "\t" + errors + "\n"
+                    ret_val += "\t" + str(errors) + "\n"
         return ret_val
 # repo actions ----------------------------------------------------------------
 
