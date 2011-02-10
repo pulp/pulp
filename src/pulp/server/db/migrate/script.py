@@ -41,7 +41,7 @@ def parse_args():
     parser = OptionParser()
     parser.add_option('--force', action='store_true', dest='force',
                       default=False, help=SUPPRESS_HELP)
-    parser.add_option('--from', dest='from', default=None,
+    parser.add_option('--from', dest='start', default=None,
                       help='run the migration starting at the version passed in')
     parser.add_option('--test', action='store_true', dest='test',
                       default=False, 
@@ -52,9 +52,9 @@ def parse_args():
     parser.add_option('--log-level', dest='log_level', default='info',
                       help='level of logging (debug, info, error, critical)')
     options, args = parser.parse_args()
-    if options.from is not None:
-        options.from = int(options.from)
-        assert options.from >= 0
+    if options.start is not None:
+        options.start = int(options.start)
+        assert options.start >= 0
     if args:
         parser.error('unknown arguments: %s' % ', '.join(args))
     return options
@@ -124,9 +124,9 @@ def main():
     if options.force:
         print 'clearing previous versions'
         clean_db()
-    if options.from is not None:
-        print 'reverting db to version %d' % options.from - 1
-        revert_to_version(options.from - 1)
+    if options.start is not None:
+        print 'reverting db to version %d' % options.start - 1
+        revert_to_version(options.start - 1)
     ret = datamodel_migration(options)
     if ret != os.EX_OK:
         return ret
