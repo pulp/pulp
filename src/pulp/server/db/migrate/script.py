@@ -52,9 +52,6 @@ def parse_args():
     parser.add_option('--log-level', dest='log_level', default='info',
                       help='level of logging (debug, info, error, critical)')
     options, args = parser.parse_args()
-    if options.start is not None:
-        options.start = int(options.start)
-        assert options.start >= 0
     if args:
         parser.error('unknown arguments: %s' % ', '.join(args))
     return options
@@ -125,8 +122,9 @@ def main():
         print 'clearing previous versions'
         clean_db()
     if options.start is not None:
-        print 'reverting db to version %d' % options.start - 1
-        revert_to_version(options.start - 1)
+        last = int(options.start) - 1
+        print 'reverting db to version %d' % last
+        revert_to_version(last)
     ret = datamodel_migration(options)
     if ret != os.EX_OK:
         return ret

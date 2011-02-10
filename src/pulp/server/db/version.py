@@ -75,7 +75,7 @@ def _get_all_versions():
     @rtype: list of L{DataModelVersion} instances
     @return: (potentially empty) list of all data model instances in the db
     """
-    _init_db
+    _init_db()
     versions = _version_db.find()
     versions.sort('version', pymongo.ASCENDING)
     return list(versions)
