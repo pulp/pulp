@@ -29,6 +29,9 @@ from pulp.client.connection import RepoConnection, ConsumerConnection, \
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.credentials import CredentialError
+from pulp.client.logutil import getLogger
+
+log = getLogger(__name__)
 
 # package command errors ---------------------------------------------------------
 class FileError(Exception):
@@ -236,6 +239,7 @@ class Upload(PackageAction):
                                help=_("process packages from this directory"))
         self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
                                help=_("Optional repoid, to associate the uploaded package"))
+        self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
 
     def run(self):
         files = self.args
@@ -249,14 +253,21 @@ class Upload(PackageAction):
         if not files:
             system_exit(os.EX_USAGE,
                         _("Need to provide at least one file to perform upload"))
-        print _('STEP: ** Performing Package Uploads to Pulp server **')
+        if not self.opts.verbose:
+            print _("* Starting Package Upload operation. See /var/log/pulp/client.log for more verbose output")
+        else:
+            print _("* Starting Package Upload\n")
+        print _('* Performing Package Uploads to Pulp server')
         pids = {}
         for frpm in files:
             pkgobj = self.sconn.search_packages(filename=os.path.basename(frpm))
             if pkgobj:
                 pkgobj = pkgobj[0]
-                print _("Package [%s] already exists on the server with checksum [%s]") % \
-                        (pkgobj['filename'], pkgobj['checksum'])
+                msg = _("Package [%s] already exists on the server with checksum [%s]") % \
+                            (pkgobj['filename'], pkgobj['checksum'])
+                log.info(msg)
+                if self.opts.verbose:
+                    print msg
                 pids[frpm] = pkgobj['id']
                 continue
             try:
@@ -265,7 +276,10 @@ class Upload(PackageAction):
                 print >> sys.stderr, _('error: %s') % e
                 continue
             if not pkginfo.has_key('nvrea'):
-                print _("Package %s is not an rpm; skipping") % frpm
+                msg = _("Package %s is not an rpm; skipping") % frpm
+                log.error(msg)
+                if self.opts.verbose:
+                    print msg
                 continue
             name, version, release, epoch, arch = pkginfo['nvrea']
             nvrea = [{'name' : name,
@@ -278,20 +292,33 @@ class Upload(PackageAction):
             uploaded = self.sconn.upload(pkginfo, pkgstream)
             if uploaded:
                 pids[frpm] = uploaded['id']
-                print _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
+                msg = _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
+                log.info(msg)
+                if self.opts.verbose:
+                    print msg
             else:
-                print _("Failed to upload [%s] to server") % pkginfo['pkgname']
+                msg = _("Failed to upload [%s] to server") % pkginfo['pkgname']
+                log.error(msg)
+                if self.opts.verbose:
+                    print msg
         if not repoids or not pids:
             system_exit(os.EX_OK)
-        print _('STEP: ** Performing Repo Associations **')
+        print _('\n* Performing Repo Associations: ')
         # performing package Repo Association
         for rid in repoids:
             repo = self.rconn.repository(rid)
             if not repo:
-                print _("Repo %s does not exist; skipping") % rid
+                msg = _("Repo %s does not exist; skipping") % rid
+                log.error(msg)
+                if self.opts.verbose:
+                    print msg
                 continue
             self.rconn.add_package(rid, pids.values())
-            print _('Successfully Associated Packages %s to Repo %s' % (pids.keys(), rid))
+            msg =  _('Successfully associated following Packages to Repo [%s]: \n%s' % (rid, '\n'.join(pids.keys())))
+            log.info(msg)
+            if self.opts.verbose:
+                print msg
+        print _("\n* Package Upload complete.")
 
 
             
