@@ -278,15 +278,18 @@ class Upload(PackageAction):
                      'arch'    : arch}]
 
             pkgobj = self.sconn.search_packages(filename=os.path.basename(frpm))
+            existing_pkg_checksums = []
             if pkgobj:
-                pkgobj = pkgobj[0]
+                existing_pkg_checksums = [pobj['checksum']['sha256'] for pobj in pkgobj]
+            
+            if pkginfo['checksum'] in existing_pkg_checksums:
                 msg = _("Package [%s] already exists on the server with checksum [%s]") % \
-                            (pkgobj['filename'], pkgobj['checksum'])
+                            (pobj['filename'], pobj['checksum']['sha256'])
                 log.info(msg)
                 if self.opts.verbose:
                     print msg
-                pids[frpm] = pkgobj['id']
-                continue
+                pids[frpm] = pobj['id']
+                continue 
             pkgstream = base64.b64encode(open(frpm).read())
             uploaded = self.sconn.upload(pkginfo, pkgstream)
             if uploaded:
@@ -300,10 +303,10 @@ class Upload(PackageAction):
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
-        if not pids:
-            system_exit(os.EX_DATAERR, _("No valid package to upload"))
         if not repoids:
-            system_exit(os.EX_OK)
+            system_exit(os.EX_OK, _("\n* Package Upload complete."))
+        if not pids:
+            system_exit(os.EX_DATAERR, _("No packages associate to upload"))
         print _('\n* Performing Repo Associations ')
         # performing package Repo Association
         for rid in repoids:

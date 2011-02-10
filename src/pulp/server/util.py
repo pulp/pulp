@@ -252,7 +252,7 @@ def compare_packages(pkgA, pkgB):
     evrA, evrB = (build_evr(pkgA), build_evr(pkgB))
     return rpm.labelCompare(evrA, evrB)
 
-def check_package_exists(pkg_path, hashsum, hashtype="sha", force=0):
+def check_package_exists(pkg_path, hashsum, hashtype="sha256", force=0):
     if not os.path.exists(pkg_path):
         return False
     # File exists, same hash?

@@ -30,6 +30,9 @@ log = logging.getLogger(__name__)
 
 PACKAGE_LOCATION = util.top_package_location()
 
+class PackageAlreadyExists(Exception):
+    pass
+
 class PackageUpload:
     def __init__(self, pkginfo, payload):
         self.pkginfo = pkginfo
@@ -44,6 +47,7 @@ class PackageUpload:
         try:
             if util.check_package_exists(pkg_path, self.pkginfo['checksum'], self.pkginfo['hashtype']):
                 log.error("Package %s Already Exists on the server skipping upload." % self.pkgname)
+                raise PackageAlreadyExists("Package %s Already Exists on the server with checksum [%s]; skipping upload." % (self.pkgname, self.pkginfo['checksum']))
             else:
                 store_package(self.stream, pkg_path, self.pkginfo['size'], self.pkginfo['checksum'], self.pkginfo['hashtype'])
             imp_pkg = self.import_package(pkg_path)

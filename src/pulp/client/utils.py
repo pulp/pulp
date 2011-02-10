@@ -199,7 +199,7 @@ def processRPM(filename, relativeDir=None):
         nvrea.append(h['arch'])
 
     hash['nvrea'] = tuple(nvrea)
-    hash['hashtype'] = getChecksumType(h)
+    hash['hashtype'] = "sha256" # we enforce sha256 as default checksum
     hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
     hash['pkgname'] = os.path.basename(filename)
     hash['description'] = h['description']
