@@ -163,8 +163,7 @@ class ErrataActions(AsyncController):
 URLS = (
     '/$', 'Errata',
     '/([^/]+)/$', 'Erratum',
-    '/([^/]+)/(%s)/$' % '|'.join(ErrataActions.exposed_actions),
-    'ErrataActions',
+    '/([^/]+)/(%s)/$' % '|'.join(ErrataActions.exposed_actions), 'ErrataActions',
 )
 
 application = web.application(URLS, globals())
