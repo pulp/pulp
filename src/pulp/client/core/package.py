@@ -33,10 +33,6 @@ from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
 
-# package command errors ---------------------------------------------------------
-class FileError(Exception):
-    pass
-
 # package action base class ---------------------------------------------------
 
 class PackageAction(Action):
@@ -252,28 +248,21 @@ class Upload(PackageAction):
                 system_exit(os.EX_DATAERR, _(str(e)))
         if not files:
             system_exit(os.EX_USAGE,
-                        _("Need to provide at least one file to perform upload"))
+                        _("Error: Need to provide at least one file to perform upload"))
         if not self.opts.verbose:
-            print _("* Starting Package Upload operation. See /var/log/pulp/client.log for more verbose output")
+            print _("* Starting Package Upload operation. See /var/log/pulp/client.log for more verbose output\n")
         else:
             print _("* Starting Package Upload\n")
         print _('* Performing Package Uploads to Pulp server')
         pids = {}
         for frpm in files:
-            pkgobj = self.sconn.search_packages(filename=os.path.basename(frpm))
-            if pkgobj:
-                pkgobj = pkgobj[0]
-                msg = _("Package [%s] already exists on the server with checksum [%s]") % \
-                            (pkgobj['filename'], pkgobj['checksum'])
-                log.info(msg)
-                if self.opts.verbose:
-                    print msg
-                pids[frpm] = pkgobj['id']
-                continue
             try:
                 pkginfo = utils.processRPM(frpm)
-            except FileError, e:
-                print >> sys.stderr, _('error: %s') % e
+            except utils.FileError, e:
+                msg = _('Error: %s') % e
+                log.error(msg)
+                if self.opts.verbose:
+                    print msg
                 continue
             if not pkginfo.has_key('nvrea'):
                 msg = _("Package %s is not an rpm; skipping") % frpm
@@ -288,6 +277,16 @@ class Upload(PackageAction):
                      'epoch'   : epoch,
                      'arch'    : arch}]
 
+            pkgobj = self.sconn.search_packages(filename=os.path.basename(frpm))
+            if pkgobj:
+                pkgobj = pkgobj[0]
+                msg = _("Package [%s] already exists on the server with checksum [%s]") % \
+                            (pkgobj['filename'], pkgobj['checksum'])
+                log.info(msg)
+                if self.opts.verbose:
+                    print msg
+                pids[frpm] = pkgobj['id']
+                continue
             pkgstream = base64.b64encode(open(frpm).read())
             uploaded = self.sconn.upload(pkginfo, pkgstream)
             if uploaded:
@@ -297,18 +296,20 @@ class Upload(PackageAction):
                 if self.opts.verbose:
                     print msg
             else:
-                msg = _("Failed to upload [%s] to server") % pkginfo['pkgname']
+                msg = _("Error: Failed to upload [%s] to server") % pkginfo['pkgname']
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
-        if not repoids or not pids:
+        if not pids:
+            system_exit(os.EX_DATAERR, _("No valid package to upload"))
+        if not repoids:
             system_exit(os.EX_OK)
-        print _('\n* Performing Repo Associations: ')
+        print _('\n* Performing Repo Associations ')
         # performing package Repo Association
         for rid in repoids:
             repo = self.rconn.repository(rid)
             if not repo:
-                msg = _("Repo %s does not exist; skipping") % rid
+                msg = _("Error: Repo %s does not exist; skipping") % rid
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
