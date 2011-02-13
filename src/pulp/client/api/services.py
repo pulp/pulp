@@ -16,5 +16,5 @@
 from pulp.client.api.base import PulpAPI
 
 
-class RepoAPI(PulpAPI):
+class ServiceAPI(PulpAPI):
     pass
