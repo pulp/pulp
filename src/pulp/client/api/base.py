@@ -17,6 +17,11 @@ from pulp.client.server.base import Server
 
 
 class PulpAPI(object):
+    """
+    Base api class that allows an internal server object to be set after
+    instantiation.
+    @ivar server: L{Server} instance
+    """
 
     def __init__(self):
         self.server = None
