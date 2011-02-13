@@ -27,41 +27,22 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
-
-class ServerRequestError(Exception):
-    """
-    Exception to indicate a less than favorable response from the server.
-    The arguments are [0] the response status as an integer and
-    [1] the response message as a dict, if we managed to decode from json,
-    or a str if we didn't
-    """
-    pass
+from pulp.client.server.base import Server, ServerRequestError
 
 
-class PulpServer(object):
+class PulpServer(Server):
     """
     Pulp server connection class.
-    @ivar host: host name of the pulp server
-    @ivar port: port the pulp server is listening on (443)
-    @ivar proto: protocol the pulp server is using (http, https)
-    @ivar prefix: mount point of the pulp api (/pulp/api)
-    @ivar headers: dictionary of http headers to send in requests
     """
 
-    def __init__(self, host, port=443, proto='https', prefix='/pulp/api'):
-        assert proto in ('http', 'https')
-
-        self.host = host
-        self.port = port
-        self.proto = proto
-        self.prefix = prefix
+    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api'):
+        super(PulpServer, self).__init__(host, port, protocol, path_prefix)
 
         default_locale = locale.getdefaultlocale()[0].lower().replace('_', '-')
-        self.headers = {
-            'Accept': 'application/json',
-            'Accept-Language': default_locale,
-            'Content-Type': 'application/json',
-        }
+        headers = {'Accept': 'application/json',
+                   'Accept-Language': default_locale,
+                   'Content-Type': 'application/json'}
+        self.headers.update(headers)
 
         self.__certfile = None
         self.__keyfile = None
@@ -88,7 +69,7 @@ class PulpServer(object):
     def _connect(self):
         # make an appropriate connection to the pulp server, and cache it
         if self.__connection is None:
-            if self.proto == 'http':
+            if self.protocol == 'http':
                 self.__connection = self._http_connection()
             else:
                 self.__connection = self._https_connection()
@@ -98,7 +79,7 @@ class PulpServer(object):
 
     def _build_url(self, path, queries=()):
         # build the request url from the path and queries dict or tuple
-        path = '/'.join((self.prefix, path))
+        path = '/'.join((self.path_prefix, path))
         queries = urllib.urlencode(queries)
         if queries:
             path = '?'.join((path, queries))
@@ -124,27 +105,12 @@ class PulpServer(object):
 
     # credentials setters -----------------------------------------------------
 
-    def set_user_pass_credentials(self, username, password):
-        """
-        Set username and password credentials for http basic auth
-        @type username: str
-        @param username: username
-        @type password: str
-        @param password: password
-        """
+    def set_basic_auth_credentials(self, username, password):
         raw = ':'.join((username, password))
         encoded = base64.encode(raw)[:-1]
         self.headers['Authorization'] = 'Basic ' + encoded
 
-    def set_cert_key_credentials(self, certfile, keyfile):
-        """
-        Set ssl certificate and public key credentials
-        @type certfile: str
-        @param certfile: absolute path to the certificate file
-        @type keyfile: str
-        @param keyfile: absolute path to the public key file
-        @raise RuntimeError: if either of the files cannot be found or read
-        """
+    def set_ssl_credentials(self, certfile, keyfile):
         if not os.access(certfile, os.R_OK):
             raise RuntimeError(_('certificate file %s does not exist or cannot be read')
                                % certfile)
@@ -157,63 +123,16 @@ class PulpServer(object):
     # request methods ---------------------------------------------------------
 
     def DELETE(self, path):
-        """
-        Send a DELETE request to the pulp server.
-        @type path: str
-        @param path: path of the resource to delete
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
         return self._request('DELETE', path)
 
     def GET(self, path, queries=()):
-        """
-        Send a GET request to the pulp server.
-        @type path: str
-        @param path: path of the resource to get
-        @type queries: dict or iterable of tuple pairs
-        @param queries: dictionary of iterable of key, value pairs to send as
-                        query parameters in the request
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
         return self._request('GET', path, queries)
 
     def HEAD(self, path):
-        """
-        Send a HEAD request to the pulp server.
-        @type path: str
-        @param path: path of the resource to check
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
         return self._request('HEAD', path)
 
     def POST(self, path, body=None):
-        """
-        Send a POST request to the pulp server.
-        @type path: str
-        @param path: path of the resource to post to
-        @type body: dict or None
-        @param body: (optional) dictionary for json encoding of post parameters
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
         return self._request('POST', path, body=body)
 
     def PUT(self, path, body):
-        """
-        Send a PUT request to the pulp server.
-        @type path: str
-        @param path: path of the resource to put
-        @type body: dict
-        @param body: dictionary for json encoding of resource
-        @rtype: (int, dict or None or str)
-        @return: tuple of the http response status and the response body
-        @raise ServerRequestError: if the request fails
-        """
         return self._request('PUT', path, body)
