@@ -35,6 +35,7 @@ class PulpCLI(object):
         self.name = os.path.basename(sys.argv[0])
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
+        self.opts = None
         self._server = None
         self._commands = {}
 
@@ -83,9 +84,9 @@ class PulpCLI(object):
         server.add_option('--url', dest='url', help=_('pulp server url'))
         self.parser.add_option_group(server)
 
-    def setup_server(self, opts):
-        if opts.url is not None:
-            parts = urlsplit(opts.url)
+    def setup_server(self):
+        if self.opts.url is not None:
+            parts = urlsplit(self.opts.url)
             protocol = parts[0].lower()
             netloc = parts[1]
             path = parts[2]
@@ -102,10 +103,11 @@ class PulpCLI(object):
             path = _cfg.server.path
         self._server = PulpServer(host, int(port), protocol, path)
 
-    def setup_credentials(self, opts):
-        if None in (opts.username, opts.password):
+    def setup_credentials(self):
+        if None in (self.opts.username, self.opts.password):
             return
-        self._server.set_basic_auth_credentials(opts.username, opts.password)
+        self._server.set_basic_auth_credentials(self.opts.username,
+                                                self.opts.password)
 
     def main(self, args=sys.argv[1:]):
         """
@@ -115,13 +117,13 @@ class PulpCLI(object):
         """
         self.parser.set_usage(self.usage)
         self.setup_parser()
-        opts, args = self.parser.parse_args(args)
+        self.opts, args = self.parser.parse_args(args)
         if not args:
             self.parser.error(_('No command given; please see --help'))
         command = self._commands.get(args[0], None)
         if command is None:
             self.parser.error(_('Invalid command; please see --help'))
-        self.setup_server(opts)
-        self.setup_credentials(opts)
+        self.setup_server()
+        self.setup_credentials()
         command.set_server(self._server)
         command.main(args[1:])
