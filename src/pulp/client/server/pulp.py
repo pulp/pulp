@@ -38,7 +38,7 @@ class ServerRequestError(Exception):
     pass
 
 
-class Server(object):
+class PulpServer(object):
     """
     Pulp server connection class.
     @ivar host: host name of the pulp server
