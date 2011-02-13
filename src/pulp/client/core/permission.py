@@ -16,7 +16,7 @@
 import os
 from gettext import gettext as _
 
-from pulp.client.connection import PermissionConnection
+from pulp.client.api.permission import PermissionAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -24,8 +24,9 @@ from pulp.client.core.utils import print_header, system_exit
 
 class PermissionAction(Action):
 
-    def setup_connections(self):
-        self.perm_conn = PermissionConnection()
+    def __init__(self):
+        super(PermissionAction, self).__init__()
+        self.permission_api = PermissionAPI()
 
     def setup_parser(self):
         self.parser.add_option('--resource', dest='resource',
@@ -50,7 +51,7 @@ class Show(PermissionAction):
 
     def run(self):
         resource = self.get_required_option('resource')
-        perms = self.perm_conn.show_permissions(resource)
+        perms = self.permission_api.show_permissions(resource)
         if perms is None:
             system_exit(os.EX_SOFTWARE)
         print_header(_('Permissions for %s') % resource)
@@ -67,7 +68,7 @@ class Grant(PermissionAction):
         operations = self.get_required_option('operations', 'operation')
         operations = [o.upper() for o in operations]
         for user in self.opts.users:
-            success = self.perm_conn.grant_permission_to_user(resource,
+            success = self.permission_api.grant_permission_to_user(resource,
                                                               user,
                                                               operations)
             if not success:
@@ -75,7 +76,7 @@ class Grant(PermissionAction):
             print _('Operations %s granted to user [ %s ] on resource [ %s ]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
-            success = self.perm_conn.grant_permission_to_role(resource,
+            success = self.permission_api.grant_permission_to_role(resource,
                                                               role,
                                                               operations)
             if not success:
@@ -93,7 +94,7 @@ class Revoke(PermissionAction):
         operations = self.get_required_option('operations', 'operation')
         operations = [o.upper() for o in operations]
         for user in self.opts.users:
-            success = self.perm_conn.revoke_permission_from_user(resource,
+            success = self.permission_api.revoke_permission_from_user(resource,
                                                                  user,
                                                                  operations)
             if not success:
@@ -101,7 +102,7 @@ class Revoke(PermissionAction):
             print _('Operations %s revoked from user [ %s ] on resource [ %s ]') % \
                     (str(operations), user, resource)
         for role in self.opts.roles:
-            success = self.perm_conn.revoke_permission_from_role(resource,
+            success = self.permission_api.revoke_permission_from_role(resource,
                                                                  role,
                                                                  operations)
             if not success:

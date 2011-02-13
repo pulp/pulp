@@ -184,18 +184,12 @@ class Action(object):
         """
         pass
 
-    def setup_connections(self):
-        """
-        Setup the connections required by this action
-        """
-        pass
-
     def add_scheduled_time_option(self):
         """
         Adds a --when scheduled time option to the option parser
         """
-        self.parser.add_option("--when", dest="when", default=None, \
-                help=_("Format: 'Year-Month-Day Hour:Min' specifies when to execute task"))
+        self.parser.add_option("--when", dest="when", default=None,
+                               help=_("Format: 'Year-Month-Day Hour:Min' specifies when to execute task"))
 
     def parse_scheduled_time_option(self):
         fmt = "%Y-%m-%d %H:%M"
@@ -205,7 +199,7 @@ class Action(object):
                 when = time.strptime(when, fmt)
                 when = time.mktime(when)
             except:
-                system_exit(-1, _("Unable to parse scheduled time of: %s. Format needs to be in: %s") % (self.opts.when, fmt)) 
+                system_exit(-1, _("Unable to parse scheduled time of: %s. Format needs to be in: %s") % (self.opts.when, fmt))
         return when
 
     def run(self):
@@ -227,7 +221,6 @@ class Action(object):
         self.setup_parser()
         self.opts, self.args = self.parser.parse_args(args)
         try:
-            self.setup_connections()
             self.run()
         except SSL.Checker.WrongHost, wh:
             print _("ERROR: The server hostname you have configured in /etc/pulp/client.conf does not match the")
@@ -245,5 +238,4 @@ class Action(object):
         except Exception, e:
             _log.error("error: %s" % e)
             raise
-        #finally:
         print ''

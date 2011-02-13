@@ -18,17 +18,15 @@
 import os
 import urlparse
 from gettext import gettext as _
-from optparse import SUPPRESS_HELP
 
 from pulp.client import constants
 from pulp.client import json_utils
 from pulp.client import utils
+from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.config import Config
-from pulp.client.connection import ConsumerConnection
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.credentials import Consumer as ConsumerBundle
-from pulp.client.credentials import CredentialError
 from pulp.client.package_profile import PackageProfile
 from pulp.client.repolib import RepoLib
 
@@ -43,12 +41,7 @@ class ConsumerAction(Action):
     def __init__(self):
         super(ConsumerAction, self).__init__()
         self.repolib = RepoLib()
-
-    def setup_connections(self):
-        try:
-            self.cconn = ConsumerConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
+        self.consumer_api = ConsumerAPI()
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
@@ -73,7 +66,7 @@ class List(ConsumerAction):
     def run(self):
         key = self.opts.key
         value = self.opts.value
-        cons = self.cconn.consumers()
+        cons = self.consumer_api.consumers()
         baseurl = "%s://%s:%s" % (_cfg.server.scheme, _cfg.server.host,
                                   _cfg.server.port)
         for con in cons:
@@ -83,18 +76,18 @@ class List(ConsumerAction):
             print_header(_("Consumer Information"))
             for con in cons:
                 kvpair = []
-                key_value_pairs = self.cconn.get_keyvalues(con["id"])
-                for k,v in key_value_pairs.items():
+                key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
+                for k, v in key_value_pairs.items():
                     kvpair.append("%s  :  %s," % (str(k), str(v)))
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"], con["description"], \
-                         con["repoids"].keys(),'\n \t\t\t'.join(kvpair[:]))
+                         con["repoids"].keys(), '\n \t\t\t'.join(kvpair[:]))
             system_exit(os.EX_OK)
 
         if value is None:
             print _("Consumers with key : %s") % key
             for con in cons:
-                key_value_pairs = self.cconn.get_keyvalues(con["id"])
+                key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
                 if key not in key_value_pairs.keys():
                     continue
                 print "%s  -  %s : %s" % (con["id"], key, key_value_pairs[key])
@@ -102,7 +95,7 @@ class List(ConsumerAction):
 
         print _("Consumers with %s : %s") % (key, value)
         for con in cons:
-            key_value_pairs = self.cconn.get_keyvalues(con["id"])
+            key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
             if (key in key_value_pairs.keys()) and \
                     (key_value_pairs[key] == value):
                 print con["id"]
@@ -116,15 +109,15 @@ class Info(ConsumerAction):
         super(Info, self).setup_parser()
         self.parser.add_option('--show-profile', action="store_true",
                                help=_("show package profile information associated with this consumer"))
-        
+
     def run(self):
         id = self.get_required_option('id')
-        cons = self.cconn.consumer(id)
+        cons = self.consumer_api.consumer(id)
         kvpair = []
-        key_value_pairs = self.cconn.get_keyvalues(cons["id"])
-        for k,v in key_value_pairs.items():
+        key_value_pairs = self.consumer_api.get_keyvalues(cons["id"])
+        for k, v in key_value_pairs.items():
             kvpair.append("%s  :  %s," % (str(k), str(v)))
-        
+
         print_header(_("Consumer Information"))
         print constants.AVAILABLE_CONSUMER_INFO % \
                 (cons["id"], cons["description"], cons["repoids"].keys(), '\n \t\t\t'.join(kvpair[:]))
@@ -135,7 +128,7 @@ class Info(ConsumerAction):
         pkgs = ""
         for pkg in cons['package_profile']:
             pkgs += " \n" + utils.getRpmName(pkg)
-        
+
         system_exit(os.EX_OK, pkgs)
 
 class Create(ConsumerAction):
@@ -152,14 +145,14 @@ class Create(ConsumerAction):
     def run(self):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', id)
-        consumer = self.cconn.create(id, description)
-        cert_dict = self.cconn.certificate(id)
+        consumer = self.consumer_api.create(id, description)
+        cert_dict = self.consumer_api.certificate(id)
         key = cert_dict['private_key']
         crt = cert_dict['certificate']
         bundle = ConsumerBundle()
         bundle.write(key, crt)
         pkginfo = PackageProfile().getPackageList()
-        self.cconn.profile(id, pkginfo)
+        self.consumer_api.profile(id, pkginfo)
         print _("Successfully created consumer [ %s ]") % consumer['id']
 
 
@@ -170,7 +163,7 @@ class Delete(ConsumerAction):
     def run(self):
         myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
-        self.cconn.delete(consumerid)
+        self.consumer_api.delete(consumerid)
         if myid and myid == consumerid:
             self.repolib.delete()
             bundle = ConsumerBundle()
@@ -188,7 +181,7 @@ class Update(ConsumerAction):
             system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
         pkginfo = PackageProfile().getPackageList()
         try:
-            self.cconn.profile(consumer_id, pkginfo)
+            self.consumer_api.profile(consumer_id, pkginfo)
             print _("Successfully updated consumer [%s] profile") % consumer_id
         except:
             system_exit(os.EX_DATAERR, _("Error updating consumer [%s]." % consumer_id))
@@ -207,7 +200,7 @@ class Bind(ConsumerAction):
         myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.cconn.bind(consumerid, repoid)
+        self.consumer_api.bind(consumerid, repoid)
         if myid and myid == consumerid:
             self.repolib.update()
         print _("Successfully subscribed consumer [%s] to repo [%s]") % \
@@ -227,7 +220,7 @@ class Unbind(ConsumerAction):
         myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.cconn.unbind(consumerid, repoid)
+        self.consumer_api.unbind(consumerid, repoid)
         if myid and myid == consumerid:
             self.repolib.update()
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
@@ -249,7 +242,7 @@ class AddKeyValue(ConsumerAction):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
-        self.cconn.add_key_value_pair(consumerid, key, value)
+        self.consumer_api.add_key_value_pair(consumerid, key, value)
         print _("Successfully added key-value pair %s:%s") % (key, value)
 
 
@@ -265,7 +258,7 @@ class DeleteKeyValue(ConsumerAction):
     def run(self):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
-        self.cconn.delete_key_value_pair(consumerid, key)
+        self.consumer_api.delete_key_value_pair(consumerid, key)
         print _("Successfully deleted key: %s") % key
 
 
@@ -284,7 +277,7 @@ class UpdateKeyValue(ConsumerAction):
         consumerid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
-        self.cconn.update_key_value_pair(consumerid, key, value)
+        self.consumer_api.update_key_value_pair(consumerid, key, value)
         print _("Successfully updated key-value pair %s:%s") % (key, value)
 
 
@@ -294,13 +287,13 @@ class GetKeyValues(ConsumerAction):
 
     def run(self):
         consumerid = self.get_required_option('id')
-        keyvalues = self.cconn.get_keyvalues(consumerid)
+        keyvalues = self.consumer_api.get_keyvalues(consumerid)
         print_header(_("Consumer Key-values"))
         print constants.CONSUMER_KEY_VALUE_INFO % ("KEY", "VALUE")
         print "--------------------------------------------"
         for key in keyvalues.keys():
             print constants.CONSUMER_KEY_VALUE_INFO % (key, keyvalues[key])
-        system_exit(os.EX_OK)       
+        system_exit(os.EX_OK)
 
 
 
@@ -333,7 +326,7 @@ class History(ConsumerAction):
             'start_date' : self.opts.start_date,
             'end_date' : self.opts.end_date,
         }
-        results = self.cconn.history(consumerid, query_params)
+        results = self.consumer_api.history(consumerid, query_params)
         print_header(_("Consumer History"))
         for entry in results:
             # Attempt to translate the programmatic event type name to a user readable one

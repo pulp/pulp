@@ -23,12 +23,12 @@ from gettext import gettext as _
 from optparse import OptionGroup, SUPPRESS_HELP
 
 from pulp.client import constants
-from pulp.client.connection import (
-    ErrataConnection, RepoConnection, ConsumerConnection,
-    ConsumerGroupConnection)
+from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.consumergroup import ConsumerGroupAPI
+from pulp.client.api.errata import ErrataAPI
+from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit, print_header
-from pulp.client.credentials import CredentialError
 from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
@@ -37,14 +37,12 @@ log = getLogger(__name__)
 
 class ErrataAction(Action):
 
-    def setup_connections(self):
-        try:
-            self.econn = ErrataConnection()
-            self.rconn = RepoConnection()
-            self.cconn = ConsumerConnection()
-            self.cgconn = ConsumerGroupConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
+    def __init__(self):
+        super(ErrataAction, self).__init__()
+        self.consumer_api = ConsumerAPI()
+        self.consumer_group_api = ConsumerGroupAPI()
+        self.errata_api = ErrataAPI()
+        self.repository_api = RepositoryAPI()
 
 # errata actions --------------------------------------------------------------
 
@@ -77,7 +75,7 @@ class List(ErrataAction):
     def run(self):
         consumerid = self.opts.consumerid
         repoid = self.opts.repoid
-        
+
         if not (consumerid or repoid):
             system_exit(os.EX_USAGE, _("A consumer or a repository is required to lookup errata"))
 
@@ -90,11 +88,11 @@ class List(ErrataAction):
             consumerid = None
 
         if repoid:
-            errata = self.rconn.errata(repoid, self.opts.type)
+            errata = self.repository_api.errata(repoid, self.opts.type)
             if errata:
                 print_header(_("Available Errata in Repo [%s]" % repoid))
         elif consumerid:
-            errata = self.cconn.errata(consumerid, self.opts.type)
+            errata = self.consumer_api.errata(consumerid, self.opts.type)
             if errata:
                 print_header(_("Applicable Errata for consumer [%s]" % consumerid))
         if not errata:
@@ -111,7 +109,7 @@ class Info(ErrataAction):
 
     def run(self):
         id = self.get_required_option('id')
-        errata = self.econn.erratum(id)
+        errata = self.errata_api.erratum(id)
         if not errata:
             system_exit(os.EX_DATAERR, _("Errata Id %s not found." % id))
         effected_pkgs = [str(pinfo['filename'])
@@ -120,7 +118,7 @@ class Info(ErrataAction):
         ref = ""
         for reference in errata['references']:
             for key, value in reference.items():
-                ref += "\n\t\t\t%s : %s" % (key, value) 
+                ref += "\n\t\t\t%s : %s" % (key, value)
         print constants.ERRATA_INFO % (errata['id'], errata['title'],
                                        errata['description'], errata['type'],
                                        errata['issued'], errata['updated'],
@@ -158,11 +156,11 @@ class Install(ErrataAction):
 
         assumeyes = False
         if self.opts.assumeyes:
-            assumeyes =  True
+            assumeyes = True
         else:
             reboot_sugg = []
             for eid in errataids:
-                eobj = self.econn.erratum(eid)
+                eobj = self.errata_api.erratum(eid)
                 if eobj:
                     reboot_sugg.append(eobj['reboot_suggested'])
             if True in reboot_sugg:
@@ -179,13 +177,13 @@ class Install(ErrataAction):
                         continue
         try:
             if self.opts.consumerid:
-                task = self.cconn.installerrata(consumerid, errataids, assumeyes=assumeyes)
+                task = self.consumer_api.installerrata(consumerid, errataids, assumeyes=assumeyes)
             elif self.opts.consumergroupid:
-                task = self.cgconn.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
+                task = self.consumer_group_api.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
         except:
             system_exit(os.EX_DATAERR, _("Unable to schedule an errata install task."))
         if not task:
-            system_exit(os.EX_DATAERR, 
+            system_exit(os.EX_DATAERR,
                 _("The requested errataids %s are not applicable for your system" % errataids))
         print _('Created task id: %s') % task['id']
         state = None
@@ -194,7 +192,7 @@ class Install(ErrataAction):
             sys.stdout.write('.')
             sys.stdout.flush()
             time.sleep(2)
-            status = self.cconn.task_status(spath)
+            status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished' and consumerid:
             (installed, reboot_status) = status['result']
@@ -205,13 +203,13 @@ class Install(ErrataAction):
                 print _('\nSuccessfully installed [%s] and reboot scheduled on [%s]' % (installed, (consumerid or (consumergroupid))))
             elif reboot_status.has_key('reboot_performed') and not reboot_status['reboot_performed']:
                 print _('\nSuccessfully installed [%s]; This update requires a reboot, please reboot [%s] at your earliest convenience' % \
-                        (installed, (consumerid or (consumergroupid))))  
-                
+                        (installed, (consumerid or (consumergroupid))))
+
         elif state == 'finished' and consumergroupid:
             print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
         else:
             print("\nErrata install failed")
-        
+
 # errata command --------------------------------------------------------------
 
 class Errata(Command):

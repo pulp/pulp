@@ -15,11 +15,10 @@ import os
 from gettext import gettext as _
 
 from pulp.client import constants
-from pulp.client.connection import ConsumerGroupConnection
+from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.repolib import RepoLib
-from pulp.client.credentials import CredentialError
 
 # consumer group base action --------------------------------------------------
 
@@ -28,12 +27,7 @@ class ConsumerGroupAction(Action):
     def __init__(self):
         super(ConsumerGroupAction, self).__init__()
         self.repolib = RepoLib()
-
-    def setup_connections(self):
-        try:
-            self.cgconn = ConsumerGroupConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
+        self.consumer_group_api = ConsumerGroupAPI()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -49,7 +43,7 @@ class List(ConsumerGroupAction):
         pass
 
     def run(self):
-        groups = self.cgconn.consumergroups()
+        groups = self.consumer_group_api.consumergroups()
         if not len(groups):
             system_exit(os.EX_OK, _("No consumer groups available to list"))
         print_header(_("List of Available Consumer Groups"))
@@ -71,7 +65,7 @@ class Create(ConsumerGroupAction):
     def run(self):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', '')
-        consumergroup = self.cgconn.create(id, description)
+        consumergroup = self.consumer_group_api.create(id, description)
         print _("Successfully created Consumer group [ %s ] with description [ %s ]") % \
                 (consumergroup['id'], consumergroup["description"])
 
@@ -85,10 +79,10 @@ class Delete(ConsumerGroupAction):
 
     def run(self):
         id = self.get_required_option('id')
-        group = self.cgconn.consumergroup(id=id)
+        group = self.consumer_group_api.consumergroup(id=id)
         if not group:
             system_exit(os.EX_DATAERR, _("Consumer group [ %s ] does not exist") % id)
-        self.cgconn.delete(id=id)
+        self.consumer_group_api.delete(id=id)
         print _("Successfully deleted consumer group [ %s ]") % id
 
 
@@ -104,7 +98,7 @@ class AddConsumer(ConsumerGroupAction):
     def run(self):
         consumerid = self.get_required_option('consumerid')
         groupid = self.get_required_option('id')
-        self.cgconn.add_consumer(groupid, consumerid)
+        self.consumer_group_api.add_consumer(groupid, consumerid)
         print _("Successfully added consumer [%s] to group [%s]") % \
                 (consumerid, groupid)
 
@@ -121,7 +115,7 @@ class DeleteConsumer(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         consumerid = self.get_required_option('consumerid')
-        self.cgconn.delete_consumer(groupid, consumerid)
+        self.consumer_group_api.delete_consumer(groupid, consumerid)
         print _("Successfully deleted consumer [%s] from group [%s]") % \
                 (consumerid, groupid)
 
@@ -138,7 +132,7 @@ class Bind(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.cgconn.bind(groupid, repoid)
+        self.consumer_group_api.bind(groupid, repoid)
         self.repolib.update()
         print _("Successfully subscribed consumer group [%s] to repo [%s]") % \
                 (groupid, repoid)
@@ -156,7 +150,7 @@ class Unbind(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.cgconn.unbind(groupid, repoid)
+        self.consumer_group_api.unbind(groupid, repoid)
         self.repolib.update()
         print _("Successfully unsubscribed consumer group [%s] from repo [%s]") % \
                 (groupid, repoid)
@@ -184,7 +178,7 @@ class AddKeyValue(ConsumerGroupAction):
             force_value = 'false'
         else:
             force_value = 'true'
-        self.cgconn.add_key_value_pair(groupid, key, value, force_value)
+        self.consumer_group_api.add_key_value_pair(groupid, key, value, force_value)
         print _("Successfully added key-value pair %s:%s") % (key, value)
 
 
@@ -200,7 +194,7 @@ class DeleteKeyValue(ConsumerGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         key = self.get_required_option('key')
-        self.cgconn.delete_key_value_pair(groupid, key)
+        self.consumer_group_api.delete_key_value_pair(groupid, key)
         print _("Successfully deleted key: %s") % key
 
 
@@ -219,7 +213,7 @@ class UpdateKeyValue(ConsumerGroupAction):
         groupid = self.get_required_option('id')
         key = self.get_required_option('key')
         value = self.get_required_option('value')
-        self.cgconn.update_key_value_pair(groupid, key, value)
+        self.consumer_group_api.update_key_value_pair(groupid, key, value)
         print _("Successfully updated key-value pair %s:%s") % (key, value)
 
 # consumer group command ------------------------------------------------------

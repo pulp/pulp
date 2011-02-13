@@ -23,24 +23,23 @@ import time
 from gettext import gettext as _
 
 import pulp.client.constants as constants
-from pulp.client.connection import ConsumerConnection, RepoConnection
+from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.logutil import getLogger
-from pulp.client.credentials import CredentialError
 
-# base package group action class ---------------------------------------------
 
 _log = getLogger(__name__)
 
+# base package group action class ---------------------------------------------
+
 class PackageGroupAction(Action):
 
-    def setup_connections(self):
-        try:
-            self.pconn = RepoConnection()
-            self.cconn = ConsumerConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
+    def __init__(self):
+        super(PackageGroupAction, self).__init__()
+        self.consumer_api = ConsumerAPI()
+        self.repository_api = RepositoryAPI()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -58,7 +57,7 @@ class List(PackageGroupAction):
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        groups = self.pconn.packagegroups(repoid)
+        groups = self.repository_api.packagegroups(repoid)
         if not groups:
             system_exit(os.EX_DATAERR,
                         _("No package groups found in repo [%s]") % (repoid))
@@ -79,7 +78,7 @@ class Info(PackageGroupAction):
     def run(self):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        groups = self.pconn.packagegroups(repoid)
+        groups = self.repository_api.packagegroups(repoid)
         if not groups or groupid not in groups:
             system_exit(os.EX_DATAERR,
                         _("Package group [%s] not found in repo [%s]") %
@@ -111,7 +110,7 @@ class Create(PackageGroupAction):
         groupname = self.get_required_option('name')
         description = self.opts.description
         try:
-            status = self.pconn.create_packagegroup(repoid, groupid, groupname, description)
+            status = self.repository_api.create_packagegroup(repoid, groupid, groupname, description)
         except Exception, e:
             _log.error(_("Failed on group [%s] create:\n%s") % (groupid, e))
             status = False
@@ -136,7 +135,7 @@ class Delete(PackageGroupAction):
         repoid = self.get_required_option('repoid')
         groupid = self.get_required_option('id')
         try:
-            self.pconn.delete_packagegroup(repoid, groupid)
+            self.repository_api.delete_packagegroup(repoid, groupid)
         except Exception, e:
             _log.error(e)
             print _("Unable to delete Packagegroup [%s] from repository [%s]") % \
@@ -169,13 +168,13 @@ class AddPackage(PackageGroupAction):
         requires = None # Only used by conditional group type
         supported_types = ["mandatory", "optional", "default", "conditional"]
         if grouptype not in supported_types:
-            system_exit(1, 
+            system_exit(1,
                     _("Bad package group type [%s].  Supported types are: %s" % \
                         (grouptype, supported_types)))
         if grouptype == "conditional":
             requires = self.get_required_option("requires")
 
-        self.pconn.add_packages_to_group(repoid, groupid, pnames, grouptype, requires)
+        self.repository_api.add_packages_to_group(repoid, groupid, pnames, grouptype, requires)
         if grouptype == "conditional":
             print _("Following packages added to group [%s] in repository [%s] for required package [%s]: \n %s") % \
                 (groupid, repoid, requires, pnames)
@@ -203,7 +202,7 @@ class DeletePackage(PackageGroupAction):
         groupid = self.get_required_option('id')
         grouptype = self.opts.grouptype
         try:
-            self.pconn.delete_package_from_group(repoid, groupid, pkgname, grouptype)
+            self.repository_api.delete_package_from_group(repoid, groupid, pkgname, grouptype)
         except Exception, e:
             _log.error(e)
             print _("Unable to delete [%s] from group [%s] in repository [%s]") % \
@@ -226,7 +225,7 @@ class Install(PackageGroupAction):
     def run(self):
         consumerid = self.get_required_option('consumerid')
         pkggroupid = self.get_required_option('id')
-        task = self.cconn.installpackagegroups(consumerid, pkggroupid)
+        task = self.consumer_api.installpackagegroups(consumerid, pkggroupid)
         print _('Created task id: %s') % task['id']
         state = None
         spath = task['status_path']
@@ -234,7 +233,7 @@ class Install(PackageGroupAction):
             sys.stdout.write('.')
             sys.stdout.flush()
             time.sleep(2)
-            status = self.cconn.task_status(spath)
+            status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
             print _('\n[%s] installed on %s') % (status['result'], consumerid)
@@ -252,7 +251,7 @@ class ListCategory(PackageGroupAction):
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        cats = self.pconn.packagegroupcategories(repoid)
+        cats = self.repository_api.packagegroupcategories(repoid)
         if not cats:
             system_exit(os.EX_DATAERR,
                         _("No package group categories found in repo [%s]") % (repoid))
@@ -274,7 +273,7 @@ class InfoCategory(PackageGroupAction):
     def run(self):
         categoryid = self.get_required_option('categoryid')
         repoid = self.get_required_option('repoid')
-        cats = self.pconn.packagegroupcategories(repoid)
+        cats = self.repository_api.packagegroupcategories(repoid)
         if not cats or categoryid not in cats:
             system_exit(os.EX_DATAERR,
                         _("Package group category [%s] not found in repo [%s]") %
@@ -304,7 +303,7 @@ class CreateCategory(PackageGroupAction):
         categoryname = self.get_required_option('name')
         description = self.opts.description
         try:
-            status = self.pconn.create_packagegroupcategory(repoid, categoryid,
+            status = self.repository_api.create_packagegroupcategory(repoid, categoryid,
                     categoryname, description)
         except Exception, e:
             _log.error(_("Failed on category [%s] create:\n%s") % (categoryid, e))
@@ -331,7 +330,7 @@ class DeleteCategory(PackageGroupAction):
         repoid = self.get_required_option('repoid')
         categoryid = self.get_required_option('categoryid')
         try:
-            self.pconn.delete_packagegroupcategory(repoid, categoryid)
+            self.repository_api.delete_packagegroupcategory(repoid, categoryid)
         except Exception, e:
             _log.error(e)
             print _("Unable to delete package group category [%s] from repository [%s]") % \
@@ -356,7 +355,7 @@ class InstallCategory(PackageGroupAction):
         consumerid = self.get_required_option('consumerid')
         categoryid = self.get_required_option('categoryid')
         repoid = self.get_required_option('repoid')
-        task = self.cconn.installpackagegroupcategories(consumerid, 
+        task = self.consumer_api.installpackagegroupcategories(consumerid,
                 repoid, categoryid)
         print _('Created task id: %s') % task['id']
         state = None
@@ -365,7 +364,7 @@ class InstallCategory(PackageGroupAction):
             sys.stdout.write('.')
             sys.stdout.flush()
             time.sleep(2)
-            status = self.cconn.task_status(spath)
+            status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
             print _('\n[%s] installed on %s') % (status['result'], consumerid)
@@ -389,7 +388,7 @@ class AddGroupToCategory(PackageGroupAction):
         groupid = self.get_required_option('id')
 
         try:
-            self.pconn.add_packagegroup_to_category(repoid, categoryid, groupid)
+            self.repository_api.add_packagegroup_to_category(repoid, categoryid, groupid)
         except Exception, e:
             _log.error(e)
             print _("Unable to add group [%s] to category [%s] in repository [%s]") % \
@@ -416,7 +415,7 @@ class DeleteGroupFromCategory(PackageGroupAction):
         repoid = self.get_required_option('repoid')
         categoryid = self.get_required_option('categoryid')
         try:
-            self.pconn.delete_packagegroup_from_category(repoid, categoryid, groupid)
+            self.repository_api.delete_packagegroup_from_category(repoid, categoryid, groupid)
         except Exception, e:
             _log.error(e)
             print _("Unable to delete [%s] from category [%s] in repository [%s]") % \

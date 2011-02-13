@@ -18,7 +18,7 @@ from gettext import gettext as _
 
 # Pulp
 from pulp.client import constants, json_utils
-from pulp.client.connection import CdsConnection
+from pulp.client.api.cds import CDSAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header
 
@@ -46,12 +46,16 @@ class Cds(Command):
 
 # -- actions ----------------------------------------------------------------------
 
-class Register(Action):
+class CDSAction(Action):
+
+    def __init__(self):
+        super(CDSAction, self).__init__()
+        self.cds_api = CDSAPI()
+
+
+class Register(CDSAction):
 
     description = _('associates a CDS instance with the pulp server')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -68,18 +72,15 @@ class Register(Action):
         description = self.opts.description
 
         try:
-            self.cds_conn.register(hostname, name, description)
+            self.cds_api.register(hostname, name, description)
             print(_('Successfully registered CDS [%s]' % hostname))
         except:
             print(_('Error attempting to register CDS [%s]' % hostname))
             print(_('Check that the CDS packages have been installed on the CDS and have been started'))
 
-class Unregister(Action):
+class Unregister(CDSAction):
 
     description = _('removes the association between the pulp server and a CDS')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -87,30 +88,24 @@ class Unregister(Action):
 
     def run(self):
         hostname = self.get_required_option('hostname')
-        self.cds_conn.unregister(hostname)
+        self.cds_api.unregister(hostname)
         print(_('Successfully unregistered CDS [%s]' % hostname))
 
-class List(Action):
+class List(CDSAction):
 
     description = _('lists all CDS instances associated with the pulp server')
 
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
-
     def run(self):
-        all_cds = self.cds_conn.list()
+        all_cds = self.cds_api.list()
 
         print_header(_('CDS Instances'))
 
         for cds in all_cds:
             _print_cds(cds)
 
-class History(Action):
+class History(CDSAction):
 
     description = _('displays the history of events on a CDS')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -129,7 +124,7 @@ class History(Action):
     def run(self):
         hostname = self.get_required_option('hostname')
 
-        results = self.cds_conn.history(hostname, event_type=self.opts.event_type,
+        results = self.cds_api.history(hostname, event_type=self.opts.event_type,
                                         limit=self.opts.limit, sort=self.opts.sort,
                                         start_date=self.opts.start_date,
                                         end_date=self.opts.end_date)
@@ -154,14 +149,11 @@ class History(Action):
             if type_name == 'sync_finished' and \
                'error' in entry['details'] and \
                entry['details']['error'] is not None:
-               print(_(constants.CDS_HISTORY_ENTRY_ERROR % entry['details']['error']))
+                print(_(constants.CDS_HISTORY_ENTRY_ERROR % entry['details']['error']))
 
-class Associate(Action):
+class Associate(CDSAction):
 
     description = _('associates a repo with a CDS')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -173,18 +165,15 @@ class Associate(Action):
         hostname = self.get_required_option('hostname')
         repo_id = self.get_required_option('repoid')
 
-        result = self.cds_conn.associate(hostname, repo_id)
+        result = self.cds_api.associate(hostname, repo_id)
         if result:
             print(_('Successfully associated CDS [%s] with repo [%s]' % (hostname, repo_id)))
         else:
             print(_('Error occurred during association, please check the server for more information'))
 
-class Unassociate(Action):
+class Unassociate(CDSAction):
 
     description = _('unassociates a repo from a CDS')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -196,18 +185,15 @@ class Unassociate(Action):
         hostname = self.get_required_option('hostname')
         repo_id = self.get_required_option('repo_id')
 
-        result = self.cds_conn.unassociate(hostname, repo_id)
+        result = self.cds_api.unassociate(hostname, repo_id)
         if result:
             print(_('Successfully associated CDS [%s] with repo [%s]' % (hostname, repo_id)))
         else:
             print(_('Error occurred during association, please check the server for more information'))
 
-class Sync(Action):
+class Sync(CDSAction):
 
     description = _('triggers an immediate sync between the pulp server and the given CDS')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -216,16 +202,13 @@ class Sync(Action):
     def run(self):
         hostname = self.get_required_option('hostname')
 
-        self.cds_conn.sync(hostname)
+        self.cds_api.sync(hostname)
         print(_('Sync for CDS [%s] started' % hostname))
         print(_('Use "cds status" to check on the progress'))
 
-class Status(Action):
+class Status(CDSAction):
 
     description = _('displays the sync status of the given CDS')
-
-    def setup_connections(self):
-        self.cds_conn = CdsConnection()
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -237,8 +220,8 @@ class Status(Action):
         hostname = self.get_required_option('hostname')
 
         # Server data retrieval
-        cds = self.cds_conn.cds(hostname)
-        sync_list = self.cds_conn.sync_list(hostname)
+        cds = self.cds_api.cds(hostname)
+        sync_list = self.cds_api.sync_list(hostname)
 
         # Print the CDS details
         print_header(_('CDS Status'))

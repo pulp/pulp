@@ -13,8 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import base64
-import math
 import os
 import string
 import sys
@@ -23,11 +21,14 @@ from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client import utils
-from pulp.client.connection import RepoConnection, ConsumerConnection, ErrataConnection, ServicesConnection, PackageConnection
+from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.errata import ErrataAPI
+from pulp.client.api.package import PackageAPI
+from pulp.client.api.service import ServiceAPI
+from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.json_utils import parse_date
-from pulp.client.credentials import CredentialError
 from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
@@ -47,15 +48,12 @@ class CloneError(Exception):
 
 class RepoAction(Action):
 
-    def setup_connections(self):
-        try:
-            self.pconn = RepoConnection()
-            self.cconn = ConsumerConnection()
-            self.econn = ErrataConnection()
-            self.sconn = ServicesConnection()
-            self.pkgconn = PackageConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
+    def __init__(self):
+        self.consumer_api = ConsumerAPI()
+        self.errata_api = ErrataAPI()
+        self.package_api = PackageAPI()
+        self.service_api = ServiceAPI()
+        self.repository_api = RepositoryAPI()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -72,22 +70,22 @@ class RepoAction(Action):
         @return: dictionary representing the repository
         """
         assert hasattr(self, 'pconn')
-        repo = self.pconn.repository(id)
+        repo = self.repository_api.repository(id)
         if repo is None:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         return repo
-    
-    
+
+
     def handle_dependencies(self, srcrepo, tgtrepo=None, pkgnames=[], recursive=0, assumeyes=False):
-        deps = self.sconn.dependencies(pkgnames, [srcrepo], recursive)['available_packages']
-        deplist = [{'name'    :   dep['name'], 
-                    'version' : dep['version'], 
-                    'release' : dep['release'], 
-                    'epoch'   : dep['epoch'], 
+        deps = self.service_api.dependencies(pkgnames, [srcrepo], recursive)['available_packages']
+        deplist = [{'name'    :   dep['name'],
+                    'version' : dep['version'],
+                    'release' : dep['release'],
+                    'epoch'   : dep['epoch'],
                     'arch'    : dep['arch']} for dep in deps]
         new_deps = []
         if tgtrepo:
-            avail_deps = self.pconn.find_package_by_nvrea(tgtrepo, deplist) or []
+            avail_deps = self.repository_api.find_package_by_nvrea(tgtrepo, deplist) or []
             for dep in deps:
                 if dep['filename'] not in avail_deps:
                     new_deps.append(dep)
@@ -110,17 +108,17 @@ class RepoAction(Action):
                 elif do_deps.strip().lower() == 'q':
                     system_exit(os.EX_OK, _("Operation aborted upon user request."))
                 else:
-                    continue        
+                    continue
         return new_deps
-    
+
     def lookup_repo_packages(self, filename, repoid):
-        pkgobj = self.sconn.search_packages(filename=filename)
+        pkgobj = self.service_api.search_packages(filename=filename)
         for pkg in pkgobj:
             pkg_repos = pkg["repos"]
             if repoid in pkg_repos:
                 return pkg
         return None
-            
+
 
 class RepoProgressAction(RepoAction):
 
@@ -153,7 +151,7 @@ class RepoProgressAction(RepoAction):
             for d in line:
                 if d in string.printable:
                     count += 1
-            linewraps += count/width
+            linewraps += count / width
         return linewraps
 
     def write(self, current, prev=None):
@@ -205,7 +203,7 @@ class RepoProgressAction(RepoAction):
             if item_details.has_key("num_success") and \
                 item_details.has_key("total_count"):
                     result += _("%ss: %s/%s\n") % \
-                        (item_type.title(), 
+                        (item_type.title(),
                          item_details["num_success"],
                          item_details["total_count"])
         return result
@@ -270,9 +268,9 @@ class List(RepoAction):
 
     def run(self):
         if self.opts.groupid:
-            repos = self.pconn.repositories_by_groupid(groups=self.opts.groupid)
+            repos = self.repository_api.repositories_by_groupid(groups=self.opts.groupid)
         else:
-            repos = self.pconn.repositories()
+            repos = self.repository_api.repositories()
         if not len(repos):
             system_exit(os.EX_OK, _("No repositories available to list"))
         print_header(_('List of Available Repositories'))
@@ -296,7 +294,7 @@ class Status(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
-        syncs = self.pconn.sync_list(id)
+        syncs = self.repository_api.sync_list(id)
         print_header(_('Status for %s') % id)
         print _('Repository: %s') % repo['id']
         print _('Number of Packages: %d') % repo['package_count']
@@ -343,13 +341,13 @@ class Content(RepoAction):
         if self.opts.updates and not self.opts.consumerid:
             system_exit(os.EX_USAGE, _('Consumer Id is required with --updates option.'))
         repo = self.get_repo(id)
-        all_packages = self.pconn.packages(id)
+        all_packages = self.repository_api.packages(id)
         all_pnames = [pkg['filename'] for pkg in all_packages]
-        all_errata = self.pconn.errata(repo['id'])
+        all_errata = self.repository_api.errata(repo['id'])
         files = repo['files']
         if self.opts.updates:
             consumerid = self.opts.consumerid
-            errata_pkg_updates = self.cconn.errata_package_updates(consumerid)
+            errata_pkg_updates = self.consumer_api.errata_package_updates(consumerid)
             pkg_updates = errata_pkg_updates['packages']
             pkgs = []
             for p in pkg_updates:
@@ -439,7 +437,7 @@ class Create(RepoAction):
         if keylist:
             reader = KeyReader()
             keylist = reader.expand(keylist)
-        repo = self.pconn.create(id, name, arch, feed, symlinks, schedule,
+        repo = self.repository_api.create(id, name, arch, feed, symlinks, schedule,
                                  cert_data=cert_data,
                                  relative_path=relative_path,
                                  groupid=groupid,
@@ -486,7 +484,7 @@ class Clone(RepoProgressAction):
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self.print_progress(task['progress'])
                 time.sleep(0.25)
-                task = self.pconn.sync_status(task['status_path'])
+                task = self.repository_api.sync_status(task['status_path'])
         except KeyboardInterrupt:
             print ''
             return
@@ -497,7 +495,7 @@ class Clone(RepoProgressAction):
     def get_task(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-        tasks = self.pconn.sync_list(id)
+        tasks = self.repository_api.sync_list(id)
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for parent repository %s already in progress') % id
             return tasks[0]
@@ -506,7 +504,7 @@ class Clone(RepoProgressAction):
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
         timeout = self.opts.timeout
-        task = self.pconn.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
+        task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
                                 groupid=groupid, timeout=timeout)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
         return task
@@ -525,7 +523,7 @@ class Delete(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        self.pconn.delete(id=id)
+        self.repository_api.delete(id=id)
         print _("Successful deleted repository [ %s ]") % id
 
 
@@ -579,7 +577,7 @@ class Update(RepoAction):
                 method(id, v)
             else:
                 delta[k] = v
-        self.pconn.update(delta)
+        self.repository_api.update(delta)
         print _("Successfully updated repository [ %s ]") % id
 
     def find(self, option):
@@ -592,12 +590,12 @@ class Update(RepoAction):
         """ add the GPG keys """
         reader = KeyReader()
         keylist = reader.expand(keylist)
-        self.pconn.addkeys(id, keylist)
+        self.repository_api.addkeys(id, keylist)
 
     def rmkeys(self, id, keylist):
         """ add the GPG keys """
         keylist = keylist.split(',')
-        self.pconn.rmkeys(id, keylist)
+        self.repository_api.rmkeys(id, keylist)
 
 class Sync(RepoProgressAction):
 
@@ -646,7 +644,7 @@ class Sync(RepoProgressAction):
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self.print_progress(task['progress'])
                 time.sleep(0.25)
-                task = self.pconn.sync_status(task['status_path'])
+                task = self.repository_api.sync_status(task['status_path'])
         except KeyboardInterrupt:
             print ''
             return
@@ -658,7 +656,7 @@ class Sync(RepoProgressAction):
     def get_task(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-        tasks = self.pconn.sync_list(id)
+        tasks = self.repository_api.sync_list(id)
         if tasks and tasks[0]['state'] in ('waiting', 'running'):
             print _('Sync for repository %s already in progress') % id
             return tasks[0]
@@ -672,7 +670,7 @@ class Sync(RepoProgressAction):
         if self.opts.nodistro:
             skip['distribution'] = 1
         timeout = self.opts.timeout
-        task = self.pconn.sync(id, skip, timeout)
+        task = self.repository_api.sync(id, skip, timeout)
         print _('Sync for repository %s started') % id
         return task
 
@@ -692,14 +690,14 @@ class CancelSync(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-        syncs = self.pconn.sync_list(id)
+        syncs = self.repository_api.sync_list(id)
         if not syncs:
             system_exit(os.EX_OK, _('No sync to cancel'))
         task = syncs[0]
         if task['state'] not in ('waiting', 'running'):
             system_exit(os.EX_OK, _('Sync has completed'))
         taskid = task['id']
-        self.pconn.cancel_sync(str(id), str(taskid))
+        self.repository_api.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s canceled") % id
 
 
@@ -715,7 +713,7 @@ class Schedules(RepoAction):
 
     def run(self):
         print_header(_('Available Repository Schedules'))
-        schedules = self.pconn.all_schedules()
+        schedules = self.repository_api.all_schedules()
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
 
@@ -726,7 +724,7 @@ class ListKeys(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        for key in self.pconn.listkeys(id):
+        for key in self.repository_api.listkeys(id):
             print os.path.basename(key)
 
 
@@ -750,11 +748,11 @@ class Publish(RepoAction):
             state = True
         if self.opts.disable:
             state = False
-        if self.pconn.update_publish(id, state):
+        if self.repository_api.update_publish(id, state):
             print _("Repository [%s] 'published' has been set to [%s]") % (id, state)
         else:
             print _("Unable to set 'published' to [%s] on repository [%s]") % (state, id)
-        
+
 
 class AddPackages(RepoAction):
     description = _('Add specific package(s) from the source repository.')
@@ -772,7 +770,7 @@ class AddPackages(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        
+
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if not self.opts.srcrepo:
@@ -781,7 +779,7 @@ class AddPackages(RepoAction):
         self.get_repo(id)
         self.get_repo(self.opts.srcrepo)
         # lookup requested pkgs in the source repository
-        pnames =[]
+        pnames = []
         pids = []
         for pkg in self.opts.pkgname:
             src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
@@ -792,21 +790,21 @@ class AddPackages(RepoAction):
             if tgt_pkgobj:
                 print (_("Package [%s] are already part of repo [%s]. skipping" % (pkg, id)))
                 continue
-            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'],
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pids.append(src_pkgobj['id'])
         if not pnames:
-            system_exit(os.EX_DATAERR)        
+            system_exit(os.EX_DATAERR)
 
         # lookup dependencies and let use decide whether to include them
         pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
         for pdep in pkgdeps:
             pnames.append("%s-%s-%s.%s" % (pdep['name'], pdep['version'], pdep['release'], pdep['arch']))
             pids.append(pdep['id'])
-   
+
         try:
-            self.pconn.add_package(id, pids)
+            self.repository_api.add_package(id, pids)
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
         print _("Successfully added packages %s to repo [%s]." % (pnames, id))
@@ -823,7 +821,7 @@ class RemovePackages(RepoAction):
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
                             help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
-    
+
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.pkgname:
@@ -837,7 +835,7 @@ class RemovePackages(RepoAction):
             if not src_pkgobj:
                 print(_("Package %s could not be found skipping" % pkg))
                 continue
-            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'],
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pobj.append(src_pkgobj)
@@ -848,7 +846,7 @@ class RemovePackages(RepoAction):
         pobj += pkgdeps
         pkg = list(set([p['filename'] for p in pobj]))
         try:
-            self.pconn.remove_package(id, pobj)
+            self.repository_api.remove_package(id, pobj)
             print _("Successfully removed package %s from repo [%s]." % (pkg, id))
         except Exception:
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
@@ -879,14 +877,14 @@ class AddErrata(RepoAction):
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
-            e_repos = self.econn.find_repos(eid) or []
+            e_repos = self.errata_api.find_repos(eid) or []
             if id in e_repos:
                 print(_("Errata Id [%s] is already in target repo [%s]. skipping" % (eid, id)))
                 continue
             if self.opts.srcrepo not in e_repos:
                 print(_("Errata Id [%s] is not in source repo [%s]. skipping" % (eid, self.opts.srcrepo)))
                 continue
-            erratum = self.econn.erratum(eid)
+            erratum = self.errata_api.erratum(eid)
             if not erratum:
                 print(_("Errata Id [%s] could not be found. skipping" % eid))
                 continue
@@ -896,14 +894,14 @@ class AddErrata(RepoAction):
 
         if not effected_pkgs:
             system_exit(os.EX_DATAERR)
-            
-        pnames =[]
+
+        pnames = []
         for pkg in effected_pkgs:
             src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
             if not src_pkgobj: # not in src_pkgobjs:
                 log.info("Errata Package %s could not be found in source repo. skipping" % pkg)
                 continue
-            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'],
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
 
@@ -911,14 +909,14 @@ class AddErrata(RepoAction):
         pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
         pids = [pdep['id'] for pdep in pkgdeps]
         try:
-            self.pconn.add_errata(id, errataids)
+            self.repository_api.add_errata(id, errataids)
             if pids:
                 # add dependencies to repo
-                self.pconn.add_package(id, pids)
+                self.repository_api.add_package(id, pids)
             print _("Successfully added Errata %s to repo [%s]." % (errataids, id))
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add errata [%s] to repo [%s]" % (errataids, id)))
-        
+
 
 class RemoveErrata(RepoAction):
     description = _('Remove errata from the repository')
@@ -931,7 +929,7 @@ class RemoveErrata(RepoAction):
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
                             help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
-        
+
     def run(self):
         id = self.get_required_option('id')
         # check if repo is valid
@@ -941,12 +939,12 @@ class RemoveErrata(RepoAction):
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
-            e_repos = self.econn.find_repos(eid)
+            e_repos = self.errata_api.find_repos(eid)
 
             if id not in e_repos:
                 print(_("Errata Id [%s] is not in the repo [%s]. skipping" % (eid, id)))
                 continue
-            erratum = self.econn.erratum(eid)
+            erratum = self.errata_api.erratum(eid)
             if not erratum:
                 print(_("Errata Id [%s] could not be found. skipping" % eid))
                 continue
@@ -962,20 +960,20 @@ class RemoveErrata(RepoAction):
             if not src_pkgobj:
                 log.info("Package %s could not be found skipping" % pkg)
                 continue
-            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'], 
+            name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'],
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pobj.append(src_pkgobj)
         if not pnames:
             system_exit(os.EX_DATAERR, \
                         _("Associated Errata packages for id [%s] are not in the repo." % errataids))
-            
+
         # lookup dependencies and let use decide whether to include them
         pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
         try:
-            self.pconn.delete_errata(id, errataids)
+            self.repository_api.delete_errata(id, errataids)
             if pkgdeps:
-                self.pconn.remove_package(id, pkgdeps)
+                self.repository_api.remove_package(id, pkgdeps)
         except Exception:
             print _("Unable to remove errata [%s] to repo [%s]" % (errataids, id))
         print _("Successfully removed Errata %s from repo [%s]." % (errataids, id))

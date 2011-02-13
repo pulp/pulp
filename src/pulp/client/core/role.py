@@ -16,7 +16,7 @@
 import os
 from gettext import gettext as _
 
-from pulp.client.connection import RoleConnection
+from pulp.client.api.role import RoleAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 
@@ -24,8 +24,9 @@ from pulp.client.core.utils import print_header, system_exit
 
 class RoleAction(Action):
 
-    def setup_connections(self):
-        self.role_conn = RoleConnection()
+    def __init__(self):
+        super(RoleAction, self).__init__()
+        self.role_api = RoleAPI()
 
 # role action classes ---------------------------------------------------------
 
@@ -35,7 +36,7 @@ class List(RoleAction):
 
     def run(self):
         print_header(_('Available Roles'))
-        for role in self.role_conn.list():
+        for role in self.role_api.list():
             print '  %s' % role
 
 
@@ -48,7 +49,7 @@ class Info(RoleAction):
 
     def run(self):
         rolename = self.get_required_option('role')
-        info = self.role_conn.info(rolename)
+        info = self.role_api.info(rolename)
         if not info:
             system_exit(os.EX_DATAERR)
         print_header(_('Role Information for %s') % rolename)
@@ -69,7 +70,7 @@ class Create(RoleAction):
 
     def run(self):
         rolename = self.get_required_option('role')
-        if self.role_conn.create(rolename):
+        if self.role_api.create(rolename):
             print _('Role [ %s ] created') % rolename
 
 
@@ -82,7 +83,7 @@ class Delete(RoleAction):
 
     def run(self):
         rolename = self.get_required_option('role')
-        if self.role_conn.delete(rolename):
+        if self.role_api.delete(rolename):
             print _('Role [ %s ] deleted') % rolename
 
 
@@ -97,7 +98,7 @@ class Add(RoleAction):
     def run(self):
         rolename = self.get_required_option('role')
         username = self.get_required_option('user')
-        if self.role_conn.add_user(rolename, username):
+        if self.role_api.add_user(rolename, username):
             print _('[ %s ] added to role [ %s ]') % (username, rolename)
 
 
@@ -112,7 +113,7 @@ class Remove(RoleAction):
     def run(self):
         rolename = self.get_required_option('role')
         username = self.get_required_option('user')
-        if self.role_conn.remove_user(rolename, username):
+        if self.role_api.remove_user(rolename, username):
             print _('[ %s ] removed from role [ %s ]') % (username, rolename)
 
 # role command ----------------------------------------------------------------

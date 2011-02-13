@@ -21,28 +21,24 @@ import getpass
 from gettext import gettext as _
 
 from pulp.client import constants
-from pulp.client.connection import UserConnection
+from pulp.client.api.user import UserAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
-from pulp.client.credentials import CredentialError
 
 # base user action class ------------------------------------------------------
 
 class UserAction(Action):
 
-    def setup_connections(self):
-        try:
-            self.userconn = UserConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
-        
+    def __init__(self):
+        super(UserAction, self).__init__()
+        self.user_api = UserAPI()
+
     def get_user(self, username):
-        user = self.userconn.user(login=username)
+        user = self.user_api.user(login=username)
         if not user:
             system_exit(os.EX_DATAERR,
                         _("User [ %s ] does not exist") % username)
         return user
-
 
 # user actions ----------------------------------------------------------------
 
@@ -51,7 +47,7 @@ class List(UserAction):
     description = _('list available users')
 
     def run(self):
-        users = self.userconn.users()
+        users = self.user_api.users()
         if not len(users):
             system_exit(os.EX_OK, _("No users available to list"))
         print_header(_('Available Users'))
@@ -83,7 +79,7 @@ class Create(UserAction):
             else:
                 print _("\nPasswords do not match\n")
         name = self.opts.name
-        user = self.userconn.create(newusername, newpassword, name)
+        user = self.user_api.create(newusername, newpassword, name)
         print _("Successfully created user [ %s ] with name [ %s ]") % \
                 (user['login'], user['name'])
 
@@ -118,7 +114,7 @@ class Update(UserAction):
                 else:
                     print _("\nPasswords do not match\n")
             user['password'] = newpassword
-        self.userconn.update(user)
+        self.user_api.update(user)
         print _("Successfully updated [ %s ] with name [ %s ]") % \
                 (user['login'], user["name"])
 
@@ -134,7 +130,7 @@ class Delete(UserAction):
     def run(self):
         deleteusername = self.get_required_option('username')
         user = self.get_user(deleteusername)
-        deleted = self.userconn.delete(login=deleteusername)
+        deleted = self.user_api.delete(login=deleteusername)
         if deleted:
             print _("Successfully deleted User [ %s ]") % deleteusername
         else:

@@ -16,19 +16,21 @@
 #
 
 
+import base64
 import os
 import string
 import sys
 import time
-import base64
 from gettext import gettext as _
 from optparse import OptionGroup
+
 from pulp.client import utils
-from pulp.client.connection import RepoConnection, ConsumerConnection, \
-                                   ConsumerGroupConnection, ServicesConnection
+from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.consumergroup import ConsumerGroupAPI
+from pulp.client.api.repository import RepositoryAPI
+from pulp.client.api.service import ServiceAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
-from pulp.client.credentials import CredentialError
 from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
@@ -37,14 +39,12 @@ log = getLogger(__name__)
 
 class PackageAction(Action):
 
-    def setup_connections(self):
-        try:
-            self.rconn = RepoConnection()
-            self.cconn = ConsumerConnection()
-            self.cgconn = ConsumerGroupConnection()
-            self.sconn = ServicesConnection()
-        except CredentialError, ce:
-            system_exit(-1, str(ce))
+    def __init__(self):
+        super(PackageAction, self).__init__()
+        self.consumer_api = ConsumerAPI()
+        self.consumer_group_api = ConsumerGroupAPI()
+        self.repository_api = RepositoryAPI()
+        self.service_api = ServiceAPI()
 
 # package actions -------------------------------------------------------------
 
@@ -61,7 +61,7 @@ class Info(PackageAction):
     def run(self):
         name = self.get_required_option('name')
         repoid = self.get_required_option('repoid')
-        pkg = self.rconn.get_package(repoid, name)
+        pkg = self.repository_api.get_package(repoid, name)
         if not pkg:
             system_exit(os.EX_DATAERR,
                         _("Package [%s] not found in repo [%s]") %
@@ -98,9 +98,9 @@ class Install(PackageAction):
             system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
         when = self.parse_scheduled_time_option()
         if consumergroupid:
-            task = self.cgconn.installpackages(consumergroupid, pnames, when=when)
+            task = self.consumer_group_api.installpackages(consumergroupid, pnames, when=when)
         else:
-            task = self.cconn.installpackages(consumerid, pnames, when=when)
+            task = self.conumer_api.installpackages(consumerid, pnames, when=when)
         print _('Created task id: %s') % task['id']
         print _('Task is scheduled for: %s') % \
                 time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
@@ -110,7 +110,7 @@ class Install(PackageAction):
             sys.stdout.write('.')
             sys.stdout.flush()
             time.sleep(2)
-            status = self.cconn.task_status(spath)
+            status = self.conumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
             print _('\n[%s] installed on %s') % \
@@ -143,25 +143,25 @@ class Search(PackageAction):
         name = self.opts.name
         release = self.opts.release
         version = self.opts.version
-        pkgs = self.sconn.search_packages(name=name, epoch=epoch, version=version,
+        pkgs = self.service_api.search_packages(name=name, epoch=epoch, version=version,
                 release=release, arch=arch, filename=filename)
         if not pkgs:
-           system_exit(os.EX_DATAERR, _("No packages found."))
+            system_exit(os.EX_DATAERR, _("No packages found."))
 
         name_field_size = self.get_field_size(pkgs, field_name="name")
-        evra_field_size = self.get_field_size(pkgs, msg="%s:%s-%s.%s", 
+        evra_field_size = self.get_field_size(pkgs, msg="%s:%s-%s.%s",
                 field_names=("epoch", "version", "release", "arch"))
         filename_field_size = self.get_field_size(pkgs, field_name="filename")
         repos_field_size = self.get_field_size(pkgs, field_name="repos")
         print_header(_("Package Information"))
         print _("%s\t%s\t%s\t%s" % (self.form_item_string("Name", name_field_size),
-                self.form_item_string("EVRA", evra_field_size), 
+                self.form_item_string("EVRA", evra_field_size),
                 self.form_item_string("Filename", filename_field_size),
                 self.form_item_string("Repositories", repos_field_size)))
         for pkg in pkgs:
             repos = ", ".join(pkg["repos"])
             print "%s\t%s\t%s\t%s" % \
-                    (self.form_item_string(pkg["name"], name_field_size), 
+                    (self.form_item_string(pkg["name"], name_field_size),
                     self.form_item_string("%s:%s-%s.%s" % (pkg["epoch"], pkg["version"],
                         pkg["release"], pkg["arch"]), evra_field_size),
                     self.form_item_string(pkg["filename"], filename_field_size),
@@ -180,11 +180,11 @@ class Search(PackageAction):
             if len(test_string) > largest_item_length:
                 largest_item_length = len(test_string)
         return largest_item_length
-    
+
 class DependencyList(PackageAction):
 
     description = _('List available dependencies')
-    
+
     def setup_parser(self):
         self.parser.add_option("-n", "--name", action="append", dest="pnames", type="string",
                                help=_("package to lookup dependencies; to specify multiple packages use multiple -n"))
@@ -193,7 +193,7 @@ class DependencyList(PackageAction):
 
 
     def run(self):
-        
+
         if not self.opts.pnames:
             system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
@@ -204,16 +204,16 @@ class DependencyList(PackageAction):
                         _("Atleast one repoid is required to lookup dependencies."))
         pnames = self.opts.pnames
 
-        repos = []    
+        repos = []
         for rid in repoid:
-            repo = self.rconn.repository(rid)
+            repo = self.repository_api.repository(rid)
             if repo is None:
                 print(_("Repository with id: [%s] not found. skipping" % rid))
                 continue
             repos.append(rid)
         if not repos:
             system_exit(os.EX_DATAERR)
-        deps = self.sconn.dependencies(pnames, repos)
+        deps = self.service_api.dependencies(pnames, repos)
         if not deps['dependency_list']:
             system_exit(os.EX_OK, _("No dependencies available for Package(s) %s in repo %s") %
                         (pnames, repos))
@@ -225,7 +225,7 @@ class DependencyList(PackageAction):
             system_exit(os.EX_OK, _("None"))
         for pkg in deps['available_packages']:
             print str(pkg['filename'])
-            
+
 class Upload(PackageAction):
 
     description = _('upload package(s) to pulp server;')
@@ -273,15 +273,15 @@ class Upload(PackageAction):
             name, version, release, epoch, arch = pkginfo['nvrea']
             nvrea = [{'name' : name,
                      'version' : version,
-                     'release' : release, 
+                     'release' : release,
                      'epoch'   : epoch,
                      'arch'    : arch}]
 
-            pkgobj = self.sconn.search_packages(filename=os.path.basename(frpm))
+            pkgobj = self.service_api.search_packages(filename=os.path.basename(frpm))
             existing_pkg_checksums = []
             if pkgobj:
                 existing_pkg_checksums = [pobj['checksum']['sha256'] for pobj in pkgobj]
-            
+
             if pkginfo['checksum'] in existing_pkg_checksums:
                 msg = _("Package [%s] already exists on the server with checksum [%s]") % \
                             (pobj['filename'], pobj['checksum']['sha256'])
@@ -289,9 +289,9 @@ class Upload(PackageAction):
                 if self.opts.verbose:
                     print msg
                 pids[frpm] = pobj['id']
-                continue 
+                continue
             pkgstream = base64.b64encode(open(frpm).read())
-            uploaded = self.sconn.upload(pkginfo, pkgstream)
+            uploaded = self.service_api.upload(pkginfo, pkgstream)
             if uploaded:
                 pids[frpm] = uploaded['id']
                 msg = _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
@@ -310,22 +310,22 @@ class Upload(PackageAction):
         print _('\n* Performing Repo Associations ')
         # performing package Repo Association
         for rid in repoids:
-            repo = self.rconn.repository(rid)
+            repo = self.repository_api.repository(rid)
             if not repo:
                 msg = _("Error: Repo %s does not exist; skipping") % rid
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
                 continue
-            self.rconn.add_package(rid, pids.values())
-            msg =  _('Successfully associated following Packages to Repo [%s]: \n%s' % (rid, '\n'.join(pids.keys())))
+            self.repository_api.add_package(rid, pids.values())
+            msg = _('Successfully associated following Packages to Repo [%s]: \n%s' % (rid, '\n'.join(pids.keys())))
             log.info(msg)
             if self.opts.verbose:
                 print msg
         print _("\n* Package Upload complete.")
 
 
-            
+
 # package command -------------------------------------------------------------
 
 class Package(Command):
