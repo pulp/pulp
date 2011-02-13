@@ -17,11 +17,14 @@ import os
 import sys
 from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
+from urlparse import urlsplit
 
-from pulp.client.credentials import Credentials
 from pulp.client.config import Config
+from pulp.client.server.pulp import PulpServer
+
 
 _cfg = Config()
+
 
 class PulpCLI(object):
     """
@@ -32,8 +35,8 @@ class PulpCLI(object):
         self.name = os.path.basename(sys.argv[0])
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
-        self._commands = {}
         self._server = None
+        self._commands = {}
 
     @property
     def usage(self):
@@ -48,11 +51,6 @@ class PulpCLI(object):
             lines.append('\t%-14s %-25s' % (name, command.description))
         return '\n'.join(lines)
 
-    def set_server(self, server):
-        self._server = server
-        for command in self._commands.values():
-            command.set_server(server)
-
     def add_command(self, name, command):
         """
         Add a command to this command line tool
@@ -64,8 +62,6 @@ class PulpCLI(object):
         command.cli = self
         command.name = name
         self._commands[name] = command
-        if self._server is not None:
-            command.set_server(self._server)
 
     def setup_parser(self):
         """
@@ -84,9 +80,30 @@ class PulpCLI(object):
         self.parser.add_option_group(credentials)
 
         server = OptionGroup(self.parser, _('Pulp Server Information'))
-        server.add_option('-s', '--server', dest='server', default=None,
-                          help=_('pulp server host'))
+        server.add_option('--url', dest='url', help=_('pulp server url'))
         self.parser.add_option_group(server)
+
+    def setup_server(self, opts):
+        if opts.url is not None:
+            parts = urlsplit(opts.url)
+            protocol = parts[0].lower()
+            netloc = parts[1]
+            path = parts[2]
+            index = netloc.find(':')
+            if index >= 0:
+                host, port = netloc.split(':')
+            else:
+                host = netloc
+                port = {'http': 80, 'https': 443}[protocol]
+        else:
+            host = _cfg.server.host
+            port = _cfg.server.port
+            protocol = _cfg.server.scheme
+            path = _cfg.server.path
+        self._server = PulpServer(host, int(port), protocol, path)
+
+    def setup_credentials(self, opts):
+        pass
 
     def main(self, args=sys.argv[1:]):
         """
@@ -102,8 +119,6 @@ class PulpCLI(object):
         command = self._commands.get(args[0], None)
         if command is None:
             self.parser.error(_('Invalid command; please see --help'))
-        if opts.server is not None:
-            Credentials.setserver(opts.server)
-        Credentials.setuser(opts.username, opts.password)
-        Credentials.setcert(opts.key_file, opts.cert_file)
+        self.setup_server(opts)
+        command.set_server(self._server)
         command.main(args[1:])
