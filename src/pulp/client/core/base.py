@@ -87,6 +87,16 @@ class Command(object):
         return _('no description available')
 
     def _set_server_on_action(self, action):
+        # NOTE this is a total hack/kludge/yuck/ew
+        # we're doing it this way in order to add the ability to specify the 
+        # server on the command line as arguments to the script
+        # but now, the script is not able to tell what the server url is until
+        # it parses its arguments and the commands and actions have to be
+        # instantiated, along with the apis they use, *before* the script can
+        # parse the command line arguments
+        # so we end up with a "chicken and the egg" problem
+        # this hack allows us to instantiate the server that the apis expect
+        # long after the api have been instantiated themselves
         for attr in action.__dict__.values():
             if not isinstance(attr, PulpAPI):
                 continue
@@ -94,8 +104,6 @@ class Command(object):
 
     def set_server(self, server):
         self._server = server
-        for action in self._actions.values():
-            self._set_server_on_action(action)
 
     def add_action(self, name, action):
         """
@@ -130,6 +138,7 @@ class Command(object):
         action = self._actions.get(args[0], None)
         if action is None:
             self.parser.error(_('invalid action: please see --help'))
+        self._set_server_on_action(action)
         action.main(args[1:])
 
 # base action class -----------------------------------------------------------
