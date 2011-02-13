@@ -20,7 +20,7 @@ import os
 from gettext import gettext as _
 
 from pulp.client.credentials import Consumer
-from pulp.client.cli.base import PulpCLI
+from pulp.client.cli.client import ClientCLI
 from pulp.client.core import consumer, errata, repo
 
 
@@ -55,7 +55,7 @@ def setup_client(client):
 
 if __name__ == '__main__':
     #root_check()
-    client = PulpCLI()
+    client = ClientCLI()
     setup_client(client)
     bundle = Consumer()
     if not bundle.getid():

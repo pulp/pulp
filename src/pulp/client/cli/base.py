@@ -103,7 +103,9 @@ class PulpCLI(object):
         self._server = PulpServer(host, int(port), protocol, path)
 
     def setup_credentials(self, opts):
-        pass
+        if None in (opts.username, opts.password):
+            return
+        self._server.set_basic_auth_credentials(opts.username, opts.password)
 
     def main(self, args=sys.argv[1:]):
         """
