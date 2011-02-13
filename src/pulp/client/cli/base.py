@@ -33,6 +33,7 @@ class PulpCLI(object):
         self.parser = OptionParser()
         self.parser.disable_interspersed_args()
         self._commands = {}
+        self._server = None
 
     @property
     def usage(self):
@@ -47,6 +48,11 @@ class PulpCLI(object):
             lines.append('\t%-14s %-25s' % (name, command.description))
         return '\n'.join(lines)
 
+    def set_server(self, server):
+        self._server = server
+        for command in self._commands.values():
+            command.set_server(server)
+
     def add_command(self, name, command):
         """
         Add a command to this command line tool
@@ -58,6 +64,8 @@ class PulpCLI(object):
         command.cli = self
         command.name = name
         self._commands[name] = command
+        if self._server is not None:
+            command.set_server(self._server)
 
     def setup_parser(self):
         """
@@ -73,8 +81,8 @@ class PulpCLI(object):
                                default=None, help=SUPPRESS_HELP)
         credentials.add_option('--key-file', dest='key_file',
                                default=None, help=SUPPRESS_HELP)
-        credentials.add_option('-s', '--server', dest='server',
-				default=None, help=_('pulp server host'))
+        credentials.add_option('-s', '--server', dest='server', default=None,
+                               help=_('pulp server host'))
         self.parser.add_option_group(credentials)
 
     def main(self, args=sys.argv[1:]):

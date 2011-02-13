@@ -20,6 +20,7 @@ from gettext import gettext as _
 from optparse import OptionParser
 from M2Crypto import SSL
 
+from pulp.client.api.base import PulpAPI
 from pulp.client.config import Config
 from pulp.client.connection import RestlibException
 from pulp.client.credentials import Consumer as ConsumerBundle
@@ -63,6 +64,7 @@ class Command(object):
         self.parser.disable_interspersed_args()
         self._actions = {}
         self._action_order = []
+        self._server = None
 
     @property
     def usage(self):
@@ -84,6 +86,17 @@ class Command(object):
         """
         return _('no description available')
 
+    def _set_server_on_action(self, action):
+        for attr in action.__dict__.values():
+            if not isinstance(attr, PulpAPI):
+                continue
+            attr.set_server(self._server)
+
+    def set_server(self, server):
+        self._server = server
+        for action in self._actions.values():
+            self._set_server_on_action(action)
+
     def add_action(self, name, action):
         """
         Add an action to this command
@@ -97,6 +110,8 @@ class Command(object):
         action.name = name
         self._action_order.append(name)
         self._actions[name] = action
+        if self._server is not None:
+            self._set_server_on_action(action)
 
     def main(self, args):
         """
