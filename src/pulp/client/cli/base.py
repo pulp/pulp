@@ -120,5 +120,6 @@ class PulpCLI(object):
         if command is None:
             self.parser.error(_('Invalid command; please see --help'))
         self.setup_server(opts)
+        self.setup_credentials(opts)
         command.set_server(self._server)
         command.main(args[1:])
