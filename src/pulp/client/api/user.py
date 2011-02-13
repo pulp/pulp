@@ -17,4 +17,37 @@ from pulp.client.api.base import PulpAPI
 
 
 class UserAPI(PulpAPI):
-    pass
+    """
+    Connection class to access consumer group related calls
+    """
+    def create(self, login, password=None, name=None):
+        user_data = {"login": login,
+                     "password": password,
+                     "name": name}
+        path = "/users/"
+        return self.server.PUT(path, user_data)
+
+    def update(self, user):
+        path = "/users/%s/" % user['id']
+        return self.server.PUT(path, user)
+
+    def delete(self, **kwargs):
+        login = kwargs['login']
+        path = "/users/%s/" % login
+        return self.server.DELETE(path)
+
+    def clean(self):
+        path = "/users/"
+        return self.server.DELETE(path)
+
+    def users(self):
+        path = "/users/"
+        return self.server.GET(path)
+
+    def user(self, login):
+        path = "/users/%s/" % str(login)
+        return self.server.GET(path)
+
+    def admin_certificate(self):
+        path = '/users/admin_certificate/'
+        return self.server.GET(path)
