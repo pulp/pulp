@@ -58,7 +58,9 @@ class PulpServer(Server):
         return httplib.HTTPConnection(self.host, self.port)
 
     def _https_connection(self):
-        if None in (self.__certfile, self.__keyfile):
+        # make sure that passed in username and password overrides cert/key auth
+        if None in (self.__certfile, self.__keyfile) or \
+                'Authorization' in self.headers:
             return httplib.HTTPSConnection(self.host, self.port)
         ssl_context = SSL.Context('sslv3')
         ssl_context.load_cert(self.__certfile, self.__keyfile)
