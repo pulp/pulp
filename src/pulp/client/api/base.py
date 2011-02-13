@@ -13,7 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.client.server import Server
+from pulp.client.server.base import Server
 
 
 class PulpAPI(object):
