@@ -14,7 +14,61 @@
 # in this software or its documentation.
 
 from pulp.client.api.base import PulpAPI
+from pulp.client.server.base import ServerRequestError
 
 
 class PermissionAPI(PulpAPI):
-    pass
+
+    def show_permissions(self, resource):
+        path = '/permissions/show/'
+        params = {'resource': resource}
+        try:
+            return self.server.POST(path, params)
+        except ServerRequestError, e:
+            print e.args[1]
+            return None
+
+    def grant_permission_to_user(self, resource, username, operations):
+        path = '/permissions/user/grant/'
+        params = {'username': username,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.server.POST(path, params)
+        except ServerRequestError, e:
+            print e.args[1]
+            return False
+
+    def revoke_permission_from_user(self, resource, username, operations):
+        path = '/permissions/user/revoke/'
+        params = {'username': username,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.server.POST(path, params)
+        except ServerRequestError, e:
+            print e.args[1]
+            return False
+
+    def grant_permission_to_role(self, resource, rolename, operations):
+        path = '/permissions/role/grant/'
+        params = {'rolename': rolename,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.server.POST(path, params)
+        except ServerRequestError, e:
+            print e.args[1]
+            return False
+
+    def revoke_permission_from_role(self, resource, rolename, operations):
+        path = '/permissions/role/revoke/'
+        params = {'rolename': rolename,
+                  'resource': resource,
+                  'operations': operations}
+        try:
+            return self.server.POST(path, params)
+        except ServerRequestError, e:
+            print e.args[1]
+            return False
+
