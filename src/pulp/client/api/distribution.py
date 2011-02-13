@@ -17,4 +17,17 @@ from pulp.client.api.base import PulpAPI
 
 
 class DistributionAPI(PulpAPI):
-    pass
+    """
+    Connection class to access distribution related calls
+    """
+    def clean(self):
+        pass
+
+    def distributions(self):
+        path = '/distribution/'
+        return self.server.GET(path)
+
+    def distribution(self, id):
+        path = '/distribution/%s/' % str(id)
+        return self.server.GET(path)
+
