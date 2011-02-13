@@ -81,9 +81,12 @@ class PulpCLI(object):
                                default=None, help=SUPPRESS_HELP)
         credentials.add_option('--key-file', dest='key_file',
                                default=None, help=SUPPRESS_HELP)
-        credentials.add_option('-s', '--server', dest='server', default=None,
-                               help=_('pulp server host'))
         self.parser.add_option_group(credentials)
+
+        server = OptionGroup(self.parser, _('Pulp Server Information'))
+        server.add_option('-s', '--server', dest='server', default=None,
+                          help=_('pulp server host'))
+        self.parser.add_option_group(server)
 
     def main(self, args=sys.argv[1:]):
         """
