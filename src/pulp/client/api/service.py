@@ -17,4 +17,36 @@ from pulp.client.api.base import PulpAPI
 
 
 class ServiceAPI(PulpAPI):
-    pass
+    '''
+    Connection class to the services handler
+    '''
+    def search_packages(self, name=None, epoch=None, version=None, release=None,
+                        arch=None, filename=None):
+        data = {}
+        if name:
+            data["name"] = name
+        if epoch:
+            data["epoch"] = epoch
+        if version:
+            data["version"] = version
+        if release:
+            data["release"] = release
+        if arch:
+            data["arch"] = arch
+        if filename:
+            data["filename"] = filename
+        path = "/services/search/packages/"
+        return self.server.PUT(path, data)
+
+    def dependencies(self, pkgnames, repoids, recursive=0):
+        params = {'repoids': repoids,
+                   'pkgnames': pkgnames,
+                   'recursive': recursive}
+        path = "/services/dependencies/"
+        return self.server.POST(path, params)
+
+    def upload(self, pkginfo, pkgstream):
+        uploadinfo = {'pkginfo': pkginfo,
+                      'pkgstream': pkgstream}
+        path = "/services/upload/"
+        return self.server.POST(path, uploadinfo)
