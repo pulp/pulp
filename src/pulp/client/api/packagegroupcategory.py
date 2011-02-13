@@ -17,4 +17,6 @@ from pulp.client.api.base import PulpAPI
 
 
 class PackageGroupCategoryAPI(PulpAPI):
-    pass
+
+    def clean(self):
+        pass
