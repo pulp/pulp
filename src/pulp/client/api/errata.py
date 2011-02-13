@@ -17,4 +17,50 @@ from pulp.client.api.base import PulpAPI
 
 
 class ErrataAPI(PulpAPI):
-    pass
+    """
+    Connection class to access errata related calls
+    """
+    def clean(self):
+        pass
+
+    def create(self, id, title, description, version, release, type,
+               status="", updated="", issued="", pushcount="", update_id="",
+               from_str="", reboot_suggested="", references=[], pkglist=[]):
+
+        params = {'id': id,
+                  'title': title,
+                  'description': description,
+                  'version': version,
+                  'release': release,
+                  'type': type,
+                  'status': status,
+                  'updated': updated,
+                  'issued': issued,
+                  'pushcount': pushcount,
+                  'from_str': from_str,
+                  'reboot_suggested': reboot_suggested,
+                  'references': references,
+                  'pkglist': pkglist}
+        path = "/errata/"
+        return self.server.POST(path, params)
+
+    def update(self, erratum):
+        path = "/erratum/%s/" % erratum['id']
+        return self.server.PUT(path, erratum)
+
+    def delete(self, erratumid):
+        path = "/erratum/%s/" % erratumid
+        return self.server.DELETE(path)
+
+    def erratum(self, id):
+        path = "/errata/%s/" % id
+        return self.server.GET(path)
+
+    def errata(self, id=None, title=None, description=None, version=None,
+               release=None, type=None, status=None, updated=None, issued=None,
+               pushcount=None, from_str=None, reboot_suggested=None):
+        pass
+
+    def find_repos(self, id):
+        path = "/errata/%s/get_repos/" % id
+        return self.server.POST(path)
