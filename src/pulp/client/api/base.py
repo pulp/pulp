@@ -13,7 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-#from pulp.client.server.base import Server
+from pulp.client.server.base import Server
 
 
 class PulpAPI(object):
@@ -27,5 +27,5 @@ class PulpAPI(object):
         self.server = None
 
     def set_server(self, server):
-#        assert isinstance(server, Server)
+        assert isinstance(server, Server)
         self.server = server
