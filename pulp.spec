@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.137
+Version:        0.0.138
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,29 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Mon Feb 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.138-1
+- 676342 - Errata lookup was using the wrong call and returning back an empty
+  list (pkilambi@redhat.com)
+- 676657 - handle different formats for errors during a repo sync
+  (jmatthews@redhat.com)
+- Adding ability to upload packages with same nvrea but different checksums
+  (pkilambi@redhat.com)
+- More verbose changes to upload (pkilambi@redhat.com)
+- Adding a verbose option to upload (pkilambi@redhat.com)
+- bug fix for --from (jconnor@redhat.com)
+- forgot cannot use from (jconnor@redhat.com)
+- added --from option to pulp-migrate script hid --force option: sitll there,
+  just hidden (jconnor@redhat.com)
+- removed auto_upgrade option (jconnor@redhat.com)
+- changed out most of the api calls for updating models for directly calls into
+  the db bindings to elliminate unwanted side-effects. (jconnor@redhat.com)
+- Updating user guide with new package upload usage (pkilambi@redhat.com)
+- abstracted version in log message to facilitate using one as a template
+  (jconnor@redhat.com)
+- 664040 - Fixed relative_path changed to same value not stored properly.
+  (jortel@redhat.com)
+- chaning the variable to be new nvrea (pkilambi@redhat.com)
+
 * Wed Feb 09 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.137-1
 - ensuring builtin roles to make consumer migration work properly
   (jconnor@redhat.com)
