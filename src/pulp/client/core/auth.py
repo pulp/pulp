@@ -15,11 +15,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import os
 from gettext import gettext as _
-from pulp.client.credentials import Credentials
+
+from pulp.client.api.user import UserAPI
 from pulp.client.credentials import Login as LoginBundle
-from pulp.client.connection import UserConnection
 from pulp.client.core.base import Action, Command
 
 # auth actions ----------------------------------------------------------------
@@ -28,23 +27,23 @@ class Login(Action):
 
     description = _('stores user credentials on this machine')
 
+    def __init__(self):
+        super(Login, self).__init__()
+        self.user_api = UserAPI()
+
     def setup_parser(self):
         self.parser.add_option('-u', '--username', dest='username',
                                help=_('pulp account username'))
         self.parser.add_option('-p', '--password', dest='password',
                                help=_('pulp account password'))
 
-    def setup_connections(self):
-        # first take into account the new credentials
-        username = self.opts.username
-        password = self.opts.password
-        if username and password:
-            Credentials.setuser(username, password)
-        self.authconn = UserConnection()
-
     def run(self):
+        # first take into account the new credentials
+        username = self.get_required_option('username')
+        password = self.get_required_option('password')
+        self.user_api.server.set_basic_auth_credentials(username, password)
         # Retrieve the certificate information from the server
-        cert_dict = self.authconn.admin_certificate()
+        cert_dict = self.user_api.admin_certificate()
         # Write the certificate data
         bundle = LoginBundle()
         key = cert_dict['private_key']
