@@ -49,6 +49,7 @@ class CloneError(Exception):
 class RepoAction(Action):
 
     def __init__(self):
+        super(RepoAction, self).__init__()
         self.consumer_api = ConsumerAPI()
         self.errata_api = ErrataAPI()
         self.package_api = PackageAPI()
