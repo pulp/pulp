@@ -109,7 +109,7 @@ class PulpServer(Server):
 
     def set_basic_auth_credentials(self, username, password):
         raw = ':'.join((username, password))
-        encoded = base64.encode(raw)[:-1]
+        encoded = base64.b64encode(raw)[:-1]
         self.headers['Authorization'] = 'Basic ' + encoded
 
     def set_ssl_credentials(self, certfile, keyfile):
