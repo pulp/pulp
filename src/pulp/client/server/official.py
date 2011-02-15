@@ -144,4 +144,4 @@ class PulpServer(Server):
         return self._request('POST', path, body=body)
 
     def PUT(self, path, body):
-        return self._request('PUT', path, body)
+        return self._request('PUT', path, body=body)
