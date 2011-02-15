@@ -13,6 +13,9 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+# NOTE I really wanted to name this module: pulp.client.server.pulp
+# but python got confused while trying to import things into this module
+
 import base64
 import httplib
 import locale
