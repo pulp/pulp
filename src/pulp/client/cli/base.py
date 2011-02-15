@@ -20,7 +20,7 @@ from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 from urlparse import urlsplit
 
 from pulp.client.config import Config
-from pulp.client.server.pulp import PulpServer
+from pulp.client.server.official import PulpServer
 
 
 _cfg = Config()
