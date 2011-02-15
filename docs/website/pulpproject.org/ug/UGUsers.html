@@ -136,12 +136,118 @@ The list of all users in the Pulp server can be retrieved with the <tt>user list
 
 Login :               	admin                        
 Name  :               	None                     
-Roles :               	SuperUsers               
+Roles :               	super-users               
 
 
 Login :               	hal                          
 Name  :               	Hal Jordan               
 Roles :               	                         
+</pre><hr />
+<h2 id="perms">Permissions</h2>
+<p>
+The <tt>pulp-admin</tt> script allows permissions to be manipulated for users. Permissions can be granted, revoked, and displayed through the <tt>permission</tt> command.
+</p>
+<h3 id="DisplayPermissions">Display Permissions</h3>
+<p>
+Permissions are displayed using the <tt>permission show</tt> command, indicating the resource in question with the <tt>--resource</tt> argument:
+</p>
+<pre class="wiki">$ pulp-admin permission show --resource /
++------------------------------------------+
+              Permissions for /
++------------------------------------------+
+  admin                	CREATE, READ, UPDATE, DELETE, EXECUTE
+</pre><h3 id="GrantPermission">Grant Permission</h3>
+<p>
+The <tt>permission grant</tt> command is used to create a new permission. 
+</p>
+<p>
+To grant a user permission, use the <tt>grant</tt> action. The following arguments are available to the <tt>permission grant</tt> command:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Resource ID </td><td> <tt>--resource</tt> </td><td> Indicates the resource REST API path whose permissions are being manipulated. 
+</td></tr><tr><td> Username </td><td> <tt>--user</tt> </td><td> Indicates the user to which access to the resource is being granted. 
+</td></tr><tr><td> Operations </td><td> <tt>-o</tt> </td><td> Indicates the type of permission being granted. Multiple types can be specified using multiple instances of this flag. See the section below for more information on valid operations. 
+</td></tr></table>
+<h4 id="Operations">Operations</h4>
+<p>
+The following are valid values for the operations flag when granting a permission:
+</p>
+<ul><li>create
+</li><li>read 
+</li><li>update 
+</li><li>delete 
+</li><li>execute 
+</li></ul><p>
+For example:
+</p>
+<pre class="wiki">$ pulp-admin permission grant --resource /repositories/ --user user -o create -o update
+Operations ['CREATE', 'UPDATE'] granted to user [ user ] on resource [ /repositories/ ]
+</pre><h3 id="RevokePermission">Revoke Permission</h3>
+<p>
+Revoking permissions works exactly the same as granting, but with the opposite results. The <tt>permission revoke</tt> command accepts the same arguments as <tt>permission grant</tt>.
+</p>
+<pre class="wiki">$ pulp-admin permission revoke --resource /repositories/ --user user -o update
+Operations ['UPDATE'] revoked from user [ user ] on resource [ /repositories/ ]
+</pre><hr />
+<h2 id="userroles">Roles</h2>
+<p>
+In order to efficiently administer permissions, Pulp uses the notion of roles to enable an administrator to grant and revoke permission on a resource to a group of users instead of individually. The <tt>role</tt> command provides the ability to list the currently defined roles, retrieve information on a role, create/delete roles, and manage user membership in a role.
+</p>
+<h3 id="ListRoles">List Roles</h3>
+<p>
+The <tt>role list</tt> command is used to list the current roles.
+</p>
+<pre class="wiki">$ pulp-admin role list
++------------------------------------------+
+               Available Roles
++------------------------------------------+
+  super-users
+  consumer-users
+</pre><h3 id="RoleInformation">Role Information</h3>
+<p>
+The <tt>role info</tt> command retrieves detailed information for a role identified by the <tt>--role</tt> argument.
+</p>
+<pre class="wiki">$ pulp-admin role info --role super-users
++------------------------------------------+
+      Role Information for super-users
++------------------------------------------+
+Name                	super-users              
+Users               	admin                    
+Permissions:
+  /                	CREATE, READ, UPDATE, DELETE, EXECUTE
+</pre><h3 id="CreateaRole">Create a Role</h3>
+<p>
+The <tt>role create</tt> command creates a new role using the <tt>--role</tt> argument to indicate it's name. Each role must have a unique name.
+</p>
+<pre class="wiki">$ pulp-admin role create --role new-role
+Role [ new-role ] created
+</pre><h3 id="DeleteaRole">Delete a Role</h3>
+<p>
+The <tt>role delete</tt> command deletes an existing role.
+</p>
+<pre class="wiki">$ pulp-admin role delete --role new-role
+Role [ new-role ] deleted
+</pre><h3 id="AddaUsertoaRole">Add a User to a Role</h3>
+<p>
+Users are added to a role using the <tt>role add</tt> action. The following parameters are required:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Role </td><td> <tt>--role</tt> </td><td> Name of the role; this role must already exist in the Pulp server. 
+</td></tr><tr><td> Username </td><td> <tt>--user</tt> </td><td> Username of the user being added to the role. 
+</td></tr></table>
+<p>
+Users are added to an existing role using the <tt>role add</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin role add --role new-role --user user
+[ user ] added to role [ new-role ]
+</pre><h3 id="RemoveaUserfromaRole">Remove a User from a Role</h3>
+<p>
+Users are removed from a role in much the same way as they are added using the <tt>role remove</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin role remove --role new-role --user user
+[ user ] removed from role [ new-role ]
 </pre></div>
    </div>
    
