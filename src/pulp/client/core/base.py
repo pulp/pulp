@@ -26,6 +26,7 @@ from pulp.client.connection import RestlibException
 from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.core.utils import system_exit
 from pulp.client.logutil import getLogger
+from pulp.client.server.base import ServerRequestError
 
 
 _cfg = Config()
@@ -254,9 +255,9 @@ class Action(object):
             print ""
             print _("Please correct the host in the /etc/pulp/client.conf file")
             sys.exit(1)
-        except RestlibException, re:
+        except ServerRequestError, re:
             _log.error("error: %s" % re)
-            system_exit(re.code, _('error: operation failed: ') + re.msg)
+            system_exit(re.args[0], _('error: operation failed: ') + re.args[1])
         except KeyboardInterrupt:
             system_exit(os.EX_NOUSER)
         except Exception, e:
