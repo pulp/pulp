@@ -17,6 +17,7 @@ import base64
 import httplib
 import locale
 import os
+import sys
 import urllib
 from gettext import gettext as _
 
@@ -27,6 +28,7 @@ except ImportError:
 
 from M2Crypto import SSL, httpslib
 
+from pulp.client.logutil import getLogger
 from pulp.client.server.base import Server, ServerRequestError
 
 
@@ -43,6 +45,8 @@ class PulpServer(Server):
                    'Accept-Language': default_locale,
                    'Content-Type': 'application/json'}
         self.headers.update(headers)
+
+        self._log = getLogger('pulp')
 
         self.__certfile = None
         self.__keyfile = None
@@ -95,6 +99,8 @@ class PulpServer(Server):
         url = self._build_url(path, queries)
         if body is not None:
             body = json.dumps(body)
+        self._log.debug('sending %s request to %s' % (method, url))
+        print >> sys.stderr, 'sending %s request to %s' % (method, url)
         connection.request(method, url, body=body, headers=self.headers)
         response = connection.getresponse()
         response_body = response.read()
