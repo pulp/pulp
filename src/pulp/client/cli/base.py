@@ -17,7 +17,6 @@ import os
 import sys
 from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
-from urlparse import urlsplit
 
 from pulp.client.config import Config
 from pulp.client.server.official import PulpServer
@@ -100,6 +99,8 @@ class PulpCLI(object):
         port = self.opts.port
         protocol = self.opts.protocol
         path = self.opts.path
+        print >> sys.stderr, 'server information: %s, %s, %s, %s' % \
+                (host, port, protocol, path)
         self._server = PulpServer(host, int(port), protocol, path)
 
     def setup_credentials(self):
