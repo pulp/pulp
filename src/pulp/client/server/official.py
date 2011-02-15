@@ -92,7 +92,7 @@ class PulpServer(Server):
         # make a request to the pulp server and return the response
         # NOTE this throws a ServerRequestError if the request did not succeed
         connection = self._connect()
-        url = self._buld_url(path, queries)
+        url = self._build_url(path, queries)
         body = body and json.dumps(body)
         connection.request(method, url, body, self.headers)
         response = connection.getresponse()
