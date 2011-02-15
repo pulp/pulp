@@ -17,6 +17,11 @@ from pulp.client.api.base import PulpAPI
 from pulp.client.server.base import ServerRequestError
 
 
+repository_deferred_fields = ('packages',
+                              'packagegroups',
+                              'packagegroupcategories')
+
+
 class RepositoryAPI(PulpAPI):
     """
     Connection class to access repo specific calls
