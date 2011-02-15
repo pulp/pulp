@@ -84,11 +84,13 @@ class PulpCLI(object):
         host = _cfg.server.host
         server.add_option('--host', dest='host', default=host,
                           help=_('pulp server host name (default: %s)') % host)
-        server.add_option('--port', dest='port', default=_cfg.server.port,
-                          help=SUPPRESS_HELP)
+        server.add_option('--port', dest='port',
+                          default=_cfg.server.port or '443', help=SUPPRESS_HELP)
         server.add_option('--protocol', dest='protocol',
-                          default=_cfg.server.protocol, help=SUPPRESS_HELP)
-        server.add_option('--path', dest='path', default=_cfg.server.path,
+                          default=_cfg.server.protocol or 'https',
+                          help=SUPPRESS_HELP)
+        server.add_option('--path', dest='path',
+                          default=_cfg.server.path or '/pulp/api',
                           help=SUPPRESS_HELP)
         self.parser.add_option_group(server)
 
