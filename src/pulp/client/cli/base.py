@@ -86,7 +86,7 @@ class PulpCLI(object):
         port = _cfg.server.port or '443'
         server.add_option('--port', dest='port', default=port,
                           help=SUPPRESS_HELP)
-        protocol = _cfg.server.protocol or 'https'
+        protocol = _cfg.server.scheme or 'https'
         server.add_option('--protocol', dest='protocol', default=protocol,
                           help=SUPPRESS_HELP)
         path = _cfg.server.path or '/pulp/api'
