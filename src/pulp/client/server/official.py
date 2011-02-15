@@ -17,7 +17,7 @@ import base64
 import httplib
 import locale
 import os
-import sys
+#import sys
 import urllib
 from gettext import gettext as _
 
@@ -100,7 +100,7 @@ class PulpServer(Server):
         if body is not None:
             body = json.dumps(body)
         self._log.debug('sending %s request to %s' % (method, url))
-        print >> sys.stderr, 'sending %s request to %s' % (method, url)
+        #print >> sys.stderr, 'sending %s request to %s' % (method, url)
         connection.request(method, url, body=body, headers=self.headers)
         response = connection.getresponse()
         response_body = response.read()
