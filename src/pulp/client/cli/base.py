@@ -81,11 +81,12 @@ class PulpCLI(object):
         self.parser.add_option_group(credentials)
 
         server = OptionGroup(self.parser, _('Pulp Server Information'))
-        server.add_option('--host', dest='host', default=_cfg.server.host,
-                          help=_('pulp server host name (default: localhost)'))
+        host = _cfg.server.host
+        server.add_option('--host', dest='host', default=host,
+                          help=_('pulp server host name (default: %s)') % host)
         server.add_option('--port', dest='port', default=_cfg.server.port,
                           help=SUPPRESS_HELP)
-        server.add_option(help='--protocol', dest='protocol',
+        server.add_option('--protocol', dest='protocol',
                           default=_cfg.server.protocol, help=SUPPRESS_HELP)
         server.add_option('--path', dest='path', default=_cfg.server.path,
                           help=SUPPRESS_HELP)
