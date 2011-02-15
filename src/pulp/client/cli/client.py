@@ -26,8 +26,10 @@ class ClientCLI(PulpCLI):
         consumer = Consumer()
         certfile = consumer.crtpath()
         keyfile = consumer.keypath()
-        if not os.access(certfile, os.R_OK) or not os.access(keyfile, os.R_OK):
-            return
-        self._server.set_ssl_credentials(certfile, keyfile)
-        # XXX do we allow the client to use the auth login credentials?
-        # probably not as auth login is not a client command...
+        if os.access(certfile, os.R_OK) and os.access(keyfile, os.R_OK):
+            self._server.set_ssl_credentials(certfile, keyfile)
+        # override with the command line options
+        if os.access(self.opts.cert_file, os.R_OK) and \
+                os.access(self.opts.key_file, os.R_OK):
+            self._server.set_ssl_credentials(self.opts.cert_file,
+                                             self.opts.key_file)

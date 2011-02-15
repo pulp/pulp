@@ -26,6 +26,10 @@ class AdminCLI(PulpCLI):
         login = Login()
         certfile = login.crtpath()
         keyfile = login.keypath()
-        if not os.access(certfile, os.R_OK) or not os.access(keyfile, os.R_OK):
-            return
-        self._server.set_ssl_credentials(certfile, keyfile)
+        if os.access(certfile, os.R_OK) and os.access(keyfile, os.R_OK):
+            self._server.set_ssl_credentials(certfile, keyfile)
+        # override with the command line options
+        if os.access(self.opts.cert_file, os.R_OK) and \
+                os.access(self.opts.key_file, os.R_OK):
+            self._server.set_ssl_credentials(self.opts.cert_file,
+                                             self.opts.key_file)
