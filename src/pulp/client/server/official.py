@@ -69,7 +69,7 @@ class PulpServer(Server):
                                         ssl_context=ssl_context)
 
     def _connect(self):
-        # make an appropriate connection to the pulp server, and cache it
+        # make an appropriate connection to the pulp server and cache it
         if self.__connection is None:
             if self.protocol == 'http':
                 self.__connection = self._http_connection()
@@ -93,8 +93,9 @@ class PulpServer(Server):
         # NOTE this throws a ServerRequestError if the request did not succeed
         connection = self._connect()
         url = self._build_url(path, queries)
-        body = body and json.dumps(body)
-        connection.request(method, url, body, self.headers)
+        if body is not None:
+            body = json.dumps(body)
+        connection.request(method, url, body=body, headers=self.headers)
         response = connection.getresponse()
         response_body = response.read()
         try:
