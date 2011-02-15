@@ -81,26 +81,21 @@ class PulpCLI(object):
         self.parser.add_option_group(credentials)
 
         server = OptionGroup(self.parser, _('Pulp Server Information'))
-        server.add_option('--url', dest='url', help=_('pulp server url'))
+        server.add_option('--host', dest='host', default=_cfg.server.host,
+                          help=_('pulp server host name (default: localhost)'))
+        server.add_option('--port', dest='port', default=_cfg.server.port,
+                          help=SUPPRESS_HELP)
+        server.add_option(help='--protocol', dest='protocol',
+                          default=_cfg.server.protocol, help=SUPPRESS_HELP)
+        server.add_option('--path', dest='path', default=_cfg.server.path,
+                          help=SUPPRESS_HELP)
         self.parser.add_option_group(server)
 
     def setup_server(self):
-        if self.opts.url is not None:
-            parts = urlsplit(self.opts.url)
-            protocol = parts[0].lower()
-            netloc = parts[1]
-            path = parts[2]
-            index = netloc.find(':')
-            if index >= 0:
-                host, port = netloc.split(':')
-            else:
-                host = netloc
-                port = {'http': 80, 'https': 443}[protocol]
-        else:
-            host = _cfg.server.host
-            port = _cfg.server.port
-            protocol = _cfg.server.scheme
-            path = _cfg.server.path
+        host = self.opts.host
+        port = self.opts.port
+        protocol = self.opts.protocol
+        path = self.opts.path
         self._server = PulpServer(host, int(port), protocol, path)
 
     def setup_credentials(self):
