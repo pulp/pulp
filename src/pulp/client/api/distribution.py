@@ -25,9 +25,9 @@ class DistributionAPI(PulpAPI):
 
     def distributions(self):
         path = '/distribution/'
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def distribution(self, id):
         path = '/distribution/%s/' % str(id)
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 

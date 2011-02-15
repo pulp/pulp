@@ -25,30 +25,30 @@ class ConsumerAPI(PulpAPI):
                      "password": password,
                      "name": name}
         path = "/users/"
-        return self.server.PUT(path, user_data)
+        return self.server.PUT(path, user_data)[1]
 
     def update(self, user):
         path = "/users/%s/" % user['id']
-        return self.server.PUT(path, user)
+        return self.server.PUT(path, user)[1]
 
     def delete(self, **kwargs):
         login = kwargs['login']
         path = "/users/%s/" % login
-        return self.server.DELETE(path)
+        return self.server.DELETE(path)[1]
 
     def clean(self):
         path = "/users/"
-        return self.server.DELETE(path)
+        return self.server.DELETE(path)[1]
 
     def users(self):
         path = "/users/"
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def user(self, login):
         path = "/users/%s/" % str(login)
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def admin_certificate(self):
         path = '/users/admin_certificate/'
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 

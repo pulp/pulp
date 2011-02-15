@@ -25,62 +25,62 @@ class ConsumerGroupAPI(PulpAPI):
                               "description": description,
                               "consumerids": consumerids}
         path = "/consumergroups/"
-        return self.server.PUT(path, consumergroup_data)
+        return self.server.PUT(path, consumergroup_data)[1]
 
     def update(self, consumergroup):
         path = "/consumergroups/%s/" % consumergroup['id']
-        return self.server.PUT(path, consumergroup)
+        return self.server.PUT(path, consumergroup)[1]
 
     def delete(self, id):
         path = "/consumergroups/%s/" % id
-        return self.server.DELETE(path)
+        return self.server.DELETE(path)[1]
 
     def clean(self):
         path = "/consumergroups/"
-        return self.server.DELETE(path)
+        return self.server.DELETE(path)[1]
 
     def consumergroups(self):
         path = "/consumergroups/"
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def consumergroup(self, id):
         path = "/consumergroups/%s/" % str(id)
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def add_consumer(self, id, consumerid):
         path = "/consumergroups/%s/add_consumer/" % id
-        return self.server.POST(path, consumerid)
+        return self.server.POST(path, consumerid)[1]
 
     def delete_consumer(self, id, consumerid):
         path = "/consumergroups/%s/delete_consumer/" % id
-        return self.server.POST(path, consumerid)
+        return self.server.POST(path, consumerid)[1]
 
     def bind(self, id, repoid):
         path = "/consumergroups/%s/bind/" % id
-        return self.server.POST(path, repoid)
+        return self.server.POST(path, repoid)[1]
 
     def unbind(self, id, repoid):
         path = "/consumergroups/%s/unbind/" % id
-        return self.server.POST(path, repoid)
+        return self.server.POST(path, repoid)[1]
 
     def add_key_value_pair(self, id, key, value, force):
         key_value_dict = {'key' : key, 'value' : value, 'force'  : force}
         path = "/consumergroups/%s/add_key_value_pair/" % id
-        return self.server.POST(path, key_value_dict)
+        return self.server.POST(path, key_value_dict)[1]
 
     def delete_key_value_pair(self, id, key):
         path = "/consumergroups/%s/delete_key_value_pair/" % id
-        return self.server.POST(path, key)
+        return self.server.POST(path, key)[1]
 
     def update_key_value_pair(self, id, key, value):
         key_value_dict = {'key' : key, 'value' : value}
         path = "/consumergroups/%s/update_key_value_pair/" % id
-        return self.server.POST(path, key_value_dict)
+        return self.server.POST(path, key_value_dict)[1]
 
     def installpackages(self, id, packagenames, when=None):
         path = "/consumergroups/%s/installpackages/" % id
         body = dict(packagenames=packagenames, scheduled_time=when)
-        return self.server.POST(path, body)
+        return self.server.POST(path, body)[1]
 
     def installerrata(self, id, errataids, types=[], assumeyes=False, when=None):
         erratainfo = {'consumerid': id,
@@ -89,5 +89,5 @@ class ConsumerGroupAPI(PulpAPI):
                       'assumeyes': assumeyes,
                       'scheduled_time': when}
         path = "/consumergroups/%s/installerrata/" % id
-        return self.server.POST(path, erratainfo)
+        return self.server.POST(path, erratainfo)[1]
 

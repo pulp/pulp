@@ -42,19 +42,19 @@ class ErrataAPI(PulpAPI):
                   'references': references,
                   'pkglist': pkglist}
         path = "/errata/"
-        return self.server.POST(path, params)
+        return self.server.POST(path, params)[1]
 
     def update(self, erratum):
         path = "/erratum/%s/" % erratum['id']
-        return self.server.PUT(path, erratum)
+        return self.server.PUT(path, erratum)[1]
 
     def delete(self, erratumid):
         path = "/erratum/%s/" % erratumid
-        return self.server.DELETE(path)
+        return self.server.DELETE(path)[1]
 
     def erratum(self, id):
         path = "/errata/%s/" % id
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def errata(self, id=None, title=None, description=None, version=None,
                release=None, type=None, status=None, updated=None, issued=None,
@@ -63,4 +63,4 @@ class ErrataAPI(PulpAPI):
 
     def find_repos(self, id):
         path = "/errata/%s/get_repos/" % id
-        return self.server.POST(path)
+        return self.server.POST(path)[1]

@@ -23,7 +23,7 @@ class PermissionAPI(PulpAPI):
         path = '/permissions/show/'
         params = {'resource': resource}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return None
@@ -34,7 +34,7 @@ class PermissionAPI(PulpAPI):
                   'resource': resource,
                   'operations': operations}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False
@@ -45,7 +45,7 @@ class PermissionAPI(PulpAPI):
                   'resource': resource,
                   'operations': operations}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False
@@ -56,7 +56,7 @@ class PermissionAPI(PulpAPI):
                   'resource': resource,
                   'operations': operations}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False
@@ -67,7 +67,7 @@ class PermissionAPI(PulpAPI):
                   'resource': resource,
                   'operations': operations}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False

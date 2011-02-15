@@ -36,17 +36,17 @@ class ServiceAPI(PulpAPI):
         if filename:
             data["filename"] = filename
         path = "/services/search/packages/"
-        return self.server.PUT(path, data)
+        return self.server.PUT(path, data)[1]
 
     def dependencies(self, pkgnames, repoids, recursive=0):
         params = {'repoids': repoids,
                    'pkgnames': pkgnames,
                    'recursive': recursive}
         path = "/services/dependencies/"
-        return self.server.POST(path, params)
+        return self.server.POST(path, params)[1]
 
     def upload(self, pkginfo, pkgstream):
         uploadinfo = {'pkginfo': pkginfo,
                       'pkgstream': pkgstream}
         path = "/services/upload/"
-        return self.server.POST(path, uploadinfo)
+        return self.server.POST(path, uploadinfo)[1]

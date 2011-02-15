@@ -21,17 +21,17 @@ class RoleAPI(PulpAPI):
 
     def list(self):
         path = '/roles/'
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def info(self, rolename):
         path = '/roles/%s/' % rolename
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def create(self, rolename):
         path = '/roles/'
         params = {'rolename': rolename}
         try:
-            return self.server.PUT(path, params)
+            return self.server.PUT(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False
@@ -39,7 +39,7 @@ class RoleAPI(PulpAPI):
     def delete(self, rolename):
         path = '/roles/%s/' % rolename
         try:
-            return self.server.DELETE(path)
+            return self.server.DELETE(path)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False
@@ -48,7 +48,7 @@ class RoleAPI(PulpAPI):
         path = '/roles/%s/add/' % rolename
         params = {'username': username}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False
@@ -57,7 +57,7 @@ class RoleAPI(PulpAPI):
         path = '/roles/%s/remove/' % rolename
         params = {'username': username}
         try:
-            return self.server.POST(path, params)
+            return self.server.POST(path, params)[1]
         except ServerRequestError, e:
             print e.args[1]
             return False

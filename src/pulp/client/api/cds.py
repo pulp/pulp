@@ -22,22 +22,22 @@ class CDSAPI(PulpAPI):
     '''
     def cds(self, hostname):
         path = '/cds/%s/' % hostname
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def register(self, hostname, name=None, description=None):
         data = {'hostname': hostname,
                 'name': name,
                 'description': description}
         path = '/cds/'
-        return self.server.PUT(path, data)
+        return self.server.PUT(path, data)[1]
 
     def unregister(self, hostname):
         path = '/cds/%s/' % hostname
-        return self.server.DELETE(path)
+        return self.server.DELETE(path)[1]
 
     def list(self):
         path = '/cds/'
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
 
     def history(self, hostname,
                 event_type=None,
@@ -59,23 +59,23 @@ class CDSAPI(PulpAPI):
             data['end_date'] = end_date
 
         path = '/cds/%s/history/' % hostname
-        return self.server.POST(path, data)
+        return self.server.POST(path, data)[1]
 
     def associate(self, hostname, repo_id):
         data = {'repo_id' : repo_id}
         path = '/cds/%s/associate/' % hostname
-        return self.server.POST(path, data)
+        return self.server.POST(path, data)[1]
 
     def unassociate(self, hostname, repo_id):
         data = {'repo_id' : repo_id}
         path = '/cds/%s/unassociate/' % hostname
-        return self.server.POST(path, data)
+        return self.server.POST(path, data)[1]
 
     def sync(self, hostname):
         data = {}
         path = '/cds/%s/sync/' % hostname
-        return self.server.POST(path, data)
+        return self.server.POST(path, data)[1]
 
     def sync_list(self, hostname):
         path = '/cds/%s/sync/' % hostname
-        return self.server.GET(path)
+        return self.server.GET(path)[1]
