@@ -226,7 +226,7 @@ class PackageApi(BaseApi):
             pkg = pkg_upload.upload()
             log.info("Upload success %s " % pkg['id'])
         except upload.PackageAlreadyExists, pae:
-            log.error("Package [%s] already exists on server with checksum [%s]" % (pginfo['pkgname'], pkginfo['checksum']))
+            log.error("Package [%s] already exists on server with checksum [%s]" % (pkginfo['pkgname'], pkginfo['checksum']))
             raise pae
         except Exception, e:
             log.error("Upload failed due an unknown exception %s" % e)
