@@ -198,7 +198,7 @@ class PulpServer(Server):
                 'Authorization' in self.headers:
             return httplib.HTTPSConnection(self.host, self.port)
         ssl_context = SSL.Context('sslv3')
-        ssl_context.load_cert(self.__certfile, keyfile=self.__keyfile)
+        ssl_context.load_cert(self.__certfile, self.__keyfile)
         return httpslib.HTTPSConnection(self.host,
                                         self.port,
                                         ssl_context=ssl_context)
