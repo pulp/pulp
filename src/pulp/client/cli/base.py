@@ -86,8 +86,8 @@ class PulpCLI(object):
         port = _cfg.server.port or '443'
         server.add_option('--port', dest='port', default=port,
                           help=SUPPRESS_HELP)
-        protocol = _cfg.server.scheme or 'https'
-        server.add_option('--protocol', dest='protocol', default=protocol,
+        scheme = _cfg.server.scheme or 'https'
+        server.add_option('--scheme', dest='scheme', default=scheme,
                           help=SUPPRESS_HELP)
         path = _cfg.server.path or '/pulp/api'
         server.add_option('--path', dest='path', default=path,
@@ -100,11 +100,11 @@ class PulpCLI(object):
         """
         host = self.opts.host
         port = self.opts.port
-        protocol = self.opts.protocol
+        scheme = self.opts.scheme
         path = self.opts.path
         #print >> sys.stderr, 'server information: %s, %s, %s, %s' % \
-        #        (host, port, protocol, path)
-        self._server = server.PulpServer(host, int(port), protocol, path)
+        #        (host, port, scheme, path)
+        self._server = server.PulpServer(host, int(port), scheme, path)
         server.set_active_server(self._server)
 
     def setup_credentials(self):
