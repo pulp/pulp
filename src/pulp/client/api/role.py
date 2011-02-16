@@ -14,7 +14,7 @@
 # in this software or its documentation.
 
 from pulp.client.api.base import PulpAPI
-from pulp.client.server.base import ServerRequestError
+from pulp.client.server import ServerRequestError
 
 
 class RoleAPI(PulpAPI):
