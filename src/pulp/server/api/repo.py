@@ -41,6 +41,7 @@ from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
+from pulp.server.api.file import FileApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
 from pulp.server.async import run_async
@@ -70,6 +71,7 @@ class RepoApi(BaseApi):
         self.errataapi = ErrataApi()
         self.distroapi = DistributionApi()
         self.cdsapi = CdsApi()
+        self.fileapi = FileApi()
         self.localStoragePath = constants.LOCAL_STORAGE
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
@@ -1477,6 +1479,49 @@ class RepoApi(BaseApi):
                     fchecksum[fname] = None
             result[repoid] = fchecksum
         return result
+
+    @audit()
+    def add_file(self, repoid, fileid):
+        '''
+         Add a file to a repo
+         @param repoid: The repo ID.
+         @param fileid: file ID.
+        '''
+        repo = self._get_existing_repo(repoid)
+        if self.fileapi.file(fileid) is None:
+            raise PulpException("File ID [%s] does not exist" % fileid)
+        repo['files'].append(fileid)
+        self.objectdb.save(repo, safe=True)
+        log.info("Successfully added file %s to repo %s" % (fileid, repoid))
+
+    @audit()
+    def remove_file(self, repoid, fileid):
+        '''
+         remove a file from a given repo
+         @param repoid: The repo ID.
+         @param fileid: file ID.
+        '''
+        repo = self._get_existing_repo(repoid)
+        if fileid in repo['files']:
+            del repo['files'][repo['files'].index(fileid)]
+            self.objectdb.save(repo, safe=True)
+            self.fileapi.delete(fileid)
+            log.info("Successfully removed file %s from repo %s" % (fileid, repoid))
+        else:
+            log.error("No file with ID %s associated to this repo" % fileid)
+            
+    def list_files(self, repoid):
+        '''
+         List files in a given repo
+         @param repoid: The repo ID.
+         @return list: file objects.
+        '''
+        repo = self._get_existing_repo(repoid)
+        files = []
+        for fileid in repo['files']:
+            files.append(self.fileapi.file(fileid))
+        return files
+
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':

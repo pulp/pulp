@@ -154,6 +154,21 @@ class PackageGroupCategory(Base):
         self.immutable = immutable
         self.repo_defined = repo_defined
 
+class File(Base):
+    """
+    Class represents a file types other than rpm. Eg: *.iso *.txt
+    """
+    def __init__(self, filename, checksum_type,
+                 checksum, size, description=None, repo_defined=False):
+        Base.__init__(self)
+        # ID is initialized in Base.__init__()
+        self.filename = filename
+        self.description = description
+        self.checksum = {checksum_type: checksum}
+        self.size = size
+        self.download_url = None
+        self.repo_defined = repo_defined
+
 # repository models -----------------------------------------------------------
 
 class Repo(Base):

@@ -18,7 +18,7 @@ from uuid import UUID
 
 from pulp.server.api import (
     consumer_group, consumer_history, consumer, errata, package, permission,
-    repo, role, user)
+    repo, role, user, file, distribution)
 from pulp.server.auditing import _objdb as auditing_objectdb
 from pulp.server.db import model
 from pulp.server.db import version
@@ -286,6 +286,26 @@ def _validate_user():
     reference = model.User(u'', u'', u'', None)
     return _validate_model(model.User.__name__, objectdb, reference)
 
+def _validate_file():
+    """
+    Validate the File model
+    @rtype: int
+    @return: number of errors found during validation
+    """
+    objectdb = file.FileApi()._getcollection()
+    reference = model.File(u'', u'', u'', u'', u'')
+    return _validate_model(model.User.__name__, objectdb, reference)
+
+def _validate_distribution():
+    """
+    Validate the Distribution model
+    @rtype: int
+    @return: number of errors found during validation
+    """
+    objectdb = distribution.DistributionApi()._getcollection()
+    reference = model.Distribution(u'', u'', u'', [])
+    return _validate_model(model.User.__name__, objectdb, reference)
+
 # validation api --------------------------------------------------------------
 
 def validate():
@@ -309,4 +329,6 @@ def validate():
     num_errors += _validate_repo_source()
     num_errors += _validate_role()
     num_errors += _validate_user()
+    num_errors += _validate_file()
+    num_errors += _validate_distribution()
     return num_errors
