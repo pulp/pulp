@@ -59,7 +59,7 @@ class ConsumerAPI(PulpAPI):
 
     def certificate(self, id):
         path = "/consumers/%s/certificate/" % str(id)
-        cert_dict = self.server.GET(path)
+        cert_dict = self.server.GET(path)[1]
         return cert_dict
 
     def consumers(self):
