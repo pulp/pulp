@@ -124,7 +124,7 @@ def check_username_password(username, password=None):
 
 # ssl cert authentication -----------------------------------------------------
 
-def check_ssl_cert(cert_pem):
+def check_user_cert(cert_pem):
     """
     Check a client ssl certificate.
     Return None if the certificate is not valid
