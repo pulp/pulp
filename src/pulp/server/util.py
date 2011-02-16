@@ -33,6 +33,18 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
+
+class CreateRepoError(PulpException):
+    def __init__(self, output):
+        self.output = output
+
+    def __str__(self):
+        return self.output
+
+class ModifyRepoError(CreateRepoError):
+    pass
+
+
 def top_repos_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "repos")
 
