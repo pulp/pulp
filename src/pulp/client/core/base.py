@@ -20,7 +20,6 @@ from gettext import gettext as _
 from optparse import OptionParser
 from M2Crypto import SSL
 
-from pulp.client.api.base import PulpAPI
 from pulp.client.config import Config
 from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.core.utils import system_exit
