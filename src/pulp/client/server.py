@@ -94,7 +94,7 @@ class Server(object):
         """
         raise NotImplementedError('base server class method called')
 
-    def are_credentials_set(self):
+    def has_credentials_set(self):
         raise NotImplementedError('base server class method called')
 
     # request methods ---------------------------------------------------------
@@ -260,7 +260,7 @@ class PulpServer(Server):
         self.__certfile = certfile
         self.__keyfile = keyfile
 
-    def are_credentials_set(self):
+    def has_credentials_set(self):
         return 'Authorization' in self.headers or \
                 None not in (self.__certfile, self.__keyfile)
 

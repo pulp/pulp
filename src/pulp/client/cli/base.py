@@ -19,7 +19,7 @@ from gettext import gettext as _
 from optparse import OptionGroup, OptionParser, SUPPRESS_HELP
 
 from pulp.client.config import Config
-from pulp.client.server.official import PulpServer
+from pulp.client import server
 
 
 _cfg = Config()
@@ -73,9 +73,9 @@ class PulpCLI(object):
                                default=None, help=_('account username'))
         credentials.add_option('-p', '--password', dest='password',
                                default=None, help=_('account password'))
-        credentials.add_option('--cert-file', dest='cert_file',
+        credentials.add_option('--cert-file', dest='certfile',
                                default=None, help=SUPPRESS_HELP)
-        credentials.add_option('--key-file', dest='key_file',
+        credentials.add_option('--key-file', dest='keyfile',
                                default=None, help=SUPPRESS_HELP)
         self.parser.add_option_group(credentials)
 
@@ -99,15 +99,18 @@ class PulpCLI(object):
         port = self.opts.port
         protocol = self.opts.protocol
         path = self.opts.path
-        print >> sys.stderr, 'server information: %s, %s, %s, %s' % \
-                (host, port, protocol, path)
-        self._server = PulpServer(host, int(port), protocol, path)
+        #print >> sys.stderr, 'server information: %s, %s, %s, %s' % \
+        #        (host, port, protocol, path)
+        self._server = server.PulpServer(host, int(port), protocol, path)
+        server.set_active_server(self._server)
 
     def setup_credentials(self):
-        if None in (self.opts.username, self.opts.password):
-            return
-        self._server.set_basic_auth_credentials(self.opts.username,
-                                                self.opts.password)
+        if None not in (self.opts.username, self.opts.password):
+            self._server.set_basic_auth_credentials(self.opts.username,
+                                                    self.opts.password)
+        elif None not in (self.opts.certfile, self.opts.keyfile):
+            self._server.set_ssl_credentials(self.opts.certfile,
+                                             self.opts.keyfile)
 
     def main(self, args=sys.argv[1:]):
         """
@@ -125,5 +128,4 @@ class PulpCLI(object):
             self.parser.error(_('Invalid command; please see --help'))
         self.setup_server()
         self.setup_credentials()
-        command.set_server(self._server)
         command.main(args[1:])
