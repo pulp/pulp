@@ -22,6 +22,10 @@ from pulp.client.credentials import Consumer
 class ClientCLI(PulpCLI):
 
     def setup_credentials(self):
+        """
+        User the super-class credentials then fallback to the consumer
+        credentials if present.
+        """
         super(ClientCLI, self).setup_credentials()
         if self._server.has_credentials_set():
             return

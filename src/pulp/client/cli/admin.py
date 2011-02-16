@@ -22,6 +22,10 @@ from pulp.client.credentials import Login
 class AdminCLI(PulpCLI):
 
     def setup_credentials(self):
+        """
+        Use the super-class credentials, then fall back to auth login
+        credentials if present.
+        """
         super(AdminCLI, self).setup_credentials()
         if self._server.has_credentials_set():
             return

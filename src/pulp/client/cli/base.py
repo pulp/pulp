@@ -95,6 +95,9 @@ class PulpCLI(object):
         self.parser.add_option_group(server)
 
     def setup_server(self):
+        """
+        Setup the active server connection.
+        """
         host = self.opts.host
         port = self.opts.port
         protocol = self.opts.protocol
@@ -105,6 +108,9 @@ class PulpCLI(object):
         server.set_active_server(self._server)
 
     def setup_credentials(self):
+        """
+        Setup up request credentials with the active server.
+        """
         if None not in (self.opts.username, self.opts.password):
             self._server.set_basic_auth_credentials(self.opts.username,
                                                     self.opts.password)
