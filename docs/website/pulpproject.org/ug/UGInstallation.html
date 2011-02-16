@@ -50,9 +50,6 @@
 <p>
 <strong>Repository:</strong> <tt>http://repos.fedorapeople.org/repos/pulp/pulp/</tt>
 </p>
-<p>
-<em>The Red Hat Enterprise Linux installation instructions do not apply to Community Release 6. RHEL support is currently only in the testing repository and will be in the next community release.</em>
-</p>
 <h3 id="TestingBuilds">Testing Builds</h3>
 <p>
 Community Releases are built and tested at the end of each Pulp sprint (roughly every three weeks). Testing builds are created more frequently (currently every Wednesday and Friday afternoon) and contain in progress features and bug fixes. While it is recommended that users try to stick with the Community Releases, there may be times where a feature or bug fix is desired before a CR is built.
@@ -201,13 +198,9 @@ QPID RPMs are not available in the default CentOS repositories. Instructions on 
 </li><li>ksurl
 </li></ul><pre class="wiki">$ vi /etc/pulp/client.conf
 </pre><p>
-4. Update <tt>/etc/gofer/agent.conf</tt> to point the <i>agent</i> at the broker running on the pulp server. Replace <tt>localhost</tt> in the <tt>url</tt> property with the hostname or IP of the pulp server as needed.
+4. Start the agent:
 </p>
-<pre class="wiki">$ vi /etc/gofer/agent.conf
-</pre><p>
-5. Start the agent (it runs within goferd):
-</p>
-<pre class="wiki">$ service goferd start
+<pre class="wiki">$ service pulp-agent start
 </pre></div>
    </div>
    

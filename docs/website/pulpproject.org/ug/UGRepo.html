@@ -48,7 +48,7 @@ Through Pulp, clients (or <i>consumers</i> in Pulp terminology) are <i>bound</i>
 The <tt>pulp-admin</tt> script provides ways to manipulate repositories in Pulp. The following sections describe the repository-related features that are provided.
 </p>
 <hr />
-<h2 id="crud">Creation, Removal, Display</h2>
+<h2 id="crud">Creation, Update, Removal, Display</h2>
 <h3 id="Creation">Creation</h3>
 <p>
 The first step when working with repositories is to create one. Repository creation is done through the <tt>repo create</tt> command in the <tt>pulp-admin</tt> script. For example, to create a repository that will synchronize packages from the Pulp Fedora 14 x86_64 repository, the following command would be used:
@@ -84,7 +84,32 @@ The following feed types are supported:
 The feed URL must be prefixed with one of these types when creating the repository. For example:
 </p>
 <pre class="wiki">$ pulp-admin repo create --id example --feed yum:http://example.com/repos
-</pre><h3 id="Removal">Removal</h3>
+</pre><h3 id="Update">Update</h3>
+<p>
+A repository may be updated after it has been created through the <tt>repo update</tt> command in the <tt>pulp-admin</tt> script. For example, to update a repository so it will synchronize packages from the Pulp Fedora 14 i386 repository instead of the x86_84 repository, the following command would be used:
+</p>
+<pre class="wiki">$ pulp-admin repo update --id example --feed yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386 --arch i386
+Successfully updated repository [ example ]
+</pre><p>
+The following attributes can be updated (all attributes are optional unless otherwise specified).
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Required. Identifies the repository to be updated. 
+</td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Change the display name which is used to better describe the content and purpose of the repo. 
+</td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Change the architecture of packages that will be found in the repo. 
+</td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Change where packages should be synchronized from when populating the repo. 
+</td></tr><tr><td> Schedule </td><td> <tt>--schedule</tt> </td><td> Change the cron syntax describing the interval at which the repository should be automatically synchronized. 
+</td></tr><tr><td> CA Certificate </td><td> <tt>--cacert</tt> </td><td> Change the CA certificate used to verify the server's SSL certificate when the feed specifies an HTTPS connection. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Entitlement Certificate </td><td> <tt>--cert</tt> </td><td> Change the x.509 entitlement certificate used for authentication. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Entitlement Private Key </td><td> <tt>--key</tt> </td><td> Change the x.509 entitlement certificate's associated private key.  The key will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> Change whether the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
+</td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Change the relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
+</td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
+</td></tr><tr><td> Add GPG keys </td><td> <tt>--addkeys</tt> </td><td> A comma-separated list of GPG public key files to be added. 
+</td></tr><tr><td> Remove GPG keys </td><td> <tt>--rmkeys</tt> </td><td> A comma-separated list of GPG public key files to be removed. 
+</td></tr></table>
+<h3 id="Removal">Removal</h3>
 <p>
 Removing a repository from Pulp is as simple as running the <tt>repo delete</tt> command.
 </p>
@@ -172,6 +197,16 @@ Errata in pulp-f14-64:
 Files in pulp-f14-64: 
 
  none
+</pre><h4 id="ListGPGKeys">List GPG Keys</h4>
+<p>
+The list of GPG keys associated with the repository can be obtained using the <tt>repo listkeys</tt> command.  Again, the <tt>--id</tt> flag is required to indicate the repository being queried.
+</p>
+<pre class="wiki">$ pulp-admin repo listkeys --id pulp-f14-64
++------------------------------------------+
+   GPG keys associated with pulp-f14-64
++------------------------------------------+
+
+RPM-GPG-KEY-fedora
 </pre><hr />
 <h2 id="sync">Synchronization</h2>
 <p>
@@ -364,7 +399,81 @@ NOTE: The url that you see above can be used directly for baremetal kickstarts.
 </pre><p>
 Distribution membership in a repository is also displayed in repository information commands. For more information, see the <a class="wiki" href="UGRepo.html#crud">Repository Display</a> documentation.
 </p>
-</div>
+<h2 id="add_package">Add Package</h2>
+<p>
+Associate a package to a repository. When add_package is invoked, a package is selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
+</p>
+<p>
+The <tt>repo add_package</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to add the package. 
+</td></tr><tr><td> Package Name </td><td> <tt>-p</tt> or <tt>--package</tt> </td><td> Package filename to add to this repository. 
+</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified packages to perform add. 
+</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of add operation. 
+</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
+</td></tr></table>
+<h4 id="Example:Addapackagefromsourcetotargetrepositorytopleveldependencyresolution">Example: Add a package from source to target repository (top level dependency resolution)</h4>
+<pre class="wiki"> $ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 
+</pre><h4 id="Example:Addapackagefromsourcetotargetrepositoryrecursive">Example: Add a package from source to target repository (recursive)</h4>
+<pre class="wiki">pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 -r
+</pre><h2 id="delete_package">Delete Package</h2>
+<p>
+Remove a package to a repository. When delete_package is invoked, a package is selected from a source repository and removed. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
+</p>
+<p>
+The <tt>repo delete_package</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to delete the package. 
+</td></tr><tr><td> Package Name </td><td> <tt>-p</tt> or <tt>--package</tt> </td><td> Package filename to delete from this repository. 
+</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of delete operation. 
+</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
+</td></tr></table>
+<h4 id="Example:Removeapackagefromrepositorytopleveldependencyresolution">Example: Remove a package from repository (top level dependency resolution)</h4>
+<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64
+</pre><h4 id="Example:Removeapackagefromrepositoryrecursive">Example: Remove a package from repository (recursive)</h4>
+<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64 -r
+</pre><h2 id="add_errata">Add Errata</h2>
+<p>
+Associate an errata and its packages to a repository. When add_errata is invoked, an errata and its associated packages are selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
+</p>
+<p>
+The <tt>repo add_errata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to add the errata. 
+</td></tr><tr><td> Errata ID </td><td> <tt>-e</tt> or <tt>--errata</tt> </td><td> Errata Id to add to this repository. 
+</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified errata to perform add. 
+</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of add operation. 
+</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
+</td></tr></table>
+<h4 id="Example:Addanerratafromsourcetotargetrepositorytopleveldependencyresolution">Example: Add an errata from source to target repository (top level dependency resolution)</h4>
+<pre class="wiki"> $ pulp-admin repo add_errata --id=test17 --source=f13-updates -e  FEDORA-2010-5816
+</pre><h4 id="Example:Addanerratafromsourcetotargetrepositoryrecursive">Example: Add an errata from source to target repository (recursive)</h4>
+<pre class="wiki">pulp-admin repo add_errata --id=test17 --source=f13-updates -e FEDORA-2010-5816 -r
+</pre><h2 id="delete_errata">Delete Errata</h2>
+<p>
+Remove an errata from repository. When delete_package is invoked, an errata and its associated packages are selected from a repository and removed. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
+</p>
+<p>
+The <tt>repo delete_errata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to delete the errata from. 
+</td></tr><tr><td> Errata ID </td><td> <tt>-e</tt> or <tt>--errata</tt> </td><td> Errata Id to delete from this repository. 
+</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of delete operation. 
+</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
+</td></tr></table>
+<h4 id="Example:Deleteanerratafromrepositorytopleveldependencyresolution">Example: Delete an errata from repository (top level dependency resolution)</h4>
+<pre class="wiki"> $ pulp-admin repo delete_errata --id=test17 -e  FEDORA-2010-5816
+</pre><h4 id="Example:Deleteanerratafromrepositoryrecursive">Example: Delete an errata from repository (recursive)</h4>
+<pre class="wiki">pulp-admin repo delete_errata --id=test17 -e FEDORA-2010-5816 -r
+</pre></div>
    </div>
    
   

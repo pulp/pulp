@@ -108,20 +108,65 @@ These search arguments can be combined for advanced queries:
 </pre><h4 id="Example:FindwhichrepoaparticularRPMisin">Example: Find which repo a particular RPM is in</h4>
 <pre class="wiki">$ pulp-admin package search --filename zbar-qt-devel-0.10-6.fc14.i686.rpm
 </pre><hr />
-<h2 id="upload">Upload</h2>
+<h2 id="deplist">Dependency List</h2>
 <p>
-Repositories that are created without a feed may have packages uploaded into them through the <tt>repo upload</tt> command. This command will upload all RPMs in a given directory into a specific repository. The following arguments are required:
+Lookup dependencies on a rpm package. The following arguments are required:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository into which the packages will be uploaded. 
-</td></tr><tr><td> RPM Directory </td><td> <tt>--dir</tt> </td><td> Local path to the directory containing the RPMs to upload. Only RPMs in this directory are uploaded into the repository. 
+</td></tr><tr><td> PKG-NAME </td><td> <tt>-n --name</tt> </td><td> package to lookup dependencies; to specify multiple packages use multiple -n. 
+</td></tr><tr><td> ID </td><td> <tt>-repoid</tt> </td><td> Identifies the repository in which the dependency lookup happens; to specify multiple packages use multiple -r 
 </td></tr></table>
-<h4 id="Example:Uploadadirectoryofpackagestopulpserverandassociateittoarepository">Example: Upload a directory of packages to pulp server and associate it to a repository</h4>
-<pre class="wiki">$ pulp-admin repo upload --id cloud --dir /root/cloud-rpms
-</pre><h4 id="Example:Uploadpackagestopulpserverandassociateittoarepository">Example: Upload package(s) to pulp server and associate it to a repository</h4>
+<h4 id="Example:Lookupdependencylistonapackage">Example: Lookup dependency list on a package</h4>
+<pre class="wiki">$ sudo pulp-admin package deplist -n emoticons -r testrepo -r f13-updates
++------------------------------------------+
+   Dependencies for package(s) [emoticons]
++------------------------------------------+
+
+ dependency: libstdc++.so.6()(64bit) 
+   provider: libstdc++.x86_64 4.4.5-2.fc13
+
+ dependency: libc.so.6()(64bit) 
+   provider: glibc.x86_64 2.12.1-4
+
+ dependency: rtld(GNU_HASH) 
+   provider: glibc.x86_64 2.12.1-4
+   provider: glibc.i686 2.12.1-4
+
+ dependency: libm.so.6()(64bit) 
+   provider: glibc.x86_64 2.12.1-4
+
+ dependency: libstdc++.so.6(GLIBCXX_3.4)(64bit) 
+   provider: libstdc++.x86_64 4.4.5-2.fc13
+
+ dependency: libc.so.6(GLIBC_2.2.5)(64bit) 
+   provider: glibc.x86_64 2.12.1-4
+
+ dependency: libgcc_s.so.1()(64bit) 
+   provider: libgcc.x86_64 4.4.5-2.fc13
+
++------------------------------------------+
+ Suggested Packages in Repo [['testrepo', 'f13-updates']]
++------------------------------------------+
+libstdc++-4.4.5-2.fc13.x86_64.rpm
+glibc-2.12.1-4.x86_64.rpm
+libgcc-4.4.5-2.fc13.x86_64.rpm
+</pre><hr />
+<h2 id="upload">Upload</h2>
+<p>
+Uploads packages to the pulp server and stores them in a central location. If a repository is specified the uploaded package(s) will be associated to the repo. The following arguments are optional:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--repoid</tt> </td><td> Identifies the repository into which the packages will be uploaded. 
+</td></tr><tr><td> RPM Directory </td><td> <tt>--dir</tt> </td><td> Local path to the directory containing the RPMs to upload. Only RPMs in this directory are uploaded into the repository. 
+</td></tr><tr><td> VERBOSE </td><td> <tt>--verbose</tt> </td><td> provides a more verbose output.
+</td></tr></table>
+<h4 id="Example:UploadadirectoryofpackagestothePulpserverandassociateittoarepository">Example: Upload a directory of packages to the Pulp server and associate it to a repository</h4>
+<pre class="wiki">$ pulp-admin package upload --id cloud --dir /root/cloud-rpms
+</pre><h4 id="Example:UploadpackagestothePulpserverandassociatethemtoarepository">Example: Upload package(s) to the Pulp server and associate them to a repository</h4>
 <pre class="wiki">$ pulp-admin package upload --repoid cloud zbar-qt-devel-0.10-6.fc14.i686.rpm
-</pre><h4 id="Example:Uploadpackagestopulpserver">Example: Upload package(s) to pulp server</h4>
+</pre><h4 id="Example:UploadpackagestothePulpserver">Example: Upload package(s) to the Pulp server</h4>
 <pre class="wiki">$ pulp-admin package upload zbar-qt-devel-0.10-6.fc14.i686.rpm
 </pre></div>
    </div>
