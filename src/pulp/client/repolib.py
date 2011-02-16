@@ -18,11 +18,14 @@ Contains repo management (backend) classes.
 """
 
 import os
+
 from iniparse import ConfigParser as Parser
+
+from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.repository import RepositoryAPI
 from pulp.client.credentials import Consumer
-from pulp.client.connection import ConsumerConnection, RepoConnection
-from pulp.client.lock import Lock
 from pulp.client.config import Config
+from pulp.client.lock import Lock
 from pulp.client.logutil import getLogger
 
 cfg = Config()
@@ -86,10 +89,8 @@ class Pulp:
     The pulp server.
     """
     def __init__(self):
-        host = cfg.server.host
-        port = cfg.server.port
-        self.rapi = RepoConnection(host=host, port=port)
-        self.capi = ConsumerConnection(host=host, port=port)
+        self.capi = ConsumerAPI()
+        self.rapi = RepositoryAPI()
 
     def getProducts(self):
         """
@@ -107,7 +108,7 @@ class Pulp:
             if repo:
                 repos.append(repo)
         return products
-    
+
     def listkeys(self, id):
         return self.rapi.listkeys(id)
 
@@ -227,7 +228,7 @@ class UpdateAction(Action):
         @return: The formatted key, value item.
         @rtype: tuple
         """
-        if isinstance(v, (list,tuple)):
+        if isinstance(v, (list, tuple)):
             paths = []
             for p in v:
                 paths.append(self.join(baseurl, p))
@@ -291,7 +292,7 @@ class Repo(dict):
         @type id: str
         """
         self.id = id
-        for k,m,d in self.PROPERTIES:
+        for k, m, d in self.PROPERTIES:
             self[k] = d
 
     def items(self):
@@ -301,9 +302,9 @@ class Repo(dict):
         @rtype: list
         """
         lst = []
-        for k,m,d in self.PROPERTIES:
+        for k, m, d in self.PROPERTIES:
             v = self.get(k)
-            lst.append((k,v))
+            lst.append((k, v))
         return tuple(lst)
 
     def update(self, other):
@@ -315,7 +316,7 @@ class Repo(dict):
         @rtype: int
         """
         count = 0
-        for k,m,d in self.PROPERTIES:
+        for k, m, d in self.PROPERTIES:
             v = other.get(k)
             if m:
                 continue
@@ -327,7 +328,7 @@ class Repo(dict):
 
     def __eq(self, a, b):
         if a and b:
-            return ( a == b )
+            return (a == b)
         if (not a) and (not b):
             return True
         return False
@@ -335,15 +336,15 @@ class Repo(dict):
     def __str__(self):
         s = []
         s.append('[%s]' % self.id)
-        for k,v in self.items():
-            s.append('%s = %s' % (k,v))
+        for k, v in self.items():
+            s.append('%s = %s' % (k, v))
         return '\n'.join(s)
 
     def __repr__(self):
         return str(self)
 
     def __eq__(self, other):
-        return ( self.id == other.id )
+        return (self.id == other.id)
 
     def __hash__(self):
         return hash(self.id)
@@ -412,7 +413,7 @@ class RepoFile(Parser):
         @param repo: A repo used to update.
         @type repo: L{Repo}
         """
-        for k,v in repo.items():
+        for k, v in repo.items():
             if v:
                 Parser.set(self, repo.id, k, v)
             else:
@@ -441,7 +442,7 @@ class RepoFile(Parser):
         """
         if self.has_section(section):
             repo = Repo(section)
-            for k,v in self.items(section):
+            for k, v in self.items(section):
                 repo[k] = v
             return repo
 
