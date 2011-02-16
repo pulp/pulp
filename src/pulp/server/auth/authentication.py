@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from pulp.server.auth.cert_generator import verify_cert
 
 # Copyright © 2010 Red Hat, Inc.
 #
@@ -26,11 +25,14 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth import cert_generator
+from pulp.server.auth.authorization import consumer_users_role
+from pulp.server.auth.cert_generator import verify_cert
 from pulp.server.auth.certificate import Certificate
 from pulp.server.auth.password_util import check_password
 from pulp.server.config import config
 from pulp.server.db.model import User
 from pulp.server.LDAPConnection import LDAPConnection
+from pulp.server.pexceptions import PulpException
 
 
 _consumer_api = ConsumerApi()
@@ -124,7 +126,7 @@ def check_username_password(username, password=None):
 
 # ssl cert authentication -----------------------------------------------------
 
-def check_ssl_cert(cert_pem):
+def check_user_cert(cert_pem):
     """
     Check a client ssl certificate.
     Return None if the certificate is not valid
@@ -142,8 +144,27 @@ def check_ssl_cert(cert_pem):
         _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
                    encoded_user)
         return None
-    username, id = cert_generator.decode_admin_user(encoded_user)
+    try:
+        username, id = cert_generator.decode_admin_user(encoded_user)
+    except PulpException:
+        return None
     return check_username_password(username)
+
+def check_consumer_cert(cert_pem):
+    # TODO document me
+    cert = Certificate(content=cert_pem)
+    subject = cert.subject()
+    encoded_user = subject.get('CN', None)
+    if encoded_user is None:
+        return None
+    if not verify_cert(cert_pem):
+        _log.error('Auth certificate with CN [%s] is signed by a foreign CA' %
+                   encoded_user)
+        return None
+    user = check_username_password(encoded_user)
+    if user is None or consumer_users_role not in user['roles']:
+        return None
+    return user
 
 # oauth authentication --------------------------------------------------------
 

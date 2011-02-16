@@ -25,7 +25,7 @@ from pymongo import json_util
 
 from pulp.server import async
 from pulp.server.auth.authentication import (
-    check_username_password, check_ssl_cert, check_oauth)
+    check_username_password, check_user_cert, check_consumer_cert, check_oauth)
 from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps, json
@@ -91,13 +91,17 @@ class JSONController(object):
                     user = check_username_password(username, password)
                     if user is None:
                         return self.unauthorized(user_pass_fail_msg)
-                # second, try user certificate authentication
+                # second, try certificate authentication
                 if user is None:
                     cert_pem = http.ssl_client_cert()
                     if cert_pem is not None:
-                        user = check_ssl_cert(cert_pem)
+                        # first, check user certificate
+                        user = check_user_cert(cert_pem)
                         if user is None:
-                            return self.unauthorized(cert_fail_msg)
+                            # second, check consumer certificate
+                            user = check_consumer_cert(cert_pem)
+                            if user is None:
+                                return self.unauthorized(cert_fail_msg)
                 # third, check oauth credentials
                 if user is None:
                     auth = http.http_authorization()
