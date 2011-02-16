@@ -35,7 +35,7 @@ from pulp.client.logutil import getLogger
 active_server = None
 
 
-def set_server(server):
+def set_active_server(server):
     global active_server
     assert isinstance(server, Server)
     active_server = server
