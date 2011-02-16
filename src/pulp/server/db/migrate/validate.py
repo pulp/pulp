@@ -294,7 +294,7 @@ def _validate_file():
     """
     objectdb = file.FileApi()._getcollection()
     reference = model.File(u'', u'', u'', u'', u'')
-    return _validate_model(model.User.__name__, objectdb, reference)
+    return _validate_model(model.File.__name__, objectdb, reference)
 
 def _validate_distribution():
     """
@@ -304,7 +304,7 @@ def _validate_distribution():
     """
     objectdb = distribution.DistributionApi()._getcollection()
     reference = model.Distribution(u'', u'', u'', [])
-    return _validate_model(model.User.__name__, objectdb, reference)
+    return _validate_model(model.Distribution.__name__, objectdb, reference)
 
 # validation api --------------------------------------------------------------
 
