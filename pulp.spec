@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.138
+Version:        0.0.139
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,15 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Feb 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.139-1
+- added try/except for handling of certs other than admin in check_user_cert
+  (jconnor@redhat.com)
+- added check_consumer_cert (jconnor@redhat.com)
+- changed ssl cert check call in prep for differenciating between user and
+  consumer certs (jconnor@redhat.com)
+- fixed typo that causes a traceback during exception handling when pkg already
+  exists (dgao@redhat.com)
+
 * Mon Feb 14 2011 Jeff Ortel <jortel@redhat.com> 0.0.138-1
 - 676342 - Errata lookup was using the wrong call and returning back an empty
   list (pkilambi@redhat.com)
