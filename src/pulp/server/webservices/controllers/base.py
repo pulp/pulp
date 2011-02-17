@@ -84,6 +84,8 @@ class JSONController(object):
 
             @wraps(method)
             def _auth_decorator(self, *args, **kwargs):
+                # XXX jesus h christ: is this some god awful shit
+                # please, please refactor this into ... something ... anything!
                 user = None
                 # first, try username:password authentication
                 username, password = http.username_password()
@@ -100,19 +102,20 @@ class JSONController(object):
                         if user is None:
                             # second, check consumer certificate
                             user = check_consumer_cert(cert_pem)
-                            if user is None:
+                    # third, check oauth credentials
+                    if user is None:
+                        auth = http.http_authorization()
+                        username = http.request_info('HTTP_PULP_USER')
+                        if None in (auth, username):
+                            if cert_pem is not None:
                                 return self.unauthorized(cert_fail_msg)
-                # third, check oauth credentials
-                if user is None:
-                    auth = http.http_authorization()
-                    username = http.request_info('HTTP_PULP_USER')
-                    if None not in (auth, username):
-                        meth = http.request_info('REQUEST_METHOD')
-                        url = http.request_url()
-                        query = http.request_info('QUERY_STRING')
-                        user = check_oauth(username, meth, url, auth, query)
-                        if user is None:
-                            return self.unauthorized(oauth_fail_msg)
+                        else:
+                            meth = http.request_info('REQUEST_METHOD')
+                            url = http.request_url()
+                            query = http.request_info('QUERY_STRING')
+                            user = check_oauth(username, meth, url, auth, query)
+                            if user is None:
+                                return self.unauthorized(oauth_fail_msg)
                 # authentication has failed
                 if user is None:
                     return self.unauthorized(authen_fail_msg)
