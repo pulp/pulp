@@ -114,8 +114,10 @@ class RepoAction(Action):
                     continue
         return new_deps
 
-    def lookup_repo_packages(self, filename, repoid):
-        pkgobj = self.service_api.search_packages(filename=filename)
+    def lookup_repo_packages(self, filename, repoid, checksum=None, checksum_type=None):
+        pkgobj = self.service_api.search_packages(filename=filename, 
+                                                  checksum=checksum, 
+                                                  checksum_type=checksum_type)
         for pkg in pkgobj:
             pkg_repos = pkg["repos"]
             if repoid in pkg_repos:
@@ -762,6 +764,8 @@ class AddPackages(RepoAction):
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified packages to perform add"))
+        self.parser.add_option( "--csv", dest="csv",
+                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of add operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
@@ -772,20 +776,32 @@ class AddPackages(RepoAction):
 
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
-        if not self.opts.srcrepo:
-            system_exit(os.EX_USAGE, _("Error, a source respository where packages exists is required"))
+        if self.opts.pkgname and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
         # check if repos are valid
         self.get_repo(id)
-        self.get_repo(self.opts.srcrepo)
+        if self.opts.srcrepo:
+            self.get_repo(self.opts.srcrepo)
         # lookup requested pkgs in the source repository
         pnames = []
         pids = []
-        for pkg in self.opts.pkgname:
-            src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
+        if self.opts.csv:
+            if not os.path.exists(self.opts.csv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            pkglist = utils.parseCSV(self.opts.csv)
+        else:
+            pkglist = self.opts.pkgname
+        for pkginfo in pkglist:
+            if isinstance(pkginfo, list) and len(pkginfo) == 3:
+                pkg, checksum_type, checksum = pkginfo
+            else:
+                pkg, checksum_type, checksum = pkginfo, None, None  
+            src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo, 
+                                                   checksum=checksum, checksum_type=checksum_type)
             if not src_pkgobj: # not in src_pkgobjs:
                 print(_("Package %s could not be found skipping" % pkg))
                 continue
-            tgt_pkgobj = self.lookup_repo_packages(pkg, id)
+            tgt_pkgobj = self.lookup_repo_packages(pkg, id, checksum=checksum, checksum_type=checksum_type)
             if tgt_pkgobj:
                 print (_("Package [%s] are already part of repo [%s]. skipping" % (pkg, id)))
                 continue
@@ -793,6 +809,7 @@ class AddPackages(RepoAction):
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pids.append(src_pkgobj['id'])
+                
         if not pnames:
             system_exit(os.EX_DATAERR)
 
@@ -815,6 +832,8 @@ class RemovePackages(RepoAction):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to remove from this repository"))
+        self.parser.add_option( "--csv", dest="csv",
+                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
@@ -824,12 +843,24 @@ class RemovePackages(RepoAction):
         id = self.get_required_option('id')
         if not self.opts.pkgname:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
+        if self.opts.pkgname and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
         # check if repo is valid
         self.get_repo(id)
         pnames = []
         pobj = []
-        for pkg in self.opts.pkgname:
-            src_pkgobj = self.lookup_repo_packages(pkg, id)
+        if self.opts.csv:
+            if not os.path.exists(self.opts.csv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            pkglist = utils.parseCSV(self.opts.csv)
+        else:
+            pkglist = self.opts.pkgname
+        for pkginfo in pkglist:
+            if isinstance(pkginfo, list) and len(pkginfo) == 3:
+                pkg, checksum_type, checksum = pkginfo
+            else:
+                pkg, checksum_type, checksum = pkginfo, None, None
+            src_pkgobj = self.lookup_repo_packages(pkg, id, checksum_type, checksum)
             if not src_pkgobj:
                 print(_("Package %s could not be found skipping" % pkg))
                 continue
@@ -837,7 +868,6 @@ class RemovePackages(RepoAction):
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pobj.append(src_pkgobj)
-        print pnames, pobj
         if not pnames:
             system_exit(os.EX_DATAERR)
         pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
@@ -1003,30 +1033,30 @@ class AddFiles(RepoAction):
             if not os.path.exists(self.opts.csv):
                 system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             flist = utils.parseCSV(self.opts.csv)
-            for f in flist:
+        else:
+            if not self.opts.files:
+                system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an add."))
+            flist = self.opts.files
+        for f in flist:
+            if isinstance(f, list) or len(f) == 3:
+                filename, checksum_type, checksum = f
                 if not len(f) == 3:
                     log.error("Bad format [%s] in csv, skipping" % f)
                     continue
-                (filename, checksum_type, checksum) = f
-                fobj = self.file_api.search_file(filename=filename, 
-                                                 checksum_type=checksum_type, 
-                                                 checksum=checksum)
-                if not len(fobj):
-                    print _("File [%s] could not be found on server; Skipping add" % filename)
-                    continue
-
-                fids[filename] = fobj[0]
-        elif self.opts.files:
-            for fname in self.opts.files:
-                fobj = self.file_api.search_file(filename=fname)
-                if not len(fobj):
-                    print _("File [%s] could not be found on server; Skipping add" % fname)
-                    continue
-                if len(fobj) > 1:
-                    print _("There is more than one file with filename [%s]. \
-                                Please use csv option to include checksum.; Skipping add" % fname)
-                    continue
-                fids[fname] = fobj[0]
+            else:
+                filename, checksum_type, checksum = f, None, None
+            
+            fobj = self.file_api.search_file(filename=filename, 
+                                             checksum_type=checksum_type, 
+                                             checksum=checksum)
+            if not len(fobj):
+                print _("File [%s] could not be found on server; Skipping add" % filename)
+                continue
+            if len(fobj) > 1:
+                print _("There is more than one file with filename [%s]. \
+                            Please use csv option to include checksum.; Skipping add" % filename)
+                continue
+            fids[filename] = fobj[0]
         
         for fname, fobj in fids.items(): 
             if self.opts.srcrepo and not self.opts.srcrepo in fobj["repos"]:
@@ -1035,6 +1065,7 @@ class AddFiles(RepoAction):
             try:
                 self.repository_api.add_file(id, fobj['id'])
             except Exception:
+                raise
                 print _("Unable to add package [%s] to repo [%s]" % (fname, id))
                 continue
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
@@ -1060,31 +1091,31 @@ class RemoveFiles(RepoAction):
             if not os.path.exists(self.opts.csv):
                 system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             flist = utils.parseCSV(self.opts.csv)
-            for f in flist:
-                if not len(f) == 3:
-                    log.error("Bad format [%s] in csv, skipping" % f)
-                    continue
-                (filename, checksum_type, checksum) = f
-                fobj = self.file_api.search_file(filename=filename, 
-                                                 checksum_type=checksum_type, 
-                                                 checksum=checksum)
-                if not len(fobj):
-                    print _("File [%s] could not be found on server; Skipping add" % filename)
-                    continue
-                fids[filename] = fobj[0]['id']
         else:
             if not self.opts.files:
                 system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an remove."))
-            for fname in self.opts.files:
-                fobj = self.file_api.search_file(filename=fname)
-                if not len(fobj):
-                    print _("File [%s] could not be found on server; Skipping add" % fname)
+            flist = self.opts.files
+        for f in flist:
+            if isinstance(f, list) or len(f) == 3:
+                filename, checksum_type, checksum = f
+                if not len(f) == 3:
+                    log.error("Bad format [%s] in csv, skipping" % f)
                     continue
-                if len(fobj) > 1:
-                    print _("There is more than one file with filename [%s]. \
-                                Please use csv option to include checksum.; Skipping add" % fname)
-                    continue
-                fids[fname] = fobj[0]['id']
+            else:
+                filename, checksum_type, checksum = f, None, None
+            
+            fobj = self.file_api.search_file(filename=filename, 
+                                             checksum_type=checksum_type, 
+                                             checksum=checksum)
+            if not len(fobj):
+                print _("File [%s] could not be found on server; Skipping remove" % filename)
+                continue
+            if len(fobj) > 1:
+                print _("There is more than one file with filename [%s]. \
+                            Please use csv option to include checksum.; Skipping remove" % filename)
+                continue
+            fids[filename] = fobj[0]['id']
+
         for fname, fid in fids.items():
             try:
                 self.repository_api.remove_file(id, fid)
