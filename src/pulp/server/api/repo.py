@@ -1488,9 +1488,11 @@ class RepoApi(BaseApi):
          @param fileid: file ID.
         '''
         repo = self._get_existing_repo(repoid)
-        if self.fileapi.file(fileid) is None:
+        fileobj = self.fileapi.file(fileid)
+        if fileobj is None:
             raise PulpException("File ID [%s] does not exist" % fileid)
-        repo['files'].append(fileid)
+        if fileid not in repo['files']:
+            repo['files'].append(fileid)
         self.objectdb.save(repo, safe=True)
         log.info("Successfully added file %s to repo %s" % (fileid, repoid))
 
@@ -1502,10 +1504,13 @@ class RepoApi(BaseApi):
          @param fileid: file ID.
         '''
         repo = self._get_existing_repo(repoid)
+        fileobj = self.fileapi.file(fileid)
+        if fileobj is None:
+            raise PulpException("File ID [%s] does not exist" % fileid)
         if fileid in repo['files']:
             del repo['files'][repo['files'].index(fileid)]
             self.objectdb.save(repo, safe=True)
-            self.fileapi.delete(fileid)
+#            self.fileapi.delete(fileid)
             log.info("Successfully removed file %s from repo %s" % (fileid, repoid))
         else:
             log.error("No file with ID %s associated to this repo" % fileid)
@@ -1521,6 +1526,14 @@ class RepoApi(BaseApi):
         for fileid in repo['files']:
             files.append(self.fileapi.file(fileid))
         return files
+    
+    def find_repos_by_files(self, fileid):
+        """
+        Return repos that contain passed in file id
+        @param pkgid: file id
+        """
+        found = self.objectdb.find({"files":fileid}, fields=["id"])
+        return [r["id"] for r in found]
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

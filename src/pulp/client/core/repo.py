@@ -25,6 +25,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.errata import ErrataAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.api.service import ServiceAPI
+from pulp.client.api.file import FileAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
@@ -55,6 +56,7 @@ class RepoAction(Action):
         self.package_api = PackageAPI()
         self.service_api = ServiceAPI()
         self.repository_api = RepositoryAPI()
+        self.file_api = FileAPI()
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
@@ -70,8 +72,8 @@ class RepoAction(Action):
         @rtype: dict
         @return: dictionary representing the repository
         """
-        assert hasattr(self, 'pconn')
-        repo = self.repository_api.repository(id)
+        assert hasattr(self, 'repository_api')
+        repo = self.repository_api.repository(id)[1]
         if repo is None:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         return repo
@@ -383,7 +385,9 @@ class Content(RepoAction):
             print _(' none')
         else:
             for f in sorted(repo['files']):
-                print ' ' + f
+                fileobj = self.file_api.file(f)
+                print ' ' + fileobj['filename']
+
 
 class Create(RepoAction):
 
@@ -701,10 +705,6 @@ class CancelSync(RepoAction):
         self.repository_api.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s canceled") % id
 
-
-
-
-
 class Schedules(RepoAction):
 
     description = _('list all repository schedules')
@@ -718,7 +718,6 @@ class Schedules(RepoAction):
         for id in schedules.keys():
             print(constants.REPO_SCHEDULES_LIST % (id, schedules[id]))
 
-
 class ListKeys(RepoAction):
 
     description = _('list gpg keys')
@@ -727,7 +726,6 @@ class ListKeys(RepoAction):
         id = self.get_required_option('id')
         for key in self.repository_api.listkeys(id):
             print os.path.basename(key)
-
 
 class Publish(RepoAction):
     description = _('enable/disable repository being published by apache')
@@ -810,7 +808,6 @@ class AddPackages(RepoAction):
             system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
         print _("Successfully added packages %s to repo [%s]." % (pnames, id))
 
-
 class RemovePackages(RepoAction):
     description = _('Remove package(s) from the repository.')
 
@@ -851,6 +848,7 @@ class RemovePackages(RepoAction):
             print _("Successfully removed package %s from repo [%s]." % (pkg, id))
         except Exception:
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
+            
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
@@ -980,6 +978,121 @@ class RemoveErrata(RepoAction):
         print _("Successfully removed Errata %s from repo [%s]." % (errataids, id))
 
 
+class AddFiles(RepoAction):
+    description = _('Add file(s) from a repository.')
+
+    def setup_parser(self):
+        super(AddFiles, self).setup_parser()
+        self.parser.add_option("-f", "--file", action="append", dest="files",
+                help=_("file to add to this repository"))
+        self.parser.add_option("--source", dest="srcrepo",
+            help=_("Source repository with specified files to perform add (optional)"))
+        self.parser.add_option( "--csv", dest="csv",
+                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        # check if repos are valid
+        self.get_repo(id)
+        if self.opts.srcrepo:
+            self.get_repo(self.opts.srcrepo)
+        fids = {}
+        if self.opts.files and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Both --files and --csv cannot be used in the same command."))
+        if self.opts.csv:
+            if not os.path.exists(self.opts.csv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            flist = utils.parseCSV(self.opts.csv)
+            for f in flist:
+                if not len(f) == 3:
+                    log.error("Bad format [%s] in csv, skipping" % f)
+                    continue
+                (filename, checksum_type, checksum) = f
+                fobj = self.file_api.search_file(filename=filename, 
+                                                 checksum_type=checksum_type, 
+                                                 checksum=checksum)
+                if not len(fobj):
+                    print _("File [%s] could not be found on server; Skipping add" % filename)
+                    continue
+
+                fids[filename] = fobj[0]
+        elif self.opts.files:
+            for fname in self.opts.files:
+                fobj = self.file_api.search_file(filename=fname)
+                if not len(fobj):
+                    print _("File [%s] could not be found on server; Skipping add" % fname)
+                    continue
+                if len(fobj) > 1:
+                    print _("There is more than one file with filename [%s]. \
+                                Please use csv option to include checksum.; Skipping add" % fname)
+                    continue
+                fids[fname] = fobj[0]
+        
+        for fname, fobj in fids.items(): 
+            if self.opts.srcrepo and not self.opts.srcrepo in fobj["repos"]:
+                print _("File [%s] Could not be found in the repo [%s]" % (filename, self.opts.srcrepo))
+                continue
+            try:
+                self.repository_api.add_file(id, fobj['id'])
+            except Exception:
+                print _("Unable to add package [%s] to repo [%s]" % (fname, id))
+                continue
+            print _("Successfully added packages %s to repo [%s]." % (fname, id))
+            
+class RemoveFiles(RepoAction):
+    description = _('Remove file(s) from a repository.')
+
+    def setup_parser(self):
+        super(RemoveFiles, self).setup_parser()
+        self.parser.add_option("-f", "--file", action="append", dest="files",
+                help=_("file to remove from this repository"))
+        self.parser.add_option( "--csv", dest="csv",
+                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        # check if repos are valid
+        self.get_repo(id)
+        if self.opts.files and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
+        fids = {}
+        if self.opts.csv:
+            if not os.path.exists(self.opts.csv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            flist = utils.parseCSV(self.opts.csv)
+            for f in flist:
+                if not len(f) == 3:
+                    log.error("Bad format [%s] in csv, skipping" % f)
+                    continue
+                (filename, checksum_type, checksum) = f
+                fobj = self.file_api.search_file(filename=filename, 
+                                                 checksum_type=checksum_type, 
+                                                 checksum=checksum)
+                if not len(fobj):
+                    print _("File [%s] could not be found on server; Skipping add" % filename)
+                    continue
+                fids[filename] = fobj[0]['id']
+        else:
+            if not self.opts.files:
+                system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an remove."))
+            for fname in self.opts.files:
+                fobj = self.file_api.search_file(filename=fname)
+                if not len(fobj):
+                    print _("File [%s] could not be found on server; Skipping add" % fname)
+                    continue
+                if len(fobj) > 1:
+                    print _("There is more than one file with filename [%s]. \
+                                Please use csv option to include checksum.; Skipping add" % fname)
+                    continue
+                fids[fname] = fobj[0]['id']
+        for fname, fid in fids.items():
+            try:
+                self.repository_api.remove_file(id, fid)
+            except Exception:
+                raise
+                system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
+            print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
+        
 
 # repo command ----------------------------------------------------------------
 

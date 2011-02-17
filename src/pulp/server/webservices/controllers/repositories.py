@@ -254,6 +254,9 @@ class RepositoryActions(AsyncController):
         'add_package',
         'delete_package',
         'get_package',
+        'add_file',
+        'remove_file',
+        'get_files'
         'add_packages_to_group',
         'delete_package_from_group',
         'delete_packagegroup',
@@ -522,6 +525,30 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         return self.ok(api.errata(id, data['types']))
+
+    def add_file(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of file to repository
+        """
+        data = self.params()
+        api.add_file(id, data['fileid'])
+        return self.ok(True)
+
+    def remove_file(self, id):
+        """
+        @param id: repository id
+        @return: True on successful deletion of file from repository
+        """
+        data = self.params()
+        api.remove_file(id, data['fileid'])
+        return self.ok(True)
+
+    def get_files(self, id):
+        """
+         get files associated for a given repo.
+        """
+        return self.ok(api.list_files(id))
 
     def addkeys(self, id):
         data = self.params()

@@ -1,0 +1,34 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2011 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+from pulp.client.api.base import PulpAPI
+
+
+class FileAPI(PulpAPI):
+    """
+    Connection class to access file related calls
+    """
+    
+    def file(self, id):
+        path = "/content/files/%s/" % id
+        return self.server.GET(path)[1]
+    
+    def search_file(self, filename=None, checksum_type=None, checksum=None):
+        params = {"filename" : filename,
+                  "checksum_type" : checksum_type,
+                  "checksum" : checksum,}
+        path = "/content/files/"
+        return self.server.POST(path, params)[1]
+

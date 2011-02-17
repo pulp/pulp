@@ -164,3 +164,24 @@ class TestFiles(unittest.TestCase):
         self.rapi.remove_file(repo['id'], fileid)
         repo = self.rapi.repository(repo['id'])
         assert(fileid not in repo['files'])
+        
+    def test_find_repos_by_files(self):
+        filename = "pulp-test.iso"
+        id = 'test_create_errata_id'
+        description = 'pulp test iso image'
+        checksum_type = "sha256"
+        checksum = "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c"
+        size = "4096"
+        sample_file = self.fapi.create(filename, checksum_type, checksum, size, description)
+        self.assertTrue(sample_file is not None)
+        fileid = sample_file['id']
+        id = 'file-repo'
+        repo = self.rapi.create(id, 'file repo', 'noarch')
+        repo = self.rapi.repository(id)
+        assert(repo is not None)
+        self.rapi.add_file(repo['id'], fileid)
+        repo = self.rapi.repository(repo['id'])
+        assert(fileid in repo['files'])
+        found = self.rapi.find_repos_by_files(fileid)
+        print "CCCCCCCCC",found
+        assert(len(found) > 0)

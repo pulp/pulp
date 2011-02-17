@@ -15,6 +15,7 @@
 #
 import os
 import rpm
+import csv
 import socket
 import hashlib
 import base64
@@ -264,4 +265,13 @@ def readFile(filepath):
         return f.read()
     except:
         return None
+    
+def parseCSV(filepath):
+    in_file  = open(filepath, "rb")
+    reader = csv.reader(in_file)
+    lines = []
+    for line in reader:
+        lines.append(line)
+    in_file.close()
+    return lines
 

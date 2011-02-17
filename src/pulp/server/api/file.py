@@ -70,7 +70,7 @@ class FileApi(BaseApi):
         return self.objectdb.find_one({'id': id})
 
     def files(self, filename=None, checksum=None, checksum_type=None, regex=None,
-              fields=["filename", "checksum", "size"]):
+              fields=["id", "filename", "checksum", "size"]):
         """
         Return all available File objects based on the filename
         """
