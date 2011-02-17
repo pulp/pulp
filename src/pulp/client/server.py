@@ -199,8 +199,8 @@ class PulpServer(Server):
             return httplib.HTTPSConnection(self.host, self.port)
         ssl_context = SSL.Context('sslv3')
         ssl_context.load_cert(self.__certfile, self.__keyfile)
-        print >> sys.stderr, 'making connection with: %s, %s' % (self.__certfile,
-                                                                 self.__keyfile)
+        #print >> sys.stderr, 'making connection with: %s, %s' % (self.__certfile,
+        #                                                         self.__keyfile)
         return httpslib.HTTPSConnection(self.host,
                                         self.port,
                                         ssl_context=ssl_context)
