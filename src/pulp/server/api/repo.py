@@ -709,11 +709,18 @@ class RepoApi(BaseApi):
         for pid in packageids:
             package = self.packageapi.package(pid)
             if package is None:
-                #raise PulpException("No Package with id: %s found" % pid)
                 log.error("No Package with id: %s found" % pid)
                 continue
-            # TODO:  We might want to restrict Packages we add to only
-            #        allow 1 NEVRA per repo
+            nvrea = {'name' : package['name'],
+                     'version' : package['version'],
+                     'release' : package['release'],
+                     'arch'    : package['arch'],
+                     'epoch'   : package['epoch'],}
+            found = self.get_packages_by_nvrea(repo['id'], [nvrea])
+            if found:
+                log.error("Package with same NVREA [%s] already exists in repo [%s]"\
+                           % (nvrea, repo['id']))
+                continue
             self._add_package(repo, package)
             log.info("Added: %s to repo: %s" % (package, repo))
             shared_pkg = pulp.server.util.get_shared_package_path(
