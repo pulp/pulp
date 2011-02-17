@@ -53,7 +53,7 @@ def _using_ldap():
     return config.has_section('ldap')
 
 
-def _check_username_password_ldap(username, password):
+def _check_username_password_ldap(username, password=None):
     """
     Check a username and password against the ldap server.
     Return None if the username and password are not valid
@@ -86,7 +86,7 @@ def _check_username_password_ldap(username, password):
     return User(username, username, password, username)
 
 
-def _check_username_password_local(username, password):
+def _check_username_password_local(username, password=None):
     """
     Check a username and password against the local database.
     Return None if the username and password are not valid
