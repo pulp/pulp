@@ -22,6 +22,11 @@ from pulp.server import config
 from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.util import random_string
+from pulp.server.auth.cert_generator import SerialNumber
+from pulp.server import constants
+
+SerialNumber.PATH = '/tmp/sn.dat'
+constants.LOCAL_STORAGE="/tmp/pulp/"
 
 def initialize():
     connection.initialize()

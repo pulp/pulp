@@ -61,9 +61,6 @@ logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-SerialNumber.PATH = '/tmp/sn.dat'
-constants.LOCAL_STORAGE="/tmp/pulp/"
-
 class TestApi(unittest.TestCase):
 
     def clean(self):
