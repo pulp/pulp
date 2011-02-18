@@ -183,6 +183,7 @@ class RepositoryDeferredFields(JSONController):
         'errata',
         'distribution',
         'files',
+        'keys',
     )
 
     def packages(self, id):
@@ -228,6 +229,10 @@ class RepositoryDeferredFields(JSONController):
          get files associated for a given repo.
         """
         return self.ok(api.list_files(id))
+
+    def keys(self, id):
+        keylist = api.listkeys(id)
+        return self.ok(keylist)
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)
@@ -678,20 +683,11 @@ class Schedules(JSONController):
         schedules = api.all_schedules()
         return self.ok(schedules)
 
-class KeyList(JSONController):
-
-    @JSONController.error_handler
-    @JSONController.auth_required(READ)
-    def GET(self, id):
-        keylist = api.listkeys(id)
-        return self.ok(keylist)
-
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'Repositories',
     '/schedules/', 'Schedules',
-    '/([^/]+)/listkeys/$', 'KeyList',
     '/([^/]+)/$', 'Repository',
 
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),

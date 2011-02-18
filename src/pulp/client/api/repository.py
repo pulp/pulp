@@ -217,7 +217,7 @@ class RepositoryAPI(PulpAPI):
         return self.server.POST(path, params)[1]
 
     def listkeys(self, id):
-        path = "/repositories/%s/listkeys/" % id
+        path = "/repositories/%s/keys/" % id
         return self.server.GET(path)[1]
 
     def update_publish(self, id, state):
