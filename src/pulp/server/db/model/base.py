@@ -22,9 +22,9 @@ from pymongo.collection import Collection
 from pulp.server.db.connection import get_database
 
 
-class Base(dict):
+class Model(dict):
     '''
-    Base object that has convenience methods to get and put
+    Model object that has convenience methods to get and put
     attrs into the base dict object with dot notation
     '''
 

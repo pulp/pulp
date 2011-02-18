@@ -18,7 +18,7 @@ import logging
 import pymongo
 
 from pulp.server.db.connection import get_object_db
-from pulp.server.db.model import Base
+from pulp.server.db.model import Model
 
 
 # current data model version of the code base
@@ -30,7 +30,7 @@ _version_db = None
 
 # data model version model ----------------------------------------------------
 
-class DataModelVersion(Base):
+class DataModelVersion(Model):
     """
     Simple data model to store data model versions and migrations in the
     database.

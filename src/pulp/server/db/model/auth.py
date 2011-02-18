@@ -13,10 +13,10 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server.db.model.base import Base
+from pulp.server.db.model.base import Model
 
 
-class Permission(Base):
+class Permission(Model):
     """
     Model representing the user permissions associated with a pulp resource.
     @ivar resource: uri path of resource
@@ -31,7 +31,7 @@ class Permission(Base):
         self.users = {}
 
 
-class Role(Base):
+class Role(Model):
     """
     Model representing a set of users and the permissions granted those users
     as a group.
@@ -46,7 +46,7 @@ class Role(Base):
         self.permissions = {}
 
 
-class User(Base):
+class User(Model):
     """
     Model representing a user of pulp.
     @ivar login: user's login name

@@ -15,10 +15,10 @@
 
 import datetime
 
-from pulp.server.db.model.base import Base
+from pulp.server.db.model.base import Model
 
 
-class Event(Base):
+class Event(Model):
     """
     Auditing models used to log and persist events in the database
     """

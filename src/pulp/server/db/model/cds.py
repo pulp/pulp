@@ -15,10 +15,10 @@
 
 import datetime
 
-from pulp.server.db.model.base import Base
+from pulp.server.db.model.base import Model
 
 
-class CDS(Base):
+class CDS(Model):
     '''
     Represents an external CDS instance managed by this pulp server.
     '''
@@ -26,7 +26,7 @@ class CDS(Base):
     unique_indicies = ('hostname',)
 
     def __init__(self, hostname, name=None, description=None):
-        Base.__init__(self)
+        Model.__init__(self)
         self.hostname = hostname
         if name:
             self.name = name
@@ -40,13 +40,13 @@ class CDS(Base):
         return self.hostname
 
 
-class CDSHistoryEvent(Base):
+class CDSHistoryEvent(Model):
     '''
     Represents a single event that occurred on a CDS.
     '''
 
     def __init__(self, cds_hostname, originator, type_name, details=None):
-        Base.__init__(self)
+        Model.__init__(self)
         self.cds_hostname = cds_hostname
         self.originator = originator
         self.type_name = type_name

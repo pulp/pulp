@@ -15,12 +15,12 @@
 
 import datetime
 
-from pulp.server.db.model.base import Base
+from pulp.server.db.model.base import Model
 from pulp.server.pexceptions import PulpException
 
 # consumer models -------------------------------------------------------------
 
-class Consumer(Base):
+class Consumer(Model):
 
     unique_indicies = ('id',)
     other_indicies = ('package_profile.name', 'repoids', 'key_value_pairs',
@@ -36,7 +36,7 @@ class Consumer(Base):
         self.key_value_pairs = key_value_pairs
 
 
-class ConsumerGroup(Base):
+class ConsumerGroup(Model):
 
     other_indicies = ('consumerids',)
 
@@ -48,9 +48,9 @@ class ConsumerGroup(Base):
         self.key_value_pairs = key_value_pairs
 
 
-class ConsumerHistoryEvent(Base):
+class ConsumerHistoryEvent(Model):
     def __init__(self, consumer_id, originator, type_name, details):
-        Base.__init__(self)
+        Model.__init__(self)
         self.consumer_id = consumer_id
         self.originator = originator
         self.type_name = type_name
@@ -59,7 +59,7 @@ class ConsumerHistoryEvent(Base):
 
 # distribution model ----------------------------------------------------------
 
-class Distribution(Base):
+class Distribution(Model):
     '''
      Distribution Model to represent kickstart trees
     '''
@@ -75,7 +75,7 @@ class Distribution(Base):
 
 # errata model ----------------------------------------------------------------
 
-class Errata(Base):
+class Errata(Model):
     """
     Errata model to represent software updates
     maps to yum.update_md.UpdateNotice fields
@@ -109,7 +109,7 @@ class Errata(Base):
 
 # package models --------------------------------------------------------------
 
-class Package(Base):
+class Package(Model):
 
     unique_indicies = (('name', 'epoch', 'version', 'release', 'arch',
                         'filename', 'checksum'),)
@@ -118,8 +118,8 @@ class Package(Base):
 
     def __init__(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, vendor=None, repo_defined=False):
-        Base.__init__(self)
-        # ID is initialized in Base.__init__()
+        Model.__init__(self)
+        # ID is initialized in Model.__init__()
         self.name = name
         self.epoch = epoch
         self.version = version
@@ -136,7 +136,7 @@ class Package(Base):
         self.provides = []
 
 
-class PackageGroup(Base):
+class PackageGroup(Model):
     """
     Class represents a yum.comps.Group
     """
@@ -161,7 +161,7 @@ class PackageGroup(Base):
         self.repo_defined = repo_defined
 
 
-class PackageGroupCategory(Base):
+class PackageGroupCategory(Model):
 
     def __init__(self, id, name, description, display_order=99,
             immutable=False, repo_defined=False):
@@ -176,14 +176,14 @@ class PackageGroupCategory(Base):
         self.immutable = immutable
         self.repo_defined = repo_defined
 
-class File(Base):
+class File(Model):
     """
     Class represents a file types other than rpm. Eg: *.iso *.txt
     """
     def __init__(self, filename, checksum_type,
                  checksum, size, description=None, repo_defined=False):
-        Base.__init__(self)
-        # ID is initialized in Base.__init__()
+        Model.__init__(self)
+        # ID is initialized in Model.__init__()
         self.filename = filename
         self.description = description
         self.checksum = {checksum_type: checksum}
@@ -193,7 +193,7 @@ class File(Base):
 
 # repository models -----------------------------------------------------------
 
-class Repo(Base):
+class Repo(Model):
 
     other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
 
@@ -236,7 +236,7 @@ class Repo(Base):
         return RepoSource(self.source)
 
 
-class RepoSource(Base):
+class RepoSource(Model):
     # yum:http://blah.bloop.com
 
     def __init__(self, url):
