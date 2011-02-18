@@ -24,7 +24,7 @@ class UploadAPI(PulpAPI):
     Connection class to access upload related calls
     """
 
-    CHUNKSIZE = 0x100000
+    CHUNKSIZE = 0xA00000 # 10 MB
 
     def upload(self, path):
         """
