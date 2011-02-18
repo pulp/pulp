@@ -49,8 +49,17 @@ def initialize(name=None, seeds=None):
         _connection = None
         _database = None
         raise
-    
-    
+
+
+def get_database():
+    """
+    Return the database instance for the pulp's document database.
+    @rtype: pymongo.database.Database instance or None
+    @return: the database instance if we'e been initialized, None otherwise
+    """
+    return _database
+
+
 def get_object_db(name, unique_indexes=[], other_indexes=[], order=pymongo.DESCENDING):
     """
     Get an object database (read MongoDB Document Collection) for the given name.

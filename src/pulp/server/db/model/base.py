@@ -14,6 +14,12 @@
 # in this software or its documentation.
 
 import uuid
+from gettext import gettext as _
+
+from pymongo import DESCENDING
+from pymongo.collection import Collection
+
+from pulp.server.db.connection import get_database
 
 
 class Base(dict):
@@ -22,6 +28,7 @@ class Base(dict):
     attrs into the base dict object with dot notation
     '''
 
+    collection_name = None
     unique_indicies = ('id',)
     other_indicies = ()
 
@@ -33,3 +40,32 @@ class Base(dict):
         return self.get(attr, None)
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+    @classmethod
+    def get_collection(cls):
+        """
+        Get the document collection for this data model.
+        @rtype: pymongo.collection.Collection instance or None
+        @return: the document collection for this data model if associated with one
+                 None otherwise
+        """
+
+        def _ensure_indicies(collection, indicies):
+            # indicies are either tuples or strings,
+            # tuples are 'unique together'
+            for index in indicies:
+                if isinstance(index, basestring):
+                    index = (index,)
+                collection.ensure_index([(i, DESCENDING) for i in index],
+                                        unique=True, background=True)
+
+        # not all data models are associated with a document collection
+        # provide mechanism for sub-documents
+        if cls.collection_name is None:
+            return None
+        db = get_database(_('Cannot get collection from uninitialized database'))
+        if db is None:
+            raise RuntimeError()
+        collection = Collection(db, cls.collection_name, create=True, safe=True)
+        _ensure_indicies(collection, cls.unique_indicies)
+        _ensure_indicies(collection, cls.other_indicies)
