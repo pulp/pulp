@@ -181,11 +181,6 @@ class PulpServer(Server):
 
         self.__certfile = None
         self.__keyfile = None
-        self.__connection = None
-
-    def __del__(self):
-        if self.__connection is not None:
-            self.__connection.close()
 
     # protected server connection methods -------------------------------------
 
@@ -207,12 +202,10 @@ class PulpServer(Server):
 
     def _connect(self):
         # make an appropriate connection to the pulp server and cache it
-        if self.__connection is None:
-            if self.protocol == 'http':
-                self.__connection = self._http_connection()
-            else:
-                self.__connection = self._https_connection()
-        return self.__connection
+        if self.protocol == 'http':
+            return self._http_connection()
+        else:
+            return self._https_connection()
 
     # protected request utilities ---------------------------------------------
 
