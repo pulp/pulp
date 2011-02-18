@@ -67,7 +67,7 @@ class Model(dict):
         if db is None:
             msg = _('Cannot get collection from uninitialized database')
             raise RuntimeError(msg)
-        collection = Collection(db, cls.collection_name, create=True)
+        collection = Collection(db, cls.collection_name)
         _ensure_indicies(collection, cls.unique_indicies, True)
         _ensure_indicies(collection, cls.other_indicies, False)
         return collection
