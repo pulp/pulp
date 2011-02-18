@@ -157,7 +157,7 @@ class File:
         return total
 
     def __segpath(self, seg):
-        fn = '%d.dat' % seg
+        fn = '%.4d.dat' % seg
         path = os.path.join(self.__segroot(), fn)
         return path
 
