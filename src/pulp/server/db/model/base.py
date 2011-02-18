@@ -29,7 +29,7 @@ class Model(dict):
     '''
 
     collection_name = None
-    unique_indicies = ('id',)
+    unique_indicies = ('id',) # note, '_id' is automatically unique and indexed
     other_indicies = ()
 
     def __init__(self):
@@ -50,6 +50,7 @@ class Model(dict):
                  None otherwise
         """
 
+        # ensure the indicies in the document collection
         def _ensure_indicies(collection, indicies, unique):
             # indicies are either tuples or strings,
             # tuples are 'unique together' if unique is True
