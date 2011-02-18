@@ -72,7 +72,7 @@ class RepoAction(Action):
         @return: dictionary representing the repository
         """
         assert hasattr(self, 'repository_api')
-        repo = self.repository_api.repository(id)[1]
+        repo = self.repository_api.repository(id)
         if repo is None:
             system_exit(os.EX_DATAERR, _("Repository with id: [%s] not found") % id)
         return repo
@@ -114,8 +114,8 @@ class RepoAction(Action):
         return new_deps
 
     def lookup_repo_packages(self, filename, repoid, checksum=None, checksum_type="sha256"):
-        pkgobj = self.service_api.search_packages(filename=filename, 
-                                                  checksum=checksum, 
+        pkgobj = self.service_api.search_packages(filename=filename,
+                                                  checksum=checksum,
                                                   checksum_type=checksum_type)
         for pkg in pkgobj:
             pkg_repos = pkg["repos"]
@@ -763,7 +763,7 @@ class AddPackages(RepoAction):
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified packages to perform add"))
-        self.parser.add_option( "--csv", dest="csv",
+        self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of add operation."))
@@ -797,8 +797,8 @@ class AddPackages(RepoAction):
             else:
                 checksum_type = None
                 pkg, checksum = pkginfo, None
-            if self.opts.srcrepo:  
-                src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo, 
+            if self.opts.srcrepo:
+                src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo,
                                                        checksum=checksum)
                 if not src_pkgobj: # not in src_pkgobjs:
                     print(_("Package %s could not be found skipping" % pkg))
@@ -823,7 +823,7 @@ class AddPackages(RepoAction):
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pids.append(src_pkgobj['id'])
-                
+
         if not pnames:
             system_exit(os.EX_DATAERR)
         if self.opts.srcrepo:
@@ -847,7 +847,7 @@ class RemovePackages(RepoAction):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to remove from this repository"))
-        self.parser.add_option( "--csv", dest="csv",
+        self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
@@ -893,7 +893,7 @@ class RemovePackages(RepoAction):
             print _("Successfully removed package %s from repo [%s]." % (pkg, id))
         except Exception:
             print _("Unable to remove package [%s] to repo [%s]" % (pkg, id))
-            
+
 
 class AddErrata(RepoAction):
     description = _('Add specific errata from the source repository')
@@ -1032,7 +1032,7 @@ class AddFiles(RepoAction):
                 help=_("file to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified files to perform add (optional)"))
-        self.parser.add_option( "--csv", dest="csv",
+        self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
 
     def run(self):
@@ -1060,7 +1060,7 @@ class AddFiles(RepoAction):
                     continue
             else:
                 filename, checksum = f, None
-            
+
             fobj = self.file_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
                 print _("File [%s] could not be found on server; Skipping add" % filename)
@@ -1070,8 +1070,8 @@ class AddFiles(RepoAction):
                             Please use csv option to include checksum.; Skipping add" % filename)
                 continue
             fids[filename] = fobj[0]
-        
-        for fname, fobj in fids.items(): 
+
+        for fname, fobj in fids.items():
             if self.opts.srcrepo and not self.opts.srcrepo in fobj["repos"]:
                 print _("File [%s] Could not be found in the repo [%s]" % (filename, self.opts.srcrepo))
                 continue
@@ -1082,7 +1082,7 @@ class AddFiles(RepoAction):
                 print _("Unable to add package [%s] to repo [%s]" % (fname, id))
                 continue
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
-            
+
 class RemoveFiles(RepoAction):
     description = _('Remove file(s) from a repository.')
 
@@ -1090,7 +1090,7 @@ class RemoveFiles(RepoAction):
         super(RemoveFiles, self).setup_parser()
         self.parser.add_option("-f", "--file", action="append", dest="files",
                 help=_("file to remove from this repository"))
-        self.parser.add_option( "--csv", dest="csv",
+        self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
 
     def run(self):
@@ -1116,7 +1116,7 @@ class RemoveFiles(RepoAction):
                     continue
             else:
                 filename, checksum = f, None
-            
+
             fobj = self.file_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
                 print _("File [%s] could not be found on server; Skipping remove" % filename)
@@ -1134,7 +1134,7 @@ class RemoveFiles(RepoAction):
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
-        
+
 
 # repo command ----------------------------------------------------------------
 
