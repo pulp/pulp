@@ -215,7 +215,7 @@ class RepositoryDeferredFields(JSONController):
          filter by errata type if any
         """
         valid_filters = ('type')
-        types = self.filters(valid_filters)['type']
+        types = self.filters(valid_filters).get('type', [])
         return self.ok(api.errata(id, types))
 
     def distribution(self, id):
