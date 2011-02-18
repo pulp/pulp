@@ -55,9 +55,9 @@ from pulp.server.compat import json
 log = logging.getLogger(__name__)
 
 
-class NotFound(Exception):
+class NotValid(Exception):
     def __init__(self, id):
-        msg = 'upload file: (%s), not-found' % id
+        msg = 'upload file: (%s), not-valid' % id
         Exception.__init__(self, msg)
 
 class UploadAlreadyFinished(Exception):
@@ -124,10 +124,11 @@ class File:
         """
         id = '.'.join((name, str(checksum)))
         f = File(id)
-        md = Metadata(f.__path(1))
+        md = Metadata(f.__path())
         md.name = name
         md.checksum = checksum
         md.size = size
+        md.valid = 1
         md.write()
         return File(id)
 
@@ -137,7 +138,6 @@ class File:
         @type id: str
         """
         self.id = id
-        self.__valid()
         self.md = Metadata(self.__path())
 
     def next(self):
@@ -193,6 +193,7 @@ class File:
         segments and metadata.
         """
         self.__delete(self.__path())
+        self.md.valid = 0
         
     def __delete(self, dir):
         for fn in os.listdir(dir):
@@ -222,9 +223,9 @@ class File:
         path = os.path.join(self.__path(), fn)
         return path
 
-    def __path(self, autocreate=0):
+    def __path(self):
         path = os.path.join(self.ROOT, self.id)
-        if not os.path.exists(path) and autocreate:
+        if not os.path.exists(path):
             os.makedirs(path)
         return path
 
@@ -250,8 +251,8 @@ class File:
         return path
     
     def __valid(self):
-        if not os.path.exists(self.__path()):
-            raise NotFound(self.id)
+        if not self.md.valid:
+            raise NotValid(self.id)
 
     def __str__(self):
         return str(self.md)
