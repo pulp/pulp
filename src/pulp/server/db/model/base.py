@@ -50,14 +50,14 @@ class Model(dict):
                  None otherwise
         """
 
-        def _ensure_indicies(collection, indicies):
+        def _ensure_indicies(collection, indicies, unique):
             # indicies are either tuples or strings,
-            # tuples are 'unique together'
+            # tuples are 'unique together' if unique is True
             for index in indicies:
                 if isinstance(index, basestring):
                     index = (index,)
                 collection.ensure_index([(i, DESCENDING) for i in index],
-                                        unique=True, background=True)
+                                        unique=unique, background=True)
 
         # not all data models are associated with a document collection
         # provide mechanism for sub-documents
@@ -67,5 +67,5 @@ class Model(dict):
         if db is None:
             raise RuntimeError()
         collection = Collection(db, cls.collection_name, create=True, safe=True)
-        _ensure_indicies(collection, cls.unique_indicies)
-        _ensure_indicies(collection, cls.other_indicies)
+        _ensure_indicies(collection, cls.unique_indicies, True)
+        _ensure_indicies(collection, cls.other_indicies, False)
