@@ -33,7 +33,6 @@ from pulp.client.json_utils import parse_date
 from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
-
 # repo command errors ---------------------------------------------------------
 
 class FileError(Exception):
@@ -114,7 +113,7 @@ class RepoAction(Action):
                     continue
         return new_deps
 
-    def lookup_repo_packages(self, filename, repoid, checksum=None, checksum_type=None):
+    def lookup_repo_packages(self, filename, repoid, checksum=None, checksum_type="sha256"):
         pkgobj = self.service_api.search_packages(filename=filename, 
                                                   checksum=checksum, 
                                                   checksum_type=checksum_type)
@@ -765,7 +764,7 @@ class AddPackages(RepoAction):
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified packages to perform add"))
         self.parser.add_option( "--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
+                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of add operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
@@ -774,7 +773,7 @@ class AddPackages(RepoAction):
     def run(self):
         id = self.get_required_option('id')
 
-        if not self.opts.pkgname:
+        if not self.opts.pkgname and not self.opts.csv:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
         if self.opts.pkgname and self.opts.csv:
             system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
@@ -792,16 +791,31 @@ class AddPackages(RepoAction):
         else:
             pkglist = self.opts.pkgname
         for pkginfo in pkglist:
-            if isinstance(pkginfo, list) and len(pkginfo) == 3:
-                pkg, checksum_type, checksum = pkginfo
+            if isinstance(pkginfo, list) and len(pkginfo) == 2:
+                #default to sha256
+                pkg, checksum = pkginfo
             else:
-                pkg, checksum_type, checksum = pkginfo, None, None  
-            src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo, 
-                                                   checksum=checksum, checksum_type=checksum_type)
-            if not src_pkgobj: # not in src_pkgobjs:
-                print(_("Package %s could not be found skipping" % pkg))
-                continue
-            tgt_pkgobj = self.lookup_repo_packages(pkg, id, checksum=checksum, checksum_type=checksum_type)
+                checksum_type = None
+                pkg, checksum = pkginfo, None
+            if self.opts.srcrepo:  
+                src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo, 
+                                                       checksum=checksum)
+                if not src_pkgobj: # not in src_pkgobjs:
+                    print(_("Package %s could not be found skipping" % pkg))
+                    continue
+            else:
+                src_pkgobj = self.service_api.search_packages(filename=pkg)
+                if not src_pkgobj:
+                    print(_("Package %s could not be found skipping" % pkg))
+                    continue
+                if len(src_pkgobj) > 1:
+                    msg = _("There is more than one file with filename [%s]. \
+                            Please use csv option to include checksum.; Skipping add" % pkg)
+                    log.error(msg)
+                    print msg
+                    continue
+                src_pkgobj = src_pkgobj[0]
+            tgt_pkgobj = self.lookup_repo_packages(pkg, id, checksum=checksum)
             if tgt_pkgobj:
                 print (_("Package [%s] are already part of repo [%s]. skipping" % (pkg, id)))
                 continue
@@ -812,13 +826,14 @@ class AddPackages(RepoAction):
                 
         if not pnames:
             system_exit(os.EX_DATAERR)
-
-        # lookup dependencies and let use decide whether to include them
-        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
-        for pdep in pkgdeps:
-            pnames.append("%s-%s-%s.%s" % (pdep['name'], pdep['version'], pdep['release'], pdep['arch']))
-            pids.append(pdep['id'])
-
+        if self.opts.srcrepo:
+            # lookup dependencies and let use decide whether to include them
+            pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
+            for pdep in pkgdeps:
+                pnames.append("%s-%s-%s.%s" % (pdep['name'], pdep['version'], pdep['release'], pdep['arch']))
+                pids.append(pdep['id'])
+        else:
+            print _("No Source repo specified, skipping dependency lookup")
         try:
             self.repository_api.add_package(id, pids)
         except Exception:
@@ -833,7 +848,7 @@ class RemovePackages(RepoAction):
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to remove from this repository"))
         self.parser.add_option( "--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
+                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
@@ -841,7 +856,7 @@ class RemovePackages(RepoAction):
 
     def run(self):
         id = self.get_required_option('id')
-        if not self.opts.pkgname:
+        if not self.opts.pkgname and not self.opts.csv:
             system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
         if self.opts.pkgname and self.opts.csv:
             system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
@@ -856,11 +871,11 @@ class RemovePackages(RepoAction):
         else:
             pkglist = self.opts.pkgname
         for pkginfo in pkglist:
-            if isinstance(pkginfo, list) and len(pkginfo) == 3:
-                pkg, checksum_type, checksum = pkginfo
+            if isinstance(pkginfo, list) and len(pkginfo) == 2:
+                pkg, checksum = pkginfo
             else:
-                pkg, checksum_type, checksum = pkginfo, None, None
-            src_pkgobj = self.lookup_repo_packages(pkg, id, checksum_type, checksum)
+                pkg, checksum = pkginfo, None
+            src_pkgobj = self.lookup_repo_packages(pkg, id, checksum)
             if not src_pkgobj:
                 print(_("Package %s could not be found skipping" % pkg))
                 continue
@@ -1018,7 +1033,7 @@ class AddFiles(RepoAction):
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified files to perform add (optional)"))
         self.parser.add_option( "--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
+                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -1038,17 +1053,15 @@ class AddFiles(RepoAction):
                 system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an add."))
             flist = self.opts.files
         for f in flist:
-            if isinstance(f, list) or len(f) == 3:
-                filename, checksum_type, checksum = f
-                if not len(f) == 3:
+            if isinstance(f, list) or len(f) == 2:
+                filename, checksum = f
+                if not len(f) == 2:
                     log.error("Bad format [%s] in csv, skipping" % f)
                     continue
             else:
-                filename, checksum_type, checksum = f, None, None
+                filename, checksum = f, None
             
-            fobj = self.file_api.search_file(filename=filename, 
-                                             checksum_type=checksum_type, 
-                                             checksum=checksum)
+            fobj = self.file_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
                 print _("File [%s] could not be found on server; Skipping add" % filename)
                 continue
@@ -1096,17 +1109,15 @@ class RemoveFiles(RepoAction):
                 system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an remove."))
             flist = self.opts.files
         for f in flist:
-            if isinstance(f, list) or len(f) == 3:
-                filename, checksum_type, checksum = f
-                if not len(f) == 3:
+            if isinstance(f, list) or len(f) == 2:
+                filename, checksum = f
+                if not len(f) == 2:
                     log.error("Bad format [%s] in csv, skipping" % f)
                     continue
             else:
-                filename, checksum_type, checksum = f, None, None
+                filename, checksum = f, None
             
-            fobj = self.file_api.search_file(filename=filename, 
-                                             checksum_type=checksum_type, 
-                                             checksum=checksum)
+            fobj = self.file_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
                 print _("File [%s] could not be found on server; Skipping remove" % filename)
                 continue

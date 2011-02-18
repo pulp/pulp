@@ -218,7 +218,7 @@ class PackageApi(BaseApi):
     
     def upload(self, pkginfo, pkgstream):
         """
-        Store the uploaded package and associate to this repo
+        Store the uploaded package and persist a package object
         """
         from pulp.server import upload
         try:
