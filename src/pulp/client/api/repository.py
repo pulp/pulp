@@ -237,4 +237,4 @@ class RepositoryAPI(PulpAPI):
 
     def list_files(self, repoid):
         path = "/repositories/%s/get_files/" % repoid
-        return self.server.POST(path)[1]
+        return self.server.GET(path)[1]

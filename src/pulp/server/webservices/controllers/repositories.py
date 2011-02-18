@@ -182,6 +182,7 @@ class RepositoryDeferredFields(JSONController):
         'packagegroupcategories',
         'errata',
         'distribution',
+        'files',
     )
 
     def packages(self, id):
@@ -221,6 +222,12 @@ class RepositoryDeferredFields(JSONController):
          list available distributions in a given repo.
         """
         return self.ok(api.list_distributions(id))
+    
+    def files(self, id):
+        """
+         get files associated for a given repo.
+        """
+        return self.ok(api.list_files(id))
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)
@@ -256,7 +263,6 @@ class RepositoryActions(AsyncController):
         'get_package',
         'add_file',
         'remove_file',
-        'get_files'
         'add_packages_to_group',
         'delete_package_from_group',
         'delete_packagegroup',
@@ -542,12 +548,6 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.remove_file(id, data['fileid'])
         return self.ok(True)
-
-    def get_files(self, id):
-        """
-         get files associated for a given repo.
-        """
-        return self.ok(api.list_files(id))
 
     def addkeys(self, id):
         data = self.params()
