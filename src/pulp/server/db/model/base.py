@@ -46,8 +46,7 @@ class Model(dict):
         """
         Get the document collection for this data model.
         @rtype: pymongo.collection.Collection instance or None
-        @return: the document collection for this data model if associated with one
-                 None otherwise
+        @return: the document collection if associated with one, None otherwise
         """
 
         # ensure the indicies in the document collection
@@ -68,7 +67,7 @@ class Model(dict):
         if db is None:
             msg = _('Cannot get collection from uninitialized database')
             raise RuntimeError(msg)
-        collection = Collection(db, cls.collection_name, create=True, safe=True)
+        collection = Collection(db, cls.collection_name, create=True)
         _ensure_indicies(collection, cls.unique_indicies, True)
         _ensure_indicies(collection, cls.other_indicies, False)
         return collection
