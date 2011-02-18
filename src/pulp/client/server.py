@@ -218,7 +218,8 @@ class PulpServer(Server):
 
     def _build_url(self, path, queries=()):
         # build the request url from the path and queries dict or tuple
-        path = '/'.join((self.path_prefix, path))
+        if not path.startswith(self.path_prefix):
+            path = '/'.join((self.path_prefix, path))
         queries = urllib.urlencode(queries)
         if queries:
             path = '?'.join((path, queries))
