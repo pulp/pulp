@@ -222,6 +222,17 @@ def readRpmHeader(ts, rpmname):
     os.close(fd)
     return h
 
+def is_signed(filename):
+    ts = rpm.TransactionSet()
+    hdr = readRpmHeader(ts, filename)
+    if hasattr(rpm, "RPMTAG_DSAHEADER"):
+        dsaheader = hdr["dsaheader"]
+    else:
+        dsaheader = 0
+    if hdr["siggpg"] or hdr["sigpgp"] or dsaheader:
+        return 1
+    return 0
+
 def generatePkgMetadata(pkgFile):
     ts = rpm.TransactionSet()
     yumPkg = yumPackages.YumLocalPackage(ts, filename=pkgFile)

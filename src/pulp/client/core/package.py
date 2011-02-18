@@ -235,6 +235,8 @@ class Upload(PackageAction):
                                help=_("process packages from this directory"))
         self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
                                help=_("Optional repoid, to associate the uploaded package"))
+        self.parser.add_option( "--nosig", action="store_true", dest="nosig",
+                               help=_("Pushes unsigned packages"))
         self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
 
     def run(self):
@@ -258,6 +260,12 @@ class Upload(PackageAction):
         for frpm in files:
             try:
                 pkginfo = utils.processRPM(frpm)
+                if not utils.is_signed(frpm) and not self.opts.nosig:
+                    msg = _("Package [%s] is not signed. Please use --nosig. Skipping " % frpm)
+                    log.error(msg)
+                    if self.opts.verbose:
+                        print msg
+                    continue
             except utils.FileError, e:
                 msg = _('Error: %s') % e
                 log.error(msg)
