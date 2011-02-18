@@ -25,6 +25,11 @@ from pulp.server.compat import json
 log = logging.getLogger(__name__)
 
 
+class NotFound(Exception):
+    def __init__(self, id):
+        msg = 'upload file: (%s), not-found' % id
+        Exception.__init__(self, msg)
+
 class UploadAlreadyFinished(Exception):
     def __init__(self, md):
         msg = '(%s) already finished, bad append()' % md.name
@@ -89,7 +94,7 @@ class File:
         """
         id = '.'.join((name, str(checksum)))
         f = File(id)
-        md = Metadata(f.__path())
+        md = Metadata(f.__path(1))
         md.name = name
         md.checksum = checksum
         md.size = size
@@ -102,6 +107,7 @@ class File:
         @type id: str
         """
         self.id = id
+        self.__valid()
         self.md = Metadata(self.__path())
 
     def next(self):
@@ -112,6 +118,7 @@ class File:
         @return: The file offset (bytes).
         @rtype: int 
         """
+        self.__valid()
         if not self.__finished():
             return self.__segtotal()
         else:
@@ -124,6 +131,7 @@ class File:
         @type content: bytes
         @raise UploadAlreadyFinshed: When attempted on finished upload.
         """
+        self.__valid()
         if self.__finished():
             raise UploadAlreadyFinshed(self.md)
         seg = len(self.__segments())
@@ -140,6 +148,7 @@ class File:
         @return: The path of the uploaded file.
         @rtype: str
         """
+        self.__valid()
         path = self.__afpath()
         if not os.path.exists(path):
             if self.__finished():
@@ -159,7 +168,7 @@ class File:
         for fn in os.listdir(dir):
             path = os.path.join(dir,fn)
             if os.path.isdir(path):
-                self.delete(path)
+                self.__delete(path)
             else:
                 os.unlink(path)
         os.rmdir(dir)
@@ -183,9 +192,9 @@ class File:
         path = os.path.join(self.__path(), fn)
         return path
 
-    def __path(self):
+    def __path(self, autocreate=0):
         path = os.path.join(self.ROOT, self.id)
-        if not os.path.exists(path):
+        if not os.path.exists(path) and autocreate:
             os.makedirs(path)
         return path
 
@@ -209,6 +218,10 @@ class File:
         fn = '%.4d.dat' % seg
         path = os.path.join(self.__segroot(), fn)
         return path
+    
+    def __valid(self):
+        if not os.path.exists(self.__path()):
+            raise NotFound(self.id)
 
     def __str__(self):
         return str(self.md)
