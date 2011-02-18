@@ -20,7 +20,8 @@ Contains repo management (backend) classes.
 import os
 
 from iniparse import ConfigParser as Parser
-
+from pulp.client.server import PulpServer, set_active_server
+from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.credentials import Consumer
@@ -89,6 +90,10 @@ class Pulp:
     The pulp server.
     """
     def __init__(self):
+        bundle = ConsumerBundle()
+        ps = PulpServer(cfg.server.host)
+        ps.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
+        set_active_server(ps)
         self.capi = ConsumerAPI()
         self.rapi = RepositoryAPI()
 

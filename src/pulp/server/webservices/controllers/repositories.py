@@ -272,7 +272,6 @@ class RepositoryActions(AsyncController):
         'get_package_by_filename',
         'addkeys',
         'rmkeys',
-        'listkeys',
         'update_publish',
     )
 
@@ -579,10 +578,6 @@ class RepositoryActions(AsyncController):
         api.rmkeys(id, data['keylist'])
         return self.ok(True)
 
-    def listkeys(self, id):
-        keylist = api.listkeys(id)
-        return self.ok(keylist)
-
     def update_publish(self, id):
         """
         Alter a repository's 'publish' state.
@@ -692,11 +687,20 @@ class Schedules(JSONController):
         schedules = api.all_schedules()
         return self.ok(schedules)
 
+class KeyList(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(READ)
+    def GET(self, id):
+        keylist = api.listkeys(id)
+        return self.ok(keylist)
+
 # web.py application ----------------------------------------------------------
 
 urls = (
     '/$', 'Repositories',
     '/schedules/', 'Schedules',
+    '/([^/]+)/listkeys/$', 'KeyList',
     '/([^/]+)/$', 'Repository',
 
     '/([^/]+)/(%s)/$' % '|'.join(RepositoryDeferredFields.exposed_fields),
