@@ -32,12 +32,8 @@ from pulp.server.db.version import check_version
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, errata, packages,
-<<<<<<< HEAD
-    permissions, repositories, users, roles, distribution, services, content)
-=======
     permissions, repositories, users, roles, distribution,
-    services, uploads)
->>>>>>> Add generic file upload service.
+    services, content, uploads)
 
 
 urls = (
