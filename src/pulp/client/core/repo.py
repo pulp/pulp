@@ -1091,7 +1091,7 @@ class RemoveFiles(RepoAction):
         self.parser.add_option("-f", "--file", action="append", dest="files",
                 help=_("file to remove from this repository"))
         self.parser.add_option( "--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum_type,checksum"))
+                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
 
     def run(self):
         id = self.get_required_option('id')
