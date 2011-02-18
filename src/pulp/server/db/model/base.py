@@ -71,3 +71,4 @@ class Model(dict):
         collection = Collection(db, cls.collection_name, create=True, safe=True)
         _ensure_indicies(collection, cls.unique_indicies, True)
         _ensure_indicies(collection, cls.other_indicies, False)
+        return collection
