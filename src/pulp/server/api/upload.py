@@ -163,7 +163,7 @@ class File:
         """
         self.__valid()
         if self.__finished():
-            raise UploadAlreadyFinshed(self.md)
+            raise UploadAlreadyFinished(self.md)
         seg = len(self.__segments())
         path = self.__segpath(seg)
         f = open(path, 'w')
