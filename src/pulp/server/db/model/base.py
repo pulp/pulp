@@ -64,9 +64,10 @@ class Model(dict):
         # provide mechanism for sub-documents
         if cls.collection_name is None:
             return None
-        db = get_database(_('Cannot get collection from uninitialized database'))
+        db = get_database()
         if db is None:
-            raise RuntimeError()
+            msg = _('Cannot get collection from uninitialized database')
+            raise RuntimeError(msg)
         collection = Collection(db, cls.collection_name, create=True, safe=True)
         _ensure_indicies(collection, cls.unique_indicies, True)
         _ensure_indicies(collection, cls.other_indicies, False)
