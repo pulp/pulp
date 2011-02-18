@@ -38,10 +38,17 @@ class UploadNotFinished(Exception):
 
 
 class Metadata(dict):
+    """
+    Represents file upload metadata
+    """
 
     FNAME = 'md.json'
 
     def __init__(self, path):
+        """
+        @param path: The directory used to read/write the md file.
+        @type path: str
+        """
         self.path = os.path.join(path, self.FNAME)
         if os.path.exists(self.path):
             f = open(self.path)
@@ -50,6 +57,9 @@ class Metadata(dict):
             self.update(d)
 
     def write(self):
+        """
+        Write I{self}.
+        """
         f = open(self.path, 'w')
         json.dump(self, f)
         f.close()
@@ -60,11 +70,23 @@ class Metadata(dict):
 
 
 class File:
+    """
+    Uploaded file object.
+    """
 
     ROOT = '/tmp/pulp/uploads'
 
     @classmethod
     def open(cls, name, checksum, size=0):
+        """
+        Open (initialize) a file upload and return a L{File} object.
+        @param name: The file name.
+        @type name: str
+        @param checksum: The MD5 checksum.  Ensures uniqueness.
+        @type checksum: str:hexdigest
+        @param size: The file size (bytes).
+        @param size: int 
+        """
         id = '.'.join((name, str(checksum)))
         f = File(id)
         md = Metadata(f.__path())
@@ -75,16 +97,33 @@ class File:
         return File(id)
 
     def __init__(self, id):
+        """
+        @param id: The file upload ID.
+        @type id: str
+        """
         self.id = id
         self.md = Metadata(self.__path())
 
     def next(self):
+        """
+        Get the offset (bytes) of the next segment to be uploaded.
+        A value of (-1) indicates the file has already been uploaded
+        and no further data should be I{appended}.
+        @return: The file offset (bytes).
+        @rtype: int 
+        """
         if not self.__finished():
             return self.__segtotal()
         else:
             return -1
 
     def append(self, content):
+        """
+        Append the specified content segment.
+        @param content: The (byte) content of the uploaded segment.
+        @type content: bytes
+        @raise UploadAlreadyFinshed: When attempted on finished upload.
+        """
         if self.__finished():
             raise UploadAlreadyFinshed(self.md)
         seg = len(self.__segments())
@@ -95,18 +134,28 @@ class File:
         if self.__finished():
             self.__build()
 
-    def inspect(self):
+    def getpath(self):
+        """
+        Get the absolute path of the complete uploaded file.
+        @return: The path of the uploaded file.
+        @rtype: str
+        """
         path = self.__afpath()
         if not os.path.exists(path):
             if self.__finished():
                 self.__build()
             else:
                 raise UploadNotFinished(self.md)
-        return (path, self.md.size, self.md.checksum)
+        return path
 
-    def delete(self, dir=None):
-        if not dir:
-            dir = self.__path()
+    def delete(self):
+        """
+        Delete (cleanup) the uploaded file including the
+        segments and metadata.
+        """
+        self.__delete(self.__path())
+        
+    def __delete(self, dir):
         for fn in os.listdir(dir):
             path = os.path.join(dir,fn)
             if os.path.isdir(path):
