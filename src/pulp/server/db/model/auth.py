@@ -23,6 +23,7 @@ class Permission(Model):
     @ivar users: dictionary of user id: tuple of allowed operations
     """
 
+    collection_name = 'permissions'
     unique_indicies = ('resource',)
 
     def __init__(self, resource):
@@ -39,6 +40,7 @@ class Role(Model):
     @ivar permissions: dictionary of resource: tuple of allowed operations
     """
 
+    collection_name = 'roles'
     unique_indicies = ('name',)
 
     def __init__(self, name):
@@ -54,6 +56,9 @@ class User(Model):
     @ivar name: user's full name
     @ivar roles: list of roles user belongs to
     """
+
+    collection_name = 'users'
+
     def __init__(self, login, id, password, name):
         self._id = id
         self.id = id

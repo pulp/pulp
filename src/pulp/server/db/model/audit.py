@@ -23,6 +23,7 @@ class Event(Model):
     Auditing models used to log and persist events in the database
     """
 
+    collection_name = 'events'
     other_indicies = ('timestamp', 'principal', 'api')
 
     def __init__(self, principal, action, api=None, method=None, params=[]):

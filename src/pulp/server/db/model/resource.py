@@ -22,6 +22,7 @@ from pulp.server.pexceptions import PulpException
 
 class Consumer(Model):
 
+    collection_name = 'consumers'
     unique_indicies = ('id',)
     other_indicies = ('package_profile.name', 'repoids', 'key_value_pairs',
                       'consumer_id', 'type_name', 'timestamp')
@@ -38,6 +39,7 @@ class Consumer(Model):
 
 class ConsumerGroup(Model):
 
+    collection_name = 'consumergroups'
     other_indicies = ('consumerids',)
 
     def __init__(self, id, description, consumerids=[], key_value_pairs={}):
@@ -49,6 +51,9 @@ class ConsumerGroup(Model):
 
 
 class ConsumerHistoryEvent(Model):
+
+    collection_name = 'consumer_history'
+
     def __init__(self, consumer_id, originator, type_name, details):
         Model.__init__(self)
         self.consumer_id = consumer_id
@@ -64,6 +69,7 @@ class Distribution(Model):
      Distribution Model to represent kickstart trees
     '''
 
+    collection_name = 'distribution'
     other_indicies = ('files', 'relativepath')
 
     def __init__(self, id, description, relativepath, files=[]):
@@ -81,6 +87,7 @@ class Errata(Model):
     maps to yum.update_md.UpdateNotice fields
     """
 
+    collection_name = 'errata'
     other_indicies = ('title', 'description', 'version', 'release', 'type',
                       'status', 'updated', 'issued', 'pushcount', 'from_str',
                       'reboot_suggested')
@@ -111,6 +118,7 @@ class Errata(Model):
 
 class Package(Model):
 
+    collection_name = 'packages'
     unique_indicies = (('name', 'epoch', 'version', 'release', 'arch',
                         'filename', 'checksum'),)
     other_indicies = ('name', 'filename', 'checksum', 'epoch', 'version',
@@ -180,6 +188,9 @@ class File(Model):
     """
     Class represents a file types other than rpm. Eg: *.iso *.txt
     """
+
+    collection_name = 'file'
+
     def __init__(self, filename, checksum_type,
                  checksum, size, description=None, repo_defined=False):
         Model.__init__(self)
@@ -195,6 +206,7 @@ class File(Model):
 
 class Repo(Model):
 
+    collection_name = 'repos'
     other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
 
     def __init__(self, id, name, arch, source=None):

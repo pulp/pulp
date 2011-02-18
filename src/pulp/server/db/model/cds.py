@@ -23,6 +23,7 @@ class CDS(Model):
     Represents an external CDS instance managed by this pulp server.
     '''
 
+    collection_name = 'cds'
     unique_indicies = ('hostname',)
 
     def __init__(self, hostname, name=None, description=None):
@@ -44,6 +45,8 @@ class CDSHistoryEvent(Model):
     '''
     Represents a single event that occurred on a CDS.
     '''
+
+    collection_name = 'cds_history'
 
     def __init__(self, cds_hostname, originator, type_name, details=None):
         Model.__init__(self)
