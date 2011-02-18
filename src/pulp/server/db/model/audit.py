@@ -22,6 +22,9 @@ class Event(Base):
     """
     Auditing models used to log and persist events in the database
     """
+
+    other_indicies = ('timestamp', 'principal', 'api')
+
     def __init__(self, principal, action, api=None, method=None, params=[]):
         super(Event, self).__init__()
         self.timestamp = datetime.datetime.now()

@@ -23,6 +23,8 @@ class CDS(Base):
     Represents an external CDS instance managed by this pulp server.
     '''
 
+    unique_indicies = ('hostname',)
+
     def __init__(self, hostname, name=None, description=None):
         Base.__init__(self)
         self.hostname = hostname

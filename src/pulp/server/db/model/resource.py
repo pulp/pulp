@@ -21,6 +21,11 @@ from pulp.server.pexceptions import PulpException
 # consumer models -------------------------------------------------------------
 
 class Consumer(Base):
+
+    unique_indicies = ('id',)
+    other_indicies = ('package_profile.name', 'repoids', 'key_value_pairs',
+                      'consumer_id', 'type_name', 'timestamp')
+
     def __init__(self, id, description, key_value_pairs={}):
         self._id = id
         self.id = id
@@ -32,6 +37,9 @@ class Consumer(Base):
 
 
 class ConsumerGroup(Base):
+
+    other_indicies = ('consumerids',)
+
     def __init__(self, id, description, consumerids=[], key_value_pairs={}):
         self._id = id
         self.id = id
@@ -55,6 +63,9 @@ class Distribution(Base):
     '''
      Distribution Model to represent kickstart trees
     '''
+
+    other_indicies = ('files', 'relativepath')
+
     def __init__(self, id, description, relativepath, files=[]):
         self._id = id
         self.id = id
@@ -69,6 +80,11 @@ class Errata(Base):
     Errata model to represent software updates
     maps to yum.update_md.UpdateNotice fields
     """
+
+    other_indicies = ('title', 'description', 'version', 'release', 'type',
+                      'status', 'updated', 'issued', 'pushcount', 'from_str',
+                      'reboot_suggested')
+
     def __init__(self, id, title, description, version, release, type, status=u"",
             updated=u"", issued=u"", pushcount=u"", from_str=u"",
             reboot_suggested=False, references=[], pkglist=[], repo_defined=False,
@@ -94,6 +110,12 @@ class Errata(Base):
 # package models --------------------------------------------------------------
 
 class Package(Base):
+
+    unique_indicies = (('name', 'epoch', 'version', 'release', 'arch',
+                        'filename', 'checksum'),)
+    other_indicies = ('name', 'filename', 'checksum', 'epoch', 'version',
+                      'release', 'arch', 'description')
+
     def __init__(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, vendor=None, repo_defined=False):
         Base.__init__(self)
@@ -172,6 +194,9 @@ class File(Base):
 # repository models -----------------------------------------------------------
 
 class Repo(Base):
+
+    other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
+
     def __init__(self, id, name, arch, source=None):
         self._id = id
         self.id = id

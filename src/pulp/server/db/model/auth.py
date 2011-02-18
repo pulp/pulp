@@ -22,6 +22,9 @@ class Permission(Base):
     @ivar resource: uri path of resource
     @ivar users: dictionary of user id: tuple of allowed operations
     """
+
+    unique_indicies = ('resource',)
+
     def __init__(self, resource):
         super(Permission, self).__init__()
         self.resource = resource
@@ -35,6 +38,9 @@ class Role(Base):
     @ivar name: role's name
     @ivar permissions: dictionary of resource: tuple of allowed operations
     """
+
+    unique_indicies = ('name',)
+
     def __init__(self, name):
         self._id = self.name = name
         self.permissions = {}

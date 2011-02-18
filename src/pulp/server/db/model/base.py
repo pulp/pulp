@@ -21,6 +21,10 @@ class Base(dict):
     Base object that has convenience methods to get and put
     attrs into the base dict object with dot notation
     '''
+
+    unique_indicies = ('id',)
+    other_indicies = ()
+
     def __init__(self):
         self._id = str(uuid.uuid4())
         self.id = self._id
