@@ -202,10 +202,9 @@ class RepositoryAPI(PulpAPI):
         return self.server.POST(path, erratainfo)[1]
 
     def errata(self, id, types=[]):
-        erratainfo = {'repoid': id,
-                      'types': types}
-        path = "/repositories/%s/list_errata/" % id
-        return self.server.POST(path, erratainfo)[1]
+        path = "/repositories/%s/errata/" % id
+        queries = [('type', t) for t in types]
+        return self.server.GET(path, queries)[1]
 
     def addkeys(self, id, keylist):
         params = dict(keylist=keylist)

@@ -222,7 +222,7 @@ class RepositoryDeferredFields(JSONController):
          list available distributions in a given repo.
         """
         return self.ok(api.list_distributions(id))
-    
+
     def files(self, id):
         """
          get files associated for a given repo.
@@ -272,7 +272,6 @@ class RepositoryActions(AsyncController):
         'add_packagegroup_to_category',
         'delete_packagegroup_from_category',
         'add_errata',
-        'list_errata',
         'delete_errata',
         'get_package_by_nvrea',
         'get_package_by_filename',
@@ -522,14 +521,6 @@ class RepositoryActions(AsyncController):
         data = self.params()
         api.delete_errata(id, data['errataid'])
         return self.ok(True)
-
-    def list_errata(self, id):
-        """
-         list applicable errata for a given repo.
-         filter by errata type if any
-        """
-        data = self.params()
-        return self.ok(api.errata(id, data['types']))
 
     def add_file(self, id):
         """
