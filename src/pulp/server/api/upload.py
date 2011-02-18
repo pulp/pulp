@@ -15,6 +15,36 @@
 
 """
 File upload classes.
+Usage:
+
+path = '/tmp/test.dat'
+
+# open (initialize) the upload file
+file = File.open(path, '0xFFFF', 30)
+
+# grab the ID for use later..
+id = file.id
+
+# upload content (chunks)
+fp = open(path)
+offset = file.next()
+if offset < 0:
+  return # all chunks uploaded
+fp.seek(offset)
+while(1):
+  buf = fp.read(4096) # 4k chunk
+  file.append(buf)
+
+# Now, lets use the uploaded file
+file = File(id)
+path = file.getpath()
+...
+# COPY/RENAME uploaded file
+...
+# clean up
+file.delete()
+
+Done!
 """
 
 import os
@@ -79,7 +109,7 @@ class File:
     Uploaded file object.
     """
 
-    ROOT = '/tmp/pulp/uploads'
+    ROOT = '/var/lib/pulp/uploads'
 
     @classmethod
     def open(cls, name, checksum, size=0):
