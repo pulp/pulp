@@ -305,7 +305,7 @@ class CdsApi(BaseApi):
         self.cds_history_api.sync_finished(cds_hostname, error=sync_error_msg)
 
         # Update the CDS to indicate the last sync time
-        cds['last_sync'] = datetime.datetime.now()
+        cds['last_sync'] = datetime.datetime.now().strftime('%s')
         self.objectdb.save(cds, safe=True)
 
         # Make sure the caller gets the error like normal (after the event logging) if
