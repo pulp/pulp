@@ -17,6 +17,7 @@
 # Python
 import os
 import sys
+import time
 import unittest
 
 # Pulp
@@ -218,6 +219,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Setup
         self.cds_api.register('cds.example.com')
+        time.sleep(1) # make sure the timestamps will be different
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds is not None)
 
@@ -322,6 +324,7 @@ class TestCdsApi(unittest.TestCase):
         # Setup
         self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
+        time.sleep(1) # make sure the timestamps will be different
 
         # Test
         self.cds_api.associate_repo('cds.example.com', 'cds-test-repo')
@@ -343,8 +346,10 @@ class TestCdsApi(unittest.TestCase):
         # Setup
         self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
+        time.sleep(1) # make sure the timestamps will be different
 
         self.cds_api.associate_repo('cds.example.com', 'cds-test-repo')
+        time.sleep(1) # make sure the timestamps will be different
         cds = self.cds_api.cds('cds.example.com')
         self.assertEqual(1, len(cds['repo_ids']))
 
@@ -399,8 +404,10 @@ class TestCdsApi(unittest.TestCase):
         # Setup
         self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
+        time.sleep(1) # make sure the timestamps will be different
 
         self.cds_api.associate_repo('cds.example.com', 'cds-test-repo')
+        time.sleep(1) # make sure the timestamps will be different
         cds = self.cds_api.cds('cds.example.com')
         self.assertEqual(1, len(cds['repo_ids']))
 
@@ -485,11 +492,15 @@ class TestCdsApi(unittest.TestCase):
         self.cds_api.register('cds-02.example.com')
         self.cds_api.register('cds-03.example.com')
 
+        time.sleep(1) # make sure the timestamps will be different
+
         self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
 
         self.cds_api.associate_repo('cds-01.example.com', 'cds-test-repo')
         self.cds_api.associate_repo('cds-02.example.com', 'cds-test-repo')
         self.cds_api.associate_repo('cds-03.example.com', 'cds-test-repo')
+
+        time.sleep(1) # make sure the timestamps will be different
 
         self.assertEqual(1, len(self.cds_api.cds('cds-01.example.com')['repo_ids']))
         self.assertEqual(1, len(self.cds_api.cds('cds-02.example.com')['repo_ids']))
@@ -497,6 +508,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Test
         self.cds_api.unassociate_all_from_repo('cds-test-repo')
+        time.sleep(1) # make sure the timestamps will be different
 
         # Verify
         self.assertEqual(0, len(self.cds_api.cds('cds-01.example.com')['repo_ids']))
