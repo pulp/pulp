@@ -44,7 +44,7 @@ class RepositoryAPI(PulpAPI):
 
     def repository(self, id, fields=[]):
         path = "/repositories/%s/" % str(id)
-        repo = self.server.GET(path)
+        repo = self.server.GET(path)[1]
         if repo is None:
             return None
         for field in fields:
@@ -224,7 +224,7 @@ class RepositoryAPI(PulpAPI):
     def update_publish(self, id, state):
         path = "/repositories/%s/update_publish/" % id
         return self.server.POST(path, {"state": state})[1]
-    
+
     def add_file(self, repoid, fileid):
         addinfo = {'repoid': repoid, 'fileid': fileid}
         path = "/repositories/%s/add_file/" % repoid
