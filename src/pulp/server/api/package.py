@@ -232,5 +232,19 @@ class PackageApi(BaseApi):
             log.error("Upload failed due an unknown exception %s" % e)
             raise e
         return pkg
-        
+    
+    def orphaned_packages(self, fields=["id", "filename", "checksum"]):
+        #TODO: Revist this when model changes so we don't need to import RepoApi
+        from pulp.server.api.repo import RepoApi
+        rapi = RepoApi()
+        repo_pkgids = set()
+        repos = rapi.repositories(fields=["packages"])
+        for r in repos:
+            repo_pkgids.update(r["packages"])
+        pkgs = self.packages(fields=["id"])
+        pkgids = set([x["id"] for x in pkgs])
+        orphans = list(pkgids.difference(repo_pkgids))
+        return list(self.objectdb.find({"id":{"$in":orphans}}, fields))
+
+
 
