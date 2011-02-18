@@ -24,13 +24,13 @@ class UploadAPI(PulpAPI):
     Connection class to access upload related calls
     """
 
-    CHUNKSIZE = 0xA00000 # 10 MB
-
-    def upload(self, path):
+    def upload(self, path, chunksize=0xA00000):
         """
         Upload a file at the specified path.
         @param path: The abs path to a file to upload.
         @type path: str
+        @param checksize: The upload chunking size.  Default=10M.
+        @type chunksize: int
         @return: The file upload ID.
         @rtype: str
         """
@@ -41,7 +41,7 @@ class UploadAPI(PulpAPI):
         f = open(path)
         f.seek(offset)
         while(1):
-            buf = f.read(self.CHUNKSIZE)
+            buf = f.read(chunksize)
             if buf:
                 self.__append(id, buf)
             else:
