@@ -190,6 +190,17 @@ class JSONController(object):
         http.header('Content-Type', 'application/json')
         return json.dumps(data, default=json_util.default)
 
+    def _error_dict(self, msg, code=None):
+        """
+        Standardized error returns
+        """
+        if code is None:
+            code = _('not set')
+        d = {'error_message': msg,
+             'error_code': code, # reserved for future use
+             'http_status': web.ctx.status, }
+        return d
+
     def ok(self, data):
         """
         Return an ok response.
@@ -392,6 +403,8 @@ class AsyncController(JSONController):
         @return: datetime.timedelta instance corresponding to a properly
                  formatted timeout value if found in data, None otherwise
         """
+        # XXX this is actually wrong, timeout should, itself, be a dictionary
+        # of 'unit': length. I hate it when I get "clever"
         timeout = data.get('timeout', None)
         if timeout is None:
             return None
