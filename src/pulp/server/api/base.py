@@ -13,20 +13,17 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-
 # base api class --------------------------------------------------------------
 
 class BaseApi(object):
 
-    def __init__(self):
-        pass
-        #self.objectdb = self._getcollection()
-
-    # db indexes
+    # db
 
     @property
     def objectdb(self):
         return self._getcollection()
+
+    # db indexes
 
     @property
     def _unique_indexes(self):
