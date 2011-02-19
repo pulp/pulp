@@ -22,7 +22,7 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.async import AsyncAgent, AgentTask
 
@@ -35,19 +35,18 @@ class ConsumerGroupApi(BaseApi):
         BaseApi.__init__(self)
         self.consumerApi = ConsumerApi()
         self.repoApi = RepoApi()
-        
+
     @property
     def _unique_indexes(self):
         return ["id"]
 
     @property
     def _indexes(self):
-        return ["consumerids"]    
+        return ["consumerids"]
 
     def _getcollection(self):
-        return get_object_db('consumergroups',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('consumergroups', self._unique_indexes, self._indexes)
+        return model.ConsumerGroup.get_collection()
 
 
     @audit(params=['id', 'consumerids'])
@@ -58,12 +57,12 @@ class ConsumerGroupApi(BaseApi):
         consumergroup = self.consumergroup(id)
         if(consumergroup):
             raise PulpException("A Consumer Group with id %s already exists" % id)
-        
+
         for consumerid in consumerids:
             consumer = self.consumerApi.consumer(consumerid)
             if (consumer is None):
                 raise PulpException("No Consumer with id: %s found" % consumerid)
-                
+
         c = model.ConsumerGroup(id, description, consumerids)
         self.insert(c)
         return c
@@ -73,7 +72,7 @@ class ConsumerGroupApi(BaseApi):
         """
         List all consumer groups.
         """
-        return list(self.objectdb.find(spec=spec, fields=fields))   
+        return list(self.objectdb.find(spec=spec, fields=fields))
 
     def consumergroup(self, id):
         """
@@ -111,7 +110,7 @@ class ConsumerGroupApi(BaseApi):
         consumerids = consumergroup['consumerids']
         if consumer["id"] in consumerids:
             return
-        
+
         consumerids.append(consumer["id"])
         consumergroup["consumerids"] = consumerids
 
@@ -179,8 +178,8 @@ class ConsumerGroupApi(BaseApi):
         for consumerid in consumerids:
             consumer = self.consumerApi.consumer(consumerid)
             consumer_keyvalues = consumer['key_value_pairs']
-            if key in consumer_keyvalues.keys() and consumer_keyvalues[key]!=value:
-                conflicting_consumers.append(consumerid) 
+            if key in consumer_keyvalues.keys() and consumer_keyvalues[key] != value:
+                conflicting_consumers.append(consumerid)
         return conflicting_consumers
 
 
@@ -196,31 +195,31 @@ class ConsumerGroupApi(BaseApi):
         @type: str
         @raise PulpException: When consumer group is not found.
         """
-        consumergroup = self.consumergroup(id)    
+        consumergroup = self.consumergroup(id)
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
-        
+
         key_value_pairs = consumergroup['key_value_pairs']
         if key not in key_value_pairs.keys():
             conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
             if len(conflicting_consumers) == 0:
                 key_value_pairs[key] = value
-            else:  
-                if force == 'false':  
+            else:
+                if force == 'false':
                     raise PulpException('Given key [%s] has different value for consumers %s '
                                         'belonging to this group. You can use --force to '
-                                        'delete consumer\'s original value.', key, conflicting_consumers)             
+                                        'delete consumer\'s original value.', key, conflicting_consumers)
                 else:
                     for consumerid in conflicting_consumers:
                         self.consumerApi.delete_key_value_pair(consumerid, key)
-                    key_value_pairs[key] = value  
-            
-        else: 
-            raise PulpException('Given key [%s] already exists', key)    
+                    key_value_pairs[key] = value
+
+        else:
+            raise PulpException('Given key [%s] already exists', key)
         consumergroup['key_value_pairs'] = key_value_pairs
-        self.update(consumergroup)   
-            
-                        
+        self.update(consumergroup)
+
+
     @audit()
     def delete_key_value_pair(self, id, key):
         """
@@ -231,14 +230,14 @@ class ConsumerGroupApi(BaseApi):
         @type repoid: str
         @raise PulpException: When consumer group is not found.
         """
-        consumergroup = self.consumergroup(id)    
+        consumergroup = self.consumergroup(id)
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
-        
+
         key_value_pairs = consumergroup['key_value_pairs']
         if key in key_value_pairs.keys():
-            del key_value_pairs[key] 
-        else: 
+            del key_value_pairs[key]
+        else:
             raise PulpException('Given key [%s] does not exist', key)
         consumergroup['key_value_pairs'] = key_value_pairs
         self.update(consumergroup)
@@ -255,26 +254,26 @@ class ConsumerGroupApi(BaseApi):
         @type: str
         @raise PulpException: When consumer group is not found.
         """
-        consumergroup = self.consumergroup(id)    
+        consumergroup = self.consumergroup(id)
         if not consumergroup:
             raise PulpException('Consumer Group [%s] does not exist', id)
-        
+
         key_value_pairs = consumergroup['key_value_pairs']
         if key not in key_value_pairs.keys():
-            raise PulpException('Given key [%s] does not exist', key)    
-        else: 
+            raise PulpException('Given key [%s] does not exist', key)
+        else:
             conflicting_consumers = self.find_consumers_with_conflicting_keyvalues(id, key, value)
             if len(conflicting_consumers) == 0:
                 key_value_pairs[key] = value
-            else:    
+            else:
                 raise PulpException('Given key [%s] has different value for consumers %s '
                                     'belonging to this group. You can use --force to '
-                                    'delete consumer\'s original value.', key, conflicting_consumers)             
+                                    'delete consumer\'s original value.', key, conflicting_consumers)
 
         consumergroup['key_value_pairs'] = key_value_pairs
         self.update(consumergroup)
-                
-        
+
+
     @audit()
     def installpackages(self, id, packagenames=[]):
         """
@@ -285,7 +284,7 @@ class ConsumerGroupApi(BaseApi):
         @type packagenames: [str,..]
         """
         consumergroup = self.consumergroup(id)
-        if consumergroup is None:   
+        if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
         items = []
         for consumerid in consumergroup['consumerids']:
@@ -296,7 +295,7 @@ class ConsumerGroupApi(BaseApi):
             items.append(install_data)
         task = InstallPackages(items)
         return task
-    
+
     def installerrata(self, id, errataids=[], types=[], assumeyes=False):
         """
         Install errata on a consumer group.
@@ -308,7 +307,7 @@ class ConsumerGroupApi(BaseApi):
         @type types: str
         """
         consumergroup = self.consumergroup(id)
-        if consumergroup is None:   
+        if consumergroup is None:
             raise PulpException("No Consumer Group with id: %s found" % id)
         consumerids = consumergroup['consumerids']
         items = []

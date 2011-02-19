@@ -20,7 +20,7 @@ import logging
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 
 log = logging.getLogger(__name__)
 
@@ -40,9 +40,9 @@ class FileApi(BaseApi):
         return []
 
     def _getcollection(self):
-        return get_object_db('file',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('file', self._unique_indexes, self._indexes)
+        return model.File.get_collection()
+
     @property
     def _unique_indexes(self):
         return []

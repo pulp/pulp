@@ -16,7 +16,7 @@
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 
 
 errata_fields = model.Errata(None, None, None, None, None, None).keys()
@@ -34,9 +34,8 @@ class ErrataApi(BaseApi):
                 "reboot_suggested"]
 
     def _getcollection(self):
-        return get_object_db('errata',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('errata', self._unique_indexes, self._indexes)
+        return model.Errata.get_collection()
 
     @audit(params=["id", "title", "type"])
     def create(self, id, title, description, version, release, type,

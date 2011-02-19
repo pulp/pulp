@@ -24,8 +24,8 @@ from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
                                        CdsCommunicationsException, CdsMethodException
-from pulp.server.db.connection import get_object_db
-from pulp.server.db.model import CDS
+#from pulp.server.db.connection import get_object_db
+from pulp.server.db.model import CDS, Repo
 from pulp.server.pexceptions import PulpException
 
 
@@ -49,7 +49,8 @@ class CdsApi(BaseApi):
         self.dispatcher = GoferDispatcher()
 
     def _getcollection(self):
-        return get_object_db('cds', ['hostname'], self._indexes)
+        #return get_object_db('cds', ['hostname'], self._indexes)
+        return CDS.get_collection()
 
     def _repocollection(self):
         '''
@@ -57,9 +58,10 @@ class CdsApi(BaseApi):
         refactoring of DB access methods away from the logic APIs, in which case this method
         will go away.
         '''
-        unique_indexes = ["id"]
-        indexes = ["packages", "packagegroups", "packagegroupcategories"]
-        return get_object_db('repos', unique_indexes, indexes)
+        #unique_indexes = ["id"]
+        #indexes = ["packages", "packagegroups", "packagegroupcategories"]
+        #return get_object_db('repos', unique_indexes, indexes)
+        return Repo.get_collection()
 
 # -- public api ---------------------------------------------------------------------
 

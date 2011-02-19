@@ -47,7 +47,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.task import RepoSyncTask
@@ -85,9 +85,8 @@ class RepoApi(BaseApi):
         return ["id"]
 
     def _getcollection(self):
-        return get_object_db('repos',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('repos', self._unique_indexes, self._indexes)
+        return model.Repo.get_collection()
 
     def _validate_schedule(self, sync_schedule):
         '''
@@ -533,7 +532,7 @@ class RepoApi(BaseApi):
 
         # delete the object
         self.objectdb.remove({'id' : id}, safe=True)
-    
+
     @event(subject='repo.updated')
     @audit()
     def update(self, repo_data):
@@ -542,7 +541,7 @@ class RepoApi(BaseApi):
         prevpath = repo.get('relative_path')
         newpath = repo_data.pop('relative_path', None)
         hascontent = self._hascontent(repo)
-        for key,value in repo_data.items():
+        for key, value in repo_data.items():
             # primary key
             if key in ('id', '_id'):
                 continue
@@ -670,7 +669,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repo_id)
         return self.packageapi.packages_by_id(repo["packages"], name=name)
 
-    def get_packages_by_nvrea(self, repo_id, nvreas = []):
+    def get_packages_by_nvrea(self, repo_id, nvreas=[]):
         """
          CHeck if package exists or not in this repo for given nvrea
         """
@@ -692,7 +691,7 @@ class RepoApi(BaseApi):
                             pkgs[p['filename']] = p
         return pkgs
 
-    def get_packages_by_filename(self, repo_id, filenames = []):
+    def get_packages_by_filename(self, repo_id, filenames=[]):
         """
           Return matching Package object in this Repo by filename
         """
@@ -719,7 +718,7 @@ class RepoApi(BaseApi):
                      'version' : package['version'],
                      'release' : package['release'],
                      'arch'    : package['arch'],
-                     'epoch'   : package['epoch'],}
+                     'epoch'   : package['epoch'], }
             found = self.get_packages_by_nvrea(repo['id'], [nvrea])
             if found:
                 log.error("Package with same NVREA [%s] already exists in repo [%s]"\
@@ -776,7 +775,7 @@ class RepoApi(BaseApi):
             # this won't fail even if the package is not in the repo's packages
             #removed_pkg = repo['packages'].pop(pkg['id'], None)
             if pkg['id'] not in repo['packages']:
-                log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"],repoid))
+                log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"], repoid))
                 continue
             repo['packages'].remove(pkg['id'])
             repo['package_count'] = repo['package_count'] - 1
@@ -809,7 +808,7 @@ class RepoApi(BaseApi):
         """
         found = self.objectdb.find({"packages":pkgid}, fields=["id"])
         return [r["id"] for r in found]
-    
+
     def errata(self, id, types=()):
         """
          Look up all applicable errata for a given repo id
@@ -847,7 +846,7 @@ class RepoApi(BaseApi):
         self.objectdb.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
-        
+
     def _update_errata_packages(self, repoid, errataids=[], action=None):
         repo = self._get_existing_repo(repoid)
         addids = []
@@ -1323,7 +1322,7 @@ class RepoApi(BaseApi):
             old_errata = list(set(repo_errata).difference(set(sync_errataids)))
             new_errata = list(set(sync_errataids).difference(set(repo_errata)))
             log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
-            self.delete_errata(id, old_errata) 
+            self.delete_errata(id, old_errata)
             # Refresh repo object 
             repo = self._get_existing_repo(id) #repo object must be refreshed
             log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
@@ -1525,7 +1524,7 @@ class RepoApi(BaseApi):
             log.info("Successfully removed file %s from repo %s" % (fileid, repoid))
         else:
             log.error("No file with ID %s associated to this repo" % fileid)
-            
+
     def list_files(self, repoid):
         '''
          List files in a given repo
@@ -1537,7 +1536,7 @@ class RepoApi(BaseApi):
         for fileid in repo['files']:
             files.append(self.fileapi.file(fileid))
         return files
-    
+
     def find_repos_by_files(self, fileid):
         """
         Return repos that contain passed in file id

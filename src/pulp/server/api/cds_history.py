@@ -22,7 +22,7 @@ import pymongo
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent
 from pulp.server.pexceptions import PulpException
 
@@ -46,7 +46,8 @@ class CdsHistoryApi(BaseApi):
         BaseApi.__init__(self)
 
     def _getcollection(self):
-        return get_object_db('cds_history', self._unique_indexes, self._indexes)
+        #return get_object_db('cds_history', self._unique_indexes, self._indexes)
+        return CDSHistoryEvent.get_collection()
 
 # -- public api ---------------------------------------------------------------------
 
@@ -122,8 +123,8 @@ class CdsHistoryApi(BaseApi):
             cursor = self.objectdb.find(search_params)
 
         # Sort by most recent entry first
-        cursor.sort( [ ('timestamp', SORT_DIRECTION[sort]),
-                       ('id', pymongo.DESCENDING) ] )
+        cursor.sort([ ('timestamp', SORT_DIRECTION[sort]),
+                       ('id', pymongo.DESCENDING) ])
 
         # If a limit was specified, add it to the cursor
         if limit:

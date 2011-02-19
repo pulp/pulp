@@ -17,7 +17,7 @@ import logging
 from pulp.server.db import model
 from pulp.server.auditing import audit
 from pulp.server.api.base import BaseApi
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 log = logging.getLogger(__name__)
 
 distribution_fields = model.Distribution(None, None, None, []).keys()
@@ -33,9 +33,8 @@ class DistributionApi(BaseApi):
         return ["id", "files", "relativepath"]
 
     def _getcollection(self):
-        return get_object_db('distribution',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('distribution', self._unique_indexes, self._indexes)
+        return model.Distribution.get_collection()
 
     @audit(params=["id"])
     def create(self, id, description, relativepath, files=[]):
@@ -69,7 +68,7 @@ class DistributionApi(BaseApi):
         Return a distribution object based on the id
         """
         return self.objectdb.find_one({'id': id})
-    
+
     def distributions(self):
         """
          Return all available distributions

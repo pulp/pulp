@@ -30,8 +30,8 @@ from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal, is_system_principal
 from pulp.server.crontab import CronTab
-from pulp.server.db.connection import get_object_db
-from pulp.server.db.model import ConsumerHistoryEvent
+#from pulp.server.db.connection import get_object_db
+from pulp.server.db.model import Consumer, ConsumerHistoryEvent
 from pulp.server.pexceptions import PulpException
 
 
@@ -70,9 +70,8 @@ class ConsumerHistoryApi(BaseApi):
         BaseApi.__init__(self)
 
     def _getcollection(self):
-        return get_object_db('consumer_history',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('consumer_history', self._unique_indexes, self._indexes)
+        return ConsumerHistoryEvent.get_collection()
 
     def _get_consumer_collection(self):
         '''
@@ -83,9 +82,8 @@ class ConsumerHistoryApi(BaseApi):
         @return: pymongo database connection to the consumer connection
         @rtype:  ?
         '''
-        return get_object_db('consumers',
-                             ['id'],
-                             ['consumer_id', 'type_name', 'timestamp'])
+        #return get_object_db('consumers', ['id'], ['consumer_id', 'type_name', 'timestamp'])
+        return Consumer.get_collection()
 
     # -- public api ----------------------------------------
 

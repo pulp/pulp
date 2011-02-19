@@ -26,14 +26,14 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
 from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.event.dispatcher import event
 
 log = logging.getLogger(__name__)
-    
+
 consumer_fields = model.Consumer(None, None).keys()
 
 
@@ -41,16 +41,15 @@ class ConsumerApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.errataapi  = ErrataApi()
-        self.repoapi    = RepoApi()
+        self.errataapi = ErrataApi()
+        self.repoapi = RepoApi()
         self.packageapi = PackageApi()
         self.consumer_history_api = ConsumerHistoryApi()
 
     def _getcollection(self):
-        return get_object_db('consumers',
-                             self._unique_indexes,
-                             self._indexes)
-        
+        #return get_object_db('consumers', self._unique_indexes, self._indexes)
+        model.Consumer.get_collection()
+
     def _get_consumergroup_collection(self):
         '''
         The circular dependency of requiring the consumergroup API causes issues, so
@@ -59,10 +58,9 @@ class ConsumerApi(BaseApi):
         @return: pymongo database connection to the consumergroup connection
         @rtype:  ?
         '''
-        return get_object_db('consumergroups',
-                             ['id'],
-                             ['consumerids'])
-    
+        #return get_object_db('consumergroups', ['id'], ['consumerids'])
+        return model.ConsumerGroup.get_collection()
+
 
     @property
     def _unique_indexes(self):
@@ -71,10 +69,10 @@ class ConsumerApi(BaseApi):
     @property
     def _indexes(self):
         return ["package_profile.name", "repoids", "key_value_pairs"]
-    
+
     @event(subject='consumer.created')
     @audit()
-    def create(self, id, description, key_value_pairs = {}):
+    def create(self, id, description, key_value_pairs={}):
         """
         Create a new Consumer object and return it
         """
@@ -85,14 +83,14 @@ class ConsumerApi(BaseApi):
         self.insert(c)
         self.consumer_history_api.consumer_created(c.id)
         return c
-    
+
     @event(subject='consumer.deleted')
     @audit()
     def delete(self, id):
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
-        
+
         consumergroup_db = self._get_consumergroup_collection()
         consumergroups = list(consumergroup_db.find({'consumerids' : consumer['id']}))
         for consumergroup in consumergroups:
@@ -100,7 +98,7 @@ class ConsumerApi(BaseApi):
             consumerids.remove(consumer['id'])
             consumergroup['consumerids'] = consumerids
             consumergroup_db.save(consumergroup, safe=True)
-                
+
         self.objectdb.remove({'id' : id}, safe=True)
         self.consumer_history_api.consumer_deleted(id)
         credentials = consumer.get('credentials')
@@ -120,7 +118,7 @@ class ConsumerApi(BaseApi):
         consumergroups = list(consumergroup_db.find({'consumerids' : id}))
         for consumergroup in consumergroups:
             group_keyvalues = consumergroup['key_value_pairs']
-            if key in group_keyvalues.keys() and group_keyvalues[key]!=value:
+            if key in group_keyvalues.keys() and group_keyvalues[key] != value:
                 return consumergroup['id']
         return None
 
@@ -137,7 +135,7 @@ class ConsumerApi(BaseApi):
         db = self._getcollection()
         query = dict(repoids=repoid)
         return tuple(db.find(query))
-    
+
     @audit()
     def add_key_value_pair(self, id, key, value):
         """
@@ -149,8 +147,8 @@ class ConsumerApi(BaseApi):
         @param value: value
         @type: str
         @raise PulpException: When consumer is not found or given key exists.
-        """       
-        consumer = self.consumer(id)    
+        """
+        consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
@@ -158,16 +156,16 @@ class ConsumerApi(BaseApi):
             conflicting_group = self.find_consumergroup_with_conflicting_keyvalues(id, key, value)
             if conflicting_group is None:
                 key_value_pairs[key] = value
-            else:    
+            else:
                 raise PulpException('Given key [%s] has different value for this consumer '
                                     'because of its membership in group [%s]. You can delete consumer '
-                                    'from that group and try again.', key, conflicting_group) 
-        else: 
-            raise PulpException('Given key [%s] already exists', key)    
+                                    'from that group and try again.', key, conflicting_group)
+        else:
+            raise PulpException('Given key [%s] already exists', key)
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
-        
-        
+
+
     @audit()
     def delete_key_value_pair(self, id, key):
         """
@@ -177,14 +175,14 @@ class ConsumerApi(BaseApi):
         @param repoid: key
         @type repoid: str
         @raise PulpException: When consumer does not exist or key is not found.
-        """       
-        consumer = self.consumer(id)    
+        """
+        consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
         if key in key_value_pairs.keys():
-            del key_value_pairs[key] 
-        else: 
+            del key_value_pairs[key]
+        else:
             raise PulpException('Given key [%s] does not exist', key)
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
@@ -200,8 +198,8 @@ class ConsumerApi(BaseApi):
         @param value: value
         @type: str
         @raise PulpException: When consumer is not found or given key exists.
-        """       
-        consumer = self.consumer(id)    
+        """
+        consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
         key_value_pairs = consumer['key_value_pairs']
@@ -211,14 +209,14 @@ class ConsumerApi(BaseApi):
             conflicting_group = self.find_consumergroup_with_conflicting_keyvalues(id, key, value)
             if conflicting_group is None:
                 key_value_pairs[key] = value
-            else:    
+            else:
                 raise PulpException('Given key [%s] has different value for this consumer '
                                     'because of its membership in group [%s]. You can delete consumer '
                                     'from that group and try again.', key, conflicting_group)
-                
+
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
-            
+
 
     def get_keyvalues (self, id):
         """
@@ -228,17 +226,17 @@ class ConsumerApi(BaseApi):
         @type id: str
         @raise PulpException: When consumer does not exist
         """
-        consumer = self.consumer(id)    
+        consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
-        key_value_pairs = consumer.get('key_value_pairs', {} )
-        
+        key_value_pairs = consumer.get('key_value_pairs', {})
+
         consumergroup_db = self._get_consumergroup_collection()
         consumergroups = list(consumergroup_db.find({'consumerids' : consumer['id']}))
         for consumergroup in consumergroups:
             group_key_value_pairs = consumergroup['key_value_pairs']
             key_value_pairs.update(group_key_value_pairs)
-            
+
         return key_value_pairs
 
 
@@ -248,9 +246,9 @@ class ConsumerApi(BaseApi):
         List consumers with given key-values
         """
         consumer_key = 'key_value_pairs.' + key
-        return self.consumers({consumer_key: value}, fields)       
-    
-    
+        return self.consumers({consumer_key: value}, fields)
+
+
     @audit()
     def certificate(self, id):
         """
@@ -266,7 +264,7 @@ class ConsumerApi(BaseApi):
             consumer['credentials'] = bundle
             self.update(consumer)
         return bundle
-        
+
     @audit()
     def bulkcreate(self, consumers):
         """
@@ -297,13 +295,13 @@ class ConsumerApi(BaseApi):
         if not consumers:
             return None
         return consumers[0]
-    
+
     def packages(self, id):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
         return consumer.get('package_profile', [])
-    
+
     def consumers_with_package_names(self, names, fields=None):
         """
         List consumers using passed in names
@@ -336,7 +334,7 @@ class ConsumerApi(BaseApi):
         repolib = agent.Repo()
         repolib.update()
         self.consumer_history_api.repo_bound(id, repoid)
-    
+
     @audit()
     def unbind(self, id, repoid):
         """
@@ -360,7 +358,7 @@ class ConsumerApi(BaseApi):
         repolib = agent.Repo()
         repolib.update()
         self.consumer_history_api.repo_unbound(id, repoid)
-        
+
     @audit(params=['id'])
     def profile_update(self, id, package_profile):
         """
@@ -369,7 +367,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        consumer["package_profile"] =  package_profile
+        consumer["package_profile"] = package_profile
         self.update(consumer)
 
     @audit()
@@ -391,7 +389,7 @@ class ConsumerApi(BaseApi):
         log.debug("Packages to Install: %s" % data)
         task = InstallPackages(id, data)
         return task
-    
+
     @audit()
     def installpackagegroups(self, id, groupnames=()):
         """
@@ -403,9 +401,9 @@ class ConsumerApi(BaseApi):
         """
         task = InstallPackageGroups(id, groupnames)
         return task
-    
-      
-        
+
+
+
     def installerrata(self, id, errataids=(), types=(), assumeyes=False):
         """
         Install errata on the consumer.
@@ -419,7 +417,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         pkgs = []
         errata_titles = []
-        reboot_suggested = False 
+        reboot_suggested = False
         if errataids:
             applicable_errata = self._applicable_errata(consumer, types)
             rlist = []
@@ -448,14 +446,14 @@ class ConsumerApi(BaseApi):
         log.error("Packages to install [%s]" % pkgs)
         task = InstallErrata(id, pkgs, errata_titles, reboot_suggested=reboot_suggested, assumeyes=assumeyes)
         return task
-        
+
     def listerrata(self, id, types=()):
         """
         List applicable errata for a given consumer id
         """
         consumer = self.consumer(id)
         return self._applicable_errata(consumer, types).keys()
-    
+
     def list_package_updates(self, id, types=()):
         """
         List applicable package updates for a given consumer id
@@ -466,7 +464,7 @@ class ConsumerApi(BaseApi):
                                     for item in etype['packages'] ]
         return {'packages' : pkglist,
                 'reboot_required' : self.check_reboot_required(applicable_errata)}
-        
+
     def list_errata_package(self, id, types=()):
         consumer = self.consumer(id)
         applicable_errata = self._applicable_errata(consumer, types)
@@ -475,14 +473,14 @@ class ConsumerApi(BaseApi):
         elist = applicable_errata.keys()
         return {'packages' : pkglist,
                 'errata'  : elist}
-        
+
     def check_reboot_required(self, applicable_errata):
         reboot_suggested = False
         if True in [item['reboot_suggested'] for item in applicable_errata.values()]:
             # if there is atleast one reboot_suggested=True, we trigger a reboot.
             reboot_suggested = True
         return reboot_suggested
-    
+
     def _applicable_errata(self, consumer, types=()):
         """ 
         Logic to filter applicable errata for a consumer
@@ -513,9 +511,9 @@ class ConsumerApi(BaseApi):
                         # applicable move on
                         continue
                     for ppkg in pkg_profile_dict:
-                        if epkg_info['name'] != ppkg['name']: 
+                        if epkg_info['name'] != ppkg['name']:
                             continue
-                        
+
                         status = compare_packages(epkg_info, ppkg)
                         if status == 1:
                             # erratum pkg is newer, add to update list

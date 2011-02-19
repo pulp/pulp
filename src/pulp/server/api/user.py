@@ -18,7 +18,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server import config
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 import pulp.server.auth.password_util as password_util
 
 log = logging.getLogger(__name__)
@@ -32,9 +32,8 @@ class UserApi(BaseApi):
         self.default_login = config.config.get('server', 'default_login')
 
     def _getcollection(self):
-        return get_object_db('users',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('users', self._unique_indexes, self._indexes)
+        return model.User.get_collection()
 
     @audit(params=['login'])
     def create(self, login, password=None, name=None, id=None):

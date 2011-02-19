@@ -16,7 +16,7 @@
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Permission
 from pulp.server.pexceptions import PulpException
 
@@ -29,9 +29,8 @@ class PermissionAPI(BaseApi):
     # base class methods overridden for implementation
 
     def _getcollection(self):
-        return get_object_db('permissions',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('permissions', self._unique_indexes, self._indexes)
+        return Permission.get_collection()
 
     @property
     def _unique_indexes(self):

@@ -15,7 +15,7 @@
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Role
 from pulp.server.pexceptions import PulpException
 
@@ -28,9 +28,8 @@ class RoleAPI(BaseApi):
     # base class methods overridden for implementation
 
     def _getcollection(self):
-        return get_object_db('roles',
-                             self._unique_indexes,
-                             self._indexes)
+        #return get_object_db('roles', self._unique_indexes, self._indexes)
+        return Role.get_collection()
 
     @property
     def _unique_indexes(self):

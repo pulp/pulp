@@ -20,7 +20,7 @@ import logging
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.api.depsolver import DepSolver
 
 from pulp.server.pexceptions import PulpException
@@ -34,15 +34,15 @@ class PackageApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.objectdb.ensure_index([('name', pymongo.DESCENDING), 
-            ('epoch', pymongo.DESCENDING), 
+        self.objectdb.ensure_index([('name', pymongo.DESCENDING),
+            ('epoch', pymongo.DESCENDING),
             ('version', pymongo.DESCENDING),
             ('release', pymongo.DESCENDING),
-            ('arch', pymongo.DESCENDING), 
+            ('arch', pymongo.DESCENDING),
             ('filename', pymongo.DESCENDING),
-            ('checksum', pymongo.DESCENDING)], 
+            ('checksum', pymongo.DESCENDING)],
             unique=True, background=True)
-        
+
 
     @property
     def _unique_indexes(self):
@@ -52,15 +52,14 @@ class PackageApi(BaseApi):
     def _indexes(self):
         return ["name", "filename", "checksum", "epoch", "version", "release",
                 "arch", "description"]
-        
+
     def _getcollection(self):
-        return get_object_db('packages',
-                             self._unique_indexes,
-                             self._indexes)
-        
-        
+        #return get_object_db('packages', self._unique_indexes, self._indexes)
+        return model.Package.get_collection()
+
+
     @audit()
-    def create(self, name, epoch, version, release, arch, description, 
+    def create(self, name, epoch, version, release, arch, description,
             checksum_type, checksum, filename, repo_defined=False):
         """
         Create a new Package object and return it
@@ -76,14 +75,14 @@ class PackageApi(BaseApi):
         Delete package version object based on "_id" key
         """
         BaseApi.delete(self, _id=id)
-    
+
     def package(self, id):
         """
         Return a single Package object based on the id
         """
         return self.objectdb.find_one({'id': id})
 
-    def packages(self, name=None, epoch=None, version=None, release=None, arch=None, 
+    def packages(self, name=None, epoch=None, version=None, release=None, arch=None,
             filename=None, checksum_type=None, checksum=None, regex=False,
             fields=["id", "name", "epoch", "version", "release", "arch", "filename", "checksum"]):
         """
@@ -130,7 +129,7 @@ class PackageApi(BaseApi):
             return list(self.objectdb.find(fields=fields))
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
-    
+
     def packages_by_id(self, pkg_ids, **kwargs):
         """
         @param pkg_ids list of package ids
@@ -163,8 +162,8 @@ class PackageApi(BaseApi):
         Returns the package version identified by the given package and VERA.
         """
         return self.objectdb.find_one({'name' : name, 'version' : version,
-                                       'epoch' : epoch, 'release' : release, 'arch' : arch,})
-                                       
+                                       'epoch' : epoch, 'release' : release, 'arch' : arch, })
+
     def package_descriptions(self, spec=None):
         '''
         List of all package names and descriptions (will not contain package
@@ -172,7 +171,7 @@ class PackageApi(BaseApi):
         '''
         #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
         return list(self.objectdb.find(spec, ['id', 'name', 'description']))
-    
+
     def package_dependency(self, pkgnames=[], repoids=[], recursive=0):
         '''
          Get list of available dependencies for a given package in
@@ -193,9 +192,9 @@ class PackageApi(BaseApi):
             repos.append(repoid)
         dsolve = DepSolver(repos, pkgnames)
         if recursive:
-            results =  dsolve.getRecursiveDepList()
+            results = dsolve.getRecursiveDepList()
         else:
-            results =  dsolve.getDependencylist()
+            results = dsolve.getDependencylist()
         deps = dsolve.processResults(results)
         pkgs = []
         log.info(" results from depsolver %s" % results)
@@ -206,16 +205,16 @@ class PackageApi(BaseApi):
                 continue
             pkgs.append(epkg)
         log.info("deps packages suggested %s" % deps)
-        return {'dependency_list' : dsolve.printable_result(results), 
+        return {'dependency_list' : dsolve.printable_result(results),
                 'available_packages' :pkgs}
-        
+
     def package_checksum(self, filename):
         """
          Returns a list of checksum info for names matching the spec
         """
         spec = {'filename' : filename}
         return list(self.objectdb.find(spec, fields=['checksum']))
-    
+
     def upload(self, pkginfo, pkgstream):
         """
         Store the uploaded package and persist a package object
@@ -232,7 +231,7 @@ class PackageApi(BaseApi):
             log.error("Upload failed due an unknown exception %s" % e)
             raise e
         return pkg
-    
+
     def orphaned_packages(self, fields=["id", "filename", "checksum"]):
         #TODO: Revist this when model changes so we don't need to import RepoApi
         from pulp.server.api.repo import RepoApi
