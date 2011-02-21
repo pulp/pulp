@@ -1541,8 +1541,11 @@ class RepoApi(BaseApi):
             if fid in repo['files']:
                 del repo['files'][repo['files'].index(fid)]
             self.objectdb.save(repo, safe=True)
-            self.fileapi.delete(fid, keep_files)
-                
+            repos = self.find_repos_by_files(fid)
+            if repo["id"] in repos and len(repos) == 1:
+                self.fileapi.delete(fid, keep_files)
+            else:
+                log.info("Not deleting %s since it is referenced by these repos: %s" % (fileobj["id"], repos))
             log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
         else:
             log.error("No file with ID %s associated to this repo" % fileids)
