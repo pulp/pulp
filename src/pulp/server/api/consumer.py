@@ -48,7 +48,7 @@ class ConsumerApi(BaseApi):
 
     def _getcollection(self):
         #return get_object_db('consumers', self._unique_indexes, self._indexes)
-        model.Consumer.get_collection()
+        return model.Consumer.get_collection()
 
     def _get_consumergroup_collection(self):
         '''
