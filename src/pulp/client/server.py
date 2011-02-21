@@ -213,11 +213,12 @@ class PulpServer(Server):
         # build the request url from the path and queries dict or tuple
         if not path.startswith(self.path_prefix):
             path = '/'.join((self.path_prefix, path))
+        # make sure the path is ascii and uses appropriate characters
+        path = urllib.quote(str(path))
         queries = urllib.urlencode(queries)
         if queries:
             path = '?'.join((path, queries))
-        # make sure the url is ascii and uses appropriate characters
-        return urllib.quote(str(path))
+        return path
 
     def _request(self, method, path, queries=(), body=None):
         # make a request to the pulp server and return the response
