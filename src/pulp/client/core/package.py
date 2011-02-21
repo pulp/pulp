@@ -72,8 +72,10 @@ class Info(PackageAction):
                         _("Package [%s] not found in repo [%s]") %
                         (name, repoid))
         print_header(_("Package Information"))
-        for key, value in pkg.items():
-            print """%s:                \t%-25s""" % (key, value)
+        #for key, value in pkg.items():
+        #    print """%s:                \t%-25s""" % (key, value)
+        for p in pkg:
+            print """%s:                \t%-25s""" % (p['id'], p)
 
 
 class Install(PackageAction):
@@ -240,9 +242,9 @@ class Upload(PackageAction):
                                help=_("process packages from this directory"))
         self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
                                help=_("Optional repoid, to associate the uploaded package"))
-        self.parser.add_option( "--nosig", action="store_true", dest="nosig",
+        self.parser.add_option("--nosig", action="store_true", dest="nosig",
                                help=_("pushes unsigned packages"))
-        self.parser.add_option( "--chunksize", dest="chunk", default=10485760, type=int,
+        self.parser.add_option("--chunksize", dest="chunk", default=10485760, type=int,
                                help=_("chunk size to use for uploads. Default:10485760"))
         self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
 
@@ -285,8 +287,8 @@ class Upload(PackageAction):
                     continue
                 pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
             else:
-                pkgobj = self.service_api.search_file(pkginfo['pkgname'], 
-                                                   pkginfo['hashtype'], 
+                pkgobj = self.service_api.search_file(pkginfo['pkgname'],
+                                                   pkginfo['hashtype'],
                                                    pkginfo['checksum'])
             existing_pkg_checksums = []
             if pkgobj:
@@ -302,7 +304,7 @@ class Upload(PackageAction):
                     pids[f] = pobj['id']
                 else:
                     fids[f] = pobj['id']
-                continue   
+                continue
             upload_id = uapi.upload(f, chunksize=self.opts.chunk)
             uploaded = uapi.import_content(pkginfo, upload_id)
             if uploaded:
@@ -335,7 +337,7 @@ class Upload(PackageAction):
                 continue
             if len(pids):
                 self.repository_api.add_package(rid, pids.values())
-            
+
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
             msg = _('Successfully associated the following to Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
@@ -344,7 +346,7 @@ class Upload(PackageAction):
             if self.opts.verbose:
                 print msg
         print _("\n* Package Upload complete.")
-        
+
 
 class List(PackageAction):
 
@@ -355,14 +357,14 @@ class List(PackageAction):
                                help=_("list of orphaned packages"))
         self.parser.add_option("--repoid", dest="repoid",
                                help=_("list packages in specified repo"))
-    
+
     def run(self):
         if not self.opts.orphaned and not self.opts.repoid:
             system_exit(os.EX_USAGE, "--orphaned or --repoid is required to list packages")
-            
+
         if self.opts.orphaned:
             orphaned_pkgs = self.package_api.orphaned_packages()
-            
+
             for pkg in orphaned_pkgs:
                 try:
                     print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
