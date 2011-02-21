@@ -293,7 +293,8 @@ def _validate_file():
     @return: number of errors found during validation
     """
     objectdb = file.FileApi()._getcollection()
-    reference = model.File(u'', u'', u'', u'', u'')
+    reference = model.File(u'', u'', u'', 0, None)
+    _base_id(reference)
     return _validate_model(model.File.__name__, objectdb, reference)
 
 def _validate_distribution():
