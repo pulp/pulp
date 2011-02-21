@@ -51,4 +51,8 @@ class PackageAPI(PulpAPI):
     def package_by_ivera(self, name, version, release, epoch, arch):
         path = "/packages/%s/%s/%s/%s/%s/" % (name, version, release, epoch, arch)
         return self.server.GET(path)[1]
+    
+    def orphaned_packages(self):
+        path = "/orphaned/packages/"
+        return self.server.GET(path)[1]
 

@@ -31,6 +31,7 @@ from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.api.upload import UploadAPI
 from pulp.client.api.file import FileAPI
+from pulp.client.api.package import PackageAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.logutil import getLogger
@@ -48,6 +49,7 @@ class PackageAction(Action):
         self.repository_api = RepositoryAPI()
         self.service_api = ServiceAPI()
         self.file_api = FileAPI()
+        self.package_api = PackageAPI()
 
 # package actions -------------------------------------------------------------
 
@@ -343,7 +345,35 @@ class Upload(PackageAction):
             if self.opts.verbose:
                 print msg
         print _("\n* Package Upload complete.")
+        
 
+class List(PackageAction):
+
+    description = _('list package(s) on pulp server;')
+
+    def setup_parser(self):
+        self.parser.add_option("--orphaned", action="store_true", dest="orphaned",
+                               help=_("list of orphaned packages"))
+        self.parser.add_option("--repoid", dest="repoid",
+                               help=_("list packages in specified repo"))
+    
+    def run(self):
+        if not self.opts.orphaned and not self.opts.repoid:
+            system_exit(os.EX_USAGE, "--orphaned or --repoid is required to list packages")
+            
+        if self.opts.orphaned:
+            orphaned_pkgs = self.package_api.orphaned_packages()
+            
+            for pkg in orphaned_pkgs:
+                try:
+                    print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
+                except:
+                    pass
+        if self.opts.repoid:
+            print self.repository_api.packages(self.opts.repoid)
+            
+            
+        
 
 
 # package command -------------------------------------------------------------

@@ -75,6 +75,7 @@ def setup_admin(admin):
     package_cmd.add_action('search', package.Search())
     package_cmd.add_action('deplist', package.DependencyList())
     package_cmd.add_action('upload', package.Upload())
+    package_cmd.add_action('list', package.List())
     admin.add_command('package', package_cmd)
 
     packagegroup_cmd = packagegroup.PackageGroup()
