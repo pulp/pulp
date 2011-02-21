@@ -110,8 +110,10 @@ class RepositoryAPI(PulpAPI):
         return self.server.POST(path, rminfo)[1]
 
     def get_package(self, repoid, pkg_name):
-        path = "/repositories/%s/get_package/" % repoid
-        return self.server.POST(path, pkg_name)[1]
+        #path = "/repositories/%s/get_package/" % repoid
+        #return self.server.POST(path, pkg_name)[1]
+        path = '/repositories/%s/packages/' % id
+        return self.server.GET(path, (('name', pkg_name),))[1]
 
     def find_package_by_nvrea(self, id, nvrea=[]):
         path = "/repositories/%s/get_package_by_nvrea/" % id
@@ -121,17 +123,14 @@ class RepositoryAPI(PulpAPI):
         #queries = []
         #for d in nvrea:
         #    queries.extend(d.items())
-        #status, packages = self.server.GET(path, tuple(queries))
-        #if status == 404:
-        #    return []
-        #return packages
+        #return self.server.GET(path, tuple(queries))[1]
 
     def get_package_by_filename(self, id, filename):
         path = "/repositories/%s/get_package_by_filename/" % id
         return self.server.POST(path, {'filename': filename})[1]
         # FIXME newer call that's using correct controller, still needs testing
         #path = '/repositories/%s/packages/' % id
-        #return self.server.GET(path, (('filename', filename),))
+        #return self.server.GET(path, (('filename', filename),))[1]
 
     def packages(self, repoid):
         path = "/repositories/%s/packages/" % repoid
