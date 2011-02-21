@@ -155,7 +155,7 @@ class PackageApi(BaseApi):
         """
          Returns a list of all file names matching the spec
         """
-        return list(self.objectdb.find(spec, fields=['filename']))
+        return list(self.objectdb.find(spec, fields=['filename', 'checksum']))
 
     def package_by_ivera(self, name, version, epoch, release, arch):
         """

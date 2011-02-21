@@ -370,7 +370,12 @@ class List(PackageAction):
                 except:
                     pass
         if self.opts.repoid:
-            print self.repository_api.packages(self.opts.repoid)
+            repo_pkgs = self.repository_api.packages(self.opts.repoid)
+            for pkg in repo_pkgs:
+                try:
+                    print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
+                except:
+                    pass
 
 # package command -------------------------------------------------------------
 
