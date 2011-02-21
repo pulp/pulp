@@ -112,7 +112,7 @@ class RepositoryAPI(PulpAPI):
     def get_package(self, repoid, pkg_name):
         #path = "/repositories/%s/get_package/" % repoid
         #return self.server.POST(path, pkg_name)[1]
-        path = '/repositories/%s/packages/' % id
+        path = '/repositories/%s/packages/' % repoid
         return self.server.GET(path, (('name', pkg_name),))[1]
 
     def find_package_by_nvrea(self, id, nvrea=[]):
