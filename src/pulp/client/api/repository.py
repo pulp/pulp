@@ -120,7 +120,10 @@ class RepositoryAPI(PulpAPI):
         queries = []
         for d in nvrea:
             queries.extend(d.items())
-        return self.server.GET(path, tuple(queries))
+        status, packages = self.server.GET(path, tuple(queries))
+        if status == 404:
+            return []
+        return packages
 
     def get_package_by_filename(self, id, filename):
         path = "/repositories/%s/get_package_by_filename/" % id
