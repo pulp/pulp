@@ -290,7 +290,6 @@ class ImportUploadContent:
         
         if util.check_package_exists(pkg_path, self.metadata['checksum'], self.metadata['hashtype']):
             log.error("Package %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
-            raise
         # copy the content over to the package location
         if not self.__finalize_content(pkg_path):
             return None
@@ -310,7 +309,6 @@ class ImportUploadContent:
         file_path = "%s/%s/%s" % (PACKAGE_LOCATION, self.metadata['checksum'][:3], self.metadata['pkgname'])
         if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
             log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
-            raise
         if not self.__finalize_content(file_path):
             return None
         f = FileApi()
