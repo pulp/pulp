@@ -188,11 +188,13 @@ class RepositoryDeferredFields(JSONController):
     )
 
     def packages(self, id):
-        valid_filters = ('name', 'version', 'release', 'epoch', 'arch', 'filename')
+        valid_filters = ('name', 'version', 'release', 'epoch', 'arch',
+                        'filename', 'field')
         filters = self.filters(valid_filters)
+        fields = filters.pop('filed', None)
         spec = mongo.filters_to_re_spec(filters) or {}
         try:
-            packages = api.get_packages(id, spec)
+            packages = api.get_packages(id, spec, fields)
         except PulpException: # XXX this isn't specific enough!
             return self.not_found('No repository %s' % id)
         else:
