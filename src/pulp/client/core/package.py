@@ -100,7 +100,7 @@ class Install(PackageAction):
         if consumergroupid:
             task = self.consumer_group_api.installpackages(consumergroupid, pnames, when=when)
         else:
-            task = self.conumer_api.installpackages(consumerid, pnames, when=when)
+            task = self.consumer_api.installpackages(consumerid, pnames, when=when)
         print _('Created task id: %s') % task['id']
         print _('Task is scheduled for: %s') % \
                 time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
@@ -110,7 +110,7 @@ class Install(PackageAction):
             sys.stdout.write('.')
             sys.stdout.flush()
             time.sleep(2)
-            status = self.conumer_api.task_status(spath)
+            status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
             print _('\n[%s] installed on %s') % \
