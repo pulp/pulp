@@ -48,3 +48,14 @@ class ServiceAPI(PulpAPI):
                    'recursive': recursive}
         path = "/services/dependencies/"
         return self.server.POST(path, params)[1]
+    
+    def search_file(self, filename=None, checksum_type=None, checksum=None):
+        data = {}
+        if filename:
+            data["filename"] = filename
+        if checksum_type:
+            data["checksum_type"] = checksum_type
+        if checksum:
+            data["checksum"] = checksum
+        path = "/services/search/files/"
+        return self.server.POST(path, data)[1]

@@ -41,40 +41,10 @@ class File(JSONController):
         """
         return self.ok(api.file(id))
 
-class Files(JSONController):
-    
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
-    def POST(self):
-        """
-        Search for matching files 
-        expects passed in regex search strings from POST data
-        @return: matching file object
-        """
-        data = self.params()
-        filename = None
-        if data.has_key("filename"):
-            filename = data["filename"]
-        checksum_type = None
-        if data.has_key("checksum_type"):
-            checksum_type = data["checksum_type"] 
-        checksum = None
-        if data.has_key("checksum"):
-            checksum = data["checksum"]
-        files = api.files(filename=filename, checksum_type=checksum_type, checksum=checksum, regex=True)
-        for f in files:
-            f["repos"] = rapi.find_repos_by_files(f["id"])
-        return self.ok(files)
-    
-    def PUT(self):
-        log.debug('deprecated Users.PUT method called')
-        return self.POST()
-
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/files/([^/]+)/$', 'File',
-    '/files/$', 'Files',
 )
 
 application = web.application(URLS, globals())

@@ -24,11 +24,4 @@ class FileAPI(PulpAPI):
     def file(self, id):
         path = "/content/files/%s/" % id
         return self.server.GET(path)[1]
-    
-    def search_file(self, filename=None, checksum_type=None, checksum=None):
-        params = {"filename" : filename,
-                  "checksum_type" : checksum_type,
-                  "checksum" : checksum,}
-        path = "/content/files/"
-        return self.server.POST(path, params)[1]
 

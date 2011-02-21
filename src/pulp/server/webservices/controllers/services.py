@@ -20,6 +20,7 @@ import web
 
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
 from pulp.server.auth.authorization import READ, EXECUTE
@@ -30,6 +31,7 @@ from pulp.server.webservices.controllers.base import JSONController
 
 rapi = RepoApi()
 papi = PackageApi()
+fapi = FileApi()
 log = logging.getLogger('pulp')
 
 # services controllers --------------------------------------------------------
@@ -158,11 +160,40 @@ class ImportUpload(JSONController):
         return self.ok(capi.process())
 
 
+class FileSearch(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        """
+        Search for matching files 
+        expects passed in regex search strings from POST data
+        @return: matching file object
+        """
+        data = self.params()
+        filename = None
+        if data.has_key("filename"):
+            filename = data["filename"]
+        checksum_type = None
+        if data.has_key("checksum_type"):
+            checksum_type = data["checksum_type"] 
+        checksum = None
+        if data.has_key("checksum"):
+            checksum = data["checksum"]
+        files = fapi.files(filename=filename, checksum_type=checksum_type, checksum=checksum, regex=True)
+        for f in files:
+            f["repos"] = rapi.find_repos_by_files(f["id"])
+        return self.ok(files)
+    
+    def PUT(self):
+        log.debug('deprecated Users.PUT method called')
+        return self.POST()
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/dependencies/$', 'DependencyActions',
     '/search/packages/$', 'PackageSearch',
+    '/search/files/$', 'FileSearch',
     '/upload/$', 'StartUpload',
     '/upload/append/([^/]+)/$', 'AppendUpload',
     '/upload/import/$',  'ImportUpload',

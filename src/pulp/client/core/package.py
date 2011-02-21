@@ -285,7 +285,7 @@ class Upload(PackageAction):
                     continue
                 pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
             else:
-                pkgobj = self.file_api.search_file(pkginfo['pkgname'], 
+                pkgobj = self.service_api.search_file(pkginfo['pkgname'], 
                                                    pkginfo['hashtype'], 
                                                    pkginfo['checksum'])
             existing_pkg_checksums = []
@@ -371,10 +371,6 @@ class List(PackageAction):
                     pass
         if self.opts.repoid:
             print self.repository_api.packages(self.opts.repoid)
-            
-            
-        
-
 
 # package command -------------------------------------------------------------
 
