@@ -19,7 +19,8 @@ Contains recurring actions and remote classes.
 """
 
 import os
-from pulp.client.connection import ConsumerConnection, RestlibException
+from pulp.client.server import PulpServer, set_active_server
+from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 from pulp.client.repolib import RepoLib
@@ -33,6 +34,16 @@ from logging import getLogger
 log = getLogger(__name__)
 plugin = Plugin.find(__name__)
 cfg = Config()
+
+
+def pulpserver():
+    """
+    Pulp server configuration
+    """
+    bundle = ConsumerBundle()
+    pulp = PulpServer(cfg.server.host)
+    pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
+    set_active_server(pulp)
 
 
 class IdentityAction:
@@ -80,19 +91,17 @@ class ProfileUpdateAction:
         Looks up the consumer id and latest pkg profile info and cals
         the api to update the consumer profile
         """
+        pulpserver()
         bundle = ConsumerBundle()
         cid = bundle.getid()
         if not cid:
             log.error("Not Registered")
             return
         try:
-            cconn = ConsumerConnection(host=cfg.server.host or "localhost",
-                                       port=cfg.server.port or 443)
+            capi = ConsumerAPI()
             pkginfo = PackageProfile().getPackageList()
-            cconn.profile(cid, pkginfo)
+            capi.profile(cid, pkginfo)
             log.info("Profile updated successfully for consumer %s" % cid)
-        except RestlibException, re:
-            log.error("Error: %s" % re)
         except Exception, e:
             log.error("Error: %s" % e)
             
@@ -158,6 +167,7 @@ class Packages:
                             or tuples for name/arch info.
         @type packageinfo: str or tuple
         """
+        pulpserver()
         installed = []
         yb = YumBase()
         log.info('installing packages: %s', packageinfo)
@@ -171,7 +181,6 @@ class Packages:
                 yb.tsInfo.addInstall(p)
         yb.resolveDeps()
         yb.processTransaction()
-        
         if reboot_suggested:
             cfg_assumeyes = cfg.client.assumeyes
             if cfg_assumeyes in ["True", "False"]:
@@ -183,13 +192,13 @@ class Packages:
                 return (installed, {'reboot_performed' :True})
             else:
                 return (installed, {'reboot_performed' :False})
-                
         return (installed, None)
     
     def __schedule_reboot(self):
         interval = cfg.client.reboot_schedule
         os.system("shutdown -r %s &" % interval)
         log.info("System is scheduled to reboot in %s minutes" % interval)
+
 
 class PackageGroups:
     """
@@ -203,6 +212,7 @@ class PackageGroups:
         @param packagegroupids: A list of package ids.
         @param packagegroupids: str
         """
+        pulpserver()
         log.info('installing packagegroups: %s', packagegroupids)
         yb = YumBase()
         for grp_id in packagegroupids:
