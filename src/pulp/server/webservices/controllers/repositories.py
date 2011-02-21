@@ -24,6 +24,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import grant_automatic_permissions_for_created_resource
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.pexceptions import PulpException
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -187,15 +188,22 @@ class RepositoryDeferredFields(JSONController):
     )
 
     def packages(self, id):
-        #TODO: Extremely slow for large repos
-        valid_filters = ('name', 'arch')
+        valid_filters = ('name', 'version', 'release', 'epoch', 'arch', 'filename')
         filters = self.filters(valid_filters)
-        repo = api.repository(id, ['id', 'packages'])
-        packages = pkg_api.package_filenames(spec={'id': {'$in': [p for p in repo['packages']]}})
-        if repo is None:
+        spec = mongo.filters_to_re_spec(filters)
+        try:
+            packages = api.get_packages(id, spec, ['filename'])
+        except PulpException:
             return self.not_found('No repository %s' % id)
-        filtered_packages = self.filter_results(packages, filters)
-        return self.ok(filtered_packages)
+        else:
+            return self.ok([p['filename'] for p in packages])
+        #TODO: Extremely slow for large repos
+        #repo = api.repository(id, ['id', 'packages'])
+        #packages = pkg_api.package_filenames(spec={'id': {'$in': [p for p in repo['packages']]}})
+        #if repo is None:
+        #    return self.not_found('No repository %s' % id)
+        #filtered_packages = self.filter_results(packages, filters)
+        #return self.ok(filtered_packages)
 
     def packagegroups(self, id):
         repo = api.repository(id, ['id', 'packagegroups'])

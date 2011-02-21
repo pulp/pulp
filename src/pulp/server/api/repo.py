@@ -699,6 +699,19 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repo_id)
         return self.packageapi.packages_by_id(repo["packages"], filename={"$in":filenames})
 
+    def get_packages(self, repo_id, spec={}, pkg_fields=None):
+        """
+        Generic call to get the packages in a repository that match the given
+        specification.
+        """
+        repo = self._get_existing_repo(repo_id, ['packages'])
+        collection = model.Package.get_collection()
+        spec['id'] = {'$in': list(repo['packages'])}
+        cursor = collection.find(spec=spec, fields=pkg_fields)
+        if cursor.count() > 0:
+            return list(cursor)
+        return []
+
     @audit()
     def add_package(self, repoid, packageids=[]):
         """
