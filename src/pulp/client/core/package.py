@@ -250,7 +250,7 @@ class Upload(PackageAction):
         dir = self.opts.dir
         if dir:
             try:
-                files += utils.processDirectory(dir, "rpm")
+                files += utils.processDirectory(dir)
             except Exception, e:
                 system_exit(os.EX_DATAERR, _(str(e)))
         if not files:
@@ -298,16 +298,16 @@ class Upload(PackageAction):
                     print msg
                 if pkginfo['type'] == 'rpm':
                     pids[f] = pobj['id']
-                if pkginfo['type'] == 'file':
+                else:
                     fids[f] = pobj['id']
                 continue   
             upload_id = uapi.upload(f, chunksize=self.opts.chunk)
 #            uploaded = self.service_api.upload(pkginfo, upload_id)
             uploaded = uapi.import_content(pkginfo, upload_id)
             if uploaded:
-                if uploaded['_ns'] == 'package':
+                if pkginfo['type'] == 'rpm':
                     pids[f] = uploaded['id']
-                if uploaded['_ns'] == 'file':
+                else:
                     fids[f] = uploaded['id']
                 msg = _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
                 log.info(msg)

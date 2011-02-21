@@ -113,11 +113,13 @@ def listdir(directory):
         packagesList.append("%s/%s" % (directory, f))
     return packagesList
 
-def processDirectory(dirpath, ftype):
+def processDirectory(dirpath, ftype=[]):
     dirfiles = []
     for file in listdir(dirpath):
         # only add packages
-        if file[-3:] in ftype:
+        if ftype and file[-3:] in ftype:
+            dirfiles.append(file)
+        else:
             dirfiles.append(file)
     return dirfiles
 
