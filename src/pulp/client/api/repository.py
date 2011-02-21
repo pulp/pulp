@@ -224,16 +224,16 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/update_publish/" % id
         return self.server.POST(path, {"state": state})[1]
 
-    def add_file(self, repoid, fileid):
-        addinfo = {'repoid': repoid, 'fileid': fileid}
+    def add_file(self, repoid, fileids=[]):
+        addinfo = {'repoid': repoid, 'fileids': fileids}
         path = "/repositories/%s/add_file/" % repoid
         return self.server.POST(path, addinfo)[1]
 
     def remove_file(self, repoid, fileid):
-        rminfo = {'repoid': repoid, 'fileid': fileid, }
+        rminfo = {'repoid': repoid, 'fileids': fileid, }
         path = "/repositories/%s/remove_file/" % repoid
         return self.server.POST(path, rminfo)[1]
 
     def list_files(self, repoid):
-        path = "/repositories/%s/get_files/" % repoid
+        path = "/repositories/%s/files/" % repoid
         return self.server.GET(path)[1]

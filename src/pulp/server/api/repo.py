@@ -1491,40 +1491,44 @@ class RepoApi(BaseApi):
         return result
 
     @audit()
-    def add_file(self, repoid, fileid):
+    def add_file(self, repoid, fileids=[]):
         '''
          Add a file to a repo
          @param repoid: The repo ID.
          @param fileid: file ID.
         '''
         repo = self._get_existing_repo(repoid)
-        fileobj = self.fileapi.file(fileid)
-        if fileobj is None:
-            raise PulpException("File ID [%s] does not exist" % fileid)
-        if fileid not in repo['files']:
-            repo['files'].append(fileid)
+        for fid in fileids:
+            fileobj = self.fileapi.file(fid)
+            if fileobj is None:
+                log.error("File ID [%s] does not exist" % fid)
+                continue
+            if fid not in repo['files']:
+                repo['files'].append(fid)
         self.objectdb.save(repo, safe=True)
-        log.info("Successfully added file %s to repo %s" % (fileid, repoid))
+        log.info("Successfully added files %s to repo %s" % (fileids, repoid))
 
     @audit()
-    def remove_file(self, repoid, fileid):
+    def remove_file(self, repoid, fileids=[]):
         '''
          remove a file from a given repo
          @param repoid: The repo ID.
          @param fileid: file ID.
         '''
         repo = self._get_existing_repo(repoid)
-        fileobj = self.fileapi.file(fileid)
-        if fileobj is None:
-            raise PulpException("File ID [%s] does not exist" % fileid)
-        if fileid in repo['files']:
-            del repo['files'][repo['files'].index(fileid)]
+        for fid in fileids:
+            fileobj = self.fileapi.file(fid)
+            if fileobj is None:
+                log.error("File ID [%s] does not exist" % fid)
+                continue
+            if fid in repo['files']:
+                del repo['files'][repo['files'].index(fid)]
             self.objectdb.save(repo, safe=True)
 #            self.fileapi.delete(fileid)
-            log.info("Successfully removed file %s from repo %s" % (fileid, repoid))
+            log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
         else:
-            log.error("No file with ID %s associated to this repo" % fileid)
-
+            log.error("No file with ID %s associated to this repo" % fileids)
+            
     def list_files(self, repoid):
         '''
          List files in a given repo

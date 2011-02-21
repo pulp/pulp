@@ -348,7 +348,6 @@ class Content(RepoAction):
         all_packages = self.repository_api.packages(id)
         all_pnames = [pkg['filename'] for pkg in all_packages]
         all_errata = self.repository_api.errata(repo['id'])
-        files = repo['files']
         if self.opts.updates:
             consumerid = self.opts.consumerid
             errata_pkg_updates = self.consumer_api.errata_package_updates(consumerid)
@@ -382,12 +381,13 @@ class Content(RepoAction):
         else:
             print '\n'.join(errata[:])
         print _('\nFiles in %s: \n') % id
+        files = self.repository_api.list_files(repo['id'])
         if not files:
             print _(' none')
         else:
-            for f in sorted(repo['files']):
-                fileobj = self.file_api.file(f)
-                print ' ' + fileobj['filename']
+            for f in files:
+                print ' ' + f['filename']
+            
 
 
 class Create(RepoAction):

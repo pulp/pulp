@@ -49,8 +49,14 @@ Done!
 
 import os
 import base64
+import shutil
 import logging
 from pulp.server.compat import json
+from pulp.server import util
+from pulp.server.api.repo_sync import BaseSynchronizer
+from pulp.server.pexceptions import PulpException
+from pulp.server.api.file import FileApi
+#from pulp.server.api.upload import File
 
 log = logging.getLogger(__name__)
 
@@ -256,3 +262,95 @@ class File:
 
     def __str__(self):
         return str(self.md)
+    
+PACKAGE_LOCATION = util.top_package_location()
+    
+class ImportUploadContent:
+    def __init__(self, metadata, upload_id):
+        self.metadata = metadata
+        self.upload_id = upload_id
+    
+    def process(self):
+        """
+        import the content into pulp database
+        """
+        if self.metadata['type'] == 'rpm':
+            return self.__import_rpm()
+        if self.metadata['type'] == 'file':
+            return self.__import_file()
+    
+    def __import_rpm(self):
+        """
+        import the rpms into pulp database
+        """
+        log.info("Importing rpm metadata content into pulp")
+        (name, version, release, epoch, arch) = self.metadata['nvrea']
+        pkg_path = "%s/%s/%s/%s/%s/%s/%s" % \
+                (PACKAGE_LOCATION, self.metadata['checksum'][:3], name, version, release, arch, self.metadata['pkgname'])
+        
+        if util.check_package_exists(pkg_path, self.metadata['checksum'], self.metadata['hashtype']):
+            log.error("Package %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
+            raise
+        # copy the content over to the package location
+        if not self.__finalize_content(pkg_path):
+            return None
+        packageInfo = PackageInfo(name, version, release, epoch, arch,\
+                                  self.metadata['description'], 
+                                  self.metadata['checksum'], self.metadata['pkgname'],
+                                  self.metadata['requires'], self.metadata['provides'])
+        bsync = BaseSynchronizer()
+        pkg = bsync.import_package(packageInfo, repo=None)
+        return pkg
+    
+    def __import_file(self):
+        """
+        import the files into pulp database
+        """
+        log.info("Importing file metadata content into pulp")
+        file_path = "%s/%s/%s" % (PACKAGE_LOCATION, self.metadata['checksum'][:3], self.metadata['pkgname'])
+        if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
+            log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
+            raise
+        if not self.__finalize_content(file_path):
+            return None
+        f = FileApi()
+        fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'], 
+                 self.metadata['checksum'], self.metadata['size'], self.metadata['description'])
+        return fobj
+    
+    def __finalize_content(self, path):
+        """
+         Move the files to final location
+        """
+        log.info("Finalizing the pkg location %s" % path)
+        f = File(self.upload_id)
+        temp_file_path = f.getpath()
+        if not os.path.exists(temp_file_path):
+            log.error("Temporary package missing")
+            return False
+        try:
+            pkg_dirname = os.path.dirname(path)
+            if not os.path.exists(pkg_dirname):
+                os.makedirs(pkg_dirname)
+            shutil.copy(temp_file_path, path)
+            log.info("File copied from %s to %s" % (temp_file_path, path))
+            f.delete()
+        except Exception,e:
+            log.error("Error occurred while copying the file to final location %s" % str(e) )
+            return False
+        return True
+
+class PackageInfo:
+    def __init__(self, name, version, release, epoch, arch, \
+                 description, checksum, relativepath, 
+                 requires, provides):
+        self.name = name
+        self.version = version
+        self.release = release
+        self.epoch = epoch
+        self.arch = arch
+        self.checksum =  checksum
+        self.relativepath = relativepath
+        self.description = description
+        self.requires = requires
+        self.provides = provides

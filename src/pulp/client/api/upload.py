@@ -50,7 +50,7 @@ class UploadAPI(PulpAPI):
         return id
 
     def __append(self, id, buf):
-        path = '/uploads/%s/' % id
+        path = '/services/upload/append/%s/' % id
         buf = base64.b64encode(buf)
         d = dict(encoding='b64', content=buf)
         return self.server.POST(path, d)[1]
@@ -60,7 +60,7 @@ class UploadAPI(PulpAPI):
         checksum = self.__checksum(path)
         size = os.path.getsize(path)
         d = dict(name=fn, checksum=checksum,size=size)
-        path = '/uploads/'
+        path = '/services/upload/'
         d = self.server.POST(path, d)[1]
         return (d['id'], int(d['offset']))
 
@@ -75,3 +75,9 @@ class UploadAPI(PulpAPI):
                 break
         f.close()
         return checksum.hexdigest()
+    
+    def import_content(self, metadata, uploadid):
+        uploadinfo = {'metadata': metadata,
+                      'uploadid': uploadid}
+        path = "/services/upload/import/"
+        return self.server.POST(path, uploadinfo)[1]

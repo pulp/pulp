@@ -15,11 +15,13 @@
 # in this software or its documentation.
 import logging
 import time
-
+import base64
 import web
 
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.upload import File
+from pulp.server.api.upload import ImportUploadContent
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
@@ -45,20 +47,6 @@ class DependencyActions(JSONController):
         """
         data = self.params()
         return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=data['recursive']))
-
-
-class UploadAction(JSONController):
-
-    @JSONController.error_handler
-    @JSONController.auth_required(EXECUTE)
-    def POST(self):
-        """
-        upload package(s) to pulp server and optionally associate them to a repo
-        expects passed in pkgnames, pkg stream and repoids from POST data
-        @return: a dict of printable dependency result and suggested packages
-        """
-        data = self.params()
-        return self.ok(papi.upload(data['pkginfo'], data['pkgstream']))
 
 
 class PackageSearch(JSONController):
@@ -129,12 +117,56 @@ class PackageSearch(JSONController):
         log.warning('deprecated DependencyActions.PUT called')
         return self.POST()
 
+class StartUpload(JSONController):
+
+    @JSONController.error_handler
+    def POST(self):
+        request = self.params()
+        name = request['name']
+        checksum = request['checksum']
+        size = request['size']
+        f = File.open(name, checksum, size)
+        offset = f.next()
+        d = dict(id=f.id, offset=offset)
+        return self.ok(d)
+
+
+class AppendUpload(JSONController):
+
+    @JSONController.error_handler
+    def POST(self, id):
+        f = File(id)
+        segment = self.params()
+        encoding = segment['encoding']
+        content = segment['content']
+        f.append(base64.b64decode(content))
+        return self.ok(True)
+
+class ImportUpload(JSONController):
+    
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        """
+        finalize the uploaded file(s)/package(s) on pulp server and
+        import the metadata into pulp db to create an object;
+        expects passed in metadata and upload_id from POST data
+        @return: a dict of printable dependency result and suggested packages
+        """
+        data = self.params()
+        capi = ImportUploadContent(data['metadata'], data['uploadid'])        
+        return self.ok(capi.process())
+
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
     '/dependencies/$', 'DependencyActions',
     '/search/packages/$', 'PackageSearch',
-    '/upload/$', 'UploadAction',
+    '/upload/$', 'StartUpload',
+    '/upload/append/([^/]+)/$', 'AppendUpload',
+    '/upload/import/$',  'ImportUpload',
+    
 )
 
 application = web.application(URLS, globals())

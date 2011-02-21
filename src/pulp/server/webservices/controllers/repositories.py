@@ -533,7 +533,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful addition of file to repository
         """
         data = self.params()
-        api.add_file(id, data['fileid'])
+        api.add_file(id, data['fileids'])
         return self.ok(True)
 
     def remove_file(self, id):
@@ -542,7 +542,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful deletion of file from repository
         """
         data = self.params()
-        api.remove_file(id, data['fileid'])
+        api.remove_file(id, data['fileids'])
         return self.ok(True)
 
     def addkeys(self, id):

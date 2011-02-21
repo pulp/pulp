@@ -158,7 +158,7 @@ def getFileChecksum(hashtype, filename=None, fd=None, file=None, buffer_size=Non
 class FileError(Exception):
     pass
 
-def processRPM(filename, relativeDir=None):
+def processFile(filename, relativeDir=None):
     # Is this a file?
     if not os.access(filename, os.R_OK):
         raise FileError("Could not stat the file %s" % filename)
@@ -174,12 +174,18 @@ def processRPM(filename, relativeDir=None):
             os.path.basename(filename))
     else:
         hash["relativePath"] = os.path.basename(filename)
+    hash['hashtype'] = "sha256" # we enforce sha256 as default checksum
+    hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
+    hash['pkgname'] = os.path.basename(filename)
     # Read the header
     try:
         ts = rpm.TransactionSet()
         ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         h = readRpmHeader(ts, filename)
+        hash["type"] = "rpm"
     except:
+        hash['type'] = "file"
+        hash['description'] =  None
         return hash
     # Get the name, version, release, epoch, arch
     nvrea = []
@@ -200,9 +206,6 @@ def processRPM(filename, relativeDir=None):
         nvrea.append(h['arch'])
 
     hash['nvrea'] = tuple(nvrea)
-    hash['hashtype'] = "sha256" # we enforce sha256 as default checksum
-    hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
-    hash['pkgname'] = os.path.basename(filename)
     hash['description'] = h['description']
     hash['requires'] = h['requires']
     hash['provides'] = h['provides']
@@ -224,7 +227,8 @@ def readRpmHeader(ts, rpmname):
 
 def is_signed(filename):
     ts = rpm.TransactionSet()
-    hdr = readRpmHeader(ts, filename)
+    ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
+    hdr = readRpmHeader(ts, filename)    
     if hasattr(rpm, "RPMTAG_DSAHEADER"):
         dsaheader = hdr["dsaheader"]
     else:

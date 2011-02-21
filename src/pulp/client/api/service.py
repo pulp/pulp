@@ -48,9 +48,3 @@ class ServiceAPI(PulpAPI):
                    'recursive': recursive}
         path = "/services/dependencies/"
         return self.server.POST(path, params)[1]
-
-    def upload(self, pkginfo, pkgstream):
-        uploadinfo = {'pkginfo': pkginfo,
-                      'pkgstream': pkgstream}
-        path = "/services/upload/"
-        return self.server.POST(path, uploadinfo)[1]

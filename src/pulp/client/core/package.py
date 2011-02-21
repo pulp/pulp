@@ -29,6 +29,8 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.api.service import ServiceAPI
+from pulp.client.api.upload import UploadAPI
+from pulp.client.api.file import FileAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.logutil import getLogger
@@ -45,6 +47,7 @@ class PackageAction(Action):
         self.consumer_group_api = ConsumerGroupAPI()
         self.repository_api = RepositoryAPI()
         self.service_api = ServiceAPI()
+        self.file_api = FileAPI()
 
 # package actions -------------------------------------------------------------
 
@@ -236,7 +239,9 @@ class Upload(PackageAction):
         self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
                                help=_("Optional repoid, to associate the uploaded package"))
         self.parser.add_option( "--nosig", action="store_true", dest="nosig",
-                               help=_("Pushes unsigned packages"))
+                               help=_("pushes unsigned packages"))
+        self.parser.add_option( "--chunksize", dest="chunk", default=10485760, type=int,
+                               help=_("chunk size to use for uploads. Default:10485760"))
         self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
 
     def run(self):
@@ -257,35 +262,30 @@ class Upload(PackageAction):
             print _("* Starting Package Upload\n")
         print _('* Performing Package Uploads to Pulp server')
         pids = {}
-        for frpm in files:
+        fids = {}
+        uapi = UploadAPI()
+        for f in files:
             try:
-                pkginfo = utils.processRPM(frpm)
-                if not utils.is_signed(frpm) and not self.opts.nosig:
-                    msg = _("Package [%s] is not signed. Please use --nosig. Skipping " % frpm)
-                    log.error(msg)
-                    if self.opts.verbose:
-                        print msg
-                    continue
+                pkginfo = utils.processFile(f)
             except utils.FileError, e:
                 msg = _('Error: %s') % e
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
                 continue
-            if not pkginfo.has_key('nvrea'):
-                msg = _("Package %s is not an rpm; skipping") % frpm
-                log.error(msg)
-                if self.opts.verbose:
-                    print msg
-                continue
-            name, version, release, epoch, arch = pkginfo['nvrea']
-            nvrea = [{'name' : name,
-                     'version' : version,
-                     'release' : release,
-                     'epoch'   : epoch,
-                     'arch'    : arch}]
 
-            pkgobj = self.service_api.search_packages(filename=os.path.basename(frpm))
+            if pkginfo.has_key('nvrea'):
+                if not utils.is_signed(f) and not self.opts.nosig:
+                    msg = _("Package [%s] is not signed. Please use --nosig. Skipping " % f)
+                    log.error(msg)
+                    if self.opts.verbose:
+                        print msg
+                    continue
+                pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
+            else:
+                pkgobj = self.file_api.search_file(pkginfo['pkgname'], 
+                                                   pkginfo['hashtype'], 
+                                                   pkginfo['checksum'])
             existing_pkg_checksums = []
             if pkgobj:
                 existing_pkg_checksums = [pobj['checksum']['sha256'] for pobj in pkgobj]
@@ -296,12 +296,19 @@ class Upload(PackageAction):
                 log.info(msg)
                 if self.opts.verbose:
                     print msg
-                pids[frpm] = pobj['id']
-                continue
-            pkgstream = base64.b64encode(open(frpm).read())
-            uploaded = self.service_api.upload(pkginfo, pkgstream)
+                if pkginfo['type'] == 'rpm':
+                    pids[f] = pobj['id']
+                if pkginfo['type'] == 'file':
+                    fids[f] = pobj['id']
+                continue   
+            upload_id = uapi.upload(f, chunksize=self.opts.chunk)
+#            uploaded = self.service_api.upload(pkginfo, upload_id)
+            uploaded = uapi.import_content(pkginfo, upload_id)
             if uploaded:
-                pids[frpm] = uploaded['id']
+                if uploaded['_ns'] == 'package':
+                    pids[f] = uploaded['id']
+                if uploaded['_ns'] == 'file':
+                    fids[f] = uploaded['id']
                 msg = _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
                 log.info(msg)
                 if self.opts.verbose:
@@ -312,9 +319,9 @@ class Upload(PackageAction):
                 if self.opts.verbose:
                     print msg
         if not repoids:
-            system_exit(os.EX_OK, _("\n* Package Upload complete."))
-        if not pids:
-            system_exit(os.EX_DATAERR, _("No packages associate to upload"))
+            system_exit(os.EX_OK, _("\n* Content Upload complete."))
+        if not pids and not fids:
+            system_exit(os.EX_DATAERR, _("No applicable content to associate."))
         print _('\n* Performing Repo Associations ')
         # performing package Repo Association
         for rid in repoids:
@@ -325,8 +332,13 @@ class Upload(PackageAction):
                 if self.opts.verbose:
                     print msg
                 continue
-            self.repository_api.add_package(rid, pids.values())
-            msg = _('Successfully associated following Packages to Repo [%s]: \n%s' % (rid, '\n'.join(pids.keys())))
+            if len(pids):
+                self.repository_api.add_package(rid, pids.values())
+            
+            if len(fids):
+                self.repository_api.add_file(rid, fids.values())
+            msg = _('Successfully associated the following to Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
+                    (rid, '\n'.join(pids.keys()) or None, '\n'.join(fids.keys()) or None))
             log.info(msg)
             if self.opts.verbose:
                 print msg

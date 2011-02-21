@@ -215,23 +215,6 @@ class PackageApi(BaseApi):
         spec = {'filename' : filename}
         return list(self.objectdb.find(spec, fields=['checksum']))
 
-    def upload(self, pkginfo, pkgstream):
-        """
-        Store the uploaded package and persist a package object
-        """
-        from pulp.server import upload
-        try:
-            pkg_upload = upload.PackageUpload(pkginfo, pkgstream)
-            pkg = pkg_upload.upload()
-            log.info("Upload success %s " % pkg['id'])
-        except upload.PackageAlreadyExists, pae:
-            log.error("Package [%s] already exists on server with checksum [%s]" % (pkginfo['pkgname'], pkginfo['checksum']))
-            raise pae
-        except Exception, e:
-            log.error("Upload failed due an unknown exception %s" % e)
-            raise e
-        return pkg
-
     def orphaned_packages(self, fields=["id", "filename", "checksum"]):
         #TODO: Revist this when model changes so we don't need to import RepoApi
         from pulp.server.api.repo import RepoApi
