@@ -14,9 +14,11 @@
 # in this software or its documentation.
 
 import re
+import os
 import pymongo
 import logging
 # Pulp
+import pulp.server.util
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
@@ -57,11 +59,19 @@ class FileApi(BaseApi):
         return f
 
     @audit()
-    def delete(self, id):
+    def delete(self, id, keep_files=False):
         """
         Delete file object based on "id" key
         """
+        fileobj = self.file(id)
+        file_path = "%s/%s/%s" % (pulp.server.util.top_package_location(), 
+                                      fileobj['checksum']['sha256'][:3],
+                                      fileobj['filename'])
         BaseApi.delete(self, _id=id)
+        if not keep_files:
+            log.info("file path to be remove %s" % file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
     def file(self, id):
         """

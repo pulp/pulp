@@ -550,7 +550,7 @@ class RepositoryActions(AsyncController):
         @return: True on successful deletion of file from repository
         """
         data = self.params()
-        api.remove_file(id, data['fileids'])
+        api.remove_file(id, data['fileids'], keep_files=data['keep_files'])
         return self.ok(True)
 
     def addkeys(self, id):

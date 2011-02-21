@@ -1061,22 +1061,28 @@ class AddFiles(RepoAction):
             else:
                 filename, checksum = f, None
 
-            fobj = self.file_api.search_file(filename=filename, checksum=checksum)
+            fobj = self.service_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
                 print _("File [%s] could not be found on server; Skipping add" % filename)
                 continue
             if len(fobj) > 1:
-                print _("There is more than one file with filename [%s]. \
-                            Please use csv option to include checksum.; Skipping add" % filename)
-                continue
-            fids[filename] = fobj[0]
+                if not self.opts.csv: 
+                    print fobj
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % filename)
+                    continue
+                else:
+                    for fo in fobj:
+                        if fo['filename'] == filename and fo['checksum']['sha256'] == checksum:
+                            fids[filename] = fo
+            else:
+                fids[filename] = fobj[0]
 
         for fname, fobj in fids.items():
             if self.opts.srcrepo and not self.opts.srcrepo in fobj["repos"]:
                 print _("File [%s] Could not be found in the repo [%s]" % (filename, self.opts.srcrepo))
                 continue
             try:
-                self.repository_api.add_file(id, fobj['id'])
+                self.repository_api.add_file(id, [fobj['id']])
             except Exception:
                 raise
                 print _("Unable to add package [%s] to repo [%s]" % (fname, id))
@@ -1092,6 +1098,9 @@ class RemoveFiles(RepoAction):
                 help=_("file to remove from this repository"))
         self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
+        self.parser.add_option("--purge-files", action="store_true",dest="purge_files",
+                help=_("Remove files from filesystem on server (optional)"))
+
 
     def run(self):
         id = self.get_required_option('id')
@@ -1099,6 +1108,9 @@ class RemoveFiles(RepoAction):
         self.get_repo(id)
         if self.opts.files and self.opts.csv:
             system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
+        keep_files=True
+        if self.opts.purge_files:
+            keep_files = False
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
@@ -1116,20 +1128,25 @@ class RemoveFiles(RepoAction):
                     continue
             else:
                 filename, checksum = f, None
-
-            fobj = self.file_api.search_file(filename=filename, checksum=checksum)
+            fobj = self.service_api.search_file(filename=filename, checksum=checksum)
             if not len(fobj):
                 print _("File [%s] could not be found on server; Skipping remove" % filename)
                 continue
             if len(fobj) > 1:
-                print _("There is more than one file with filename [%s]. \
-                            Please use csv option to include checksum.; Skipping remove" % filename)
-                continue
-            fids[filename] = fobj[0]['id']
-
+                if not self.opts.csv:
+                    print fobj
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % filename)
+                    continue
+                else:
+                    for fo in fobj:
+                        print fo['filename'], checksum
+                        if fo['filename'] == filename and fo['checksum']['sha256'] == checksum:
+                            fids[filename] = fo['id']
+            else:
+                fids[filename] = fobj[0]['id']
         for fname, fid in fids.items():
             try:
-                self.repository_api.remove_file(id, fid)
+                self.repository_api.remove_file(id, [fid], keep_files=keep_files)
             except Exception:
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))

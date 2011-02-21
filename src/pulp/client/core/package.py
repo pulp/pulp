@@ -304,7 +304,6 @@ class Upload(PackageAction):
                     fids[f] = pobj['id']
                 continue   
             upload_id = uapi.upload(f, chunksize=self.opts.chunk)
-#            uploaded = self.service_api.upload(pkginfo, upload_id)
             uploaded = uapi.import_content(pkginfo, upload_id)
             if uploaded:
                 if pkginfo['type'] == 'rpm':

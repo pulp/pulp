@@ -497,6 +497,10 @@ class RepoApi(BaseApi):
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
+            
+        #remove files:
+        for fileid in repo['files']:
+            self.remove_file(repo['id'], fileid)
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi
@@ -1522,7 +1526,7 @@ class RepoApi(BaseApi):
         log.info("Successfully added files %s to repo %s" % (fileids, repoid))
 
     @audit()
-    def remove_file(self, repoid, fileids=[]):
+    def remove_file(self, repoid, fileids=[], keep_files=False):
         '''
          remove a file from a given repo
          @param repoid: The repo ID.
@@ -1537,7 +1541,8 @@ class RepoApi(BaseApi):
             if fid in repo['files']:
                 del repo['files'][repo['files'].index(fid)]
             self.objectdb.save(repo, safe=True)
-#            self.fileapi.delete(fileid)
+            self.fileapi.delete(fid, keep_files)
+                
             log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
         else:
             log.error("No file with ID %s associated to this repo" % fileids)

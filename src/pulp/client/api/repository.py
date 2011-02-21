@@ -229,8 +229,8 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/add_file/" % repoid
         return self.server.POST(path, addinfo)[1]
 
-    def remove_file(self, repoid, fileid):
-        rminfo = {'repoid': repoid, 'fileids': fileid, }
+    def remove_file(self, repoid, fileids, keep_files=True):
+        rminfo = {'repoid': repoid, 'fileids': fileids, 'keep_files' : keep_files}
         path = "/repositories/%s/remove_file/" % repoid
         return self.server.POST(path, rminfo)[1]
 
