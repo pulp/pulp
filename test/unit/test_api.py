@@ -52,9 +52,9 @@ from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
 from pulp.server.util import top_repos_location
-from pulp.server.auth import cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server import constants
+from pulp.server.pexceptions import PulpException
 import testutil
 
 logging.root.setLevel(logging.ERROR)
@@ -88,16 +88,19 @@ class TestApi(unittest.TestCase):
     def tearDown(self):
         self.clean()
 
-    def test_create(self):
+    def test_repo_create(self):
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com')
         assert(repo is not None)
 
-    def test_create_feedless(self):
+    def test_repo_create_feedless(self):
         repo = self.rapi.create('some-id-no-feed', 'some name', 'i386')
         assert(repo is not None)
 
-    def test_duplicate(self):
+    def test_repo_create_bad_arch(self):
+        self.assertRaises(PulpException, self.rapi.create, 'valid-id', 'valid-name', 'bad-arch')
+
+    def test_repo_duplicate(self):
         id = 'some-id'
         name = 'some name'
         arch = 'i386'

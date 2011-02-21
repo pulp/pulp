@@ -145,6 +145,10 @@ class RepoApi(BaseApi):
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
+
+        if not model.Repo.is_supported_arch(arch):
+            raise PulpException('Architecture must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_ARCHS))
+
         self._validate_schedule(sync_schedule)
 
         r = model.Repo(id, name, arch, feed)

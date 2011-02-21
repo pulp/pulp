@@ -206,6 +206,8 @@ class File(Model):
 
 class Repo(Model):
 
+    SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64']
+
     collection_name = 'repos'
     other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
 
@@ -247,9 +249,11 @@ class Repo(Model):
             return None
         return RepoSource(self.source)
 
+    @classmethod
+    def is_supported_arch(cls, arch):
+        return arch in cls.SUPPORTED_ARCHS
 
 class RepoSource(Model):
-    # yum:http://blah.bloop.com
 
     def __init__(self, url):
         self.supported_types = ['yum', 'local', 'rhn']
@@ -259,10 +263,10 @@ class RepoSource(Model):
 
     def parse_feed(self, source):
         parts = source.split(':')
-        if (len(parts) < 2):
+        if len(parts) < 2:
             msg = "Invalid feed url.  Must be <type>:<path> where types are: %s"
             raise PulpException(msg % self.supported_types)
-        if (self.supported_types.count(parts[0]) < 1):
+        if self.supported_types.count(parts[0]) < 1:
             raise PulpException("Invalid type.  valid types are %s"
                                 % self.supported_types)
         self.type = parts[0]
