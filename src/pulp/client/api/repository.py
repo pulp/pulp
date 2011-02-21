@@ -186,9 +186,6 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/schedules/"
         return self.server.GET(path)[1]
 
-    def sync_status(self, status_path):
-        return self.server.GET(str(status_path))[1]
-
     def add_errata(self, id, errataids):
         erratainfo = {'repoid': id,
                       'errataid': errataids}

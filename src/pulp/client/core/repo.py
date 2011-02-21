@@ -490,7 +490,7 @@ class Clone(RepoProgressAction):
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self.print_progress(task['progress'])
                 time.sleep(0.25)
-                task = self.repository_api.sync_status(task['status_path'])
+                task = self.repository_api.task_status(task['status_path'])
         except KeyboardInterrupt:
             print ''
             return
@@ -650,7 +650,7 @@ class Sync(RepoProgressAction):
             while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
                 self.print_progress(task['progress'])
                 time.sleep(0.25)
-                task = self.repository_api.sync_status(task['status_path'])
+                task = self.repository_api.task_status(task['status_path'])
         except KeyboardInterrupt:
             print ''
             return

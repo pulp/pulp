@@ -26,3 +26,11 @@ class PulpAPI(object):
     @property
     def server(self):
         return server.active_server
+
+    def task_status(self, status_path):
+        """
+        Get the status of a task.
+        @param status_path: The Task.status_path
+        @return: The task status.
+        """
+        return self.server.GET(str(status_path))[1]
