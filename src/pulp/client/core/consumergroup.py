@@ -48,9 +48,12 @@ class List(ConsumerGroupAction):
             system_exit(os.EX_OK, _("No consumer groups available to list"))
         print_header(_("List of Available Consumer Groups"))
         for group in groups:
+            kvpair = []
+            for k, v in group["key_value_pairs"].items():
+                kvpair.append("%s  :  %s," % (str(k), str(v)))
             print constants.AVAILABLE_CONSUMER_GROUP_INFO % \
                     (group["id"], group["description"], group["consumerids"],
-                     group["key_value_pairs"])
+                     '\n \t\t\t'.join(kvpair[:]))
 
 
 class Create(ConsumerGroupAction):
