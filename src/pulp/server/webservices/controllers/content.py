@@ -19,14 +19,12 @@ import logging
 import web
 
 from pulp.server.api.file import FileApi
-from pulp.server.api.repo import RepoApi
-from pulp.server.auth.authorization import READ, EXECUTE
+from pulp.server.auth.authorization import READ, DELETE
 from pulp.server.webservices.controllers.base import JSONController
 
 # globals ---------------------------------------------------------------------
 
 api = FileApi()
-rapi = RepoApi()
 log = logging.getLogger('pulp')
 
 class File(JSONController):
@@ -41,10 +39,21 @@ class File(JSONController):
         """
         return self.ok(api.file(id))
 
+    @JSONController.error_handler
+    @JSONController.auth_required(DELETE)
+    def DELETE(self, id):
+        """
+        Delete an file
+        @param id: file id to delete
+        @return: True on successful deletion of file
+        """
+        api.delete(id=id)
+        return self.ok(True)
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
-    '/files/([^/]+)/$', 'File',
+    '/file/([^/]+)/$', 'File',
 )
 
 application = web.application(URLS, globals())

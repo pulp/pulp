@@ -22,6 +22,10 @@ class FileAPI(PulpAPI):
     """
     
     def file(self, id):
-        path = "/content/files/%s/" % id
+        path = "/content/file/%s/" % str(id)
         return self.server.GET(path)[1]
+    
+    def delete(self, id):
+        path = "/content/file/%s/" % id
+        return self.server.DELETE(path)[1]
 
