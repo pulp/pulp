@@ -190,7 +190,7 @@ class RepositoryDeferredFields(JSONController):
     def packages(self, id):
         valid_filters = ('name', 'version', 'release', 'epoch', 'arch', 'filename')
         filters = self.filters(valid_filters)
-        spec = mongo.filters_to_re_spec(filters)
+        spec = mongo.filters_to_re_spec(filters) or {}
         try:
             packages = api.get_packages(id, spec, ['filename'])
         except PulpException:
