@@ -193,10 +193,10 @@ class RepositoryDeferredFields(JSONController):
         spec = mongo.filters_to_re_spec(filters) or {}
         try:
             packages = api.get_packages(id, spec, ['filename'])
-        except PulpException:
+        except PulpException: # XXX this isn't specific enough!
             return self.not_found('No repository %s' % id)
         else:
-            return self.ok([p['filename'] for p in packages])
+            return self.ok(packages)
         #TODO: Extremely slow for large repos
         #repo = api.repository(id, ['id', 'packages'])
         #packages = pkg_api.package_filenames(spec={'id': {'$in': [p for p in repo['packages']]}})
