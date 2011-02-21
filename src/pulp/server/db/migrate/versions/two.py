@@ -72,6 +72,9 @@ def _migrate_repo_model():
         if not isinstance(repo['packages'], list):
             repo['packages'] = [pkg_id for pkg_id in repo['packages']]
             modified = True
+        if 'allow_upload' in repo:
+            del repo['allow_upload']
+            modified = True
         if modified:
             collection.save(repo)
 

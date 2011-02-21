@@ -238,7 +238,6 @@ class Repo(Model):
         self.groupid = []
         self.relative_path = None
         self.files = []
-        self.allow_upload = 0
         self.publish = False
         self.clone_ids = []
         self.distributionid = []

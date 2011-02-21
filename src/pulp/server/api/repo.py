@@ -171,8 +171,7 @@ class RepoApi(BaseApi):
                     r['relative_path'] = url_parse[2] or r['id']
             else:
                 r['relative_path'] = r['id']
-                # There is no repo source, allow package uploads
-                r['allow_upload'] = 1
+
         else:
             r['relative_path'] = relative_path
         # Remove leading "/", they will interfere with symlink
@@ -456,7 +455,7 @@ class RepoApi(BaseApi):
 
     @event(subject='repo.deleted')
     @audit()
-    def delete(self, id):
+    def delete(self, id, keep_files=False):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
 
@@ -497,10 +496,10 @@ class RepoApi(BaseApi):
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
-            
+
         #remove files:
         for fileid in repo['files']:
-            self.remove_file(repo['id'], fileid)
+            self.remove_file(repo['id'], fileid, keep_files)
         #unsubscribe consumers from this repo
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi
