@@ -292,28 +292,30 @@ class Upload(PackageAction):
                 pkgobj = self.service_api.search_file(pkginfo['pkgname'],
                                                    pkginfo['hashtype'],
                                                    pkginfo['checksum'])
-            existing_pkg_checksums = []
+            existing_pkg_checksums = {}
             if pkgobj:
-                existing_pkg_checksums = [pobj['checksum']['sha256'] for pobj in pkgobj]
+                for pobj in pkgobj:
+                    existing_pkg_checksums[pobj['checksum']['sha256']] = pobj
 
-            if pkginfo['checksum'] in existing_pkg_checksums:
+            if pkginfo['checksum'] in existing_pkg_checksums.keys():
+                pobj = existing_pkg_checksums[pkginfo['checksum']]
                 msg = _("Package [%s] already exists on the server with checksum [%s]") % \
                             (pobj['filename'], pobj['checksum']['sha256'])
                 log.info(msg)
                 if self.opts.verbose:
                     print msg
                 if pkginfo['type'] == 'rpm':
-                    pids[f] = pobj['id']
+                    pids[os.path.basename(f)] = pobj['id']
                 else:
-                    fids[f] = pobj['id']
+                    fids[os.path.basename(f)] = pobj['id']
                 continue
             upload_id = uapi.upload(f, chunksize=self.opts.chunk)
             uploaded = uapi.import_content(pkginfo, upload_id)
             if uploaded:
                 if pkginfo['type'] == 'rpm':
-                    pids[f] = uploaded['id']
+                    pids[os.path.basename(f)] = uploaded['id']
                 else:
-                    fids[f] = uploaded['id']
+                    fids[os.path.basename(f)] = uploaded['id']
                 msg = _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
                 log.info(msg)
                 if self.opts.verbose:
@@ -338,12 +340,13 @@ class Upload(PackageAction):
                 if self.opts.verbose:
                     print msg
                 continue
+
             if len(pids):
                 self.repository_api.add_package(rid, pids.values())
 
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
-            msg = _('Successfully associated the following to Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
+            msg = _('Package association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
                     (rid, '\n'.join(pids.keys()) or None, '\n'.join(fids.keys()) or None))
             log.info(msg)
             if self.opts.verbose:
