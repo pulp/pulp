@@ -18,7 +18,7 @@
 from pulp.client.cli.admin import AdminCLI
 from pulp.client.core import (
     auth, cds, consumer, consumergroup, errata, package,
-    packagegroup, repo, user, distribution, permission, role)
+    packagegroup, repo, user, distribution, permission, role, content)
 
 def setup_admin(admin):
     auth_cmd = auth.Auth()
@@ -74,8 +74,6 @@ def setup_admin(admin):
     package_cmd.add_action('install', package.Install())
     package_cmd.add_action('search', package.Search())
     package_cmd.add_action('deplist', package.DependencyList())
-    package_cmd.add_action('upload', package.Upload())
-    package_cmd.add_action('list', package.List())
     admin.add_command('package', package_cmd)
 
     packagegroup_cmd = packagegroup.PackageGroup()
@@ -142,6 +140,12 @@ def setup_admin(admin):
     role_cmd.add_action('add', role.Add())
     role_cmd.add_action('remove', role.Remove())
     admin.add_command('role', role_cmd)
+    
+    content_cmd = content.Content()
+    content_cmd.add_action('upload', content.Upload())
+    content_cmd.add_action('list', content.List())
+    admin.add_command('content', content_cmd)
+    
 
 
 if __name__ == "__main__":

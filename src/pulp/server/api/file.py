@@ -100,3 +100,16 @@ class FileApi(BaseApi):
             return list(self.objectdb.find(fields=fields))
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
+        
+    def orphaned_files(self, fields=["filename", "checksum"]):
+        #TODO: Revist this when model changes so we don't need to import RepoApi
+        from pulp.server.api.repo import RepoApi
+        rapi = RepoApi()
+        repo_fileids = set()
+        repos = rapi.repositories(fields=["files"])
+        for r in repos:
+            repo_fileids.update(r["files"])
+        fils = self.files(fields=["id"])
+        fileids = set([x["id"] for x in fils])
+        orphans = list(fileids.difference(repo_fileids))
+        return list(self.objectdb.find({"id":{"$in":orphans}}, fields))

@@ -28,4 +28,8 @@ class FileAPI(PulpAPI):
     def delete(self, id):
         path = "/content/file/%s/" % id
         return self.server.DELETE(path)[1]
+    
+    def orphaned_files(self):
+        path = "/orphaned/files/"
+        return self.server.GET(path)[1]
 
