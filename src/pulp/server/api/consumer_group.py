@@ -101,7 +101,7 @@ class ConsumerGroupApi(BaseApi):
         if consumer is None:
             raise PulpException("No Consumer with id: %s found" % consumerid)
         conflicting_keyvalues = self.find_conflicting_keyvalues(groupid, consumerid)
-        if conflicting_keyvalues is not None:
+        if len(conflicting_keyvalues.keys()) > 0:
             raise PulpException('Consumer [%s] cannot be added to consumergroup [%s] because of the following '
                                 'conflicting key-value pairs. You need to delete these key-values from the consumer '
                                 'in order to add it to this consumergroup: %s', consumerid, groupid, conflicting_keyvalues)
