@@ -267,6 +267,7 @@ class Upload(PackageAction):
         print _('* Performing Package Uploads to Pulp server')
         pids = {}
         fids = {}
+        exit_code = 0
         uapi = UploadAPI()
         for f in files:
             try:
@@ -284,6 +285,7 @@ class Upload(PackageAction):
                     log.error(msg)
                     if self.opts.verbose:
                         print msg
+                    exit_code = os.EX_DATAERR
                     continue
                 pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
             else:
@@ -321,8 +323,9 @@ class Upload(PackageAction):
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
+                exit_code = os.EX_DATAERR
         if not repoids:
-            system_exit(os.EX_OK, _("\n* Content Upload complete."))
+            system_exit(exit_code, _("\n* Content Upload complete."))
         if not pids and not fids:
             system_exit(os.EX_DATAERR, _("No applicable content to associate."))
         print _('\n* Performing Repo Associations ')
@@ -345,7 +348,7 @@ class Upload(PackageAction):
             log.info(msg)
             if self.opts.verbose:
                 print msg
-        print _("\n* Package Upload complete.")
+        system_exit(exit_code, _("\n* Package Upload complete."))
 
 
 class List(PackageAction):
