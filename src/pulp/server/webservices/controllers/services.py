@@ -23,6 +23,8 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
 from pulp.server.auth.authorization import READ, EXECUTE
+from pulp.server.db.model import Status
+from pulp.server.db.version import VERSION
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController
 
@@ -93,10 +95,10 @@ class PackageSearch(JSONController):
         filename = None
         if data.has_key("filename"):
             filename = data["filename"]
-        checksum_type=None
+        checksum_type = None
         if data.has_key("checksum_type"):
             checksum_type = data["checksum_type"]
-        checksum=None
+        checksum = None
         if data.has_key("checksum"):
             checksum = data["checksum"]
         start_time = time.time()
@@ -143,7 +145,7 @@ class AppendUpload(JSONController):
         return self.ok(True)
 
 class ImportUpload(JSONController):
-    
+
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
     def POST(self):
@@ -154,7 +156,7 @@ class ImportUpload(JSONController):
         @return: a dict of printable dependency result and suggested packages
         """
         data = self.params()
-        capi = ImportUploadContent(data['metadata'], data['uploadid'])        
+        capi = ImportUploadContent(data['metadata'], data['uploadid'])
         return self.ok(capi.process())
 
 
@@ -174,7 +176,7 @@ class FileSearch(JSONController):
             filename = data["filename"]
         checksum_type = None
         if data.has_key("checksum_type"):
-            checksum_type = data["checksum_type"] 
+            checksum_type = data["checksum_type"]
         checksum = None
         if data.has_key("checksum"):
             checksum = data["checksum"]
@@ -182,10 +184,36 @@ class FileSearch(JSONController):
         for f in files:
             f["repos"] = rapi.find_repos_by_files(f["id"])
         return self.ok(files)
-    
+
     def PUT(self):
         log.debug('deprecated Users.PUT method called')
         return self.POST()
+
+
+class StatusService(JSONController):
+
+    @JSONController.error_handler
+    def GET(self):
+        """
+        Dummy call that just prints time.
+        @return: db_version - current DB version number
+        """
+        start_time = time.time()
+        collection = Status.get_collection()
+        status = collection.find_one({}) or Status()
+
+        # increment the counter and return
+        status['count'] += 1
+        status['timestamp'] = start_time
+        collection.save(status, safe=True)
+
+        # return the response
+        return self.ok({
+          "db_version": VERSION,
+          "status_count": status['count'],
+          "status_duration_ms": str(round((time.time() - start_time) * 1000, 2)),
+        })
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
@@ -194,8 +222,8 @@ URLS = (
     '/search/files/$', 'FileSearch',
     '/upload/$', 'StartUpload',
     '/upload/append/([^/]+)/$', 'AppendUpload',
-    '/upload/import/$',  'ImportUpload',
-    
+    '/upload/import/$', 'ImportUpload',
+    '/status/$', 'StatusService',
 )
 
 application = web.application(URLS, globals())

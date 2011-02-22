@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,9 +13,21 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import time
 
-from pulp.server.db.model.audit import *
-from pulp.server.db.model.auth import *
-from pulp.server.db.model.cds import *
-from pulp.server.db.model.status import *
-from pulp.server.db.model.resource import *
+from pulp.server.db.model.base import Model
+
+
+class Status(Model):
+    """
+    Status model used to record the number of times the status service has
+    been called and the time of the last call.
+    """
+
+    collection_name = 'status'
+    other_indicies = ('timestamp')
+
+    def __init__(self):
+        super(Status, self).__init__()
+        self.count = 0
+        self.timestamp = time.time()
