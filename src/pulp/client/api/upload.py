@@ -64,21 +64,26 @@ class UploadAPI(PulpAPI):
     Connection class to access upload related calls
     """
 
-    def upload(self, path, chunksize=0xA00000):
+    def upload(self, path, checksum=None, chunksize=0xA00000):
         """
         Upload a file at the specified path.
         @param path: The abs path to a file to upload.
         @type path: str
+        @param checksum: The (optional) file checksum.
+        @type checksum: str
         @param checksize: The upload chunking size.  Default=10M.
         @type chunksize: int
         @return: The file upload ID.
         @rtype: str
         """
-        md5 = self.__md5(path)
-        momento = Momento(path, md5)
+        if not checksum:
+            checksum = self.__checksum(path)
+        else:
+            checksum = str(checksum)
+        momento = Momento(path, checksum)
         uuid = momento.read()
         try:
-            uuid, offset = self.__start(path, md5, uuid)
+            uuid, offset = self.__start(path, checksum, uuid)
             if offset < 0:
                 # already uploaded
                 return uuid
@@ -91,10 +96,10 @@ class UploadAPI(PulpAPI):
             momento.delete()
         return uuid
 
-    def __start(self, path, md5, uuid):
+    def __start(self, path, checksum, uuid):
         fn = os.path.basename(path)
         size = os.path.getsize(path)
-        d = dict(name=fn, checksum=md5, size=size, uuid=uuid)
+        d = dict(name=fn, checksum=checksum, size=size, uuid=uuid)
         path = '/services/upload/'
         d = self.server.POST(path, d)[1]
         return (d['uuid'], int(d['offset']))
@@ -115,7 +120,7 @@ class UploadAPI(PulpAPI):
         path = '/services/upload/append/%s/' % id
         return self.server.PUT(path, buf)[1]
 
-    def __md5(self, path):
+    def __checksum(self, path):
         f = open(path)
         checksum = hashlib.md5()
         while(1):
