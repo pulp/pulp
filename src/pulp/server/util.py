@@ -324,10 +324,10 @@ def create_symlinks(source_path, link_path):
         log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
         os.symlink(source_path, link_path)
         
-def create_repo(dir, groups=None):
-    cmd = "createrepo -g %s --update %s" % (groups, dir)
+def create_repo(dir, groups=None, checksum_type="sha256"):
+    cmd = "createrepo --checksum %s -g %s --update %s" % (checksum_type, groups, dir)
     if not groups:
-        cmd = "createrepo --update %s" % (dir)
+        cmd = "createrepo --checksum %s --update %s" % (checksum_type, dir)
         repodata_file = os.path.join(dir, "repodata", "repomd.xml")
         if os.path.isfile(repodata_file):
             log.info("Checking what metadata types are available: %s" % \
@@ -337,7 +337,7 @@ def create_repo(dir, groups=None):
                     repodata_file, "group")
                 comps_file = os.path.join(dir, comps_file)
                 if comps_file and os.path.isfile(comps_file):
-                    cmd = "createrepo -g %s --update %s" % (comps_file, dir)
+                    cmd = "createrepo --checksum %s -g %s --update %s" % (checksum_type, comps_file, dir)
     status, out = commands.getstatusoutput(cmd)
 
     if status != 0:

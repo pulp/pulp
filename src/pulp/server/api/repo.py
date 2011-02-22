@@ -137,7 +137,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               cert_data=None, groupid=(), relative_path=None, gpgkeys=()):
+               cert_data=None, groupid=(), relative_path=None, gpgkeys=(), checksum_type="sha256"):
         """
         Create a new Repository object and return it
         """
@@ -147,6 +147,9 @@ class RepoApi(BaseApi):
 
         if not model.Repo.is_supported_arch(arch):
             raise PulpException('Architecture must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_ARCHS))
+        
+        if not model.Repo.is_supported_checksum(checksum_type):
+            raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
 
         self._validate_schedule(sync_schedule)
 
@@ -180,6 +183,7 @@ class RepoApi(BaseApi):
         r['repomd_xml_path'] = \
                 os.path.join(pulp.server.util.top_repos_location(),
                         r['relative_path'], 'repodata/repomd.xml')
+        r['checksum_type'] = checksum_type
         if gpgkeys:
             root = pulp.server.util.top_repos_location()
             path = r['relative_path']
@@ -258,10 +262,10 @@ class RepoApi(BaseApi):
         if feed == 'origin':
             origin_feed = repo['source']['type'] + ":" + repo['source']['url']
             self.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
-                        relative_path=clone_id, cert_data=cert_data)
+                        relative_path=clone_id, cert_data=cert_data, checksum_type=repo['checksum_type'])
         else:
             self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
-                        relative_path=relative_path, cert_data=cert_data)
+                        relative_path=relative_path, cert_data=cert_data, checksum_type=repo['checksum_type'])
         # Sync from parent repo
         try:
             self._sync(clone_id, progress_callback=progress_callback)
@@ -752,7 +756,7 @@ class RepoApi(BaseApi):
                     os.symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
-        pulp.server.util.create_repo(repo_path)
+        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         self.objectdb.save(repo, safe=True)
 
     def _add_package(self, repo, p):

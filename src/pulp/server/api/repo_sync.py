@@ -755,7 +755,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     progress_callback(self.progress)
                 log.info("Running createrepo, this may take a few minutes to complete.")
                 start = time.time()
-                pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path)
+                pulp.server.util.create_repo(dst_repo_dir, groups=groups_xml_path, checksum_type=repo['checksum_type'])
                 end = time.time()
                 log.info("Createrepo finished in %s seconds" % (end - start))
                 if prestodelta_path:

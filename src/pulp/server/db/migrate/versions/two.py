@@ -75,6 +75,9 @@ def _migrate_repo_model():
         if 'allow_upload' in repo:
             del repo['allow_upload']
             modified = True
+        if 'checksum_type' not in repo:
+            repo['checksum_type'] = u'sha256'
+            modified = True
         if modified:
             collection.save(repo)
 

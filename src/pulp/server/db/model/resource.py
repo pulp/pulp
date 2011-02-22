@@ -207,6 +207,7 @@ class File(Model):
 class Repo(Model):
 
     SUPPORTED_ARCHS = ['noarch', 'i386', 'i686', 'ppc64', 's390x', 'x86_64']
+    SUPPORTED_CHECKSUMS = ['sha256', 'sha', 'sha1', 'md5']
 
     collection_name = 'repos'
     other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
@@ -241,6 +242,7 @@ class Repo(Model):
         self.publish = False
         self.clone_ids = []
         self.distributionid = []
+        self.checksum_type = u"sha256"
 #        self.size = None
 
     def get_repo_source(self):
@@ -251,6 +253,10 @@ class Repo(Model):
     @classmethod
     def is_supported_arch(cls, arch):
         return arch in cls.SUPPORTED_ARCHS
+    
+    @classmethod
+    def is_supported_checksum(cls, checksum_type):
+        return checksum_type in cls.SUPPORTED_CHECKSUMS
 
 class RepoSource(Model):
 

@@ -49,7 +49,8 @@ default_fields = [
     'files',
     'publish',
     'clone_ids',
-    'distributionid'
+    'distributionid',
+    'checksum_type'
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -101,7 +102,8 @@ class Repositories(JSONController):
                           cert_data=repo_data.get('cert_data', None),
                           relative_path=repo_data.get('relative_path', None),
                           groupid=repo_data.get('groupid', None),
-                          gpgkeys=repo_data.get('gpgkeys', None),)
+                          gpgkeys=repo_data.get('gpgkeys', None),
+                          checksum_type=repo_data.get('checksum_type', 'sha256'))
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path

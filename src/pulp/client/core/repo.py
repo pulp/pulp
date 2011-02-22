@@ -418,6 +418,8 @@ class Create(RepoAction):
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--gpgkeys", dest="keys",
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
+        self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
+                               help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
 
     def _get_cert_options(self):
         cacert = self.opts.cacert
@@ -447,7 +449,7 @@ class Create(RepoAction):
                                  cert_data=cert_data,
                                  relative_path=relative_path,
                                  groupid=groupid,
-                                 gpgkeys=keylist)
+                                 gpgkeys=keylist, checksum_type=self.opts.checksum_type)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 class Clone(RepoProgressAction):
