@@ -392,10 +392,10 @@ class InstallPackages(AgentTask):
         Perform the RMI to the agent to install packages.
         """
         for item in self.items:
-             agent = AsyncAgent(item['consumerid'])
-             packages = agent.Packages(self)
-             sn = packages.install(item['packages'], item['reboot_suggested'], item['assumeyes'])
-             self.serials[sn] = item['consumerid']
+            agent = AsyncAgent(item['consumerid'])
+            packages = agent.Packages(self)
+            sn = packages.install(item['packages'], item['reboot_suggested'], item['assumeyes'])
+            self.serials[sn] = item['consumerid']
 
     def succeeded(self, sn, result):
         """
