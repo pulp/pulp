@@ -64,6 +64,9 @@ class FileApi(BaseApi):
         Delete file object based on "id" key
         """
         fileobj = self.file(id)
+        if not fileobj:
+            log.error("File id [%s] not found " % id)
+            return
         file_path = "%s/%s/%s" % (pulp.server.util.top_package_location(), 
                                       fileobj['checksum']['sha256'][:3],
                                       fileobj['filename'])

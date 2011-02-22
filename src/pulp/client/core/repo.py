@@ -1103,8 +1103,6 @@ class RemoveFiles(RepoAction):
                 help=_("file to remove from this repository"))
         self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
-        self.parser.add_option("--purge-files", action="store_true",dest="purge_files",
-                help=_("Remove files from filesystem on server (optional)"))
 
 
     def run(self):
@@ -1113,9 +1111,7 @@ class RemoveFiles(RepoAction):
         self.get_repo(id)
         if self.opts.files and self.opts.csv:
             system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
-        keep_files=True
-        if self.opts.purge_files:
-            keep_files = False
+        
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
@@ -1151,7 +1147,7 @@ class RemoveFiles(RepoAction):
                 fids[filename] = fobj[0]['id']
         for fname, fid in fids.items():
             try:
-                self.repository_api.remove_file(id, [fid], keep_files=keep_files)
+                self.repository_api.remove_file(id, [fid])
             except Exception:
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
