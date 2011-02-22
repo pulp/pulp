@@ -119,7 +119,7 @@ class Upload(ContentAction):
                 else:
                     fids[os.path.basename(f)] = pobj['id']
                 continue
-            upload_id = uapi.upload(f, chunksize=self.opts.chunk)
+            upload_id = uapi.upload(f, checksum=pkginfo['checksum'], chunksize=self.opts.chunk)
             uploaded = uapi.import_content(pkginfo, upload_id)
             if uploaded:
                 if pkginfo['type'] == 'rpm':
