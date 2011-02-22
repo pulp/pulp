@@ -98,8 +98,13 @@ class ConsumerGroupApi(BaseApi):
         if (consumergroup is None):
             raise PulpException("No Consumer Group with id: %s found" % groupid)
         consumer = self.consumerApi.consumer(consumerid)
-        if (consumer is None):
+        if consumer is None:
             raise PulpException("No Consumer with id: %s found" % consumerid)
+        conflicting_keyvalues = self.find_conflicting_keyvalues(groupid, consumerid)
+        if conflicting_keyvalues is not None:
+            raise PulpException('Consumer [%s] cannot be added to consumergroup [%s] because of the following '
+                                'conflicting key-value pairs. You need to delete these key-values from the consumer '
+                                'in order to add it to this consumergroup: %s', consumerid, groupid, conflicting_keyvalues)
         self._add_consumer(consumergroup, consumer)
         self.update(consumergroup)
 
@@ -167,6 +172,18 @@ class ConsumerGroupApi(BaseApi):
         consumerids = consumergroup['consumerids']
         for consumerid in consumerids:
             self.consumerApi.unbind(consumerid, repoid)
+
+    def find_conflicting_keyvalues(self, id, consumerid):
+        """
+        Find keyvalues of a consumer that are conflicting with this consumer group
+        """
+        conflicting_keyvalues = {}
+        consumergroup = self.consumergroup(id)
+        consumer_keyvalues = self.consumerApi.get_keyvalues(consumerid)
+        for key, value in consumergroup['key_value_pairs'].items():
+            if key in consumer_keyvalues.keys() and value != consumer_keyvalues[key]:
+                conflicting_keyvalues[key] = consumer_keyvalues[key]
+        return conflicting_keyvalues
 
     def find_consumers_with_conflicting_keyvalues(self, id, key, value):
         """
