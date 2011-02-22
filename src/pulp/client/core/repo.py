@@ -811,12 +811,15 @@ class AddPackages(RepoAction):
                     print(_("Package %s could not be found skipping" % pkg))
                     continue
                 if len(src_pkgobj) > 1:
-                    msg = _("There is more than one file with filename [%s]. \
-                            Please use csv option to include checksum.; Skipping add" % pkg)
-                    log.error(msg)
-                    print msg
-                    continue
-                src_pkgobj = src_pkgobj[0]
+                    if not self.opts.csv:
+                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % pkg)
+                        continue
+                    else:
+                        for fo in src_pkgobj:
+                            if fo['filename'] == pkg and fo['checksum']['sha256'] == checksum:
+                                src_pkgobj = fo
+                else:
+                    src_pkgobj = src_pkgobj[0]
             tgt_pkgobj = self.lookup_repo_packages(pkg, id, checksum=checksum)
             if tgt_pkgobj:
                 print (_("Package [%s] are already part of repo [%s]. skipping" % (pkg, id)))
