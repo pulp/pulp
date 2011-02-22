@@ -15,7 +15,6 @@
 # in this software or its documentation.
 import logging
 import time
-import base64
 import web
 
 from pulp.server.api.package import PackageApi
@@ -127,21 +126,20 @@ class StartUpload(JSONController):
         name = request['name']
         checksum = request['checksum']
         size = request['size']
-        f = File.open(name, checksum, size)
+        uuid = request['uuid']
+        f = File.open(name, checksum, size, uuid)
         offset = f.next()
-        d = dict(id=f.id, offset=offset)
+        d = dict(uuid=f.uuid, offset=offset)
         return self.ok(d)
 
 
 class AppendUpload(JSONController):
 
     @JSONController.error_handler
-    def POST(self, id):
-        f = File(id)
-        segment = self.params()
-        encoding = segment['encoding']
-        content = segment['content']
-        f.append(base64.b64decode(content))
+    def PUT(self, uuid):
+        f = File(uuid)
+        content = self.data()
+        f.append(content)
         return self.ok(True)
 
 class ImportUpload(JSONController):

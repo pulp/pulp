@@ -15,8 +15,48 @@
 
 import os
 import hashlib
-import base64
 from pulp.client.api.base import PulpAPI
+
+
+class Momento:
+    """
+    Upload momento contains an upload uuid.
+    """
+
+    ROOT = '~/.pulp/upload'
+
+    def __init__(self, path, checksum):
+        fn = os.path.basename(path)
+        root = os.path.expanduser(self.ROOT)
+        path = path = os.path.join(root, str(checksum))
+        self.path = os.path.join(path, fn)
+        self.__mkdir(path)
+
+    def write(self, uuid):
+        f = open(self.path, 'w')
+        f.write(uuid)
+        f.close()
+
+    def read(self):
+        try:
+            f = open(self.path)
+            uuid = f.read()
+            f.close()
+            return uuid
+        except:
+            pass
+
+    def delete(self):
+        try:
+            os.unlink(self.path)
+            os.rmdir(os.path.dirname(self.path))
+        except:
+            pass
+
+    def __mkdir(self, path):
+        if not os.path.exists(path):
+            os.makedirs(path)
+
 
 
 class UploadAPI(PulpAPI):
@@ -34,37 +74,48 @@ class UploadAPI(PulpAPI):
         @return: The file upload ID.
         @rtype: str
         """
-        id, offset = self.__start(path)
-        if offset < 0:
-            # already uploaded
-            return id
+        md5 = self.__md5(path)
+        momento = Momento(path, md5)
+        uuid = momento.read()
+        try:
+            uuid, offset = self.__start(path, md5, uuid)
+            if offset < 0:
+                # already uploaded
+                return uuid
+            momento.write(uuid)
+            self.__upload(path, offset, uuid, chunksize)
+            momento.delete()
+        except SystemExit, KeyboardInterrupt:
+            pass # resume later
+        except Exception:
+            momento.delete()
+        return uuid
+
+    def __start(self, path, md5, uuid):
+        fn = os.path.basename(path)
+        size = os.path.getsize(path)
+        d = dict(name=fn, checksum=md5, size=size, uuid=uuid)
+        path = '/services/upload/'
+        d = self.server.POST(path, d)[1]
+        return (d['uuid'], int(d['offset']))
+
+    def __upload(self, path, offset, uuid, bufsize):
         f = open(path)
         f.seek(offset)
         while(1):
-            buf = f.read(chunksize)
+            buf = f.read(bufsize)
             if buf:
-                self.__append(id, buf)
+                self.__append(uuid, buf)
             else:
                 break
         f.close()
-        return id
+        return self
 
     def __append(self, id, buf):
         path = '/services/upload/append/%s/' % id
-        buf = base64.b64encode(buf)
-        d = dict(encoding='b64', content=buf)
-        return self.server.POST(path, d)[1]
+        return self.server.PUT(path, buf)[1]
 
-    def __start(self, path):
-        fn = os.path.basename(path)
-        checksum = self.__checksum(path)
-        size = os.path.getsize(path)
-        d = dict(name=fn, checksum=checksum,size=size)
-        path = '/services/upload/'
-        d = self.server.POST(path, d)[1]
-        return (d['id'], int(d['offset']))
-
-    def __checksum(self, path):
+    def __md5(self, path):
         f = open(path)
         checksum = hashlib.md5()
         while(1):

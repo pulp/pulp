@@ -147,6 +147,13 @@ class JSONController(object):
             return {}
         return json.loads(data)
 
+    def data(self):
+        """
+        Get binary POST/PUT payload.
+        @return: raw data.
+        """
+        return web.data()
+
     def filters(self, valid):
         """
         Fetch any parameters passed on the url

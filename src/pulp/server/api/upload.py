@@ -48,15 +48,14 @@ Done!
 """
 
 import os
-import base64
 import shutil
 import logging
+from uuid import uuid4
 from pulp.server.compat import json
 from pulp.server import util
 from pulp.server.api.repo_sync import BaseSynchronizer
 from pulp.server.pexceptions import PulpException
 from pulp.server.api.file import FileApi
-#from pulp.server.api.upload import File
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +117,7 @@ class File:
     ROOT = '/var/lib/pulp/uploads'
 
     @classmethod
-    def open(cls, name, checksum, size=0):
+    def open(cls, name, checksum, size, uuid=None):
         """
         Open (initialize) a file upload and return a L{File} object.
         @param name: The file name.
@@ -126,24 +125,31 @@ class File:
         @param checksum: The MD5 checksum.  Ensures uniqueness.
         @type checksum: str:hexdigest
         @param size: The file size (bytes).
-        @param size: int 
+        @param size: int
+        @param uuid: The (optional) upload uuid used to resume upload.
+        @type uuid: str
         """
-        id = '.'.join((name, str(checksum)))
-        f = File(id)
+        if not uuid:
+            uuid = str(uuid4())
+        else:
+            log.info('upload resumed: %s (%s)', uuid, name)
+        f = File(uuid)
         md = Metadata(f.__path())
+        md.uuid = uuid
         md.name = name
         md.checksum = checksum
         md.size = size
         md.valid = 1
         md.write()
-        return File(id)
+        f.md = md
+        return f
 
-    def __init__(self, id):
+    def __init__(self, uuid):
         """
         @param id: The file upload ID.
         @type id: str
         """
-        self.id = id
+        self.uuid = uuid
         self.md = Metadata(self.__path())
 
     def next(self):
@@ -225,12 +231,11 @@ class File:
         return [os.path.join(dir,fn) for fn in files]
 
     def __afpath(self):
-        fn = self.id.rsplit('.', 1)[0]
-        path = os.path.join(self.__path(), fn)
+        path = os.path.join(self.__path(), self.md.name)
         return path
 
     def __path(self):
-        path = os.path.join(self.ROOT, self.id)
+        path = os.path.join(self.ROOT, self.uuid)
         if not os.path.exists(path):
             os.makedirs(path)
         return path
@@ -258,7 +263,7 @@ class File:
     
     def __valid(self):
         if not self.md.valid:
-            raise NotValid(self.id)
+            raise NotValid(self.uuid)
 
     def __str__(self):
         return str(self.md)
