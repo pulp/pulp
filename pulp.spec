@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.139
+Version:        0.0.140
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,66 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Tue Feb 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.140-1
+- Refactor client connections into API classes that miror API classes
+  in the server.api package.
+- Refactor connections base into server module.
+- remove the allow_upload option on repos and allow all uploads by default
+  (pkilambi@redhat.com)
+- only attempt to remove files if they are not part of other repos
+  (pkilambi@redhat.com)
+- added fields filter to packages deferred field to enable limiting of package
+  fields passed back by api (jconnor@redhat.com)
+- 669802 - consumergroup list now presents key-value attributes the same way as
+  consumer list presents them (skarmark@redhat.com)
+- Adding a keep_files option to remove_files and --purge-files to cli
+  (pkilambi@redhat.com)
+- list repo packages in csv format (pkilambi@redhat.com)
+- cleaning up the content ws and adding a delete call (pkilambi@redhat.com)
+- Adding orphaned packages lookp on the client to show in csv type format
+  (pkilambi@redhat.com)
+- remove restrictions on rpm type; allows any type of upload
+  (pkilambi@redhat.com)
+- Upload Enhancements: support non-rpms; chunked, interruptable upload.
+  (pkilambi@redhat.com)
+- 668097 - Added enumerated value set and checking for arch when creating a
+  repo. (jason.dobies@redhat.com)
+- fixed types parameter from query in errata (jconnor@redhat.com)
+- removed the list_errata action and changed the client to use the errata
+  deferred field (jconnor@redhat.com)
+- experiment with map/reduce for computing orphaned_packages
+  (jmatthews@redhat.com)
+- 678658- Fix client refactoring & auth issues. (jortel@redhat.com)
+- Adding packages.orphaned_packages() returns list of packages not associated
+  to any repository (jmatthews@redhat.com)
+- Add chunksize to (client) UploadAPI.upload(). (jortel@redhat.com)
+- removing checksum type from csv and have it default to sha256
+  (pkilambi@redhat.com)
+- Fix upload file validity testing. (jortel@redhat.com)
+- Production location /var/lib/pulp and updated docs. (jortel@redhat.com)
+- Add generic file upload service. (jortel@redhat.com)
+- Ability to restrict uploading unsigned packages. --nosig to allow unsigned
+  uploads (pkilambi@redhat.com)
+- changed all username password signature to make password optional
+  (jconnor@redhat.com)
+- Restrict package associations to NVREA. If package with same nvrea exists
+  add_package will log the message and skip the associations
+  (pkilambi@redhat.com)
+- * Adding csv and checksum lookup support for add/remove operations
+  (pkilambi@redhat.com)
+- replaced the connection objects with new api objects (jconnor@redhat.com)
+- changed cli to use new global server added simpler, more stream lined
+  credential handling (jconnor@redhat.com)
+- storing active server in server module (jconnor@redhat.com)
+- changed out restlib exception to new server request error
+  (jconnor@redhat.com)
+- changed all server calls made by the api to take into account that server
+  requests now return a tuple of (status, body) instead of just body
+  (jconnor@redhat.com)
+- added lazy setting of the server to the called action (jconnor@redhat.com)
+- added code in server to default to using basic auth over ssl credentials
+  (jconnor@redhat.com)
+
 * Wed Feb 16 2011 Jeff Ortel <jortel@redhat.com> 0.0.139-1
 - added try/except for handling of certs other than admin in check_user_cert
   (jconnor@redhat.com)
