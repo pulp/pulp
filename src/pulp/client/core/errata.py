@@ -51,7 +51,7 @@ class List(ErrataAction):
     description = _('list applicable errata')
 
     def __init__(self, is_consumer_client=False):
-        Action.__init__(self)
+        super(List, self).__init__()
         self.is_consumer_client = is_consumer_client
 
     def setup_parser(self):
