@@ -321,8 +321,12 @@ class AsyncController(JSONController):
         @return dict representing task
         """
         fields = ('id', 'method_name', 'state', 'start_time', 'finish_time',
-                 'result', 'exception', 'traceback', 'progress', 'scheduled_time')
-        return dict((f, getattr(task, f)) for f in fields)
+                  'result', 'exception', 'traceback', 'progress',
+                  'scheduled_time')
+        d = dict((f, getattr(task, f)) for f in fields)
+        if isinstance(task.exception, Exception):
+            d['exception'] = str(task.exception)
+        return d
 
     def _status_path(self, id):
         """
