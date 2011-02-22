@@ -69,7 +69,7 @@ class List(ErrataAction):
                                help=_('This option is required if a consumer doesn\'t exist locally.'))
         self.parser.add_option("--repoid", dest="repoid",
                                help=_("repository id"))
-        self.parser.add_option("--type", dest="type", action="append",
+        self.parser.add_option("--type", dest="type", action="append", default=[],
                                help=_("type of errata to lookup; supported types: security, bugfix, enhancement"))
 
     def run(self):
