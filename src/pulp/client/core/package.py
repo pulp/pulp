@@ -351,7 +351,7 @@ class Upload(PackageAction):
             log.info(msg)
             if self.opts.verbose:
                 print msg
-        system_exit(exit_code, _("\n* Package Upload complete."))
+        system_exit(exit_code, _("\n* Content Upload complete."))
 
 
 class List(PackageAction):
@@ -370,7 +370,8 @@ class List(PackageAction):
 
         if self.opts.orphaned:
             orphaned_pkgs = self.package_api.orphaned_packages()
-
+            if not len(orphaned_pkgs):
+                system_exit(os.EX_OK, _("No orphaned packages on server"))
             for pkg in orphaned_pkgs:
                 try:
                     print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
@@ -378,6 +379,8 @@ class List(PackageAction):
                     pass
         if self.opts.repoid:
             repo_pkgs = self.repository_api.packages(self.opts.repoid)
+            if not len(repo_pkgs):
+                system_exit(os.EX_OK, _("No packages in the repo [%s]" % self.opts.repoid))
             for pkg in repo_pkgs:
                 try:
                     print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
