@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import re
+import os
 import pymongo
 import logging
 # Pulp
@@ -22,7 +23,7 @@ from pulp.server.auditing import audit
 from pulp.server.db import model
 #from pulp.server.db.connection import get_object_db
 from pulp.server.api.depsolver import DepSolver
-
+import pulp.server.util
 from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
@@ -70,10 +71,18 @@ class PackageApi(BaseApi):
         return p
 
     @audit()
-    def delete(self, id):
+    def delete(self, id, keep_files=False):
         """
         Delete package version object based on "_id" key
         """
+        if not keep_files:
+            pkg = self.package(id)
+            pkg_packages_path = pulp.server.util.get_shared_package_path(
+                                           pkg["name"], pkg["version"], pkg["release"], pkg["arch"],
+                                           pkg["filename"], pkg["checksum"])
+            if os.path.exists(pkg_packages_path):
+                log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
+                os.remove(pkg_packages_path)
         BaseApi.delete(self, _id=id)
 
     def package(self, id):

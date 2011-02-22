@@ -496,7 +496,14 @@ class RepoApi(BaseApi):
         path = repo['relative_path']
         ks = KeyStore(path)
         ks.clean(True)
-
+        
+        #remove packages
+        for pkgid in repo["packages"]:
+            repos = self.find_repos_by_package(pkgid)
+            if repo["id"] in repos and len(repos) == 1:
+                self.packageapi.delete(pkgid, keep_files)
+            else:
+                log.info("Not deleting %s since it is referenced by these repos: %s" % (pkgid, repos))
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
@@ -760,6 +767,7 @@ class RepoApi(BaseApi):
                     os.symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
+        #TODO: we also need to account for presto/groups/comps metadata
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         self.objectdb.save(repo, safe=True)
 
@@ -809,21 +817,13 @@ class RepoApi(BaseApi):
             if os.path.exists(pkg_repo_path):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_repo_path))
                 os.remove(pkg_repo_path)
-            repos_with_pkg = self.find_repos_by_package(pkg["id"])
-            if len(repos_with_pkg) == 1 and repoid in repos_with_pkg:
-                # NOTE:  We haven't saved the repo object yet, so mongo still
-                # thinks that this pkg is associated to repoid.  Therefore if mongo
-                # returns this as the only repo associated we are free to delete this
-                # package and update mongo at the end of this loop
-                self.packageapi.delete(pkg["id"])
-                pkg_packages_path = pulp.server.util.get_shared_package_path(
-                    pkg["name"], pkg["version"], pkg["release"], pkg["arch"],
-                    pkg["filename"], pkg["checksum"])
-                if os.path.exists(pkg_packages_path):
-                    log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
-                    os.remove(pkg_packages_path)
         self.objectdb.save(repo, safe=True)
-
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
+        #TODO: we also need to account for presto/groups/comps metadata
+        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
 
     def find_repos_by_package(self, pkgid):
         """

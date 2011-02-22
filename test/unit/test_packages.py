@@ -133,14 +133,50 @@ class TestApi(unittest.TestCase):
         self.rapi.remove_package(repo['id'], p)
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(p['id'] not in repo["packages"])
-        # Verify package has been removed from repo and since
-        # no other repos were referencing it, the package has been removed
-        # from the package collection as well
-        found = self.papi.packages(name=test_pkg_name, epoch=test_epoch,
-                version=test_version, release=test_release, arch=test_arch,
-                filename=test_filename, checksum_type=test_checksum_type,
-                checksum=test_checksum)
-        self.assertTrue(len(found) == 0)
+        
+    def test_package_delete_repo(self):
+        repo = self.rapi.create('some-id', 'some name',
+            'i386', 'yum:http://example.com')
+        repo = self.rapi.repository(repo["id"])
+        test_pkg_name = "test_package_versions_name"
+        test_epoch = "1"
+        test_version = "1.2.3"
+        test_release = "1.el5"
+        test_arch = "x86_64"
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+                release=test_release, arch=test_arch, description=test_description,
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        print "Package! %s" % p
+        # Add this package version to the repo
+        self.rapi.add_package(repo["id"],[p['id']])
+        # Lookup repo and confirm new package version was added
+        repo = self.rapi.repository(repo["id"])
+        self.assertTrue(p['id'] in repo["packages"])
+        packageid = p['id']
+        saved_pkg = self.papi.package(p['id'])
+        self.assertTrue(saved_pkg)
+        self.assertTrue(saved_pkg['name'] == test_pkg_name)
+        self.assertTrue(saved_pkg['epoch'] == test_epoch)
+        self.assertTrue(saved_pkg['version'] == test_version)
+        self.assertTrue(saved_pkg['release'] == test_release)
+        self.assertTrue(saved_pkg['arch'] == test_arch)
+        self.assertTrue(saved_pkg['description'] == test_description)
+        self.assertTrue(saved_pkg['checksum'].has_key(test_checksum_type))
+        self.assertTrue(saved_pkg['checksum'][test_checksum_type] == test_checksum)
+        self.assertTrue(saved_pkg['filename'] == test_filename)
+        # Verify we can find this package version through repo api calls
+        pkgs = self.rapi.packages(repo['id'], name=test_pkg_name)
+        self.assertTrue(len(pkgs) == 1)
+        self.assertTrue(pkgs[packageid]["id"] == packageid)
+        self.assertTrue(pkgs[packageid]['filename'] == test_filename)
+
+        self.rapi.delete(repo['id'])
+        found = self.papi.package(p['id'])
+        self.assertTrue(found is None)
 
     def test_find_repos_by_package(self):
         repo_a = self.rapi.create('some-id_a', 'some name',
