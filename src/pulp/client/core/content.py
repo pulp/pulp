@@ -200,6 +200,75 @@ class List(ContentAction):
                     print "%s,%s" % (pkg['filename'], pkg['checksum']['sha256'])
                 except:
                     pass
+                
+class Delete(ContentAction):
+    
+    description = _("Delete content from the pulp server")
+
+    def setup_parser(self):
+        self.parser.add_option("-f", "--filename", action="append", dest="files",
+                               help=_("content filename to delete from server"))
+        self.parser.add_option("--csv", dest="csv",
+                               help=_("a content csv with list of files to remove;format:filename,checksum"))
+        
+    def run(self):
+        if self.opts.files and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
+            
+        fids = {}
+        if self.opts.csv:
+            if not os.path.exists(self.opts.csv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            flist = utils.parseCSV(self.opts.csv)
+        else:
+            if not self.opts.files:
+                system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an remove."))
+            flist = self.opts.files
+        exit_code = 0    
+        fids = {}
+        for f in flist:
+            if isinstance(f, list) or len(f) == 2:
+                if not len(f) == 2:
+                    log.error("Bad format [%s] in csv, skipping" % f)
+                    continue
+                filename, checksum = f
+            else:
+                filename, checksum = f, None
+            #TODO: Once package/file api are merge to contentapi, replace this check with global content_search
+            if filename.endswith('.rpm'):
+                pkgobj = self.service_api.search_packages(filename=filename, checksum=checksum)
+            else:
+                pkgobj = self.service_api.search_file(filename=filename, checksum=checksum)
+
+            if not pkgobj:
+                print _("Content with filename [%s] could not be found on server; skipping delete" % filename)
+                exit_code = os.EX_DATAERR
+                continue
+            
+            if len(pkgobj) > 1:
+                if not self.opts.csv:
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping delete" % filename)
+                    exit_code = os.EX_DATAERR
+                    continue
+                else:
+                    for fo in pkgobj:
+                        if fo['filename'] == filename and fo['checksum']['sha256'] == checksum:
+                            pobj = fo
+            else:
+                pobj = pkgobj[0]
+            
+            if len(pobj['repos']):
+                print _("content with filename [%s] is currently associated other repos; Cannot perform delete; skipping" % filename)
+                exit_code = os.EX_DATAERR
+                continue
+            #TODO: Once package/file api are merge to contentapi, replace this check with global content_search
+            if pobj['filename'].endswith('.rpm'):
+                self.package_api.delete(pobj['id'])
+            else:
+                self.file_api.delete(pobj['id'])
+            
+            print _("Successfully delete content [%s] from pulp server" % filename)
+        system_exit(exit_code)
 
 # content command -------------------------------------------------------------
 

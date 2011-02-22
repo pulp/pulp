@@ -144,6 +144,7 @@ def setup_admin(admin):
     content_cmd = content.Content()
     content_cmd.add_action('upload', content.Upload())
     content_cmd.add_action('list', content.List())
+    content_cmd.add_action('delete', content.Delete())
     admin.add_command('content', content_cmd)
     
 
