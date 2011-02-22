@@ -82,11 +82,11 @@ class UploadAPI(PulpAPI):
             if offset < 0:
                 # already uploaded
                 return uuid
-            momento.write(uuid)
             self.__upload(path, offset, uuid, chunksize)
             momento.delete()
-        except SystemExit, KeyboardInterrupt:
-            pass # resume later
+        except KeyboardInterrupt, ke:
+            momento.write(uuid)
+            raise ke
         except Exception:
             momento.delete()
         return uuid
