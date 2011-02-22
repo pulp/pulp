@@ -112,6 +112,7 @@ class Install(PackageAction):
         print _('Task is scheduled for: %s') % \
                 time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
         state = None
+        status = None
         spath = task['status_path']
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
             sys.stdout.write('.')
@@ -121,9 +122,14 @@ class Install(PackageAction):
             state = status['state']
         if state == 'finished':
             print _('\n[%s] installed on %s') % \
-                  (status['result'], (consumerid or consumergroupid))
+                    (status['result'], (consumerid or consumergroupid))
         else:
-            system_exit(-1, _("\nPackage install failed"))
+            msg = _('\nPackage install failed: %s') % state
+            if status is not None and state == 'error':
+                msg += _('\nException: %s\nTraceback: %s') % \
+                        (status['exception'], status['traceback'])
+            system_exit(-1, msg)
+
 
 class Search(PackageAction):
 
