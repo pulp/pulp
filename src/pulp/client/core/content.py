@@ -91,6 +91,13 @@ class Upload(ContentAction):
                     continue
             except _rpm.error:
                 log.error("Could not read the header, perhaps not an rpm; continue")
+            except Exception,e:
+                msg = "Error: %s" % e
+                log.error(msg)
+                exit_code = os.EX_DATAERR
+                if self.opts.verbose:
+                    print msg
+                continue 
             try:
                 metadata = utils.processFile(f)
             except utils.FileError, e:
