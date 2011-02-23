@@ -128,10 +128,10 @@ class StartUpload(JSONController):
         name = request['name']
         checksum = request['checksum']
         size = request['size']
-        uuid = request.get('uuid')
+        uuid = request.get('id')
         f = File.open(name, checksum, size, uuid)
         offset = f.next()
-        d = dict(uuid=f.uuid, offset=offset)
+        d = dict(id=f.uuid, offset=offset)
         return self.ok(d)
 
 

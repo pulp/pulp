@@ -99,10 +99,10 @@ class UploadAPI(PulpAPI):
     def __start(self, path, checksum, uuid):
         fn = os.path.basename(path)
         size = os.path.getsize(path)
-        d = dict(name=fn, checksum=checksum, size=size, uuid=uuid)
+        d = dict(name=fn, checksum=checksum, size=size, id=uuid)
         path = '/services/upload/'
         d = self.server.POST(path, d)[1]
-        return (d['uuid'], int(d['offset']))
+        return (d['id'], int(d['offset']))
 
     def __upload(self, path, offset, uuid, bufsize):
         f = open(path)
