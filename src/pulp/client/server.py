@@ -226,7 +226,7 @@ class PulpServer(Server):
         # NOTE this throws a ServerRequestError if the request did not succeed
         connection = self._connect()
         url = self._build_url(path, queries)
-        if isinstance(body, dict):
+        if not isinstance(body, (type(None), bytes,)):
             body = json.dumps(body)
         self._log.debug('sending %s request to %s' % (method, url))
         #print >> sys.stderr, 'sending %s request to %s' % (method, url)
@@ -246,6 +246,10 @@ class PulpServer(Server):
                 raise ServerRequestError(response.status, message, traceback)
             raise ServerRequestError(response.status, response_body, None)
         return (response.status, response_body)
+
+    def _encoded(self, body):
+        if body is None:
+            return body
 
     # credentials setters -----------------------------------------------------
 
