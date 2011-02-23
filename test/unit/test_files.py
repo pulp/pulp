@@ -71,22 +71,11 @@ class TestFiles(unittest.TestCase):
         filename = "pulp-test.iso"
         checksum_type = "sha256"
         checksum = "b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c"
-        sample_file = self.fapi.create(filename, checksum_type, checksum, None, None)
-        assert(sample_file is not None)
-        exception_caught = False
-        try:
-            sample_file = self.fapi.create(filename, checksum_type, checksum, None, None)
-        except DuplicateKeyError:
-            exception_caught = True
-        self.assertTrue(exception_caught)
-        checksum_type = "sha256"
-        checksum = "c5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c"
-        no_exception = True
-        try:
-            sample_file = self.fapi.create("pulp-test.iso", checksum_type, checksum, None, None)
-        except DuplicateKeyError:
-            no_exception = False
-        self.assertTrue(no_exception)
+        sample_file_1 = self.fapi.create(filename, checksum_type, checksum, None, None)
+        assert(sample_file_1 is not None)
+        sample_file_2 = self.fapi.create(filename, checksum_type, checksum, None, None)
+        assert(sample_file_2 is not None)
+        self.assertTrue(sample_file_1['id'] == sample_file_2["id"])
 
     def test_delete(self):
         filename = "pulp-test.iso"
