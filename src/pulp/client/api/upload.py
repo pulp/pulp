@@ -110,7 +110,7 @@ class UploadAPI(PulpAPI):
         while(1):
             buf = f.read(bufsize)
             if buf:
-                self.__append(uuid, bytes(buf))
+                self.__append(uuid, bytearray(buf))
             else:
                 break
         f.close()
