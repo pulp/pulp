@@ -521,7 +521,7 @@ class LocalSynchronizer(BaseSynchronizer):
 
     def _process_rpm(self, pkg, dst_repo_dir):
         pkg_info = pulp.server.util.get_rpm_information(pkg)
-        pkg_checksum = pulp.server.util.get_file_checksum(filename=pkg)
+        pkg_checksum = pulp.server.util.get_file_checksum(hashtype="sha256", filename=pkg)
         pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
                 pkg_info['version'], pkg_info['release'], pkg_info['arch'],
                 os.path.basename(pkg), pkg_checksum)
