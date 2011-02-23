@@ -15,72 +15,61 @@ from iniparse import ConfigParser
 import os
 
 class Repo(dict):
-    """
-    A yum repo (content set).
-    @cvar CA: The absolute path to the CA.
-    @type CA: str
-    @cvar PROPERTIES: Yum repo property definitions.
-    @type PROPERTIES: tuple.
-    """
+    '''
+    Holder object for repo data. Upon instantiation, the instance will be populated with
+    default values. When the repo is sent to the RepoFile (either through add_repo or
+    update_repo), the current values in a Repo instance will be written to the
+    underlying store.
 
-    CA = None
+    Repo-specific values are set using dict notation with the exception of the URL for
+    the repo. This is done through the set_repo_urls method.
+    '''
 
-    # (name, mutable, default)
+    # Default properties in the form: (name, default_value)
+    # This list does not contain 'baseurl' or 'mirrorlist' since we can only have
+    # one of them present in a repo at any time and defaulting them will cause their
+    # presence in the generated repo file. Special handling will be done in
+    # the items() call to add in whichever is present.
     PROPERTIES = (
-        ('name', 0, None),
-        ('baseurl', 0, None),
-        ('enabled', 0, '1'),
-        ('gpgkey', 0, None),
-        ('sslverify', 0, '0'),
-        ('gpgcheck', 0, '0')
+        ('name', None),
+        ('enabled', '1'),
+        ('gpgkey', None),
+        ('sslverify', '0'),
+        ('gpgcheck', '0'),
     )
 
     def __init__(self, id):
-        """
-        @param id: The repo (unique) id.
-        @type id: str
-        """
+        '''
+        Creates a new instance, populating itself with the default values for all
+        properties defined in PROPERTIES.
+
+        @param id: unique identifier for the repo
+        @type  id: string
+        '''
         self.id = id
-        for k, m, d in self.PROPERTIES:
+        for k, d in self.PROPERTIES:
             self[k] = d
 
     def items(self):
-        """
-        Get I{ordered} items.
-        @return: A list of ordered items.
-        @rtype: list
-        """
+        '''
+        Returns a list of relevant key/value pairs set for this instance.
+
+        @return: list of key/value pairs describing the repo
+        @rtype:  list of tuples; (string, string)
+        '''
         lst = []
-        for k, m, d in self.PROPERTIES:
+        for k, d in self.PROPERTIES:
             v = self.get(k)
             lst.append((k, v))
+
+        # Since we'll have either baseurl or mirrorlist, keep them out of
+        # PROPERTIES and do explicit handling here.
+        if 'baseurl' in self:
+            lst.append(('baseurl', self.get('baseurl')))
+        if 'mirrorlist' in self:
+            lst.append(('mirrorlist', self.get('mirrorlist')))
+
         return tuple(lst)
-
-    def update(self, other):
-        """
-        Update (merge) based on property definitions.
-        @param other: The object to merge.
-        @type other: L{Repo}.
-        @return: The number of properties updated.
-        @rtype: int
-        """
-        count = 0
-        for k, m, d in self.PROPERTIES:
-            v = other.get(k)
-            if m:
-                continue
-            if self.__eq(self[k], v):
-                continue
-            self[k] = v
-            count += 1
-        return count
-
-    def __eq(self, a, b):
-        if a and b:
-            return a == b
-        if (not a) and (not b):
-            return True
-        return False
 
     def __str__(self):
         s = []
@@ -174,6 +163,11 @@ class RepoFile(object):
         '''
         Adds a new repo to this object, however the file is not saved.
 
+        This is not saved as an object reference, so future changes to the passed in
+        repo will not be captured in this RepoFile instance. If changes are made to
+        the original Repo object, it must be passed into the RepoFile instance through
+        update_repo in order for the changes to be captured.
+
         @param repo: repo to add; may not be None
         @type  repo: L{Repo}
         '''
@@ -182,7 +176,8 @@ class RepoFile(object):
 
     def remove_repo_by_name(self, repo_name):
         '''
-        Removes the repo with the given name.
+        Removes the repo with the given name. If the repo does not exist, this
+        method does nothing.
 
         @param repo: identifies the repo to remove
         @type  repo: string
@@ -194,11 +189,14 @@ class RepoFile(object):
         Updates the underlying store with the latest contents of a repo. The repo
         passed to this method must have been created prior to this call.
 
+        The repo is not saved as an object reference. Instead, the values are captured
+        to the underlying store at the point in time this is called.
+
         @param repo: repo instance containing updated values to store; cannot be None
         @type  repo: L{Repo}
         '''
         self._repo_to_parser(repo)
-
+        
     def get_repo(self, repo_name):
         '''
         Loads a repo by name. If the repo does not exist, returns None.
@@ -259,7 +257,72 @@ class RepoFile(object):
 
         return repo
 
-class Reader:
+class MirrorListFile(object):
+    '''
+    This is a similar abstraction as RepoFile is. It represents a single local mirror
+    list file, regardless of whether or not the file has been saved yet. The usage is
+    to create the instance, specifying the filename to which it will be written,
+    populate the entries, and save the file.
+    '''
+
+    def __init__(self, filename):
+        '''
+        @param filename: absolute path to the repo file; the repo file does not need to
+                         exist at the time of instantiation, the save method will write it
+                         out if it doesn't
+        @type  filename: string; may not be None
+
+        @raise ValueError: if filename is missing
+        '''
+        if filename is None:
+            raise ValueError('Filename must be specified when creating a MirrorListFile')
+
+        self.filename = filename
+        self.entries = []
+
+    def add_entry(self, url):
+        '''
+        Adds a new entry in this mirror list.
+
+        @param url: repo URL to be added to the mirror list; cannot be None
+        @type  url: string
+        '''
+        self.entries.append(url)
+
+    def delete(self):
+        '''
+        If the mirror list file exists, it will be deleted. If not, this method does nothing.
+
+        @raise Exception: if there is an error during the delete
+        '''
+        if os.path.exists(self.filename):
+            os.unlink(self.filename)
+
+    def load(self):
+        '''
+        Loads the contents of the mirror list from the file into this instance. This
+        will overwrite any entries already in this instance.
+
+        @raise Exception: if the file cannot be read
+        '''
+        f = open(self.filename, 'r')
+        entries = f.read()
+        self.entries = entries.split()
+        f.close()
+        
+    def save(self):
+        '''
+        Writes the entries in this instance out to the file.
+
+        @raise Exception: if there is an error during the save
+        '''
+        f = open(self.filename, 'w')
+        for entry in self.entries:
+            f.write(entry)
+            f.write('\n')
+        f.close()
+
+class Reader(object):
     '''
     Reader object used to mitigate annoying behavior of iniparse of leaving blank
     lines when removing sections.
@@ -302,3 +365,4 @@ class Reader:
             ln = '\n'
         self.idx = i
         return ln
+

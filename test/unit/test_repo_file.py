@@ -23,21 +23,24 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.client.repo_file import Repo, RepoFile
+from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
 
-TEST_FILENAME = '/tmp/TestRepoFile.repo'
+TEST_REPO_FILENAME = '/tmp/TestRepoFile.repo'
+TEST_MIRROR_LIST_FILENAME = '/tmp/TestRepoFile.mirrorlist'
+
+# -- repo file tests ------------------------------------------------------------------
 
 class TestRepoFile(unittest.TestCase):
 
     def setUp(self):
         # Clean up from any previous runs that may have exited abnormally
-        if os.path.exists(TEST_FILENAME):
-            os.remove(TEST_FILENAME)
+        if os.path.exists(TEST_REPO_FILENAME):
+            os.remove(TEST_REPO_FILENAME)
 
     def tearDown(self):
         # Clean up in case the test file was saved in a test
-        if os.path.exists(TEST_FILENAME):
-            os.remove(TEST_FILENAME)
+        if os.path.exists(TEST_REPO_FILENAME):
+            os.remove(TEST_REPO_FILENAME)
 
     def test_one_repo_save_and_load(self):
         '''
@@ -53,17 +56,17 @@ class TestRepoFile(unittest.TestCase):
         add_me['sslverify'] = 0
         add_me['gpgcheck'] = 0
 
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
 
         # Test Save
         repo_file.add_repo(add_me)
         repo_file.save()
 
         # Verify Save
-        self.assertTrue(os.path.exists(TEST_FILENAME))
+        self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
 
         # Test Load
-        loaded = RepoFile(TEST_FILENAME)
+        loaded = RepoFile(TEST_REPO_FILENAME)
         loaded.load()
 
         # Verify Load
@@ -85,7 +88,7 @@ class TestRepoFile(unittest.TestCase):
         repo2 = Repo('test-repo-2')
         repo2['baseurl'] = 'http://localhost/repo2'
 
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
 
         # Test
         repo_file.add_repo(repo1)
@@ -93,7 +96,7 @@ class TestRepoFile(unittest.TestCase):
         repo_file.save()
 
         # Verify
-        loaded = RepoFile(TEST_FILENAME)
+        loaded = RepoFile(TEST_REPO_FILENAME)
         loaded.load()
 
         self.assertEqual(2, len(loaded.all_repos()))
@@ -115,7 +118,7 @@ class TestRepoFile(unittest.TestCase):
         repo1 = Repo('test-repo-1')
         repo2 = Repo('test-repo-2')
 
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.add_repo(repo1)
         repo_file.add_repo(repo2)
         repo_file.save()
@@ -125,13 +128,29 @@ class TestRepoFile(unittest.TestCase):
         repo_file.save()
 
         # Verify
-        loaded = RepoFile(TEST_FILENAME)
+        loaded = RepoFile(TEST_REPO_FILENAME)
         loaded.load()
         
         self.assertEqual(1, len(loaded.all_repos()))
 
         self.assertTrue(loaded.get_repo('test-repo-1') is None)
         self.assertTrue(loaded.get_repo('test-repo-2') is not None)
+
+    def test_delete_repo_no_repo(self):
+        '''
+        Ensures that an error is not thrown when a repo that does not exist is
+        deleted from the repo file.
+        '''
+
+        # Setup
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.add_repo(Repo('test-repo-1'))
+
+        # Test
+        repo_file.remove_repo_by_name('foo')
+
+        # Verify
+        self.assertTrue(repo_file.get_repo('test-repo-1') is not None)
 
     def test_update_repo(self):
         '''
@@ -142,7 +161,7 @@ class TestRepoFile(unittest.TestCase):
         repo1 = Repo('test-repo-1')
         repo1['baseurl'] = 'http://localhost/repo1'
 
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.add_repo(repo1)
         repo_file.save()
 
@@ -152,7 +171,7 @@ class TestRepoFile(unittest.TestCase):
         repo_file.save()
 
         # Verify
-        loaded = RepoFile(TEST_FILENAME)
+        loaded = RepoFile(TEST_REPO_FILENAME)
         loaded.load()
 
         found_repo = loaded.get_repo('test-repo-1')
@@ -164,11 +183,11 @@ class TestRepoFile(unittest.TestCase):
         '''
 
         # Test
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.save()
 
         # Verify
-        loaded = RepoFile(TEST_FILENAME)
+        loaded = RepoFile(TEST_REPO_FILENAME)
         loaded.load()
 
         # Verify
@@ -180,18 +199,18 @@ class TestRepoFile(unittest.TestCase):
         '''
 
         # Setup
-        self.assertTrue(not os.path.exists(TEST_FILENAME))
+        self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
 
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.save()
 
-        self.assertTrue(os.path.exists(TEST_FILENAME))
+        self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
 
         # Test
         repo_file.delete()
 
         # Verify
-        self.assertTrue(not os.path.exists(TEST_FILENAME))
+        self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
 
     def test_broken_save(self):
         '''
@@ -223,12 +242,12 @@ class TestRepoFile(unittest.TestCase):
         '''
 
         # Setup
-        f = open(TEST_FILENAME, 'w')
+        f = open(TEST_REPO_FILENAME, 'w')
         f.write('This is not parsable.')
         f.close()
 
         # Test
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
 
         self.assertRaises(Exception, repo_file.load)
 
@@ -238,10 +257,10 @@ class TestRepoFile(unittest.TestCase):
         '''
 
         # Setup
-        self.assertTrue(not os.path.exists(TEST_FILENAME))
+        self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
 
         # Test
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.delete()
 
         # Verify
@@ -253,11 +272,11 @@ class TestRepoFile(unittest.TestCase):
         '''
 
         # Setup
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
         repo_file.save()
 
         # Test
-        f = open(TEST_FILENAME, 'r')
+        f = open(TEST_REPO_FILENAME, 'r')
         contents = f.read()
         f.close()
 
@@ -271,7 +290,7 @@ class TestRepoFile(unittest.TestCase):
         '''
 
         # Setup
-        repo_file = RepoFile(TEST_FILENAME)
+        repo_file = RepoFile(TEST_REPO_FILENAME)
 
         # Test
         found = repo_file.get_repo('foo')
@@ -287,6 +306,136 @@ class TestRepoFile(unittest.TestCase):
 
         # Test
         self.assertRaises(ValueError, RepoFile, None)
+
+    def test_baseurl_not_mirrorlist(self):
+        '''
+        Tests that if a baseurl is specified, a mirrorlist entry isn't written to the
+        saved repo file.
+        '''
+
+        # Setup
+        repo = Repo('test-repo-1')
+        repo['baseurl'] = 'http://localhost'
+
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.add_repo(repo)
+        repo_file.save()
+
+        # Test
+        loaded = RepoFile(TEST_REPO_FILENAME)
+        loaded.load()
+
+        loaded_repo = loaded.get_repo('test-repo-1')
+        self.assertEqual(loaded_repo['baseurl'], 'http://localhost')
+        self.assertTrue('mirrorlist' not in loaded_repo)
+
+    def test_mirrorlist_not_baseurl(self):
+        '''
+        Tests that if a mirrorlist is specified, a baseurl entry isn't written to the
+        saved repo file.
+        '''
+
+        # Setup
+        repo = Repo('test-repo-1')
+        repo['mirrorlist'] = 'file://etc/pulp/mirrorlist'
+
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.add_repo(repo)
+        repo_file.save()
+
+        # Test
+        loaded = RepoFile(TEST_REPO_FILENAME)
+        loaded.load()
+
+        loaded_repo = loaded.get_repo('test-repo-1')
+        self.assertEqual(loaded_repo['mirrorlist'], 'file://etc/pulp/mirrorlist')
+        self.assertTrue('baseurl' not in loaded_repo)
+
+# -- mirror list tests ----------------------------------------------------------------
+
+class TestMirrorListFile(unittest.TestCase):
+
+    def setUp(self):
+        # Clean up from any previous runs that may have exited abnormally
+        if os.path.exists(TEST_MIRROR_LIST_FILENAME):
+            os.remove(TEST_MIRROR_LIST_FILENAME)
+
+    def tearDown(self):
+        # Clean up in case the test file was saved in a test
+        if os.path.exists(TEST_MIRROR_LIST_FILENAME):
+            os.remove(TEST_MIRROR_LIST_FILENAME)
+
+    def test_missing_filename(self):
+        '''
+        Tests that a MirrorListFile cannot be created without specifying a filename.
+        '''
+
+        # Test
+        self.assertRaises(ValueError, MirrorListFile, None)
+
+    def test_multiple_entries_save_load(self):
+        '''
+        Tests creating a new mirror list file with multiple entries, saving it, and then
+        loading it back from disk.
+        '''
+
+        # Test Save
+        mirror_list = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
+        mirror_list.add_entry('http://cds-01')
+        mirror_list.add_entry('http://cds-02')
+
+        mirror_list.save()
+
+        # Verify Save
+        self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        # Test Load
+        loaded = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
+        loaded.load()
+
+        # Verify Load
+        self.assertEqual(2, len(loaded.entries))
+        self.assertEqual('http://cds-01', loaded.entries[0])
+        self.assertEqual('http://cds-02', loaded.entries[1])
+
+    def test_broken_save(self):
+        '''
+        Tests that an exception is raised when the file cannot be saved.
+        '''
+
+        # Test
+
+        # MirrorListFile will not create these directories so it should fail if this structure
+        # does not exist.
+        mirror_list = MirrorListFile('/a/b/c/d')
+
+        self.assertRaises(IOError, mirror_list.save)
+
+    def test_broken_load(self):
+        '''
+        Tests that an exception is raised when the file cannot be loaded because it is not
+        found.
+        '''
+
+        # Test
+        mirror_list = MirrorListFile('/a/b/c/d')
+
+        self.assertRaises(IOError, mirror_list.load)
+
+    def test_delete_file_doesnt_exist(self):
+        '''
+        Tests that deleting when the file doesn't exist does *not* throw an error.
+        '''
+
+        # Setup
+        self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        # Test
+        mirror_list = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
+        mirror_list.delete()
+
+        # Verify
+        # Nothing to verify, this shouldn't have thrown an error
 
 # -- utilities ------------------------------------------------------------------------
 
