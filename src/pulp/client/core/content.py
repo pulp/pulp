@@ -29,6 +29,7 @@ from pulp.client.api.package import PackageAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import system_exit
 from pulp.client.logutil import getLogger
+from rpm import _rpm
 
 log = getLogger(__name__)
 
@@ -81,15 +82,6 @@ class Upload(ContentAction):
         uapi = UploadAPI()
         for f in files:
             try:
-                pkginfo = utils.processFile(f)
-            except utils.FileError, e:
-                msg = _('Error: %s') % e
-                log.error(msg)
-                if self.opts.verbose:
-                    print msg
-                continue
-
-            if pkginfo.has_key('nvrea'):
                 if not utils.is_signed(f) and not self.opts.nosig:
                     msg = _("Package [%s] is not signed. Please use --nosig. Skipping " % f)
                     log.error(msg)
@@ -97,41 +89,52 @@ class Upload(ContentAction):
                         print msg
                     exit_code = os.EX_DATAERR
                     continue
+            except _rpm.error:
+                log.error("Could not read the header, perhaps not an rpm; continue")
+            try:
+                metadata = utils.processFile(f)
+            except utils.FileError, e:
+                msg = _('Error: %s') % e
+                log.error(msg)
+                if self.opts.verbose:
+                    print msg
+                continue
+            if metadata.has_key('nvrea'):
                 pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
             else:
-                pkgobj = self.service_api.search_file(pkginfo['pkgname'],
-                                                   pkginfo['hashtype'],
-                                                   pkginfo['checksum'])
+                pkgobj = self.service_api.search_file(metadata['pkgname'],
+                                                   metadata['hashtype'],
+                                                   metadata['checksum'])
             existing_pkg_checksums = {}
             if pkgobj:
                 for pobj in pkgobj:
                     existing_pkg_checksums[pobj['checksum']['sha256']] = pobj
 
-            if pkginfo['checksum'] in existing_pkg_checksums.keys():
-                pobj = existing_pkg_checksums[pkginfo['checksum']]
+            if metadata['checksum'] in existing_pkg_checksums.keys():
+                pobj = existing_pkg_checksums[metadata['checksum']]
                 msg = _("Package [%s] already exists on the server with checksum [%s]") % \
                             (pobj['filename'], pobj['checksum']['sha256'])
                 log.info(msg)
                 if self.opts.verbose:
                     print msg
-                if pkginfo['type'] == 'rpm':
+                if metadata['type'] == 'rpm':
                     pids[os.path.basename(f)] = pobj['id']
                 else:
                     fids[os.path.basename(f)] = pobj['id']
                 continue
-            upload_id = uapi.upload(f, checksum=pkginfo['checksum'], chunksize=self.opts.chunk)
-            uploaded = uapi.import_content(pkginfo, upload_id)
+            upload_id = uapi.upload(f, checksum=metadata['checksum'], chunksize=self.opts.chunk)
+            uploaded = uapi.import_content(metadata, upload_id)
             if uploaded:
-                if pkginfo['type'] == 'rpm':
+                if metadata['type'] == 'rpm':
                     pids[os.path.basename(f)] = uploaded['id']
                 else:
                     fids[os.path.basename(f)] = uploaded['id']
-                msg = _("Successfully uploaded [%s] to server") % pkginfo['pkgname']
+                msg = _("Successfully uploaded [%s] to server") % metadata['pkgname']
                 log.info(msg)
                 if self.opts.verbose:
                     print msg
             else:
-                msg = _("Error: Failed to upload [%s] to server") % pkginfo['pkgname']
+                msg = _("Error: Failed to upload [%s] to server") % metadata['pkgname']
                 log.error(msg)
                 if self.opts.verbose:
                     print msg
