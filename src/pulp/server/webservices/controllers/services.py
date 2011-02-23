@@ -128,7 +128,7 @@ class StartUpload(JSONController):
         name = request['name']
         checksum = request['checksum']
         size = request['size']
-        uuid = request['uuid']
+        uuid = request.get('uuid')
         f = File.open(name, checksum, size, uuid)
         offset = f.next()
         d = dict(uuid=f.uuid, offset=offset)
