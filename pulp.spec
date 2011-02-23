@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.140
+Version:        0.0.141
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,47 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Feb 23 2011 Jeff Ortel <jortel@redhat.com> 0.0.141-1
+- 679800 - handle POST/PUT body othen than dict but still handle binary.
+  (jortel@redhat.com)
+- 677738 - fixing local sync checksum type to use sha256 (skarmark@redhat.com)
+- added the split of the server-side traceback out when raising a server
+  request error (jconnor@redhat.com)
+- Make uuid optional to resume upload. (jortel@redhat.com)
+- 679692 - check for signature before extracting the metadata. This should save
+  some cpu for unsigned packages to be skipped (pkilambi@redhat.com)
+- added status service at /services/status that returns the # of times the
+  service has been called, the current db data model in use, and the length of
+  time it took to calculate all that as a GET call that does not require auth
+  credentials all courtesy of Lukas Zapletal <lzap+fed@redhat.com>
+  (jconnor@redhat.com)
+- Add optional checksum to UploadAPI.upload(). (jortel@redhat.com)
+- Only write upload momento on keyboard interupt. (jortel@redhat.com)
+- Repo delete enhancements: * purge packages by default.
+  (pkilambi@redhat.com)
+- Change from base64 encoded to binary uploads.  (jortel@redhat.com)
+- 669779 - fixed bug in exception serialization (jconnor@redhat.com)
+- removing purge-file option on remove_file; remove_file is more a selective
+  sync operation, so instead move the puirge logic to delete repo. repo
+  remove_file will only remove the file reference from repo[files] like it
+  should. (pkilambi@redhat.com)
+- Adding support for pulp-admin content delete (pkilambi@redhat.com)
+- 669209, 669213 - Raising PulpException when trying to add a consumer with
+  conflicting keyvalues (skarmark@redhat.com)
+- Adding a new command, * pulp-admin content * moving upload and list to
+  content command * adding a call to list orphaned files (pkilambi@redhat.com)
+- 669209, 669213 - Raising PulpException when trying to add a consumer with
+  conflicting keyvalues (skarmark@redhat.com)
+- 679501 - If no orphaned packages, print a message (pkilambi@redhat.com)
+- adding default list instead of None (jconnor@redhat.com)
+- correcting bad super class constructor call (jconnor@redhat.com)
+- 679461 - Change the associations message to be more generic
+  (pkilambi@redhat.com)
+- 679441 - return error codes based on the output (pkilambi@redhat.com)
+- Configurable checksum type on repo: * db model change to include
+  checksum_type * migration changes * api/ws changes * cli option on repo
+  create (pkilambi@redhat.com)
+
 * Tue Feb 22 2011 Jeff Ortel <jortel@redhat.com> 0.0.140-1
 - Refactor client connections into API classes that miror API classes
   in the server.api package.
