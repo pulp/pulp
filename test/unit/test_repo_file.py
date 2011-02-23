@@ -1,0 +1,308 @@
+# Copyright (c) 2011 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+# Python
+import os
+import sys
+import unittest
+
+# Pulp
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+sys.path.insert(0, srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
+
+from pulp.client.repo_file import Repo, RepoFile
+
+TEST_FILENAME = '/tmp/TestRepoFile.repo'
+
+class TestRepoFile(unittest.TestCase):
+
+    def setUp(self):
+        # Clean up from any previous runs that may have exited abnormally
+        if os.path.exists(TEST_FILENAME):
+            os.remove(TEST_FILENAME)
+
+    def tearDown(self):
+        # Clean up in case the test file was saved in a test
+        if os.path.exists(TEST_FILENAME):
+            os.remove(TEST_FILENAME)
+
+    def test_one_repo_save_and_load(self):
+        '''
+        Tests the normal flow of saving and loading, using only one repo to
+        minimize complications.
+        '''
+
+        # Setup
+        add_me = Repo('test-repo-1')
+        add_me['baseurl'] = 'http://localhost/repo'
+        add_me['enabled'] = 1
+        add_me['gpgkey'] = '/tmp/key'
+        add_me['sslverify'] = 0
+        add_me['gpgcheck'] = 0
+
+        repo_file = RepoFile(TEST_FILENAME)
+
+        # Test Save
+        repo_file.add_repo(add_me)
+        repo_file.save()
+
+        # Verify Save
+        self.assertTrue(os.path.exists(TEST_FILENAME))
+
+        # Test Load
+        loaded = RepoFile(TEST_FILENAME)
+        loaded.load()
+
+        # Verify Load
+        self.assertEqual(1, len(loaded.all_repos()))
+
+        found_repo = loaded.get_repo('test-repo-1')
+        self.assertTrue(found_repo is not None)
+        self.assertTrue(_repo_eq(add_me, found_repo))
+
+    def test_multiple_repos(self):
+        '''
+        Tests saving and loading multiple repos.
+        '''
+
+        # Setup
+        repo1 = Repo('test-repo-1')
+        repo1['baseurl'] = 'http://localhost/repo1'
+
+        repo2 = Repo('test-repo-2')
+        repo2['baseurl'] = 'http://localhost/repo2'
+
+        repo_file = RepoFile(TEST_FILENAME)
+
+        # Test
+        repo_file.add_repo(repo1)
+        repo_file.add_repo(repo2)
+        repo_file.save()
+
+        # Verify
+        loaded = RepoFile(TEST_FILENAME)
+        loaded.load()
+
+        self.assertEqual(2, len(loaded.all_repos()))
+
+        found_repo1 = loaded.get_repo('test-repo-1')
+        self.assertTrue(found_repo1 is not None)
+        self.assertTrue(_repo_eq(repo1, found_repo1))
+
+        found_repo2 = loaded.get_repo('test-repo-2')
+        self.assertTrue(found_repo2 is not None)
+        self.assertTrue(_repo_eq(repo2, found_repo2))
+
+    def test_delete_repo(self):
+        '''
+        Tests removing an existing repo is correctly saved and loaded
+        '''
+
+        # Setup
+        repo1 = Repo('test-repo-1')
+        repo2 = Repo('test-repo-2')
+
+        repo_file = RepoFile(TEST_FILENAME)
+        repo_file.add_repo(repo1)
+        repo_file.add_repo(repo2)
+        repo_file.save()
+        
+        # Test
+        repo_file.remove_repo_by_name('test-repo-1')
+        repo_file.save()
+
+        # Verify
+        loaded = RepoFile(TEST_FILENAME)
+        loaded.load()
+        
+        self.assertEqual(1, len(loaded.all_repos()))
+
+        self.assertTrue(loaded.get_repo('test-repo-1') is None)
+        self.assertTrue(loaded.get_repo('test-repo-2') is not None)
+
+    def test_update_repo(self):
+        '''
+        Tests that updating an existing repo is correctly saved.
+        '''
+
+        # Setup
+        repo1 = Repo('test-repo-1')
+        repo1['baseurl'] = 'http://localhost/repo1'
+
+        repo_file = RepoFile(TEST_FILENAME)
+        repo_file.add_repo(repo1)
+        repo_file.save()
+
+        # Test
+        repo1['baseurl'] = 'http://localhost/repo-updated'
+        repo_file.update_repo(repo1)
+        repo_file.save()
+
+        # Verify
+        loaded = RepoFile(TEST_FILENAME)
+        loaded.load()
+
+        found_repo = loaded.get_repo('test-repo-1')
+        self.assertEqual(found_repo['baseurl'], 'http://localhost/repo-updated')
+
+    def test_no_repos_save_load(self):
+        '''
+        Tests that saving and loading a file with no repos is successful.
+        '''
+
+        # Test
+        repo_file = RepoFile(TEST_FILENAME)
+        repo_file.save()
+
+        # Verify
+        loaded = RepoFile(TEST_FILENAME)
+        loaded.load()
+
+        # Verify
+        self.assertEqual(0, len(loaded.all_repos()))
+
+    def test_delete_repofile(self):
+        '''
+        Tests that deleting a RepoFile correctly deletes the file on disk.
+        '''
+
+        # Setup
+        self.assertTrue(not os.path.exists(TEST_FILENAME))
+
+        repo_file = RepoFile(TEST_FILENAME)
+        repo_file.save()
+
+        self.assertTrue(os.path.exists(TEST_FILENAME))
+
+        # Test
+        repo_file.delete()
+
+        # Verify
+        self.assertTrue(not os.path.exists(TEST_FILENAME))
+
+    def test_broken_save(self):
+        '''
+        Tests that an exception is raised when the file cannot be saved.
+        '''
+
+        # Test
+
+        # RepoFile will not create these directories so it should fail if this structure
+        # does not exist.
+        repo_file = RepoFile('/a/b/c/d')
+        
+        self.assertRaises(IOError, repo_file.save)
+
+    def test_broken_load(self):
+        '''
+        Tests that an exception is raised when the file cannot be loaded because it is not
+        found.
+        '''
+
+        # Test
+        repo_file = RepoFile('/a/b/c/d')
+
+        self.assertRaises(IOError, repo_file.load)
+
+    def test_broken_load_invalid_data(self):
+        '''
+        Tests that an exception is raised when the file contains non-parsable data.
+        '''
+
+        # Setup
+        f = open(TEST_FILENAME, 'w')
+        f.write('This is not parsable.')
+        f.close()
+
+        # Test
+        repo_file = RepoFile(TEST_FILENAME)
+
+        self.assertRaises(Exception, repo_file.load)
+
+    def test_delete_file_doesnt_exist(self):
+        '''
+        Tests that deleting when the file doesn't exist does *not* throw an error.
+        '''
+
+        # Setup
+        self.assertTrue(not os.path.exists(TEST_FILENAME))
+
+        # Test
+        repo_file = RepoFile(TEST_FILENAME)
+        repo_file.delete()
+
+        # Verify
+        # Nothing to verify, this shouldn't have thrown an error
+
+    def test_header(self):
+        '''
+        Tests that the pulp header is properly written in the generated file.
+        '''
+
+        # Setup
+        repo_file = RepoFile(TEST_FILENAME)
+        repo_file.save()
+
+        # Test
+        f = open(TEST_FILENAME, 'r')
+        contents = f.read()
+        f.close()
+
+        # Verify
+        self.assertTrue(contents.startswith(RepoFile.FILE_HEADER))
+
+    def test_get_invalid_repo(self):
+        '''
+        Makes sure None is returned when requesting a repo that doesn't exist
+        instead of throwing an error.
+        '''
+
+        # Setup
+        repo_file = RepoFile(TEST_FILENAME)
+
+        # Test
+        found = repo_file.get_repo('foo')
+
+        # Verify
+        self.assertTrue(found is None)
+
+    def test_missing_filename(self):
+        '''
+        Tests that the proper error is thrown when creating a RepoFile without
+        a filename.
+        '''
+
+        # Test
+        self.assertRaises(ValueError, RepoFile, None)
+
+# -- utilities ------------------------------------------------------------------------
+
+def _repo_eq(repo1, repo2):
+    '''
+    Tests the contents of both repos for equality. If they all values match, returns
+    True; otherwise False.
+    '''
+
+    for key in repo1.keys():
+        if key not in repo2:
+            return False
+
+        # Convert to strings to get around cases where an int is returned
+        if str(repo1[key]) != str(repo2[key]):
+            print('Repo1 [%s:%s]  Repo2 [%s:%s]' % (key, repo1[key], key, repo2[key]))
+            return False
+
+    return True

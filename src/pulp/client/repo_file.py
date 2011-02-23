@@ -1,0 +1,304 @@
+# Copyright (c) 2011 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+from iniparse import ConfigParser
+import os
+
+class Repo(dict):
+    """
+    A yum repo (content set).
+    @cvar CA: The absolute path to the CA.
+    @type CA: str
+    @cvar PROPERTIES: Yum repo property definitions.
+    @type PROPERTIES: tuple.
+    """
+
+    CA = None
+
+    # (name, mutable, default)
+    PROPERTIES = (
+        ('name', 0, None),
+        ('baseurl', 0, None),
+        ('enabled', 0, '1'),
+        ('gpgkey', 0, None),
+        ('sslverify', 0, '0'),
+        ('gpgcheck', 0, '0')
+    )
+
+    def __init__(self, id):
+        """
+        @param id: The repo (unique) id.
+        @type id: str
+        """
+        self.id = id
+        for k, m, d in self.PROPERTIES:
+            self[k] = d
+
+    def items(self):
+        """
+        Get I{ordered} items.
+        @return: A list of ordered items.
+        @rtype: list
+        """
+        lst = []
+        for k, m, d in self.PROPERTIES:
+            v = self.get(k)
+            lst.append((k, v))
+        return tuple(lst)
+
+    def update(self, other):
+        """
+        Update (merge) based on property definitions.
+        @param other: The object to merge.
+        @type other: L{Repo}.
+        @return: The number of properties updated.
+        @rtype: int
+        """
+        count = 0
+        for k, m, d in self.PROPERTIES:
+            v = other.get(k)
+            if m:
+                continue
+            if self.__eq(self[k], v):
+                continue
+            self[k] = v
+            count += 1
+        return count
+
+    def __eq(self, a, b):
+        if a and b:
+            return a == b
+        if (not a) and (not b):
+            return True
+        return False
+
+    def __str__(self):
+        s = []
+        s.append('[%s]' % self.id)
+        for k, v in self.items():
+            s.append('%s = %s' % (k, v))
+        return '\n'.join(s)
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
+
+
+class RepoFile(object):
+    '''
+    Represents a .repo file, including operations to manipulate its repositories and
+    CRUD operations on the file itself.
+    '''
+
+    # Be careful when changing the spacing below, the parser takes issue when the comment
+    # indicator isn't in the first column. The blank line at the end is fine though.
+    FILE_HEADER = '''#
+# Pulp Repositories
+# Managed by Pulp client
+#
+
+'''
+
+    def __init__(self, filename):
+        '''
+        @param filename: absolute path to the repo file; the repo file does not need to
+                         exist at the time of instantiation, the save method will write it
+                         out if it doesn't
+        @type  filename: string; may not be None
+
+        @raise ValueError: if filename is missing
+        '''
+        if filename is None:
+            raise ValueError('Filename must be specified when creating a RepoFile')
+
+        self.filename = filename
+        self.parser = ConfigParser()
+
+    # -- file manipulation ------------------------------------------------------------
+
+    def delete(self):
+        '''
+        If the repo file exists, it will be deleted. If not, this method does nothing.
+
+        @raise Exception: if there is an error during the delete
+        '''
+        if os.path.exists(self.filename):
+            os.unlink(self.filename)
+
+    def load(self):
+        '''
+        Loads the repo file.
+
+        @raise Exception: if there is an error during the read
+        '''
+        r = Reader(self.filename)
+        self.parser.readfp(r)
+
+    def save(self):
+        '''
+        Saves the current repositories to the repo file.
+
+        @raise Exception: if there is an error during the write
+        '''
+        # If the file doesn't exist, initialize with Pulp header
+        first_write = not os.path.exists(self.filename)
+
+        f = open(self.filename, 'w')
+
+        if first_write:
+            f.write(RepoFile.FILE_HEADER)
+
+        # Write the contents of the parser
+        self.parser.write(f)
+        
+        f.close()
+
+    # -- contents manipulation ------------------------------------------------------------
+
+    def add_repo(self, repo):
+        '''
+        Adds a new repo to this object, however the file is not saved.
+
+        @param repo: repo to add; may not be None
+        @type  repo: L{Repo}
+        '''
+        self.parser.add_section(repo.id)
+        self._repo_to_parser(repo)
+
+    def remove_repo_by_name(self, repo_name):
+        '''
+        Removes the repo with the given name.
+
+        @param repo: identifies the repo to remove
+        @type  repo: string
+        '''
+        return self.parser.remove_section(repo_name)
+
+    def update_repo(self, repo):
+        '''
+        Updates the underlying store with the latest contents of a repo. The repo
+        passed to this method must have been created prior to this call.
+
+        @param repo: repo instance containing updated values to store; cannot be None
+        @type  repo: L{Repo}
+        '''
+        self._repo_to_parser(repo)
+
+    def get_repo(self, repo_name):
+        '''
+        Loads a repo by name. If the repo does not exist, returns None.
+
+        @param repo_name: name of the repo to retrieve
+        @type  repo_name: string
+
+        @return: repo instance if one exists; None otherwise
+        @rtype:  L{Repo}
+        '''
+        if self.parser.has_section(repo_name):
+            repo = self._parser_to_repo(repo_name)
+            return repo
+        else:
+            return None
+
+    def all_repos(self):
+        '''
+        Returns a list of all repos in the store.
+
+        @return: list of repo instances; empty list if there are none
+        @rtype:  list of L{Repo}
+        '''
+        repos = []
+        for repo_name in self.parser.sections():
+            repo = self._parser_to_repo(repo_name)
+            repos.append(repo)
+
+        return repos
+
+    def _repo_to_parser(self, repo):
+        '''
+        Adds the contents of the repo to the underlying store. This call assumes
+        the parser section has already been created.
+
+        @param repo: repo instance to update in the parser; cannot be None
+        @type  repo: L{Repo}
+        '''
+        for k, v in repo.items():
+            if v:
+                self.parser.set(repo.id, k, v)
+            else:
+                self.parser.remove_option(repo.id, k)
+
+    def _parser_to_repo(self, repo_name):
+        '''
+        Utility for converting the config parser section into a repo object.
+
+        @param repo_name: name of the repo being retrieved from the store
+        @type  repo_name: string
+
+        @return: repo instance populated from the section data
+        @rtype:  L{Repo}
+        '''
+        repo = Repo(repo_name)
+        for key, value in self.parser.items(repo_name):
+            repo[key] = value
+
+        return repo
+
+class Reader:
+    '''
+    Reader object used to mitigate annoying behavior of iniparse of leaving blank
+    lines when removing sections.
+    '''
+
+    def __init__(self, path):
+        '''
+        @param path: the absolute path to a .repo file
+        @type  path: str
+        '''
+        f = open(path)
+        bfr = f.read()
+        self.idx = 0
+        self.lines = bfr.split('\n')
+        f.close()
+
+    def readline(self):
+        '''
+        Read the next line. Strips annoying blank lines left by iniparse when
+        removing sections.
+
+        @return: next line or None
+        @rtype:  str or None
+        '''
+        nl = 0
+        ln = None
+        i = self.idx
+        eof = len(self.lines)
+        while 1:
+            if i == eof:
+                return
+            ln = self.lines[i]
+            i += 1
+            if not ln:
+                nl += 1
+            else:
+                break
+        if nl:
+            i -= 1
+            ln = '\n'
+        self.idx = i
+        return ln
