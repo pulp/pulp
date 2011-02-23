@@ -22,6 +22,7 @@ import pulp.server.util
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
+from pymongo.errors import DuplicateKeyError
 #from pulp.server.db.connection import get_object_db
 
 log = logging.getLogger(__name__)
@@ -54,9 +55,13 @@ class FileApi(BaseApi):
         """
         Create a new File object and return it
         """
-        f = model.File(filename, checksum_type, checksum, size, description, repo_defined=repo_defined)
-        self.insert(f)
-        return f
+        try:
+            f = model.File(filename, checksum_type, checksum, size, description, repo_defined=repo_defined)
+            self.insert(f)
+            return f
+        except DuplicateKeyError:
+            log.error("file with name [%s] and checksum [%s] already exists" % (filename, checksum))
+            return self.files(filename=filename, checksum=checksum, checksum_type=checksum_type)[0]
 
     @audit()
     def delete(self, id, keep_files=False):
