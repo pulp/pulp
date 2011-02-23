@@ -47,7 +47,8 @@ class ServerRequestError(Exception):
     Exception to indicate a less than favorable response from the server.
     The arguments are [0] the response status as an integer and
     [1] the response message as a dict, if we managed to decode from json,
-    or a str if we didn't
+    or a str if we didn't [2] potentially a traceback, if the server response
+    was a python error, otherwise it will be None
     """
     pass
 
@@ -237,7 +238,13 @@ class PulpServer(Server):
         except:
             pass
         if response.status >= 300:
-            raise ServerRequestError(response.status, response_body)
+            # if the server has responded with a python traceback
+            # try to split it out
+            if isinstance(response_body, basestring) and \
+                    response_body.startswith('Traceback'):
+                traceback, message = response_body.rsplit('\n', 1)
+                raise ServerRequestError(response.status, message, traceback)
+            raise ServerRequestError(response.status, response_body, None)
         return (response.status, response_body)
 
     # credentials setters -----------------------------------------------------
