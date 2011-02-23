@@ -67,6 +67,8 @@ def setup_admin(admin):
     errata_cmd.add_action('list', errata.List())
     errata_cmd.add_action('info', errata.Info())
     errata_cmd.add_action('install', errata.Install())
+    errata_cmd.add_action('create', errata.Create())
+    errata_cmd.add_action('delete', errata.Delete())
     admin.add_command('errata', errata_cmd)
 
     package_cmd = package.Package()
