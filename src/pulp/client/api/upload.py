@@ -16,6 +16,7 @@
 import os
 import hashlib
 from pulp.client.api.base import PulpAPI
+from pulp.client.server import Bytes
 
 
 class Momento:
@@ -110,7 +111,7 @@ class UploadAPI(PulpAPI):
         while(1):
             buf = f.read(bufsize)
             if buf:
-                self.__append(uuid, bytearray(buf))
+                self.__append(uuid, Bytes(buf))
             else:
                 break
         f.close()

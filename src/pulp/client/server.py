@@ -53,6 +53,13 @@ class ServerRequestError(Exception):
     pass
 
 
+class Bytes(str):
+    """
+    Binary (non-json) PUT/POST request body wrapper.
+    """
+    pass
+
+
 class Server(object):
     """
     Base server class.
@@ -226,7 +233,7 @@ class PulpServer(Server):
         # NOTE this throws a ServerRequestError if the request did not succeed
         connection = self._connect()
         url = self._build_url(path, queries)
-        if not isinstance(body, (type(None), bytearray,)):
+        if not isinstance(body, (type(None), Bytes,)):
             body = json.dumps(body)
         self._log.debug('sending %s request to %s' % (method, url))
         #print >> sys.stderr, 'sending %s request to %s' % (method, url)
