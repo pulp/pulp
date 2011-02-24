@@ -113,17 +113,52 @@ class TestRepolib(unittest.TestCase):
 
         self.assertEqual(2, len(repo_file.all_repos()))
 
-
     def test_bind_single_url(self):
         '''
         Tests that binding with a single URL will produce a baseurl in the repo.
         '''
+
+        # Test
+        url_list = ['http://pulpserver']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO, url_list, LOCK)
+
+        # Verify
+        self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
+        self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertEqual(loaded['baseurl'], url_list[0])
+        self.assertTrue('mirrorlist' not in loaded)
 
     def test_bind_multiple_url(self):
         '''
         Tests that binding with a list of URLs will produce a mirror list and the
         correct mirrorlist entry in the repo entry.
         '''
+
+        # Test
+        url_list = ['http://pulpserver', 'http://otherserver']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO, url_list, LOCK)
+
+        # Verify
+        self.assertTrue(os.path.exists(TEST_REPO_FILENAME))
+        self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertTrue('baseurl' not in loaded)
+        self.assertEqual(loaded['mirrorlist'], TEST_MIRROR_LIST_FILENAME)
+
+        mirror_list_file = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
+        mirror_list_file.load()
+
+        self.assertEqual(mirror_list_file.entries[0], 'http://pulpserver')
+        self.assertEqual(mirror_list_file.entries[1], 'http://otherserver')
 
     # -- unbind tests ------------------------------------------------------------------
 
@@ -132,14 +167,67 @@ class TestRepolib(unittest.TestCase):
         Tests the normal case of unbinding a repo that exists in the repo file.
         '''
 
+        # Setup
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.add_repo(Repo('test-unbind-repo'))
+        repo_file.save()
+
+        # Test
+        repolib.unbind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, 'test-unbind-repo', LOCK)
+
+        # verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load(allow_missing=False) # the file should still be there, so error if it doesn't
+
+        self.assertEqual(0, len(repo_file.all_repos()))
+
+    def test_unbind_repo_with_mirrorlist(self):
+        '''
+        Tests that unbinding a repo that had a mirror list deletes the mirror list
+        file.
+        '''
+
+        # Setup
+        url_list = ['http://pulp1', 'http://pulp2', 'http://pulp3']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO, url_list, LOCK)
+        self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        # Test
+        repolib.unbind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO['id'], LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+        self.assertEqual(0, len(repo_file.all_repos()))
+
+        self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
     def test_unbind_missing_file(self):
         '''
         Tests that calling unbind in the case where the underlying .repo file has been
         deleted does not result in an error.
         '''
 
+        # Setup
+        self.assertTrue(not os.path.exists(TEST_REPO_FILENAME))
+
+        # Test
+        repolib.unbind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO, LOCK)
+
+        # Verify
+        # The above shouldn't throw an error
+
     def test_unbind_missing_repo(self):
         '''
         Tests that calling unbind on a repo that isn't bound does not result in
         an error.
         '''
+
+        # Setup
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO, ['http://pulp'], LOCK)
+
+        # Test
+        repolib.unbind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, 'fake-repo', LOCK)
+
+        # Verify
+        # The above shouldn't throw an error; the net effect is still that the repo is unbound

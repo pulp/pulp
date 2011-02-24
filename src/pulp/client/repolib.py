@@ -21,6 +21,10 @@ through API calls or the message bus. The logic is still the same and occurs
 entirely on the consumer.
 '''
 
+# Python
+import os
+
+# Pulp
 from pulp.client.lock import Lock
 from pulp.client.logutil import getLogger
 from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
@@ -58,6 +62,8 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
         if len(url_list) > 1:
             mirror_list_file = MirrorListFile(mirror_list_filename)
             mirror_list_file.add_entries(url_list)
+            mirror_list_file.save()
+            
             repo['mirrorlist'] = mirror_list_filename
         else:
             repo['baseurl'] = url_list[0]
@@ -67,13 +73,19 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
     finally:
         lock.release()
 
-def unbind(repo_filename, repo_id, lock=REPO_LOCK):
+def unbind(repo_filename, mirror_list_filename, repo_id, lock=REPO_LOCK):
     lock.acquire()
     try:
+        if not os.path.exists(repo_filename):
+            return
+
         repo_file = RepoFile(repo_filename)
         repo_file.load()
         repo_file.remove_repo_by_name(repo_id) # will not throw an error if repo doesn't exist
         repo_file.save()
+
+        if os.path.exists(mirror_list_filename):
+            os.remove(mirror_list_filename)
     finally:
         lock.release()
 
