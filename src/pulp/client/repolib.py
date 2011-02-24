@@ -37,7 +37,7 @@ REPO_LOCK = Lock('/var/run/subsys/pulp/repolib.pid')
 
 # -- public ----------------------------------------------------------------
 
-def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
+def bind(repo_filename, mirror_list_filename, repo_data, url_list, lock=REPO_LOCK):
     '''
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
@@ -61,8 +61,8 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
                                  necessary; this should be unique for the given repo
     @type  mirror_list_filename: string
 
-    @param repo: contains data on the repo being bound
-    @type  repo: dict
+    @param repo_data: contains data on the repo being bound
+    @type  repo_data: dict
 
     @param url_list: list of URLs that will be used to access the repo; this call
                      will determine the best way to represent the URL list in
@@ -75,10 +75,12 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
 
     lock.acquire()
     try:
+        log.info('Binding repo [%s]' % repo_data['id'])
+
         repo_file = RepoFile(repo_filename)
         repo_file.load()
         
-        repo = _convert_repo(repo)
+        repo = _convert_repo(repo_data)
 
         if len(url_list) > 1:
 
@@ -89,6 +91,8 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
             mirror_list_file.save()
             
             repo['mirrorlist'] = mirror_list_filename
+
+            log.info('Created mirrorlist for repo [%s] at [%s]' % (repo.id, mirror_list_filename))
         else:
 
             # On a repo update, the mirror list may have existed but is no longer used.
@@ -98,10 +102,13 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
                 os.remove(mirror_list_filename)
 
             repo['baseurl'] = url_list[0]
+            log.info('Configuring repo [%s] to use baseurl [%s]' % (repo.id, url_list[0]))
 
         if repo_file.get_repo(repo.id):
+            log.info('Updating repo [%s]' % repo.id)
             repo_file.update_repo(repo)
         else:
+            log.info('Adding new repo [%s]' % repo.id)
             repo_file.add_repo(repo)
             
         repo_file.save()
@@ -138,6 +145,8 @@ def unbind(repo_filename, mirror_list_filename, repo_id, lock=REPO_LOCK):
 
     lock.acquire()
     try:
+        log.info('Unbinding repo [%s]' % repo_id)
+
         if not os.path.exists(repo_filename):
             return
 
