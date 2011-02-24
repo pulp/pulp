@@ -13,25 +13,21 @@
 # in this software or its documentation.
 #
 
-"""
-Contains repo management (backend) classes.
-"""
+'''
+Logic methods for handling repo bind, unbind, and update operations. This module
+is independent of how the requests for these operations are received. In other words,
+this module does not care if the required information for these commands is received
+through API calls or the message bus. The logic is still the same and occurs
+entirely on the consumer.
+'''
 
-import os
-
-from iniparse import ConfigParser as Parser
-from pulp.client.server import PulpServer, set_active_server
-from pulp.client.credentials import Consumer as ConsumerBundle
-from pulp.client.api.consumer import ConsumerAPI
-from pulp.client.api.repository import RepositoryAPI
-from pulp.client.credentials import Consumer
-from pulp.client.config import Config
 from pulp.client.lock import Lock
 from pulp.client.logutil import getLogger
+from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
 
-cfg = Config()
 log = getLogger(__name__)
 
+# -- concurrency utilities ----------------------------------------------------------------
 
 class ActionLock(Lock):
     """
@@ -42,482 +38,70 @@ class ActionLock(Lock):
 
     PATH = '/var/run/subsys/pulp/repolib.pid'
 
-    def __init__(self):
-        Lock.__init__(self, self.PATH)
+    def __init__(self, path=PATH):
+        Lock.__init__(self, path)
 
+# Create a single lock at the module level that will be used for all invocations.
+# It can be overridden in the public methods if necessary.
+REPO_LOCK = ActionLock()
 
-class RepoLib:
-    """
-    Library for performing yum repo management.
-    @ivar lock: The action lock.  Ensures only 1 instance updating repos.
-    @type lock: L{Lock}
-    """
+# -- public ----------------------------------------------------------------
 
-    def __init__(self, lock=ActionLock()):
-        """
-        @param lock: A lock.
-        @type lock: L{Lock}
-        """
-        self.lock = lock
+def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
+    lock.acquire()
+    try:
+        repo_file = RepoFile(repo_filename)
+        repo_file.load()
+        
+        repo = _convert_repo(repo)
 
-    def update(self):
-        """
-        Update yum repos based on pulp bind (subscription).
-        """
-        lock = self.lock
-        lock.acquire()
-        try:
-            action = UpdateAction()
-            return action.perform()
-        finally:
-            lock.release()
-
-    def delete(self):
-        """
-        Delete the repo file.
-        """
-        lock = self.lock
-        lock.acquire()
-        try:
-            action = DeleteAction()
-            return action.perform()
-        finally:
-            lock.release()
-
-
-class Pulp:
-    """
-    The pulp server.
-    """
-    def __init__(self):
-        bundle = ConsumerBundle()
-        ps = PulpServer(cfg.server.host)
-        ps.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
-        set_active_server(ps)
-        self.capi = ConsumerAPI()
-        self.rapi = RepositoryAPI()
-
-    def getProducts(self):
-        """
-        Get subscribed products.
-        @return: A list of products
-        @rtype: list
-        """
-        repos = []
-        product = dict(content=repos)
-        products = (product,)
-        cid = self.consumerId()
-        consumer = self.capi.consumer(cid)
-        for repoid in consumer['repoids']:
-            repo = self.rapi.repository(repoid)
-            if repo:
-                repos.append(repo)
-        return products
-
-    def listkeys(self, id):
-        return self.rapi.listkeys(id)
-
-    def consumerId(self):
-        bundle = Consumer()
-        return bundle.getid()
-
-
-class Action:
-    """
-    Action base class.
-    """
-    pass
-
-
-class UpdateAction(Action):
-    """
-    Update the yum repositores based on pulp bindings (subscription).
-    """
-
-    def __init__(self):
-        self.pulp = Pulp()
-
-    def perform(self):
-        """
-        Perform the action.
-          - Get the content set(s) from pulp.
-          - Merge with yum .repo file.
-          - Write the merged .repo file.
-        @return: The number of updates performed.
-        @rtype: int
-        """
-        repod = RepoFile()
-        repod.read()
-        valid = set()
-        updates = 0
-        for cont in self.getUniqueContent():
-            valid.add(cont.id)
-            existing = repod.section(cont.id)
-            if existing is None:
-                updates += 1
-                repod.add(cont)
-                continue
-            updates += existing.update(cont)
-            repod.update(existing)
-        for section in repod.sections():
-            if section not in valid:
-                updates += 1
-                repod.delete(section)
-        repod.write()
-        return updates
-
-    def getUniqueContent(self):
-        """
-        Get the B{unique} content sets from pulp.
-        @return: A unique set L{Repo} objects reported by pulp.
-        @rtype: [L{Repo},...]
-        """
-        unique = set()
-        products = self.pulp.getProducts()
-        for product in products:
-            for r in self.getContent(product):
-                unique.add(r)
-        return unique
-
-    def getContent(self, product):
-        """
-        Get L{Repo} object(s) for a given subscription.
-        @param product: A product (contains content sets).
-        @type product: dict
-        @return: A list of L{Repo} objects for the specified product.
-        @rtype: [L{Repo},...]
-        """
-        lst = []
-        baseurl = cfg.cds.baseurl
-        keyurl = cfg.cds.keyurl
-        for cont in product['content']:
-            if not cont:
-                continue
-            id = str(cont['id'])
-            path = cont['relative_path']
-            keys = self.pulp.listkeys(id)
-            enabled = cont.get('publish', True)
-            repo = Repo(id)
-            repo['name'] = cont['name']
-            repo['baseurl'] = self.join(baseurl, path)
-            repo['enabled'] = self.decode(enabled, True, '1', '0')
-            repo['gpgkey'] = self.fmt(keyurl, keys)
-            if keys:
-                repo['gpgcheck'] = '1'
-            lst.append(repo)
-        return lst
-
-    def decode(self, *s):
-        """
-        Provides simple string value decoding.
-        @param s: A list of strings.
-        @type s: [str,..]
-        @return: the decoded value.
-        """
-        base = s[0]
-        choices = s[1:-1]
-        default = s[-1]
-        matched = False
-        for v in choices:
-            if matched:
-                return v
-            if v == base:
-                matched = True
-        return default
-
-    def fmt(self, baseurl, v):
-        """
-        Format the value.
-        @param v: The property value to format.
-        @type v: object
-        @return: The formatted key, value item.
-        @rtype: tuple
-        """
-        if isinstance(v, (list, tuple)):
-            paths = []
-            for p in v:
-                paths.append(self.join(baseurl, p))
-            v = '\n'.join(paths)
+        if len(url_list) > 1:
+            mirror_list_file = MirrorListFile(mirror_list_filename)
+            mirror_list_file.add_entries(url_list)
+            repo['mirrorlist'] = mirror_list_filename
         else:
-            v = self.join(baseurl, v)
-        return v
+            repo['baseurl'] = url_list[0]
 
-    def join(self, base, url):
-        """
-        Join the base and url.
-        @param base: The URL base (protocol, host & port).
-        @type base: str
-        @param url: The relative url.
-        @type url: str
-        @return: The complete (joined) url.
-        @rtype: str
-        """
-        if '://' in url:
-            return url
-        if base.endswith('/'):
-            base = base[:-1]
-        if url.startswith('/'):
-            url = url[1:]
-        return '/'.join((base, url))
+        repo_file.add_repo(repo)
+        repo_file.save()
+    finally:
+        lock.release()
 
+def unbind(repo_filename, repo_id, lock=REPO_LOCK):
+    lock.acquire()
+    try:
+        repo_file = RepoFile(repo_filename)
+        repo_file.load()
+        repo_file.remove_repo_by_name(repo_id) # will not throw an error if repo doesn't exist
+        repo_file.save()
+    finally:
+        lock.release()
 
-class DeleteAction(Action):
-    """
-    Delete the yum repo file.
-    """
-    def perform(self):
-        RepoFile.unlink()
-        log.info('%s, deleted', RepoFile.PATH)
+# -- private -----------------------------------------------------------------
 
+def _convert_repo(repo_data):
+    '''
+    Converts the dict repository representation into the repo file domain instance.
+    This will *not* populate the baseurl parameter of the repo. That will be done
+    elsewhere to take into account if a mirror list is required depending on the
+    host URLs sent with the bind response.
 
-class Repo(dict):
-    """
-    A yum repo (content set).
-    @cvar CA: The absolute path to the CA.
-    @type CA: str
-    @cvar PROPERTIES: Yum repo property definitions.
-    @type PROPERTIES: tuple.
-    """
+    @param repo: contains data for the repo to be created
+    @type  repo: dict
 
-    CA = None
+    @return: repo instance in the repo file format
+    @rtype:  L{Repo}
+    '''
+    repo = Repo(str(repo_data['id']))
+    repo['name'] = repo_data['name']
+    repo['gpgcheck'] = '0'
 
-    # (name, mutable, default)
-    PROPERTIES = (
-        ('name', 0, None),
-        ('baseurl', 0, None),
-        ('enabled', 0, '1'),
-        ('gpgkey', 0, None),
-        ('sslverify', 0, '0'),
-        ('gpgcheck', 0, '0')
-    )
+    # This probably won't be an issue; you shouldn't be able to bind to an unpublished repo
+    if bool(repo_data['publish']):
+        enabled = '1'
+    else:
+        enabled = '0'
 
-    def __init__(self, id):
-        """
-        @param id: The repo (unique) id.
-        @type id: str
-        """
-        self.id = id
-        for k, m, d in self.PROPERTIES:
-            self[k] = d
+    repo['enabled'] = enabled
 
-    def items(self):
-        """
-        Get I{ordered} items.
-        @return: A list of ordered items.
-        @rtype: list
-        """
-        lst = []
-        for k, m, d in self.PROPERTIES:
-            v = self.get(k)
-            lst.append((k, v))
-        return tuple(lst)
-
-    def update(self, other):
-        """
-        Update (merge) based on property definitions.
-        @param other: The object to merge.
-        @type other: L{Repo}.
-        @return: The number of properties updated.
-        @rtype: int
-        """
-        count = 0
-        for k, m, d in self.PROPERTIES:
-            v = other.get(k)
-            if m:
-                continue
-            if self.__eq(self[k], v):
-                continue
-            self[k] = v
-            count += 1
-        return count
-
-    def __eq(self, a, b):
-        if a and b:
-            return (a == b)
-        if (not a) and (not b):
-            return True
-        return False
-
-    def __str__(self):
-        s = []
-        s.append('[%s]' % self.id)
-        for k, v in self.items():
-            s.append('%s = %s' % (k, v))
-        return '\n'.join(s)
-
-    def __repr__(self):
-        return str(self)
-
-    def __eq__(self, other):
-        return (self.id == other.id)
-
-    def __hash__(self):
-        return hash(self.id)
-
-
-class RepoFile(Parser):
-    """
-    Represents a .repo file and is primarily a wrapper around
-    I{iniparse} to get around its short comings and understand L{Repo} objects.
-    @cvar PATH: The absolute path to a .repo file.
-    @type PATH: str
-    """
-
-    PATH = '/etc/yum.repos.d/pulp.repo'
-
-    @classmethod
-    def unlink(cls):
-        try:
-            os.unlink(cls.PATH)
-        except:
-            pass
-
-    def __init__(self):
-        """
-        @param name: The .repo file name.
-        @type name: str
-        """
-        Parser.__init__(self)
-        self.create()
-
-    def read(self):
-        """
-        Read and parse the file.
-        """
-        r = Reader(self.PATH)
-        Parser.readfp(self, r)
-
-    def write(self):
-        """
-        Write the file.
-        """
-        f = open(self.PATH, 'w')
-        Parser.write(self, f)
-        f.close()
-
-    def add(self, repo):
-        """
-        Add a repo and create section if needed.
-        @param repo: A repo to add.
-        @type repo: L{Repo}
-        """
-        self.add_section(repo.id)
-        self.update(repo)
-
-    def delete(self, section):
-        """
-        Delete a section (repo name).
-        @return: self
-        @rtype: L{RepoFile}
-        """
-        return self.remove_section(section)
-
-    def update(self, repo):
-        """
-        Update the repo section using the specified repo.
-        @param repo: A repo used to update.
-        @type repo: L{Repo}
-        """
-        for k, v in repo.items():
-            if v:
-                Parser.set(self, repo.id, k, v)
-            else:
-                self.clear(repo, k)
-
-    def clear(self, repo, option):
-        """
-        Remove the specified option.
-        @param repo: A repo used to update.
-        @type repo: L{Repo}
-        @param option: A option name.
-        @type option: str
-        """
-        try:
-            self.remove_option(repo.id, option)
-        except:
-            pass
-
-    def section(self, section):
-        """
-        Get a L{Repo} (section) by name.
-        @param section: A section (repo) name.
-        @type section: str
-        @return: A repo for the section name.
-        @rtype: L{Repo}
-        """
-        if self.has_section(section):
-            repo = Repo(section)
-            for k, v in self.items(section):
-                repo[k] = v
-            return repo
-
-    def create(self):
-        """
-        Create the .repo file with appropriate header/footer
-        if it does not already exist.
-        """
-        if os.path.exists(self.PATH):
-            return
-        f = open(self.PATH, 'w')
-        s = []
-        s.append('#')
-        s.append('# Pulp Repositories')
-        s.append('# Managed by Pulp client')
-        s.append('#')
-        f.write('\n'.join(s))
-        f.close()
-
-
-class Reader:
-    """
-    Reader object used to mitigate annoying behavior of
-    iniparse of leaving blank lines when removing sections.
-    """
-
-    def __init__(self, path):
-        """
-        @param path: The absolute path to a .repo file.
-        @type path: str
-        """
-        f = open(path)
-        bfr = f.read()
-        self.idx = 0
-        self.lines = bfr.split('\n')
-        f.close()
-
-    def readline(self):
-        """
-        Read the next line.
-        Strips annoying blank lines left by iniparse when
-        removing sections.
-        @return: The next line (or None).
-        @rtype: str
-        """
-        nl = 0
-        i = self.idx
-        eof = len(self.lines)
-        while 1:
-            if i == eof:
-                return
-            ln = self.lines[i]
-            i += 1
-            if not ln:
-                nl += 1
-            else:
-                break
-        if nl:
-            i -= 1
-            ln = '\n'
-        self.idx = i
-        return ln
-
-
-def main():
-    print 'Updating Pulp repository'
-    repolib = RepoLib()
-    updates = repolib.update()
-    print '%d updates required' % updates
-    print 'done'
-
-if __name__ == '__main__':
-    main()
+    return repo
