@@ -408,6 +408,8 @@ class TestMirrorListFile(unittest.TestCase):
 
         # Verify Load
         self.assertEqual(2, len(loaded.entries))
+
+        #   Make sure the entries are returned in the correct order
         self.assertEqual('http://cds-01', loaded.entries[0])
         self.assertEqual('http://cds-02', loaded.entries[1])
 
