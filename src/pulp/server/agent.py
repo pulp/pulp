@@ -24,6 +24,31 @@ from gofer.proxy import Agent as Base
 from gofer.messaging.producer import Producer
 from pulp.server.config import config
 
+def retrieve_agent(uuid, **options):
+    '''
+    Factory method for getting Agent instances. This method can be monkey patched
+    in unit tests to return a mock agent suitable for testing.
+
+    @param uuid: uuid of the consumer
+    @type  uuid: string
+
+    @param options: options to the underlying message bus
+    @type  options: dict
+    '''
+    return Agent(uuid, **options)
+
+def retrieve_repo_proxy(uuid, **options):
+    '''
+    Utility factory method for retrieving the repo proxy to a consumer.
+
+    @param uuid: uuid of the consumer
+    @type  uuid: string
+
+    @param options: options to the underlying message bus
+    @type  options: dict
+    '''
+    agent = retrieve_agent(uuid, **options)
+    return agent.Repo()
 
 class Agent(Base):
     """
