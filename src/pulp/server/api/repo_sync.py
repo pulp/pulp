@@ -491,6 +491,8 @@ class LocalSynchronizer(BaseSynchronizer):
         self.progress['details'][item_type]["total_count"] = num_items
         self.progress['details'][item_type]["num_success"] = 0
         self.progress['details'][item_type]["num_error"] = 0
+        self.progress['details'][item_type]["total_size_bytes"] = size_bytes
+        self.progress['details'][item_type]["size_left"] = size_bytes
 
     def init_progress_details(self, src_repo_dir, skip_dict):
         if not self.progress.has_key('size_total'):
@@ -562,9 +564,12 @@ class LocalSynchronizer(BaseSynchronizer):
                 error_info["traceback"] = traceback.format_exc().splitlines()
                 self._add_error_details(pkg, "rpm", error_info)
             self.progress["step"] = ProgressReport.DownloadItems
-            self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
+            item_size = self._calculate_bytes(src_repo_dir, [pkg])
+            self.progress['size_left'] -= item_size
             self.progress['items_left'] -= 1
             self.progress['details']["rpm"]["items_left"] -= 1
+            self.progress['details']["rpm"]["size_left"] -= item_size
+
             if progress_callback is not None:
                 progress_callback(self.progress)
         log.info("Finished copying %s packages" % (len(pkglist)))
@@ -620,9 +625,11 @@ class LocalSynchronizer(BaseSynchronizer):
                 error_info["traceback"] = traceback.format_exc().splitlines()
                 self._add_error_details(pkg, "drpm", error_info)
             self.progress['step'] = ProgressReport.DownloadItems
-            self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [pkg])
+            item_size = self._calculate_bytes(src_repo_dir, [pkg])
+            self.progress['size_left'] -= item_size
             self.progress['items_left'] -= 1
             self.progress['details']["drpm"]["items_left"] -= 1
+            self.progress['details']["drpm"]["size_left"] -= item_size
             if progress_callback is not None:
                 progress_callback(self.progress)
 
@@ -696,9 +703,11 @@ class LocalSynchronizer(BaseSynchronizer):
                                 self._add_error_details(imfile, "tree_file", error_info)
                             log.debug("Imported file %s " % dst_file_path)
                             self.progress['step'] = ProgressReport.DownloadItems
-                            self.progress['size_left'] -= self._calculate_bytes(src_repo_dir, [imfile])
+                            item_size = self._calculate_bytes(src_repo_dir, [imfile])
+                            self.progress['size_left'] -= item_size
                             self.progress['items_left'] -= 1
                             self.progress['details']["tree_file"]["items_left"] -= 1
+                            self.progress['details']["tree_file"]["size_left"] -= item_size
                             if progress_callback is not None:
                                 progress_callback(self.progress)
                     else:
