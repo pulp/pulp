@@ -43,6 +43,9 @@ def bind(repo_filename, mirror_list_filename, repo, url_list, lock=REPO_LOCK):
     determine the best method for representing the repo given the data in the
     repo object as well as the list of URLs where the repo can be found.
 
+    This call may be used to bind a new repo or update the details of a previously
+    bound repo.
+
     The default lock is defined at the module level and is
     used to ensure that concurrent access to the give files is prevented. Specific
     locks can be passed in for testing purposes to circumvent the default
