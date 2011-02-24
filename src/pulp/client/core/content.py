@@ -268,7 +268,7 @@ class Delete(ContentAction):
                 pobj = pkgobj[0]
             
             if not pobj:
-                print _("No content found matching filename [%s] and checksum [%s]" % (filename, checksum))
+                print _("Content with filename [%s] could not be found on server; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
             
