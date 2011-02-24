@@ -129,12 +129,19 @@ class RepoFile(object):
         if os.path.exists(self.filename):
             os.unlink(self.filename)
 
-    def load(self):
+    def load(self, allow_missing=True):
         '''
         Loads the repo file.
 
+        @param allow_missing: if True, this call will not throw an error if the file cannot
+                              be found; defaults to True
+        @type  allow_missing: bool
+
         @raise Exception: if there is an error during the read
         '''
+        if allow_missing and not os.path.exists(self.filename):
+            return
+
         r = Reader(self.filename)
         self.parser.readfp(r)
 
@@ -289,6 +296,15 @@ class MirrorListFile(object):
         '''
         self.entries.append(url)
 
+    def add_entries(self, url_list):
+        '''
+        Adds all entries in the given list to this mirror list
+
+        @param url_list: list of URLs to add
+        @type  url_list: list
+        '''
+        self.entries.extend(url_list)
+        
     def delete(self):
         '''
         If the mirror list file exists, it will be deleted. If not, this method does nothing.

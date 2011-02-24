@@ -234,7 +234,20 @@ class TestRepoFile(unittest.TestCase):
         # Test
         repo_file = RepoFile('/a/b/c/d')
 
-        self.assertRaises(IOError, repo_file.load)
+        self.assertRaises(IOError, repo_file.load, allow_missing=False)
+
+    def test_broken_load_allow_missing(self):
+        '''
+        Tests that an exception is raised when the file cannot be loaded because it is not
+        found.
+        '''
+
+        # Test
+        repo_file = RepoFile('/a/b/c/d')
+        repo_file.load(allow_missing=True)
+
+        # Verify
+        # The above should not throw an error even though the file doesn't exist
 
     def test_broken_load_invalid_data(self):
         '''
@@ -397,6 +410,23 @@ class TestMirrorListFile(unittest.TestCase):
         self.assertEqual(2, len(loaded.entries))
         self.assertEqual('http://cds-01', loaded.entries[0])
         self.assertEqual('http://cds-02', loaded.entries[1])
+
+    def test_add_entries(self):
+        '''
+        Tests the ability to add a list of entries in a single operation.
+        '''
+
+        # Setup
+        mirror_list = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
+        mirror_list.add_entry('http://cds-01')
+
+        add_us = ['http://cds-02', 'http://cds-03']
+
+        # Test
+        mirror_list.add_entries(add_us)
+
+        # Verify
+        self.assertEqual(3, len(mirror_list.entries))
 
     def test_broken_save(self):
         '''
