@@ -23,6 +23,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+from pulp.client.lock import Lock
 import pulp.client.repolib as repolib
 from pulp.client.repo_file import MirrorListFile, RepoFile, Repo
 
@@ -40,7 +41,7 @@ REPO = {
 }
 
 # Lock that doesn't require root privileges
-LOCK = repolib.ActionLock('/tmp/test_repolib_lock.pid')
+LOCK = Lock('/tmp/test_repolib_lock.pid')
 
 # -- test classes ---------------------------------------------------------------------
 

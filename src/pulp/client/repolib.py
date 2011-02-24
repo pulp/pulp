@@ -31,23 +31,11 @@ from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
 
 log = getLogger(__name__)
 
-# -- concurrency utilities ----------------------------------------------------------------
-
-class ActionLock(Lock):
-    """
-    Action lock.
-    @cvar PATH: The lock file absolute path.
-    @type PATH: str
-    """
-
-    PATH = '/var/run/subsys/pulp/repolib.pid'
-
-    def __init__(self, path=PATH):
-        Lock.__init__(self, path)
+# -- constants ----------------------------------------------------------------
 
 # Create a single lock at the module level that will be used for all invocations.
 # It can be overridden in the public methods if necessary.
-REPO_LOCK = ActionLock()
+REPO_LOCK = Lock('/var/run/subsys/pulp/repolib.pid')
 
 # -- public ----------------------------------------------------------------
 
