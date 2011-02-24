@@ -89,7 +89,6 @@ class Momento:
             os.makedirs(path)
 
 
-
 class UploadAPI(PulpAPI):
     """
     Connection class to access upload related calls
@@ -164,7 +163,6 @@ class UploadAPI(PulpAPI):
                     retries = (retries-1)
                 else:
                     raise ex
-            
 
     def __checksum(self, path):
         f = open(path)
