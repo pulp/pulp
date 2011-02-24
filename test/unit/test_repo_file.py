@@ -12,6 +12,7 @@
 # in this software or its documentation.
 
 # Python
+from ConfigParser import DuplicateSectionError
 import os
 import sys
 import unittest
@@ -108,6 +109,19 @@ class TestRepoFile(unittest.TestCase):
         found_repo2 = loaded.get_repo('test-repo-2')
         self.assertTrue(found_repo2 is not None)
         self.assertTrue(_repo_eq(repo2, found_repo2))
+
+    def test_add_duplicate(self):
+        '''
+        Tests that adding a repo that already exists throws a duplication error.
+        '''
+
+        # Setup
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.add_repo(Repo('foo'))
+
+        # Test
+        self.assertRaises(DuplicateSectionError, repo_file.add_repo, Repo('foo'))
+
 
     def test_delete_repo(self):
         '''
