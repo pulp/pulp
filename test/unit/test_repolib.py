@@ -114,6 +114,34 @@ class TestRepolib(unittest.TestCase):
 
         self.assertEqual(2, len(repo_file.all_repos()))
 
+    def test_bind_update_repo(self):
+        '''
+        Tests calling bind on an existing repo with new repo data. This test will test
+        the more complex case where a mirror list existed in the original repo but is
+        not necessary in the updated repo.
+        '''
+
+        # Setup
+        url_list = ['http://pulp1', 'http://pulp2']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, REPO, url_list, LOCK)
+
+        self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        # Test
+        updated_repo = dict(REPO)
+        updated_repo['name'] = 'Updated'
+
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, updated_repo, ['http://pulpx'], LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertEqual(loaded['name'], updated_repo['name'])
+
+        self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
     def test_bind_single_url(self):
         '''
         Tests that binding with a single URL will produce a baseurl in the repo.

@@ -204,18 +204,18 @@ class RepoFile(object):
         '''
         self._repo_to_parser(repo)
         
-    def get_repo(self, repo_name):
+    def get_repo(self, repo_id):
         '''
-        Loads a repo by name. If the repo does not exist, returns None.
+        Loads a repo by repo ID. If the repo does not exist, returns None.
 
-        @param repo_name: name of the repo to retrieve
-        @type  repo_name: string
+        @param repo_id: id of the repo to retrieve
+        @type  repo_id: string
 
         @return: repo instance if one exists; None otherwise
         @rtype:  L{Repo}
         '''
-        if self.parser.has_section(repo_name):
-            repo = self._parser_to_repo(repo_name)
+        if self.parser.has_section(repo_id):
+            repo = self._parser_to_repo(repo_id)
             return repo
         else:
             return None
