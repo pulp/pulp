@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright (c) 2011 Red Hat, Inc.
 #
 #
 # This software is licensed to you under the GNU General Public License,
@@ -517,19 +517,6 @@ class TestApi(unittest.TestCase):
         subject = cert.subject()
         consumer_cert_uid = subject.get('CN', None)
         self.assertEqual(c['id'], consumer_cert_uid)
-
-    def test_consumer_bind(self):
-        cid = 'bindconsumerid'
-        rid = 'bindrepoid'
-        key = 'repoids'
-        self.capi.create(cid, 'test bind/unbind.')
-        self.rapi.create(rid, 'testbind', 'noarch', 'yum:http://foo')
-        self.capi.bind(cid, rid)
-        consumer = self.capi.consumer(cid)
-        assert(rid in consumer[key])
-        self.capi.unbind(cid, rid)
-        consumer = self.capi.consumer(cid)
-        assert(rid not in consumer[key])
 
     def __test_consumer_installpackages(self):
         cid = 'bindconsumerid'

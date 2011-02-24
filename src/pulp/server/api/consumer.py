@@ -17,6 +17,7 @@ import logging
 import hashlib
 
 # Pulp
+import pulp.server.agent
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
@@ -165,7 +166,6 @@ class ConsumerApi(BaseApi):
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
 
-
     @audit()
     def delete_key_value_pair(self, id, key):
         """
@@ -217,7 +217,6 @@ class ConsumerApi(BaseApi):
         consumer['key_value_pairs'] = key_value_pairs
         self.update(consumer)
 
-
     def get_keyvalues (self, id):
         """
         Get all key-values corresponding to consumer. This also includes key-values inherited from
@@ -238,8 +237,6 @@ class ConsumerApi(BaseApi):
             key_value_pairs.update(group_key_value_pairs)
 
         return key_value_pairs
-
-
 
     def consumers_with_key_value(self, key, value, fields=None):
         """
@@ -314,26 +311,48 @@ class ConsumerApi(BaseApi):
 
     @audit()
     def bind(self, id, repoid):
-        """
-        Bind (subscribe) a consumer to a repo.
-        @param id: A consumer id.
-        @type id: str
-        @param repoid: A repo id to bind.
-        @type repoid: str
-        @raise PulpException: When consumer not found.
-        """
+        '''
+        Binds (subscribe) the consumer identified by id to an existing repo. If the
+        consumer is already bound to the repo, this call has no effect.
+
+        @param id: identifies the consumer; a consumer with this ID must exist
+        @type  id: string
+
+        @param repoid: identifies the repo to bind; a repo with this ID must exist
+        @type  repoid: string
+
+        @raise PulpException: if either the consumer or repo cannot be found
+        '''
+
+        # Parameter tests
         consumer = self.consumer(id)
         if consumer is None:
-            raise PulpException('Consumer [%s] not found', id)
+            raise PulpException('Consumer [%s] not found' % id)
+
+        repo = self.repoapi.repository(repoid)
+        if repo is None:
+            raise PulpException('Repo [%s] does not exist' % repoid)
+
+        # Short circuit if the repo is already bound
         repoids = consumer.setdefault('repoids', [])
         if repoid in repoids:
             return
+
+        # Update the consumer with the new repo, adding an entry to its history 
         repoids.append(repoid)
         self.update(consumer)
-        agent = Agent(id, async=True)
-        repolib = agent.Repo()
-        repolib.update()
         self.consumer_history_api.repo_bound(id, repoid)
+
+        # Collect the necessary information to return to the caller:
+        # - repo object
+        # - ordered list of URLs to use to access the repo
+        #
+
+
+
+        # Send the bind request over to the consumer
+        agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
+        agent_repolib.bind()
 
     @audit()
     def unbind(self, id, repoid):
@@ -522,7 +541,6 @@ class ConsumerApi(BaseApi):
                                                                 'reboot_suggested' : erratum['reboot_suggested']}
                             applicable_errata[erratumid]['packages'].append(pkg)
         return applicable_errata
-
 
 
 class InstallPackages(AgentTask):
