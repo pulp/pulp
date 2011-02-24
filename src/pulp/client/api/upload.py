@@ -15,8 +15,15 @@
 
 import os
 import hashlib
+from time import sleep
+from logging import getLogger
+from socket import error as SocketError
+from M2Crypto.SSL import SSLError
 from pulp.client.api.base import PulpAPI
 from pulp.client.server import Bytes
+
+
+log = getLogger(__name__)
 
 
 class Momento:
@@ -87,6 +94,10 @@ class UploadAPI(PulpAPI):
     """
     Connection class to access upload related calls
     """
+    
+    DELAY = 5
+    DELAY_INCREMENT = 5
+    RETRIES = 5
 
     def upload(self, path, checksum=None, chunksize=0xA00000):
         """
@@ -138,8 +149,22 @@ class UploadAPI(PulpAPI):
         return self
 
     def __append(self, id, buf):
-        path = '/services/upload/append/%s/' % id
-        return self.server.PUT(path, buf)[1]
+        delay = self.DELAY
+        retries = self.RETRIES
+        while True:
+            try:
+                path = '/services/upload/append/%s/' % id
+                return self.server.PUT(path, buf)[1]
+            except (SocketError, SSLError), ex:
+                msg = 'upload (%s) append failed:%s [wait:%d, retries:%d]'
+                log.warn(msg, id, ex, delay, retries)
+                if retries:
+                    sleep(delay)
+                    delay = (delay+self.DELAY_INCREMENT)
+                    retries = (retries-1)
+                else:
+                    raise ex
+            
 
     def __checksum(self, path):
         f = open(path)
