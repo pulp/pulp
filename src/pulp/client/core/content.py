@@ -228,7 +228,7 @@ class Delete(ContentAction):
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
-                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found" % self.opts.csv))
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
@@ -254,7 +254,7 @@ class Delete(ContentAction):
                 print _("Content with filename [%s] could not be found on server; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
-            
+            pobj = None
             if len(pkgobj) > 1:
                 if not self.opts.csv:
                     print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping delete" % filename)
@@ -266,6 +266,11 @@ class Delete(ContentAction):
                             pobj = fo
             else:
                 pobj = pkgobj[0]
+            
+            if not pobj:
+                print _("No content found matching filename [%s] and checksum [%s]" % (filename, checksum))
+                exit_code = os.EX_DATAERR
+                continue
             
             if len(pobj['repos']):
                 print _("content with filename [%s] is currently associated other repos; Cannot perform delete; skipping" % filename)
