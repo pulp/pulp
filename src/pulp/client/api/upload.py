@@ -27,34 +27,57 @@ class Momento:
     ROOT = '~/.pulp/upload'
 
     def __init__(self, path, checksum):
+        """
+        @param path: The momento absolute path.
+        @type path: str
+        @param checksum: The file checksum
+        @type checksum: str
+        """
         fn = os.path.basename(path)
         root = os.path.expanduser(self.ROOT)
         path = path = os.path.join(root, str(checksum))
         self.path = os.path.join(path, fn)
-        self.__mkdir(path)
 
     def write(self, uuid):
+        """
+        Write the momento.
+        @param uuid: The momento content.
+        @type uuid: str
+        """
+        self.__mkdir()
         f = open(self.path, 'w')
         f.write(uuid)
         f.close()
 
-    def read(self):
+    def read(self, delete=True):
+        """
+        Read the uuid from the momento.
+        @param delete: Delete the momento after reading.
+        @type delete: bool
+        @return: The stored upload uuid.
+        """
         try:
             f = open(self.path)
             uuid = f.read()
             f.close()
+            if delete:
+                self.delete()
             return uuid
         except:
             pass
 
     def delete(self):
+        """
+        Delete (clean up) the momento.
+        """
         try:
             os.unlink(self.path)
             os.rmdir(os.path.dirname(self.path))
         except:
             pass
 
-    def __mkdir(self, path):
+    def __mkdir(self):
+        path = os.path.dirname(self.path)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -89,12 +112,9 @@ class UploadAPI(PulpAPI):
                 # already uploaded
                 return uuid
             self.__upload(path, offset, uuid, chunksize)
-            momento.delete()
         except KeyboardInterrupt, ke:
             momento.write(uuid)
             raise ke
-        except Exception:
-            momento.delete()
         return uuid
 
     def __start(self, path, checksum, uuid):
