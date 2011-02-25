@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.142
+Version:        0.0.143
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,23 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Fri Feb 25 2011 Jeff Ortel <jortel@redhat.com> 0.0.143-1
+- added collection caching to Model base class (jconnor@redhat.com)
+- 680462 - filter out empty lines from csv (pkilambi@redhat.com)
+- changed data model versioning to use the new Model.get_collection()
+  (jconnor@redhat.com)
+- strip any white spaces while reading the csv entries (pkilambi@redhat.com)
+- changing help desc to note optional (pkilambi@redhat.com)
+- 678119 - Requiring updated grinder and adding integration test for yum sync
+  (jmatthews@redhat.com)
+- 678119 - Fix local sync portion for missing fields in repo sync status
+  (jmatthews@redhat.com)
+- adding a check to make sure package object was retrieved if not skip the
+  package (pkilambi@redhat.com)
+- retry chunk upload on network/ssl errors. (jortel@redhat.com)
+- 680079 - python 2.4 compat: custom wrapper instead of bytearray.
+  (jortel@redhat.com)
+
 * Wed Feb 23 2011 Jeff Ortel <jortel@redhat.com> 0.0.142-1
 - updating unit tests as duplicatekey is caucht at the api level
   (pkilambi@redhat.com)
