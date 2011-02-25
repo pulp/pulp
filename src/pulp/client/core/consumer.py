@@ -28,7 +28,8 @@ from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.package_profile import PackageProfile
-from pulp.client.repolib import RepoLib
+import pulp.client.repolib as repolib
+from pulp.client.repo_file import RepoFile
 
 
 
@@ -40,7 +41,6 @@ class ConsumerAction(Action):
 
     def __init__(self):
         super(ConsumerAction, self).__init__()
-        self.repolib = RepoLib()
         self.consumer_api = ConsumerAPI()
 
     def setup_parser(self):
@@ -165,7 +165,9 @@ class Delete(ConsumerAction):
         consumerid = self.get_required_option('id')
         self.consumer_api.delete(consumerid)
         if myid and myid == consumerid:
-            self.repolib.delete()
+            repo_file = RepoFile(_cfg.repo_file)
+            repo_file.delete()
+            
             bundle = ConsumerBundle()
             bundle.delete()
         print _("Successfully deleted consumer [%s]") % consumerid
@@ -200,9 +202,10 @@ class Bind(ConsumerAction):
         myid = self.getconsumerid()
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        self.consumer_api.bind(consumerid, repoid)
+        bind_data = self.consumer_api.bind(consumerid, repoid)
         if myid and myid == consumerid:
-            self.repolib.update()
+            mirror_list_filename = repolib.mirror_list_filename(_cfg.mirror_list_dir, repoid)
+            repolib.bind(_cfg.repo_file, mirror_list_filename, bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
         print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                 (consumerid, repoid)
 
@@ -222,7 +225,8 @@ class Unbind(ConsumerAction):
         repoid = self.get_required_option('repoid')
         self.consumer_api.unbind(consumerid, repoid)
         if myid and myid == consumerid:
-            self.repolib.update()
+            mirror_list_filename = repolib.mirror_list_filename(_cfg.mirror_list_dir, repoid)
+            repolib.unbind(cfg.repo_file, mirror_list_filename, repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 

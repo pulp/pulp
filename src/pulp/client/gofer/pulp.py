@@ -23,7 +23,7 @@ from pulp.client.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
-from pulp.client.repolib import RepoLib
+import pulp.client.repolib as repolib
 from pulp.client.credentials import Consumer as ConsumerBundle
 from gofer.agent.plugin import Plugin
 from gofer.decorators import *
@@ -136,22 +136,26 @@ class Repo:
     """
 
     @remote
-    def update(self):
+    def bind(self, bind_data):
         """
-        Update the pulp.repo based on information
-        retrieved from pulp server.
+        Binds the repo described in bind_data to this consumer.
         """
-        log.info('updating yum repo')
-        rlib = RepoLib()
-        rlib.update()
+        log.info('Binding repo [%s]' % bind_data['repo']['id'])
+
+        repo_file = cfg.repo_file
+        mirror_list_file = repolib.mirror_list_filename(cfg.mirror_list_dir, bind_data['repo']['id'])
+
+        repolib.bind(repo_file, mirror_list_file, bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
 
     @remote
-    def delete(self):
+    def unbind(self, repo_id):
         """
-        Delete the .repo file.
+        Unbinds the given repo from this consumer.
         """
-        rlib = RepoLib()
-        rlib.delete()
+        repo_file = cfg.repo_file
+        mirror_list_file = repolib.mirror_list_filename(cfg.mirror_list_dir, repo_id)
+
+        repolib.unbind(repo_file, mirror_list_file, repo_id)
 
 
 class Packages:

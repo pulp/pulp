@@ -164,6 +164,18 @@ def unbind(repo_filename, mirror_list_filename, repo_id, lock=REPO_LOCK):
     finally:
         lock.release()
 
+def mirror_list_filename(dir, repo_id):
+    '''
+    Generates the full path to a unique mirror list file for the given repo.
+
+    @param dir: directory in which mirror list files are stored
+    @type  dir: string
+
+    @param repo_id: id of the repo the mirror list will belong to
+    @type  repo_id: string
+    '''
+    return os.path.join(dir, repo_id + '.mirrorlist')
+
 # -- private -----------------------------------------------------------------
 
 def _convert_repo(repo_data, key_list):
