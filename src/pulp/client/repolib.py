@@ -37,7 +37,7 @@ REPO_LOCK = Lock('/var/run/subsys/pulp/repolib.pid')
 
 # -- public ----------------------------------------------------------------
 
-def bind(repo_filename, mirror_list_filename, repo_data, url_list, lock=REPO_LOCK):
+def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, lock=REPO_LOCK):
     '''
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
@@ -67,7 +67,11 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, lock=REPO_LOC
     @param url_list: list of URLs that will be used to access the repo; this call
                      will determine the best way to represent the URL list in
                      the repo definition
-    @type  url_list: list
+    @type  url_list: list of strings
+
+    @param key_list: list of URLs that will be used to access GPG keys associated with
+                     the repo
+    @type  key_list: list of strings
 
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
@@ -80,7 +84,7 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, lock=REPO_LOC
         repo_file = RepoFile(repo_filename)
         repo_file.load()
         
-        repo = _convert_repo(repo_data)
+        repo = _convert_repo(repo_data, key_list)
 
         if len(url_list) > 1:
 
@@ -162,7 +166,7 @@ def unbind(repo_filename, mirror_list_filename, repo_id, lock=REPO_LOCK):
 
 # -- private -----------------------------------------------------------------
 
-def _convert_repo(repo_data):
+def _convert_repo(repo_data, key_list):
     '''
     Converts the dict repository representation into the repo file domain instance.
     This will *not* populate the baseurl parameter of the repo. That will be done
@@ -172,19 +176,26 @@ def _convert_repo(repo_data):
     @param repo: contains data for the repo to be created
     @type  repo: dict
 
+    @param key_list: list of GPG keys associated with the repo
+    @type  key_list: list of strings
+
     @return: repo instance in the repo file format
     @rtype:  L{Repo}
     '''
     repo = Repo(str(repo_data['id']))
     repo['name'] = repo_data['name']
-    repo['gpgcheck'] = '0'
+
+    if key_list is not None and len(key_list) > 0:
+        repo['gpgcheck'] = '1'
+        repo['gpgkey'] = '\n'.join(key_list)
+    else:
+        repo['gpgcheck'] = '0'
 
     # This probably won't be an issue; you shouldn't be able to bind to an unpublished repo
     if bool(repo_data['publish']):
         enabled = '1'
     else:
         enabled = '0'
-
     repo['enabled'] = enabled
 
     return repo

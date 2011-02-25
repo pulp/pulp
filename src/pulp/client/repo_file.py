@@ -57,6 +57,7 @@ class Repo(dict):
         @return: list of key/value pairs describing the repo
         @rtype:  list of tuples; (string, string)
         '''
+
         lst = []
         for k, d in self.PROPERTIES:
             v = self.get(k)
