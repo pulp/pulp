@@ -34,7 +34,7 @@ sys.path.insert(0, commondir)
 
 import pulp.server.comps_util
 import pulp.server.util
-import pulp.server.db.model
+from pulp.server.db import model
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import BaseSynchronizer
 from pulp.server.pexceptions import PulpException
@@ -83,7 +83,7 @@ class TestComps(unittest.TestCase):
         base.sync_groups_data(compsfile, repo)
         # 'repo' object should now contain groups/categories
         # we need to save it to the db so we can query from it
-        self.rapi.update(repo)
+        model.Repo.get_collection().save(repo, safe=True)
         # Testing for expected values
         found = self.rapi.packagegroup(repo['id'], "web-server")
         self.assertTrue(found is not None)
@@ -468,7 +468,7 @@ class TestComps(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         repo = self.rapi.repository(repo["id"])
         repo["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
-        self.rapi.update(repo)
+        model.Repo.get_collection().save(repo, safe=True)
         self.rapi._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) == 2)

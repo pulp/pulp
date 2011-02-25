@@ -29,6 +29,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import pulp
+from pulp.server.db import model
 from pulp.server import updateinfo
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
@@ -332,14 +333,13 @@ class TestErrata(unittest.TestCase):
         print "Package! %s" % p
         # Add this package version to the repo
         self.rapi.add_package(repo["id"], p['id'])
-        self.rapi.update(repo)
         test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
                                                     'name': 'pulp-test-package',
                                                     'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
                                                     'epoch': '0', 'version': '0.3.1', 'release': '1.fc11',
                                                     'arch': 'x86_64'}]}]
         self.eapi.update(test_errata_1)
-        repo["errata"] = {"security" : [test_errata_1['id']]}
+        self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
         cid = 'test-consumer'
         c = self.capi.create(cid, 'some consumer desc')
@@ -355,11 +355,10 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(c['package_profile'] is not None)
         self.capi.update(c)
 
-        self.rapi.update(repo)
         c["repoids"] = [repo['id']]
         self.capi.update(c)
 
-        errlist = self.capi.listerrata(c['id'], types=['security'])
+        errlist = self.capi.listerrata(c['id'], types=[type,])
         assert(len(errlist) == 1)
 
         pkguplist = self.capi.list_package_updates(c['id'])['packages']
@@ -429,7 +428,7 @@ class TestErrata(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         r = self.rapi.repository(r["id"])
         r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
-        self.rapi.update(r)
+        model.Repo.get_collection().save(r, safe=True)
         self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
@@ -500,7 +499,7 @@ class TestErrata(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         r = self.rapi.repository(r["id"])
         r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
-        self.rapi.update(r)
+        model.Repo.get_collection().save(r, safe=True)
         self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
