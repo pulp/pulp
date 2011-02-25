@@ -539,14 +539,6 @@ class Update(RepoAction):
 
     description = _('update a repository')
 
-    # special options that are handled by the
-    # specified methods.
-    # format (option, method)
-    OPTIONS = (
-        ('addkeys', 'addkeys'),
-        ('rmkeys', 'rmkeys'),
-    )
-
     def setup_parser(self):
         super(Update, self).setup_parser()
         self.parser.add_option("--name", dest="name",
@@ -580,30 +572,23 @@ class Update(RepoAction):
         for k, v in optdict.items():
             if not v:
                 continue
-            method = self.find(k)
-            if method: # special method
-                method(id, v)
-            else:
-                delta[k] = v
+            if k == 'addkeys':
+                reader = KeyReader()
+                keylist = reader.expand(v)
+                self.repository_api.addkeys(id, keylist)
+                continue
+            if k == 'rmkeys':
+                keylist = v.split(',')
+                self.repository_api.rmkeys(id, keylist)
+                continue
+            if k in ('ca', 'cert', 'key',):
+                f = open(v)
+                v = f.read()
+                f.close()
+            delta[k] = v
         self.repository_api.update(delta)
         print _("Successfully updated repository [ %s ]") % id
 
-    def find(self, option):
-        """ find option specification """
-        for opt, fn in self.OPTIONS:
-            if opt == option:
-                return getattr(self, fn)
-
-    def addkeys(self, id, keylist):
-        """ add the GPG keys """
-        reader = KeyReader()
-        keylist = reader.expand(keylist)
-        self.repository_api.addkeys(id, keylist)
-
-    def rmkeys(self, id, keylist):
-        """ add the GPG keys """
-        keylist = keylist.split(',')
-        self.repository_api.rmkeys(id, keylist)
 
 class Sync(RepoProgressAction):
 

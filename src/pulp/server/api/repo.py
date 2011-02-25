@@ -37,7 +37,6 @@ from pulp.server import updateinfo
 from pulp.server.compat import chain
 from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
-from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi
@@ -563,9 +562,9 @@ class RepoApi:
                 repo[key] = value
                 continue
             # Certificate(s) changed
-            if key in ('cacert', 'cert', 'key',):
+            if key in ('ca', 'cert', 'key',):
                 value = self._write_certs_to_disk(id, {key:value})
-                repo[key] = value
+                repo[key] = value[key]
                 continue
             # feed changed
             if key == 'feed':
