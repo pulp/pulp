@@ -36,8 +36,11 @@ import testutil
 
 class MockRepoProxy(object):
 
-    def bind(self):
-        print('Calling bind')
+    def __init__(self):
+        self.bind_data = None
+
+    def bind(self, bind_data):
+        self.bind_data = bind_data
 
 MOCK_REPO_PROXY = MockRepoProxy()
 
@@ -81,13 +84,76 @@ class TestConsumerApi(unittest.TestCase):
         self.consumer_api.create('test-consumer', None)
 
         # Test
-        self.consumer_api.bind('test-consumer', 'test-repo')
+        returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
 
         # Verify
-        consumer = self.consumer_api.consumer('test-consumer')
 
+        #   Database
+        consumer = self.consumer_api.consumer('test-consumer')
         self.assertTrue(consumer is not None)
         self.assertTrue('test-repo' in consumer['repoids'])
+
+        #   Bind data validation
+        def verify_bind_data(bind_data):
+            self.assertTrue(bind_data is not None)
+
+            # Verify repo
+            data_repo = bind_data['repo']
+            self.assertTrue(data_repo is not None)
+            self.assertEqual(data_repo['id'], 'test-repo')
+            self.assertEqual(data_repo['name'], 'Test Repo')
+
+            # Verify repo URLs
+            host_urls = bind_data['host_urls']
+            self.assertTrue(host_urls is not None)
+            self.assertEqual(1, len(host_urls))
+            self.assertEqual('https://localhost/pulp/repos/test-repo', host_urls[0])
+
+            # Verify key URLs
+            key_urls = bind_data['key_urls']
+            self.assertTrue(key_urls is not None)
+            self.assertEqual(0, len(key_urls))
+
+        #   Returned bind data
+        verify_bind_data(returned_bind_data)
+
+        #   Messaging bind data
+        verify_bind_data(MOCK_REPO_PROXY.bind_data)
+
+    def test_consumer_bind_with_keys(self):
+        '''
+        Tests that binding to a repo with GPG keys returns the URL to those keys as
+        part of the bind data.
+        '''
+
+        # Setup
+        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+        keyA = ('key-1', 'key-1-content')
+        keyB = ('key-2', 'key-2-content')
+        keylist = [keyA, keyB]
+        self.repo_api.addkeys('test-repo', keylist)
+
+        self.consumer_api.create('test-consumer', None)
+
+        # Test
+        returned_bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
+
+        # Verify
+
+        def verify_key_bind_data(bind_data):
+            key_urls = bind_data['key_urls']
+            self.assertTrue(key_urls is not None)
+            self.assertEqual(2, len(key_urls))
+
+            self.assertTrue('https://localhost/pulp/gpg/test-repo/key-1' in key_urls)
+            self.assertTrue('https://localhost/pulp/gpg/test-repo/key-2' in key_urls)
+
+        #   Returned bind data
+        verify_key_bind_data(returned_bind_data)
+
+        #   Messaging bind data
+        verify_key_bind_data(MOCK_REPO_PROXY.bind_data)
+
 
     def test_consumer_bind_invalid_consumer(self):
         '''

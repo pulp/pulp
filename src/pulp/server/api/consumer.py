@@ -26,8 +26,8 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 import pulp.server.auth.cert_generator as cert_generator
+from pulp.server.config import config
 from pulp.server.db import model
-#from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
 from pulp.server.async import AsyncAgent, AgentTask
@@ -315,11 +315,23 @@ class ConsumerApi(BaseApi):
         Binds (subscribe) the consumer identified by id to an existing repo. If the
         consumer is already bound to the repo, this call has no effect.
 
+        Any data the caller needs to use the newly bound repo is returned. The data are
+        returned in a dictionary. The keys in the dictionary and what they represent
+        are as follows:
+        - repo: the repo object itself
+        - host_urls: an ordered list of full URLs to use to access the repo
+        - key_urls: a list of full URLs to all gpg keys (if any) associated with the repo;
+                    empty list if the repo does not define any GPG keys
+
         @param id: identifies the consumer; a consumer with this ID must exist
         @type  id: string
 
         @param repoid: identifies the repo to bind; a repo with this ID must exist
         @type  repoid: string
+
+        @return: dictionary containing details about the repo that will describe how
+                 to use the bound repo
+        @rtype:  dict
 
         @raise PulpException: if either the consumer or repo cannot be found
         '''
@@ -343,16 +355,37 @@ class ConsumerApi(BaseApi):
         self.update(consumer)
         self.consumer_history_api.repo_bound(id, repoid)
 
-        # Collect the necessary information to return to the caller:
-        # - repo object
-        # - ordered list of URLs to use to access the repo
-        #
+        # Collect the necessary information to return to the caller (see __doc__ above)
 
+        # This will be replaced with a call to determine the list based on CDS availability.
+        # For now, this is just to maintain existing functionality in the new bind model.
+        server_name = config.get('server', 'server_name')
 
+        repo_hosted_url = config.get('server', 'relative_url')
+        repo_relative_path = repo['relative_path']
+        repo_url = 'https://%s%s/%s' % (server_name, repo_hosted_url, repo_relative_path)
+        repo_urls = [repo_url]
+
+        # This will also be replaced to be generated based on CDS availability.
+        key_hosted_url = config.get('server', 'key_url')
+        key_list = self.repoapi.listkeys(repoid)
+        key_urls = []
+        for key in key_list:
+            key_url = 'https://%s%s/%s' % (server_name, key_hosted_url, key)
+            key_urls.append(key_url)
+
+        bind_data = {
+            'repo' : repo,
+            'host_urls' : repo_urls,
+            'key_urls' : key_urls,
+        }
 
         # Send the bind request over to the consumer
         agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
-        agent_repolib.bind()
+        agent_repolib.bind(bind_data)
+
+        # Return the bind data to the caller
+        return bind_data
 
     @audit()
     def unbind(self, id, repoid):
