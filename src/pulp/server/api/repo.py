@@ -24,6 +24,7 @@ import shutil
 import time
 import traceback
 from urlparse import urlparse
+from StringIO import StringIO
 
 # Pulp
 import pulp.server.logs
@@ -1571,7 +1572,34 @@ class RepoApi(BaseApi):
         """
         found = self.objectdb.find({"files":fileid}, fields=["id"])
         return [r["id"] for r in found]
-
+    
+    def import_comps(self, repoid, comps_data=None):
+        """
+        Creates packagegroups and categories from a comps.xml file
+        @param repoid: repository Id
+        @param compsfile: comps xml stream
+        @return: True if success; else False
+        """
+        repo = self._get_existing_repo(repoid)
+        compsobj = StringIO()
+        compsobj.write(comps_data.encode("utf8"))
+        compsobj.seek(0,0)
+        bs = repo_sync.BaseSynchronizer()
+        status = bs.sync_groups_data(compsobj, repo)
+        self.objectdb.save(repo, safe=True)
+        return status
+    
+    def export_comps(self, repoid):
+        """
+        Creates packagegroups and categories from a comps.xml file
+        @param compsfile: comps xml stream
+        @return: comps xml stream
+        """
+        repo = self._get_existing_repo(repoid)    
+        xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
+                repo['packagegroups'])
+        return xml
+        
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':

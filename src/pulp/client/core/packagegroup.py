@@ -64,6 +64,7 @@ class List(PackageGroupAction):
         print_header(_("Repository: %s") % (repoid), _("Package Group Information"))
         for key in sorted(groups.keys()):
             print "\t %s" % (key)
+        
 
 
 class Info(PackageGroupAction):
@@ -423,7 +424,67 @@ class DeleteGroupFromCategory(PackageGroupAction):
         else:
             print _("Group [%s] deleted from category [%s] in repository [%s]") % \
                     (groupid, categoryid, repoid)
-
+                    
+class ImportComps(PackageGroupAction):
+    
+    description = _('Import package groups and categories from an existing comps.xml')
+    
+    def setup_parser(self):
+        super(ImportComps, self).setup_parser()
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+        self.parser.add_option("--comps", dest="compsxml",
+                               help=_("comps xml file to import (required)"))
+        
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        compsfile = self.get_required_option('compsxml')
+        
+        if not os.path.exists(compsfile):
+            system_exit(os.EX_DATAERR, _("Comps file could not be found."))
+            
+        try:
+            status = self.repository_api.import_comps(repoid, compsfile)
+        except Exception, e:
+            _log.error(e)
+            system_exit(os.EX_DATAERR, _("Comps file import failed with error %s") % e)
+        
+        if status:
+            system_exit(os.EX_OK, _("Successfully imported comps groups and categories into repository [%s]") % repoid)
+        else:
+            system_exit(os.EX_DATAERR, _("Failed to import comps file. Please double check the comps file."))
+            
+class ExportComps(PackageGroupAction):
+    
+    description = _('Export comps.xml for package groups and categories in a repo')
+    
+    def setup_parser(self):
+        super(ExportComps, self).setup_parser()
+        self.parser.add_option("-r", "--repoid", dest="repoid",
+                               help=_("repository label (required)"))
+        self.parser.add_option("-o", "--out", dest="out",
+                               help=_("output file to store the exported comps data (optional); default is stdout"))
+        
+    def run(self):
+        repoid = self.get_required_option('repoid')
+        
+        try:
+            comps_xml = self.repository_api.export_comps(repoid)
+        except Exception, e:
+            _log.error(e)
+            system_exit(os.EX_DATAERR, _("Unable to export comps file for repo [%s]") % repoid)
+        else:
+            if self.opts.out:
+                try:
+                    f = open(self.opts.out, 'w')
+                    f.write(comps_xml.encode("utf8"))
+                    f.close()
+                    system_exit(os.EX_OK, _("Successfully exported the comps data to [%s]" % self.opts.out))
+                except Exception,e:
+                    system_exit(os.EX_DATAERR, _("Error occurred while storing the comps data %s" % e))
+            else:
+                print comps_xml
+    
 
 # package group command -------------------------------------------------------
 
