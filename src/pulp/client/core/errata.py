@@ -22,6 +22,7 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup, SUPPRESS_HELP
 
+from pulp.client import utils
 from pulp.client import constants
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
@@ -209,6 +210,130 @@ class Install(ErrataAction):
             print _("\nSuccessfully performed consumergroup install with following consumer result list %s" % status['result'])
         else:
             print("\nErrata install failed")
+            
+class Create(ErrataAction):
+    
+    description = _('create a custom errata')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("advisory id of the erratum to be created"))
+        self.parser.add_option("--title", dest="title",
+                               help=_("title of the erratum"))
+        self.parser.add_option("--description", dest="description", default="",
+                               help=_("description of the erratum"))
+        self.parser.add_option("--version", dest="version",
+                               help=_("version of the erratum"))
+        self.parser.add_option("--release", dest="release",
+                               help=_("release of the erratum"))
+        self.parser.add_option("--type", dest="type",
+                               help=_("type of the erratum.Supported:security, enhancement, bugfix"))
+        self.parser.add_option("--issued", dest="issued",default="",
+                               help=_("erratum issued date; format:YYYY-MM-DD HH:MM:SS"))
+        self.parser.add_option("--status", dest="status",
+                               help=_("status of this update. eg:stable"))
+        self.parser.add_option("--updated", dest="updated",default="",
+                               help=_("erratum updated date; format:YYYY-MM-DD HH:MM:SS"))
+        self.parser.add_option("--fromstr", dest="fromstr",default="",
+                               help=_("from contact string who released the Erratum, eg:updates@fedoraproject.org"))
+        self.parser.add_option("--effected-packages", dest="pkgcsv",
+                               help=_("a csv file with effected packages; format:name,version,release,epoch,arch,filename,sourceurl"))
+        self.parser.add_option("--pushcount", dest="pushcount", default="",
+                               help=_("pushcount on the erratum"))
+        self.parser.add_option("--references", dest="refcsv",
+                            help=_("A reference csv file; format:href,type,id,title"))
+        self.parser.add_option("--reboot-suggested", action="store_true", dest="reboot_sugg",
+                            help=_("reboot suggested on errata"))
+        self.parser.add_option("--short", dest="short",
+                            help=_("short release name; eg: F14"))
+        
+        
+    def run(self):
+        if not self.opts.id:
+            system_exit(os.EX_USAGE, _("Errata Id is required; see --help"))
+        
+        if not self.opts.title:
+            system_exit(os.EX_USAGE, _("Errata title is required; see --help"))
+            
+        if not self.opts.description:
+            self.opts.description = self.opts.title
+            
+        if not self.opts.version:
+            system_exit(os.EX_USAGE, _("Errata version is required; see --help"))
+            
+        if not self.opts.release:
+            system_exit(os.EX_USAGE, _("Errata release is required; see --help"))
+            
+        if not self.opts.type:
+            system_exit(os.EX_USAGE, _("Errata type is required; see --help"))
+            
+        found = self.errata_api.erratum(self.opts.id)
+        if found:
+            system_exit(os.EX_DATAERR, _("Erratum with id [%s] already exists on server." % self.opts.id))
+        # process package list
+        references = []
+        if self.opts.refcsv:
+            if not os.path.exists(self.opts.refcsv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            reflist = utils.parseCSV(self.opts.refcsv)
+            for ref in reflist:
+                if not len(ref) == 4:
+                    log.error(_("Bad format [%s] in csv, skipping" % ref))
+                    continue
+                href,type,id,title = ref
+                refdict = dict(href=href,type=type,id=id,title=title)
+                references.append(refdict)
+        #process references
+        pkglist = []
+        if self.opts.pkgcsv:
+            if not os.path.exists(self.opts.pkgcsv):
+                system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
+            plist = utils.parseCSV(self.opts.pkgcsv)
+            pkgs = []
+            for p in plist:
+                if not len(p) == 7:
+                    log.error(_("Bad format [%s] in csv, skipping" % p))
+                    continue
+                name,version,release,epoch,arch,filename,sourceurl = p
+                pdict = dict(name=name, version=version, release=release, 
+                               epoch=epoch, filename=filename, src=sourceurl)
+                pkgs.append(pdict)
+            plistdict = {'packages' : pkgs,
+                         'name'     : self.opts.release,
+                         'short'    : self.opts.short or ""} 
+            pkglist = [plistdict]
+        #create an erratum
+
+        erratum_new = self.errata_api.create(self.opts.id, self.opts.title, self.opts.description,
+                               self.opts.version, self.opts.release, self.opts.type,
+                               status=self.opts.status, updated=self.opts.updated or "", 
+                               issued=self.opts.issued or "", pushcount=self.opts.pushcount or "", 
+                               update_id="", from_str=self.opts.fromstr or "", 
+                               reboot_suggested=self.opts.reboot_sugg or "", 
+                               references=references, pkglist=pkglist)
+        if erratum_new:
+            print _("Successfully created an Erratum with id [%s]" % erratum_new['id'])
+        
+class update(ErrataAction):
+    pass
+
+class Delete(ErrataAction):
+    
+    description = _('delete a custom errata')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("errata id to delete"))
+        
+    def run(self):
+        if not self.opts.id:
+            system_exit(os.EX_USAGE, _("Errata Id is required; see --help"))
+        found = self.errata_api.erratum(self.opts.id)
+        if not found:
+            system_exit(os.EX_DATAERR, _("Erratum with id [%s] not found." % self.opts.id))
+        
+        self.errata_api.delete(self.opts.id)
+        print _("Successfully deleted Erratum with id [%s]" % self.opts.id)
 
 # errata command --------------------------------------------------------------
 

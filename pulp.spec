@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.141
+Version:        0.0.142
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -26,7 +26,7 @@ Requires: python-webpy
 Requires: python-simplejson
 Requires: python-oauth2
 Requires: python-httplib2
-Requires: grinder >= 0.0.78
+Requires: grinder >= 0.0.81
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_ssl
@@ -243,6 +243,17 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Feb 23 2011 Jeff Ortel <jortel@redhat.com> 0.0.142-1
+- updating unit tests as duplicatekey is caucht at the api level
+  (pkilambi@redhat.com)
+- Errata cli crud operations (pkilambi@redhat.com)
+- 679889 - use bytearray instead of bytes. (jortel@redhat.com)
+- adding a catch for DuplicateKeyError and return the existing file object
+  (pkilambi@redhat.com)
+- Refactored out repo file so we can more easily plug in different approaches
+  for CDS binding. Removed hardcoded filename limitation so we can test and
+  later allow multiple consumers per machine. (jason.dobies@redhat.com)
+
 * Wed Feb 23 2011 Jeff Ortel <jortel@redhat.com> 0.0.141-1
 - 679800 - handle POST/PUT body othen than dict but still handle binary.
   (jortel@redhat.com)

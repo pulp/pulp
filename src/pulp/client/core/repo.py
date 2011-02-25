@@ -764,7 +764,7 @@ class AddPackages(RepoAction):
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
                 help=_("Package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("Source repository with specified packages to perform add"))
+            help=_("Source repository with specified packages to perform add (optional)"))
         self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",

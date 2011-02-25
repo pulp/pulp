@@ -841,6 +841,36 @@ class TestApi(unittest.TestCase):
         finally:
             os.chmod(bad_rpm_path, bad_rpm_mode)
             os.chmod(bad_tree_path, bad_tree_mode) 
+    
+    def test_local_sync_callback(self):
+        # We need report to be accesible for writing by the callback
+        global report
+        report = None
+        def callback(r):
+            global report
+            report = r
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = my_dir + "/data/repo_resync_a/"
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'local:file://%s' % datadir)
+        self.rapi._sync(repo['id'], progress_callback=callback)
+        found = self.rapi.repository(repo['id'])
+        packages = found['packages']
+        self.assertTrue(packages is not None)
+        self.assertTrue(len(packages) == 3)
+        self.assertEqual(report["num_download"], 3)
+        self.assertEqual(report["num_error"], 0)
+        self.assertEqual(report["num_success"], 3)
+        self.assertEqual(report["items_total"], 3)
+        self.assertEqual(report["items_left"], 0)
+        self.assertEqual(report["size_total"], 6791)
+        rpm_details = report["details"]["rpm"]
+        self.assertEqual(rpm_details["total_count"], 3)
+        self.assertEqual(rpm_details["num_error"], 0)
+        self.assertEqual(rpm_details["num_success"], 3)
+        self.assertEqual(rpm_details["items_left"], 0)
+        self.assertEqual(rpm_details["total_size_bytes"], 6791)
+        self.assertEqual(rpm_details["size_left"], 0)
 
     def test_find_repos_by_package(self):
         # Goal is to search by errata id and discover the repos
