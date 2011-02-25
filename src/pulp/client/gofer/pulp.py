@@ -24,6 +24,7 @@ from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
 import pulp.client.repolib as repolib
+from pulp.client.repo_file import RepoFile
 from pulp.client.credentials import Consumer as ConsumerBundle
 from gofer.agent.plugin import Plugin
 from gofer.decorators import *
@@ -124,8 +125,10 @@ class Consumer:
         if found != digest:
             log.warn('Artifacts NOT deleted')
             return
-        repo = Repo()
-        repo.delete()
+
+        repo_file = RepoFile(cfg.repo_file)
+        repo_file.delete()
+
         bundle.delete()
         log.info('Artifacts deleted')
 
@@ -152,6 +155,8 @@ class Repo:
         """
         Unbinds the given repo from this consumer.
         """
+        log.info('Unbinding repo [%s]' % repo_id)
+
         repo_file = cfg.repo_file
         mirror_list_file = repolib.mirror_list_filename(cfg.mirror_list_dir, repo_id)
 
