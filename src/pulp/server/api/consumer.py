@@ -388,28 +388,38 @@ class ConsumerApi(BaseApi):
         return bind_data
 
     @audit()
-    def unbind(self, id, repoid):
-        """
-        Unbind (unsubscribe) a consumer to a repo.
-        @param id: A consumer id.
-        @type id: str
-        @param repoid: A repo id to unbind.
-        @type repoid: str
-        @raise PulpException: When consumer not found.
-        """
+    def unbind(self, id, repo_id):
+        '''
+        Unbinds a consumer from the given repo. If the consumer is not bound to the
+        repo, this call has no effect.
+
+        @param id: identifies the consumer; this must represent a consumer currently in the DB
+        @type  id: string
+
+        @param repo_id: identifies the repo being unbound
+        @type  repo_id: string
+
+        @raise PulpException: if the consumer cannot be found
+        '''
+
+        # Parameter test
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        repoids = consumer["repoids"] #.  setdefault('repoids', [])
-        log.error("Consumer repos %s" % repoids)
-        if repoid not in repoids:
+
+        # Short circuit if the repo isn't bound to the consumer
+        repoids = consumer['repoids']
+        if repo_id not in repoids:
             return
-        repoids.remove(repoid)
+
+        # Update the consumer entry in the DB
+        repoids.remove(repo_id)
         self.update(consumer)
-        agent = Agent(id, async=True)
-        repolib = agent.Repo()
-        repolib.update()
-        self.consumer_history_api.repo_unbound(id, repoid)
+
+        agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
+        agent_repolib.unbind(repo_id)
+
+        self.consumer_history_api.repo_unbound(id, repo_id)
 
     @audit(params=['id'])
     def profile_update(self, id, package_profile):
