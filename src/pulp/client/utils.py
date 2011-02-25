@@ -288,6 +288,7 @@ def parseCSV(filepath):
     reader = csv.reader(in_file)
     lines = []
     for line in reader:
+        line = [l.strip() for l in line]
         lines.append(line)
     in_file.close()
     return lines
