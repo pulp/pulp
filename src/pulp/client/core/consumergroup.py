@@ -18,7 +18,6 @@ from pulp.client import constants
 from pulp.client.api.consumergroup import ConsumerGroupAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
-from pulp.client.repolib import RepoLib
 
 # consumer group base action --------------------------------------------------
 
@@ -26,7 +25,6 @@ class ConsumerGroupAction(Action):
 
     def __init__(self):
         super(ConsumerGroupAction, self).__init__()
-        self.repolib = RepoLib()
         self.consumer_group_api = ConsumerGroupAPI()
 
     def setup_parser(self):
@@ -136,7 +134,6 @@ class Bind(ConsumerGroupAction):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.consumer_group_api.bind(groupid, repoid)
-        self.repolib.update()
         print _("Successfully subscribed consumer group [%s] to repo [%s]") % \
                 (groupid, repoid)
 
@@ -154,7 +151,6 @@ class Unbind(ConsumerGroupAction):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         self.consumer_group_api.unbind(groupid, repoid)
-        self.repolib.update()
         print _("Successfully unsubscribed consumer group [%s] from repo [%s]") % \
                 (groupid, repoid)
 
