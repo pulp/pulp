@@ -444,7 +444,8 @@ class ImportComps(PackageGroupAction):
             system_exit(os.EX_DATAERR, _("Comps file could not be found."))
             
         try:
-            status = self.repository_api.import_comps(repoid, compsfile)
+            compsobj = open(compsfile, 'r').read()
+            status = self.repository_api.import_comps(repoid, compsobj)
         except Exception, e:
             _log.error(e)
             system_exit(os.EX_DATAERR, _("Comps file import failed with error %s") % e)
