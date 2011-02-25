@@ -306,8 +306,8 @@ class ConsumerActions(AsyncController):
         data = self.params()
         if not repo_api.repository(data):
             return self.conflict('Repo [%s] does not exist' % data)
-        consumer_api.bind(id, data)
-        return self.ok(True)
+        bind_data = consumer_api.bind(id, data)
+        return self.ok(bind_data)
 
     def unbind(self, id):
         """

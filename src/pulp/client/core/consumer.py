@@ -165,7 +165,7 @@ class Delete(ConsumerAction):
         consumerid = self.get_required_option('id')
         self.consumer_api.delete(consumerid)
         if myid and myid == consumerid:
-            repo_file = RepoFile(_cfg.repo_file)
+            repo_file = RepoFile(_cfg.client.repo_file)
             repo_file.delete()
             
             bundle = ConsumerBundle()
@@ -203,11 +203,16 @@ class Bind(ConsumerAction):
         consumerid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
         bind_data = self.consumer_api.bind(consumerid, repoid)
-        if myid and myid == consumerid:
-            mirror_list_filename = repolib.mirror_list_filename(_cfg.mirror_list_dir, repoid)
-            repolib.bind(_cfg.repo_file, mirror_list_filename, bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
-        print _("Successfully subscribed consumer [%s] to repo [%s]") % \
-                (consumerid, repoid)
+
+        if bind_data:
+            if myid and myid == consumerid:
+                mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
+                repolib.bind(_cfg.client.repo_file, mirror_list_filename, bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
+
+            print _("Successfully subscribed consumer [%s] to repo [%s]") % \
+                  (consumerid, repoid)
+        else:
+            print _('Repo [%s] already bound to the consumer' % repoid)
 
 
 class Unbind(ConsumerAction):
@@ -225,8 +230,8 @@ class Unbind(ConsumerAction):
         repoid = self.get_required_option('repoid')
         self.consumer_api.unbind(consumerid, repoid)
         if myid and myid == consumerid:
-            mirror_list_filename = repolib.mirror_list_filename(_cfg.mirror_list_dir, repoid)
-            repolib.unbind(cfg.repo_file, mirror_list_filename, repoid)
+            mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
+            repolib.unbind(_cfg.client.repo_file, mirror_list_filename, repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 

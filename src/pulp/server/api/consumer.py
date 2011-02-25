@@ -330,7 +330,7 @@ class ConsumerApi(BaseApi):
         @type  repoid: string
 
         @return: dictionary containing details about the repo that will describe how
-                 to use the bound repo
+                 to use the bound repo; None if no binding took place
         @rtype:  dict
 
         @raise PulpException: if either the consumer or repo cannot be found
@@ -348,7 +348,7 @@ class ConsumerApi(BaseApi):
         # Short circuit if the repo is already bound
         repoids = consumer.setdefault('repoids', [])
         if repoid in repoids:
-            return
+            return None
 
         # Update the consumer with the new repo, adding an entry to its history 
         repoids.append(repoid)
