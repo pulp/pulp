@@ -36,19 +36,17 @@ class Model(dict):
         self._id = str(uuid.uuid4())
         self.id = self._id
 
+    # dict to dot-notation mapping methods ------------------------------------
+
     def __getattr__(self, attr):
         return self.get(attr, None)
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-    @classmethod
-    def get_collection(cls):
-        """
-        Get the document collection for this data model.
-        @rtype: pymongo.collection.Collection instance or None
-        @return: the document collection if associated with one, None otherwise
-        """
+    # class connection methods ------------------------------------------------
 
+    @classmethod
+    def _get_collection_from_db(cls):
         # ensure the indicies in the document collection
         def _ensure_indicies(collection, indicies, unique):
             # indicies are either tuples or strings,
@@ -59,10 +57,6 @@ class Model(dict):
                 collection.ensure_index([(i, DESCENDING) for i in index],
                                         unique=unique, background=True)
 
-        # not all data models are associated with a document collection
-        # provide mechanism for sub-documents
-        if cls.collection_name is None:
-            return None
         db = get_database()
         if db is None:
             msg = _('Cannot get collection from uninitialized database')
@@ -71,3 +65,28 @@ class Model(dict):
         _ensure_indicies(collection, cls.unique_indicies, True)
         _ensure_indicies(collection, cls.other_indicies, False)
         return collection
+
+    @classmethod
+    def _get_cached_collection(cls):
+        try:
+            return cls.__collection
+        except AttributeError:
+            return None
+
+    @classmethod
+    def get_collection(cls):
+        """
+        Get the document collection for this data model.
+        @rtype: pymongo.collection.Collection instance or None
+        @return: the document collection if associated with one, None otherwise
+        """
+        # not all data models are associated with a document collection
+        # provide mechanism for sub-documents
+        if cls.collection_name is None:
+            return None
+        # see if we have the collection cached
+        cls.__collection = cls._get_cached_collection()
+        # if not, grab the collection, and cache it
+        if cls.__collection is None:
+            cls.__collection = cls._get_collection_from_db()
+        return cls.__collection
