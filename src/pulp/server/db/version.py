@@ -17,7 +17,7 @@ import logging
 
 import pymongo
 
-from pulp.server.db.connection import get_object_db
+#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Model
 
 
@@ -38,6 +38,10 @@ class DataModelVersion(Model):
     @ivar validated: boolean flag set to True if the data model has been
                      validated, False initially
     """
+
+    collection_name = 'data_model'
+    unique_indicies = ('version',)
+
     def __init__(self, version):
         """
         @type version: int
@@ -56,7 +60,8 @@ def _init_db():
     global _version_db
     if _version_db is not None:
         return
-    _version_db = get_object_db('data_model', ['version'])
+    #_version_db = get_object_db('data_model', ['version'])
+    _version_db = DataModelVersion.get_collection()
 
 def clean_db():
     """
