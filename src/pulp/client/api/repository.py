@@ -246,3 +246,11 @@ class RepositoryAPI(PulpAPI):
     def list_files(self, repoid):
         path = "/repositories/%s/files/" % repoid
         return self.server.GET(path)[1]
+    
+    def import_comps(self, repoid, compsdata):
+        path = "/repositories/%s/import_comps/" % repoid
+        return self.server.POST(path, compsdata)[1]
+    
+    def export_comps(self, repoid):
+        path = "/repositories/%s/comps/" % repoid
+        return self.server.GET(path)[1]

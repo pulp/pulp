@@ -28,6 +28,22 @@ class Model(dict):
     attrs into the base dict object with dot notation
     '''
 
+    # The model class will know how to fetch the document collection used to
+    # store the models in database. If you want a document collection to be
+    # associated with your model, all you need to do is define the name of the
+    # document collection with the 'collection_name' class field.
+    # Once you have defined the collection_name, you may use the
+    # 'unique_indices' and 'other_indicies' to define which fields are indexed
+    # in the document collection.
+    # The unique_indicies field is a tuple whose elements can be either:
+    # * A string name of a model field whose value is to be indexed and must be
+    #   unique among all stored instances of the model.
+    # * A tuple of string names of model fields that will each be indexed and,
+    #   together, must be a unique set of fields among all stored instances of
+    #   the model.
+    # The other_indices field is only a tuple listing other model fields to be
+    # indexed in the collection, but that do not need to be individually unique
+    # or form unique sets of values.
     collection_name = None
     unique_indicies = ('id',) # note, '_id' is automatically unique and indexed
     other_indicies = ()

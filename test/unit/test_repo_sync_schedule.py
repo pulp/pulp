@@ -62,8 +62,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Update #1 ----------
         repo = self.repo_api.repository(repo_id)
-        repo['sync_schedule'] = sync_schedule
-        self.repo_api.update(repo)
+        delta = {'id':repo_id, 'sync_schedule':sync_schedule}
+        repo = self.repo_api.update(delta)
 
         # Verify
         tab = pulp.server.crontab.CronTab()
@@ -75,8 +75,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Update #2 ----------
         repo = self.repo_api.repository(repo_id)
-        repo['sync_schedule'] = sync_schedule_2
-        self.repo_api.update(repo)
+        delta = {'id':repo_id, 'sync_schedule':sync_schedule_2}
+        repo = self.repo_api.update(delta)
 
         # Verify
         tab = pulp.server.crontab.CronTab()
@@ -87,8 +87,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Delete #1 ----------
         repo = self.repo_api.repository(repo_id)
-        repo['sync_schedule'] = None
-        self.repo_api.update(repo)
+        delta = {'id':repo_id, 'sync_schedule':None}
+        repo = self.repo_api.update(delta)
 
         # Verify
         tab = pulp.server.crontab.CronTab()
@@ -97,8 +97,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Delete #2 ----------
         repo = self.repo_api.repository(repo_id)
-        repo['sync_schedule'] = None
-        self.repo_api.update(repo)
+        delta = {'id':repo_id, 'sync_schedule':None}
+        repo = self.repo_api.update(delta)
 
         # Verify
         tab = pulp.server.crontab.CronTab()

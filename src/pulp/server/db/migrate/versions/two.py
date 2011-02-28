@@ -15,13 +15,12 @@
 
 import logging
 
-from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.repo import RepoApi
-from pulp.server.api.role import RoleAPI
-from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (ensure_builtin_roles,
     consumer_users_role, add_user_to_role,
     grant_automatic_permissions_to_consumer_user)
+
+from pulp.server.db.model.resource import Repo, Consumer
+from pulp.server.db.model.auth import User, Role
 
 
 _log = logging.getLogger('pulp')
@@ -32,7 +31,7 @@ version = 2
 
 
 def _migrate_builtin_roles():
-    collection = RoleAPI()._getcollection()
+    collection = Repo.get_collection()
     for role in collection.find():
         # just delete the roles directly, we need to leave the user permissions
         # in tact
@@ -43,8 +42,8 @@ def _migrate_builtin_roles():
 
 
 def _migrate_consumer_model():
-    collection = ConsumerApi()._getcollection()
-    user_api = UserApi()
+    collection = Consumer.get_collection()
+    user_api = User.get_collection()
     for consumer in collection.find():
         key = 'credentials'
         if key not in consumer:
@@ -60,7 +59,7 @@ def _migrate_consumer_model():
 
 
 def _migrate_repo_model():
-    collection = RepoApi()._getcollection()
+    collection = Repo.get_collection()
     for repo in collection.find():
         modified = False
         if 'package_count' not in repo:
@@ -83,7 +82,7 @@ def _migrate_repo_model():
 
 
 def _migrate_user_model():
-    collection = UserApi()._getcollection()
+    collection = User.get_collection()
     for user in collection.find():
         modified = False
         if 'roles' not in user or not isinstance(user['roles'], list):

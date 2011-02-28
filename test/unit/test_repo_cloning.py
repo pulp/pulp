@@ -46,13 +46,18 @@ class TestRepoSyncSchedule(unittest.TestCase):
         
     def test_clone(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://mmccune.fedorapeople.org/pulp/')
-
-        self.rapi._sync(repo['id'])
-  
-        # Try repo cloning default case: feed = parent
-        self.rapi._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')   
+                                'yum:http://10.16.76.78/pub/updates/')
+        self.assertTrue(repo is not None)
+        try:
+            self.rapi._sync(repo['id'])
+        except Exception:
+            self.assertTrue(False)
         
+        # Try repo cloning default case: feed = parent
+        try:
+            self.rapi._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')
+        except Exception:
+            self.assertTrue(False)
         # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-parent')
         assert(len(dirList) > 0)
@@ -62,8 +67,11 @@ class TestRepoSyncSchedule(unittest.TestCase):
         assert(len(packages) > 0)
 
         # Try repo cloning with origin feed
-        self.rapi._clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
-           # Check that local storage has dir and rpms
+        try:
+            self.rapi._clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
+        except Exception:
+            self.assertTrue(False)
+        # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-origin')
         assert(len(dirList) > 0)
         found = self.rapi.repository('clone-some-id-origin')
@@ -72,8 +80,11 @@ class TestRepoSyncSchedule(unittest.TestCase):
         assert(len(packages) > 0)
 
         # Try repo cloning with no feed
-        self.rapi._clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
-           # Check that local storage has dir and rpms
+        try:
+            self.rapi._clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
+        except Exception:
+            self.assertTrue(False)
+        # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-none')
         assert(len(dirList) > 0)
         found = self.rapi.repository('clone-some-id-none')

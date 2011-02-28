@@ -202,6 +202,22 @@ class File(Model):
         self.download_url = None
         self.repo_defined = repo_defined
 
+class Filter(Model):
+    """
+    Class represents a blacklist or whitelist filter that can be applied when syncing a repository
+    """
+    collection_name = 'filters'
+    unique_indicies = ('id',)
+    other_indicies = ('type')
+
+    def _init_(self, id, type, description=None, package_list=[]):
+        self._id = id
+        self.id = id
+        self.description = description
+        self.type = type
+        self.package_list = package_list
+
+
 # repository models -----------------------------------------------------------
 
 class Repo(Model):

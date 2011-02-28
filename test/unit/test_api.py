@@ -401,7 +401,6 @@ class TestApi(unittest.TestCase):
         print "Package! %s" % p
         # Add this package version to the repo
         self.rapi.add_package(repo["id"], [p['id']])
-        self.rapi.update(repo)
         test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
                                                     'name': 'pulp-test-package',
                                                     'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
@@ -409,7 +408,7 @@ class TestApi(unittest.TestCase):
                                                     'arch': 'x86_64'}]}]
 
         self.eapi.update(test_errata_1)
-        repo["errata"] = {"security" : [test_errata_1['id']]}
+        self.rapi.add_errata(repo['id'], (test_errata_1['id'],))
 
         cid = 'test-consumer'
         c = self.capi.create(cid, 'some consumer desc')
@@ -425,7 +424,6 @@ class TestApi(unittest.TestCase):
         self.assertTrue(c['package_profile'] is not None)
         self.capi.update(c)
 
-        self.rapi.update(repo)
         c["repoids"] = [repo['id']]
         self.capi.update(c)
 
@@ -467,23 +465,27 @@ class TestApi(unittest.TestCase):
 
 
     def test_repo_package_group_categories(self):
-        repo = self.rapi.create('some-id_pkg_group_categories', 'some name', \
-            'i386', 'yum:http://example.com')
-        pkggroup = PackageGroup('test-group-id', 'test-group-name',
-                'test-group-description')
-        pkggroup.default_package_names.append("test-package-name")
-        ctg = PackageGroupCategory('test-group-cat-id', 'test-group-cat-name',
-                'test-group-cat-description')
-        ctg.packagegroupids = pkggroup.id
-        repo['packagegroupcategories'][ctg.id] = ctg
-        repo['packagegroups'][pkggroup.id] = pkggroup
-        self.rapi.update(repo)
-
-        found = self.rapi.repository('some-id_pkg_group_categories')
+        repo = self.rapi.create(
+            'some-id_pkg_group_categories',
+            'some name',
+            'i386',
+            'yum:http://example.com')
+        group = self.rapi.create_packagegroup(
+            repo['id'],
+            'test-group-id',
+            'test-group-name',
+            'test-group-description')
+        group.default_package_names.append("test-package-name")
+        category = self.rapi.create_packagegroupcategory(
+            repo['id'],
+            'test-group-cat-id', 'test-group-cat-name',
+            'test-group-cat-description')
+        self.rapi.add_packagegroup_to_category(repo['id'], category['id'], group['id'])
+        found = self.rapi.repository(repo['id'])
         assert(found['packagegroups'] is not None)
-        assert(pkggroup['id'] in found['packagegroups'])
+        assert(group['id'] in found['packagegroups'])
         assert(found['packagegroupcategories'] is not None)
-        assert(ctg['id'] in found['packagegroupcategories'])
+        assert(category['id'] in found['packagegroupcategories'])
 
     def test_consumer_create(self):
         c = self.capi.create('test-consumer', 'some consumer desc')

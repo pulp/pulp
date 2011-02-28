@@ -78,6 +78,13 @@ Name  :               \t%-25s
 Roles :               \t%-25s
 """
 
+AVAILABLE_FILTERS_LIST = """
+Id           :               \t%-25s
+Description  :               \t%-25s
+Type         :               \t%-25s
+Package List :               \t%-25s
+"""
+
 ERRATA_INFO = """
 Id                    \t%-25s
 Title                 \t%-25s

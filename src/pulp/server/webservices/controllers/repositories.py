@@ -187,6 +187,7 @@ class RepositoryDeferredFields(JSONController):
         'distribution',
         'files',
         'keys',
+        'comps',
     )
 
     def packages(self, id):
@@ -245,7 +246,16 @@ class RepositoryDeferredFields(JSONController):
     def keys(self, id):
         keylist = api.listkeys(id)
         return self.ok(keylist)
-
+    
+    def comps(self, id):
+        """
+        Exports comps.xml for groups in a repository
+        @param id: repository id
+        @return: comps xml output
+        """
+        return self.ok(api.export_comps(id))
+    
+        
     @JSONController.error_handler
     @JSONController.auth_required(READ)
     def GET(self, id, field_name):
@@ -295,6 +305,7 @@ class RepositoryActions(AsyncController):
         'addkeys',
         'rmkeys',
         'update_publish',
+        'import_comps',
     )
 
     def sync(self, id):
@@ -443,7 +454,16 @@ class RepositoryActions(AsyncController):
         descrp = p["description"]
         return self.ok(api.create_packagegroup(id, groupid, groupname,
                                                descrp))
-
+        
+    def import_comps(self, id):
+        """
+        Creates packagegroups and categories from a comps.xml file
+        @param id: repository id
+        @return: True on successful import to repository
+        """
+        comps_data = self.params()
+        return self.ok(api.import_comps(id, comps_data))
+    
     def delete_packagegroup(self, id):
         """
         Removes a packagegroup from a repository

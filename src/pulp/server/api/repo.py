@@ -24,6 +24,7 @@ import shutil
 import time
 import traceback
 from urlparse import urlparse
+from StringIO import StringIO
 
 # Pulp
 import pulp.server.logs
@@ -36,7 +37,6 @@ from pulp.server import updateinfo
 from pulp.server.compat import chain
 from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
-from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi
@@ -47,7 +47,6 @@ from pulp.server.api.package import PackageApi
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
 from pulp.server.db import model
-#from pulp.server.db.connection import get_object_db
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.task import RepoSyncTask
@@ -60,13 +59,12 @@ log = logging.getLogger(__name__)
 repo_fields = model.Repo(None, None, None).keys()
 
 
-class RepoApi(BaseApi):
+class RepoApi:
     """
     API for create/delete/syncing of Repo objects
     """
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.distroapi = DistributionApi()
@@ -75,18 +73,6 @@ class RepoApi(BaseApi):
         self.localStoragePath = constants.LOCAL_STORAGE
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
-
-    @property
-    def _indexes(self):
-        return ["packages", "packagegroups", "packagegroupcategories"]
-
-    @property
-    def _unique_indexes(self):
-        return ["id"]
-
-    def _getcollection(self):
-        #return get_object_db('repos', self._unique_indexes, self._indexes)
-        return model.Repo.get_collection()
 
     def _validate_schedule(self, sync_schedule):
         '''
@@ -141,6 +127,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        collection = model.Repo.get_collection()
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -189,7 +176,7 @@ class RepoApi(BaseApi):
             path = r['relative_path']
             ks = KeyStore(path)
             added = ks.add(gpgkeys)
-        self.insert(r)
+        collection.insert(r, safe=True)
         if sync_schedule:
             repo_sync.update_schedule(r)
         default_to_publish = \
@@ -211,7 +198,8 @@ class RepoApi(BaseApi):
         """
         repo = self._get_existing_repo(id)
         repo['publish'] = state
-        self.update(repo)
+        collection = model.Repo.get_collection()
+        collection.save(repo, safe=True)
         repo = self._get_existing_repo(id)
         try:
             if repo['publish']:
@@ -244,6 +232,7 @@ class RepoApi(BaseApi):
                 os.unlink(link_path)
 
     def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, progress_callback=None):
+        collection = model.Repo.get_collection()
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
@@ -280,13 +269,13 @@ class RepoApi(BaseApi):
             cloned_repo['source'] = repo['source']
         elif feed == "none":
             cloned_repo['source'] = None
-        self.update(cloned_repo)
+        collection.save(cloned_repo, safe=True)
 
         # Update clone_ids for parent repo
         clone_ids = repo['clone_ids']
         clone_ids.append(clone_id)
         repo['clone_ids'] = clone_ids
-        self.update(repo)
+        collection.save(repo, safe=True)
 
         # Update gpg keys from parent repo
         keylist = []
@@ -348,6 +337,7 @@ class RepoApi(BaseApi):
          @param gpg_keys: list of keys to be associated with the repo
          @type gpg_keys: list(dict(gpg_key_label : <gpg-key-label>, gpg_key_url : url),)
         """
+        collection = model.Repo.get_collection()
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
@@ -367,7 +357,7 @@ class RepoApi(BaseApi):
                                    relative_path=uri)
                 repo['release'] = label.split("-")[-2]
                 self.addkeys(repo['id'], gkeys)
-                self.update(repo)
+                collection.save(repo, safe=True)
             except:
                 log.error("Error creating repo %s for product %s" % (label, groupid))
                 continue
@@ -388,6 +378,7 @@ class RepoApi(BaseApi):
          @param gpg_keys: list of keys to be associated with the repo
          @type gpg_keys: list(dict(gpg_key_label : <gpg-key-label>, gpg_key_url : url),)
         """
+        collection = model.Repo.get_collection()
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
@@ -411,7 +402,7 @@ class RepoApi(BaseApi):
                 repo['relative_path'] = uri
                 repo['groupid'] = [groupid]
                 self.addkeys(repo['id'], gkeys)
-                self.update(repo)
+                collection.save(repo, safe=True)
             except PulpException, pe:
                 log.error(pe)
                 continue
@@ -447,12 +438,12 @@ class RepoApi(BaseApi):
         if not groupid:
             # Nothing further can be done, exit
             return
-
+        collection = model.Repo.get_collection()
         repos = self.repositories(spec={"groupid" : groupid})
         log.error("List of repos to be deleted %s" % repos)
         for repo in repos:
             try:
-                self.delete(repo['id'])
+                collection.delete({'id':repo['id']}, safe=True)
             except:
                 log.error("Error deleting repo %s for product %s" % (repo['id'], groupid))
                 continue
@@ -460,6 +451,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.deleted')
     @audit()
     def delete(self, id, keep_files=False):
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
 
@@ -478,7 +470,7 @@ class RepoApi(BaseApi):
             cloned_repo = self._get_existing_repo(clone_id)
             if cloned_repo['source'] != repo['source']:
                 cloned_repo['source'] = None
-                self.update(cloned_repo)
+                collection.save(cloned_repo, safe=True)
 
         #update clone_ids of its parent repo        
         parent_repos = self.repositories({'clone_ids' : id})
@@ -487,7 +479,7 @@ class RepoApi(BaseApi):
             clone_ids = parent_repo['clone_ids']
             clone_ids.remove(id)
             parent_repo['clone_ids'] = clone_ids
-            self.update(parent_repo)
+            collection.save(parent_repo, safe=True)
 
         self._delete_published_link(repo)
         repo_sync.delete_schedule(repo)
@@ -549,19 +541,30 @@ class RepoApi(BaseApi):
                     continue
 
         # delete the object
-        self.objectdb.remove({'id' : id}, safe=True)
+        collection.remove({'id' : id}, safe=True)
 
     @event(subject='repo.updated')
     @audit()
-    def update(self, repo_data):
-        id = repo_data['id']
+    def update(self, delta={}):
+        """
+        Update a repo by id.
+        @param delta: A dict containing (id) and update keywords.
+        """
+        id = delta.pop('id')
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(id)
         prevpath = repo.get('relative_path')
-        newpath = repo_data.pop('relative_path', None)
+        newpath = delta.pop('relative_path', None)
         hascontent = self._hascontent(repo)
-        for key, value in repo_data.items():
-            # primary key
-            if key in ('id', '_id'):
+        for key, value in delta.items():
+            # simple changes
+            if key in ('name', 'arch',):
+                repo[key] = value
+                continue
+            # Certificate(s) changed
+            if key in ('ca', 'cert', 'key',):
+                value = self._write_certs_to_disk(id, {key:value})
+                repo[key] = value[key]
                 continue
             # feed changed
             if key == 'feed':
@@ -587,10 +590,8 @@ class RepoApi(BaseApi):
                         "Repository has content, symlinks cannot be changed")
                 repo[key] = value
                 continue
-            # blindly updated only if the key is valid
-            if key in repo:
-                repo[key] = value
-            continue
+            raise Exception,\
+                'update keyword "%s", not-supported' % key
         # make sure path is relative.
         if newpath:
             newpath = newpath.strip('/')
@@ -615,7 +616,7 @@ class RepoApi(BaseApi):
                 raise PulpException(
                     "Repository has content, relative path cannot be changed")
         # store changed object
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         # update subscribers (after) the object has been saved.
         if pathchanged:
             self.update_subscribed(id)
@@ -625,7 +626,8 @@ class RepoApi(BaseApi):
         """
         Return a list of Repositories
         """
-        return list(self.objectdb.find(spec=spec, fields=fields))
+        collection = model.Repo.get_collection()
+        return list(collection.find(spec=spec, fields=fields))
 
     def repository(self, id, fields=None):
         """
@@ -735,6 +737,7 @@ class RepoApi(BaseApi):
         """
         Adds the passed in package to this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
@@ -769,7 +772,7 @@ class RepoApi(BaseApi):
                     log.error("Link %s already exists" % pkg_repo_path)
         #TODO: we also need to account for presto/groups/comps metadata
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
 
     def _add_package(self, repo, p):
         """
@@ -798,6 +801,7 @@ class RepoApi(BaseApi):
          Note: This method does not update repo metadata.
          It is assumed metadata has already been updated.
         """
+        collection = model.Repo.get_collection()
         if not pkgobjs:
             log.debug("remove_packages invoked on %s with no packages" % (repoid))
             # Nothing to perform, return
@@ -817,7 +821,7 @@ class RepoApi(BaseApi):
             if os.path.exists(pkg_repo_path):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_repo_path))
                 os.remove(pkg_repo_path)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
@@ -830,7 +834,8 @@ class RepoApi(BaseApi):
         Return repos that contain passed in package id
         @param pkgid: package id
         """
-        found = self.objectdb.find({"packages":pkgid}, fields=["id"])
+        collection = model.Repo.get_collection()
+        found = collection.find({"packages":pkgid}, fields=["id"])
         return [r["id"] for r in found]
 
     def errata(self, id, types=()):
@@ -854,9 +859,10 @@ class RepoApi(BaseApi):
         """
         Adds in erratum to this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         self._add_erratum(repo, erratumid)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_errata_packages(repoid, [erratumid], action='add')
         updateinfo.generate_updateinfo(repo)
 
@@ -864,10 +870,11 @@ class RepoApi(BaseApi):
         """
          Adds a list of errata to this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         for erratumid in errataids:
             self._add_erratum(repo, erratumid)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='add')
         updateinfo.generate_updateinfo(repo)
 
@@ -924,9 +931,10 @@ class RepoApi(BaseApi):
         """
         delete erratum from this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         self._delete_erratum(repo, erratumid)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_errata_packages(repoid, [erratumid], action='delete')
         updateinfo.generate_updateinfo(repo)
 
@@ -934,10 +942,11 @@ class RepoApi(BaseApi):
         """
         delete list of errata from this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         for erratumid in errataids:
             self._delete_erratum(repo, erratumid)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_errata_packages(repoid, errataids, action='delete')
         updateinfo.generate_updateinfo(repo)
 
@@ -985,6 +994,7 @@ class RepoApi(BaseApi):
         @param description:
         @return packagegroup object
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if not repo:
             raise PulpException("Unable to find repository [%s]" % (repoid))
@@ -993,7 +1003,7 @@ class RepoApi(BaseApi):
                                 (group_id, repoid))
         group = model.PackageGroup(group_id, group_name, description)
         repo["packagegroups"][group_id] = group
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
         return group
 
@@ -1004,13 +1014,14 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @param groupid: package group id
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
             raise PulpException("Group [%s] does not exist in repo [%s]" % (groupid, repo["id"]))
         if repo['packagegroups'][groupid]["immutable"]:
             raise PulpException("Changes to immutable groups are not supported: %s" % (groupid))
         del repo['packagegroups'][groupid]
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -1020,13 +1031,14 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @param pg: packagegroup
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         pg_id = pg['id']
         if pg_id in repo['packagegroups']:
             if repo["packagegroups"][pg_id]["immutable"]:
                 raise PulpException("Changes to immutable groups are not supported: %s" % (pg["id"]))
         repo['packagegroups'][pg_id] = pg
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -1036,13 +1048,14 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @param pglist: list of packagegroups
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         for item in pglist:
             if item['id'] in repo['packagegroups']:
                 if repo['packagegroups'][item["id"]]["immutable"]:
                     raise PulpException("Changes to immutable groups are not supported: %s" % (item["id"]))
             repo['packagegroups'][item['id']] = item
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     def packagegroups(self, id):
@@ -1082,7 +1095,7 @@ class RepoApi(BaseApi):
         are not known to the repo or pulp.  The package group will be used on 
         the client and will have access to all repos the client can see.
         """
-
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
             raise PulpException("No PackageGroup with id: %s exists in repo %s"
@@ -1108,7 +1121,7 @@ class RepoApi(BaseApi):
                 if pkg_name not in group["default_package_names"]:
                     if pkg_name not in group["default_package_names"]:
                         group["default_package_names"].append(pkg_name)
-        self.update(repo)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -1120,6 +1133,7 @@ class RepoApi(BaseApi):
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional"
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if groupid not in repo['packagegroups']:
             raise PulpException("No PackageGroup with id: %s exists in repo %s"
@@ -1149,7 +1163,7 @@ class RepoApi(BaseApi):
             else:
                 raise PulpException("Package %s not present in package group" % (pkg_name))
 
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit(params=['repoid', 'cat_id', 'cat_name'])
@@ -1162,13 +1176,14 @@ class RepoApi(BaseApi):
         @param description:
         @return packagegroupcategory object
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if cat_id in repo['packagegroupcategories']:
             raise PulpException("Package group category %s already exists in repo %s" %
                                 (cat_id, repoid))
         cat = model.PackageGroupCategory(cat_id, cat_name, description)
         repo["packagegroupcategories"][cat_id] = cat
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
         return cat
 
@@ -1177,17 +1192,19 @@ class RepoApi(BaseApi):
         """
         Remove a packagegroupcategory from a repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if categoryid not in repo['packagegroupcategories']:
             return
         if repo['packagegroupcategories'][categoryid]["immutable"]:
             raise PulpException("Changes to immutable categories are not supported: %s" % (categoryid))
         del repo['packagegroupcategories'][categoryid]
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
     def delete_packagegroup_from_category(self, repoid, categoryid, groupid):
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if categoryid in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][categoryid]["immutable"]:
@@ -1199,11 +1216,12 @@ class RepoApi(BaseApi):
                         "Group id [%s] is not in category [%s]" % \
                                 (groupid, categoryid))
             repo['packagegroupcategories'][categoryid]['packagegroupids'].remove(groupid)
-        self.update(repo)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
     def add_packagegroup_to_category(self, repoid, categoryid, groupid):
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if categoryid in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][categoryid]["immutable"]:
@@ -1212,7 +1230,7 @@ class RepoApi(BaseApi):
                                 % (categoryid))
         if groupid not in repo['packagegroupcategories'][categoryid]["packagegroupids"]:
             repo['packagegroupcategories'][categoryid]["packagegroupids"].append(groupid)
-            self.update(repo)
+            collection.save(repo, safe=True)
             self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -1220,12 +1238,13 @@ class RepoApi(BaseApi):
         """
         Save the passed in PackageGroupCategory to this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if pgc['id'] in repo['packagegroupcategories']:
             if repo["packagegroupcategories"][pgc["id"]]["immutable"]:
                 raise PulpException("Changes to immutable categories are not supported: %s" % (pgc["id"]))
         repo['packagegroupcategories'][pgc['id']] = pgc
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     @audit()
@@ -1233,13 +1252,14 @@ class RepoApi(BaseApi):
         """
         Save the list of passed in PackageGroupCategory objects to this repo
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         for item in pgclist:
             if item['id'] in repo['packagegroupcategories']:
                 if repo["packagegroupcategories"][item["id"]]["immutable"]:
                     raise PulpException("Changes to immutable categories are not supported: %s" % item["id"])
             repo['packagegroupcategories'][item['id']] = item
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
     def packagegroupcategories(self, id):
@@ -1262,6 +1282,7 @@ class RepoApi(BaseApi):
         @param repoid: repo id
         @return: True if metadata was successfully updated, otherwise False
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         try:
             # If the repomd file is not valid, or if we are missingg
@@ -1276,7 +1297,7 @@ class RepoApi(BaseApi):
                 repo["group_xml_path"] = os.path.dirname(repo["repomd_xml_path"])
                 repo["group_xml_path"] = os.path.join(os.path.dirname(repo["repomd_xml_path"]),
                                                       "comps.xml")
-                self.update(repo)
+                collection.save(repo, safe=True)
             f = open(repo["group_xml_path"], "w")
             f.write(xml.encode("utf-8"))
             f.close()
@@ -1298,6 +1319,7 @@ class RepoApi(BaseApi):
         """
         Sync a repo from the URL contained in the feed
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(id)
         repo_source = repo['source']
         if not repo_source:
@@ -1319,7 +1341,7 @@ class RepoApi(BaseApi):
             len(sync_errataids), (end_sync_items - start_sync_items)))
         # We need to update the repo object in Mongo to account for
         # package_group info added in sync call
-        self.update(repo)
+        collection.save(repo, safe=True)
         if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
             old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
             old_pkgs = map(self.packageapi.package, old_pkgs)
@@ -1337,7 +1359,7 @@ class RepoApi(BaseApi):
             for pkg in new_pkgs:
                 self._add_package(repo, pkg)
             # Update repo for package additions
-            self.update(repo)
+            collection.save(repo, safe=True)
         if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
             # Determine removed errata
             synchronizer.progress_callback(step="Processing Errata")
@@ -1354,7 +1376,7 @@ class RepoApi(BaseApi):
                 self._add_erratum(repo, eid)
         repo['last_sync'] = datetime.now().strftime("%s")
         synchronizer.progress_callback(step="Finished")
-        self.update(repo)
+        collection.save(repo, safe=True)
 
     @audit()
     def sync(self, id, timeout=None, skip=None):
@@ -1442,11 +1464,12 @@ class RepoApi(BaseApi):
          @param repoid: The repo ID.
          @param distroid: The distribution ID.
         '''
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if self.distroapi.distribution(distroid) is None:
             raise PulpException("Distribution ID [%s] does not exist" % distroid)
         repo['distributionid'].append(distroid)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         if repo['publish']:
             self._create_ks_link(repo)
         log.info("Successfully added distribution %s to repo %s" % (distroid, repoid))
@@ -1457,10 +1480,11 @@ class RepoApi(BaseApi):
          @param repoid: The repo ID.
          @param distroid: The distribution ID.
         '''
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         if distroid in repo['distributionid']:
             del repo['distributionid'][repo['distributionid'].index(distroid)]
-            self.objectdb.save(repo, safe=True)
+            collection.save(repo, safe=True)
             self.distroapi.delete(distroid)
             self._delete_ks_link(repo)
             log.info("Successfully removed distribution %s from repo %s" % (distroid, repoid))
@@ -1521,6 +1545,7 @@ class RepoApi(BaseApi):
          @param repoid: The repo ID.
          @param fileid: file ID.
         '''
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         for fid in fileids:
             fileobj = self.fileapi.file(fid)
@@ -1529,7 +1554,7 @@ class RepoApi(BaseApi):
                 continue
             if fid not in repo['files']:
                 repo['files'].append(fid)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         log.info("Successfully added files %s to repo %s" % (fileids, repoid))
 
     @audit()
@@ -1539,6 +1564,7 @@ class RepoApi(BaseApi):
          @param repoid: The repo ID.
          @param fileid: file ID.
         '''
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         for fid in fileids:
             fileobj = self.fileapi.file(fid)
@@ -1547,7 +1573,7 @@ class RepoApi(BaseApi):
                 continue
             if fid in repo['files']:
                 del repo['files'][repo['files'].index(fid)]
-            self.objectdb.save(repo, safe=True)
+            collection.save(repo, safe=True)
             log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
         else:
             log.error("No file with ID %s associated to this repo" % fileids)
@@ -1569,9 +1595,37 @@ class RepoApi(BaseApi):
         Return repos that contain passed in file id
         @param pkgid: file id
         """
-        found = self.objectdb.find({"files":fileid}, fields=["id"])
+        collection = model.Repo.get_collection()
+        found = collection.find({"files":fileid}, fields=["id"])
         return [r["id"] for r in found]
-
+    
+    def import_comps(self, repoid, comps_data=None):
+        """
+        Creates packagegroups and categories from a comps.xml file
+        @param repoid: repository Id
+        @param compsfile: comps xml stream
+        @return: True if success; else False
+        """
+        repo = self._get_existing_repo(repoid)
+        compsobj = StringIO()
+        compsobj.write(comps_data.encode("utf8"))
+        compsobj.seek(0,0)
+        bs = repo_sync.BaseSynchronizer()
+        status = bs.sync_groups_data(compsobj, repo)
+        self.objectdb.save(repo, safe=True)
+        return status
+    
+    def export_comps(self, repoid):
+        """
+        Creates packagegroups and categories from a comps.xml file
+        @param compsfile: comps xml stream
+        @return: comps xml stream
+        """
+        repo = self._get_existing_repo(repoid)    
+        xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
+                repo['packagegroups'])
+        return xml
+        
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':

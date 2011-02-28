@@ -93,6 +93,8 @@ def setup_admin(admin):
     packagegroup_cmd.add_action('delete_category', packagegroup.DeleteCategory())
     packagegroup_cmd.add_action('add_group', packagegroup.AddGroupToCategory())
     packagegroup_cmd.add_action('delete_group', packagegroup.DeleteGroupFromCategory())
+    packagegroup_cmd.add_action('import', packagegroup.ImportComps())
+    packagegroup_cmd.add_action('export', packagegroup.ExportComps())
     admin.add_command('packagegroup', packagegroup_cmd)
 
     repo_cmd = repo.Repo()
