@@ -22,6 +22,7 @@ from pulp.server.db import model
 import pulp.server.auth.password_util as password_util
 
 log = logging.getLogger(__name__)
+
 user_fields = model.User(None, None, None, None).keys()
 
 
@@ -32,7 +33,6 @@ class UserApi(BaseApi):
         self.default_login = config.config.get('server', 'default_login')
 
     def _getcollection(self):
-        #return get_object_db('users', self._unique_indexes, self._indexes)
         return model.User.get_collection()
 
     @audit(params=['login'])
@@ -46,33 +46,37 @@ class UserApi(BaseApi):
         if (password is not None):
             hashed_password = password_util.hash_password(password)
         user = model.User(login, id, hashed_password, name)
-        self.insert(user)
+        self.collection.insert(user, safe=True)
         return user
 
-    @audit(params=['user'])
-    def update(self, user):
+    @audit(params=['delta'])
+    def update(self, delta):
         """
         Update a user and hash the inbound password if it is different
         from the existing password
         """
-        old_user = self.user(user['login'])
-        password = user['password']
-        if password is not None:
-            print "Pass not none."
-            if password == old_user['password']:
-                user['password'] = old_user['password']
-            else:
-                user['password'] = password_util.hash_password(password)
-
-        BaseApi.update(self, user)
+        login = delta.pop('login')
+        user = self.user(login)
+        for key,value in delta.items():
+            # simple changes
+            if key in ('roles',):
+                user[key] = value
+                continue
+            # password changed
+            if key == 'password':
+                if value:
+                    user['password'] = password_util.hash_password(value)
+                continue
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(user, safe=True)
         return user
-
 
     def users(self, spec=None, fields=None):
         """
         List all users.
         """
-        users = list(self.objectdb.find(spec=spec, fields=fields))
+        users = list(self.collection.find(spec=spec, fields=fields))
         return users
 
     def user(self, login, fields=None):
@@ -90,4 +94,4 @@ class UserApi(BaseApi):
         Delete all the Users in the database except the default admin user.  default 
         user can not be deleted
         """
-        self.objectdb.remove({'login': {'$ne': self.default_login}}, safe=True)
+        self.collection.remove({'login': {'$ne': self.default_login}}, safe=True)

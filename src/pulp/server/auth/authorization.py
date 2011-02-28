@@ -24,6 +24,7 @@ from pulp.server.api.permission import PermissionAPI
 from pulp.server.api.role import RoleAPI
 from pulp.server.api.user import UserApi
 from pulp.server.pexceptions import PulpException
+from pulp.server.db.model import Delta
 
 
 _permission_api = PermissionAPI()
@@ -394,7 +395,7 @@ def add_user_to_role(role_name, user_name):
     if role_name in user['roles']:
         return False
     user['roles'].append(role_name)
-    _user_api.update(user)
+    _user_api.update(Delta(user, 'roles', pk='login'))
     for resource, operations in role['permissions'].items():
         _permission_api.grant(resource, user, operations)
     return True
@@ -420,7 +421,7 @@ def remove_user_from_role(role_name, user_name):
     if role_name not in user['roles']:
         return False
     user['roles'].remove(role_name)
-    _user_api.update(user)
+    _user_api.update(Delta(user, 'roles', pk='login'))
     for resource, operations in role['permissions'].items():
         other_roles = _get_other_roles(role, user['roles'])
         user_ops = _operations_not_granted_by_roles(resource,

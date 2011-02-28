@@ -29,6 +29,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+from pulp.server.db.model import Delta
 from pulp.server.api.user import UserApi
 import testutil
 
@@ -90,22 +91,13 @@ class TestUsers(unittest.TestCase):
         clear_txt_pass = 'some password'
         user = self.uapi.create(login)
         user['password'] = clear_txt_pass
-        user = self.uapi.update(user)
+        user = self.uapi.update(Delta(user, 'password', pk='login'))
 
         # Lookup user again and verify password is hashed
         user = self.uapi.user(login)
         self.assertTrue(user is not None)
         self.assertTrue(user['password'] is not None)
         self.assertNotEqual(clear_txt_pass, user['password'])
-
-        # Verify an update with existing password doesn't double-hash the
-        # password.
-        user = self.uapi.user(login)
-        existing_password = user['password']
-        updated = self.uapi.update(user)
-        self.assertEqual(updated['password'], existing_password)
-
-
 
 
 if __name__ == '__main__':

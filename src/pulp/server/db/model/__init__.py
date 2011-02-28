@@ -19,3 +19,33 @@ from pulp.server.db.model.auth import *
 from pulp.server.db.model.cds import *
 from pulp.server.db.model.status import *
 from pulp.server.db.model.resource import *
+
+
+class Delta(dict):
+    """
+    The delta of a model object.
+    Contains the primary key and keys/values specified in the filter.
+    """
+
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __init__(self, obj, filter=(), pk=('id',)):
+        """
+        @param obj: A model object (dict).
+        @type obj: Model|dict
+        @param filter: A list of dictionary keys to include
+            in the delta.
+        @type filter: str|list
+        @param pk: The object primary key
+        @type pk: str|list
+        """
+        dict.__init__(self)
+        if isinstance(pk, basestring):
+            pk = (pk,)
+        if isinstance(filter, basestring):
+            filter = (filter,)
+        for k,v in obj.items():
+            if k in pk or k in filter:
+                self[k] = v
