@@ -64,6 +64,7 @@ def get_object_db(name, unique_indexes=[], other_indexes=[], order=pymongo.DESCE
     """
     Get an object database (read MongoDB Document Collection) for the given name.
     Build in indexes in the given order.
+    @deprecated: use pulp.server.db.model.base.Model.get_collection() instead
     @type name: basestring instance or derived instance
     @param name: name of the object database to get
     @type unique_indexes: iterable of str's
