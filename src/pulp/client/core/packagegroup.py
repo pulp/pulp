@@ -484,7 +484,7 @@ class ExportComps(PackageGroupAction):
                 except Exception,e:
                     system_exit(os.EX_DATAERR, _("Error occurred while storing the comps data %s" % e))
             else:
-                print comps_xml
+                print comps_xml.encode("utf8")
     
 
 # package group command -------------------------------------------------------
