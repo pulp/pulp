@@ -29,15 +29,9 @@ from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
 
 log = getLogger(__name__)
 
-# -- constants ----------------------------------------------------------------
-
-# Create a single lock at the module level that will be used for all invocations.
-# It can be overridden in the public methods if necessary.
-REPO_LOCK = Lock('/var/run/subsys/pulp/repolib.pid')
-
 # -- public ----------------------------------------------------------------
 
-def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, lock=REPO_LOCK):
+def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, lock=None):
     '''
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
@@ -76,6 +70,9 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, loc
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
     '''
+
+    if not lock:
+        lock = Lock('/var/run/subsys/pulp/repolib.pid')
 
     lock.acquire()
     try:
@@ -119,7 +116,7 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, loc
     finally:
         lock.release()
 
-def unbind(repo_filename, mirror_list_filename, repo_id, lock=REPO_LOCK):
+def unbind(repo_filename, mirror_list_filename, repo_id, lock=None):
     '''
     Removes the repo identified by repo_id from the given repo file. If the repo is
     not bound, this call has no effect. If the mirror list file exists, it will be
@@ -146,6 +143,9 @@ def unbind(repo_filename, mirror_list_filename, repo_id, lock=REPO_LOCK):
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
     '''
+
+    if not lock:
+        lock = Lock('/var/run/subsys/pulp/repolib.pid')
 
     lock.acquire()
     try:
