@@ -14,11 +14,12 @@
 # in this software or its documentation.
 
 from logging import getLogger
-from uuid import UUID
 
-from pulp.server.api import (
-    consumer_group, consumer_history, consumer, errata, package, permission,
-    repo, role, user, file, distribution)
+from pulp.server.db.model.resource import (Consumer, ConsumerGroup,
+    ConsumerHistoryEvent, Errata, Package, Distribution, Errata, File, Repo)
+from pulp.server.db.model.auth import User, Role, Permission
+
+
 from pulp.server.auditing import _objdb as auditing_objectdb
 from pulp.server.db import model
 from pulp.server.db import version
@@ -82,7 +83,7 @@ def _validate_consumer():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = consumer.ConsumerApi()._getcollection()
+    objectdb = Consumer.get_collection()
     reference = model.Consumer(u'', None)
     return _validate_model(model.Consumer.__name__, objectdb, reference)
 
@@ -93,7 +94,7 @@ def _validate_consumer_group():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = consumer_group.ConsumerGroupApi()._getcollection()
+    objectdb = ConsumerGroup.get_collection()
     reference = model.ConsumerGroup(u'', u'')
     return _validate_model(model.ConsumerGroup.__name__, objectdb, reference)
 
@@ -104,7 +105,7 @@ def _validate_consumer_history_event():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = consumer_history.ConsumerHistoryApi()._getcollection()
+    objectdb = ConsumerHistoryEvent.get_collection()
     reference = model.ConsumerHistoryEvent(u'', u'', u'', None)
     _base_id(reference)
     return _validate_model(model.ConsumerHistoryEvent.__name__,
@@ -131,7 +132,7 @@ def _validate_errata():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = errata.ErrataApi()._getcollection()
+    objectdb = Errata.get_collection()
     reference = model.Errata(u'', u'', None, u'', u'', u'')
     return _validate_model(model.Errata.__name__, objectdb, reference)
 
@@ -155,7 +156,7 @@ def _validate_package():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = package.PackageApi()._getcollection()
+    objectdb = Package.get_collection()
     reference = model.Package(u'', u'', u'', u'', u'', u'', u'', u'', u'')
     _base_id(reference)
     return _validate_model(model.Package.__name__, objectdb, reference)
@@ -168,7 +169,7 @@ def _validate_package_group():
     @return: number of errors found during validation
     """
     num_errors = 0
-    objectdb = repo.RepoApi()._getcollection()
+    objectdb = Repo.get_collection()
     reference = model.PackageGroup(u'', u'', u'')
     for r in objectdb.find({'packagegroups': {'$gt': 0}}):
         for pg in r['packagegroups'].values():
@@ -195,7 +196,7 @@ def _validate_package_group_category():
     @return: number of errors found during validation
     """
     num_errors = 0
-    objectdb = repo.RepoApi()._getcollection()
+    objectdb = Repo.get_collection()
     reference = model.PackageGroupCategory(u'', u'', u'')
     for r in objectdb.find({'packagegroupcategories': {'$gt': 0}}):
         for pgc in r['packagegroupcategories'].values():
@@ -222,7 +223,7 @@ def _validate_permission():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = permission.PermissionAPI()._getcollection()
+    objectdb = Permission.get_collection()
     reference = model.Permission(u'')
     _base_id(reference)
     return _validate_model(model.Permission.__name__, objectdb, reference)
@@ -234,7 +235,7 @@ def _validate_repo():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = repo.RepoApi()._getcollection()
+    objectdb = Repo.get_collection()
     reference = model.Repo(u'', u'', u'')
     return _validate_model(model.Repo.__name__, objectdb, reference)
 
@@ -246,7 +247,7 @@ def _validate_repo_source():
     @return: number of errors found during validation
     """
     num_errors = 0
-    objectdb = repo.RepoApi()._getcollection()
+    objectdb = Repo.get_collection()
     reference = model.RepoSource(u'yum:http://reference.org/reference_repo/')
     for r in objectdb.find({'source': {'$ne': None}}):
         source = r['source']
@@ -271,7 +272,7 @@ def _validate_role():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = role.RoleAPI()._getcollection()
+    objectdb = Role.get_collection()
     reference = model.Role(u'')
     return _validate_model(model.Role.__name__, objectdb, reference)
 
@@ -282,7 +283,7 @@ def _validate_user():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = user.UserApi()._getcollection()
+    objectdb = User.get_collection()
     reference = model.User(u'', u'', u'', None)
     return _validate_model(model.User.__name__, objectdb, reference)
 
@@ -292,7 +293,7 @@ def _validate_file():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = file.FileApi()._getcollection()
+    objectdb = File.get_collection()
     reference = model.File(u'', u'', u'', 0, None)
     _base_id(reference)
     return _validate_model(model.File.__name__, objectdb, reference)
@@ -303,7 +304,7 @@ def _validate_distribution():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = distribution.DistributionApi()._getcollection()
+    objectdb = Distribution.get_collection()
     reference = model.Distribution(u'', u'', u'', [])
     return _validate_model(model.Distribution.__name__, objectdb, reference)
 
