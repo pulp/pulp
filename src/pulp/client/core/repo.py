@@ -999,8 +999,7 @@ class RemoveErrata(RepoAction):
             pnames.append(name)
             pobj.append(src_pkgobj)
         if not pnames:
-            system_exit(os.EX_DATAERR, \
-                        _("Associated Errata packages for id [%s] are not in the repo." % errataids))
+            log.info("Associated Errata packages for id [%s] are not in the repo." % errataids)
 
         # lookup dependencies and let use decide whether to include them
         pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
