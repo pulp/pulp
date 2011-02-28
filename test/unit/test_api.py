@@ -44,6 +44,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.errata import ErrataApi
 from pulp.server.auth.certificate import Certificate
+from pulp.server.db.model import Delta
 from pulp.server.db.model import PackageGroup
 from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer
@@ -407,7 +408,7 @@ class TestApi(unittest.TestCase):
                                                     'epoch': '0', 'version': '0.3.1', 'release': '1.fc11',
                                                     'arch': 'x86_64'}]}]
 
-        self.eapi.update(test_errata_1)
+        self.eapi.update(Delta(test_errata_1, 'pkglist'))
         self.rapi.add_errata(repo['id'], (test_errata_1['id'],))
 
         cid = 'test-consumer'
