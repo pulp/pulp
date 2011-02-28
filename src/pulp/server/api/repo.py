@@ -1606,13 +1606,14 @@ class RepoApi:
         @param compsfile: comps xml stream
         @return: True if success; else False
         """
+        collection = model.Repo.get_collection()
         repo = self._get_existing_repo(repoid)
         compsobj = StringIO()
         compsobj.write(comps_data.encode("utf8"))
         compsobj.seek(0,0)
         bs = repo_sync.BaseSynchronizer()
         status = bs.sync_groups_data(compsobj, repo)
-        self.objectdb.save(repo, safe=True)
+        collection.save(repo, safe=True)
         return status
     
     def export_comps(self, repoid):
