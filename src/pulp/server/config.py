@@ -68,7 +68,7 @@ _default_values = {
     },
     'server': {
         'server_name': 'localhost',
-        'relative_url': '/pub',
+        'relative_url': '/pulp/repos',
         'key_url': '/pulp/gpg',
         'default_login': 'admin',
         'default_password': 'admin',
