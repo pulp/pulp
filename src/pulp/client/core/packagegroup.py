@@ -433,12 +433,12 @@ class ImportComps(PackageGroupAction):
         super(ImportComps, self).setup_parser()
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
-        self.parser.add_option("--comps", dest="compsxml",
+        self.parser.add_option("--comps", dest="comps",
                                help=_("comps xml file to import (required)"))
         
     def run(self):
         repoid = self.get_required_option('repoid')
-        compsfile = self.get_required_option('compsxml')
+        compsfile = self.get_required_option('comps')
         
         if not os.path.exists(compsfile):
             system_exit(os.EX_DATAERR, _("Comps file could not be found."))
