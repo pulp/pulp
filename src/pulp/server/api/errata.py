@@ -24,17 +24,7 @@ errata_fields = model.Errata(None, None, None, None, None, None).keys()
 
 class ErrataApi(BaseApi):
 
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    @property
-    def _indexes(self):
-        return ["title", "description", "version", "release", "type", "status",
-                "updated", "issued", "pushcount", "from_str",
-                "reboot_suggested"]
-
     def _getcollection(self):
-        #return get_object_db('errata', self._unique_indexes, self._indexes)
         return model.Errata.get_collection()
 
     @audit(params=["id", "title", "type"])
@@ -49,28 +39,40 @@ class ErrataApi(BaseApi):
                 status, updated, issued, pushcount, from_str,
                 reboot_suggested, references, pkglist, repo_defined,
                 immutable)
-        self.insert(e)
+        self.collection.insert(e, safe=True)
         return e
+
+    @audit()
+    def update(self, delta):
+        """
+        Updates an errata object in the database
+        """
+        id = delta.pop('id')
+        erratum = self.erratum(id)
+        if not erratum:
+            raise Exception('Erratum "%s", not-found', id)
+        for key,value in delta.items():
+            # anything but references
+            if key not in ('references',):
+                erratum[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(erratum, safe=True)
 
     @audit()
     def delete(self, id):
         """
         Delete package version object based on "_id" key
         """
-        super(ErrataApi, self).delete(id=id)
-
-    @audit()
-    def update(self, errata):
-        """
-        Updates an errata object in the database
-        """
-        return super(ErrataApi, self).update(errata)
+        self.collection.remove(dict(id=id), safe=True)
 
     def erratum(self, id):
         """
         Return a single Errata object based on the id
         """
-        return self.objectdb.find_one({'id': id})
+        return self.collection.find_one({'id': id})
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,
@@ -104,9 +106,9 @@ class ErrataApi(BaseApi):
         if reboot_suggested:
             searchDict['reboot_suggested'] = reboot_suggested
         if (len(searchDict.keys()) == 0):
-            return list(self.objectdb.find())
+            return list(self.collection.find())
         else:
-            return list(self.objectdb.find(searchDict))
+            return list(self.collection.find(searchDict))
 
     def search_by_packages(self):
         """
