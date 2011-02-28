@@ -21,17 +21,14 @@ class BaseApi(object):
 
     @property
     def objectdb(self):
+        """
+        @deprecated: Use collection().
+        """
         return self._getcollection()
 
-    # db indexes
-
     @property
-    def _unique_indexes(self):
-        return ["id"]
-
-    @property
-    def _indexes(self):
-        return []
+    def collection(self):
+        return self._getcollection()
 
     # db methods
 
@@ -39,27 +36,27 @@ class BaseApi(object):
         """
         Delete all the Objects in the database.  WARNING: Destructive
         """
-        self.objectdb.remove(safe=True)
+        self.collection.remove(safe=True)
 
     def insert(self, object, check_keys=False):
         """
         Insert the object document to the database
         """
-        self.objectdb.insert(object, check_keys=check_keys, safe=True)
+        self.collection.insert(object, check_keys=check_keys, safe=True)
         return object
 
     def update(self, object):
         """
         Write the object document to the database
         """
-        self.objectdb.save(object, safe=True)
+        self.collection.save(object, safe=True)
         return object
 
     def delete(self, **kwargs):
         """
         Delete a single stored Object
         """
-        self.objectdb.remove(kwargs, safe=True)
+        self.collection.remove(kwargs, safe=True)
 
     def _getcollection(self):
         """
