@@ -48,7 +48,6 @@ class ConsumerApi(BaseApi):
         self.consumer_history_api = ConsumerHistoryApi()
 
     def _getcollection(self):
-        #return get_object_db('consumers', self._unique_indexes, self._indexes)
         return model.Consumer.get_collection()
 
     def _get_consumergroup_collection(self):
@@ -59,17 +58,7 @@ class ConsumerApi(BaseApi):
         @return: pymongo database connection to the consumergroup connection
         @rtype:  ?
         '''
-        #return get_object_db('consumergroups', ['id'], ['consumerids'])
         return model.ConsumerGroup.get_collection()
-
-
-    @property
-    def _unique_indexes(self):
-        return ["id"]
-
-    @property
-    def _indexes(self):
-        return ["package_profile.name", "repoids", "key_value_pairs"]
 
     @event(subject='consumer.created')
     @audit()
@@ -81,9 +70,28 @@ class ConsumerApi(BaseApi):
         if(consumer):
             raise PulpException("Consumer [%s] already exists" % id)
         c = model.Consumer(id, description, key_value_pairs)
-        self.insert(c)
+        self.collection.insert(c, safe=True)
         self.consumer_history_api.consumer_created(c.id)
         return c
+
+    @audit()
+    def update(self, delta):
+        """
+        Updates a consumer object in the database
+        """
+        id = delta.pop('id')
+        consumer = self.consumer(id)
+        if not consumer:
+            raise PulpException('Consumer [%s] does not exist', id)
+        for key,value in delta.items():
+            # simple changes
+            if key in ('description',):
+                erratum[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(consumer, safe=True)
 
     @event(subject='consumer.deleted')
     @audit()
@@ -100,7 +108,7 @@ class ConsumerApi(BaseApi):
             consumergroup['consumerids'] = consumerids
             consumergroup_db.save(consumergroup, safe=True)
 
-        self.objectdb.remove({'id' : id}, safe=True)
+        self.collection.remove(dict(id=id), safe=True)
         self.consumer_history_api.consumer_deleted(id)
         credentials = consumer.get('credentials')
         if credentials:
@@ -164,7 +172,7 @@ class ConsumerApi(BaseApi):
         else:
             raise PulpException('Given key [%s] already exists', key)
         consumer['key_value_pairs'] = key_value_pairs
-        self.update(consumer)
+        self.collection.save(consumer, safe=True)
 
     @audit()
     def delete_key_value_pair(self, id, key):
@@ -185,7 +193,7 @@ class ConsumerApi(BaseApi):
         else:
             raise PulpException('Given key [%s] does not exist', key)
         consumer['key_value_pairs'] = key_value_pairs
-        self.update(consumer)
+        self.collection.save(consumer, safe=True)
 
     @audit()
     def update_key_value_pair(self, id, key, value):
@@ -215,7 +223,7 @@ class ConsumerApi(BaseApi):
                                     'from that group and try again.', key, conflicting_group)
 
         consumer['key_value_pairs'] = key_value_pairs
-        self.update(consumer)
+        self.collection.save(consumer, safe=True)
 
     def get_keyvalues (self, id):
         """
@@ -259,7 +267,7 @@ class ConsumerApi(BaseApi):
         if not bundle:
             bundle = cert_generator.make_cert(id)
             consumer['credentials'] = bundle
-            self.update(consumer)
+            self.collection.save(consumer, safe=True)
         return bundle
 
     @audit()
@@ -275,14 +283,14 @@ class ConsumerApi(BaseApi):
         chunked = chunks(consumers, chunksize)
         inserted = 0
         for chunk in chunked:
-            self.objectdb.insert(chunk, check_keys=False, safe=False)
+            self.collection.insert(chunk, check_keys=False, safe=False)
             inserted = inserted + chunksize
 
     def consumers(self, spec=None, fields=None):
         """
         List all consumers.  Can be quite large
         """
-        return list(self.objectdb.find(spec=spec, fields=fields))
+        return list(self.collection.find(spec=spec, fields=fields))
 
     def consumer(self, id, fields=None):
         """
@@ -305,7 +313,7 @@ class ConsumerApi(BaseApi):
         """
         consumers = []
         for name in names:
-            #consumers.extend(self.objectdb.find({'package_profile.name': name}, fields))
+            #consumers.extend(self.collection.find({'package_profile.name': name}, fields))
             consumers.extend(self.consumers({'package_profile.name': name}, fields))
         return consumers
 
@@ -352,7 +360,7 @@ class ConsumerApi(BaseApi):
 
         # Update the consumer with the new repo, adding an entry to its history 
         repoids.append(repoid)
-        self.update(consumer)
+        self.collection.save(consumer, safe=True)
         self.consumer_history_api.repo_bound(id, repoid)
 
         # Collect the necessary information to return to the caller (see __doc__ above)
@@ -414,7 +422,7 @@ class ConsumerApi(BaseApi):
 
         # Update the consumer entry in the DB
         repoids.remove(repo_id)
-        self.update(consumer)
+        self.collection.save(consumer, safe=True)
 
         agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
         agent_repolib.unbind(repo_id)
@@ -430,7 +438,7 @@ class ConsumerApi(BaseApi):
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
         consumer["package_profile"] = package_profile
-        self.update(consumer)
+        self.collection.save(consumer, safe=True)
 
     @audit()
     def installpackages(self, id, packagenames=()):

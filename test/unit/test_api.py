@@ -423,10 +423,10 @@ class TestApi(unittest.TestCase):
         packages = generatePakageProfile([info1, info2])
         c['package_profile'] = packages
         self.assertTrue(c['package_profile'] is not None)
-        self.capi.update(c)
+        Consumer.get_collection().save(c, safe=True)
 
         c["repoids"] = [repo['id']]
-        self.capi.update(c)
+        Consumer.get_collection().save(c, safe=True)
 
         errlist = self.capi.listerrata(c['id'])
         assert(len(errlist) == 1)
@@ -565,7 +565,7 @@ class TestApi(unittest.TestCase):
             packages.append(package)
 
         c['package_profile'] = packages
-        self.capi.update(c)
+        Consumer.get_collection().save(c, safe=True)
         self.assertTrue(c['package_profile'] is not None)
         ## Look back up from DB
         c = self.capi.consumer(c['id'])

@@ -353,10 +353,10 @@ class TestErrata(unittest.TestCase):
         packages = generatePakageProfile([info1, info2])
         c['package_profile'] = packages
         self.assertTrue(c['package_profile'] is not None)
-        self.capi.update(c)
+        model.Consumer.get_collection().save(c, safe=True)
 
         c["repoids"] = [repo['id']]
-        self.capi.update(c)
+        model.Consumer.get_collection().save(c, safe=True)
 
         errlist = self.capi.listerrata(c['id'], types=[type,])
         assert(len(errlist) == 1)
