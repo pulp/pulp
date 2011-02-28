@@ -121,3 +121,25 @@ class FileApi(BaseApi):
         fileids = set([x["id"] for x in fils])
         orphans = list(fileids.difference(repo_fileids))
         return list(self.objectdb.find({"id":{"$in":orphans}}, fields))
+    
+    def file_checksum(self, filename):
+        """
+         Returns a list of checksum info for names matching the spec
+        """
+        spec = {'filename' : filename}
+        return list(self.objectdb.find(spec, fields=['checksum']))
+    
+    def get_file_checksums(self, filenames):
+        '''
+        Fetch the package checksuums
+        @param data: ["file_name", ...]
+        @return  {"file_name": [<checksums>],...} 
+        '''
+        fchecksum = {}
+        for filename in filenames:
+            filedata = self.file_checksum(filename)
+            if not filedata:
+                continue
+            checksums = [fdata['checksum']['sha256'] for fdata in filedata]
+            fchecksum[filename] = checksums
+        return fchecksum

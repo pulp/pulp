@@ -59,3 +59,11 @@ class ServiceAPI(PulpAPI):
             data["checksum"] = checksum
         path = "/services/search/files/"
         return self.server.POST(path, data)[1]
+    
+    def get_package_checksums(self, filenames=[]):
+        path = "/services/search/packages/checksum/"
+        return self.server.POST(path, filenames)[1]
+    
+    def get_file_checksums(self, filenames=[]):
+        path = "/services/search/files/checksum/"
+        return self.server.POST(path, filenames)[1]

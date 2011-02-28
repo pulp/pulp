@@ -213,6 +213,32 @@ class StatusService(JSONController):
           "status_count": status['count'],
           "status_duration_ms": str(round((time.time() - start_time) * 1000, 2)),
         })
+        
+class PackagesChecksumSearch(JSONController):
+    
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        """
+        Search for matching rpms to get all available checksums
+        @return: {"rpmname1": [<checksums1>,<checksum2>,..],...} 
+        """
+        #NOTE: This call could be done with PackageSearch call.
+        # need to efficiently rewrite the search to handle multiple queries.
+        pkgnames = self.params()
+        return self.ok(papi.get_package_checksums(pkgnames))
+
+class FilesChecksumSearch(JSONController):
+    
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        """
+        Search for matching files to get all available checksums
+        @return: {"filename1": [<checksums1>,<checksum2>,..],...} 
+        """
+        filenames = self.params()
+        return self.ok(fapi.get_file_checksums(filenames))
 
 # web.py application ----------------------------------------------------------
 
@@ -220,6 +246,8 @@ URLS = (
     '/dependencies/$', 'DependencyActions',
     '/search/packages/$', 'PackageSearch',
     '/search/files/$', 'FileSearch',
+    '/search/packages/checksum/$', 'PackagesChecksumSearch',
+    '/search/files/checksum/$', 'FilesChecksumSearch',
     '/upload/$', 'StartUpload',
     '/upload/append/([^/]+)/$', 'AppendUpload',
     '/upload/import/$', 'ImportUpload',

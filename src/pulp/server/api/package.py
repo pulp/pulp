@@ -237,5 +237,18 @@ class PackageApi(BaseApi):
         orphans = list(pkgids.difference(repo_pkgids))
         return list(self.objectdb.find({"id":{"$in":orphans}}, fields))
 
-
+    def get_package_checksums(self, filenames):
+        '''
+        Fetch the package checksuums
+        @param data: ["file_name", ...]
+        @return  {"file_name": [<checksums>],...} 
+        '''
+        fchecksum = {}
+        for filename in filenames:
+            filedata = self.package_checksum(filename)
+            if not filedata:
+                continue
+            checksums = [fdata['checksum']['sha256'] for fdata in filedata]
+            fchecksum[filename] = checksums
+        return fchecksum
 
