@@ -1,0 +1,177 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+#!/usr/bin/python
+#
+# Copyright (c) 2010 Red Hat, Inc.
+#
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+# Python
+import sys
+import os
+import unittest
+
+# Pulp
+srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
+sys.path.insert(0, srcdir)
+
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
+
+import pulp.server.cds.round_robin as round_robin
+from pulp.server.db.model.cds import CDSRepoRoundRobin
+
+import testutil
+
+# -- test cases ------------------------------------------------------------------------------
+
+class TestRoundRobin(unittest.TestCase):
+
+    def setUp(self):
+        self.clean()
+
+    def tearDown(self):
+        self.clean()
+
+    def clean(self):
+        for doomed in CDSRepoRoundRobin.get_collection().find():
+            CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
+
+    def test_three_cds_instances(self):
+        '''
+        Tests that the round robin algorithm correctly balances across three CDS instances.
+        '''
+
+    def test_one_cds_instance(self):
+        '''
+        Tests that the round robin algorithm functions when there is only one CDS for a given repo.
+        '''
+
+    def test_zero_cds_instances(self):
+        '''
+        Tests that the round robin algorithm functions when no CDS instances are available to serve
+        a given repo.
+        '''
+
+    def test_add_new_cds_existing_association(self):
+        '''
+        Tests adding a new CDS instance to a repo that already has at least one CDS associated with it.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Test
+        added = round_robin.add_cds_repo_association('cds2', 'repo1')
+
+        # Verify
+        self.assertTrue(added)
+
+        association = round_robin._find_association('repo1')
+        self.assertTrue(association is not None)
+        self.assertEqual(2, len(association['next_permutation']))
+        self.assertEqual('cds2', association['next_permutation'][0])
+        self.assertEqual('cds1', association['next_permutation'][1])
+
+    def test_add_new_cds_new_association(self):
+        '''
+        Tests adding a new CDS instance for a repo that does not already have a CDS instance associated
+        with it.
+        '''
+
+        # Test
+        added = round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Verify
+        self.assertTrue(added)
+
+        association = round_robin._find_association('repo1')
+        self.assertTrue(association is not None)
+        self.assertEqual(1, len(association['next_permutation']))
+        self.assertEqual('cds1', association['next_permutation'][0])
+
+    def test_add_existing_cds_to_association(self):
+        '''
+        Tests adding a CDS that has already been added.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Test
+        added = round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Verify
+        self.assertTrue(not added)
+
+        association = round_robin._find_association('repo1')
+        self.assertEqual(1, len(association['next_permutation']))
+
+    def test_remove_cds_existing_assoication(self):
+        '''
+        Tests removing a CDS from a previously associated repo.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Test
+        removed = round_robin.remove_cds_repo_association('cds1', 'repo1')
+
+        # Verify
+        self.assertTrue(removed)
+
+        association = round_robin._find_association('repo1')
+        self.assertTrue(association is not None)
+        self.assertEqual(0, len(association['next_permutation']))
+
+    def test_remove_unassociated_cds(self):
+        '''
+        Tests removing a CDS that was not assoicated with the repo.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Test
+        removed = round_robin.remove_cds_repo_association('fake-cds', 'repo1')
+
+        # Verify
+        self.assertTrue(not removed)
+
+        association = round_robin._find_association('repo1')
+        self.assertEqual(1, len(association['next_permutation']))
+
+    def test_remove_no_associations_for_repo(self):
+        '''
+        Tests removing a CDS from a repo that has no assoications.        
+        '''
+
+        # Test
+        removed = round_robin.remove_cds_repo_association('fake-cds', 'fake-repo')
+
+        # Verify
+        self.assertTrue(not removed)

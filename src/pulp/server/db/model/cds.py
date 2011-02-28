@@ -70,3 +70,20 @@ class CDSHistoryEventType(object):
     REPO_UNASSOCIATED = 'repo_unassociated'
 
     TYPES = (REGISTERED, UNREGISTERED, SYNC_STARTED, SYNC_FINISHED, REPO_ASSOCIATED, REPO_UNASSOCIATED)
+
+
+class CDSRepoRoundRobin(Model):
+    '''
+    Holds the necessary data for the round robin algorithm to function. Each instance is
+    scoped to a particular repo and contains information on how the CDS URL list has been
+    generated in the past.
+    '''
+    collection_name = 'cds_repo_round_robin'
+
+    def __init__(self, repo_id, next_permutation):
+        self.repo_id = repo_id
+        self.next_permutation = next_permutation # list of strings
+
+    def __str__(self):
+        return 'Repo [%s], next permutation [%s]' % (self.repo_id, ','.join(self.next_permutation))
+    
