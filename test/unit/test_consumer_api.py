@@ -86,8 +86,7 @@ class TestConsumerApi(unittest.TestCase):
         MOCK_REPO_PROXY.clean()
 
         # Flush the assignment algorithm cache
-        for doomed in CDSRepoRoundRobin.get_collection().find():
-            CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
+        CDSRepoRoundRobin.get_collection().remove(safe=True)
 
         testutil.common_cleanup()
 
