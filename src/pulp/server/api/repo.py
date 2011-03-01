@@ -618,6 +618,8 @@ class RepoApi(BaseApi):
         # update subscribers (after) the object has been saved.
         if pathchanged:
             self.update_subscribed(id)
+        # reset for event handler
+        delta['id'] = id
         return repo
 
     def repositories(self, spec=None, fields=None):
@@ -729,6 +731,7 @@ class RepoApi(BaseApi):
             return list(cursor)
         return []
 
+    @event(subject='repo.updated.content')
     @audit()
     def add_package(self, repoid, packageids=[]):
         """
@@ -791,6 +794,7 @@ class RepoApi(BaseApi):
         """
         return self.remove_packages(repoid, [p])
 
+    @event(subject='repo.updated.content')
     def remove_packages(self, repoid, pkgobjs=[]):
         """
          Remove one or more packages from a repository
@@ -1510,6 +1514,7 @@ class RepoApi(BaseApi):
             result[repoid] = fchecksum
         return result
 
+    @event(subject='repo.updated.content')
     @audit()
     def add_file(self, repoid, fileids=[]):
         '''
@@ -1528,6 +1533,7 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         log.info("Successfully added files %s to repo %s" % (fileids, repoid))
 
+    @event(subject='repo.updated.content')
     @audit()
     def remove_file(self, repoid, fileids=[]):
         '''

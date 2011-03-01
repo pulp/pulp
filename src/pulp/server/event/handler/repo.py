@@ -19,6 +19,7 @@
 Contains REPO event handler classes.
 """
 
+import os
 from pulp.server.event.dispatcher import *
 from pulp.server.event.producer import EventProducer
 from pulp.server.api.repo import RepoApi
@@ -63,7 +64,26 @@ class RepoEvent(EventHandler):
         @param kwargs: The keyword arguments passed to RepoApi.update()
         @type kwargs: list
         """
-        pass
+        delta = args[1]
+        id = delta.pop('id')
+        event = dict(id=id, delta=delta,)
+        self.producer.send('repo.updated', event)
+
+    @outbound(action='updated.content')
+    def contentupdated(self, *args, **kwargs):
+        """
+        Raise events when a repo's content is updated.
+        @param args: The arguments passed to RepoApi.xx()
+        @type args: list
+        @param kwargs: The keyword arguments passed to RepoApi.xx()
+        @type kwargs: list
+        """
+        id = args[1]
+        fields = ('relative_path',)
+        repo = self.rapi.repository(id, fields)
+        path = os.path.join(self.rapi.published_path, repo[fields[0]])
+        event = dict(id=id, path=path,)
+        self.producer.send('repo.updated.content', event)
 
     @outbound(action='deleted')
     def delete(self, *args, **kwargs):
@@ -75,7 +95,13 @@ class RepoEvent(EventHandler):
         @param kwargs: The keyword arguments passed to RepoApi.delete()
         @type kwargs: list
         """
-        pass
+        if len(args) > 1:
+            id = args[1]
+        else:
+            id = kwargs.get('id')
+        event = dict(id=id)
+        self.producer.send('repo.deleted', event)
+
 
     @inbound(action='created')
     def created(self, event):
