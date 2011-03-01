@@ -24,7 +24,7 @@ from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
                                        CdsCommunicationsException, CdsMethodException
-#from pulp.server.db.connection import get_object_db
+import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDS, Repo
 from pulp.server.pexceptions import PulpException
 
@@ -210,10 +210,18 @@ class CdsApi(BaseApi):
         if repo is None:
             raise PulpException('Repository with ID [%s] could not be found' % repo_id)
 
+        # If the repo isn't already associated with the CDS, process it
         if repo_id not in cds['repo_ids']:
+
+            # Update the CDS in the database
             cds['repo_ids'].append(repo_id)
             self.objectdb.save(cds, safe=True)
+
+            # Add a history entry for the change
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
+
+            # Add it to the CDS host assignment algorithm
+            round_robin.add_cds_repo_association(cds_hostname, repo_id)
 
     @audit()
     def unassociate_repo(self, cds_hostname, repo_id):
@@ -238,10 +246,18 @@ class CdsApi(BaseApi):
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
+        # If the repo is associated, process it
         if repo_id in cds['repo_ids']:
+
+            # Update the CDS in the database
             cds['repo_ids'].remove(repo_id)
             self.objectdb.save(cds, safe=True)
+
+            # Add a history entry for the change
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
+
+            # Remove it from CDS host assignment consideration
+            round_robin.remove_cds_repo_association(cds_hostname, repo_id)
 
     @audit()
     def sync(self, cds_hostname):

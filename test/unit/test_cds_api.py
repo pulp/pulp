@@ -31,7 +31,8 @@ from pulp.server.api.cds import CdsApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.cds.dispatcher import CdsTimeoutException
-from pulp.server.db.model import CDSHistoryEventType
+import pulp.server.cds.round_robin as round_robin
+from pulp.server.db.model import CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
 import testutil
@@ -105,6 +106,10 @@ class TestCdsApi(unittest.TestCase):
         self.cds_history_api.clean()
         self.cds_api.clean()
         self.repo_api.clean()
+
+        # Flush the assignment algorithm cache
+        for doomed in CDSRepoRoundRobin.get_collection().find():
+            CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -338,6 +343,10 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, history[0]['type_name'])
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[1]['type_name'])
 
+        host_urls = round_robin.generate_cds_urls('cds-test-repo')
+        self.assertEqual(1, len(host_urls))
+        self.assertEqual('cds.example.com', host_urls[0])
+
     def test_associate_repo_already_associated(self):
         '''
         Tests that associating an already associated repo doesn't throw an error.
@@ -365,6 +374,10 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, history[0]['type_name'])
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[1]['type_name'])
 
+        host_urls = round_robin.generate_cds_urls('cds-test-repo')
+        self.assertEqual(1, len(host_urls))
+        self.assertEqual('cds.example.com', host_urls[0])
+        
     def test_associate_repo_invalid_cds(self):
         '''
         Tests that associating a repo with an invalid CDS hostname throws an error.
@@ -423,6 +436,9 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REPO_UNASSOCIATED, history[0]['type_name'])
         self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, history[1]['type_name'])
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[2]['type_name'])
+
+        host_urls = round_robin.generate_cds_urls('cds-test-repo')
+        self.assertEqual(0, len(host_urls))
 
     def test_unassociate_not_associated(self):
         '''
