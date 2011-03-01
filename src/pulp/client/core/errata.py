@@ -237,7 +237,7 @@ class Create(ErrataAction):
         self.parser.add_option("--fromstr", dest="fromstr",default="",
                                help=_("from contact string who released the Erratum, eg:updates@fedoraproject.org"))
         self.parser.add_option("--effected-packages", dest="pkgcsv",
-                               help=_("a csv file with effected packages; format:name,version,release,epoch,arch,filename,sourceurl"))
+                               help=_("a csv file with effected packages; format:name,version,release,epoch,arch,filename,checksum,checksum_type,sourceurl"))
         self.parser.add_option("--pushcount", dest="pushcount", default="",
                                help=_("pushcount on the erratum"))
         self.parser.add_option("--references", dest="refcsv",
