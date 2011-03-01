@@ -723,7 +723,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repo_id, ['packages'])
         collection = model.Package.get_collection()
         spec['id'] = {'$in': list(repo['packages'])}
-        cursor = self.collection.find(spec=spec, fields=pkg_fields)
+        cursor = collection.find(spec=spec, fields=pkg_fields)
         if cursor.count() > 0:
             return list(cursor)
         return []
