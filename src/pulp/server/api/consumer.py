@@ -378,7 +378,7 @@ class ConsumerApi(BaseApi):
         repo_urls = []
         for host in host_list:
             repo_url = 'https://%s%s/%s' % (host, repo_hosted_url, repo_relative_path)
-            repo_urls = [repo_url]
+            repo_urls.append(repo_url)
 
         # This will also be replaced to be generated based on CDS availability.
         key_hosted_url = config.get('server', 'key_url')

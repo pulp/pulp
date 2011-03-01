@@ -27,8 +27,10 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import pulp.server.agent
+from pulp.server.api.cds import CdsApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 import testutil
 
@@ -61,6 +63,14 @@ def retrieve_mock_repo_proxy(uuid, **options):
 
 pulp.server.agent.retrieve_repo_proxy = retrieve_mock_repo_proxy
 
+
+class MockCdsDispatcher(object):
+    '''
+    Simple mock to allow a CDS creation through the CDS APIs.
+    '''
+    def init_cds(self, cds):
+        pass
+
 # -- test cases ---------------------------------------------------------------------------
 
 class TestConsumerApi(unittest.TestCase):
@@ -69,11 +79,16 @@ class TestConsumerApi(unittest.TestCase):
         '''
         Removes any entities written to the database in all used APIs.
         '''
+        self.cds_api.clean()
         self.repo_api.clean()
         self.consumer_api.clean()
-
-        MOCK_REPO_PROXY.clean()
         
+        MOCK_REPO_PROXY.clean()
+
+        # Flush the assignment algorithm cache
+        for doomed in CDSRepoRoundRobin.get_collection().find():
+            CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
+
         testutil.common_cleanup()
 
     def setUp(self):
@@ -81,6 +96,9 @@ class TestConsumerApi(unittest.TestCase):
 
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
+
+        self.cds_api = CdsApi()
+        self.cds_api.dispatcher = MockCdsDispatcher()
 
         self.clean()
 
@@ -199,7 +217,32 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Make sure no messages were sent over the bus
         self.assertTrue(MOCK_REPO_PROXY.bind_data is None)
-                
+
+    def test_bind_with_cds(self):
+        '''
+        Tests the bind API when there are CDS instances associated with the bound repo.
+        '''
+
+        # Setup
+        self.consumer_api.create('test-consumer', None)
+        self.repo_api.create('test-repo', 'Test Repo', 'noarch')
+
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+        self.cds_api.associate_repo('cds1', 'test-repo')
+        self.cds_api.associate_repo('cds2', 'test-repo')
+
+        # Test
+        bind_data = self.consumer_api.bind('test-consumer', 'test-repo')
+
+        # Verify
+        host_urls = bind_data['host_urls']
+        self.assertEqual(3, len(host_urls)) # 2 CDS + Pulp server itself
+
+        #   The pulp server itself should be the last of the hosts
+        self.assertTrue('localhost' in host_urls[2])
+
+
     # -- unbind test cases -------------------------------------------------------------------
 
     def test_unbind(self):
