@@ -40,6 +40,7 @@ from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
+import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.file import FileApi
@@ -509,7 +510,7 @@ class RepoApi(BaseApi):
         #importing here to bypass circular imports
         from pulp.server.api.consumer import ConsumerApi
         capi = ConsumerApi()
-        bound_consumers = capi.findsubscribed(repo['id'])
+        bound_consumers = consumer_utils.consumers_bound_to_repo(repo['id'])
         for consumer in bound_consumers:
             try:
                 log.info("Unsubscribe repoid %s from consumer %s" % (repo['id'], consumer['id']))
@@ -1417,9 +1418,7 @@ class RepoApi(BaseApi):
         @param repoid: The updated repo ID.
         @type repoid: str
         """
-        from pulp.server.api.consumer import ConsumerApi
-        capi = ConsumerApi()
-        cids = [str(c['id']) for c in capi.findsubscribed(repoid)]
+        cids = [str(c['id']) for c in consumer_utils.consumers_bound_to_repo(repoid)]
         agent = Agent(cids, async=True)
         repolib = agent.Repo()
         repolib.update()
