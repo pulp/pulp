@@ -27,6 +27,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.config import config
+import pulp.server.cds.round_robin as round_robin
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
@@ -67,7 +68,7 @@ class ConsumerApi(BaseApi):
         Create a new Consumer object and return it
         """
         consumer = self.consumer(id)
-        if(consumer):
+        if consumer:
             raise PulpException("Consumer [%s] already exists" % id)
         c = model.Consumer(id, description, key_value_pairs)
         self.collection.insert(c, safe=True)
@@ -253,7 +254,6 @@ class ConsumerApi(BaseApi):
         consumer_key = 'key_value_pairs.' + key
         return self.consumers({consumer_key: value}, fields)
 
-
     @audit()
     def certificate(self, id):
         """
@@ -365,14 +365,20 @@ class ConsumerApi(BaseApi):
 
         # Collect the necessary information to return to the caller (see __doc__ above)
 
-        # This will be replaced with a call to determine the list based on CDS availability.
-        # For now, this is just to maintain existing functionality in the new bind model.
+        # Determine the ordered list of hosts to access for the repo
+        host_list = round_robin.generate_cds_urls(repoid)
+
+        # Add in the pulp server itself as the last host in the list if there are CDS
+        # instances; if there are none, the pulp server will be the only entry (default case)
         server_name = config.get('server', 'server_name')
+        host_list.append(server_name)
 
         repo_hosted_url = config.get('server', 'relative_url')
         repo_relative_path = repo['relative_path']
-        repo_url = 'https://%s%s/%s' % (server_name, repo_hosted_url, repo_relative_path)
-        repo_urls = [repo_url]
+        repo_urls = []
+        for host in host_list:
+            repo_url = 'https://%s%s/%s' % (host, repo_hosted_url, repo_relative_path)
+            repo_urls = [repo_url]
 
         # This will also be replaced to be generated based on CDS availability.
         key_hosted_url = config.get('server', 'key_url')

@@ -199,7 +199,7 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
         #   Make sure no messages were sent over the bus
         self.assertTrue(MOCK_REPO_PROXY.bind_data is None)
-        
+                
     # -- unbind test cases -------------------------------------------------------------------
 
     def test_unbind(self):
