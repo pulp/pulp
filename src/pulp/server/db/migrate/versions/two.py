@@ -19,7 +19,7 @@ from pulp.server.auth.authorization import (ensure_builtin_roles,
     consumer_users_role, add_user_to_role,
     grant_automatic_permissions_to_consumer_user)
 
-from pulp.server.db.model.resource import Repo, Consumer
+from pulp.server.db.model.resource import Repo, Consumer, Errata
 from pulp.server.db.model.auth import User, Role
 
 
@@ -98,6 +98,20 @@ def _migrate_user_model():
             modified = True
         if modified:
             collection.save(user)
+            
+def _migrate_errata_model():
+    collection = Errata.get_collection()
+    for erratum in collection.find():
+        modified = False
+        print erratum
+        if 'severity' not in erratum:
+            erratum['severity'] = u""
+            modified = True
+        if 'rights' not in erratum:
+            erratum['rights'] = u""
+            modified = True
+        if modified:
+            collection.save(erratum)
 
 
 def migrate():
@@ -106,4 +120,5 @@ def migrate():
     _migrate_consumer_model()
     _migrate_repo_model()
     _migrate_user_model()
+    _migrate_errata_model()
     _log.info('migration to data model version 2 complete')

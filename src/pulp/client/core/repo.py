@@ -893,7 +893,7 @@ class AddErrata(RepoAction):
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
                 help=_("Errata Id to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("Source repository with specified packages to perform add"))
+            help=_("optional source repository with specified packages to perform selective add"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
                             help=_("Assume yes; automatically process dependencies as part of remove operation."))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
@@ -903,11 +903,10 @@ class AddErrata(RepoAction):
         id = self.get_required_option('id')
         if not self.opts.errataid:
             system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform an add."))
-        if not self.opts.srcrepo:
-            system_exit(os.EX_USAGE, _("Error, a source respository where erratum exists is required"))
         # check if repos are valid
         self.get_repo(id)
-        self.get_repo(self.opts.srcrepo)
+        if self.opts.srcrepo:
+            self.get_repo(self.opts.srcrepo)
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
@@ -915,7 +914,7 @@ class AddErrata(RepoAction):
             if id in e_repos:
                 print(_("Errata Id [%s] is already in target repo [%s]. skipping" % (eid, id)))
                 continue
-            if self.opts.srcrepo not in e_repos:
+            if self.opts.srcrepo and self.opts.srcrepo not in e_repos:
                 print(_("Errata Id [%s] is not in source repo [%s]. skipping" % (eid, self.opts.srcrepo)))
                 continue
             erratum = self.errata_api.erratum(eid)
@@ -928,20 +927,29 @@ class AddErrata(RepoAction):
 
         if not effected_pkgs:
             system_exit(os.EX_DATAERR)
-
-        pnames = []
+            
+        pkgs = {}
         for pkg in effected_pkgs:
-            src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
-            if not src_pkgobj: # not in src_pkgobjs:
-                log.info("Errata Package %s could not be found in source repo. skipping" % pkg)
-                continue
+            if self.opts.srcrepo:
+                src_pkgobj = self.lookup_repo_packages(pkg, self.opts.srcrepo)
+                if not src_pkgobj: # not in src_pkgobjs:
+                    log.info("Errata Package %s could not be found in source repo. skipping" % pkg)
+                    continue
+            else:
+                src_pkgobj = self.service_api.search_packages(filename=pkg)
+                if not src_pkgobj:
+                    print(_("Package %s could not be found skipping" % pkg))
+                    continue
+                src_pkgobj = src_pkgobj[0]
             name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'],
                                     src_pkgobj['release'], src_pkgobj['arch'])
-            pnames.append(name)
-
-        # lookup dependencies and let use decide whether to include them
-        pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pnames, self.opts.recursive, self.opts.assumeyes)
-        pids = [pdep['id'] for pdep in pkgdeps]
+            pkgs[name] = src_pkgobj
+        if self.opts.srcrepo:
+            # lookup dependencies and let use decide whether to include them
+            pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pkgs.keys(), self.opts.recursive, self.opts.assumeyes)
+            pids = [pdep['id'] for pdep in pkgdeps]
+        else:
+            pids = [pkg['id'] for pkg in pkgs.values()]
         try:
             self.repository_api.add_errata(id, errataids)
             if pids:

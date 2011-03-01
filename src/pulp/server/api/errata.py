@@ -30,15 +30,15 @@ class ErrataApi(BaseApi):
     @audit(params=["id", "title", "type"])
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
-            reboot_suggested="", references=(), pkglist=(),
-            repo_defined=False, immutable=False):
+            reboot_suggested="", references=(), pkglist=(), severity="", 
+            rights="", repo_defined=False, immutable=False):
         """
         Create a new Errata object and return it
         """
         e = model.Errata(id, title, description, version, release, type,
                 status, updated, issued, pushcount, from_str,
-                reboot_suggested, references, pkglist, repo_defined,
-                immutable)
+                reboot_suggested, references, pkglist, severity, rights,
+                repo_defined, immutable)
         self.collection.insert(e, safe=True)
         return e
 
@@ -76,7 +76,7 @@ class ErrataApi(BaseApi):
 
     def errata(self, id=None, title=None, description=None, version=None,
             release=None, type=None, status=None, updated=None, issued=None,
-            pushcount=None, from_str=None, reboot_suggested=None):
+            pushcount=None, from_str=None, reboot_suggested=None, severity=None):
         """
         Return a list of all errata objects matching search terms
         """
@@ -105,6 +105,8 @@ class ErrataApi(BaseApi):
             searchDict['from_str'] = from_str
         if reboot_suggested:
             searchDict['reboot_suggested'] = reboot_suggested
+        if severity:
+            searchDict['severity'] = severity
         if (len(searchDict.keys()) == 0):
             return list(self.collection.find())
         else:

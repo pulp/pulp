@@ -246,6 +246,10 @@ class Create(ErrataAction):
                             help=_("reboot suggested on errata"))
         self.parser.add_option("--short", dest="short",
                             help=_("short release name; eg: F14"))
+        self.parser.add_option("--severity", dest="severity",
+                            help=_("optional severity information; eg: Low,Moderate,Critical"))
+        self.parser.add_option("--rights", dest="rights",
+                            help=_("optional copyright information"))
         
         
     def run(self):
@@ -291,12 +295,12 @@ class Create(ErrataAction):
             plist = utils.parseCSV(self.opts.pkgcsv)
             pkgs = []
             for p in plist:
-                if not len(p) == 7:
+                if not len(p) == 9:
                     log.error(_("Bad format [%s] in csv, skipping" % p))
                     continue
-                name,version,release,epoch,arch,filename,sourceurl = p
+                name,version,release,epoch,arch,filename,sums,type,sourceurl = p
                 pdict = dict(name=name, version=version, release=release, 
-                               epoch=epoch, filename=filename, src=sourceurl)
+                             epoch=epoch, arch=arch, filename=filename, sums=sums, type=type, src=sourceurl)
                 pkgs.append(pdict)
             plistdict = {'packages' : pkgs,
                          'name'     : self.opts.release,
@@ -310,11 +314,13 @@ class Create(ErrataAction):
                                issued=self.opts.issued or "", pushcount=self.opts.pushcount or "", 
                                update_id="", from_str=self.opts.fromstr or "", 
                                reboot_suggested=self.opts.reboot_sugg or "", 
-                               references=references, pkglist=pkglist)
+                               references=references, pkglist=pkglist, severity=self.opts.severity or "",
+                               rights=self.opts.rights or "")
         if erratum_new:
             print _("Successfully created an Erratum with id [%s]" % erratum_new['id'])
         
 class update(ErrataAction):
+    #TODO: put this in place once update semantics is done
     pass
 
 class Delete(ErrataAction):

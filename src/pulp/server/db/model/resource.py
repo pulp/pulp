@@ -94,8 +94,8 @@ class Errata(Model):
 
     def __init__(self, id, title, description, version, release, type, status=u"",
             updated=u"", issued=u"", pushcount=u"", from_str=u"",
-            reboot_suggested=False, references=[], pkglist=[], repo_defined=False,
-            immutable=False):
+            reboot_suggested=False, references=[], pkglist=[], severity=u"", 
+            rights=u"", repo_defined=False, immutable=False):
         self._id = id
         self.id = id
         self.title = title
@@ -111,6 +111,8 @@ class Errata(Model):
         self.reboot_suggested = reboot_suggested
         self.references = references
         self.pkglist = pkglist
+        self.rights = rights
+        self.severity = severity
         self.repo_defined = repo_defined
         self.immutable = immutable
 

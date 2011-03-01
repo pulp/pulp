@@ -66,6 +66,8 @@ class Errata(JSONController):
                           errata_data.get('reboot_suggested', ""),
                           errata_data.get('references', []),
                           errata_data.get('pkglist', []),
+                          errata_data.get('severity', ""),
+                          errata_data.get('rights', ""),
                           errata_data.get('repo_defined', False),
                           errata_data.get('immutable', False))
         resource = http.resource_path(http.extend_uri_path(errata['id']))

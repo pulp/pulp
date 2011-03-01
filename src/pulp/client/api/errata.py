@@ -25,7 +25,8 @@ class ErrataAPI(PulpAPI):
 
     def create(self, id, title, description, version, release, type,
                status="", updated="", issued="", pushcount="", update_id="",
-               from_str="", reboot_suggested="", references=[], pkglist=[]):
+               from_str="", reboot_suggested="", references=[], pkglist=[],
+               severity="", rights=""):
 
         params = {'id': id,
                   'title': title,
@@ -40,7 +41,9 @@ class ErrataAPI(PulpAPI):
                   'from_str': from_str,
                   'reboot_suggested': reboot_suggested,
                   'references': references,
-                  'pkglist': pkglist}
+                  'pkglist': pkglist,
+                  'severity' : severity,
+                  'rights'   : rights,}
         path = "/errata/"
         return self.server.POST(path, params)[1]
 
