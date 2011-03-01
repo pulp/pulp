@@ -2,21 +2,6 @@
 #
 # Copyright (c) 2010 Red Hat, Inc.
 #
-# This software is licensed to you under the GNU General Public License,
-# version 2 (GPLv2). There is NO WARRANTY for this software, express or
-# implied, including the implied warranties of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
-# along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
-# Red Hat trademarks are not licensed under GPLv2. No permission is
-# granted to use or replicate Red Hat trademarks that are incorporated
-# in this software or its documentation.
-
-#!/usr/bin/python
-#
-# Copyright (c) 2010 Red Hat, Inc.
-#
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -65,16 +50,59 @@ class TestRoundRobin(unittest.TestCase):
         Tests that the round robin algorithm correctly balances across three CDS instances.
         '''
 
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+        round_robin.add_cds_repo_association('cds2', 'repo1')
+        round_robin.add_cds_repo_association('cds3', 'repo1')
+
+        # Test
+        perm1 = round_robin.generate_cds_urls('repo1')
+        perm2 = round_robin.generate_cds_urls('repo1')
+        perm3 = round_robin.generate_cds_urls('repo1')
+        perm4 = round_robin.generate_cds_urls('repo1')
+
+        # Verify
+
+        # Newly added CDS entries go at the front of the list, so since they were added 1, 2, 3, they
+        # will be returned in reverse order
+        self.assertEqual(perm1, ['cds3', 'cds2', 'cds1'])
+        self.assertEqual(perm2, ['cds2', 'cds1', 'cds3'])
+        self.assertEqual(perm3, ['cds1', 'cds3', 'cds2'])
+        self.assertEqual(perm4, ['cds3', 'cds2', 'cds1'])
+
     def test_one_cds_instance(self):
         '''
         Tests that the round robin algorithm functions when there is only one CDS for a given repo.
         '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+
+        # Test
+        perm1 = round_robin.generate_cds_urls('repo1')
+        perm2 = round_robin.generate_cds_urls('repo1')
+        perm3 = round_robin.generate_cds_urls('repo1')
+
+        # Verify
+
+        # Newly added CDS entries go at the front of the list, so since they were added 1, 2, 3, they
+        # will be returned in reverse order
+        self.assertEqual(perm1, ['cds1'])
+        self.assertEqual(perm2, ['cds1'])
+        self.assertEqual(perm3, ['cds1'])
+        
 
     def test_zero_cds_instances(self):
         '''
         Tests that the round robin algorithm functions when no CDS instances are available to serve
         a given repo.
         '''
+
+        # Test
+        perm = round_robin.generate_cds_urls('repo1')
+
+        # Verify
+        self.assertEqual([], perm)
 
     def test_add_new_cds_existing_association(self):
         '''
@@ -112,6 +140,70 @@ class TestRoundRobin(unittest.TestCase):
         self.assertTrue(association is not None)
         self.assertEqual(1, len(association['next_permutation']))
         self.assertEqual('cds1', association['next_permutation'][0])
+
+    def test_iterator_with_save(self):
+        '''
+        Tests that returning an iterator returns a properly configured and functioning iterator.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+        round_robin.add_cds_repo_association('cds2', 'repo1')
+        round_robin.add_cds_repo_association('cds3', 'repo1')
+
+        # Test
+        iterator = round_robin.iterator('repo1')
+
+        perm1 = iterator.next()
+        perm2 = iterator.next()
+        perm3 = iterator.next()
+        perm4 = iterator.next()
+
+        iterator.save()
+
+        #   The following should generate the next in the sequence after the iterator was saved
+        perm5 = round_robin.generate_cds_urls('repo1')
+
+        # Verify
+
+        # Newly added CDS entries go at the front of the list, so since they were added 1, 2, 3, they
+        # will be returned in reverse order
+        self.assertEqual(perm1, ['cds3', 'cds2', 'cds1'])
+        self.assertEqual(perm2, ['cds2', 'cds1', 'cds3'])
+        self.assertEqual(perm3, ['cds1', 'cds3', 'cds2'])
+        self.assertEqual(perm4, ['cds3', 'cds2', 'cds1'])
+        self.assertEqual(perm5, ['cds2', 'cds1', 'cds3']) # next sequence since iterator was saved
+
+    def test_iterator_with_no_save(self):
+        '''
+        Tests that returning an iterator returns a properly configured and functioning iterator.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+        round_robin.add_cds_repo_association('cds2', 'repo1')
+        round_robin.add_cds_repo_association('cds3', 'repo1')
+
+        # Test
+        iterator = round_robin.iterator('repo1')
+
+        perm1 = iterator.next()
+        perm2 = iterator.next()
+        perm3 = iterator.next()
+        perm4 = iterator.next()
+
+        #   Since the iterator wasn't saved, this call should return the first in the sequence
+        perm5 = round_robin.generate_cds_urls('repo1')
+
+        # Verify
+
+        # Newly added CDS entries go at the front of the list, so since they were added 1, 2, 3, they
+        # will be returned in reverse order
+        self.assertEqual(perm1, ['cds3', 'cds2', 'cds1'])
+        self.assertEqual(perm2, ['cds2', 'cds1', 'cds3'])
+        self.assertEqual(perm3, ['cds1', 'cds3', 'cds2'])
+        self.assertEqual(perm4, ['cds3', 'cds2', 'cds1'])
+        self.assertEqual(perm5, ['cds3', 'cds2', 'cds1']) # first since iterator wasn't saved
 
     def test_add_existing_cds_to_association(self):
         '''

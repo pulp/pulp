@@ -37,31 +37,105 @@ then be sent to consumers to rebalance the system.
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 
 
+# -- support classes ----------------------------------------------------------------------
+
+class Iterator(object):
+    '''
+    Calculates the next permutation in the CDS list based on the algorithm defined in
+    the module-level docs. An instance of this object is returned on a redistribute
+    call to allow a large number of permutations to be generated without incurring
+    the database access penalty between generations.
+
+    It is critical to realize the save() method must be called when the permutations
+    are finished being generated to save the state of the last generation to the database.
+    '''
+
+    def __init__(self, repo_id, seed):
+        self.repo_id = repo_id
+        self.next_permutation = seed
+
+    def next(self):
+        '''
+        Returns the next permutation.
+
+        @return: next list of CDS hostnames according to the generation algorithm
+        @rtype:  list of strings
+        '''
+        perm = self.next_permutation
+        self.next_permutation = Iterator._next(perm)
+        return perm
+
+    def save(self):
+        '''
+        Saves the state of the permutations based on the current state of the iterator.
+        This call accesses the database and is best used once all permutations have been
+        generated.
+        '''
+        association = _find_association(self.repo_id)
+        association['next_permutation'] = self.next_permutation
+        CDSRepoRoundRobin.get_collection().save(association, safe=True)
+
+    @classmethod
+    def _next(cls, seed):
+        '''
+        Calculates the next permutation based on the provided seed according to the
+        algorithm defined in the module-level documentation.
+        '''
+        return seed[1:] + seed[:1]
+
 # -- public api ---------------------------------------------------------------------------
 
-def generate_cds_urls(repo):
+def generate_cds_urls(repo_id):
     '''
-    Generates an ordered list of URLs that should be used to access the given repo.
+    Generates an ordered list of CDS hostnames that should be used to access the given repo.
 
-    @param repo: the repo to which to generate the list of URLs
-    @type  repo: L{Repo}
+    @param repo_id: identifies the repo to which to generate the list of hostnames
+    @type  repo_id: string
 
-    @return: list of URLs used to access the given rep
+    @return: list of hostnames used to access the given rep
     @rtype:  list of strings; empty list if there are no CDS instances associated with the
              repo
     '''
-    objectdb = CDSRepoRoundRobin.get_collection()
 
-    if objectdb.find({'repo_id' : repo['id']}) is None:
+    # If there is no association of CDSes to the repo, return an empty list
+    association = _find_association(repo_id)
+    if association is None:
         return []
 
+    # Hold on to a copy of this to return to the caller
+    perm = list(association['next_permutation'])
+
+    # Generate the next permutation and save it
+    association['next_permutation'] = Iterator._next(list(perm))
+    CDSRepoRoundRobin.get_collection().save(association, safe=True)
+
+    # Return the permutation to the caller
+    return perm
 
 
-def redistribute(repo):
+def iterator(repo_id):
     '''
-    Decide between pre-generating list and returning an iterator.
+    Returns an iterator capable of generating permutations for the repo with the given ID.
+    If there are no CDSes assigned to the given repo, None will be returned.
+
+    Once finished generating permutations with this iterator, its save() method must be called
+    to save the state of the last generated permutation. Keep in mind the save() call writes
+    to the database, so be careful to avoid calling it in large loops.
+
+    @param repo_id: identifies the repo to which CDS hostname permutations will be generated;
+                    at least one CDS should be associated with this repo prior to calling this
+    @type  repo_id: string
+
+    @return: iterator used to produce CDS hostname permutations for the given repo
+    @rtype:  L{Iterator}
     '''
-    
+
+    # Sanity check that the iterator makes sense to return
+    association = _find_association(repo_id)
+    if association is None:
+        return None
+
+    return Iterator(repo_id, association['next_permutation'])
 
 def add_cds_repo_association(cds_hostname, repo_id):
     '''
@@ -95,7 +169,7 @@ def add_cds_repo_association(cds_hostname, repo_id):
     # The new CDS should be the first returned at the next assignment
     association['next_permutation'] = [cds_hostname] + association['next_permutation']
     
-    objectdb.save(association)
+    objectdb.save(association, safe=True)
 
     return True
 
@@ -125,7 +199,7 @@ def remove_cds_repo_association(cds_hostname, repo_id):
     # The new CDS should be the first returned at the next assignment
     if cds_hostname in association['next_permutation']:
         association['next_permutation'].remove(cds_hostname)
-        objectdb.save(association)
+        objectdb.save(association, safe=True)
         return True
     else:
         return False
