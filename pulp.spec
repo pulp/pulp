@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.143
+Version:        0.0.144
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,67 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Mar 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.144-1
+- 681601 - fixing help for repo add/remove operations (pkilambi@redhat.com)
+- 681545 - fixing error message (pkilambi@redhat.com)
+- user validation must allow for passwords of None (jconnor@redhat.com)
+- 681619 - use older style look up for older yums (pkilambi@redhat.com)
+- Changing incorrect PUT request to POST for creating filters
+  (skarmark@redhat.com)
+- Adding cli and basic unit tests for cloning filters (skarmark@redhat.com)
+- reverting back to using the user api (jconnor@redhat.com)
+- Raise events when repo updated including content changes. (jortel@redhat.com)
+- Adding new fields for errata * added rights, severity, sums, type * updated
+  api/ws and cli * updated the add_errata to not require source repo
+  (pkilambi@redhat.com)
+- Beginnings of extracting out some consumer logic/queries to prevent circular
+  API dependencies. (jason.dobies@redhat.com)
+- Added hooks to associating a repo with a CDS to add the association into the
+  host URL calculation. (jason.dobies@redhat.com)
+- Added hooks from bind into CDS round-robin algorithm.
+  (jason.dobies@redhat.com)
+- Implemented generate and iterator functions. (jason.dobies@redhat.com)
+- API update semantics: convert ConsumerApi. (jortel@redhat.com)
+- API update semantics: convert ErrataApi. (jortel@redhat.com)
+- API update semantics: convert UserApi. (jortel@redhat.com)
+- API update semantics: convert RepoApi. (jortel@redhat.com)
+- 681016 - log the warning and remove the errata (pkilambi@redhat.com)
+- 677695 - calls to lookup checksums for packages/files (pkilambi@redhat.com)
+- fix encoding while displaying the comps data (pkilambi@redhat.com)
+- The lock eagerly creates the file, so shift the default lock instantiation to
+  only if it is needed. (jason.dobies@redhat.com)
+- updating default config to match new relative path /pulp/repos
+  (jconnor@redhat.com)
+- 680868 - minor fix to import help options (pkilambi@redhat.com)
+- Fixed DB migration code to work with new collection APIs.
+  (jason.dobies@redhat.com)
+- added comment explaining how to setup get_collections for Model class
+  (jconnor@redhat.com)
+- 674902 - Fix repo.update() of ca/cert/key. (jortel@redhat.com)
+- Support to Import/Export comps.xml (pkilambi@redhat.com)
+- Wired up new client/server bind and unbind APIs to new client repolib logic.
+  (jason.dobies@redhat.com)
+- Added factory methods for consumer repo proxy (more still need to be added
+  and APIs refactored to use them). (jason.dobies@redhat.com)
+- Added logging calls (jason.dobies@redhat.com)
+- Added test to verify adding an existing repo functionality.
+  (jason.dobies@redhat.com)
+- Added pretty important doc that bind is for both add and update.
+  (jason.dobies@redhat.com)
+- Modified repolib.bind to work in both add and update cases.
+  (jason.dobies@redhat.com)
+- Removed unnecessary ActionLock class. (jason.dobies@redhat.com)
+- Finished implementing tests and bug fixes found by them.
+  (jason.dobies@redhat.com)
+- Added comment to indicate the test needs to check for mirror list entry
+  order. (jason.dobies@redhat.com)
+- Big refactor of repolib to remove coupling to the server and work on the data
+  no matter how it came into the consumer.  (jason.dobies@redhat.com)
+- Added repo file location as a config value. (jason.dobies@redhat.com)
+- Added safe load and add_entries methods for repos. (jason.dobies@redhat.com)
+- Added support for writing mirror lists, including in the repo configuration.
+  (jason.dobies@redhat.com)
+
 * Fri Feb 25 2011 Jeff Ortel <jortel@redhat.com> 0.0.143-1
 - added collection caching to Model base class (jconnor@redhat.com)
 - 680462 - filter out empty lines from csv (pkilambi@redhat.com)
