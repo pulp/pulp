@@ -284,7 +284,7 @@ def _validate_user():
     @return: number of errors found during validation
     """
     objectdb = User.get_collection()
-    reference = model.User(u'', u'', u'', None)
+    reference = model.User(u'', u'', None, None)
     return _validate_model(model.User.__name__, objectdb, reference)
 
 def _validate_file():
