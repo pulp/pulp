@@ -54,6 +54,9 @@ def top_gpg_location():
 def top_package_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "packages")
 
+def top_file_location():
+    return "%s/%s" % (constants.LOCAL_STORAGE, "files")
+
 def relative_repo_path(path):
     """
     Convert the specified I{path} to a relative path
