@@ -27,7 +27,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import pulp.server.api.consumer_utils as utils
-from pulp.server.db.model.resource import Consumer
+from pulp.server.db.model.resource import Consumer, Repo
 import testutil
 
 # -- test cases -------------------------------------------------------------------------
@@ -89,4 +89,42 @@ class TestConsumerUtils(unittest.TestCase):
         # Verify
         self.assertTrue(consumers is not None)
         self.assertEqual(0, len(consumers))
-        
+
+    def test_build_bind_data(self):
+        '''
+        Tests that assembling the data needed for a bind correctly includes all supplied data.
+        '''
+
+        # Setup
+        repo = Repo('repo1', 'Repo 1', 'noarch')
+        Repo.get_collection().save(repo)
+
+        # Test
+        bind_data = utils.build_bind_data(repo, ['cds1', 'cds2'], ['key1'])
+
+        # Verify
+        self.assertTrue(bind_data is not None)
+
+        self.assertTrue('repo' in bind_data)
+        self.assertTrue('host_urls' in bind_data)
+        self.assertTrue('key_urls' in bind_data)
+
+        data_repo = bind_data['repo']
+        self.assertTrue(data_repo is not None)
+        self.assertEqual(data_repo['id'], 'repo1')
+        self.assertEqual(data_repo['name'], 'Repo 1')
+        self.assertEqual(data_repo['arch'], 'noarch')
+
+        data_hosts = bind_data['host_urls']
+        self.assertTrue(data_hosts is not None)
+        self.assertEqual(3, len(data_hosts)) # 2 CDS + pulp server
+
+        data_keys = bind_data['key_urls']
+        self.assertTrue(data_keys is not None)
+        self.assertEqual(1, len(data_keys))
+
+    def test_build_bind_data_no_hostnames_or_keys(self):
+        '''
+        Tests that pass in no hostnames and/or keys does not error and properly sets the values in
+        the returned data.
+        '''

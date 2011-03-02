@@ -18,6 +18,7 @@ This module contains utilities to support the consumer-related operations that a
 used outside of consumer API itself.
 '''
 
+from pulp.server.config import config
 from pulp.server.db.model.resource import Consumer
 
 def consumers_bound_to_repo(repo_id):
@@ -35,3 +36,64 @@ def consumers_bound_to_repo(repo_id):
         repo_id = [repo_id]
 
     return list(Consumer.get_collection().find({'repoids' : repo_id}))
+
+def build_bind_data(repo, hostnames, key_list):
+    '''
+    Builds the data bundle that will be sent to consumers for a bind request.
+    The Pulp server itself will automatically be added to the list of provided
+    hostnames at the end.
+
+    Any data the caller needs to use the newly bound repo is returned. The data is
+    returned in a dictionary. The keys in the dictionary and what they represent
+    are as follows:
+    - repo: the repo object itself
+    - host_urls: an ordered list of full URLs to use to access the repo
+    - key_urls: a list of full URLs to all gpg keys (if any) associated with the repo;
+                empty list if the repo does not define any GPG keys
+
+
+    @param repo: repo object describing the repo being bound
+    @type  repo: L{Repo}
+
+    @param hostnames: list of CDS hostnames the consumer will be bound to
+    @type  hostnames: list of strings; may be an empty list
+
+    @param key_list: list of keys associated with the repo
+    @type  key_list: list of strings
+
+    @return: dictionary of data to send to a consumer for a bind
+    @rtype:  dict
+    '''
+
+    if hostnames is None:
+        hostnames = []
+
+    if key_list is None:
+        key_list = []
+
+    # Add in the pulp server itself as the last host in the list if there are CDS
+    # instances; if there are none, the pulp server will be the only entry (default case)
+    server_name = config.get('server', 'server_name')
+    hostnames.append(server_name)
+
+    repo_hosted_url = config.get('server', 'relative_url')
+    repo_relative_path = repo['relative_path']
+    repo_urls = []
+    for host in hostnames:
+        repo_url = 'https://%s%s/%s' % (host, repo_hosted_url, repo_relative_path)
+        repo_urls.append(repo_url)
+
+    # This will also be replaced to be generated based on CDS availability.
+    key_hosted_url = config.get('server', 'key_url')
+    key_urls = []
+    for key in key_list:
+        key_url = 'https://%s%s/%s' % (server_name, key_hosted_url, key)
+        key_urls.append(key_url)
+
+    bind_data = {
+        'repo' : repo,
+        'host_urls' : repo_urls,
+        'key_urls' : key_urls,
+    }
+
+    return bind_data
