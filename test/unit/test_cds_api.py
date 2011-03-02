@@ -27,8 +27,11 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import pulp.server.agent
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.cds_history import CdsHistoryApi
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.cds.dispatcher import CdsTimeoutException
 import pulp.server.cds.round_robin as round_robin
@@ -36,6 +39,8 @@ from pulp.server.db.model import CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
 import testutil
+
+# -- mocks -------------------------------------------------------------------------------
 
 class MockCdsDispatcher(object):
 
@@ -100,16 +105,55 @@ class MockCdsDispatcher(object):
         self.repos = None
         self.call_log = []
 
+
+class MockRepoProxy(object):
+
+    def __init__(self):
+        self.bind_data = None
+        self.unbind_repo_id = None
+        self.update_calls = []
+
+    def bind(self, bind_data):
+        self.bind_data = bind_data
+
+    def unbind(self, repo_id):
+        self.unbind_repo_id = repo_id
+
+    def update(self, repo_id, bind_data):
+        self.update_calls.append((repo_id, bind_data))
+
+    def clear(self):
+        '''
+        Removes all state from the mock. Meant to be run between test runs to ensure a
+        common starting point.
+        '''
+        self.bind_data = None
+        self.unbind_repo_id = None
+        self.update_calls = []
+
+MOCK_REPO_PROXY = MockRepoProxy()
+
+def retrieve_mock_repo_proxy(uuid, **options):
+    return MOCK_REPO_PROXY
+
+pulp.server.agent.retrieve_repo_proxy = retrieve_mock_repo_proxy
+
+# -- test cases --------------------------------------------------------------------------------------
+
 class TestCdsApi(unittest.TestCase):
 
     def clean(self):
         self.cds_history_api.clean()
         self.cds_api.clean()
         self.repo_api.clean()
+        self.consumer_api.clean()
+        self.consumer_history_api.clean()
 
         # Flush the assignment algorithm cache
-        for doomed in CDSRepoRoundRobin.get_collection().find():
-            CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
+        CDSRepoRoundRobin.get_collection().remove()
+
+        self.dispatcher.clear()
+        MOCK_REPO_PROXY.clear()
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -120,6 +164,8 @@ class TestCdsApi(unittest.TestCase):
 
         self.cds_history_api = CdsHistoryApi()
         self.repo_api = RepoApi()
+        self.consumer_api = ConsumerApi()
+        self.consumer_history_api = ConsumerHistoryApi()
 
         self.clean()
 
@@ -699,4 +745,86 @@ class TestCdsApi(unittest.TestCase):
 
         # Test
         self.assertRaises(PulpException, self.repo_api.delete, repo['id'])
-        
+
+    def test_redistribute(self):
+        '''
+        Tests redistribute with multiple consumers bound to the repo and multiple CDS instances
+        hosting it.
+        '''
+
+        # Setup
+        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'noarch')
+
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+
+        self.cds_api.associate_repo('cds1', 'cds-test-repo')
+        self.cds_api.associate_repo('cds2', 'cds-test-repo')
+
+        self.consumer_api.create('consumer1', None)
+        self.consumer_api.create('consumer2', None)
+        self.consumer_api.create('consumer3', None)
+
+        self.consumer_api.bind('consumer1', 'cds-test-repo')
+        self.consumer_api.bind('consumer2', 'cds-test-repo')
+        self.consumer_api.bind('consumer3', 'cds-test-repo')
+
+        # Test
+        self.cds_api.redistribute('cds-test-repo')
+
+        # Verify
+        self.assertEqual(3, len(MOCK_REPO_PROXY.update_calls))
+
+        #   Make sure the correct data is in the update call
+        for call in MOCK_REPO_PROXY.update_calls:
+            self.assertEqual('cds-test-repo', call[0])
+
+            bind_data = call[1]
+
+            self.assertTrue('repo' in bind_data)
+            self.assertTrue('host_urls' in bind_data)
+            self.assertTrue('key_urls' in bind_data)
+
+            self.assertTrue(bind_data['repo'] is None)
+            self.assertEqual(3, len(bind_data['host_urls'])) # 2 CDS + pulp server
+            self.assertEqual(0, len(bind_data['key_urls']))
+
+    def test_redistribute_no_consumers(self):
+        '''
+        Tests that calling redistribute when there are no consumers bound to the repo does not
+        throw an error.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'noarch')
+
+        # Test
+        self.cds_api.redistribute(repo['id'])
+
+        # Verify
+
+        #   Make sure no attempts to send an update call across the bus were made
+        self.assertEqual(0, len(MOCK_REPO_PROXY.update_calls))
+
+    def test_redistribution_no_cds(self):
+        '''
+        Tests that calling redistribute when there are no CDS instances hosting the repo does
+        not throw an error.
+        '''
+
+        # Setup
+        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'noarch')
+
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+
+        self.cds_api.associate_repo('cds1', 'cds-test-repo')
+        self.cds_api.associate_repo('cds2', 'cds-test-repo')
+                
+        # Test
+        self.cds_api.redistribute(repo['id'])
+
+        # Verify
+
+        #   Make sure no attempts to send an update call across the bus were made
+        self.assertEqual(0, len(MOCK_REPO_PROXY.update_calls))

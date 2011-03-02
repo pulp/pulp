@@ -19,13 +19,16 @@ import logging
 import sys
 
 # Pulp
+import pulp.server.agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
+import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
                                        CdsCommunicationsException, CdsMethodException
 import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDS, Repo
+from pulp.server.api.keystore import KeyStore
 from pulp.server.pexceptions import PulpException
 
 
@@ -331,6 +334,51 @@ class CdsApi(BaseApi):
         if sync_error_msg is not None:
             raise PulpException('%s; check the server log for more information' % sync_error_msg), None, sync_traceback
 
+    def redistribute(self, repo_id):
+        '''
+        Triggers a recalculation of host URLs for the given repo for each consumer bound to
+        it. The consumers will be sent a bind request with the updated host URL list.
+
+        If there are no CDS associations for the given repo, this method has no effect.
+
+        @param repo_id: identifies the repo whose host URLs will be recalculated
+        @type  repo_id: string
+        '''
+
+        # Redistribute only applies if there are CDSes hosting the repo, so punch out early
+        # if the iterator doesn't have anything
+        iterator = round_robin.iterator(repo_id)
+        if iterator is None:
+            return
+
+        # Punch out early if there are no bound consumers; there's nothing to do
+        consumers = consumer_utils.consumers_bound_to_repo(repo_id)
+        if len(consumers) == 0:
+            return
+
+        # Load the repo data
+        repo = list(Repo.get_collection().find({'id' : repo_id}))[0]
+
+        key_store = KeyStore(repo['relative_path'])
+        key_list = key_store.list()
+
+        for consumer in consumers:
+
+            # Get the next sequence to hand to this consumer
+            hostnames = iterator.next()
+
+            # Recreate the bind data since it is scoped to a particular consumer
+            bind_data = consumer_utils.build_bind_data(repo, hostnames, key_list)
+
+            # Blank the repo since nothing has changed in it, only the host/key URLs
+            bind_data['repo'] = None
+
+            # Retrieve the repo proxy for the consumer being handled
+            agent_repolib = pulp.server.agent.retrieve_repo_proxy(consumer['id'], async=True)
+
+            # Send the update message to the consumer
+            agent_repolib.update(repo_id, bind_data)
+        
 # -- internal only api ---------------------------------------------------------------------
 
     def unassociate_all_from_repo(self, repo_id):
