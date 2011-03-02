@@ -306,7 +306,7 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
             hash = checksum[hash.keys()[0]]
 
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
-        hash[:3], name, version, release, arch, filename)
+        name, version, release, arch, hash[:3], filename)
     return pkg_location
 
 def create_symlinks(source_path, link_path):
