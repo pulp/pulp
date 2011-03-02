@@ -35,7 +35,7 @@ def _migrate_errata_model():
             erratum['solution'] = u""
             modified = True
         if modified:
-            collection.save(erratum)
+            collection.save(erratum, safe=True)
 
 
 def migrate():
