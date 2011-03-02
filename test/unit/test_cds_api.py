@@ -108,9 +108,8 @@ class TestCdsApi(unittest.TestCase):
         self.repo_api.clean()
 
         # Flush the assignment algorithm cache
-        for doomed in CDSRepoRoundRobin.get_collection().find():
-            CDSRepoRoundRobin.get_collection().remove({'repo_id' : doomed['repo_id']}, safe=True)
-
+        CDSRepoRoundRobin.get_collection().remove()
+        
     def setUp(self):
         self.config = testutil.load_test_config()
 
