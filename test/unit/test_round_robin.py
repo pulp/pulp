@@ -205,6 +205,17 @@ class TestRoundRobin(unittest.TestCase):
         self.assertEqual(perm4, ['cds3', 'cds2', 'cds1'])
         self.assertEqual(perm5, ['cds3', 'cds2', 'cds1']) # first since iterator wasn't saved
 
+    def test_iterator_no_associations(self):
+        '''
+        Tests the correct return result when requesting the iterator with no associations.
+        '''
+
+        # Test
+        iterator = round_robin.iterator('fake-repo')
+
+        # Verify
+        self.assertTrue(iterator is None)
+
     def test_add_existing_cds_to_association(self):
         '''
         Tests adding a CDS that has already been added.
