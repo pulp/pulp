@@ -232,7 +232,7 @@ class Delete(ContentAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an remove."))
+                system_exit(os.EX_USAGE, _("Error: Need to provide at least one file to perform remove."))
             flist = self.opts.files
         exit_code = 0    
         fids = {}

@@ -742,7 +742,7 @@ class Publish(RepoAction):
 
 
 class AddPackages(RepoAction):
-    description = _('Add specific package(s) from the source repository.')
+    description = _('Add package to a repository.')
 
     def setup_parser(self):
         super(AddPackages, self).setup_parser()
@@ -831,7 +831,7 @@ class AddPackages(RepoAction):
         print _("Successfully added packages %s to repo [%s]." % (pnames, id))
 
 class RemovePackages(RepoAction):
-    description = _('Remove package(s) from the repository.')
+    description = _('Remove package from the repository.')
 
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
@@ -886,7 +886,7 @@ class RemovePackages(RepoAction):
 
 
 class AddErrata(RepoAction):
-    description = _('Add specific errata from the source repository')
+    description = _('Add errata to a repository')
 
     def setup_parser(self):
         super(AddErrata, self).setup_parser()
@@ -1021,7 +1021,7 @@ class RemoveErrata(RepoAction):
 
 
 class AddFiles(RepoAction):
-    description = _('Add file(s) from a repository.')
+    description = _('Add file to a repository.')
 
     def setup_parser(self):
         super(AddFiles, self).setup_parser()
@@ -1087,7 +1087,7 @@ class AddFiles(RepoAction):
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
 
 class RemoveFiles(RepoAction):
-    description = _('Remove file(s) from a repository.')
+    description = _('Remove file from a repository.')
 
     def setup_parser(self):
         super(RemoveFiles, self).setup_parser()

@@ -15,9 +15,10 @@
 
 from logging import getLogger
 
-from pulp.server.db.model.resource import (Consumer, ConsumerGroup,
-    ConsumerHistoryEvent, Errata, Package, Distribution, Errata, File, Repo)
 from pulp.server.db.model.auth import User, Role, Permission
+from pulp.server.db.model.base import Model
+from pulp.server.db.model.resource import (Consumer, ConsumerGroup,
+    ConsumerHistoryEvent, Errata, Package, Distribution, File, Repo)
 
 
 from pulp.server.auditing import _objdb as auditing_objectdb
@@ -30,7 +31,18 @@ _log = getLogger('pulp')
 # reference utilities ---------------------------------------------------------
 
 def _base_id(reference):
+    # XXX this is a hack because I've no idea what the type of pymongo's
+    # default _id field is
     reference._id = reference.id = None
+
+
+def _unicodify_reference(reference):
+    if not isinstance(reference, Model):
+        return reference
+    for key, value in reference.items():
+        if isinstance(value, str):
+            reference[key] = unicode(value)
+    return reference
 
 # general model validation ----------------------------------------------------
 
@@ -51,6 +63,9 @@ def _validate_model(model_name, objectdb, reference, values={}):
     @return: number of errors found during validation
     """
     num_errors = 0
+    # convert all the str fields to unicode as all strings coming out of our
+    # database have been converted to unicode
+    reference = _unicodify_reference(reference)
     for model in objectdb.find():
         for field, value in reference.items():
             vtype = type(value)
@@ -170,7 +185,7 @@ def _validate_package_group():
     """
     num_errors = 0
     objectdb = Repo.get_collection()
-    reference = model.PackageGroup(u'', u'', u'')
+    reference = _unicodify_reference(model.PackageGroup(u'', u'', u''))
     for r in objectdb.find({'packagegroups': {'$gt': 0}}):
         for pg in r['packagegroups'].values():
             for field, value in reference.items():
@@ -197,7 +212,7 @@ def _validate_package_group_category():
     """
     num_errors = 0
     objectdb = Repo.get_collection()
-    reference = model.PackageGroupCategory(u'', u'', u'')
+    reference = _unicodify_reference(model.PackageGroupCategory(u'', u'', u''))
     for r in objectdb.find({'packagegroupcategories': {'$gt': 0}}):
         for pgc in r['packagegroupcategories'].values():
             for field, value in reference.items():
@@ -248,7 +263,8 @@ def _validate_repo_source():
     """
     num_errors = 0
     objectdb = Repo.get_collection()
-    reference = model.RepoSource(u'yum:http://reference.org/reference_repo/')
+    reference = _unicodify_reference(
+                model.RepoSource(u'yum:http://reference.org/reference_repo/'))
     for r in objectdb.find({'source': {'$ne': None}}):
         source = r['source']
         for field, value in reference.items():
@@ -284,7 +300,7 @@ def _validate_user():
     @return: number of errors found during validation
     """
     objectdb = User.get_collection()
-    reference = model.User(u'', u'', u'', None)
+    reference = model.User(u'', u'', None, None)
     return _validate_model(model.User.__name__, objectdb, reference)
 
 def _validate_file():

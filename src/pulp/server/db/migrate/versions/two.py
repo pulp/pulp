@@ -103,7 +103,6 @@ def _migrate_errata_model():
     collection = Errata.get_collection()
     for erratum in collection.find():
         modified = False
-        print erratum
         if 'severity' not in erratum:
             erratum['severity'] = u""
             modified = True

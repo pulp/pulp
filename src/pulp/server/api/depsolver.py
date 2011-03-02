@@ -119,7 +119,11 @@ class DepSolver:
         return results
 
     def __whatProvides(self, name, flags, version):
-        return ListPackageSack(self._repostore.pkgSack.searchProvides((name, flags, version)))
+        try:
+            return ListPackageSack(self._repostore.pkgSack.searchProvides((name, flags, version)))
+        except:
+            #perhaps we're on older version of yum try old style
+            return ListPackageSack(self._repostore.pkgSack.searchProvides(name))
 
     def processResults(self, results):
         reqlist = []

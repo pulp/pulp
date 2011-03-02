@@ -94,9 +94,15 @@ def _translate_updatenotice_to_erratum(unotice):
     rights = ""
     if unotice.has_key('rights'):
         rights   = unotice['rights']
+    summary = ""
+    if unotice.has_key('summary'):
+        summary = unotice['summary']
+    solution = ""
+    if unotice.has_key('solution'):
+        severity = unotice['solution']
     erratum = Errata(id, title, description, version, release, type,
         status, updated, issued, pushcount, from_str, reboot_suggested,
-        references, pkglist, severity, rights)
+        references, pkglist, severity, rights, summary, solution)
     return erratum
 
 def generate_updateinfo(repo):
@@ -135,6 +141,8 @@ def generate_updateinfo(repo):
             'reboot_suggested' : e['reboot_suggested'],
             'severity'         : e['severity'],
             'rights'           : e['rights'],
+            'summary'          : e['summary'],
+            'solution'         : e['solution'],
         }
         un._md = _md
         um.add_notice(un)
