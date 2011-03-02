@@ -15,12 +15,12 @@
 
 import logging
 
+from pulp.server.api.user import UserApi
 from pulp.server.auth.authorization import (ensure_builtin_roles,
     consumer_users_role, add_user_to_role,
     grant_automatic_permissions_to_consumer_user)
-
-from pulp.server.db.model.resource import Repo, Consumer, Errata
-from pulp.server.db.model.auth import User, Role
+from pulp.server.db.model.auth import User
+from pulp.server.db.model.resource import Consumer, Errata, Repo
 
 
 _log = logging.getLogger('pulp')
@@ -43,7 +43,7 @@ def _migrate_builtin_roles():
 
 def _migrate_consumer_model():
     collection = Consumer.get_collection()
-    user_api = User.get_collection()
+    user_api = UserApi()
     for consumer in collection.find():
         key = 'credentials'
         if key not in consumer:
@@ -98,7 +98,7 @@ def _migrate_user_model():
             modified = True
         if modified:
             collection.save(user)
-            
+
 def _migrate_errata_model():
     collection = Errata.get_collection()
     for erratum in collection.find():
