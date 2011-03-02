@@ -30,12 +30,10 @@ log = logging.getLogger(__name__)
 filter_fields = model.Filter(None, None, None, None).keys()
 
 
-class FilterApi():
-
-    def __init__(self):
-        self.objectdb.ensure_index([
-            ('id', pymongo.DESCENDING)],
-            unique=True, background=True)
+class FilterApi(BaseApi):
+      
+    def _getcollection(self):
+        return model.Filter.get_collection()
 
     @audit()
     def create(self, id, type, description=None, package_list=[]):
@@ -47,8 +45,7 @@ class FilterApi():
             raise PulpException("A Filter with id %s already exists" % id)
 
         f = model.Filter(id, type, description, package_list)
-        collection = model.Filter.get_collection()
-        collection.insert(f, safe=True)
+        self.collection.insert(f, safe=True)
         f = self.filter(f["id"])
         return f
 
@@ -62,64 +59,27 @@ class FilterApi():
         if not filter:
             log.error("Filter id [%s] not found " % id)
             return
-
-        collection = model.Filter.get_collection()
-        collection.remove({'id' : id}, safe=True)
+        self.collection.remove({'id' : id}, safe=True)
 
     def filters(self, spec=None, fields=None):
         """
         Return a list of Filters
         """
-        collection = model.Filter.get_collection()
-        return list(collection.find(spec=spec, fields=fields))
+        return list(self.collection.find(spec=spec, fields=fields))
 
     def filter(self, id, fields=None):
         """
         Return a single Filter object
         """
-        filters = self.filters({'id': id}, fields)
-        if not filters:
-            return None
-        return filters[0]
+        return self.collection.find_one({'id': id})
 
+    @audit()
+    def clean(self):
+        """
+        Delete all the Filter objects in the database.  
+        WARNING: Destructive
+        """
+        found = self.filters(fields=["id"])
+        for f in found:
+            self.delete(f["id"])
 
-    def file(self, id):
-        """
-        Return a single File object based on the filename and checksum
-        """
-        return self.objectdb.find_one({'id': id})
-
-    def files(self, filename=None, checksum=None, checksum_type=None, regex=None,
-              fields=["id", "filename", "checksum", "size"]):
-        """
-        Return all available File objects based on the filename
-        """
-        searchDict = {}
-        if filename:
-            if regex:
-                searchDict['filename'] = {"$regex":re.compile(filename)}
-            else:
-                searchDict['filename'] = filename
-        if checksum_type and checksum:
-            if regex:
-                searchDict['checksum.%s' % checksum_type] = \
-                    {"$regex":re.compile(checksum)}
-            else:
-                searchDict['checksum.%s' % checksum_type] = checksum
-        if (len(searchDict.keys()) == 0):
-            return list(self.objectdb.find(fields=fields))
-        else:
-            return list(self.objectdb.find(searchDict, fields=fields))
-
-    def orphaned_files(self, fields=["filename", "checksum"]):
-        #TODO: Revist this when model changes so we don't need to import RepoApi
-        from pulp.server.api.repo import RepoApi
-        rapi = RepoApi()
-        repo_fileids = set()
-        repos = rapi.repositories(fields=["files"])
-        for r in repos:
-            repo_fileids.update(r["files"])
-        fils = self.files(fields=["id"])
-        fileids = set([x["id"] for x in fils])
-        orphans = list(fileids.difference(repo_fileids))
-        return list(self.objectdb.find({"id":{"$in":orphans}}, fields))

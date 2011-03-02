@@ -26,7 +26,7 @@ from pulp.server.webservices.http import extend_uri_path, resource_path
 # filters api ---------------------------------------------------------------
 
 api = FilterApi()
-log = logging.getLogger('pulp')
+_log = logging.getLogger('pulp')
 
 # controllers -----------------------------------------------------------------
 
@@ -54,8 +54,8 @@ class Filters(JSONController):
         if api.filter(id) is not None:
             return self.conflict('A filter with the id, %s, already exists' % id)
 
-        filter = api.create(data['id'], data['type'], data['description'],
-                                  data['package_list'])
+        filter = api.create(id, data['type'], description = data.get('description', None),
+                                  package_list = data.get('package_list', None))
         resource = resource_path(extend_uri_path(filter['id']))
         grant_automatic_permissions_for_created_resource(resource)
         return self.created(filter['id'], filter)
@@ -83,18 +83,6 @@ class filter(JSONController):
         """
         return self.ok(api.filter(id))
 
-    #===========================================================================
-    # @JSONController.error_handler
-    # @JSONController.auth_required(UPDATE)
-    # def PUT(self, login):
-    #    """
-    #    Update user
-    #    @param login: The user's login
-    #    """
-    #    user = self.params()
-    #    user = api.update(user)
-    #    return self.ok(True)
-    #===========================================================================
 
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)

@@ -212,7 +212,7 @@ class Filter(Model):
     unique_indicies = ('id',)
     other_indicies = ('type')
 
-    def _init_(self, id, type, description=None, package_list=[]):
+    def __init__(self, id, type, description=None, package_list=[]):
         self._id = id
         self.id = id
         self.description = description

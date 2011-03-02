@@ -74,7 +74,7 @@ class Create(FilterAction):
         id = self.get_required_option('id')
         type = self.get_required_option('type')
         if self.opts.description:
-            description = self.opts.name
+            description = self.opts.description
         else:
             description = None
         if self.opts.pnames:
@@ -82,7 +82,7 @@ class Create(FilterAction):
         else:
             pnames = []
 
-        filter = self.user_filter.create(id, type, description, pnames)
+        filter = self.filter_api.create(id, type, description, pnames)
         print _("Successfully created filter [ %s ]" % filter['id'])
 
 
@@ -103,7 +103,7 @@ class Delete(FilterAction):
         else:
             print _("Filter [%s] not deleted") % id
 
-# user command ----------------------------------------------------------------
+# filter command ----------------------------------------------------------------
 
 class Filter(Command):
 
