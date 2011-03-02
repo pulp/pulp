@@ -17,13 +17,13 @@
 #
 
 import os
-import getpass
 from gettext import gettext as _
 
 from pulp.client import constants
 from pulp.client.api.filter import FilterAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
+
 
 # base filter action class ------------------------------------------------------
 
@@ -61,6 +61,7 @@ class Create(FilterAction):
     description = _('create a filter')
 
     def setup_parser(self):
+        super(Create, self).setup_parser()
         self.parser.add_option("--id", dest="id",
                                help=_("new filter id to create (required)"))
         self.parser.add_option("--type", dest="type",
@@ -73,15 +74,9 @@ class Create(FilterAction):
     def run(self):
         id = self.get_required_option('id')
         type = self.get_required_option('type')
-        if self.opts.description:
-            description = self.opts.description
-        else:
-            description = None
-        if self.opts.pnames:
-            pnames = self.opts.pnames
-        else:
-            pnames = []
-
+        description = self.opts.description or None
+        pnames = self.opts.pnames or []
+       
         filter = self.filter_api.create(id, type, description, pnames)
         print _("Successfully created filter [ %s ]" % filter['id'])
 

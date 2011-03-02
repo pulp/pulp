@@ -15,7 +15,6 @@
 
 from pulp.client.api.base import PulpAPI
 
-
 class FilterAPI(PulpAPI):
     """
     Connection class to access filter related calls
@@ -26,11 +25,7 @@ class FilterAPI(PulpAPI):
                 "description": description,
                 "package_list": package_list}
         path = "/filters/"
-        return self.server.PUT(path, data)[1]
-
-    def update(self, filter):
-        path = "/filters/%s/" % filter['id']
-        return self.server.PUT(path, filter)[1]
+        return self.server.POST(path, data)[1]
 
     def delete(self, **kwargs):
         id = kwargs['id']

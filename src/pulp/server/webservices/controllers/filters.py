@@ -53,7 +53,6 @@ class Filters(JSONController):
         id = data['id']
         if api.filter(id) is not None:
             return self.conflict('A filter with the id, %s, already exists' % id)
-
         filter = api.create(id, data['type'], description = data.get('description', None),
                                   package_list = data.get('package_list', None))
         resource = resource_path(extend_uri_path(filter['id']))
