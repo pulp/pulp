@@ -250,6 +250,10 @@ class Create(ErrataAction):
                             help=_("optional severity information; eg: Low,Moderate,Critical"))
         self.parser.add_option("--rights", dest="rights",
                             help=_("optional copyright information"))
+        self.parser.add_option("--summary", dest="summary",
+                            help=_("optional summary information"))
+        self.parser.add_option("--solution", dest="solution",
+                            help=_("optional solution information"))
         
         
     def run(self):
@@ -315,7 +319,8 @@ class Create(ErrataAction):
                                update_id="", from_str=self.opts.fromstr or "", 
                                reboot_suggested=self.opts.reboot_sugg or "", 
                                references=references, pkglist=pkglist, severity=self.opts.severity or "",
-                               rights=self.opts.rights or "")
+                               rights=self.opts.rights or "", summary=self.opts.summary or "",
+                               solution=self.opts.solution or "")
         if erratum_new:
             print _("Successfully created an Erratum with id [%s]" % erratum_new['id'])
         
