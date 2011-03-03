@@ -107,7 +107,7 @@ class Upload(ContentAction):
                     print msg
                 continue
             if metadata.has_key('nvrea'):
-                pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
+                pkgobj = self.service_api.search_packages(filename=os.path.basename(f), regex=False)
             else:
                 pkgobj = self.service_api.search_file(metadata['pkgname'],
                                                    metadata['hashtype'],
