@@ -128,3 +128,20 @@ class TestConsumerUtils(unittest.TestCase):
         Tests that pass in no hostnames and/or keys does not error and properly sets the values in
         the returned data.
         '''
+
+        # Setup
+        repo = Repo('repo1', 'Repo 1', 'noarch')
+        Repo.get_collection().save(repo)
+
+        # Test
+        bind_data = utils.build_bind_data(repo, None, None)
+
+        # Verify
+        self.assertTrue(bind_data is not None)
+
+        self.assertTrue('repo' in bind_data)
+        self.assertTrue('host_urls' in bind_data)
+        self.assertTrue('key_urls' in bind_data)
+
+        self.assertEqual(1, len(bind_data['host_urls'])) # pulp server itself
+        self.assertEqual(0, len(bind_data['key_urls']))
