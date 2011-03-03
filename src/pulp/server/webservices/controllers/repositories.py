@@ -306,6 +306,9 @@ class RepositoryActions(AsyncController):
         'rmkeys',
         'update_publish',
         'import_comps',
+        'add_filter',
+        'add_filter',
+        'remove_filter'
     )
 
     def sync(self, id):
@@ -604,6 +607,24 @@ class RepositoryActions(AsyncController):
     def rmkeys(self, id):
         data = self.params()
         api.rmkeys(id, data['keylist'])
+        return self.ok(True)
+
+    def add_filters(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of filters to repository
+        """
+        data = self.params()
+        api.add_filters(id, data['filter_ids'])
+        return self.ok(True)
+
+    def remove_filters(self, id):
+        """
+        @param id: repository id
+        @return: True on successful removal of filters from repository
+        """
+        data = self.params()
+        api.remove_filters(id, data['filter_ids'])
         return self.ok(True)
 
     def update_publish(self, id):

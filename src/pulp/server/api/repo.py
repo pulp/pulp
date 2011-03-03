@@ -44,6 +44,7 @@ import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.file import FileApi
+from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.async import run_async
@@ -73,6 +74,7 @@ class RepoApi(BaseApi):
         self.distroapi = DistributionApi()
         self.cdsapi = CdsApi()
         self.fileapi = FileApi()
+        self.filterapi = FilterApi()
         self.localStoragePath = constants.LOCAL_STORAGE
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
@@ -1608,6 +1610,43 @@ class RepoApi(BaseApi):
         xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
         return xml
+
+    @audit(params=['id', 'filter_ids'])
+    def add_filters(self, id, filter_ids):
+        repo = self._get_existing_repo(id)
+        for filter_id in filter_ids:
+            filter = self.filterapi.filter(filter_id)
+            if filter is None:
+                raise PulpException("No Filter with id: %s found" % filter_ids)
+
+        filters = repo['filters']
+        for filter_id in filter_ids:
+            if filter_id in filters:
+                continue
+            filters.append(filter_id)
+
+        repo["filters"] = filters
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), added filter: %s', id, filter_ids)
+
+
+
+    @audit(params=['id', 'filter_ids'])
+    def remove_filters(self, id, filter_ids):
+        repo = self._get_existing_repo(id)
+        filters = repo['filters']
+        for filter_id in filter_ids:
+            if filter_id not in filters:
+                continue
+            filters.remove(filter_id)
+
+        repo["filters"] = filters
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), removed filters: %s', id, filter_ids)
+
+    def list_filters(self, id):
+        repo = self._get_existing_repo(id)
+        return repo['filters']
         
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

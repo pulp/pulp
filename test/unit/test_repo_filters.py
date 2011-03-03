@@ -30,6 +30,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.server.api.filter import FilterApi
+from pulp.server.api.repo import RepoApi
 import testutil
 
 
@@ -37,10 +38,12 @@ class TestRepoFilters(unittest.TestCase):
 
     def clean(self):
         self.filter_api.clean()
+        self.rapi.clean()
 
     def setUp(self):
         self.config = testutil.load_test_config()
         self.filter_api = FilterApi()
+        self.rapi = RepoApi()
         self.clean()
 
     def tearDown(self):
@@ -49,10 +52,11 @@ class TestRepoFilters(unittest.TestCase):
 
     def test_create(self):
         filter = self.filter_api.create('filter-test', type="blacklist", description="test filter",
-                                package_list=['emacs'])
+                                package_list=['NOTemacs'])
         self.assertTrue(filter is not None)
         filter = self.filter_api.filter('filter-test')
         self.assertTrue(filter is not None)
+        self.assertEquals(filter['description'], 'test filter')
 
     def test_duplicate(self):
         id = 'dupe-test'
@@ -79,7 +83,60 @@ class TestRepoFilters(unittest.TestCase):
         self.filter_api.delete('filter-test')
         filter = self.filter_api.filter('filter-test')
         assert(filter is None)
- 
+
+    def test_add_filters_to_repo(self):
+        repoid = 'some-id'
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'yum:http://10.16.76.78/pub/updates/')
+        self.assertTrue(repo is not None)
+        filter_ids = ["filter-test1", "filter-test2"]
+        # Try without creating filters
+        try:
+            self.rapi.add_filters(repoid, filter_ids)
+            self.assertTrue(False)
+        except Exception:
+            self.assertTrue(True)
+
+        # After creating filters
+        self.filter_api.create('filter-test1', type="blacklist")
+        self.filter_api.create('filter-test2', type="whitelist")
+        try:
+            self.rapi.add_filters(repoid, filter_ids)
+        except Exception:
+            self.assertTrue(False)
+
+    def test_remove_filters_from_repo(self):
+        repoid = 'some-id'
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'yum:http://10.16.76.78/pub/updates/')
+        self.assertTrue(repo is not None)
+        self.filter_api.create('filter-test1', type="blacklist")
+        self.filter_api.create('filter-test2', type="whitelist")
+        filter_ids = ["filter-test1", "filter-test2"]
+        try:
+            self.rapi.add_filters(repoid, filter_ids)
+        except Exception:
+            self.assertTrue(False)
+        # Remove added filters
+        try:
+            self.rapi.remove_filters(repoid, filter_ids)
+        except Exception:
+            self.assertTrue(False)
+
+    def test_list_repo_filters(self):
+        repoid = 'some-id'
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'yum:http://10.16.76.78/pub/updates/')
+        self.assertTrue(repo is not None)
+        filters = self.rapi.list_filters(repoid)
+        self.assertTrue(len(filters) == 0)
+
+        self.filter_api.create('filter-test1', type="blacklist")
+        self.filter_api.create('filter-test2', type="whitelist")
+        filter_ids = ["filter-test1", "filter-test2"]
+        self.rapi.add_filters(repoid, filter_ids)
+        filters = self.rapi.list_filters(repoid)
+        self.assertTrue(len(filters) == 2)
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())
