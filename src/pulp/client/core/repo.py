@@ -116,7 +116,7 @@ class RepoAction(Action):
     def lookup_repo_packages(self, filename, repoid, checksum=None, checksum_type="sha256"):
         pkgobj = self.service_api.search_packages(filename=filename,
                                                   checksum=checksum,
-                                                  checksum_type=checksum_type)
+                                                  checksum_type=checksum_type, regex=False)
         for pkg in pkgobj:
             pkg_repos = pkg["repos"]
             if repoid in pkg_repos:
@@ -791,7 +791,7 @@ class AddPackages(RepoAction):
                     print(_("Package %s could not be found skipping" % pkg))
                     continue
             else:
-                src_pkgobj = self.service_api.search_packages(filename=pkg)
+                src_pkgobj = self.service_api.search_packages(filename=pkg, regex=False)
                 if not src_pkgobj:
                     print(_("Package %s could not be found skipping" % pkg))
                     continue
@@ -936,7 +936,7 @@ class AddErrata(RepoAction):
                     log.info("Errata Package %s could not be found in source repo. skipping" % pkg)
                     continue
             else:
-                src_pkgobj = self.service_api.search_packages(filename=pkg)
+                src_pkgobj = self.service_api.search_packages(filename=pkg, regex=False)
                 if not src_pkgobj:
                     print(_("Package %s could not be found skipping" % pkg))
                     continue
