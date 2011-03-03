@@ -42,7 +42,11 @@
 <div class='wiki-toc'>
 <ol><li class="active"><a href="UGREST-Services.html#DependencyResolution">Dependency Resolution</a></li><li class="active">
 <a href="UGREST-Services.html#PackageSearch">Package Search</a></li><li class="active">
-<a href="UGREST-Services.html#UploadaPackage">Upload a Package</a></li></ol></li></ol></div>
+<a href="UGREST-Services.html#StartFileUpload">Start File Upload</a></li><li class="active">
+<a href="UGREST-Services.html#AppendFileContent">Append File Content</a></li><li class="active">
+<a href="UGREST-Services.html#ImportFile">Import File</a></li><li class="active">
+<a href="UGREST-Services.html#LookuppackageChecksums">Lookup package Checksums</a></li><li class="active">
+<a href="UGREST-Services.html#LookupfileChecksums">Lookup file Checksums</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -162,9 +166,10 @@ Response: <strong>200 OK</strong>
 </pre></div><p>
 Error: None
 </p>
-<h2 id="UploadaPackage">Upload a Package</h2>
+<h2 id="StartFileUpload">Start File Upload</h2>
 <p>
-Upload a package to a repository.
+Begin (initialize) a file upload.  Returns the unique upload ID and file offset for the next <i>chunk</i> to be uploaded.
+The file content (bits) are sent using <a href="UGREST-Services.html#AppendFileContent">Append File Content</a>
 </p>
 <p>
 Status: <strong>complete</strong>
@@ -178,8 +183,52 @@ Method: <strong>POST</strong>
 <p>
 Parameters:
 </p>
-<ul><li>pkginfo: package metadata
-</li><li>pkgstream: package byte stream (file upload)
+<ul><li>name: file name
+</li><li>size: file size (bytes)
+</li><li>checksum: file checksum (crc32|sha256|md5)
+</li><li>id: <i>(optional)</i> upload ID of a previously started upload used to resume the upload
+</li></ul><p>
+Returns:
+</p>
+<ul><li>uuid: file upload ID
+</li><li>offset: file offset of next expected chunk (-1 indicates upload complete)
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{ <B><span class="code-string">&quot;id&quot;</span></b> : <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, <B><span class="code-string">&quot;offset&quot;</span></b> : <B><span class="code-string">&quot;0&quot;</span></b> }
+</pre></div><h2 id="AppendFileContent">Append File Content</h2>
+<p>
+Upload file content (bits) in <i>chunks</i> using the ID of a previously <a href="UGREST-Services.html#BeginFileUpload">started</a> upload.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/upload/{id}/append</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>binary data
 </li></ul><p>
 Authentication:
 </p>
@@ -200,10 +249,137 @@ None
 Response: <strong>200 OK</strong>
 </p>
 <div class="code"><pre>True
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such package
+</pre></div><h2 id="ImportFile">Import File</h2>
+<p>
+Import a previously uploaded file.  The file header is used to determine the <i>type</i> of file uploaded.
 </p>
-<hr />
+<p>
+Extensions:
+</p>
+<ul><li>.rpm - imported into <i>package</i>
+</li><li>other  - imported into <i>file</i>
+</li></ul><p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/upload/import</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>metadata: uploaded file metadata eg: {'nvrea': 'only for rpm','pkgname': <i>, 'description': </i>, 'hashtype': 'sha256','checksum': <i>, 'type': 'file/rpm', 'size': </i>}
+</li><li>uploadid: the ID of an uploaded file
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;skytux-repo&quot;</span></b>, 
+   <B><span class="code-string">&quot;filename&quot;</span></b>: <B><span class="code-string">&quot;skytux-repo-1.0-4.noarch.rpm&quot;</span></b>, 
+   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;0&quot;</span></b>, 
+   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;1.0&quot;</span></b>, 
+   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;4&quot;</span></b>, 
+   <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
+   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;noarch&quot;</span></b>, 
+   <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
+   ..
+}
+</pre></div><h2 id="LookuppackageChecksums">Lookup package Checksums</h2>
+<p>
+Lookup checksums for a batch of packages.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/packages/checksum/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>pkglist: list of package file names
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">&quot;rpmname1&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
+ <B><span class="code-string">&quot;rpmname2&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
+ ...}
+</pre></div><h2 id="LookupfileChecksums">Lookup file Checksums</h2>
+<p>
+Lookup checksums for a batch of files.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/files/checksum/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>filelist: list of file names
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">&quot;filename1&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
+ <B><span class="code-string">&quot;filename2&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
+ ...}
+</pre></div><hr />
 </div>
    </div>
    

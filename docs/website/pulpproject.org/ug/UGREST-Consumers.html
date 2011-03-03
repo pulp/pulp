@@ -503,7 +503,7 @@ Error: <strong>404 Not Found</strong> if there is no such consumer
 Bind a repository to this consumer
 </p>
 <p>
-Status: <strong>partial</strong> - no error checking for already bound repository
+Status: <strong>complete</strong>
 </p>
 <p>
 Path: <strong>/consumers/&lt;consumer id&gt;/bind/</strong>
@@ -514,7 +514,8 @@ Method: <strong>POST</strong>
 <p>
 Parameters:
 </p>
-<ul><li>repoid: repository id
+<ul><li>id: consumer id
+</li><li>repoid: repository id
 </li></ul><p>
 Authentication:
 </p>
@@ -533,8 +534,21 @@ None
 </blockquote>
 <p>
 Response: <strong>200 OK</strong>
+The response will be a map of three items:
 </p>
-<div class="code"><pre>True
+<ul><li>'repo': map of data describing the repository; same as retrieved through the repository information call.
+</li><li>'host_urls': ordered list of URLs to access for the repository; the ordering describes Pulp's suggested preference for accessing the repo
+</li><li>'key_urls': similar to host_urls, this indicates the location at which keys for the repo can be found
+</li></ul><div class="code"><pre>{<B><span class="code-string">&quot;repo&quot;</span></b>:
+    {<B><span class="code-string">&quot;use_symlinks&quot;</span></b>: false, <B><span class="code-string">&quot;sync_schedule&quot;</span></b>: null, <B><span class="code-string">&quot;package_count&quot;</span></b>: 0, <B><span class="code-string">&quot;ca&quot;</span></b>: null, <B><span class="code-string">&quot;distributionid&quot;</span></b>: [], <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;simple-repo&quot;</span></b>,
+     <B><span class="code-string">&quot;repomd_xml_path&quot;</span></b>: <B><span class="code-string">&quot;/var/lib/pulp//repos/repos/pulp/pulp/fedora-14/i386/repodata/repomd.xml&quot;</span></b>,
+     <B><span class="code-string">&quot;source&quot;</span></b>: {<B><span class="code-string">&quot;url&quot;</span></b>: <B><span class="code-string">&quot;http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386&quot;</span></b>, <B><span class="code-string">&quot;type&quot;</span></b>: <B><span class="code-string">&quot;yum&quot;</span></b>, <B><span class="code-string">&quot;supported_types&quot;</span></b>: [<B><span class="code-string">&quot;yum&quot;</span></b>, <B><span class="code-string">&quot;local&quot;</span></b>, <B><span class="code-string">&quot;rhn&quot;</span></b>]}, <B><span class="code-string">&quot;group_xml_path&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>,
+     <B><span class="code-string">&quot;publish&quot;</span></b>: true, <B><span class="code-string">&quot;groupid&quot;</span></b>: [], <B><span class="code-string">&quot;packagegroups&quot;</span></b>: {}, <B><span class="code-string">&quot;files&quot;</span></b>: [], <B><span class="code-string">&quot;relative_path&quot;</span></b>: <B><span class="code-string">&quot;repos/pulp/pulp/fedora-14/i386&quot;</span></b>, <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;noarch&quot;</span></b>, <B><span class="code-string">&quot;key&quot;</span></b>: null,
+     <B><span class="code-string">&quot;packages&quot;</span></b>: [], <B><span class="code-string">&quot;group_gz_xml_path&quot;</span></b>: <B><span class="code-string">&quot;&quot;</span></b>, <B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;simple-repo&quot;</span></b>, <B><span class="code-string">&quot;last_sync&quot;</span></b>: null, <B><span class="code-string">&quot;clone_ids&quot;</span></b>: [], <B><span class="code-string">&quot;cert&quot;</span></b>: null, <B><span class="code-string">&quot;packagegroupcategories&quot;</span></b>: {},
+     <B><span class="code-string">&quot;_ns&quot;</span></b>: <B><span class="code-string">&quot;repos&quot;</span></b>, <B><span class="code-string">&quot;release&quot;</span></b>: null, <B><span class="code-string">&quot;checksum_type&quot;</span></b>: <B><span class="code-string">&quot;sha256&quot;</span></b>, <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;simple-repo&quot;</span></b>, <B><span class="code-string">&quot;errata&quot;</span></b>: {}},
+ <B><span class="code-string">&quot;host_urls&quot;</span></b>: [<B><span class="code-string">&quot;https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/i386&quot;</span></b>],
+ <B><span class="code-string">&quot;key_urls&quot;</span></b>: []
+}
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such consumer
 </p>

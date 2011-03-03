@@ -40,12 +40,12 @@
     <div id="searchable"><h1 id="Installation">Installation</h1>
 <h2 id="latest">Latest Release</h2>
 <p>
-<strong>Community Release 6</strong>
+<strong>Community Release 8</strong>
 </p>
 <table class="wiki">
-<tr><td> <strong>Pulp Build</strong> </td><td> 0.129 
-</td></tr><tr><td> <strong>Released</strong> </td><td> January 18th, 2011 
-</td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 13 (i386, x86_64) and Fedora 14 (i386, x86_64) 
+<tr><td> <strong>Pulp Build</strong> </td><td> 0.139 
+</td></tr><tr><td> <strong>Released</strong> </td><td> February 16th, 2011 
+</td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 13 (i386, x86_64), Fedora 14 (i386, x86_64), Red Hat Enterprise Linux 5 (i386, x86_64) 
 </td></tr></table>
 <p>
 <strong>Repository:</strong> <tt>http://repos.fedorapeople.org/repos/pulp/pulp/</tt>
@@ -76,7 +76,7 @@ The repo files for <a class="ext-link" href="http://repos.fedorapeople.org/repos
 Fedora
 </span>
 <pre class="wiki" style="background: #ccccee; border: 1px solid #0000bb; border-radius: 10px; -moz-border-radius: 10px">
-$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+$ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
 </pre>
 </div>
 <p>
@@ -89,7 +89,7 @@ Red Hat Enterprise Linux
 <br /><br />
 Pulp Repository
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
-$ wget /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+$ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 </pre>
 
 Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a>
@@ -149,7 +149,7 @@ Pulp admin commands are accessed through the <tt>pulp-admin</tt> script.
 <p>
 1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
 </p>
-<pre class="wiki">$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+<pre class="wiki">$ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
 </pre><p>
 2. Install the Pulp client packages:
 </p>
@@ -177,7 +177,7 @@ Pulp consumer commands are accessed through the <tt>pulp-client</tt> script. Thi
 <p>
 1. Download the repository configuration file to <tt>/etc/yum.repos.d</tt>:
 </p>
-<pre class="wiki">$ wget /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+<pre class="wiki">$ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
 </pre><p>
 2. Install the Pulp client packages:
 </p>

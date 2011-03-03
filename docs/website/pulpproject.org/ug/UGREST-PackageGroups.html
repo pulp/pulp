@@ -44,7 +44,9 @@
 <a href="UGREST-PackageGroups.html#Create">Create</a></li><li class="active">
 <a href="UGREST-PackageGroups.html#Delete">Delete</a></li><li class="active">
 <a href="UGREST-PackageGroups.html#AddPackage">Add Package</a></li><li class="active">
-<a href="UGREST-PackageGroups.html#DeletePackage">Delete Package</a></li></ol></li></ol></div>
+<a href="UGREST-PackageGroups.html#DeletePackage">Delete Package</a></li><li class="active">
+<a href="UGREST-PackageGroups.html#Import">Import</a></li><li class="active">
+<a href="UGREST-PackageGroups.html#Export">Export</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -285,6 +287,97 @@ Response: <strong>200 OK</strong>
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
+<hr />
+<h2 id="Import">Import</h2>
+<p>
+Import a comps.xml and create groups and categories
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/import_comps/</strong>
+</p>
+<p>
+Method: <strong>PUT</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>comps: comps xml data stream
+</li></ul><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: 
+</p>
+<div class="code"><pre>True
+</pre></div><hr />
+<h2 id="Export">Export</h2>
+<p>
+Export a comps.xml for a repository
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;repoid&gt;/comps/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: 
+</p>
+<div class="code"><pre>&lt;?xml version=<B><span class="code-string">&quot;1.0&quot;</span></b> encoding=<B><span class="code-string">&quot;UTF-8&quot;</span></b>?&gt;
+&lt;!DOCTYPE comps PUBLIC <B><span class="code-string">&quot;-//Red Hat, Inc.//DTD Comps info//EN&quot;</span></b> <B><span class="code-string">&quot;comps.dtd&quot;</span></b>&gt;
+&lt;comps&gt;
+        
+  &lt;group&gt;
+   &lt;id&gt;admin-tools&lt;/id&gt;
+...
+&lt;/grouplist&gt;
+  &lt;/category&gt;
+
+&lt;/comps&gt;
+</pre></div><hr />
 </div>
    </div>
    

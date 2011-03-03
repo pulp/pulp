@@ -40,9 +40,7 @@
     <div id="searchable"><h1 id="CentOS">CentOS</h1>
 <h2 id="BuildingDependencies">Building Dependencies</h2>
 <p>
-The process of building the QPID RPMs on CentOS is relatively straight forward.  There are a few packages that must be installed for satisfy both specified and missing <tt>!BuildRequires</tt>.  Also, the <tt>amqp</tt> and <tt>python-qpid</tt> packages must be installed before building the <tt>qpidc</tt> RPM. There are automated tests that run as part of the <tt>%build</tt> that will fail unless they are installed.
-</p>
-<p>
+The process of building the QPID RPMs on CentOS is relatively straight forward.  There are a few packages that must be installed for satisfy both specified and missing <tt>!BuildRequires</tt>.
 These instructions outline the approach of installing and building the source rpms rather than downloading them and rebuilding as 'rpmbuild --rebuild &lt;srpm&gt;'. However, either method should work equally.
 </p>
 <p>
@@ -62,32 +60,47 @@ Steps:
 </pre><p>
 3. Install the source RPMs (get the latest <a class="ext-link" href="ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/"><span class="icon">here</span></a>):
 </p>
-<pre class="wiki">$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/qpidc-0.5.752581-17.el5.src.rpm
-$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/amqp-1.0.750054-1.el5.src.rpm
-$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/python-qpid-0.5.752581-3.el5.src.rpm
+<pre class="wiki">$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/amqp-1.0.750054-1.el5.src.rpm
+$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/python-qpid-0.7.946106-15.el5.src.rpm
+$ rpm -i ftp://ftp.redhat.com/pub/redhat/linux/enterprise/5Server/en/RHEMRG/SRPMS/qpid-cpp-mrg-0.7.946106-28.el5.src.rpm
 </pre><p>
 4. Install extra dependencies:
 </p>
 <pre class="wiki">$ yum install gcc-c++ boost-devel doxygen e2fsprogs-devel libtool ruby cyrus-sasl-devel \
               libibverbs-devel librdmacm-devel nss-devel nspr-devel xqilla-devel xerces-c-devel \
-              openais-devel cman-devel python-devel
+              openais-devel cman-devel python-devel ruby-devel swig db4-devel libaio-devel
 </pre><p>
-5. Build the <tt>amqp</tt> and <tt>python-qpid</tt> RPMs:
+5. Build the RPMs:
 </p>
 <pre class="wiki">$ cd /usr/src/redhat
 $ rpmbuild -bb SPECS/amqp.spec
 $ rpmbuild -bb SPECS/python-qpid.spec
+$ rpmbuild -bb SPECS/qpid-cpp-mrg.spec
 </pre><p>
-6. Install the <tt>python-qpid</tt> and <tt>amqp</tt> RPMs which used by the automated tests when building the <tt>qpidc</tt> RPM:
+The build produces the following (noarch) RPMs:
 </p>
-<pre class="wiki">$ cd RPMS/noarch
-$ rpm -i amqp-1.0.750054-1.noarch.rpm python-qpid-0.5.752581-3.noarch.rpm
-$ cd ../../
-</pre><p>
-7. Build the <tt>qpidc</tt> RPMs:
+<ul><li>amqp-1.0.750054-1.noarch.rpm
+</li><li>python-qpid-0.7.946106-15.noarch.rpm
+</li></ul><p>
+The build produces the following RPMs:
 </p>
-<pre class="wiki">$ rpmbuild -bb SPECS/qpidc.spec
-</pre></div>
+<ul><li>qpid-cpp-client-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-client-devel-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-client-devel-docs-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-devel-0.7.946106-28.x86_64.rpm
+</li><li>qmf-0.7.946106-28.x86_64.rpm
+</li><li>qmf-devel-0.7.946106-28.x86_64.rpm
+</li><li>ruby-qmf-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-client-rdma-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-rdma-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-client-ssl-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-ssl-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-xml-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-cluster-0.7.946106-28.x86_64.rpm
+</li><li>qpid-cpp-server-store-0.7.946106-28.x86_64.rpm
+</li><li>rh-qpid-cpp-tests-0.7.946106-28.x86_64.rpm
+</li></ul></div>
    </div>
    
   
