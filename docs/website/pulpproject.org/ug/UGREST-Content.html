@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="Content">Content</h1>
+<p>
+<div class='wiki-toc'>
+<ol><li class="active"><a href="UGREST-Content.html#LookupFile">Lookup File</a></li><li class="active">
+<a href="UGREST-Content.html#DeleteaFile">Delete a File</a></li></ol></li></ol></div>
+
+</p>
+<p>
+Pulp exposes a content API to perform file specific operations.
+</p>
+<p>
+Eventually all API methods with have a specification on which level of access is required to call them.
+</p>
+<p>
+Base URL Path: <strong>/content/</strong>
+</p>
+<hr />
+<h2 id="LookupFile">Lookup File</h2>
+<p>
+lookup files on pulp server by id.
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/content/files/</strong>
+</p>
+<p>
+Method: <strong>GET</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+{'id' : fileid}
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
+  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'Test package.  Nothing to see here.'</span></b>,
+  <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'test.iso'</span></b>, checksum=<B><span class="code-string">&quot;f242d4h4v23jf42f5423h4fh32f23fh2gfh32&quot;</span></b>},
+ {<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span></b>,
+  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'d996d42e-ccca-4a0d-beb1-7d87690cadc2'</span></b>,
+  <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'test package'</span></b>,
+  <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'test2.iso'</span></b>, checksum=<B><span class="code-string">&quot;f242d4h4v23jf42f5423h4fh32f23fh2gfh32&quot;</span></b>}]
+}]
+
+</pre></div><hr />
+<h2 id="DeleteaFile">Delete a File</h2>
+<p>
+Delete a single file
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/content/files/&lt;file id&gt;/</strong>
+</p>
+<p>
+Method: <strong>DELETE</strong>
+</p>
+<p>
+Parameters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/pass
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>True
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if there is no such file
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+
