@@ -290,9 +290,8 @@ class ImportUploadContent:
         """
         log.info("Importing rpm metadata content into pulp")
         (name, version, release, epoch, arch) = self.metadata['nvrea']
-        pkg_path = "%s/%s/%s/%s/%s/%s/%s" % \
-                (PACKAGE_LOCATION, self.metadata['checksum'][:3], name, version, release, arch, self.metadata['pkgname'])
-        
+        pkg_path = util.get_shared_package_path(name, version, release, arch, \
+                                                self.metadata['pkgname'], self.metadata['checksum'])
         if util.check_package_exists(pkg_path, self.metadata['checksum'], self.metadata['hashtype']):
             log.error("Package %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
         # copy the content over to the package location
@@ -311,7 +310,7 @@ class ImportUploadContent:
         import the files into pulp database
         """
         log.info("Importing file metadata content into pulp")
-        file_path = "%s/%s/%s" % (PACKAGE_LOCATION, self.metadata['checksum'][:3], self.metadata['pkgname'])
+        file_path = "%s/%s/%s" % (util.top_file_location(), self.metadata['checksum'][:3], self.metadata['pkgname'])
         if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
             log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
         if not self.__finalize_content(file_path):

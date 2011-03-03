@@ -54,6 +54,9 @@ def top_gpg_location():
 def top_package_location():
     return "%s/%s" % (constants.LOCAL_STORAGE, "packages")
 
+def top_file_location():
+    return "%s/%s" % (constants.LOCAL_STORAGE, "files")
+
 def relative_repo_path(path):
     """
     Convert the specified I{path} to a relative path
@@ -306,7 +309,7 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
             hash = checksum[hash.keys()[0]]
 
     pkg_location = "%s/%s/%s/%s/%s/%s/%s" % (top_package_location(),
-        hash[:3], name, version, release, arch, filename)
+        name, version, release, arch, hash[:3], filename)
     return pkg_location
 
 def create_symlinks(source_path, link_path):

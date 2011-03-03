@@ -101,10 +101,11 @@ class PackageSearch(JSONController):
         checksum = None
         if data.has_key("checksum"):
             checksum = data["checksum"]
+        regex = data["regex"]
         start_time = time.time()
         pkgs = papi.packages(name=name, epoch=epoch, version=version,
             release=release, arch=arch, filename=filename, checksum=checksum,
-            checksum_type=checksum_type, regex=True)
+            checksum_type=checksum_type, regex=regex)
         initial_search_end = time.time()
         for p in pkgs:
             p["repos"] = rapi.find_repos_by_package(p["id"])

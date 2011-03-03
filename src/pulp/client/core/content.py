@@ -107,7 +107,7 @@ class Upload(ContentAction):
                     print msg
                 continue
             if metadata.has_key('nvrea'):
-                pkgobj = self.service_api.search_packages(filename=os.path.basename(f))
+                pkgobj = self.service_api.search_packages(filename=os.path.basename(f), regex=False)
             else:
                 pkgobj = self.service_api.search_file(metadata['pkgname'],
                                                    metadata['hashtype'],
@@ -246,7 +246,7 @@ class Delete(ContentAction):
                 filename, checksum = f, None
             #TODO: Once package/file api are merge to contentapi, replace this check with global content_search
             if filename.endswith('.rpm'):
-                pkgobj = self.service_api.search_packages(filename=filename, checksum=checksum)
+                pkgobj = self.service_api.search_packages(filename=filename, checksum=checksum, regex=False)
             else:
                 pkgobj = self.service_api.search_file(filename=filename, checksum=checksum)
 

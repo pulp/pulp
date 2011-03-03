@@ -72,7 +72,7 @@ class FileApi(BaseApi):
         if not fileobj:
             log.error("File id [%s] not found " % id)
             return
-        file_path = "%s/%s/%s" % (pulp.server.util.top_package_location(), 
+        file_path = "%s/%s/%s" % (pulp.server.util.top_file_location(), 
                                       fileobj['checksum']['sha256'][:3],
                                       fileobj['filename'])
         BaseApi.delete(self, _id=id)
