@@ -187,7 +187,6 @@ class List(ContentAction):
     def run(self):
         if not self.opts.orphaned and not self.opts.repoid:
             system_exit(os.EX_USAGE, "--orphaned or --repoid is required to list packages")
-
         if self.opts.orphaned:
             orphaned_pkgs = self.package_api.orphaned_packages()
             orphaned_files = self.file_api.orphaned_files()

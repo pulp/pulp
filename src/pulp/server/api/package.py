@@ -243,12 +243,8 @@ class PackageApi(BaseApi):
         @param data: ["file_name", ...]
         @return  {"file_name": [<checksums>],...} 
         '''
-        fchecksum = {}
-        for filename in filenames:
-            filedata = self.package_checksum(filename)
-            if not filedata:
-                continue
-            checksums = [fdata['checksum']['sha256'] for fdata in filedata]
-            fchecksum[filename] = checksums
-        return fchecksum
+        result = {}
+        for i in self.objectdb.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
+            result.setdefault(i["filename"], []).append(i["checksum"]["sha256"])
+        return result
 
