@@ -108,14 +108,38 @@ class CdsActions(AsyncController):
         data = self.params()
         repo_id = data.get('repo_id')
         cds_api.associate_repo(id, repo_id)
-        return self.ok(True)
+
+        # Kick off the async task
+        task = self.start_task(cds_api.redistribute, [repo_id], unique=True)
+
+        # If no task was returned, the uniqueness check was tripped which means
+        # there's already a redistribute running for the given repo
+        if task is None:
+            return self.conflict('Sync already in process for repo [%s]' % repo_id)
+
+        # Munge the task information to return to the caller
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
     def unassociate(self, id):
         data = self.params()
         repo_id = data.get('repo_id')
         cds_api.unassociate_repo(id, repo_id)
-        return self.ok(True)
 
+        # Kick off the async task
+        task = self.start_task(cds_api.redistribute, [repo_id], unique=True)
+
+        # If no task was returned, the uniqueness check was tripped which means
+        # there's already a redistribute running for the given repo
+        if task is None:
+            return self.conflict('Sync already in process for repo [%s]' % repo_id)
+
+        # Munge the task information to return to the caller
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
+        
     def history(self, id):
         data = self.params()
 
@@ -225,9 +249,8 @@ class CdsSyncTaskStatus(AsyncController):
         '''
         task_info = self.task_status(task_id)
         if task_info is None:
-            return self.not_found('No sync with id [%s] found' % (task_id))
+            return self.not_found('No sync with id [%s] found' % task_id)
         return self.ok(task_info)
-
 
 # web.py application ----------------------------------------------------------
 

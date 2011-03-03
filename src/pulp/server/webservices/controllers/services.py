@@ -13,10 +13,12 @@
 # Red Hat trademarks are not licensed under GPLv2. No permission is
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
+
 import logging
 import time
 import web
 
+from pulp.server.api.cds import CdsApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
@@ -26,14 +28,15 @@ from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
 from pulp.server.webservices import mongo
-from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.base import JSONController, AsyncController
 
 # globals ---------------------------------------------------------------------
 
+cds_api = CdsApi()
 rapi = RepoApi()
 papi = PackageApi()
 fapi = FileApi()
-log = logging.getLogger('pulp')
+log = logging.getLogger(__name__)
 
 # services controllers --------------------------------------------------------
 
@@ -240,6 +243,29 @@ class FilesChecksumSearch(JSONController):
         """
         filenames = self.params()
         return self.ok(fapi.get_file_checksums(filenames))
+
+class CdsRedistribute(AsyncController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self, repo_id):
+        '''
+        Triggers a redistribution of consumers across all CDS instances for the
+        given repo.
+        '''
+
+        # Kick off the async task
+        task = self.start_task(cds_api.redistribute, [repo_id], unique=True)
+
+        # If no task was returned, the uniqueness check was tripped which means
+        # there's already a redistribute running for the given repo
+        if task is None:
+            return self.conflict('Sync already in process for repo [%s]' % repo_id)
+
+        # Munge the task information to return to the caller
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
 # web.py application ----------------------------------------------------------
 
