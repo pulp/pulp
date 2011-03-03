@@ -45,7 +45,7 @@ from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.keystore import KeyStore
-from pulp.server.api.package import PackageApi
+from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
 from pulp.server.db import model
@@ -489,12 +489,20 @@ class RepoApi(BaseApi):
         ks.clean(True)
         
         #remove packages
-        for pkgid in repo["packages"]:
-            repos = self.find_repos_by_package(pkgid)
-            if repo["id"] in repos and len(repos) == 1:
+        # clear package list to decrement each package's reference count
+        packages = repo["packages"]
+        repo["packages"] = []
+        self.collection.save(repo, safe=True)
+        for pkgid in packages:
+            try:
                 self.packageapi.delete(pkgid, keep_files)
-            else:
-                log.info("Not deleting %s since it is referenced by these repos: %s" % (pkgid, repos))
+            except PackageHasReferences:
+                log.info(
+                    'package "%s" has references, not deleted',
+                    pkgid)
+            except Exception, ex:
+                log.exception(ex)
+
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)

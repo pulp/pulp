@@ -21,14 +21,22 @@ import logging
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-#from pulp.server.db.connection import get_object_db
 from pulp.server.api.depsolver import DepSolver
 import pulp.server.util
+import pulp.server.db.model
 from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
 package_fields = model.Package(None, None, None, None, None, None, None, None, None).keys()
+
+
+class PackageHasReferences(Exception):
+
+    MSG = 'package [%s] has references, delete not permitted'
+
+    def __init__(self, id):
+        Exception.__init__(self, self.MSG % id)
 
 
 class PackageApi(BaseApi):
@@ -75,6 +83,8 @@ class PackageApi(BaseApi):
         """
         Delete package version object based on "_id" key
         """
+        if self.referenced(id):
+            raise PackageHasReferences(id)
         if not keep_files:
             pkg = self.package(id)
             pkg_packages_path = pulp.server.util.get_shared_package_path(
@@ -138,6 +148,19 @@ class PackageApi(BaseApi):
             return list(self.objectdb.find(fields=fields))
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
+
+    def referenced(self, id):
+        """
+        Get whether a package is referenced.
+        @param id: A package ID.
+        @type id: str
+        @return: True if referenced
+        @rtype: bool
+        """
+        collection = model.Repo.get_collection()
+        repo = collection.find_one({"packages":id}, fields=["id"])
+        return ( repo is not None )
+
 
     def packages_by_id(self, pkg_ids, **kwargs):
         """
