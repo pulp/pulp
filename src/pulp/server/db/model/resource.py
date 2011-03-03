@@ -263,6 +263,7 @@ class Repo(Model):
         self.clone_ids = []
         self.distributionid = []
         self.checksum_type = u"sha256"
+        self.filters = []
 #        self.size = None
 
     def get_repo_source(self):
