@@ -797,7 +797,7 @@ class AddPackages(RepoAction):
                     continue
                 if len(src_pkgobj) > 1:
                     if not self.opts.csv:
-                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % pkg)
+                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % pkg)
                         continue
                     else:
                         for fo in src_pkgobj:
@@ -1065,7 +1065,7 @@ class AddFiles(RepoAction):
             if len(fobj) > 1:
                 if not self.opts.csv: 
                     print fobj
-                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % filename)
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % filename)
                     continue
                 else:
                     for fo in fobj:
