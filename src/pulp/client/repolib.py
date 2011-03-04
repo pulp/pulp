@@ -25,20 +25,17 @@ import os
 # Pulp
 from pulp.client.lock import Lock
 from pulp.client.logutil import getLogger
-from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
+from pulp.client.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles
 
 log = getLogger(__name__)
 
 # -- public ----------------------------------------------------------------
 
-def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, lock=None):
+def bind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, repo_data, url_list, gpg_keys, lock=None):
     '''
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
     repo object as well as the list of URLs where the repo can be found.
-
-    This call may be used to bind a new repo or update the details of a previously
-    bound repo.
 
     The default lock is defined at the module level and is
     used to ensure that concurrent access to the give files is prevented. Specific
@@ -55,17 +52,24 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, loc
                                  necessary; this should be unique for the given repo
     @type  mirror_list_filename: string
 
+    @param keys_root_dir: absolute path to the root directory in which the keys for
+                          all repos will be stored
+    @type  keys_root_dir: string
+
+    @param repo_id: uniquely identifies the repo being updated
+    @type  repo_id: string
+
     @param repo_data: contains data on the repo being bound
-    @type  repo_data: dict
+    @type  repo_data: dict {string: string}
 
     @param url_list: list of URLs that will be used to access the repo; this call
                      will determine the best way to represent the URL list in
                      the repo definition
     @type  url_list: list of strings
 
-    @param key_list: list of URLs that will be used to access GPG keys associated with
-                     the repo
-    @type  key_list: list of strings
+    @param gpg_keys: mapping of key name to contents for GPG keys to be used when
+                     verifying packages from this repo
+    @type  gpg_keys: dict {string: string}
 
     @param lock: if the default lock is unacceptble, it may be overridden in this variable
     @type  lock: L{Lock}
@@ -80,33 +84,24 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, loc
 
         repo_file = RepoFile(repo_filename)
         repo_file.load()
-        
-        repo = _convert_repo(repo_data, key_list)
 
-        if len(url_list) > 1:
+        # In the case of an update, only the changed values will have been sent.
+        # Therefore, any of the major data components (repo data, url list, keys)
+        # may be None.
 
-            # The mirror list file isn't loaded; if this call was made as part of a
-            # repo update the file should be written new given the URLs passed in
-            mirror_list_file = MirrorListFile(mirror_list_filename)
-            mirror_list_file.add_entries(url_list)
-            mirror_list_file.save()
-            
-            repo['mirrorlist'] = mirror_list_filename
-
-            log.info('Created mirrorlist for repo [%s] at [%s]' % (repo.id, mirror_list_filename))
+        if repo_data is not None:
+            repo = _convert_repo(repo_id, repo_data)
         else:
+            repo = repo_file.get_repo(repo_id)
 
-            # On a repo update, the mirror list may have existed but is no longer used.
-            # If we're in this block there shouldn't be a mirror list file for the repo,
-            # so delete it if it's there.
-            if os.path.exists(mirror_list_filename):
-                os.remove(mirror_list_filename)
+        if gpg_keys is not None:
+            _handle_gpg_keys(repo, gpg_keys, keys_root_dir)
 
-            repo['baseurl'] = url_list[0]
-            log.info('Configuring repo [%s] to use baseurl [%s]' % (repo.id, url_list[0]))
+        if url_list is not None:
+            _handle_host_urls(repo, url_list, mirror_list_filename)
 
         if repo_file.get_repo(repo.id):
-            log.info('Updating repo [%s]' % repo.id)
+            log.info('Updating existing repo [%s]' % repo.id)
             repo_file.update_repo(repo)
         else:
             log.info('Adding new repo [%s]' % repo.id)
@@ -116,7 +111,7 @@ def bind(repo_filename, mirror_list_filename, repo_data, url_list, key_list, loc
     finally:
         lock.release()
 
-def unbind(repo_filename, mirror_list_filename, repo_id, lock=None):
+def unbind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, lock=None):
     '''
     Removes the repo identified by repo_id from the given repo file. If the repo is
     not bound, this call has no effect. If the mirror list file exists, it will be
@@ -137,6 +132,10 @@ def unbind(repo_filename, mirror_list_filename, repo_id, lock=None):
                                  not exist this field will be ignored
     @type  mirror_list_filename: string
 
+    @param keys_root_dir: absolute path to the root directory in which the keys for
+                          all repos will be stored
+    @type  keys_root_dir: string
+
     @param repo_id: identifies the repo in the repo file to delete
     @type  repo_id: string
 
@@ -154,13 +153,20 @@ def unbind(repo_filename, mirror_list_filename, repo_id, lock=None):
         if not os.path.exists(repo_filename):
             return
 
+        # Repo file changes
         repo_file = RepoFile(repo_filename)
         repo_file.load()
         repo_file.remove_repo_by_name(repo_id) # will not throw an error if repo doesn't exist
         repo_file.save()
 
+        # Mirror list removal
         if os.path.exists(mirror_list_filename):
             os.remove(mirror_list_filename)
+
+        # Keys removal
+        repo_keys = RepoKeyFiles(keys_root_dir, repo_id)
+        repo_keys.update_filesystem()
+            
     finally:
         lock.release()
 
@@ -178,30 +184,18 @@ def mirror_list_filename(dir, repo_id):
 
 # -- private -----------------------------------------------------------------
 
-def _convert_repo(repo_data, key_list):
+def _convert_repo(repo_id, repo_data):
     '''
     Converts the dict repository representation into the repo file domain instance.
     This will *not* populate the baseurl parameter of the repo. That will be done
     elsewhere to take into account if a mirror list is required depending on the
     host URLs sent with the bind response.
 
-    @param repo: contains data for the repo to be created
-    @type  repo: dict
-
-    @param key_list: list of GPG keys associated with the repo
-    @type  key_list: list of strings
-
     @return: repo instance in the repo file format
     @rtype:  L{Repo}
     '''
-    repo = Repo(str(repo_data['id']))
+    repo = Repo(str(repo_id))
     repo['name'] = repo_data['name']
-
-    if key_list is not None and len(key_list) > 0:
-        repo['gpgcheck'] = '1'
-        repo['gpgkey'] = '\n'.join(key_list)
-    else:
-        repo['gpgcheck'] = '0'
 
     # This probably won't be an issue; you shouldn't be able to bind to an unpublished repo
     if bool(repo_data['publish']):
@@ -211,3 +205,54 @@ def _convert_repo(repo_data, key_list):
     repo['enabled'] = enabled
 
     return repo
+
+def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
+    '''
+    Handles the processing of any GPG keys that were specified with the repo. The key
+    files will be written to disk, deleting any existing key files that were there. The
+    repo object will be updated with any values related to GPG key information.
+    '''
+
+    repo_keys = RepoKeyFiles(keys_root_dir, repo.id)
+
+    if gpg_keys is not None and len(gpg_keys) > 0:
+        repo['gpgcheck'] = '1'
+
+        for key_name in gpg_keys:
+            repo_keys.add_key(key_name, gpg_keys[key_name])
+
+        repo['gpgkey'] = '\n'.join(repo_keys.key_filenames())
+    else:
+        repo['gpgcheck'] = '0'
+
+    # Call this in either case to make sure any existing keys were deleted
+    repo_keys.update_filesystem()
+
+def _handle_host_urls(repo, url_list, mirror_list_filename):
+    '''
+    Handles the processing of the host URLs sent for a repo. If a mirror list file is
+    needed, it will be created and saved to disk as part of this call. The repo
+    object will be updated with the appropriate parameter for the repo URL.
+    '''
+
+    if len(url_list) > 1:
+
+        # The mirror list file isn't loaded; if this call was made as part of a
+        # repo update the file should be written new given the URLs passed in
+        mirror_list_file = MirrorListFile(mirror_list_filename)
+        mirror_list_file.add_entries(url_list)
+        mirror_list_file.save()
+
+        repo['mirrorlist'] = mirror_list_filename
+
+        log.info('Created mirrorlist for repo [%s] at [%s]' % (repo.id, mirror_list_filename))
+    else:
+
+        # On a repo update, the mirror list may have existed but is no longer used.
+        # If we're in this block there shouldn't be a mirror list file for the repo,
+        # so delete it if it's there.
+        if os.path.exists(mirror_list_filename):
+            os.remove(mirror_list_filename)
+
+        repo['baseurl'] = url_list[0]
+        log.info('Configuring repo [%s] to use baseurl [%s]' % (repo.id, url_list[0]))
