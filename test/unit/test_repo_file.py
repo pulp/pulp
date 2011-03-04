@@ -14,6 +14,7 @@
 # Python
 from ConfigParser import DuplicateSectionError
 import os
+import shutil
 import sys
 import unittest
 
@@ -24,10 +25,11 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.client.repo_file import Repo, RepoFile, MirrorListFile
+from pulp.client.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles
 
 TEST_REPO_FILENAME = '/tmp/TestRepoFile.repo'
 TEST_MIRROR_LIST_FILENAME = '/tmp/TestRepoFile.mirrorlist'
+TEST_KEYS_ROOT_DIR = '/tmp/TestRepoFile-keys'
 
 # -- repo file tests ------------------------------------------------------------------
 
@@ -482,6 +484,133 @@ class TestMirrorListFile(unittest.TestCase):
 
         # Verify
         # Nothing to verify, this shouldn't have thrown an error
+
+# -- repo key files tests ----------------------------------------------------------------
+
+class TestRepoKeyFiles(unittest.TestCase):
+
+    def setUp(self):
+        # Clean up from any previous runs that may have exited abnormally
+        if os.path.exists(TEST_KEYS_ROOT_DIR):
+            shutil.rmtree(TEST_KEYS_ROOT_DIR)
+
+    def tearDown(self):
+        # Clean up in case the test file was saved in a test
+        if os.path.exists(TEST_KEYS_ROOT_DIR):
+            shutil.rmtree(TEST_KEYS_ROOT_DIR)
+
+    def test_repo_first_time(self):
+        '''
+        Tests adding keys to a repo that has never had keys before (i.e. the
+        repo keys dir doesn't exist).
+        '''
+
+        # Test
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo1')
+        repo_keys.add_key('key1', 'KEY1')
+        repo_keys.add_key('key2', 'KEY2')
+        repo_keys.update_filesystem()
+
+        # Verify
+        self.assertTrue(os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo1')))
+
+        key_files = repo_keys.key_filenames()
+        self.assertEqual(2, len(key_files))
+
+        for f in key_files:
+            self.assertTrue(os.path.exists(f))
+
+        f = open(key_files[0], 'r')
+        contents = f.read()
+        f.close()
+        self.assertEqual(contents, 'KEY1')
+
+        f = open(key_files[1], 'r')
+        contents = f.read()
+        f.close()
+        self.assertEqual(contents, 'KEY2')
+
+    def test_repo_existing_keys(self):
+        '''
+        Tests adding a new key when keys have already been written. The new key should be
+        present but the old should be deleted.
+        '''
+
+        # Setup
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo2')
+        repo_keys.add_key('key1', 'KEY1')
+        repo_keys.update_filesystem()
+
+        # Test
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo2')
+        repo_keys.add_key('keyX', 'KEYX')
+        repo_keys.update_filesystem()
+
+        # Verify
+        self.assertTrue(os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo2')))
+
+        key_files = repo_keys.key_filenames()
+        self.assertEqual(1, len(key_files))
+
+        self.assertTrue(os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo2', 'keyX')))
+        self.assertTrue(not os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo2', 'key1')))
+
+        f = open(key_files[0], 'r')
+        contents = f.read()
+        f.close()
+        self.assertEqual(contents, 'KEYX')
+
+    def test_repo_update_key(self):
+        '''
+        Tests adding new contents for a key that already exists.
+        '''
+
+        # Setup
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo3')
+        repo_keys.add_key('key', 'KEY1')
+        repo_keys.update_filesystem()
+
+        # Test
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo3')
+        repo_keys.add_key('key', 'KEYX')
+        repo_keys.update_filesystem()
+
+        # Verify
+        self.assertTrue(os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo3')))
+
+        key_files = repo_keys.key_filenames()
+        self.assertEqual(1, len(key_files))
+
+        self.assertTrue(os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo3', 'key')))
+
+        f = open(key_files[0], 'r')
+        contents = f.read()
+        f.close()
+        self.assertEqual(contents, 'KEYX')
+
+    def test_repo_remove_keys(self):
+        '''
+        Tests calling update_filesystem for a repo that previously had keys but no longer
+        does.
+        '''
+
+        # Setup
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo4')
+        repo_keys.add_key('key', 'KEY1')
+        repo_keys.update_filesystem()
+
+        self.assertTrue(os.path.exists(repo_keys.key_filenames()[0]))
+
+        # Test
+        repo_keys = RepoKeyFiles(TEST_KEYS_ROOT_DIR, 'repo4')
+        repo_keys.update_filesystem()
+
+        # Verify
+        self.assertTrue(not os.path.exists(os.path.join(TEST_KEYS_ROOT_DIR, 'repo3')))
+
+        key_list = repo_keys.key_filenames()
+        self.assertTrue(key_list is not None)
+        self.assertEqual(0, len(key_list))
 
 # -- utilities ------------------------------------------------------------------------
 

@@ -13,6 +13,7 @@
 
 from iniparse import ConfigParser
 import os
+import shutil
 
 class Repo(dict):
     '''
@@ -71,7 +72,7 @@ class Repo(dict):
             lst.append(('mirrorlist', self.get('mirrorlist')))
 
         return tuple(lst)
-
+    
     def __str__(self):
         s = []
         s.append('[%s]' % self.id)
@@ -338,6 +339,88 @@ class MirrorListFile(object):
             f.write(entry)
             f.write('\n')
         f.close()
+
+class RepoKeyFiles(object):
+    '''
+    Represents all of the GPG key files for a specific repo. An instance of this
+    class can be used to clear all keys for a certain repo on the filesystem as well
+    as keeping track of one or more files to write. The location of the key files
+    will be determined by the data passed during instantiation.
+    '''
+
+    def __init__(self, keys_root_dir, repo_id):
+        '''
+        Instantiation does not affect anything on the filesystem, it simply creates
+        an object scoped to the given repo and configured with the data necessary to
+        find and manipulate the key files.
+
+        Any keys stored on the filesystem for this repo are *not* loaded as part
+        of this call. The intention is that each instance will be populated with
+        the current set of keys for a repo. If there are no keys added when the
+        filesystem is updated, the keys directory for the repo will be removed.
+
+        @param keys_root_dir: root directory in which all repo keys will be stored;
+                              a unique sub-directory will be created in which to store
+                              the keys for each repo; this directory does not need
+                              to exist prior to this call
+        @type  keys_root_dir: string
+
+        @param repo_id: id of the repo whose keys are being manipulated; this must be
+                        unique for each repo
+        @type  repo_id: string
+        '''
+
+        self.repo_keys_dir = os.path.join(keys_root_dir, repo_id)
+
+        self.keys = {} # key file path: key contents
+
+    def add_key(self, key_name, key_contents):
+        '''
+        Adds a new key for the repo identified at instantiation. This will not cause
+        the key files to be saved to disk.
+
+        @param key_name: name of the key; must be unique for each key
+        @type  key_name: string
+
+        @param key_contents: encoded key
+        @type  key_contents: string
+        '''
+        key_file = os.path.join(self.repo_keys_dir, key_name)
+        self.keys[key_file] = key_contents
+
+    def key_filenames(self):
+        '''
+        Returns a list of filenames for all keys for this instance's repo.
+
+        @return: list of absolute paths to key files
+        @rtype:  list of strings
+        '''
+        return self.keys.keys()
+
+    def update_filesystem(self):
+        '''
+        Brings the filesystem up to speed with the keys defined in this instance.
+        All existing keys for this instance's repo will be deleted at the outset
+        of this call.
+
+        If there were no keys added to this instance through add_keys,
+        this call has the effect of deleting all keys on the repo. Any keys that
+        were added will be written to disk.
+        '''
+
+        # Delete the repo's key directory
+        if os.path.exists(self.repo_keys_dir):
+            shutil.rmtree(self.repo_keys_dir)
+
+        # If there are any keys to write, create the directory for the repo's keys
+        # and write each of them out
+        if len(self.keys) > 0:
+            os.makedirs(self.repo_keys_dir)
+
+            for filename in self.keys:
+                f = open(filename, 'w')
+                f.write(self.keys[filename])
+                f.close()
 
 class Reader(object):
     '''
