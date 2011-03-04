@@ -40,7 +40,6 @@ from pulp.server.agent import Agent
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
-import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.file import FileApi
@@ -49,6 +48,7 @@ from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
+import pulp.server.consumer_utils as consumer_utils
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException

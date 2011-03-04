@@ -22,11 +22,11 @@ import sys
 import pulp.server.agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
-import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
                                        CdsCommunicationsException, CdsMethodException
 import pulp.server.cds.round_robin as round_robin
+import pulp.server.consumer_utils as consumer_utils
 from pulp.server.db.model import CDS, Repo
 from pulp.server.api.keystore import KeyStore
 from pulp.server.pexceptions import PulpException

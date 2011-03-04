@@ -21,13 +21,13 @@ import pulp.server.agent
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
-import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
 import pulp.server.auth.cert_generator as cert_generator
 import pulp.server.cds.round_robin as round_robin
+import pulp.server.consumer_utils as consumer_utils
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages

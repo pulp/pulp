@@ -26,11 +26,11 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import pulp.server.api.consumer_utils as utils
+import pulp.server.consumer_utils as utils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
-from pulp.server.db.model.resource import Consumer, Repo
-import testutil
+from pulp.server.db.model.resource import Consumer
+
 
 # -- test cases -------------------------------------------------------------------------
 
