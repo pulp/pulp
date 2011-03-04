@@ -480,9 +480,9 @@ class ExportComps(PackageGroupAction):
                     f = open(self.opts.out, 'w')
                     f.write(comps_xml.encode("utf8"))
                     f.close()
-                    system_exit(os.EX_OK, _("Successfully exported the comps data to [%s]" % self.opts.out))
                 except Exception,e:
                     system_exit(os.EX_DATAERR, _("Error occurred while storing the comps data %s" % e))
+                system_exit(os.EX_OK, _("Successfully exported the comps data to [%s]" % self.opts.out))
             else:
                 print comps_xml.encode("utf8")
     
