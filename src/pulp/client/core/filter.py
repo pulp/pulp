@@ -74,7 +74,11 @@ class Create(FilterAction):
     def run(self):
         id = self.get_required_option('id')
         type = self.get_required_option('type')
-        description = self.opts.description or None
+        if type not in ["blacklist","whitelist"]:
+            self.parser.error(_("Invalid argument for option 'type'; please see --help"))
+            system_exit(os.EX_USAGE, _("Invalid argument for option 'type'"))
+
+        description = self.opts.description or id
         pnames = self.opts.pnames or []
        
         filter = self.filter_api.create(id, type, description, pnames)

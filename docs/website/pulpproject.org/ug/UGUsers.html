@@ -62,7 +62,7 @@ $ pulp-admin repo list -u admin -p admin
 <p>
 Rather than specifying the credentials on each call to <tt>pulp-admin</tt>, a user can <i>log in</i> to the Pulp server. Logging in stores a user credentials certificate at <tt>~/.pulp/user-cert.pem</tt>. Logging in is done through the <tt>auth login</tt> command:
 </p>
-<pre class="wiki">$ pulp-admin -u admin -p admin auth login
+<pre class="wiki">$ pulp-admin auth login -u admin -p admin
 User credentials successfully stored at [/home/pulp-user/.pulp]
 </pre><p>
 Subsequent commands to <tt>pulp-admin</tt> will no longer require the username/password arguments and will instead use the user certificate.
@@ -248,6 +248,15 @@ Users are removed from a role in much the same way as they are added using the <
 </p>
 <pre class="wiki">$ pulp-admin role remove --role new-role --user user
 [ user ] removed from role [ new-role ]
+</pre><h3 id="GrantingandRevokingPermissionstofromaRole">Granting and Revoking Permissions to/from a Role</h3>
+<p>
+Permissions can be granted and revoked from roles just like users. User the <tt>permission grant</tt> or <tt>permission revoke</tt> command as noted above, but pass in the <tt>--role</tt> flag instead of <tt>--user</tt>:
+</p>
+<pre class="wiki">$ pulp-admin permission grant --resource /repositories/ --role new-role -o create
+Operations ['CREATE'] granted to role [ new-role ] on resource [ /repositories/ ]
+
+$ pulp-admin permission revoke --resource /repositories/ --role new-role -o update
+Operations ['UPDATE'] revoked from role [ new-role ] on resource [ /repositories/ ]
 </pre></div>
    </div>
    

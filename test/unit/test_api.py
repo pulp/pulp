@@ -39,7 +39,7 @@ import pymongo.json_util
 
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
-from pulp.server.api.package import PackageApi
+from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.errata import ErrataApi
@@ -994,6 +994,16 @@ class TestApi(unittest.TestCase):
         
         pkgs = self.rapi.packages(repo['id'], name="bad_name")
         self.assertTrue(len(pkgs) == 0)
+
+        # test delete referenced package
+        try:
+            self.papi.delete(p1['id'])
+            raise Exception, 'package with references, deleted'
+        except PackageHasReferences:
+            pass
+
+        # test delete orphaned package
+        self.papi.delete(p3['id'])
 
 if __name__ == '__main__':
     unittest.main()

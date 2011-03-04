@@ -2,7 +2,8 @@ Pulp is a content management system for collecting software packages
 organizing them into repositories and assisting with distribution of that
 content to target systems and other destinations.
 
-For more info on setting up Pulp and hacking on the code see:
+For more information, check out the project website:
 
-https://fedorahosted.org/pulp/wiki/Develop
+https://pulpproject.org
+
 

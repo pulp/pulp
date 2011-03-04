@@ -44,8 +44,9 @@ import pulp.server.api.consumer_utils as consumer_utils
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.file import FileApi
+from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
-from pulp.server.api.package import PackageApi
+from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
 from pulp.server.db import model
@@ -73,6 +74,7 @@ class RepoApi(BaseApi):
         self.distroapi = DistributionApi()
         self.cdsapi = CdsApi()
         self.fileapi = FileApi()
+        self.filterapi = FilterApi()
         self.localStoragePath = constants.LOCAL_STORAGE
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
@@ -489,12 +491,20 @@ class RepoApi(BaseApi):
         ks.clean(True)
         
         #remove packages
-        for pkgid in repo["packages"]:
-            repos = self.find_repos_by_package(pkgid)
-            if repo["id"] in repos and len(repos) == 1:
+        # clear package list to decrement each package's reference count
+        packages = repo["packages"]
+        repo["packages"] = []
+        self.collection.save(repo, safe=True)
+        for pkgid in packages:
+            try:
                 self.packageapi.delete(pkgid, keep_files)
-            else:
-                log.info("Not deleting %s since it is referenced by these repos: %s" % (pkgid, repos))
+            except PackageHasReferences:
+                log.info(
+                    'package "%s" has references, not deleted',
+                    pkgid)
+            except Exception, ex:
+                log.exception(ex)
+
         #remove any distributions
         for distroid in repo['distributionid']:
             self.remove_distribution(repo['id'], distroid)
@@ -1600,6 +1610,43 @@ class RepoApi(BaseApi):
         xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
         return xml
+
+    @audit(params=['id', 'filter_ids'])
+    def add_filters(self, id, filter_ids):
+        repo = self._get_existing_repo(id)
+        for filter_id in filter_ids:
+            filter = self.filterapi.filter(filter_id)
+            if filter is None:
+                raise PulpException("No Filter with id: %s found" % filter_ids)
+
+        filters = repo['filters']
+        for filter_id in filter_ids:
+            if filter_id in filters:
+                continue
+            filters.append(filter_id)
+
+        repo["filters"] = filters
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), added filter: %s', id, filter_ids)
+
+
+
+    @audit(params=['id', 'filter_ids'])
+    def remove_filters(self, id, filter_ids):
+        repo = self._get_existing_repo(id)
+        filters = repo['filters']
+        for filter_id in filter_ids:
+            if filter_id not in filters:
+                continue
+            filters.remove(filter_id)
+
+        repo["filters"] = filters
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), removed filters: %s', id, filter_ids)
+
+    def list_filters(self, id):
+        repo = self._get_existing_repo(id)
+        return repo['filters']
         
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

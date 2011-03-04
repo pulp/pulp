@@ -741,18 +741,29 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'fifo_tasks'</span></b>,
- <B><span class="code-string">'exception'</span></b>: None,
- <B><span class="code-string">'finish_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149604},
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
- <B><span class="code-string">'method_name'</span></b>: <B><span class="code-string">'sync'</span></b>,
- <B><span class="code-string">'next_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149102},
- <B><span class="code-string">'result'</span></b>: None,
- <B><span class="code-string">'start_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149573},
- <B><span class="code-string">'state'</span></b>: <B><span class="code-string">'finished'</span></b>,
- <B><span class="code-string">'status_path'</span></b>: <B><span class="code-string">'/repositories/test_two_repos_share_common_pkg_repo_B/sync/09f55d5e-7e11-11df-bcee-002564c957fe/'</span></b>,
- <B><span class="code-string">'traceback'</span></b>: None}
+<div class="code"><pre>{<B><span class="code-string">&quot;scheduled_time&quot;</span></b>: 0, 
+<B><span class="code-string">&quot;exception&quot;</span></b>: null, 
+<B><span class="code-string">&quot;status_path&quot;</span></b>: <B><span class="code-string">&quot;/pulp/api/repositories/repo500/sync/346aa491-3a01-11e0-a0cd-0022157359f6/&quot;</span></b>, 
+<B><span class="code-string">&quot;finish_time&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1297865775645}, 
+<B><span class="code-string">&quot;start_time&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1297865766991}, 
+<B><span class="code-string">&quot;traceback&quot;</span></b>: null, 
+<B><span class="code-string">&quot;method_name&quot;</span></b>: <B><span class="code-string">&quot;_sync&quot;</span></b>, 
+<B><span class="code-string">&quot;state&quot;</span></b>: <B><span class="code-string">&quot;finished&quot;</span></b>, 
+<B><span class="code-string">&quot;result&quot;</span></b>: null, 
+<B><span class="code-string">&quot;progress&quot;</span></b>: 
+  {<B><span class="code-string">&quot;status&quot;</span></b>: <B><span class="code-string">&quot;FINISHED&quot;</span></b>, 
+   <B><span class="code-string">&quot;num_success&quot;</span></b>: 500, 
+   <B><span class="code-string">&quot;size_total&quot;</span></b>: 8821483, 
+   <B><span class="code-string">&quot;num_download&quot;</span></b>: 0, 
+   <B><span class="code-string">&quot;item_name&quot;</span></b>: null, 
+   <B><span class="code-string">&quot;items_left&quot;</span></b>: 500, 
+   <B><span class="code-string">&quot;items_total&quot;</span></b>: 500, 
+   <B><span class="code-string">&quot;step&quot;</span></b>: <B><span class="code-string">&quot;Finished&quot;</span></b>, 
+   <B><span class="code-string">&quot;size_left&quot;</span></b>: 0, 
+   <B><span class="code-string">&quot;details&quot;</span></b>: {
+     <B><span class="code-string">&quot;rpm&quot;</span></b>: {<B><span class="code-string">&quot;total_count&quot;</span></b>: 500, <B><span class="code-string">&quot;total_size_bytes&quot;</span></b>: 8821483, <B><span class="code-string">&quot;num_success&quot;</span></b>: 500, <B><span class="code-string">&quot;size_left&quot;</span></b>: 19328, <B><span class="code-string">&quot;items_left&quot;</span></b>: 0}}, 
+   <B><span class="code-string">&quot;error_details&quot;</span></b>: [], 
+   <B><span class="code-string">&quot;num_error&quot;</span></b>: 0}, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;346aa491-3a01-11e0-a0cd-0022157359f6&quot;</span></b>}
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository or sync task
 </p>

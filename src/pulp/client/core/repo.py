@@ -761,7 +761,7 @@ class AddPackages(RepoAction):
         id = self.get_required_option('id')
 
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error, at least one package id is required to perform an add."))
         if self.opts.pkgname and self.opts.csv:
             system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
         # check if repos are valid
@@ -847,7 +847,7 @@ class RemovePackages(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error, atleast one package id is required to perform a delete."))
+            system_exit(os.EX_USAGE, _("Error, at least one package id is required to perform a remove."))
         if self.opts.pkgname and self.opts.csv:
             system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
         # check if repo is valid
@@ -902,7 +902,7 @@ class AddErrata(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error, at least one erratum id is required to perform an add."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -977,7 +977,7 @@ class RemoveErrata(RepoAction):
         # check if repo is valid
         self.get_repo(id)
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error, atleast one erratum id is required to perform a delete."))
+            system_exit(os.EX_USAGE, _("Error, at least one erratum id is required to perform a remove."))
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
@@ -1047,7 +1047,7 @@ class AddFiles(RepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an add."))
+                system_exit(os.EX_USAGE, _("Error, at least one file is required to perform an add."))
             flist = self.opts.files
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1111,7 +1111,7 @@ class RemoveFiles(RepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, atleast one file is required to perform an remove."))
+                system_exit(os.EX_USAGE, _("Error, at least one file is required to perform a remove."))
             flist = self.opts.files
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
