@@ -256,7 +256,7 @@ class Delete(ContentAction):
             pobj = None
             if len(pkgobj) > 1:
                 if not self.opts.csv:
-                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping delete" % filename)
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum. Skipping delete" % filename)
                     exit_code = os.EX_DATAERR
                     continue
                 else:
@@ -272,7 +272,7 @@ class Delete(ContentAction):
                 continue
             
             if len(pobj['repos']):
-                print _("content with filename [%s] is currently associated other repos; Cannot perform delete; skipping" % filename)
+                print _("Content with filename [%s] is currently associated a repository; skipping delete" % filename)
                 exit_code = os.EX_DATAERR
                 continue
             #TODO: Once package/file api are merge to contentapi, replace this check with global content_search
@@ -281,7 +281,7 @@ class Delete(ContentAction):
             else:
                 self.file_api.delete(pobj['id'])
             
-            print _("Successfully delete content [%s] from pulp server" % filename)
+            print _("Successfully deleted content [%s] from pulp server" % filename)
         system_exit(exit_code)
 
 # content command -------------------------------------------------------------
