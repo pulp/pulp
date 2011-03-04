@@ -20,6 +20,7 @@ import logging
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
+from pulp.server.event.dispatcher import event
 from pulp.server.db import model
 from pulp.server.api.depsolver import DepSolver
 import pulp.server.util
@@ -93,6 +94,7 @@ class PackageApi(BaseApi):
             if os.path.exists(pkg_packages_path):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
                 os.remove(pkg_packages_path)
+                self.__pkgdeleted(id, pkg_packages_path)
         BaseApi.delete(self, _id=id)
 
     def package(self, id):
@@ -271,3 +273,7 @@ class PackageApi(BaseApi):
             result.setdefault(i["filename"], []).append(i["checksum"]["sha256"])
         return result
 
+    @event(subject='package.deleted')
+    def __pkgdeleted(self, id, path):
+        # called to raise the event
+        pass

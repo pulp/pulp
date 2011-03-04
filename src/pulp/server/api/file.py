@@ -21,6 +21,7 @@ import logging
 import pulp.server.util
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
+from pulp.server.event.dispatcher import event
 from pulp.server.db import model
 from pymongo.errors import DuplicateKeyError
 #from pulp.server.db.connection import get_object_db
@@ -80,6 +81,7 @@ class FileApi(BaseApi):
             log.info("file path to be remove %s" % file_path)
             if os.path.exists(file_path):
                 os.remove(file_path)
+                self.__filedeleted(id, file_path)
 
     def file(self, id):
         """
@@ -132,3 +134,8 @@ class FileApi(BaseApi):
         for i in self.objectdb.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
             result.setdefault(i["filename"], []).append(i["checksum"]["sha256"])
         return result
+
+    @event(subject='file.deleted')
+    def __filedeleted(self, id, path):
+        # called to raise the event
+        pass

@@ -56,6 +56,7 @@ from pulp.server import util
 from pulp.server.api.repo_sync import BaseSynchronizer
 from pulp.server.pexceptions import PulpException
 from pulp.server.api.file import FileApi
+from pulp.server.event.dispatcher import event
 
 log = logging.getLogger(__name__)
 
@@ -303,8 +304,14 @@ class ImportUploadContent:
                                   self.metadata['requires'], self.metadata['provides'])
         bsync = BaseSynchronizer()
         pkg = bsync.import_package(packageInfo, repo=None)
+        self.__package_imported(pkg.id, pkg_path)
         return pkg
     
+    @event(subject='package.uploaded')
+    def __package_imported(self, id, path):
+        # called to raise the event
+        pass
+
     def __import_file(self):
         """
         import the files into pulp database
@@ -318,8 +325,14 @@ class ImportUploadContent:
         f = FileApi()
         fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'], 
                  self.metadata['checksum'], self.metadata['size'], self.metadata['description'])
+        self.__file_imported(fobj.id, file_path)
         return fobj
     
+    @event(subject='file.uploaded')
+    def __file_imported(self, id, path):
+        # called to raise the event
+        pass
+
     def __finalize_content(self, path):
         """
          Move the files to final location
