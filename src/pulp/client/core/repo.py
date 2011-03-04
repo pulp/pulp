@@ -728,9 +728,9 @@ class Publish(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if self.opts.enable and self.opts.disable:
-            system_exit(os.EX_USAGE, _("Error, both enable and disable are set to True"))
+            system_exit(os.EX_USAGE, _("Error: Both enable and disable are set to True"))
         if not self.opts.enable and not self.opts.disable:
-            system_exit(os.EX_USAGE, _("Error, either --enable or --disable needs to be chosen"))
+            system_exit(os.EX_USAGE, _("Error: Either --enable or --disable needs to be chosen"))
         if self.opts.enable:
             state = True
         if self.opts.disable:
@@ -761,9 +761,9 @@ class AddPackages(RepoAction):
         id = self.get_required_option('id')
 
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error, at least one package id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform an add."))
         if self.opts.pkgname and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
+            system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -847,9 +847,9 @@ class RemovePackages(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error, at least one package id is required to perform a remove."))
+            system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform a remove."))
         if self.opts.pkgname and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
+            system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repo is valid
         self.get_repo(id)
         pnames = []
@@ -902,7 +902,7 @@ class AddErrata(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error, at least one erratum id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform an add."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -977,7 +977,7 @@ class RemoveErrata(RepoAction):
         # check if repo is valid
         self.get_repo(id)
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error, at least one erratum id is required to perform a remove."))
+            system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform a remove."))
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
@@ -1047,7 +1047,7 @@ class AddFiles(RepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, at least one file is required to perform an add."))
+                system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an add."))
             flist = self.opts.files
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1111,7 +1111,7 @@ class RemoveFiles(RepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, at least one file is required to perform a remove."))
+                system_exit(os.EX_USAGE, _("Error: At least one file is required to perform a remove."))
             flist = self.opts.files
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1144,7 +1144,39 @@ class RemoveFiles(RepoAction):
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
+            
+            
+class AddFilters(RepoAction):
 
+    description = _('add filters to a repository')
+
+    def setup_parser(self):
+        super(AddFilters, self).setup_parser()
+        self.parser.add_option("--filters", dest="filters",
+                       help=_("list of filter identifiers (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        filters = self.get_required_option('filters')
+        self.repository_api.add_filters(repoid, filters)
+        print _("Successfully added filters %s to repository [%s]" % (filters, repoid))
+
+
+class RemoveFilters(RepoAction):
+
+    description = _('remove filters from a repository')
+
+    def setup_parser(self):
+        super(RemoveFilters, self).setup_parser()
+        self.parser.add_option("--filters", dest="filters",
+                               help=_("list of filter identifiers (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        filters = self.get_required_option('filters')
+        self.repository_api.remove_filters(repoid, filters)
+        print _("Successfully removed filters %s from repository [%s]") % \
+                (filters, repoid)
 
 # repo command ----------------------------------------------------------------
 
