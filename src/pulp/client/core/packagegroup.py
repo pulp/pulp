@@ -430,7 +430,6 @@ class ImportComps(PackageGroupAction):
     description = _('Import package groups and categories from an existing comps.xml')
     
     def setup_parser(self):
-        super(ImportComps, self).setup_parser()
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
         self.parser.add_option("--comps", dest="comps",
@@ -460,7 +459,6 @@ class ExportComps(PackageGroupAction):
     description = _('Export comps.xml for package groups and categories in a repo')
     
     def setup_parser(self):
-        super(ExportComps, self).setup_parser()
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
         self.parser.add_option("-o", "--out", dest="out",
