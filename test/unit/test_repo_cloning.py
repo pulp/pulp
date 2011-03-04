@@ -44,7 +44,12 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.rapi.clean()
         testutil.common_cleanup()
         
-    def test_clone(self):
+    def __clone(self):
+
+
+        # Disabled until dependency on Red Hat VPN machine is removed
+
+
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'yum:http://10.16.76.78/pub/updates/')
         self.assertTrue(repo is not None)
