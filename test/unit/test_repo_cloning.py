@@ -44,14 +44,10 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.rapi.clean()
         testutil.common_cleanup()
         
-    def __clone(self):
-
-
-        # Disabled until dependency on Red Hat VPN machine is removed
-
+    def test_clone(self):
 
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://10.16.76.78/pub/updates/')
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         try:
             self.rapi._sync(repo['id'])
