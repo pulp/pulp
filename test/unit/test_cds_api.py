@@ -27,7 +27,6 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import pulp.server.agent
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.consumer import ConsumerApi
@@ -38,6 +37,7 @@ import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
+import mocks
 import testutil
 
 # -- mocks -------------------------------------------------------------------------------
@@ -105,38 +105,7 @@ class MockCdsDispatcher(object):
         self.repos = None
         self.call_log = []
 
-
-class MockRepoProxy(object):
-
-    def __init__(self):
-        self.bind_data = None
-        self.unbind_repo_id = None
-        self.update_calls = []
-
-    def bind(self, bind_data):
-        self.bind_data = bind_data
-
-    def unbind(self, repo_id):
-        self.unbind_repo_id = repo_id
-
-    def update(self, repo_id, bind_data):
-        self.update_calls.append((repo_id, bind_data))
-
-    def clear(self):
-        '''
-        Removes all state from the mock. Meant to be run between test runs to ensure a
-        common starting point.
-        '''
-        self.bind_data = None
-        self.unbind_repo_id = None
-        self.update_calls = []
-
-MOCK_REPO_PROXY = MockRepoProxy()
-
-def retrieve_mock_repo_proxy(uuid, **options):
-    return MOCK_REPO_PROXY
-
-pulp.server.agent.retrieve_repo_proxy = retrieve_mock_repo_proxy
+MOCK_REPO_PROXY = mocks.init_repo_proxy()
 
 # -- test cases --------------------------------------------------------------------------------------
 

@@ -27,6 +27,8 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import pulp.server.api.consumer_utils as utils
+from pulp.server.api.consumer import ConsumerApi
+from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.resource import Consumer, Repo
 import testutil
 
@@ -35,9 +37,13 @@ import testutil
 class TestConsumerUtils(unittest.TestCase):
 
     def clean(self):
-        Consumer.get_collection().remove(safe=True)
+        self.consumer_api.clean()
+        self.repo_api.clean()
 
     def setUp(self):
+        self.repo_api = RepoApi()
+        self.consumer_api = ConsumerApi()
+
         self.clean()
 
     def tearDown(self):
@@ -96,8 +102,7 @@ class TestConsumerUtils(unittest.TestCase):
         '''
 
         # Setup
-        repo = Repo('repo1', 'Repo 1', 'noarch')
-        Repo.get_collection().save(repo)
+        repo = self.repo_api.create('repo1', 'Repo 1', 'noarch')
 
         # Test
         bind_data = utils.build_bind_data(repo, ['cds1', 'cds2'], ['key1'])
@@ -130,8 +135,7 @@ class TestConsumerUtils(unittest.TestCase):
         '''
 
         # Setup
-        repo = Repo('repo1', 'Repo 1', 'noarch')
-        Repo.get_collection().save(repo)
+        repo = self.repo_api.create('repo1', 'Repo 1', 'noarch')
 
         # Test
         bind_data = utils.build_bind_data(repo, None, None)

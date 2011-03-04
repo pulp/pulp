@@ -26,43 +26,18 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import pulp.server.agent
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
+
+import mocks
 import testutil
 
-# -- mocks ---------------------------------------------------------------------------
+# -- mocks -------------------------------------------------------------------------------
 
-class MockRepoProxy(object):
-
-    def __init__(self):
-        self.bind_data = None
-        self.unbind_repo_id = None
-
-    def bind(self, bind_data):
-        self.bind_data = bind_data
-
-    def unbind(self, repo_id):
-        self.unbind_repo_id = repo_id
-
-    def clean(self):
-        '''
-        Removes all state from the mock. Meant to be run between test runs to ensure a
-        common starting point.
-        '''
-        self.bind_data = None
-        self.unbind_repo_id = None
-
-MOCK_REPO_PROXY = MockRepoProxy()
-
-def retrieve_mock_repo_proxy(uuid, **options):
-    return MOCK_REPO_PROXY
-
-pulp.server.agent.retrieve_repo_proxy = retrieve_mock_repo_proxy
-
+MOCK_REPO_PROXY = mocks.init_repo_proxy()
 
 class MockCdsDispatcher(object):
     '''
@@ -83,7 +58,7 @@ class TestConsumerApi(unittest.TestCase):
         self.repo_api.clean()
         self.consumer_api.clean()
         
-        MOCK_REPO_PROXY.clean()
+        MOCK_REPO_PROXY.clear()
 
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove(safe=True)
