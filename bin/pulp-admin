@@ -116,6 +116,8 @@ def setup_admin(admin):
     repo_cmd.add_action('remove_errata', repo.RemoveErrata())
     repo_cmd.add_action('add_file', repo.AddFiles())
     repo_cmd.add_action('remove_file', repo.RemoveFiles())
+    repo_cmd.add_action('add_filter', repo.AddFilters())
+    repo_cmd.add_action('remove_filter', repo.RemoveFilters())   
     admin.add_command('repo', repo_cmd)
 
     filter_cmd = filter.Filter()

@@ -1144,7 +1144,39 @@ class RemoveFiles(RepoAction):
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
+            
+            
+class AddFilters(RepoAction):
 
+    description = _('add filters to a repository')
+
+    def setup_parser(self):
+        super(AddFilters, self).setup_parser()
+        self.parser.add_option("--filters", dest="filters",
+                       help=_("list of filter identifiers (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        filters = self.get_required_option('filters')
+        self.repository_api.add_filters(repoid, filters)
+        print _("Successfully added filters %s to repository [%s]" % (filters, repoid))
+
+
+class RemoveFilters(RepoAction):
+
+    description = _('remove filters from a repository')
+
+    def setup_parser(self):
+        super(RemoveFilters, self).setup_parser()
+        self.parser.add_option("--filters", dest="filters",
+                               help=_("list of filter identifiers (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        filters = self.get_required_option('filters')
+        self.repository_api.remove_filters(repoid, filters)
+        print _("Successfully removed filters %s from repository [%s]") % \
+                (filters, repoid)
 
 # repo command ----------------------------------------------------------------
 

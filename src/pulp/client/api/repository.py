@@ -254,3 +254,14 @@ class RepositoryAPI(PulpAPI):
     def export_comps(self, repoid):
         path = "/repositories/%s/comps/" % repoid
         return self.server.GET(path)[1]
+    
+    def add_filters(self, repoid, filters):
+        addinfo = {'repoid': repoid, 'filters': filters}
+        path = "/repositories/%s/add_filters/" % repoid
+        return self.server.POST(path, addinfo)[1]
+
+    def remove_filters(self, repoid, filters):
+        rminfo = {'repoid': repoid, 'filters': filters}
+        path = "/repositories/%s/remove_filters/" % repoid
+        return self.server.POST(path, rminfo)[1]
+
