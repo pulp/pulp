@@ -31,6 +31,7 @@ from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.resource import Consumer
 
+import testutil
 
 # -- test cases -------------------------------------------------------------------------
 
