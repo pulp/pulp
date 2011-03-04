@@ -36,7 +36,7 @@ from pulp.server import config
 from pulp.server import crontab
 from pulp.server import updateinfo
 from pulp.server.compat import chain
-from pulp.server.agent import Agent
+import pulp.server.agent as agent
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
@@ -216,7 +216,7 @@ class RepoApi(BaseApi):
                 self._delete_published_link(repo)
                 if repo['distributionid']:
                     self._delete_ks_link(repo)
-            self.update_subscribed(id)
+            self.update_subscribed(repo)
         except Exception, e:
             log.error(e)
             return False
@@ -627,7 +627,7 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         # update subscribers (after) the object has been saved.
         if pathchanged:
-            self.update_subscribed(id)
+            self.update_subscribed(repo)
         # reset for event handler
         delta['id'] = id
         return repo
@@ -1406,7 +1406,7 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         added = ks.add(keylist)
         log.info('repository (%s), added keys: %s', id, added)
-        self.update_subscribed(id)
+        self.update_subscribed(repo)
         return added
 
     @audit(params=['id', 'keylist'])
@@ -1416,7 +1416,7 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         deleted = ks.delete(keylist)
         log.info('repository (%s), delete keys: %s', id, deleted)
-        self.update_subscribed(id)
+        self.update_subscribed(repo)
         return deleted
 
     def listkeys(self, id):
@@ -1425,17 +1425,24 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         return ks.list()
 
-    def update_subscribed(self, repoid):
+    def update_subscribed(self, repo):
         """
         Do an asynchronous RMI to subscribed agents
         to update the .repo file.
         @param repoid: The updated repo ID.
         @type repoid: str
         """
-        cids = [str(c['id']) for c in consumer_utils.consumers_bound_to_repo(repoid)]
-        agent = Agent(cids, async=True)
-        repolib = agent.Repo()
-        repolib.update()
+
+        consumers = consumer_utils.consumers_bound_to_repo(repo['id'])
+        bind_data = consumer_utils.build_bind_data(repo, None, None)
+
+        # Blank out the host and URLs since they haven't changed
+        bind_data['host_urls'] = None
+        bind_data['key_urls'] = None
+
+        for consumer in consumers:
+            repo_proxy = agent.retrieve_repo_proxy(consumer['id'])
+            repo_proxy.update(repo['id'], bind_data)
 
     def all_schedules(self):
         '''

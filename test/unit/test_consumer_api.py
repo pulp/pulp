@@ -32,12 +32,10 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
-import mocks
+from mocks import MockRepoProxyFactory
 import testutil
 
 # -- mocks -------------------------------------------------------------------------------
-
-MOCK_REPO_PROXY = mocks.init_repo_proxy()
 
 class MockCdsDispatcher(object):
     '''
@@ -57,8 +55,6 @@ class TestConsumerApi(unittest.TestCase):
         self.cds_api.clean()
         self.repo_api.clean()
         self.consumer_api.clean()
-        
-        MOCK_REPO_PROXY.clear()
 
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove(safe=True)
@@ -73,6 +69,9 @@ class TestConsumerApi(unittest.TestCase):
 
         self.cds_api = CdsApi()
         self.cds_api.dispatcher = MockCdsDispatcher()
+
+        self.proxy_factory = MockRepoProxyFactory()
+        self.proxy_factory.activate()
 
         self.clean()
 
@@ -125,7 +124,7 @@ class TestConsumerApi(unittest.TestCase):
         verify_bind_data(returned_bind_data)
 
         #   Messaging bind data
-        verify_bind_data(MOCK_REPO_PROXY.bind_data)
+        verify_bind_data(self.proxy_factory.proxies['test-consumer'].bind_data)
 
     def test_bind_with_keys(self):
         '''
@@ -159,7 +158,7 @@ class TestConsumerApi(unittest.TestCase):
         verify_key_bind_data(returned_bind_data)
 
         #   Messaging bind data
-        verify_key_bind_data(MOCK_REPO_PROXY.bind_data)
+        verify_key_bind_data(self.proxy_factory.proxies['test-consumer'].bind_data)
 
 
     def test_bind_invalid_consumer(self):
@@ -175,7 +174,7 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertTrue(MOCK_REPO_PROXY.bind_data is None)
+        self.assertEqual(0, len(self.proxy_factory.proxies))
 
     def test_bind_invalid_repo(self):
         '''
@@ -190,7 +189,7 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertTrue(MOCK_REPO_PROXY.bind_data is None)
+        self.assertEqual(0, len(self.proxy_factory.proxies))
 
     def test_bind_with_cds(self):
         '''
@@ -240,7 +239,7 @@ class TestConsumerApi(unittest.TestCase):
         consumer = self.consumer_api.consumer('test-consumer')
         self.assertTrue('test-repo' not in consumer['repoids'])
 
-        self.assertEqual(MOCK_REPO_PROXY.unbind_repo_id, 'test-repo')
+        self.assertEqual(self.proxy_factory.proxies['test-consumer'].unbind_repo_id, 'test-repo')
 
     def test_unbind_existing_repos(self):
         '''
@@ -268,7 +267,7 @@ class TestConsumerApi(unittest.TestCase):
         self.assertTrue('test-repo-1' not in consumer['repoids'])
         self.assertTrue('test-repo-2' in consumer['repoids'])
 
-        self.assertEqual(MOCK_REPO_PROXY.unbind_repo_id, 'test-repo-1')
+        self.assertEqual(self.proxy_factory.proxies['test-consumer'].unbind_repo_id, 'test-repo-1')
 
     def test_unbind_repo_not_bound(self):
         '''
@@ -284,7 +283,7 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertTrue(MOCK_REPO_PROXY.unbind_repo_id is None)
+        self.assertEqual(0, len(self.proxy_factory.proxies))
 
     def test_unbind_invalid_consumer(self):
         '''
@@ -300,4 +299,4 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertTrue(MOCK_REPO_PROXY.unbind_repo_id is None)
+        self.assertEqual(0, len(self.proxy_factory.proxies))

@@ -37,7 +37,7 @@ import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
-import mocks
+from mocks import MockRepoProxyFactory
 import testutil
 
 # -- mocks -------------------------------------------------------------------------------
@@ -105,8 +105,6 @@ class MockCdsDispatcher(object):
         self.repos = None
         self.call_log = []
 
-MOCK_REPO_PROXY = mocks.init_repo_proxy()
-
 # -- test cases --------------------------------------------------------------------------------------
 
 class TestCdsApi(unittest.TestCase):
@@ -122,7 +120,6 @@ class TestCdsApi(unittest.TestCase):
         CDSRepoRoundRobin.get_collection().remove()
 
         self.dispatcher.clear()
-        MOCK_REPO_PROXY.clear()
 
     def setUp(self):
         self.config = testutil.load_test_config()
@@ -135,6 +132,9 @@ class TestCdsApi(unittest.TestCase):
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
         self.consumer_history_api = ConsumerHistoryApi()
+
+        self.proxy_factory = MockRepoProxyFactory()
+        self.proxy_factory.activate()
 
         self.clean()
 
@@ -742,13 +742,13 @@ class TestCdsApi(unittest.TestCase):
         self.cds_api.redistribute('cds-test-repo')
 
         # Verify
-        self.assertEqual(3, len(MOCK_REPO_PROXY.update_calls))
+        self.assertEqual(3, len(self.proxy_factory.proxies))
 
         #   Make sure the correct data is in the update call
-        for call in MOCK_REPO_PROXY.update_calls:
-            self.assertEqual('cds-test-repo', call[0])
+        for proxy in self.proxy_factory.proxies.values():
+            self.assertEqual('cds-test-repo', proxy.update_calls[0][0])
 
-            bind_data = call[1]
+            bind_data = proxy.update_calls[0][1]
 
             self.assertTrue('repo' in bind_data)
             self.assertTrue('host_urls' in bind_data)
@@ -773,7 +773,7 @@ class TestCdsApi(unittest.TestCase):
         # Verify
 
         #   Make sure no attempts to send an update call across the bus were made
-        self.assertEqual(0, len(MOCK_REPO_PROXY.update_calls))
+        self.assertEqual(0, len(self.proxy_factory.proxies))
 
     def test_redistribution_no_cds(self):
         '''
@@ -796,4 +796,4 @@ class TestCdsApi(unittest.TestCase):
         # Verify
 
         #   Make sure no attempts to send an update call across the bus were made
-        self.assertEqual(0, len(MOCK_REPO_PROXY.update_calls))
+        self.assertEqual(0, len(self.proxy_factory.proxies))
