@@ -207,7 +207,8 @@ class Bind(ConsumerAction):
         if bind_data:
             if myid and myid == consumerid:
                 mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
-                repolib.bind(_cfg.client.repo_file, mirror_list_filename, bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
+                repolib.bind(_cfg.client.repo_file, mirror_list_filename, _cfg.gpg_keys_dir,
+                             repoid, bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
 
             print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                   (consumerid, repoid)
@@ -231,7 +232,7 @@ class Unbind(ConsumerAction):
         self.consumer_api.unbind(consumerid, repoid)
         if myid and myid == consumerid:
             mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
-            repolib.unbind(_cfg.client.repo_file, mirror_list_filename, repoid)
+            repolib.unbind(_cfg.client.repo_file, mirror_list_filename, _cfg.gpg_keys_dir, repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 

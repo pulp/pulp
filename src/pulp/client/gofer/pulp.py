@@ -139,16 +139,18 @@ class Repo:
     """
 
     @remote
-    def bind(self, bind_data):
+    def bind(self, repo_id, bind_data):
         """
         Binds the repo described in bind_data to this consumer.
         """
-        log.info('Binding repo [%s]' % bind_data['repo']['id'])
+        log.info('Binding repo [%s]' % repo_id)
 
         repo_file = cfg.repo_file
         mirror_list_file = repolib.mirror_list_filename(cfg.mirror_list_dir, bind_data['repo']['id'])
+        gpg_keys_dir = cfg.gpg_keys_dir
 
-        repolib.bind(repo_file, mirror_list_file, bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
+        repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
+                     bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
 
     @remote
     def unbind(self, repo_id):
@@ -159,10 +161,25 @@ class Repo:
 
         repo_file = cfg.repo_file
         mirror_list_file = repolib.mirror_list_filename(cfg.mirror_list_dir, repo_id)
+        gpg_keys_dir = cfg.gpg_keys_dir
 
-        repolib.unbind(repo_file, mirror_list_file, repo_id)
+        repolib.unbind(repo_file, mirror_list_file, gpg_keys_dir, repo_id)
 
+    @remote
+    def update(self, repo_id, bind_data):
+        '''
+        Updates a repo that was previously bound to the consumer. Only the changed
+        information will be in bind_data.
+        '''
+        log.info('Updating repo [%s]' % repo_id)
 
+        repo_file = cfg.repo_file
+        mirror_list_file = repolib.mirror_list_filename(cfg.mirror_list_dir, bind_data['repo']['id'])
+        gpg_keys_dir = cfg.gpg_keys_dir
+
+        repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
+                     bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
+        
 class Packages:
     """
     Package management object.
