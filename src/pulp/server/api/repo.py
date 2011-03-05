@@ -319,7 +319,7 @@ class RepoApi(BaseApi):
         for key, value in cert_data.items():
             fname = os.path.join(cert_dir, repoid + "." + key)
             try:
-                log.error("storing file %s" % fname)
+                log.info("storing file %s" % fname)
                 f = open(fname, 'w')
                 f.write(value)
                 f.close()
@@ -442,7 +442,7 @@ class RepoApi(BaseApi):
             # Nothing further can be done, exit
             return
         repos = self.repositories(spec={"groupid" : groupid})
-        log.error("List of repos to be deleted %s" % repos)
+        log.info("List of repos to be deleted %s" % repos)
         for repo in repos:
             try:
                 self.collection.delete({'id':repo['id']}, safe=True)
@@ -702,7 +702,7 @@ class RepoApi(BaseApi):
         """
          CHeck if package exists or not in this repo for given nvrea
         """
-        log.error('looking up pkg [%s] in repo [%s]' % (nvreas, repo_id))
+        log.debug("looking up pkg [%s] in repo [%s]" % (nvreas, repo_id))
         #TODO: Potential to make this call quicker and pass more of the checks into mongo
         repo = self._get_existing_repo(repo_id)
         repo_packages = repo['packages']
@@ -746,28 +746,46 @@ class RepoApi(BaseApi):
     def add_package(self, repoid, packageids=[]):
         """
         Adds the passed in package to this repo
+        @return:    [] on success
+                    [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error, 
+                    where each id represents a package id that couldn't be added
         """
+        errors = []
         repo = self._get_existing_repo(repoid)
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
+        new_pkg_set = set()
+        new_filenames = set()
         for pid in packageids:
             package = self.packageapi.package(pid)
             if package is None:
                 log.error("No Package with id: %s found" % pid)
+                errors.append({pid:"unknown"})
                 continue
+            pkg_tup = (package['name'], package['epoch'], package['version'], 
+                    package['release'], package['arch'])
             nvrea = {'name' : package['name'],
                      'version' : package['version'],
                      'release' : package['release'],
                      'arch'    : package['arch'],
                      'epoch'   : package['epoch'], }
             found = self.get_packages_by_nvrea(repo['id'], [nvrea])
-            if found:
+            if found or pkg_tup in new_pkg_set:
                 log.error("Package with same NVREA [%s] already exists in repo [%s]"\
                            % (nvrea, repo['id']))
+                errors.append((pid,pkg_tup,package["filename"],package["checksum"]["sha256"]))
+                continue
+            found = self.get_packages_by_filename(repo["id"], [package["filename"]])
+            if found or package["filename"] in new_filenames:
+                log.error("Package with same filename [%s] already exists in repo [%s]"\
+                           % (package["filename"], repo['id']))
+                errors.append((pid,pkg_tup,package["filename"],package["checksum"]["sha256"]))
                 continue
             self._add_package(repo, package)
+            new_pkg_set.add(pkg_tup)
+            new_filenames.add(package["filename"])
             log.info("Added: %s to repo: %s" % (package, repo))
             shared_pkg = pulp.server.util.get_shared_package_path(
                     package['name'], package['version'], package['release'],
@@ -782,6 +800,7 @@ class RepoApi(BaseApi):
         #TODO: we also need to account for presto/groups/comps metadata
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         self.collection.save(repo, safe=True)
+        return errors
 
     def _add_package(self, repo, p):
         """
@@ -1647,6 +1666,65 @@ class RepoApi(BaseApi):
     def list_filters(self, id):
         repo = self._get_existing_repo(id)
         return repo['filters']
+
+    def associate_packages(self, pkg_info):
+        """
+        Associates a list of packages to multiple repositories.
+        Each package is identified by it's (filename,checksum)
+        @param pkg_info: format is [(((filename,checksum), [repoids]))]
+        @return:    [] on success
+                    or {"filename":{"checksum":"repos"} on error 
+        """
+        pkg_query = []
+        for p in pkg_info:
+            q = {}
+            q["filename"] = p[0][0]
+            q["checksum.sha256"] = p[0][1]
+            pkg_query.append(q)
+        from pulp.server.api.package import PackageApi
+        papi = PackageApi()
+        #Translate (filename,checksum) to package id
+        data = papi.or_query(pkg_query)
+        #Determine what (filename,checksum) pairs were not looked up.
+        errors = {}
+        repo_pkgs = {}
+        for item in pkg_info:
+            filename = item[0][0]
+            checksum = item[0][1]
+            repos = item[1]
+            #Lookup package id from returned mongo results
+            pkg_id = None
+            for d in data:
+                if d["filename"] == filename and d["checksum"]["sha256"] == checksum:
+                    pkg_id = d["id"]
+            #If we can't locate the id, record the error so we can notify the caller
+            if not pkg_id:
+                if not errors.has_key(filename):
+                    errors[filename] = {}
+                if not errors[filename].has_key(checksum):
+                    errors[filename][checksum] = [repos]
+                else:
+                    errors[filename][checksum].append(repos)
+                continue
+            # Build up a list per repository of package ids we want to add
+            for r_id in repos:
+                if not repo_pkgs.has_key(r_id):
+                    repo_pkgs[r_id] = [pkg_id]
+                else:
+                    repo_pkgs[r_id].append(pkg_id)
+        for repo_id in repo_pkgs:
+            add_pkg_errors = self.add_package(repo_id, repo_pkgs[repo_id])
+            for e in add_pkg_errors:
+                filename = e[2]
+                checksum = e[3]
+                if not errors.has_key(filename):
+                    errors[filename] = {}
+                if not errors[filename].has_key(checksum):
+                    errors[filename][checksum] = [repo_id]
+                else:
+                    errors[filename][checksum].append(repo_id)
+        return errors
+            
         
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

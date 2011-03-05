@@ -277,3 +277,12 @@ class PackageApi(BaseApi):
     def __pkgdeleted(self, id, path):
         # called to raise the event
         pass
+
+    def or_query(self, pkg_info, fields=None):
+        """
+        Provides an 'or' query for multiple package queries
+        @param pkg_info: list of queries[{"field":"value"},"field2":"value2"}]
+        @return fields:  what fields to return
+        """
+        return list(self.collection.find({"$or":pkg_info}, fields))
+

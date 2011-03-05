@@ -239,7 +239,7 @@ class TestApi(unittest.TestCase):
         num_packages = 50
         package = None
         for i in range(num_packages):
-            package = testutil.create_package(self.papi, random_string())
+            package = testutil.create_package(self.papi, random_string(), filename=random_string())
             self.rapi.add_package(repo["id"], [package['id']])
 
         count = self.rapi.package_count('some-id')
@@ -897,10 +897,10 @@ class TestApi(unittest.TestCase):
     def test_repo_package_by_name(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
-        p = testutil.create_package(self.papi, 'test_pkg_by_name', version="1")
+        p = testutil.create_package(self.papi, 'test_pkg_by_name', version="1", filename="test01.rpm")
         self.rapi.add_package(repo["id"], [p['id']])
         
-        p2 = testutil.create_package(self.papi, 'test_pkg_by_name', version="2")
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name', version="2", filename="test02.rpm")
         self.rapi.add_package(repo["id"], [p2['id']])
 
         pkgs = self.rapi.get_packages_by_name(repo['id'], p['name'])
@@ -1004,6 +1004,57 @@ class TestApi(unittest.TestCase):
 
         # test delete orphaned package
         self.papi.delete(p3['id'])
+   
+    def test_add_2_pkg_same_nevra_same_repo(self):
+        repo = self.rapi.create('some-id1', 'some name', \
+            'i386', 'yum:http://example.com')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm", checksum="blah1")
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm", checksum="blah2")
+        errors = self.rapi.add_package(repo["id"], [p1['id'],p2['id']])
+        self.assertTrue(len(errors), 1)
+        # Error format is:  [(id, (n,e,v,r,a), filename, sha256_checksum)]
+        self.assertEqual(errors[0][0], p2["id"])
+        self.assertEqual(errors[0][1], (p2["name"], p2["epoch"], p2["version"], p2["release"], p2["arch"]))
+        self.assertEqual(errors[0][2], p2["filename"])
+        self.assertEqual(errors[0][3], p2["checksum"]["sha256"])
+
+    def test_associate_packages(self):
+        repo1 = self.rapi.create('some-id1', 'some name', \
+            'i386', 'yum:http://example.com')
+        repo2 = self.rapi.create('some-id2', 'some name', \
+            'i386', 'yum:http://example.com')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name1', filename="test01.rpm", checksum="blah1")
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name2', filename="test02.rpm", checksum="blah2")
+        p3 = testutil.create_package(self.papi, 'test_pkg_by_name3', filename="test03a.rpm", checksum="blah3")
+        p4 = testutil.create_package(self.papi, 'test_pkg_by_name3', filename="test03b.rpm", checksum="blah4")
+        p5a = testutil.create_package(self.papi, 'test_pkg_by_name5a', filename="test05.rpm", checksum="blah5a")
+        p5b = testutil.create_package(self.papi, 'test_pkg_by_name5b', filename="test05.rpm", checksum="blah5b")
+        # Adding 2 pkg of same NEVRA only 1 should be added (first one).
+        # Adding 2 pkg with same filename, only 1 should be added
+        # Adding a bogus package, it should not be added since it wasn't created on server 
+        bad_filename = "bad_filename_doesntexist"
+        bad_checksum = "bogus_checksum"
+        errors = self.rapi.associate_packages([((p1["filename"],p1["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+            ((p2["filename"],p2["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+            ((p3["filename"],p3["checksum"]["sha256"]),[repo1["id"],repo2["id"]]),
+            ((p4["filename"],p4["checksum"]["sha256"]),[repo1["id"],repo2["id"]]),
+            ((p5a["filename"],p5a["checksum"]["sha256"]),[repo1["id"],repo2["id"]]),
+            ((p5b["filename"],p5b["checksum"]["sha256"]),[repo1["id"],repo2["id"]]),
+            ((bad_filename,bad_checksum),[repo1["id"],repo2["id"]])])
+        found = self.rapi.repository(repo1['id'])
+        self.assertEqual(len(found['packages']), 4)
+        self.assertTrue(p1["id"] in found['packages'])
+        self.assertTrue(p2["id"] in found['packages'])
+        self.assertTrue(p3["id"] in found['packages'])
+        self.assertTrue(p4["id"] not in found['packages'])
+        self.assertTrue(p5a["id"] in found['packages'])
+        self.assertTrue(p5b["id"] not in found['packages'])
+        
+        self.assertTrue(bad_filename in errors)
+        for e in errors:
+            #Error format shoudl be key is the filename
+            # value is {'checksum':[repo_id1,repo_id2]}
+            self.assertTrue(e in [p4["filename"], p5b["filename"], bad_filename])
 
 if __name__ == '__main__':
     unittest.main()
