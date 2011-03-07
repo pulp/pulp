@@ -216,7 +216,7 @@ class RepoApi(BaseApi):
                 self._delete_published_link(repo)
                 if repo['distributionid']:
                     self._delete_ks_link(repo)
-            self.update_subscribed(repo)
+            self.update_repo_on_consumers(repo)
         except Exception, e:
             log.error(e)
             return False
@@ -571,10 +571,19 @@ class RepoApi(BaseApi):
         prevpath = repo.get('relative_path')
         newpath = delta.pop('relative_path', None)
         hascontent = self._hascontent(repo)
+
+        # Keeps a running track of whether or not the changes require notifying
+        # conusmers
+        update_consumers = False
+
         for key, value in delta.items():
             # simple changes
             if key in ('name', 'arch',):
                 repo[key] = value
+
+                if key == 'name':
+                    update_consumers = True
+                
                 continue
             # Certificate(s) changed
             if key in ('ca', 'cert', 'key',):
@@ -618,6 +627,8 @@ class RepoApi(BaseApi):
         # not be changed indirectly (feed) or directly (relativepath)
         #
         if pathchanged:
+            update_consumers = True
+
             if not hascontent:
                 rootdir = pulp.server.util.top_repos_location()
                 path = os.path.join(rootdir, prevpath)
@@ -632,9 +643,11 @@ class RepoApi(BaseApi):
                     "Repository has content, relative path cannot be changed")
         # store changed object
         self.collection.save(repo, safe=True)
-        # update subscribers (after) the object has been saved.
-        if pathchanged:
-            self.update_subscribed(repo)
+
+        # Update subscribed consumers after the object has been saved
+        if update_consumers:
+            self.update_repo_on_consumers(repo)
+
         # reset for event handler
         delta['id'] = id
         return repo
@@ -1432,7 +1445,11 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         added = ks.add(keylist)
         log.info('repository (%s), added keys: %s', id, added)
-        self.update_subscribed(repo)
+
+        # Retrieve the latest set of key names and contents and send to consumers
+        key_names_and_content = ks.keyfiles()
+        self.update_gpg_keys_on_consumers(repo, key_names_and_content)
+
         return added
 
     @audit(params=['id', 'keylist'])
@@ -1442,7 +1459,11 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         deleted = ks.delete(keylist)
         log.info('repository (%s), delete keys: %s', id, deleted)
-        self.update_subscribed(repo)
+
+        # Retrieve the latest set of key names and contents and send to consumers
+        key_names_and_content = ks.keyfiles()
+        self.update_gpg_keys_on_consumers(repo, key_names_and_content)
+
         return deleted
 
     def listkeys(self, id):
@@ -1451,21 +1472,51 @@ class RepoApi(BaseApi):
         ks = KeyStore(path)
         return ks.list()
 
-    def update_subscribed(self, repo):
-        """
-        Do an asynchronous RMI to subscribed agents
-        to update the .repo file.
-        @param repoid: The updated repo ID.
-        @type repoid: str
-        """
+    def update_repo_on_consumers(self, repo):
+        '''
+        Notifies all consumers bound to the given repo that the repo metadata has
+        changed. This only refers to data on the repo itself, not its GPG keys or
+        host URLs.
 
+        @param repo: repo object containing the full data for the repo, not just the
+                     changes
+        @type  repo: L{Repo}
+        '''
         consumers = consumer_utils.consumers_bound_to_repo(repo['id'])
         bind_data = consumer_utils.build_bind_data(repo, None, None)
 
-        # Blank out the host and URLs since they haven't changed
+        # Blank out the values that haven't changed
         bind_data['host_urls'] = None
-        bind_data['key_urls'] = None
+        bind_data['gpg_keys'] = None
 
+        # For each consumer, retrieve its proxy and send the update request
+        for consumer in consumers:
+            repo_proxy = agent.retrieve_repo_proxy(consumer['id'])
+            repo_proxy.update(repo['id'], bind_data)
+
+    def update_gpg_keys_on_consumers(self, repo, gpg_keys):
+        '''
+        Notifies all consumers bound to the given repo that the GPG keys for the
+        repo have changed. The full set of current keys on the repo will be
+        sent to consumers. The repo object itself will not be sent.
+
+        @param repo: repo object containing the full data for the repo, not just the
+                     changes
+        @type  repo: L{Repo}
+
+        @param gpg_keys: mapping of key name to contents; this should contain the
+                         full listing of keys for the repo, not just changed keys
+        @type  gpg_keys: dict {string : string}
+        '''
+
+        consumers = consumer_utils.consumers_bound_to_repo(repo['id'])
+        bind_data = consumer_utils.build_bind_data(repo, None, gpg_keys)
+
+        # Blank out the values that haven't changed
+        bind_data['host_urls'] = None
+        bind_data['repo'] = None
+
+        # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
             repo_proxy = agent.retrieve_repo_proxy(consumer['id'])
             repo_proxy.update(repo['id'], bind_data)

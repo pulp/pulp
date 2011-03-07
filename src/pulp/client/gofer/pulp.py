@@ -150,7 +150,7 @@ class Repo:
         gpg_keys_dir = cfg.gpg_keys_dir
 
         repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
-                     bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
+                     bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
 
     @remote
     def unbind(self, repo_id):
@@ -178,7 +178,7 @@ class Repo:
         gpg_keys_dir = cfg.gpg_keys_dir
 
         repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
-                     bind_data['repo'], bind_data['host_urls'], bind_data['key_urls'])
+                     bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
         
 class Packages:
     """

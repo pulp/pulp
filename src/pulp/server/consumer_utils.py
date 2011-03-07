@@ -21,6 +21,7 @@ used outside of consumer API itself.
 from pulp.server.config import config
 from pulp.server.db.model.resource import Consumer
 
+
 def consumers_bound_to_repo(repo_id):
     '''
     Returns a list of consumers that are bound to the given repo.
@@ -48,9 +49,8 @@ def build_bind_data(repo, hostnames, key_list):
     are as follows:
     - repo: the repo object itself
     - host_urls: an ordered list of full URLs to use to access the repo
-    - key_urls: a list of full URLs to all gpg keys (if any) associated with the repo;
+    - gpg_keys: a list of full URLs to all gpg keys (if any) associated with the repo;
                 empty list if the repo does not define any GPG keys
-
 
     @param repo: repo object describing the repo being bound
     @type  repo: L{Repo}
@@ -93,7 +93,7 @@ def build_bind_data(repo, hostnames, key_list):
     bind_data = {
         'repo' : repo,
         'host_urls' : repo_urls,
-        'key_urls' : key_urls,
+        'gpg_keys' : key_urls,
     }
 
     return bind_data

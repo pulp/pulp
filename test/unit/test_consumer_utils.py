@@ -113,7 +113,7 @@ class TestConsumerUtils(unittest.TestCase):
 
         self.assertTrue('repo' in bind_data)
         self.assertTrue('host_urls' in bind_data)
-        self.assertTrue('key_urls' in bind_data)
+        self.assertTrue('gpg_keys' in bind_data)
 
         data_repo = bind_data['repo']
         self.assertTrue(data_repo is not None)
@@ -125,7 +125,7 @@ class TestConsumerUtils(unittest.TestCase):
         self.assertTrue(data_hosts is not None)
         self.assertEqual(3, len(data_hosts)) # 2 CDS + pulp server
 
-        data_keys = bind_data['key_urls']
+        data_keys = bind_data['gpg_keys']
         self.assertTrue(data_keys is not None)
         self.assertEqual(1, len(data_keys))
 
@@ -146,7 +146,7 @@ class TestConsumerUtils(unittest.TestCase):
 
         self.assertTrue('repo' in bind_data)
         self.assertTrue('host_urls' in bind_data)
-        self.assertTrue('key_urls' in bind_data)
+        self.assertTrue('gpg_keys' in bind_data)
 
         self.assertEqual(1, len(bind_data['host_urls'])) # pulp server itself
-        self.assertEqual(0, len(bind_data['key_urls']))
+        self.assertEqual(0, len(bind_data['gpg_keys']))

@@ -116,9 +116,9 @@ class TestConsumerApi(unittest.TestCase):
             self.assertEqual('https://localhost/pulp/repos/test-repo', host_urls[0])
 
             # Verify key URLs
-            key_urls = bind_data['key_urls']
-            self.assertTrue(key_urls is not None)
-            self.assertEqual(0, len(key_urls))
+            gpg_keys = bind_data['gpg_keys']
+            self.assertTrue(gpg_keys is not None)
+            self.assertEqual(0, len(gpg_keys))
 
         #   Returned bind data
         verify_bind_data(returned_bind_data)
@@ -147,12 +147,12 @@ class TestConsumerApi(unittest.TestCase):
         # Verify
 
         def verify_key_bind_data(bind_data):
-            key_urls = bind_data['key_urls']
-            self.assertTrue(key_urls is not None)
-            self.assertEqual(2, len(key_urls))
+            gpg_keys = bind_data['gpg_keys']
+            self.assertTrue(gpg_keys is not None)
+            self.assertEqual(2, len(gpg_keys))
 
-            self.assertTrue('https://localhost/pulp/gpg/test-repo/key-1' in key_urls)
-            self.assertTrue('https://localhost/pulp/gpg/test-repo/key-2' in key_urls)
+            self.assertTrue('https://localhost/pulp/gpg/test-repo/key-1' in gpg_keys)
+            self.assertTrue('https://localhost/pulp/gpg/test-repo/key-2' in gpg_keys)
 
         #   Returned bind data
         verify_key_bind_data(returned_bind_data)
