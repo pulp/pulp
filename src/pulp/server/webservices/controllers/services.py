@@ -244,6 +244,7 @@ class FilesChecksumSearch(JSONController):
         filenames = self.params()
         return self.ok(fapi.get_file_checksums(filenames))
 
+
 class CdsRedistribute(AsyncController):
 
     @JSONController.error_handler
@@ -267,9 +268,25 @@ class CdsRedistribute(AsyncController):
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
+class AssociatePackages(JSONController):
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        """
+        Associate a collection of filename,checksum tuples to 
+        multiple repositories.
+        Returns an empty list on success or a dictionary of items
+        which could not be associated
+        """
+        data = self.params()
+        pkg_info = data["package_info"]
+        return self.ok(rapi.associate_packages(pkg_info))
+
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
+    '/associate/packages/$', 'AssociatePackages',
     '/dependencies/$', 'DependencyActions',
     '/search/packages/$', 'PackageSearch',
     '/search/files/$', 'FileSearch',

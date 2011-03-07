@@ -288,7 +288,7 @@ class List(RepoAction):
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'], repo['groupid'] or None)
+                    repo['publish'], repo['clone_ids'], repo['groupid'] or None, repo['filters'])
 
 
 class Status(RepoAction):
@@ -471,6 +471,8 @@ class Clone(RepoProgressAction):
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
                                help=_('clone repository in the foreground'))
+        self.parser.add_option("-f", "--filter", action="append", dest="filters",
+                       help=_("filters to be applied while cloning"))
 
     def print_clone_finish(self, state, progress):
         self.print_progress(progress)
@@ -512,8 +514,9 @@ class Clone(RepoProgressAction):
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
         timeout = self.opts.timeout
+        filters = self.opts.filters or []
         task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
-                                groupid=groupid, timeout=timeout)
+                                groupid=groupid, timeout=timeout, filters=filters)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
         return task
 
@@ -728,9 +731,9 @@ class Publish(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if self.opts.enable and self.opts.disable:
-            system_exit(os.EX_USAGE, _("Error, both enable and disable are set to True"))
+            system_exit(os.EX_USAGE, _("Error: Both enable and disable are set to True"))
         if not self.opts.enable and not self.opts.disable:
-            system_exit(os.EX_USAGE, _("Error, either --enable or --disable needs to be chosen"))
+            system_exit(os.EX_USAGE, _("Error: Either --enable or --disable needs to be chosen"))
         if self.opts.enable:
             state = True
         if self.opts.disable:
@@ -761,9 +764,9 @@ class AddPackages(RepoAction):
         id = self.get_required_option('id')
 
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error, at least one package id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform an add."))
         if self.opts.pkgname and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
+            system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -797,7 +800,7 @@ class AddPackages(RepoAction):
                     continue
                 if len(src_pkgobj) > 1:
                     if not self.opts.csv:
-                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % pkg)
+                        print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % pkg)
                         continue
                     else:
                         for fo in src_pkgobj:
@@ -847,9 +850,9 @@ class RemovePackages(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.pkgname and not self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error, at least one package id is required to perform a remove."))
+            system_exit(os.EX_USAGE, _("Error: At least one package id is required to perform a remove."))
         if self.opts.pkgname and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Both --package and --csv cannot be used in the same command."))
+            system_exit(os.EX_USAGE, _("Error: Both --package and --csv cannot be used in the same command."))
         # check if repo is valid
         self.get_repo(id)
         pnames = []
@@ -902,7 +905,7 @@ class AddErrata(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error, at least one erratum id is required to perform an add."))
+            system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform an add."))
         # check if repos are valid
         self.get_repo(id)
         if self.opts.srcrepo:
@@ -977,7 +980,7 @@ class RemoveErrata(RepoAction):
         # check if repo is valid
         self.get_repo(id)
         if not self.opts.errataid:
-            system_exit(os.EX_USAGE, _("Error, at least one erratum id is required to perform a remove."))
+            system_exit(os.EX_USAGE, _("Error: At least one erratum id is required to perform a remove."))
         errataids = self.opts.errataid
         effected_pkgs = []
         for eid in errataids:
@@ -1047,7 +1050,7 @@ class AddFiles(RepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, at least one file is required to perform an add."))
+                system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an add."))
             flist = self.opts.files
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1065,7 +1068,7 @@ class AddFiles(RepoAction):
             if len(fobj) > 1:
                 if not self.opts.csv: 
                     print fobj
-                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping remove" % filename)
+                    print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % filename)
                     continue
                 else:
                     for fo in fobj:
@@ -1111,7 +1114,7 @@ class RemoveFiles(RepoAction):
             flist = utils.parseCSV(self.opts.csv)
         else:
             if not self.opts.files:
-                system_exit(os.EX_USAGE, _("Error, at least one file is required to perform a remove."))
+                system_exit(os.EX_USAGE, _("Error: At least one file is required to perform a remove."))
             flist = self.opts.files
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
@@ -1144,7 +1147,39 @@ class RemoveFiles(RepoAction):
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
+            
+            
+class AddFilters(RepoAction):
 
+    description = _('add filters to a repository')
+
+    def setup_parser(self):
+        super(AddFilters, self).setup_parser()
+        self.parser.add_option("-f", "--filter", action="append", dest="filters",
+                       help=_("filter identifiers to be added to the repo (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        filters = self.get_required_option('filters')
+        self.repository_api.add_filters(repoid=repoid, filters=filters)
+        print _("Successfully added filters %s to repository [%s]" % (filters, repoid))
+
+
+class RemoveFilters(RepoAction):
+
+    description = _('remove filters from a repository')
+
+    def setup_parser(self):
+        super(RemoveFilters, self).setup_parser()
+        self.parser.add_option("-f", "--filter", action="append", dest="filters",
+                               help=_("list of filter identifiers (required)"))
+
+    def run(self):
+        repoid = self.get_required_option('id')
+        filters = self.get_required_option('filters')
+        self.repository_api.remove_filters(repoid=repoid, filters=filters)
+        print _("Successfully removed filters %s from repository [%s]") % \
+                (filters, repoid)
 
 # repo command ----------------------------------------------------------------
 

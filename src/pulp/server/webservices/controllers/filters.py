@@ -70,7 +70,7 @@ class Filters(JSONController):
         return self.ok(True)
 
 
-class filter(JSONController):
+class Filter(JSONController):
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)

@@ -29,6 +29,7 @@ Distributions      \t%-25s
 Publish            \t%-25s
 Clones             \t%-25s
 Groups             \t%-25s
+Filters            \t%-25s
 """
 
 AVAILABLE_CONSUMER_GROUP_INFO = """

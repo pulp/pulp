@@ -430,7 +430,6 @@ class ImportComps(PackageGroupAction):
     description = _('Import package groups and categories from an existing comps.xml')
     
     def setup_parser(self):
-        super(ImportComps, self).setup_parser()
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
         self.parser.add_option("--comps", dest="comps",
@@ -460,7 +459,6 @@ class ExportComps(PackageGroupAction):
     description = _('Export comps.xml for package groups and categories in a repo')
     
     def setup_parser(self):
-        super(ExportComps, self).setup_parser()
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
         self.parser.add_option("-o", "--out", dest="out",
@@ -480,9 +478,9 @@ class ExportComps(PackageGroupAction):
                     f = open(self.opts.out, 'w')
                     f.write(comps_xml.encode("utf8"))
                     f.close()
-                    system_exit(os.EX_OK, _("Successfully exported the comps data to [%s]" % self.opts.out))
                 except Exception,e:
                     system_exit(os.EX_DATAERR, _("Error occurred while storing the comps data %s" % e))
+                system_exit(os.EX_OK, _("Successfully exported the comps data to [%s]" % self.opts.out))
             else:
                 print comps_xml.encode("utf8")
     

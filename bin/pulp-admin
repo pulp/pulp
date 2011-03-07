@@ -116,12 +116,15 @@ def setup_admin(admin):
     repo_cmd.add_action('remove_errata', repo.RemoveErrata())
     repo_cmd.add_action('add_file', repo.AddFiles())
     repo_cmd.add_action('remove_file', repo.RemoveFiles())
+    repo_cmd.add_action('add_filters', repo.AddFilters())
+    repo_cmd.add_action('remove_filters', repo.RemoveFilters())   
     admin.add_command('repo', repo_cmd)
 
     filter_cmd = filter.Filter()
     filter_cmd.add_action('list', filter.List())
     filter_cmd.add_action('create', filter.Create())
     filter_cmd.add_action('delete', filter.Delete())
+    filter_cmd.add_action('info', filter.Info())
     admin.add_command('filter', filter_cmd)
 
     user_cmd = user.User()

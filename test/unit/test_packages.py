@@ -230,6 +230,23 @@ class TestApi(unittest.TestCase):
         self.assertTrue(pkg4["id"] in orphan_ids)
         self.assertTrue(pkg5["id"] in orphan_ids)
 
+    def test_or_query(self):
+        repo_a = self.rapi.create('some-id_a', 'some name',
+            'i386', 'yum:http://example.com')
+        repo_b = self.rapi.create('some-id_b', 'some name',
+            'i386', 'yum:http://example.com')
+        pkg1 = testutil.create_random_package(self.papi)
+        pkg2 = testutil.create_random_package(self.papi)
+        pkg3 = testutil.create_random_package(self.papi)
+
+        queries = [{"filename":pkg1["filename"], "checksum.sha256":pkg1["checksum"]["sha256"]},
+        {"filename":pkg2["filename"], "checksum.sha256":pkg2["checksum"]["sha256"]},
+        {"filename":pkg3["filename"], "checksum.sha256":pkg3["checksum"]["sha256"]}]
+        found = self.papi.or_query(queries)
+        self.assertEqual(len(found), 3)
+        self.assertTrue(found[0]["id"] in [pkg1["id"], pkg2["id"], pkg3["id"]])
+        self.assertTrue(found[1]["id"] in [pkg1["id"], pkg2["id"], pkg3["id"]])
+        self.assertTrue(found[2]["id"] in [pkg1["id"], pkg2["id"], pkg3["id"]])
 
 if __name__ == '__main__':
     unittest.main()

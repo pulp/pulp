@@ -68,3 +68,11 @@ class ServiceAPI(PulpAPI):
     def get_file_checksums(self, filenames=[]):
         path = "/services/search/files/checksum/"
         return self.server.POST(path, filenames)[1]
+
+    def associate_packages(self, package_info=[]):
+        """
+        Will associate a list of filename,checksums to mulitple repositories
+        package_info: format of [((filename,checksum), [repo_id])]
+        """
+        path = "/services/associate/packages/"
+        return self.server.POST(path,{"package_info":package_info})[1]
