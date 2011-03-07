@@ -288,7 +288,7 @@ class List(RepoAction):
                     repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'], repo['groupid'] or None)
+                    repo['publish'], repo['clone_ids'], repo['groupid'] or None, repo['filters'])
 
 
 class Status(RepoAction):
@@ -471,6 +471,8 @@ class Clone(RepoProgressAction):
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
                                help=_('clone repository in the foreground'))
+        self.parser.add_option("-f", "--filter", action="append", dest="filters",
+                       help=_("filters to be applied while cloning"))
 
     def print_clone_finish(self, state, progress):
         self.print_progress(progress)
@@ -512,8 +514,9 @@ class Clone(RepoProgressAction):
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
         timeout = self.opts.timeout
+        filters = self.opts.filters or None
         task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
-                                groupid=groupid, timeout=timeout)
+                                groupid=groupid, timeout=timeout, filters=filters)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
         return task
 
@@ -1152,13 +1155,13 @@ class AddFilters(RepoAction):
 
     def setup_parser(self):
         super(AddFilters, self).setup_parser()
-        self.parser.add_option("--filters", dest="filters",
-                       help=_("list of filter identifiers (required)"))
+        self.parser.add_option("-f", "--filter", action="append", dest="filters",
+                       help=_("filter identifiers to be added to the repo (required)"))
 
     def run(self):
         repoid = self.get_required_option('id')
         filters = self.get_required_option('filters')
-        self.repository_api.add_filters(repoid, filters)
+        self.repository_api.add_filters(repoid=repoid, filters=filters)
         print _("Successfully added filters %s to repository [%s]" % (filters, repoid))
 
 
@@ -1168,13 +1171,13 @@ class RemoveFilters(RepoAction):
 
     def setup_parser(self):
         super(RemoveFilters, self).setup_parser()
-        self.parser.add_option("--filters", dest="filters",
+        self.parser.add_option("-f", "--filter", action="append", dest="filters",
                                help=_("list of filter identifiers (required)"))
 
     def run(self):
         repoid = self.get_required_option('id')
         filters = self.get_required_option('filters')
-        self.repository_api.remove_filters(repoid, filters)
+        self.repository_api.remove_filters(repoid=repoid, filters=filters)
         print _("Successfully removed filters %s from repository [%s]") % \
                 (filters, repoid)
 

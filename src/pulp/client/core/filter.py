@@ -32,7 +32,7 @@ class FilterAction(Action):
     def __init__(self):
         super(FilterAction, self).__init__()
         self.filter_api = FilterAPI()
-
+        
     def get_filter(self, id):
         filter = self.filter_api.filter(id=id)
         if not filter:
@@ -45,7 +45,7 @@ class FilterAction(Action):
 class List(FilterAction):
 
     description = _('list available filters')
-
+    
     def run(self):
         filters = self.filter_api.filters()
         if not len(filters):
@@ -56,12 +56,29 @@ class List(FilterAction):
                                                     filter["type"], filter["package_list"])
 
 
+class Info(FilterAction):
+
+    description = _('lookup information for a filter')
+    
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("new filter id to create (required)"))
+        
+    def run(self):
+        id = self.get_required_option('id')
+        filter = self.filter_api.filter(id)
+        if not filter:
+            system_exit(os.EX_DATAERR, _("No filter with give id"))
+        else:
+            print constants.AVAILABLE_FILTERS_LIST % (filter["id"], filter["description"],
+                                                    filter["type"], filter["package_list"])
+
+
 class Create(FilterAction):
 
     description = _('create a filter')
 
     def setup_parser(self):
-        super(Create, self).setup_parser()
         self.parser.add_option("--id", dest="id",
                                help=_("new filter id to create (required)"))
         self.parser.add_option("--type", dest="type",
@@ -91,7 +108,7 @@ class Delete(FilterAction):
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
-                               help=_("id of filter you wish to delete (required)"))
+                               help=_("filter id (required)"))
 
     def run(self):
         id = self.get_required_option('id')

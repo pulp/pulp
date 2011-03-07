@@ -237,7 +237,8 @@ class RepoApi(BaseApi):
                 # need to use lexists so we will return True even for broken links
                 os.unlink(link_path)
 
-    def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, progress_callback=None):
+    def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, 
+               filters=None, progress_callback=None):
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
@@ -260,6 +261,10 @@ class RepoApi(BaseApi):
         else:
             self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
                         relative_path=relative_path, cert_data=cert_data, checksum_type=repo['checksum_type'])
+          
+        # Associate filters if specified
+        self.add_filters(clone_id, filter_ids=filters)    
+            
         # Sync from parent repo
         try:
             self._sync(clone_id, progress_callback=progress_callback)
@@ -295,12 +300,13 @@ class RepoApi(BaseApi):
         self.addkeys(clone_id, keylist)
 
     @audit()
-    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None, progress_callback=None, timeout=None):
+    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None, 
+              progress_callback=None, timeout=None, filters=None):
         """
         Run a repo clone asynchronously.
         """
         task = run_async(self._clone,
-                         [id, clone_id, clone_name, feed, groupid, relative_path],
+                         [id, clone_id, clone_name, feed, groupid, relative_path, filters],
                          {},
                          timeout=timeout)
         if feed in ('feedless', 'parent'):
@@ -1636,7 +1642,7 @@ class RepoApi(BaseApi):
         for filter_id in filter_ids:
             filter = self.filterapi.filter(filter_id)
             if filter is None:
-                raise PulpException("No Filter with id: %s found" % filter_ids)
+                raise PulpException("No Filter with id: %s found" % filter_id)
 
         filters = repo['filters']
         for filter_id in filter_ids:
@@ -1646,7 +1652,7 @@ class RepoApi(BaseApi):
 
         repo["filters"] = filters
         self.collection.save(repo, safe=True)
-        log.info('repository (%s), added filter: %s', id, filter_ids)
+        log.info('repository (%s), added filters: %s', id, filter_ids)
 
 
 

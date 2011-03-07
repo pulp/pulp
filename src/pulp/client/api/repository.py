@@ -53,14 +53,15 @@ class RepositoryAPI(PulpAPI):
         return repo
 
     def clone(self, repoid, clone_id, clone_name, feed='parent',
-              relative_path=None, groupid=None, timeout=None):
+              relative_path=None, groupid=None, timeout=None, filters=None):
         path = "/repositories/%s/clone/" % repoid
         data = {"clone_id": clone_id,
                 "clone_name": clone_name,
                 "feed": feed,
                 "relative_path": relative_path,
                 "groupid": groupid,
-                "timeout": timeout}
+                "timeout": timeout,
+                "filters": filters}
         return self.server.POST(path, data)[1]
 
     def repositories(self):
