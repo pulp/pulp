@@ -59,7 +59,7 @@ class FilterApi(BaseApi):
             log.error("Filter id [%s] not found " % id)
             return
         associated_repo_ids = self.find_associated_repos(id)
-        if associated_repo_ids is []:
+        if not associated_repo_ids:
             self.collection.remove({'id' : id}, safe=True)
         elif force:
             self.remove_association_with_repos(id, associated_repo_ids)
