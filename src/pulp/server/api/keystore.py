@@ -141,6 +141,21 @@ class KeyStore:
                 log.error(fp, exc_info=True)
         return keys
 
+    def keys_and_contents(self):
+        '''
+        Returns a mapping of key name to its contents.
+
+        @return: mapping of key name (not a full path) to its contents
+        @rtype:  dict {string : string}
+        '''
+
+        key_contents = {}
+
+        for path, contents in self.keyfiles():
+            key_contents[os.path.basename(path)] = contents
+
+        return key_contents
+
     def link(self, src, dst):
         """
         Link I{src} to I{dst} unless it is already

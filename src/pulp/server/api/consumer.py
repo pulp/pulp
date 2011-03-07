@@ -351,10 +351,7 @@ class ConsumerApi(BaseApi):
         ks = KeyStore(repo['relative_path'])
 
         # Retrieve the latest set of key names and contents and send to consumers
-        gpg_keys = {}
-        for name, content in ks.keyfiles():
-            gpg_keys[name] = content
-
+        gpg_keys = ks.keys_and_contents()
         bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
         # Send the bind request over to the consumer

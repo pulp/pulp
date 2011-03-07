@@ -1447,9 +1447,7 @@ class RepoApi(BaseApi):
         log.info('repository (%s), added keys: %s', id, added)
 
         # Retrieve the latest set of key names and contents and send to consumers
-        gpg_keys = {}
-        for name, content in ks.keyfiles():
-            gpg_keys[name] = content
+        gpg_keys = ks.keys_and_contents()
         self.update_gpg_keys_on_consumers(repo, gpg_keys)
 
         return added
@@ -1463,9 +1461,7 @@ class RepoApi(BaseApi):
         log.info('repository (%s), delete keys: %s', id, deleted)
 
         # Retrieve the latest set of key names and contents and send to consumers
-        gpg_keys = {}
-        for name, content in ks.keyfiles():
-            gpg_keys[name] = content
+        gpg_keys = ks.keys_and_contents()
         self.update_gpg_keys_on_consumers(repo, gpg_keys)
 
         return deleted
