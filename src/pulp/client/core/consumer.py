@@ -232,7 +232,7 @@ class Unbind(ConsumerAction):
         self.consumer_api.unbind(consumerid, repoid)
         if myid and myid == consumerid:
             mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
-            repolib.unbind(_cfg.client.repo_file, mirror_list_filename, _cfg.gpg_keys_dir, repoid)
+            repolib.unbind(_cfg.client.repo_file, mirror_list_filename, _cfg.client.gpg_keys_dir, repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 
