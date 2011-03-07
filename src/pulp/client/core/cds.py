@@ -187,7 +187,7 @@ class Unassociate(CDSAction):
 
         result = self.cds_api.unassociate(hostname, repo_id)
         if result:
-            print(_('Successfully associated CDS [%s] with repo [%s]' % (hostname, repo_id)))
+            print(_('Successfully unassociated CDS [%s] with repo [%s]' % (hostname, repo_id)))
         else:
             print(_('Error occurred during association, please check the server for more information'))
 
