@@ -42,6 +42,8 @@ class TestConsumerUtils(unittest.TestCase):
         self.repo_api.clean()
 
     def setUp(self):
+        testutil.load_test_config()
+
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
 
