@@ -80,7 +80,7 @@ def bind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, repo_data,
 
     lock.acquire()
     try:
-        log.info('Binding repo [%s]' % repo_data['id'])
+        log.info('Binding repo [%s]' % repo_id)
 
         repo_file = RepoFile(repo_filename)
         repo_file.load()
@@ -224,6 +224,7 @@ def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
         repo['gpgkey'] = '\n'.join(repo_keys.key_filenames())
     else:
         repo['gpgcheck'] = '0'
+        repo['gpgkey'] = None
 
     # Call this in either case to make sure any existing keys were deleted
     repo_keys.update_filesystem()

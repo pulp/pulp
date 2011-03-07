@@ -127,22 +127,19 @@ class TestRepolib(unittest.TestCase):
 
     def test_bind_update_repo(self):
         '''
-        Tests calling bind on an existing repo with new repo data. This test will test
-        the more complex case where a mirror list existed in the original repo but is
-        not necessary in the updated repo.
+        Tests calling bind on an existing repo with new repo data. The host URL and key data
+        remain unchanged.
         '''
 
         # Setup
         url_list = ['http://pulp1', 'http://pulp2']
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, url_list, {}, LOCK)
-
-        self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, url_list, None, LOCK)
 
         # Test
         updated_repo = dict(REPO)
         updated_repo['name'] = 'Updated'
 
-        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], updated_repo, ['http://pulpx'], {}, LOCK)
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], updated_repo, None, None, LOCK)
 
         # Verify
         repo_file = RepoFile(TEST_REPO_FILENAME)
@@ -151,7 +148,80 @@ class TestRepolib(unittest.TestCase):
         loaded = repo_file.get_repo(REPO['id'])
         self.assertEqual(loaded['name'], updated_repo['name'])
 
+    def test_bind_update_host_urls(self):
+        '''
+        Tests calling bind on an existing repo with new repo data. This test will test
+        the more complex case where a mirror list existed in the original repo but is
+        not necessary in the updated repo.
+        '''
+
+        # Setup
+        url_list = ['http://pulp1', 'http://pulp2']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, url_list, None, LOCK)
+
+        self.assertTrue(os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+        # Test
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], None, ['http://pulpx'], None, LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertEqual(loaded['baseurl'], 'http://pulpx')
+
         self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
+
+    def test_bind_update_keys(self):
+        '''
+        Tests changing the GPG keys on a previously bound repo.
+        '''
+
+        # Setup
+        keys = {'key1' : 'KEY1', 'key2' : 'KEY2'}
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, ['http://pulp'], keys, LOCK)
+
+        # Test
+        new_keys = {'key1' : 'KEYX'}
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], None, None, new_keys, LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertEqual(loaded['gpgcheck'], '1')
+        self.assertEqual(1, len(loaded['gpgkey'].split('\n')))
+        self.assertEqual(1, len(os.listdir(os.path.join(TEST_KEYS_DIR, REPO['id']))))
+
+        key_file = open(loaded['gpgkey'].split('\n')[0], 'r')
+        contents = key_file.read()
+        key_file.close()
+
+        self.assertEqual(contents, 'KEYX')
+
+    def test_bind_update_remove_keys(self):
+        '''
+        Tests that updating a previously bound repo by removing its keys correctly
+        configures the repo and deletes the key files.
+        '''
+
+        # Setup
+        keys = {'key1' : 'KEY1', 'key2' : 'KEY2'}
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, ['http://pulp'], keys, LOCK)
+
+        # Test
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], None, None, {}, LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertEqual(loaded['gpgcheck'], '0')
+        self.assertEqual(loaded['gpgkey'], None)
+        self.assertTrue(not os.path.exists(os.path.join(TEST_KEYS_DIR, REPO['id'])))
 
     def test_bind_single_url(self):
         '''
