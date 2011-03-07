@@ -15,11 +15,12 @@
 # in this software or its documentation.
 
 import atexit
+
 import web
 
 from pulp.server import async
-from pulp.server import config # unused here, but initializes configuration
 from pulp.server import auditing
+from pulp.server import config
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.db import connection
@@ -29,6 +30,7 @@ connection.initialize()
 auditing.initialize()
 
 from pulp.server.db.version import check_version
+from pulp.server.debugging import StacktraceDumper
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
     audit, cds, consumergroups, consumers, errata, packages,
@@ -54,14 +56,11 @@ urls = (
     '/filters', filters.application
 )
 
+_stacktrace_dumper = None
 
-def wsgi_application():
-    """
-    Application factory to create, configure, and return a WSGI application
-    using the web.py framework.
-    @return: wsgi application callable
-    """
-    application = web.subdir_application(urls)
+
+def _initialize_pulp():
+    global _stacktrace_dumper
     # pulp initialization methods
     start_logging()
     check_version()
@@ -70,4 +69,19 @@ def wsgi_application():
     async.initialize()
     # pulp finalization methods, registered via 'atexit'
     atexit.register(async.finalize)
+    # setup debugging, if configured
+    if config.config.getboolean('server', 'debugging_mode') and \
+            _stacktrace_dumper is None:
+        _stacktrace_dumper = StacktraceDumper()
+        _stacktrace_dumper.start()
+
+
+def wsgi_application():
+    """
+    Application factory to create, configure, and return a WSGI application
+    using the web.py framework.
+    @return: wsgi application callable
+    """
+    application = web.subdir_application(urls)
+    _initialize_pulp()
     return application.wsgifunc()
