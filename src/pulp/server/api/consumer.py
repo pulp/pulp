@@ -22,6 +22,7 @@ from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.errata import ErrataApi
+from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.auditing import audit
@@ -346,9 +347,15 @@ class ConsumerApi(BaseApi):
 
         # Collect the necessary information to return to the caller (see __doc__ above)
         host_list = round_robin.generate_cds_urls(repoid)
-        key_list = self.repoapi.listkeys(repoid)
 
-        bind_data = consumer_utils.build_bind_data(repo, host_list, key_list)
+        ks = KeyStore(repo['relative_path'])
+
+        # Retrieve the latest set of key names and contents and send to consumers
+        gpg_keys = {}
+        for name, content in ks.keyfiles():
+            gpg_keys[name] = content
+
+        bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
         # Send the bind request over to the consumer
         agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
