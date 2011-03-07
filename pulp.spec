@@ -26,7 +26,7 @@ Requires: python-webpy
 Requires: python-simplejson
 Requires: python-oauth2
 Requires: python-httplib2
-Requires: grinder >= 0.0.82
+Requires: grinder >= 0.0.83
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_ssl
