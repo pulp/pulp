@@ -756,7 +756,7 @@ class TestCdsApi(unittest.TestCase):
 
             self.assertTrue(bind_data['repo'] is None)
             self.assertEqual(3, len(bind_data['host_urls'])) # 2 CDS + pulp server
-            self.assertEqual(0, len(bind_data['gpg_keys']))
+            self.assertEqual(None, bind_data['gpg_keys']) # don't send keys on redistribute
 
     def test_redistribute_no_consumers(self):
         '''

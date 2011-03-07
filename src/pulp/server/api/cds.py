@@ -226,6 +226,9 @@ class CdsApi(BaseApi):
             # Add it to the CDS host assignment algorithm
             round_robin.add_cds_repo_association(cds_hostname, repo_id)
 
+            # Automatically redistribute consumers to pick up these changes
+            self.redistribute(repo_id)
+
     @audit()
     def unassociate_repo(self, cds_hostname, repo_id):
         '''
@@ -261,6 +264,9 @@ class CdsApi(BaseApi):
 
             # Remove it from CDS host assignment consideration
             round_robin.remove_cds_repo_association(cds_hostname, repo_id)
+
+            # Automatically redistribute consumers to pick up these changes
+            self.redistribute(repo_id)
 
     @audit()
     def sync(self, cds_hostname):
@@ -356,11 +362,10 @@ class CdsApi(BaseApi):
         if len(consumers) == 0:
             return
 
+        log.info('After consumers')
+
         # Load the repo data
         repo = list(Repo.get_collection().find({'id' : repo_id}))[0]
-
-        key_store = KeyStore(repo['relative_path'])
-        key_list = key_store.list()
 
         for consumer in consumers:
 
@@ -368,10 +373,11 @@ class CdsApi(BaseApi):
             hostnames = iterator.next()
 
             # Recreate the bind data since it is scoped to a particular consumer
-            bind_data = consumer_utils.build_bind_data(repo, hostnames, key_list)
+            bind_data = consumer_utils.build_bind_data(repo, hostnames, None)
 
             # Blank the repo since nothing has changed in it, only the host/key URLs
             bind_data['repo'] = None
+            bind_data['gpg_keys'] = None
 
             # Retrieve the repo proxy for the consumer being handled
             agent_repolib = pulp.server.agent.retrieve_repo_proxy(consumer['id'], async=True)

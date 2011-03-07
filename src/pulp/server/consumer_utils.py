@@ -26,16 +26,12 @@ def consumers_bound_to_repo(repo_id):
     '''
     Returns a list of consumers that are bound to the given repo.
 
-    @param repo_id: ID(s) of the repo(s) to search for bindings; this may be a single
-                    ID (string) or a list of multiple IDs (list or tuple)
-    @type  repo_id: string, list, or tuple
+    @param repo_id: ID of the repo to search for bindings
+    @type  repo_id: string
 
     @return: list of consumer objects; empty list if none are bound
     @rtype:  list of L{Consumer}
     '''
-    if type(repo_id) is not list and type(repo_id) is not tuple:
-        repo_id = [repo_id]
-
     return list(Consumer.get_collection().find({'repoids' : repo_id}))
 
 def build_bind_data(repo, hostnames, key_list):

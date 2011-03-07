@@ -29,7 +29,8 @@ class MockRepoProxy(object):
         self.uuid = uuid
         self.options = options
 
-    def bind(self, bind_data):
+    def bind(self, repo_id, bind_data):
+        self.repo_id = repo_id
         self.bind_data = bind_data
 
     def unbind(self, repo_id):

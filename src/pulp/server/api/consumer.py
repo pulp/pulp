@@ -348,15 +348,14 @@ class ConsumerApi(BaseApi):
         # Collect the necessary information to return to the caller (see __doc__ above)
         host_list = round_robin.generate_cds_urls(repoid)
 
-        ks = KeyStore(repo['relative_path'])
-
         # Retrieve the latest set of key names and contents and send to consumers
+        ks = KeyStore(repo['relative_path'])
         gpg_keys = ks.keys_and_contents()
         bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
         # Send the bind request over to the consumer
         agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
-        agent_repolib.bind(bind_data)
+        agent_repolib.bind(repoid, bind_data)
 
         # Return the bind data to the caller
         return bind_data

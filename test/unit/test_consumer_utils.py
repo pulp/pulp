@@ -81,7 +81,8 @@ class TestConsumerUtils(unittest.TestCase):
 
         # Verify
         self.assertTrue(consumers is not None)
-        self.assertEqual(1, len(consumers))
+        print(consumers)
+        self.assertEqual(2, len(consumers))
 
         for c in consumers:
             self.assertTrue(c['id'] in ['c1', 'c2'])
