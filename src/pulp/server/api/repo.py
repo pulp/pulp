@@ -705,7 +705,27 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repo_id)
         return self.packageapi.packages_by_id(repo["packages"], name=name)
 
-    def get_packages_by_nvrea(self, repo_id, nvreas=[]):
+    def get_packages_by_nvrea(self, repo_id, nvreas=[], verify_existing=True):
+        """
+        Check if package exists or not in this repo for given nvrea
+        @return: [{"filename":pulp.server.db.model.resoure.Package}
+        """
+        log.debug("looking up pkg(s) [%s] in repo [%s]" % (nvreas, repo_id))
+        repo = self._get_existing_repo(repo_id)
+        repo_packages = repo['packages']
+        result = self.packageapi.or_query(nvreas, restrict_ids=repo_packages)
+        pkgs = {}
+        for p in result:
+            if verify_existing:
+                pkg_repo_path = pulp.server.util.get_repo_package_path(
+                    repo['relative_path'], p['filename'])
+                if os.path.exists(pkg_repo_path):
+                    pkgs[p['filename']] = p
+            else:
+                pkgs[p['filename']] = p
+        return pkgs
+
+    def get_packages_by_nvrea_original(self, repo_id, nvreas=[]):
         """
          CHeck if package exists or not in this repo for given nvrea
         """
@@ -765,7 +785,8 @@ class RepoApi(BaseApi):
             os.makedirs(repo_path)
         new_pkg_set = set()
         new_filenames = set()
-        for pid in packageids:
+        start_add_packages = time.time()
+        for index, pid in enumerate(packageids):
             package = self.packageapi.package(pid)
             if package is None:
                 log.error("No Package with id: %s found" % pid)
@@ -778,6 +799,8 @@ class RepoApi(BaseApi):
                      'release' : package['release'],
                      'arch'    : package['arch'],
                      'epoch'   : package['epoch'], }
+            # TODO: For performance could call get_packages_by_nvrea for all packageids prior to loop
+            # need to be careful about marking when a package wasn't added
             found = self.get_packages_by_nvrea(repo['id'], [nvrea])
             if found or pkg_tup in new_pkg_set:
                 log.error("Package with same NVREA [%s] already exists in repo [%s]"\
@@ -793,7 +816,7 @@ class RepoApi(BaseApi):
             self._add_package(repo, package)
             new_pkg_set.add(pkg_tup)
             new_filenames.add(package["filename"])
-            log.info("Added: %s to repo: %s" % (package, repo))
+            log.info("Added: %s to repo: %s, progress %s/%s" % (package['filename'], repo['id'], index, len(packageids)))
             shared_pkg = pulp.server.util.get_shared_package_path(
                     package['name'], package['version'], package['release'],
 		    package['arch'], package["filename"], package['checksum'])
@@ -804,9 +827,11 @@ class RepoApi(BaseApi):
                     os.symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
+        self.collection.save(repo, safe=True)
+        end_add_packages = time.time()
+        log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages-start_add_packages))
         #TODO: we also need to account for presto/groups/comps metadata
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
-        self.collection.save(repo, safe=True)
         return errors
 
     def _add_package(self, repo, p):
@@ -1682,6 +1707,7 @@ class RepoApi(BaseApi):
         @return:    [] on success
                     or {"filename":{"checksum":"repos"} on error 
         """
+        start_translate = time.time()
         pkg_query = []
         for p in pkg_info:
             q = {}
@@ -1691,7 +1717,10 @@ class RepoApi(BaseApi):
         from pulp.server.api.package import PackageApi
         papi = PackageApi()
         #Translate (filename,checksum) to package id
+        start_orquery = time.time()
         data = papi.or_query(pkg_query)
+        end_orquery = time.time()
+        log.info("Package or_query took %s seconds" % (end_orquery - start_orquery))
         #Determine what (filename,checksum) pairs were not looked up.
         errors = {}
         repo_pkgs = {}
@@ -1706,6 +1735,7 @@ class RepoApi(BaseApi):
                     pkg_id = d["id"]
             #If we can't locate the id, record the error so we can notify the caller
             if not pkg_id:
+                log.error("Unable to find package id for filename=%s, checksum=%s" %(filename, checksum))
                 if not errors.has_key(filename):
                     errors[filename] = {}
                 if not errors[filename].has_key(checksum):
@@ -1719,7 +1749,10 @@ class RepoApi(BaseApi):
                     repo_pkgs[r_id] = [pkg_id]
                 else:
                     repo_pkgs[r_id].append(pkg_id)
+        end_translate = time.time()
+        log.info("Translated %s filename,checksums in %s seconds" % (len(pkg_info), end_translate - start_translate))
         for repo_id in repo_pkgs:
+            start_time = time.time()
             add_pkg_errors = self.add_package(repo_id, repo_pkgs[repo_id])
             for e in add_pkg_errors:
                 filename = e[2]
@@ -1730,6 +1763,8 @@ class RepoApi(BaseApi):
                     errors[filename][checksum] = [repo_id]
                 else:
                     errors[filename][checksum].append(repo_id)
+            end_time = time.time()
+            log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time-start_time))
         return errors
             
         
