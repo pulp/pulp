@@ -752,11 +752,11 @@ class TestCdsApi(unittest.TestCase):
 
             self.assertTrue('repo' in bind_data)
             self.assertTrue('host_urls' in bind_data)
-            self.assertTrue('key_urls' in bind_data)
+            self.assertTrue('gpg_keys' in bind_data)
 
             self.assertTrue(bind_data['repo'] is None)
             self.assertEqual(3, len(bind_data['host_urls'])) # 2 CDS + pulp server
-            self.assertEqual(0, len(bind_data['key_urls']))
+            self.assertEqual(0, len(bind_data['gpg_keys']))
 
     def test_redistribute_no_consumers(self):
         '''
