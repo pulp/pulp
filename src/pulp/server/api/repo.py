@@ -1447,8 +1447,10 @@ class RepoApi(BaseApi):
         log.info('repository (%s), added keys: %s', id, added)
 
         # Retrieve the latest set of key names and contents and send to consumers
-        key_names_and_content = ks.keyfiles()
-        self.update_gpg_keys_on_consumers(repo, key_names_and_content)
+        gpg_keys = {}
+        for name, content in ks.keyfiles():
+            gpg_keys[name] = content
+        self.update_gpg_keys_on_consumers(repo, gpg_keys)
 
         return added
 
@@ -1461,8 +1463,10 @@ class RepoApi(BaseApi):
         log.info('repository (%s), delete keys: %s', id, deleted)
 
         # Retrieve the latest set of key names and contents and send to consumers
-        key_names_and_content = ks.keyfiles()
-        self.update_gpg_keys_on_consumers(repo, key_names_and_content)
+        gpg_keys = {}
+        for name, content in ks.keyfiles():
+            gpg_keys[name] = content
+        self.update_gpg_keys_on_consumers(repo, gpg_keys)
 
         return deleted
 
@@ -1491,7 +1495,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            repo_proxy = agent.retrieve_repo_proxy(consumer['id'])
+            repo_proxy = agent.retrieve_repo_proxy(consumer['id'], async=True)
             repo_proxy.update(repo['id'], bind_data)
 
     def update_gpg_keys_on_consumers(self, repo, gpg_keys):
@@ -1518,7 +1522,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            repo_proxy = agent.retrieve_repo_proxy(consumer['id'])
+            repo_proxy = agent.retrieve_repo_proxy(consumer['id'], async=True)
             repo_proxy.update(repo['id'], bind_data)
 
     def all_schedules(self):

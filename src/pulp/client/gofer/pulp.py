@@ -146,7 +146,7 @@ class Repo:
         log.info('Binding repo [%s]' % repo_id)
 
         repo_file = cfg.client.repo_file
-        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, bind_data['repo']['id'])
+        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, repo_id)
         gpg_keys_dir = cfg.client.gpg_keys_dir
 
         repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
@@ -174,7 +174,7 @@ class Repo:
         log.info('Updating repo [%s]' % repo_id)
 
         repo_file = cfg.client.repo_file
-        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, bind_data['repo']['id'])
+        mirror_list_file = repolib.mirror_list_filename(cfg.client.mirror_list_dir, repo_id)
         gpg_keys_dir = cfg.client.gpg_keys_dir
 
         repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,

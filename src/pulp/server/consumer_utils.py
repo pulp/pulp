@@ -69,7 +69,7 @@ def build_bind_data(repo, hostnames, key_list):
         hostnames = []
 
     if key_list is None:
-        key_list = []
+        key_list = {}
 
     # Add in the pulp server itself as the last host in the list if there are CDS
     # instances; if there are none, the pulp server will be the only entry (default case)
@@ -83,17 +83,10 @@ def build_bind_data(repo, hostnames, key_list):
         repo_url = 'https://%s%s/%s' % (host, repo_hosted_url, repo_relative_path)
         repo_urls.append(repo_url)
 
-    # This will also be replaced to be generated based on CDS availability.
-    key_hosted_url = config.get('server', 'key_url')
-    key_urls = []
-    for key in key_list:
-        key_url = 'https://%s%s/%s' % (server_name, key_hosted_url, key)
-        key_urls.append(key_url)
-
     bind_data = {
         'repo' : repo,
         'host_urls' : repo_urls,
-        'gpg_keys' : key_urls,
+        'gpg_keys' : key_list,
     }
 
     return bind_data
