@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.144
+Version:        0.0.145
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -26,7 +26,7 @@ Requires: python-webpy
 Requires: python-simplejson
 Requires: python-oauth2
 Requires: python-httplib2
-Requires: grinder >= 0.0.82
+Requires: grinder >= 0.0.83
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_ssl
@@ -243,6 +243,44 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Mon Mar 07 2011 Jeff Ortel <jortel@redhat.com> 0.0.145-1
+- Remove old get_packages_by_nvera_original() (jmatthews@redhat.com)
+- 681866 - Changed get_packages_by_nvera to use a mongo $or query
+  (jmatthews@redhat.com)
+- 681304 - repo sync failing with Type error, requires grinder 0.83
+  (jmatthews@redhat.com)
+- Fixing broken repo cloning unit test (skarmark@redhat.com)
+- Added ability to specify multiple filters when associating with repo and cli
+  changes for filter info (skarmark@redhat.com)
+- adding a playpen script to try out WS services/associate/packages call
+  (jmatthews@redhat.com)
+- 681866/68226 - adding packages to a repo is very slow/filename must be unique
+  within a repo (jmatthews@redhat.com)
+- Add package/file (uploaded/deleted) events. (jortel@redhat.com)
+- 682225 - Fixed typo in add-package error messaging (tsanders@redhat.com)
+- 681659 - Fixing error messaging for content delete action
+  (tsanders@redhat.com)
+- 682294 - removed super() call from setup_parser() on import and export
+  calls (dgao@redhat.com)
+- 682232 - Fixing error messaging in add/remove actions for repositories.
+  (tsanders@redhat.com)
+- Removed test dependency on redhat vpn (skarmark@redhat.com)
+- CLI for associating filters to a repo (skarmark@redhat.com)
+- 681989 - fixing some typos in add/remove error messages (pkilambi@redhat.com)
+- Model, api changes and unit tests for associating filters to a repo
+  (skarmark@redhat.com)
+- 680393 - prevent delete of referenced package. (jortel@redhat.com)
+- 677695 -  adding some improvements from dmach to make checksum look ups
+  faster (pkilambi@redhat.com)
+- disable regex search for content add/deletes (pkilambi@redhat.com)
+- 681804 -  fixing the uploads to ignore regex search and do a direct lookup
+  (pkilambi@redhat.com)
+- update file delete to use new location (pkilambi@redhat.com)
+- storing files seperate to make lookup easier (pkilambi@redhat.com)
+- bumping grinder version dep (pkilambi@redhat.com)
+- 680366 - revamp the package storage path to be n/v/r/a/<hash>/.rpm. There is
+  also a corresponding grinder change for yum syncs (pkilambi@redhat.com)
+
 * Wed Mar 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.144-1
 - 681601 - fixing help for repo add/remove operations (pkilambi@redhat.com)
 - 681545 - fixing error message (pkilambi@redhat.com)
