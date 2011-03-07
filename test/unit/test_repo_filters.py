@@ -87,7 +87,7 @@ class TestRepoFilters(unittest.TestCase):
     def test_add_filters_to_repo(self):
         repoid = 'some-id'
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://10.16.76.78/pub/updates/')
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         filter_ids = ["filter-test1", "filter-test2"]
         # Try without creating filters
@@ -108,7 +108,7 @@ class TestRepoFilters(unittest.TestCase):
     def test_remove_filters_from_repo(self):
         repoid = 'some-id'
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://10.16.76.78/pub/updates/')
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         self.filter_api.create('filter-test1', type="blacklist")
         self.filter_api.create('filter-test2', type="whitelist")
@@ -126,7 +126,7 @@ class TestRepoFilters(unittest.TestCase):
     def test_list_repo_filters(self):
         repoid = 'some-id'
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://10.16.76.78/pub/updates/')
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         filters = self.rapi.list_filters(repoid)
         self.assertTrue(len(filters) == 0)

@@ -278,11 +278,20 @@ class PackageApi(BaseApi):
         # called to raise the event
         pass
 
-    def or_query(self, pkg_info, fields=None):
+    def or_query(self, pkg_info, fields=None, restrict_ids=None):
         """
         Provides an 'or' query for multiple package queries
         @param pkg_info: list of queries[{"field":"value"},"field2":"value2"}]
+        @param fields: optional, fields to return
+        @param restrict_ids: optional, restrict the search to this list of possible package ids, used to restrict result to packages in a particular repo
         @return fields:  what fields to return
         """
-        return list(self.collection.find({"$or":pkg_info}, fields))
+        q = {}
+        q["$or"] = pkg_info
+        if restrict_ids != None:
+            # Note:  if restrict_ids is an empty list we want that to be passed in to the query
+            # We only want to skip this check if restrict_ids is truly None
+            q["id"] = {"$in":restrict_ids}
+        return list(self.collection.find(q, fields))
+
 

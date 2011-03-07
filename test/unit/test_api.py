@@ -1056,5 +1056,37 @@ class TestApi(unittest.TestCase):
             # value is {'checksum':[repo_id1,repo_id2]}
             self.assertTrue(e in [p4["filename"], p5b["filename"], bad_filename])
 
+
+    def test_get_packages_by_nvera(self):
+        repo1 = self.rapi.create('some-id1', 'some name', \
+            'i386', 'yum:http://example.com')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name1', 
+                filename="test01.rpm", checksum="blah1")
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name2', 
+                filename="test02.rpm", checksum="blah2")
+        p3 = testutil.create_package(self.papi, 'test_pkg_by_name3', 
+                filename="test03.rpm", checksum="blah3")
+        self.rapi.add_package(repo1["id"], [p1["id"], p2["id"]])
+        nevra = {}
+        nevra["name"] = p1["name"]
+        nevra["epoch"] = p1["epoch"]
+        nevra["version"] = p1["version"]
+        nevra["release"] = p1["release"]
+        nevra["arch"] = p1["arch"]
+        found = self.rapi.get_packages_by_nvrea(repo1["id"], [nevra], verify_existing=False)
+        self.assertTrue(p1["filename"] in found)
+        self.assertEquals(found[p1["filename"]]["id"], p1["id"])
+        
+        nevra["name"] = p3["name"]
+        nevra["epoch"] = p3["epoch"]
+        nevra["version"] = p3["version"]
+        nevra["release"] = p3["release"]
+        nevra["arch"] = p3["arch"]
+        found = self.rapi.get_packages_by_nvrea(repo1["id"], [nevra], verify_existing=False)
+        self.assertEquals(len(found), 0)
+
+
+
+
 if __name__ == '__main__':
     unittest.main()
