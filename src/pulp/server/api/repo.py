@@ -725,28 +725,6 @@ class RepoApi(BaseApi):
                 pkgs[p['filename']] = p
         return pkgs
 
-    def get_packages_by_nvrea_original(self, repo_id, nvreas=[]):
-        """
-         CHeck if package exists or not in this repo for given nvrea
-        """
-        log.debug("looking up pkg [%s] in repo [%s]" % (nvreas, repo_id))
-        #TODO: Potential to make this call quicker and pass more of the checks into mongo
-        repo = self._get_existing_repo(repo_id)
-        repo_packages = repo['packages']
-        pkgs = {}
-        for nvrea in nvreas:
-            for pkg_id in repo_packages:
-                p = self.packageapi.package(pkg_id)
-                if not p:
-                    continue
-                if (nvrea['name'], nvrea['version'], nvrea['release'], nvrea['epoch'], nvrea['arch']) == \
-                    (p['name'], p['version'], p['release'], p['epoch'], p['arch']):
-                        pkg_repo_path = pulp.server.util.get_repo_package_path(
-                                             repo['relative_path'], p['filename'])
-                        if os.path.exists(pkg_repo_path):
-                            pkgs[p['filename']] = p
-        return pkgs
-
     def get_packages_by_filename(self, repo_id, filenames=[]):
         """
           Return matching Package object in this Repo by filename
