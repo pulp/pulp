@@ -245,6 +245,7 @@ def _handle_host_urls(repo, url_list, mirror_list_filename):
         mirror_list_file.save()
 
         repo['mirrorlist'] = mirror_list_filename
+        repo['baseurl'] = None # make sure to zero this out in case of an update
 
         log.info('Created mirrorlist for repo [%s] at [%s]' % (repo.id, mirror_list_filename))
     else:
@@ -256,4 +257,6 @@ def _handle_host_urls(repo, url_list, mirror_list_filename):
             os.remove(mirror_list_filename)
 
         repo['baseurl'] = url_list[0]
+        repo['mirrorlist'] = None # make sure to zero this out in case of an update
+
         log.info('Configuring repo [%s] to use baseurl [%s]' % (repo.id, url_list[0]))

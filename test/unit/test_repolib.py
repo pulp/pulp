@@ -173,6 +173,47 @@ class TestRepolib(unittest.TestCase):
 
         self.assertTrue(not os.path.exists(TEST_MIRROR_LIST_FILENAME))
 
+    def test_bind_host_urls_one_to_many(self):
+        '''
+        Tests that changing from a single URL to many properly updates the baseurl and
+        mirrorlist entries of the repo.
+        '''
+
+        # Setup
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, ['https://pulpx'], None, LOCK)
+
+        # Test
+        url_list = ['http://pulp1', 'http://pulp2']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, url_list, None, LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertTrue('baseurl' not in loaded)
+        self.assertTrue('mirrorlist' in loaded)
+
+    def test_bind_host_urls_many_to_one(self):
+        '''
+        Tests that changing from multiple URLs (mirrorlist usage) to a single URL
+        properly sets the repo metadata.
+        '''
+        # Setup
+        url_list = ['http://pulp1', 'http://pulp2']
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, url_list, None, LOCK)
+
+        # Test
+        repolib.bind(TEST_REPO_FILENAME, TEST_MIRROR_LIST_FILENAME, TEST_KEYS_DIR, REPO['id'], REPO, ['http://pulpx'], None, LOCK)
+
+        # Verify
+        repo_file = RepoFile(TEST_REPO_FILENAME)
+        repo_file.load()
+
+        loaded = repo_file.get_repo(REPO['id'])
+        self.assertTrue('baseurl' in loaded)
+        self.assertTrue('mirrorlist' not in loaded)
+
     def test_bind_update_keys(self):
         '''
         Tests changing the GPG keys on a previously bound repo.
