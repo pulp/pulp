@@ -238,7 +238,7 @@ class RepoApi(BaseApi):
                 os.unlink(link_path)
 
     def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, 
-               filters=None, progress_callback=None):
+               filters=[], progress_callback=None):
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
@@ -263,7 +263,8 @@ class RepoApi(BaseApi):
                         relative_path=relative_path, cert_data=cert_data, checksum_type=repo['checksum_type'])
           
         # Associate filters if specified
-        self.add_filters(clone_id, filter_ids=filters)    
+        if len(filters) > 0:
+            self.add_filters(clone_id, filter_ids=filters)    
             
         # Sync from parent repo
         try:
@@ -301,7 +302,7 @@ class RepoApi(BaseApi):
 
     @audit()
     def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None, 
-              progress_callback=None, timeout=None, filters=None):
+              progress_callback=None, timeout=None, filters=[]):
         """
         Run a repo clone asynchronously.
         """

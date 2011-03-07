@@ -351,7 +351,7 @@ class RepositoryActions(AsyncController):
                          repo_data['feed'],
                          relative_path=repo_data.get('relative_path', None),
                          groupid=repo_data.get('groupid', None),
-                         filters=repo_data.get('filters', None))
+                         filters=repo_data.get('filters', []))
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
         task_info = self._task_to_dict(task)

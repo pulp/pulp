@@ -514,7 +514,7 @@ class Clone(RepoProgressAction):
         feed = self.opts.feed or 'parent'
         groupid = self.opts.groupid
         timeout = self.opts.timeout
-        filters = self.opts.filters or None
+        filters = self.opts.filters or []
         task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
                                 groupid=groupid, timeout=timeout, filters=filters)
         print _('Repository [%s] is being cloned as [%s]' % (id, clone_id))
