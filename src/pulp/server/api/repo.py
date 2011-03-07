@@ -1673,9 +1673,11 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         log.info('repository (%s), removed filters: %s', id, filter_ids)
 
+
     def list_filters(self, id):
         repo = self._get_existing_repo(id)
         return repo['filters']
+
 
     def associate_packages(self, pkg_info):
         """

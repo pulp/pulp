@@ -13,16 +13,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import re
-import os
-import pymongo
+
 import logging
 # Pulp
-import pulp.server.util
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pymongo.errors import DuplicateKeyError
 from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
@@ -34,6 +30,9 @@ class FilterApi(BaseApi):
       
     def _getcollection(self):
         return model.Filter.get_collection()
+
+    def _getRepoCollection(self):
+        return model.Repo.get_collection()
 
     @audit()
     def create(self, id, type, description=None, package_list=[]):
@@ -51,7 +50,7 @@ class FilterApi(BaseApi):
 
 
     @audit()
-    def delete(self, id):
+    def delete(self, id, force=False):
         """
         Delete filter object based on "id" key
         """
@@ -59,7 +58,15 @@ class FilterApi(BaseApi):
         if not filter:
             log.error("Filter id [%s] not found " % id)
             return
-        self.collection.remove({'id' : id}, safe=True)
+        associated_repo_ids = self.find_associated_repos(id)
+        if associated_repo_ids is []:
+            self.collection.remove({'id' : id}, safe=True)
+        elif force:
+            self.remove_association_with_repos(id, associated_repo_ids)
+            self.collection.remove({'id' : id}, safe=True)
+        else:
+            raise PulpException("Filter [%s] cannot be deleted because of it's association with repos %s"
+                                % (id, associated_repo_ids))
 
     def filters(self, spec=None, fields=None):
         """
@@ -67,11 +74,13 @@ class FilterApi(BaseApi):
         """
         return list(self.collection.find(spec=spec, fields=fields))
 
+
     def filter(self, id, fields=None):
         """
         Return a single Filter object
         """
         return self.collection.find_one({'id': id})
+
 
     @audit()
     def clean(self):
@@ -81,5 +90,25 @@ class FilterApi(BaseApi):
         """
         found = self.filters(fields=["id"])
         for f in found:
-            self.delete(f["id"])
+            self.delete(f["id"], force=True)
 
+
+    def find_associated_repos(self, id):
+        """
+        Find all the associated repos
+        """
+        associated_repo_ids = []
+        repo_db = self._getRepoCollection()
+        associated_repos = list(repo_db.find({'filters' : id}, fields=['id']))
+        for repo in associated_repos:
+            associated_repo_ids.append(repo['id'])
+        return associated_repo_ids
+
+    def remove_association_with_repos(self, id, repoids):
+        repo_db = self._getRepoCollection()
+        for repoid in repoids:
+            repo = repo_db.find_one({'id' : repoid})
+            filters = repo['filters']
+            filters.remove(id)
+            repo['filters'] = filters
+            repo_db.save(repo, safe=True)
