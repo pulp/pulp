@@ -41,12 +41,12 @@ class StacktraceDumper(object):
     def _stacktraces(self):
         # fetch the current stack traces for all active threads
         code = []
-        for threadId, stack in sys._current_frames().items():
+        for thread_id, stack in sys._current_frames().items():
             code.append("\n# ProcessId: %s" % os.getpid())
-            code.append("# ThreadID: %s" % threadId)
+            code.append("# ThreadID: %s" % thread_id)
             for filename, lineno, name, line in traceback.extract_stack(stack):
-                code.append('File: "%s", line %d, in %s' % (filename,
-                        lineno, name))
+                code.append('File: "%s", line %d, in %s' %
+                            (filename, lineno, name))
                 if line:
                     code.append("  %s" % (line.strip()))
         # actually "prints" to the apache error log
