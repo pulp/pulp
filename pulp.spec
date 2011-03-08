@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.145
+Version:        0.0.146
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,13 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Tue Mar 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.146-1
+- 682992 - tighten up parallel uploads. (jortel@redhat.com)
+- Fix provides/requires on uploaded packages. (jortel@redhat.com)
+- Bump to grinder 0.85 to fix relative path issue with symbolic links
+  (jmatthews@redhat.com)
+- 683011 - package symlinks in repos should be relative (jmatthews@redhat.com)
+
 * Mon Mar 07 2011 Jeff Ortel <jortel@redhat.com> 0.0.145-1
 - Remove old get_packages_by_nvera_original() (jmatthews@redhat.com)
 - 681866 - Changed get_packages_by_nvera to use a mongo $or query
