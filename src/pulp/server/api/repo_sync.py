@@ -36,6 +36,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.distribution import DistributionApi
 from pulp.server import config, constants
 from pulp.server.pexceptions import PulpException
+from pulp.server.db.model import DuplicateKeyError
 
 
 log = logging.getLogger(__name__)
@@ -299,35 +300,52 @@ class BaseSynchronizer(object):
                         something manually added later
         """
         try:
-            retval = None
             file_name = os.path.basename(package.relativepath)
             hashtype = "sha256"
             checksum = package.checksum
-            found = self.package_api.packages(name=package.name,
-                    epoch=package.epoch, version=package.version,
-                    release=package.release, arch=package.arch,
+            try:
+                newpkg = self.package_api.create(
+                    package.name,
+                    package.epoch,
+                    package.version,
+                    package.release,
+                    package.arch,
+                    package.description,
+                    hashtype,
+                    checksum,
+                    file_name,
+                    repo_defined=repo_defined)
+            except DuplicateKeyError:
+                found = self.package_api.packages(
+                    name=package.name,
+                    epoch=package.epoch,
+                    version=package.version,
+                    release=package.release,
+                    arch=package.arch,
                     filename=file_name,
-                    checksum_type=hashtype, checksum=checksum)
-            if len(found) == 1:
-                retval = found[0]
-            else:
-                retval = self.package_api.create(package.name, package.epoch,
-                    package.version, package.release, package.arch, package.description,
-                    hashtype, checksum, file_name, repo_defined=repo_defined)
-                for dep in package.requires:
-                    retval.requires.append(dep[0])
-                for prov in package.provides:
-                    retval.provides.append(prov[0])
-                retval.download_url = None
-                if repo:
-                    retval.download_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name') + "/" + \
-                                          config.config.get('server', 'relative_url') + "/" + \
-                                          repo["id"] + "/" + file_name
-                self.package_api.update(retval)
-            return retval
+                    checksum_type=hashtype,
+                    checksum=checksum)
+                return found[0]
+            # update dependancies
+            for dep in package.requires:
+                newpkg.requires.append(dep[0])
+            for prov in package.provides:
+                newpkg.provides.append(prov[0])
+            # set the download URL
+            if repo:
+                newpkg.download_url = \
+                    constants.SERVER_SCHEME \
+                    + config.config.get('server', 'server_name') \
+                    + "/" \
+                    + config.config.get('server', 'relative_url') \
+                    + "/" \
+                    + repo["id"] \
+                    + "/" \
+                    + file_name
+            self.package_api.update(newpkg)
+            return newpkg
         except Exception, e:
-            log.error("error reading package %s" % (file_name))
-            log.error("%s" % (traceback.format_exc()))
+            log.error('Package "%s", import failed', file_name, exc_info=True)
 
     def sync_groups_data(self, compsfile, repo):
         """

@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 
+from pymongo.errors import DuplicateKeyError
 from pulp.server.db.model.audit import *
 from pulp.server.db.model.auth import *
 from pulp.server.db.model.cds import *
