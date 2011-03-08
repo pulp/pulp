@@ -26,6 +26,7 @@ from pulp.server.util import chunks
 from pulp.server.util import get_rpm_information
 from pulp.server.util import get_repo_packages
 from pulp.server.util import get_repo_package
+from pulp.server.util import get_relative_path
 
 
 logging.root.setLevel(logging.ERROR)
@@ -64,7 +65,38 @@ class TestUtil(unittest.TestCase):
                       'pulp-test-package-same-nevra-0.1.0-1.x86_64.rpm')
         self.assertNotEquals(package, None)
         self.assertNotEquals(package.name, None)
+       
+    def test_get_relative_path(self):
+        src = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/new_name.rpm"
+        rel = get_relative_path(src, dst)
+        expected_rel = "bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        self.assertEquals(rel, expected_rel)
+        
+        src = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        rel = get_relative_path(src, dst)
+        expected_rel = "../../bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        self.assertEquals(rel, expected_rel)
+        
+        #Test typical case 
+        src = "/var/lib/pulp//packages/ece/bzip2-devel/1.0.5/6.fc12/i686/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        rel = get_relative_path(src, dst)
+        expected_rel = "../../../../../../../../packages/ece/bzip2-devel/1.0.5/6.fc12/i686/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        self.assertEqual(rel, expected_rel)
+
+
+        #Test case where no common path element exists except for "/"
+        src = "/packages/ece/bzip2-devel/1.0.5/6.fc12/i686/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
+        rel = get_relative_path(src, dst)
+        expected_rel = "../../../../../../../../../../.." + src
+        self.assertEquals(rel, expected_rel)
         
         
+
+
+
 if __name__ == '__main__':
     unittest.main()

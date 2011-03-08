@@ -227,6 +227,8 @@ class RepoApi(BaseApi):
             os.makedirs(self.published_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                 repo["relative_path"])
+        if not os.path.isdir(source_path):
+            os.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
         pulp.server.util.create_symlinks(source_path, link_path)
 
@@ -1508,9 +1510,11 @@ class RepoApi(BaseApi):
 
     def _create_ks_link(self, repo):
         if not os.path.isdir(self.distro_path):
-            os.mkdir(self.distro_path)
+            os.makedirs(self.distro_path)
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                 repo["relative_path"])
+        if not os.path.isdir(source_path):
+            os.makedirs(source_path)
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Linking %s" % link_path)
         pulp.server.util.create_symlinks(source_path, link_path)

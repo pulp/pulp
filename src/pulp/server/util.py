@@ -29,7 +29,7 @@ import yum
 
 from pulp.server import config, constants
 from pulp.server.pexceptions import PulpException
-
+from grinder import GrinderUtils
 
 log = logging.getLogger(__name__)
 
@@ -312,10 +312,14 @@ def get_shared_package_path(name, version, release, arch, filename, checksum):
         name, version, release, arch, hash[:3], filename)
     return pkg_location
 
+def get_relative_path(source_path, dest_path):
+    return GrinderUtils.get_relative_path(source_path, dest_path)
+
+def create_rel_symlink(source_path, dest_path):
+    rel_path = get_relative_path(source_path, dest_path)
+    return create_symlinks(rel_path, dest_path)
+
 def create_symlinks(source_path, link_path):
-    if not os.path.exists(source_path):
-        # Create source repo location
-        os.makedirs(source_path)
     if not os.path.exists(os.path.dirname(link_path)):
         # Create published dir as well as 
         # any needed dir parts if rel_path has multiple parts
@@ -324,7 +328,7 @@ def create_symlinks(source_path, link_path):
         if os.path.lexists(link_path):
             # Clean up broken sym link
             os.unlink(link_path)
-        log.error("Create symlink for [%s] to [%s]" % (source_path, link_path))
+        log.debug("Create symlink for [%s] to [%s]" % (source_path, link_path))
         os.symlink(source_path, link_path)
         
 def create_repo(dir, groups=None, checksum_type="sha256"):
