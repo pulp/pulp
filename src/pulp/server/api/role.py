@@ -57,7 +57,7 @@ class RoleAPI(BaseApi):
         return roles[0]
 
     def roles(self, spec=None, fields=None):
-        return list(self.objectdb.find(spec=spec, fields=fields))
+        return list(self.collection.find(spec=spec, fields=fields))
 
     @audit()
     def add_permissions(self, role, resource, operations):

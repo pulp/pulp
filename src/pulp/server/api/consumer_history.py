@@ -155,9 +155,9 @@ class ConsumerHistoryApi(BaseApi):
 
         # Determine the correct mongo cursor to retrieve
         if len(search_params) == 0:
-            cursor = self.objectdb.find()
+            cursor = self.collection.find()
         else:
-            cursor = self.objectdb.find(search_params)
+            cursor = self.collection.find(search_params)
 
         # Sort by most recent entry first
         cursor.sort('timestamp', direction=SORT_DIRECTION[sort])
@@ -308,7 +308,7 @@ class ConsumerHistoryApi(BaseApi):
         now = datetime.datetime.now()
         limit = (now - lifetime).strftime('%s')
         spec = {'timestamp': {'$lt': limit}}
-        self.objectdb.remove(spec, safe=False)
+        self.collection.remove(spec, safe=False)
 
     def _get_lifetime(self):
         '''

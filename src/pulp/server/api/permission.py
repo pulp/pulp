@@ -63,7 +63,7 @@ class PermissionAPI(BaseApi):
         return permissions[0]
 
     def permissions(self, spec=None, fields=None):
-        return list(self.objectdb.find(spec=spec, fields=fields))
+        return list(self.collection.find(spec=spec, fields=fields))
 
     @audit()
     def grant(self, resource, user, operations):

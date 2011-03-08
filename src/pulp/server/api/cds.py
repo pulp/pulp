@@ -135,7 +135,7 @@ class CdsApi(BaseApi):
         # Add call here to fire off unregister call to the CDS
         # Decide what should happen if the unregister fails
 
-        self.objectdb.remove({'hostname' : hostname}, safe=True)
+        self.collection.remove({'hostname' : hostname}, safe=True)
 
         self.cds_history_api.cds_unregistered(hostname)
 
@@ -149,7 +149,7 @@ class CdsApi(BaseApi):
         @return: CDS instance if one exists with the exact hostname given; None otherwise
         @rtype:  L{pulp.server.db.model.CDS} or None
         '''
-        matching_cds = list(self.objectdb.find(spec={'hostname': hostname}))
+        matching_cds = list(self.collection.find(spec={'hostname': hostname}))
         if len(matching_cds) == 0:
             return None
         else:
@@ -167,7 +167,7 @@ class CdsApi(BaseApi):
         @return: list of all matching CDS instances if any match; empty list otherwise
         @rtype:  list of L{CDS} instances
         '''
-        cursor = self.objectdb.find({'repo_ids' : repo_id})
+        cursor = self.collection.find({'repo_ids' : repo_id})
         return list(cursor)
 
     def list(self):
@@ -177,7 +177,7 @@ class CdsApi(BaseApi):
         @return: list of all registered CDS instances; empty list if none are registered
         @rtype:  list
         '''
-        return list(self.objectdb.find())
+        return list(self.collection.find())
 
     @audit()
     def associate_repo(self, cds_hostname, repo_id):
@@ -213,7 +213,7 @@ class CdsApi(BaseApi):
 
             # Update the CDS in the database
             cds['repo_ids'].append(repo_id)
-            self.objectdb.save(cds, safe=True)
+            self.collection.save(cds, safe=True)
 
             # Add a history entry for the change
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
@@ -252,7 +252,7 @@ class CdsApi(BaseApi):
 
             # Update the CDS in the database
             cds['repo_ids'].remove(repo_id)
-            self.objectdb.save(cds, safe=True)
+            self.collection.save(cds, safe=True)
 
             # Add a history entry for the change
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
@@ -328,7 +328,7 @@ class CdsApi(BaseApi):
 
         # Update the CDS to indicate the last sync time
         cds['last_sync'] = datetime.datetime.now().strftime('%s')
-        self.objectdb.save(cds, safe=True)
+        self.collection.save(cds, safe=True)
 
         # Make sure the caller gets the error like normal (after the event logging) if
         # one occurred
@@ -399,5 +399,5 @@ class CdsApi(BaseApi):
 
         for cds in cds_list:
             cds['repo_ids'].remove(repo_id)
-            self.objectdb.save(cds, safe=True)
+            self.collection.save(cds, safe=True)
             self.cds_history_api.repo_unassociated(cds['hostname'], repo_id)

@@ -72,7 +72,7 @@ class FileApi(BaseApi):
         """
         Return a single File object based on the filename and checksum
         """
-        return self.objectdb.find_one({'id': id})
+        return self.collection.find_one({'id': id})
 
     def files(self, filename=None, checksum=None, checksum_type=None, regex=None,
               fields=["id", "filename", "checksum", "size"]):
@@ -92,9 +92,9 @@ class FileApi(BaseApi):
             else:
                 searchDict['checksum.%s' % checksum_type] = checksum
         if (len(searchDict.keys()) == 0):
-            return list(self.objectdb.find(fields=fields))
+            return list(self.collection.find(fields=fields))
         else:
-            return list(self.objectdb.find(searchDict, fields=fields))
+            return list(self.collection.find(searchDict, fields=fields))
 
     def orphaned_files(self, fields=["filename", "checksum"]):
         #TODO: Revist this when model changes so we don't need to import RepoApi
@@ -107,7 +107,7 @@ class FileApi(BaseApi):
         fils = self.files(fields=["id"])
         fileids = set([x["id"] for x in fils])
         orphans = list(fileids.difference(repo_fileids))
-        return list(self.objectdb.find({"id":{"$in":orphans}}, fields))
+        return list(self.collection.find({"id":{"$in":orphans}}, fields))
 
     def get_file_checksums(self, filenames):
         '''
@@ -116,7 +116,7 @@ class FileApi(BaseApi):
         @return  {"file_name": [<checksums>],...} 
         '''
         result = {}
-        for i in self.objectdb.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
+        for i in self.collection.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
             result.setdefault(i["filename"], []).append(i["checksum"]["sha256"])
         return result
 

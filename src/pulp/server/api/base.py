@@ -26,13 +26,6 @@ class BaseApi(object):
         raise NotImplementedError()
 
     @property
-    def objectdb(self):
-        """
-        @deprecated: Use collection().
-        """
-        return self._getcollection()
-
-    @property
     def collection(self):
         return self._getcollection()
 

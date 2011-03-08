@@ -108,9 +108,9 @@ class CdsHistoryApi(BaseApi):
 
         # Determine the correct mongo cursor to retrieve
         if len(search_params) == 0:
-            cursor = self.objectdb.find()
+            cursor = self.collection.find()
         else:
-            cursor = self.objectdb.find(search_params)
+            cursor = self.collection.find(search_params)
 
         # Sort by most recent entry first
         cursor.sort([ ('timestamp', SORT_DIRECTION[sort]),

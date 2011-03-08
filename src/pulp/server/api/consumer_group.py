@@ -60,20 +60,20 @@ class ConsumerGroupApi(BaseApi):
         """
         List all consumer groups.
         """
-        return list(self.objectdb.find(spec=spec, fields=fields))
+        return list(self.collection.find(spec=spec, fields=fields))
 
     def consumergroup(self, id):
         """
         Return a single ConsumerGroup object
         """
-        return self.objectdb.find_one({'id': id})
+        return self.collection.find_one({'id': id})
 
 
     def consumers(self, id):
         """
         Return consumer ids belonging to this ConsumerGroup
         """
-        consumer = self.objectdb.find_one({'id': id})
+        consumer = self.collection.find_one({'id': id})
         return consumer['consumerids']
 
 

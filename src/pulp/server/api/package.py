@@ -44,7 +44,7 @@ class PackageHasReferences(Exception):
 class PackageApi(BaseApi):
 
     def __init__(self):
-        self.objectdb.ensure_index([('name', pymongo.DESCENDING),
+        self.collection.ensure_index([('name', pymongo.DESCENDING),
             ('epoch', pymongo.DESCENDING),
             ('version', pymongo.DESCENDING),
             ('release', pymongo.DESCENDING),
@@ -91,7 +91,7 @@ class PackageApi(BaseApi):
         """
         Return a single Package object based on the id
         """
-        return self.objectdb.find_one({'id': id})
+        return self.collection.find_one({'id': id})
 
     def packages(self, name=None, epoch=None, version=None, release=None, arch=None,
             filename=None, checksum_type=None, checksum=None, regex=False,
@@ -137,9 +137,9 @@ class PackageApi(BaseApi):
             else:
                 searchDict['checksum.%s' % checksum_type] = checksum
         if (len(searchDict.keys()) == 0):
-            return list(self.objectdb.find(fields=fields))
+            return list(self.collection.find(fields=fields))
         else:
-            return list(self.objectdb.find(searchDict, fields=fields))
+            return list(self.collection.find(searchDict, fields=fields))
 
     def referenced(self, id):
         """
@@ -170,7 +170,7 @@ class PackageApi(BaseApi):
         for key in kwargs:
             search_dict[key] = kwargs[key]
         ret_data = {}
-        tmp_data = self.objectdb.find(search_dict)
+        tmp_data = self.collection.find(search_dict)
         for pkg in tmp_data:
             ret_data[pkg["id"]] = pkg
         return ret_data
@@ -179,13 +179,13 @@ class PackageApi(BaseApi):
         """
          Returns a list of all file names matching the spec
         """
-        return list(self.objectdb.find(spec, fields=['filename', 'checksum']))
+        return list(self.collection.find(spec, fields=['filename', 'checksum']))
 
     def package_by_ivera(self, name, version, epoch, release, arch):
         """
         Returns the package version identified by the given package and VERA.
         """
-        return self.objectdb.find_one({'name' : name, 'version' : version,
+        return self.collection.find_one({'name' : name, 'version' : version,
                                        'epoch' : epoch, 'release' : release, 'arch' : arch, })
 
     def package_descriptions(self, spec=None):
@@ -193,8 +193,8 @@ class PackageApi(BaseApi):
         List of all package names and descriptions (will not contain package
         version information).
         '''
-        #return list(self.objectdb.find({}, {'name' : True, 'description' : True,}))
-        return list(self.objectdb.find(spec, ['id', 'name', 'description']))
+        #return list(self.collection.find({}, {'name' : True, 'description' : True,}))
+        return list(self.collection.find(spec, ['id', 'name', 'description']))
 
     def package_dependency(self, pkgnames=[], repoids=[], recursive=0):
         '''
@@ -237,7 +237,7 @@ class PackageApi(BaseApi):
          Returns a list of checksum info for names matching the spec
         """
         spec = {'filename' : filename}
-        return list(self.objectdb.find(spec, fields=['checksum']))
+        return list(self.collection.find(spec, fields=['checksum']))
 
     def orphaned_packages(self, fields=["id", "filename", "checksum"]):
         #TODO: Revist this when model changes so we don't need to import RepoApi
@@ -250,7 +250,7 @@ class PackageApi(BaseApi):
         pkgs = self.packages(fields=["id"])
         pkgids = set([x["id"] for x in pkgs])
         orphans = list(pkgids.difference(repo_pkgids))
-        return list(self.objectdb.find({"id":{"$in":orphans}}, fields))
+        return list(self.collection.find({"id":{"$in":orphans}}, fields))
 
     def get_package_checksums(self, filenames):
         '''
@@ -259,7 +259,7 @@ class PackageApi(BaseApi):
         @return  {"file_name": [<checksums>],...} 
         '''
         result = {}
-        for i in self.objectdb.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
+        for i in self.collection.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
             result.setdefault(i["filename"], []).append(i["checksum"]["sha256"])
         return result
 

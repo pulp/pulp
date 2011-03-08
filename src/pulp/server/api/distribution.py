@@ -61,11 +61,11 @@ class DistributionApi(BaseApi):
         """
         Return a distribution object based on the id
         """
-        return self.objectdb.find_one({'id': id})
+        return self.collection.find_one({'id': id})
 
     def distributions(self):
         """
          Return all available distributions
         """
-        return list(self.objectdb.find())
+        return list(self.collection.find())
 
