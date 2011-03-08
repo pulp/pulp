@@ -94,7 +94,12 @@ class TestUtil(unittest.TestCase):
         expected_rel = "../../../../../../../../../../.." + src
         self.assertEquals(rel, expected_rel)
         
-        
+        src = "/var/lib/pulp/packages/ruby-gofer/0.20/1.fc14/noarch/804/ruby-gofer-0.20-1.fc14.noarch.rpm"
+        dst = "/var/lib/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/ruby-gofer-0.20-1.fc14.noarch.rpm"
+        rel = get_relative_path(src, dst)
+        expected_rel = "../../../../../../packages/ruby-gofer/0.20/1.fc14/noarch/804/ruby-gofer-0.20-1.fc14.noarch.rpm"
+        self.assertEquals(rel, expected_rel)
+
 
 
 
