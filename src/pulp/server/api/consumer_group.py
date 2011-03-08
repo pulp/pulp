@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -15,16 +15,14 @@
 
 import logging
 
-from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.auditing import audit
 from pulp.server.db import model
-#from pulp.server.db.connection import get_object_db
 from pulp.server.pexceptions import PulpException
-from pulp.server.async import AsyncAgent, AgentTask
 
 log = logging.getLogger(__name__)
 
@@ -32,20 +30,10 @@ log = logging.getLogger(__name__)
 class ConsumerGroupApi(BaseApi):
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.consumerApi = ConsumerApi()
         self.repoApi = RepoApi()
 
-    @property
-    def _unique_indexes(self):
-        return ["id"]
-
-    @property
-    def _indexes(self):
-        return ["consumerids"]
-
     def _getcollection(self):
-        #return get_object_db('consumergroups', self._unique_indexes, self._indexes)
         return model.ConsumerGroup.get_collection()
 
 

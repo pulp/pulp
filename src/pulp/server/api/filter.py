@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,14 +13,15 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-
 import logging
+
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-from pulp.server.pexceptions import PulpException
 from pulp.server.event.dispatcher import event
+from pulp.server.pexceptions import PulpException
+
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ filter_fields = model.Filter(None, None, None, None).keys()
 
 
 class FilterApi(BaseApi):
-      
+
     def _getcollection(self):
         return model.Filter.get_collection()
 

@@ -1,4 +1,5 @@
-# Copyright (c) 2010 Red Hat, Inc.
+# -*- coding: utf-8 -*-
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -11,25 +12,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import logging
-
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-from pulp.server.auth import principal
-import pulp.server.auth.cert_generator as cert_generator
-
-
-LOG = logging.getLogger(__name__)
+from pulp.server.auth import cert_generator, principal
 
 
 class AuthApi(BaseApi):
-
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    def _getcollection(self):
-        # We're not using the DB features of BaseApi, so just return None here
-        return None
 
     @audit()
     def admin_certificate(self):

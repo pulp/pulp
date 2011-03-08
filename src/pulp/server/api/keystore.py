@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,10 +13,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import os
 import logging
-from pulp.server.util import top_repos_location as keydir
+import os
+
 from pulp.server.util import top_gpg_location as lnkdir
+from pulp.server.util import top_repos_location as keydir
+
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ class KeyStore:
         @rtype: [str,..]
         """
         added = []
-        for fn,content in keylist:
+        for fn, content in keylist:
             path = os.path.join(keydir(), self.path, fn)
             log.info('writing @: %s', path)
             f = open(path, 'w')
@@ -125,7 +127,7 @@ class KeyStore:
         pattern = '----BEGIN PGP PUBLIC KEY BLOCK-----'
         path = os.path.join(keydir(), self.path)
         for fn in os.listdir(path):
-            for ext in ('.rpm','.gz','.xml'):
+            for ext in ('.rpm', '.gz', '.xml'):
                 if fn.endswith(ext):
                     continue
             try:

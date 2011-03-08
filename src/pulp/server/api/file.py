@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,18 +13,19 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import re
-import os
-import pymongo
 import logging
+import os
+import re
+
+import pymongo
+from pymongo.errors import DuplicateKeyError
+
 # Pulp
 import pulp.server.util
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.event.dispatcher import event
 from pulp.server.db import model
-from pymongo.errors import DuplicateKeyError
-#from pulp.server.db.connection import get_object_db
 
 log = logging.getLogger(__name__)
 
@@ -34,22 +35,13 @@ file_fields = model.File(None, None, None, None, None, None).keys()
 class FileApi(BaseApi):
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.objectdb.ensure_index([
             ('filename', pymongo.DESCENDING),
             ('checksum', pymongo.DESCENDING)],
             unique=True, background=True)
-    @property
-    def _indexes(self):
-        return []
 
     def _getcollection(self):
-        #return get_object_db('file', self._unique_indexes, self._indexes)
         return model.File.get_collection()
-
-    @property
-    def _unique_indexes(self):
-        return []
 
     @audit()
     def create(self, filename, checksum_type, checksum, size, description=None, repo_defined=False):
@@ -73,7 +65,7 @@ class FileApi(BaseApi):
         if not fileobj:
             log.error("File id [%s] not found " % id)
             return
-        file_path = "%s/%s/%s" % (pulp.server.util.top_file_location(), 
+        file_path = "%s/%s/%s" % (pulp.server.util.top_file_location(),
                                       fileobj['checksum']['sha256'][:3],
                                       fileobj['filename'])
         BaseApi.delete(self, _id=id)
@@ -110,7 +102,7 @@ class FileApi(BaseApi):
             return list(self.objectdb.find(fields=fields))
         else:
             return list(self.objectdb.find(searchDict, fields=fields))
-        
+
     def orphaned_files(self, fields=["filename", "checksum"]):
         #TODO: Revist this when model changes so we don't need to import RepoApi
         from pulp.server.api.repo import RepoApi
@@ -123,7 +115,7 @@ class FileApi(BaseApi):
         fileids = set([x["id"] for x in fils])
         orphans = list(fileids.difference(repo_fileids))
         return list(self.objectdb.find({"id":{"$in":orphans}}, fields))
-    
+
     def get_file_checksums(self, filenames):
         '''
         Fetch the package checksuums

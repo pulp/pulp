@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,22 +13,16 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-# Python
-import logging
-
 # 3rd Party
 import pymongo
 
 # Pulp
 from pulp.server.api.base import BaseApi
 from pulp.server.auth.principal import get_principal
-#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent
 from pulp.server.pexceptions import PulpException
 
 # -- globals ---------------------------------------------------------------------
-
-log = logging.getLogger(__name__)
 
 # Maps user entered query sort parameters to the pymongo representation
 SORT_ASCENDING = 'ascending'
@@ -42,11 +36,7 @@ SORT_DIRECTION = {
 
 class CdsHistoryApi(BaseApi):
 
-    def __init__(self):
-        BaseApi.__init__(self)
-
     def _getcollection(self):
-        #return get_object_db('cds_history', self._unique_indexes, self._indexes)
         return CDSHistoryEvent.get_collection()
 
 # -- public api ---------------------------------------------------------------------

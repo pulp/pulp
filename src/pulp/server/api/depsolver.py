@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -11,23 +13,27 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation
 
-import sys
-import shutil
-import yum
 import logging
+import shutil
+import sys
+
+import yum
+from yum.misc import prco_tuple_to_string
 from yum.packageSack import ListPackageSack
+from yum.repos import RepoStorage
 
 from pulp.server import util
-from yum.misc import prco_tuple_to_string
-from yum.repos import RepoStorage
+
+
 log = logging.getLogger(__name__)
 
 CACHE_DIR = "/var/lib/pulp/cache/"
 
+
 class DepSolver:
     def __init__(self, repos, pkgs=[]):
         self.pkgs = pkgs
-        self.repos  = repos
+        self.repos = repos
         self._repostore = RepoStorage(self)
         self.setup()
         self.loadPackages()
@@ -48,7 +54,7 @@ class DepSolver:
         """
         self._repostore._setup = True
         self._repostore.populateSack(which='all')
-        
+
     def cleanup(self):
         """
          clean up the repo metadata cache from /var/lib/pulp/cache/
@@ -70,7 +76,7 @@ class DepSolver:
             pkgs.append(po)
         results = self.__locateDeps(pkgs)
         return results
-    
+
     def getRecursiveDepList(self):
         """
          Get dependency list and suggested packages for package names provided.
@@ -100,16 +106,16 @@ class DepSolver:
             self.pkgs = to_solve
 #        log.debug("difference:: %s \n\n" % list(set(to_solve) - set(solved)))
         return all_results
-    
+
     def __locateDeps(self, pkgs):
         results = {}
         for pkg in pkgs:
-            results[pkg] = {} 
+            results[pkg] = {}
             reqs = pkg.requires
             reqs.sort()
             pkgresults = results[pkg]
             for req in reqs:
-                (r,f,v) = req
+                (r, f, v) = req
                 if r.startswith('rpmlib('):
                     continue
                 satisfiers = []
@@ -143,7 +149,7 @@ class DepSolver:
                 if dep not in deps:
                     deps.append(dep)
         return deps
-    
+
     def printable_result(self, results):
         print_doc_str = ""
         for pkg in results:
@@ -156,19 +162,19 @@ class DepSolver:
                     # Unsatisfied dependency
                     print_doc_str += "   Unsatisfied dependency \n"
                     continue
-                
+
                 for po in rlist:
                     print_doc_str += "   provider: %s\n" % po.compactPrint()
         return print_doc_str
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     if len(sys.argv) < 3:
         print "USAGE: python depsolver.py <repoid> <pkgname> <pkgname> ..."
         sys.exit(0)
     repo = [sys.argv[1]]
     pkgs = sys.argv[2:]
     dsolve = DepSolver(repo, pkgs)
-    results =  dsolve.getDependencylist()
+    results = dsolve.getDependencylist()
     print dsolve.processResults(results)
 

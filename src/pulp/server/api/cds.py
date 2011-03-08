@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -20,15 +20,15 @@ import sys
 
 # Pulp
 import pulp.server.agent
+import pulp.server.cds.round_robin as round_robin
+import pulp.server.consumer_utils as consumer_utils
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auditing import audit
-from pulp.server.cds.dispatcher import GoferDispatcher, CdsTimeoutException, \
-                                       CdsCommunicationsException, CdsMethodException
-import pulp.server.cds.round_robin as round_robin
-import pulp.server.consumer_utils as consumer_utils
+from pulp.server.cds.dispatcher import (
+    GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
+    CdsMethodException)
 from pulp.server.db.model import CDS, Repo
-from pulp.server.api.keystore import KeyStore
 from pulp.server.pexceptions import PulpException
 
 
@@ -47,12 +47,10 @@ REPO_FIELDS = [
 class CdsApi(BaseApi):
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.cds_history_api = CdsHistoryApi()
         self.dispatcher = GoferDispatcher()
 
     def _getcollection(self):
-        #return get_object_db('cds', ['hostname'], self._indexes)
         return CDS.get_collection()
 
     def _repocollection(self):
@@ -61,9 +59,6 @@ class CdsApi(BaseApi):
         refactoring of DB access methods away from the logic APIs, in which case this method
         will go away.
         '''
-        #unique_indexes = ["id"]
-        #indexes = ["packages", "packagegroups", "packagegroupcategories"]
-        #return get_object_db('repos', unique_indexes, indexes)
         return Repo.get_collection()
 
 # -- public api ---------------------------------------------------------------------
@@ -384,7 +379,7 @@ class CdsApi(BaseApi):
 
             # Send the update message to the consumer
             agent_repolib.update(repo_id, bind_data)
-        
+
 # -- internal only api ---------------------------------------------------------------------
 
     def unassociate_all_from_repo(self, repo_id):

@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -17,7 +17,13 @@
 
 class BaseApi(object):
 
-    # db
+    # database methods --------------------------------------------------------
+
+    def _getcollection(self):
+        """
+        Protected method to get the db collection corresponding to this api.
+        """
+        raise NotImplementedError()
 
     @property
     def objectdb(self):
@@ -30,13 +36,7 @@ class BaseApi(object):
     def collection(self):
         return self._getcollection()
 
-    # db methods
-
-    def clean(self):
-        """
-        Delete all the Objects in the database.  WARNING: Destructive
-        """
-        self.collection.remove(safe=True)
+    # crud methods ------------------------------------------------------------
 
     def insert(self, object, check_keys=False):
         """
@@ -58,8 +58,8 @@ class BaseApi(object):
         """
         self.collection.remove(kwargs, safe=True)
 
-    def _getcollection(self):
+    def clean(self):
         """
-        Protected method to get the db collection corresponding to this api.
+        Delete all the Objects in the database.  WARNING: Destructive
         """
-        raise NotImplementedError()
+        self.collection.remove(safe=True)

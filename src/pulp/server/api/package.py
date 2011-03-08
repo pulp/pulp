@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,19 +13,20 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import re
-import os
-import pymongo
 import logging
+import os
+import re
+
+import pymongo
+
 # Pulp
-from pulp.server.api.base import BaseApi
-from pulp.server.auditing import audit
-from pulp.server.event.dispatcher import event
-from pulp.server.db import model
-from pulp.server.api.depsolver import DepSolver
 import pulp.server.util
-import pulp.server.db.model
-from pulp.server.pexceptions import PulpException
+from pulp.server.api.base import BaseApi
+from pulp.server.api.depsolver import DepSolver
+from pulp.server.auditing import audit
+from pulp.server.db import model
+from pulp.server.event.dispatcher import event
+
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ class PackageHasReferences(Exception):
 class PackageApi(BaseApi):
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.objectdb.ensure_index([('name', pymongo.DESCENDING),
             ('epoch', pymongo.DESCENDING),
             ('version', pymongo.DESCENDING),
@@ -54,17 +54,7 @@ class PackageApi(BaseApi):
             unique=True, background=True)
 
 
-    @property
-    def _unique_indexes(self):
-        return []
-
-    @property
-    def _indexes(self):
-        return ["name", "filename", "checksum", "epoch", "version", "release",
-                "arch", "description"]
-
     def _getcollection(self):
-        #return get_object_db('packages', self._unique_indexes, self._indexes)
         return model.Package.get_collection()
 
 
@@ -161,7 +151,7 @@ class PackageApi(BaseApi):
         """
         collection = model.Repo.get_collection()
         repo = collection.find_one({"packages":id}, fields=["id"])
-        return ( repo is not None )
+        return (repo is not None)
 
 
     def packages_by_id(self, pkg_ids, **kwargs):
