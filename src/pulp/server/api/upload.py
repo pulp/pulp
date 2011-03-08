@@ -304,7 +304,7 @@ class ImportUploadContent:
                                   self.metadata['requires'], self.metadata['provides'])
         bsync = BaseSynchronizer()
         pkg = bsync.import_package(packageInfo, repo=None)
-        self.__package_imported(pkg.id, pkg_path)
+        self.__package_imported(pkg['id'], pkg_path)
         return pkg
     
     @event(subject='package.uploaded')
@@ -325,7 +325,7 @@ class ImportUploadContent:
         f = FileApi()
         fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'], 
                  self.metadata['checksum'], self.metadata['size'], self.metadata['description'])
-        self.__file_imported(fobj.id, file_path)
+        self.__file_imported(fobj['id'], file_path)
         return fobj
     
     @event(subject='file.uploaded')
