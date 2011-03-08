@@ -24,6 +24,7 @@ from pulp.server import config
 from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.db import connection
+
 # We need to initialize the db connection and auditing prior to any other 
 # imports, since some of the imports will invoke setup methods
 connection.initialize()
@@ -33,27 +34,27 @@ from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.logs import start_logging
 from pulp.server.webservices.controllers import (
-    audit, cds, consumergroups, consumers, errata, packages,
-    permissions, repositories, users, roles, distribution,
-    services, content, orphaned, filters)
+    audit, cds, consumergroups, consumers, content, distribution, errata,
+    filters, orphaned, packages, permissions, repositories, roles, services,
+    users)
 
 
-urls = (
+urls = (# alphabetical order, please
     '/cds', cds.application,
-    '/consumers', consumers.application,
     '/consumergroups', consumergroups.application,
+    '/consumers', consumers.application,
+    '/content', content.application,
     '/distribution', distribution.application,
     '/errata', errata.application,
     '/events', audit.application,
+    '/filters', filters.application,
+    '/orphaned', orphaned.application,
     '/packages', packages.application,
     '/permissions', permissions.application,
     '/repositories', repositories.application,
     '/roles', roles.application,
-    '/users', users.application,
     '/services', services.application,
-    '/content', content.application,
-    '/orphaned', orphaned.application,
-    '/filters', filters.application
+    '/users', users.application,
 )
 
 _stacktrace_dumper = None
