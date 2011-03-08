@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -16,7 +16,6 @@
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
-#from pulp.server.db.connection import get_object_db
 
 
 errata_fields = model.Errata(None, None, None, None, None, None).keys()
@@ -30,7 +29,7 @@ class ErrataApi(BaseApi):
     @audit(params=["id", "title", "type"])
     def create(self, id, title, description, version, release, type,
             status="", updated="", issued="", pushcount="", from_str="",
-            reboot_suggested="", references=(), pkglist=(), severity="", 
+            reboot_suggested="", references=(), pkglist=(), severity="",
             rights="", summary="", solution="", repo_defined=False, immutable=False):
         """
         Create a new Errata object and return it
@@ -51,7 +50,7 @@ class ErrataApi(BaseApi):
         erratum = self.erratum(id)
         if not erratum:
             raise Exception('Erratum "%s", not-found', id)
-        for key,value in delta.items():
+        for key, value in delta.items():
             # anything but references
             if key not in ('references',):
                 erratum[key] = value

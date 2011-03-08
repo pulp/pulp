@@ -1,4 +1,6 @@
-# Copyright (c) 2010 Red Hat, Inc.
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -14,12 +16,12 @@
 import logging
 import uuid
 
+import pulp.server.auth.password_util as password_util
+from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-from pulp.server import config
 from pulp.server.db import model
-#from pulp.server.db.connection import get_object_db
-import pulp.server.auth.password_util as password_util
+
 
 log = logging.getLogger(__name__)
 

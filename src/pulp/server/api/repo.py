@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 20102011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -15,18 +15,20 @@
 
 
 # Python
-from datetime import datetime
-import logging
 import gzip
-from optparse import OptionParser
+import logging
 import os
 import shutil
 import time
 import traceback
-from urlparse import urlparse
+from datetime import datetime
+from optparse import OptionParser
 from StringIO import StringIO
+from urlparse import urlparse
 
 # Pulp
+import pulp.server.agent as agent
+import pulp.server.consumer_utils as consumer_utils
 import pulp.server.logs
 import pulp.server.util
 from pulp.server.api.base import BaseApi
@@ -35,8 +37,6 @@ from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
 from pulp.server import updateinfo
-from pulp.server.compat import chain
-import pulp.server.agent as agent
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
@@ -46,15 +46,15 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
+from pulp.server.api.repo_sync import (
+    yum_rhn_progress_callback, local_progress_callback)
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
-import pulp.server.consumer_utils as consumer_utils
+from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.task import RepoSyncTask
-from pulp.server.api.repo_sync import yum_rhn_progress_callback, \
-    local_progress_callback
 
 
 log = logging.getLogger(__name__)
@@ -68,7 +68,6 @@ class RepoApi(BaseApi):
     """
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.packageapi = PackageApi()
         self.errataapi = ErrataApi()
         self.distroapi = DistributionApi()
@@ -141,7 +140,7 @@ class RepoApi(BaseApi):
 
         if not model.Repo.is_supported_arch(arch):
             raise PulpException('Architecture must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_ARCHS))
-        
+
         if not model.Repo.is_supported_checksum(checksum_type):
             raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
 
@@ -239,7 +238,7 @@ class RepoApi(BaseApi):
                 # need to use lexists so we will return True even for broken links
                 os.unlink(link_path)
 
-    def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None, 
+    def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None,
                filters=[], progress_callback=None):
         repo = self.repository(id)
         if repo is None:
@@ -263,11 +262,11 @@ class RepoApi(BaseApi):
         else:
             self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
                         relative_path=relative_path, cert_data=cert_data, checksum_type=repo['checksum_type'])
-          
+
         # Associate filters if specified
         if len(filters) > 0:
-            self.add_filters(clone_id, filter_ids=filters)    
-            
+            self.add_filters(clone_id, filter_ids=filters)
+
         # Sync from parent repo
         try:
             self._sync(clone_id, progress_callback=progress_callback)
@@ -303,7 +302,7 @@ class RepoApi(BaseApi):
         self.addkeys(clone_id, keylist)
 
     @audit()
-    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None, 
+    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None,
               progress_callback=None, timeout=None, filters=[]):
         """
         Run a repo clone asynchronously.
@@ -498,7 +497,7 @@ class RepoApi(BaseApi):
         path = repo['relative_path']
         ks = KeyStore(path)
         ks.clean(True)
-        
+
         #remove packages
         # clear package list to decrement each package's reference count
         packages = repo["packages"]
@@ -585,7 +584,7 @@ class RepoApi(BaseApi):
 
                 if key == 'name':
                     update_consumers = True
-                
+
                 continue
             # Certificate(s) changed
             if key in ('ca', 'cert', 'key',):
@@ -785,7 +784,7 @@ class RepoApi(BaseApi):
                 log.error("No Package with id: %s found" % pid)
                 errors.append({pid:"unknown"})
                 continue
-            pkg_tup = (package['name'], package['epoch'], package['version'], 
+            pkg_tup = (package['name'], package['epoch'], package['version'],
                     package['release'], package['arch'])
             nvrea = {'name' : package['name'],
                      'version' : package['version'],
@@ -798,13 +797,13 @@ class RepoApi(BaseApi):
             if found or pkg_tup in new_pkg_set:
                 log.error("Package with same NVREA [%s] already exists in repo [%s]"\
                            % (nvrea, repo['id']))
-                errors.append((pid,pkg_tup,package["filename"],package["checksum"]["sha256"]))
+                errors.append((pid, pkg_tup, package["filename"], package["checksum"]["sha256"]))
                 continue
             found = self.get_packages_by_filename(repo["id"], [package["filename"]])
             if found or package["filename"] in new_filenames:
                 log.error("Package with same filename [%s] already exists in repo [%s]"\
                            % (package["filename"], repo['id']))
-                errors.append((pid,pkg_tup,package["filename"],package["checksum"]["sha256"]))
+                errors.append((pid, pkg_tup, package["filename"], package["checksum"]["sha256"]))
                 continue
             self._add_package(repo, package)
             new_pkg_set.add(pkg_tup)
@@ -822,7 +821,7 @@ class RepoApi(BaseApi):
                     log.error("Link %s already exists" % pkg_repo_path)
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
-        log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages-start_add_packages))
+        log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
         #TODO: we also need to account for presto/groups/comps metadata
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         return errors
@@ -1654,7 +1653,7 @@ class RepoApi(BaseApi):
             log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
         else:
             log.error("No file with ID %s associated to this repo" % fileids)
-            
+
     def list_files(self, repoid):
         '''
          List files in a given repo
@@ -1674,7 +1673,7 @@ class RepoApi(BaseApi):
         """
         found = self.collection.find({"files":fileid}, fields=["id"])
         return [r["id"] for r in found]
-    
+
     def import_comps(self, repoid, comps_data=None):
         """
         Creates packagegroups and categories from a comps.xml file
@@ -1690,14 +1689,14 @@ class RepoApi(BaseApi):
         status = bs.sync_groups_data(compsobj, repo)
         self.collection.save(repo, safe=True)
         return status
-    
+
     def export_comps(self, repoid):
         """
         Creates packagegroups and categories from a comps.xml file
         @param compsfile: comps xml stream
         @return: comps xml stream
         """
-        repo = self._get_existing_repo(repoid)    
+        repo = self._get_existing_repo(repoid)
         xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
                 repo['packagegroups'])
         return xml
@@ -1779,7 +1778,7 @@ class RepoApi(BaseApi):
                     pkg_id = d["id"]
             #If we can't locate the id, record the error so we can notify the caller
             if not pkg_id:
-                log.error("Unable to find package id for filename=%s, checksum=%s" %(filename, checksum))
+                log.error("Unable to find package id for filename=%s, checksum=%s" % (filename, checksum))
                 if not errors.has_key(filename):
                     errors[filename] = {}
                 if not errors[filename].has_key(checksum):
@@ -1808,10 +1807,10 @@ class RepoApi(BaseApi):
                 else:
                     errors[filename][checksum].append(repo_id)
             end_time = time.time()
-            log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time-start_time))
+            log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
-            
-        
+
+
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
 if __name__ == '__main__':

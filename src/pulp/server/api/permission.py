@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -16,7 +16,6 @@
 
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
-#from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Permission
 from pulp.server.pexceptions import PulpException
 
@@ -29,12 +28,7 @@ class PermissionAPI(BaseApi):
     # base class methods overridden for implementation
 
     def _getcollection(self):
-        #return get_object_db('permissions', self._unique_indexes, self._indexes)
         return Permission.get_collection()
-
-    @property
-    def _unique_indexes(self):
-        return ['resource']
 
     @audit()
     def create(self, resource):

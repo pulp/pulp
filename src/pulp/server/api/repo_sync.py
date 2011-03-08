@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -16,25 +16,24 @@
 import gzip
 import logging
 import os
-import time
-import traceback
 import shutil
 import sys
+import time
+import traceback
 from urlparse import urlparse
 
 import yum
+from grinder.GrinderCallback import ProgressReport
+from grinder.RepoFetch import YumRepoGrinder
+from grinder.RHNSync import RHNSync
 
 import pulp.server.comps_util
 import pulp.server.crontab
 import pulp.server.util
-from grinder.GrinderCallback import ProgressReport
-from grinder.RepoFetch import YumRepoGrinder
-from grinder.RHNSync import RHNSync
-from pulp.server import updateinfo
+from pulp.server import config, constants, updateinfo
+from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
-from pulp.server.api.distribution import DistributionApi
-from pulp.server import config, constants
 from pulp.server.pexceptions import PulpException
 from pulp.server.db.model import DuplicateKeyError
 

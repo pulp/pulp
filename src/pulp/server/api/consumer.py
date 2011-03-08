@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,11 +13,14 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import logging
 import hashlib
+import logging
 
 # Pulp
 import pulp.server.agent
+import pulp.server.auth.cert_generator as cert_generator
+import pulp.server.cds.round_robin as round_robin
+import pulp.server.consumer_utils as consumer_utils
 from pulp.server.agent import Agent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
@@ -25,15 +28,13 @@ from pulp.server.api.errata import ErrataApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.auditing import audit
-import pulp.server.auth.cert_generator as cert_generator
-import pulp.server.cds.round_robin as round_robin
-import pulp.server.consumer_utils as consumer_utils
 from pulp.server.db import model
+from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
-from pulp.server.async import AsyncAgent, AgentTask
-from pulp.server.event.dispatcher import event
+
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ consumer_fields = model.Consumer(None, None).keys()
 class ConsumerApi(BaseApi):
 
     def __init__(self):
-        BaseApi.__init__(self)
         self.errataapi = ErrataApi()
         self.repoapi = RepoApi()
         self.packageapi = PackageApi()
@@ -85,7 +85,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)
-        for key,value in delta.items():
+        for key, value in delta.items():
             # simple changes
             if key in ('description',):
                 erratum[key] = value

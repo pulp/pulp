@@ -47,16 +47,17 @@ file.delete()
 Done!
 """
 
+import logging
 import os
 import shutil
-import logging
 from uuid import uuid4
-from pulp.server.compat import json
+
 from pulp.server import util
-from pulp.server.api.repo_sync import BaseSynchronizer
-from pulp.server.pexceptions import PulpException
 from pulp.server.api.file import FileApi
+from pulp.server.api.repo_sync import BaseSynchronizer
+from pulp.server.compat import json
 from pulp.server.event.dispatcher import event
+
 
 log = logging.getLogger(__name__)
 
@@ -165,7 +166,7 @@ class File:
         if not self.__finished():
             return self.__segtotal()
         else:
-            return -1
+            return - 1
 
     def append(self, content):
         """
@@ -207,10 +208,10 @@ class File:
         """
         self.__delete(self.__path())
         self.md.valid = 0
-        
+
     def __delete(self, dir):
         for fn in os.listdir(dir):
-            path = os.path.join(dir,fn)
+            path = os.path.join(dir, fn)
             if os.path.isdir(path):
                 self.__delete(path)
             else:
@@ -229,7 +230,7 @@ class File:
         dir = self.__segroot()
         files = os.listdir(dir)
         files.sort()
-        return [os.path.join(dir,fn) for fn in files]
+        return [os.path.join(dir, fn) for fn in files]
 
     def __afpath(self):
         path = os.path.join(self.__path(), self.md.name)
@@ -249,7 +250,7 @@ class File:
 
     def __finished(self):
         uploaded = self.__segtotal()
-        return ( self.md.size <= uploaded )
+        return (self.md.size <= uploaded)
 
     def __segtotal(self):
         total = 0
@@ -261,21 +262,21 @@ class File:
         fn = '%.4d.dat' % seg
         path = os.path.join(self.__segroot(), fn)
         return path
-    
+
     def __valid(self):
         if not self.md.valid:
             raise NotValid(self.uuid)
 
     def __str__(self):
         return str(self.md)
-    
+
 PACKAGE_LOCATION = util.top_package_location()
-    
+
 class ImportUploadContent:
     def __init__(self, metadata, upload_id):
         self.metadata = metadata
         self.upload_id = upload_id
-    
+
     def process(self):
         """
         import the content into pulp database
@@ -284,7 +285,7 @@ class ImportUploadContent:
             return self.__import_rpm()
         if self.metadata['type'] == 'file':
             return self.__import_file()
-    
+
     def __import_rpm(self):
         """
         import the rpms into pulp database
@@ -294,19 +295,19 @@ class ImportUploadContent:
         pkg_path = util.get_shared_package_path(name, version, release, arch, \
                                                 self.metadata['pkgname'], self.metadata['checksum'])
         if util.check_package_exists(pkg_path, self.metadata['checksum'], self.metadata['hashtype']):
-            log.error("Package %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
+            log.error("Package %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
         # copy the content over to the package location
         if not self.__finalize_content(pkg_path):
             return None
-        packageInfo = PackageInfo(name, version, release, epoch, arch,\
-                                  self.metadata['description'], 
+        packageInfo = PackageInfo(name, version, release, epoch, arch, \
+                                  self.metadata['description'],
                                   self.metadata['checksum'], self.metadata['pkgname'],
                                   self.metadata['requires'], self.metadata['provides'])
         bsync = BaseSynchronizer()
         pkg = bsync.import_package(packageInfo, repo=None)
         self.__package_imported(pkg['id'], pkg_path)
         return pkg
-    
+
     @event(subject='package.uploaded')
     def __package_imported(self, id, path):
         # called to raise the event
@@ -319,15 +320,15 @@ class ImportUploadContent:
         log.info("Importing file metadata content into pulp")
         file_path = "%s/%s/%s" % (util.top_file_location(), self.metadata['checksum'][:3], self.metadata['pkgname'])
         if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
-            log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])   
+            log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
         if not self.__finalize_content(file_path):
             return None
         f = FileApi()
-        fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'], 
+        fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'],
                  self.metadata['checksum'], self.metadata['size'], self.metadata['description'])
         self.__file_imported(fobj['id'], file_path)
         return fobj
-    
+
     @event(subject='file.uploaded')
     def __file_imported(self, id, path):
         # called to raise the event
@@ -350,21 +351,21 @@ class ImportUploadContent:
             shutil.copy(temp_file_path, path)
             log.info("File copied from %s to %s" % (temp_file_path, path))
             f.delete()
-        except Exception,e:
-            log.error("Error occurred while copying the file to final location %s" % str(e) )
+        except Exception, e:
+            log.error("Error occurred while copying the file to final location %s" % str(e))
             return False
         return True
 
 class PackageInfo:
     def __init__(self, name, version, release, epoch, arch, \
-                 description, checksum, relativepath, 
+                 description, checksum, relativepath,
                  requires, provides):
         self.name = name
         self.version = version
         self.release = release
         self.epoch = epoch
         self.arch = arch
-        self.checksum =  checksum
+        self.checksum = checksum
         self.relativepath = relativepath
         self.description = description
         self.requires = requires

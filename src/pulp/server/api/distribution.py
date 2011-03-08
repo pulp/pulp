@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -14,10 +14,12 @@
 # in this software or its documentation.
 
 import logging
-from pulp.server.db import model
-from pulp.server.auditing import audit
+
 from pulp.server.api.base import BaseApi
-#from pulp.server.db.connection import get_object_db
+from pulp.server.auditing import audit
+from pulp.server.db import model
+
+
 log = logging.getLogger(__name__)
 
 distribution_fields = model.Distribution(None, None, None, []).keys()
@@ -25,15 +27,7 @@ distribution_fields = model.Distribution(None, None, None, []).keys()
 
 class DistributionApi(BaseApi):
 
-    def __init__(self):
-        BaseApi.__init__(self)
-
-    @property
-    def _indexes(self):
-        return ["id", "files", "relativepath"]
-
     def _getcollection(self):
-        #return get_object_db('distribution', self._unique_indexes, self._indexes)
         return model.Distribution.get_collection()
 
     @audit(params=["id"])
