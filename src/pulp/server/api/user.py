@@ -30,7 +30,6 @@ class UserApi(BaseApi):
 
     def __init__(self):
         BaseApi.__init__(self)
-        self.default_login = config.config.get('server', 'default_login')
 
     def _getcollection(self):
         return model.User.get_collection()
@@ -57,7 +56,7 @@ class UserApi(BaseApi):
         """
         login = delta.pop('login')
         user = self.user(login)
-        for key,value in delta.items():
+        for key, value in delta.items():
             # simple changes
             if key in ('roles',):
                 user[key] = value
@@ -94,4 +93,5 @@ class UserApi(BaseApi):
         Delete all the Users in the database except the default admin user.  default 
         user can not be deleted
         """
-        self.collection.remove({'login': {'$ne': self.default_login}}, safe=True)
+        default_login = config.config.get('server', 'default_login')
+        self.collection.remove({'login': {'$ne': default_login}}, safe=True)
