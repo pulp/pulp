@@ -94,7 +94,7 @@ class Errata(Model):
 
     def __init__(self, id, title, description, version, release, type, status=u"",
             updated=u"", issued=u"", pushcount=u"", from_str=u"",
-            reboot_suggested=False, references=[], pkglist=[], severity=u"", 
+            reboot_suggested=False, references=[], pkglist=[], severity=u"",
             rights=u"", summary=u"", solution=u"", repo_defined=False, immutable=False):
         self._id = id
         self.id = id
@@ -194,6 +194,7 @@ class File(Model):
     """
 
     collection_name = 'file'
+    unique_indicies = (('filename', 'checksum'),)
 
     def __init__(self, filename, checksum_type,
                  checksum, size, description=None, repo_defined=False):
@@ -274,7 +275,7 @@ class Repo(Model):
     @classmethod
     def is_supported_arch(cls, arch):
         return arch in cls.SUPPORTED_ARCHS
-    
+
     @classmethod
     def is_supported_checksum(cls, checksum_type):
         return checksum_type in cls.SUPPORTED_CHECKSUMS

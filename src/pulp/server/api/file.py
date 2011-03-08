@@ -17,7 +17,6 @@ import logging
 import os
 import re
 
-import pymongo
 from pymongo.errors import DuplicateKeyError
 
 # Pulp
@@ -33,12 +32,6 @@ file_fields = model.File(None, None, None, None, None, None).keys()
 
 
 class FileApi(BaseApi):
-
-    def __init__(self):
-        self.objectdb.ensure_index([
-            ('filename', pymongo.DESCENDING),
-            ('checksum', pymongo.DESCENDING)],
-            unique=True, background=True)
 
     def _getcollection(self):
         return model.File.get_collection()
