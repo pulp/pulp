@@ -109,15 +109,62 @@ class Delete(FilterAction):
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
                                help=_("filter id (required)"))
+        self.parser.add_option("--force", action="store_false", dest="force", default=True,
+                               help=_("force deletion of filter by removing association with repositories"))
+
 
     def run(self):
         id = self.get_required_option('id')
         filter = self.get_filter(id)
-        deleted = self.filter_api.delete(id=id)
+        force = getattr(self.opts, 'force', True)
+        if force:
+            force_value = 'false'
+        else:
+            force_value = 'true'
+        print _("Force value: %s") % force_value
+        deleted = self.filter_api.delete(id=id, force=force_value)
         if deleted:
             print _("Successfully deleted Filter [ %s ]") % id
         else:
             print _("Filter [%s] not deleted") % id
+
+
+class AddPackages(FilterAction):
+
+    description = _('add packages to filter')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("new filter id to create (required)"))
+        self.parser.add_option("-p", "--package", action="append", dest="pnames",
+                               help=_("packages to be added to the filter; to specify multiple packages use multiple -p"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        pnames = self.opts.pnames or []
+        if not pnames:
+            system_exit(os.EX_USAGE, _("At least one package regex needs to be provided"))
+        filter = self.filter_api.add_packages(id, pnames)
+        print _("Successfully added packages to filter [ %s ]" % id)
+
+
+class RemovePackages(FilterAction):
+
+    description = _('remove packages from filter')
+
+    def setup_parser(self):
+        self.parser.add_option("--id", dest="id",
+                               help=_("new filter id to create (required)"))
+        self.parser.add_option("-p", "--package", action="append", dest="pnames",
+                               help=_("packages to be removed from the filter; to specify multiple packages use multiple -p"))
+
+    def run(self):
+        id = self.get_required_option('id')
+        pnames = self.opts.pnames or []
+        if not pnames:
+            system_exit(os.EX_USAGE, _("At least one package regex needs to be provided"))
+        filter = self.filter_api.remove_packages(id, pnames)
+        print _("Successfully removed packages to filter [ %s ]" % id)
 
 # filter command ----------------------------------------------------------------
 

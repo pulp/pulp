@@ -125,6 +125,8 @@ def setup_admin(admin):
     filter_cmd.add_action('create', filter.Create())
     filter_cmd.add_action('delete', filter.Delete())
     filter_cmd.add_action('info', filter.Info())
+    filter_cmd.add_action('add_packages', filter.AddPackages())
+    filter_cmd.add_action('remove_packages', filter.RemovePackages())
     admin.add_command('filter', filter_cmd)
 
     user_cmd = user.User()

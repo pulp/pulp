@@ -19,8 +19,8 @@ import web
 
 from pulp.server.api.filter import FilterApi
 from pulp.server.auth.authorization import (
-    grant_automatic_permissions_for_created_resource, CREATE, READ, DELETE)
-from pulp.server.webservices.controllers.base import JSONController
+    grant_automatic_permissions_for_created_resource, CREATE, READ, DELETE, EXECUTE)
+from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.http import extend_uri_path, resource_path
 
 # filters api ---------------------------------------------------------------
@@ -83,21 +83,65 @@ class Filter(JSONController):
         return self.ok(api.filter(id))
 
 
-    @JSONController.error_handler
-    @JSONController.auth_required(DELETE)
-    def DELETE(self, id):
-        """
-        Delete a filter
-        @param id: id of filter to delete
-        @return: True on successful deletion of filter
-        """
-        filter = api.filter(id)
-        if filter is None:
-            return self.not_found('No such filter: %s' % id)
+class FilterActions(AsyncController):
 
-        api.delete(id=id)
+    exposed_actions = (
+        'add_packages',
+        'remove_packages',
+        'delete_filter'
+    )
+
+    def add_packages(self, id):
+        """
+        @param id: filter id
+        @return: True on successful addition of packages to filter
+        """
+        data = self.params()
+        api.add_packages(id, data['packages'])
         return self.ok(True)
 
+    def remove_packages(self, id):
+        """
+        @param id: filter id
+        @return: True on successful removal of packages from filter
+        """
+        data = self.params()
+        api.remove_packages(id, data['packages'])
+        return self.ok(True)
+
+    def delete_filter(self, id):
+        """
+        @param id: filter id
+        @return: True on successful deletion of filter
+        """
+        data = self.params()
+        if data['force'] == 'true':
+            force = True
+        else:
+            force = False
+        api.delete(id, force)
+        return self.ok(True)
+
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self, id, action_name):
+        """
+        Action dispatcher. This method checks to see if the action is exposed,
+        and if so, implemented. It then calls the corresponding method (named
+        the same as the action) to handle the request.
+        @type id: str
+        @param id: filter id
+        @type action_name: str
+        @param action_name: name of the action
+        @return: http response
+        """
+        filter = api.filter(id, fields=['id'])
+        if not filter:
+            return self.not_found('No filter with id %s found' % id)
+        action = getattr(self, action_name, None)
+        if action is None:
+            return self.internal_server_error('No implementation for %s found' % action_name)
+        return action(id)
 
 
 # web.py application ----------------------------------------------------------
@@ -105,6 +149,9 @@ class Filter(JSONController):
 URLS = (
     '/$', 'Filters',
     '/([^/]+)/$', 'Filter',
+
+    '/([^/]+)/(%s)/$' % '|'.join(FilterActions.exposed_actions),
+    'FilterActions',
 )
 
 application = web.application(URLS, globals())
