@@ -21,7 +21,7 @@ import threading
 import traceback
 
 
-FLAGFILE = '/var/log/pulp/stacktrace-dump.flag'
+FLAGFILE = '/var/log/pulp/stacktrace-dump'
 
 
 class StacktraceDumper(object):
