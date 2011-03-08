@@ -75,7 +75,7 @@ class TestYumRepoSync(unittest.TestCase):
         self.clean()
 
     
-    def test_local_sync_callback(self):
+    def test_yum_sync_callback(self):
         # We need report to be accesible for writing by the callback
         global report
         report = None
@@ -87,8 +87,6 @@ class TestYumRepoSync(unittest.TestCase):
         self.rapi._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
-        print report
-
         self.assertTrue(packages is not None)
         self.assertTrue(len(packages) == 3)
         self.assertEqual(report["num_download"], 3)

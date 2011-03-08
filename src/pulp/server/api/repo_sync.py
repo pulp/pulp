@@ -532,14 +532,11 @@ class LocalSynchronizer(BaseSynchronizer):
             if not os.path.exists(pkg_dirname):
                 os.makedirs(pkg_dirname)
             shutil.copy(pkg, pkg_location)
-            repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
-            if not os.path.islink(repo_pkg_path):
-                os.symlink(pkg_location, repo_pkg_path)
+            
             self.progress['num_download'] += 1
-        else:
-            repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
-            if not os.path.islink(repo_pkg_path):
-                os.symlink(pkg_location, repo_pkg_path)
+        repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
+        if not os.path.islink(repo_pkg_path):
+            pulp.server.util.create_rel_symlink(pkg_location, repo_pkg_path)
 
     def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
         # Compute and import packages
