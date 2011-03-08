@@ -209,8 +209,12 @@ def processFile(filename, relativeDir=None):
 
     hash['nvrea'] = tuple(nvrea)
     hash['description'] = h['description']
-    hash['requires'] = h['requires']
-    hash['provides'] = h['provides']
+    #
+    # pulp server expect requires/provides to be list of
+    # list/tuple like yum provides.
+    #
+    hash['requires'] = [(r,) for r in h['requires']]
+    hash['provides'] = [(p,) for p in h['provides']]
     return hash
 
 def getChecksumType(header):
