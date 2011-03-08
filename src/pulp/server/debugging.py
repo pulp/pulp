@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import atexit
+import logging
 import os
 import Queue
 import sys
@@ -69,9 +70,10 @@ class StacktraceDumper(object):
                 pass
 
     def start(self):
+        atexit.register(self.exit)
         self.thread = threading.Thread(target=self._monitor)
         self.thread.setDaemon(True)
-        atexit.register(self.exit)
+        self.thread.start()
 
     def exit(self):
         try:
