@@ -27,9 +27,10 @@ class FilterAPI(PulpAPI):
         path = "/filters/"
         return self.server.POST(path, data)[1]
 
-    def delete(self, id):
-        path = "/filters/%s/" % id
-        return self.server.DELETE(path)[1]
+    def delete(self, id, force):
+        info = {'force': force}
+        path = "/filters/%s/delete_filter/" % id
+        return self.server.POST(path, info)[1]
 
     def clean(self):
         path = "/filters/"
@@ -42,3 +43,13 @@ class FilterAPI(PulpAPI):
     def filter(self, id):
         path = "/filters/%s/" % str(id)
         return self.server.GET(path)[1]
+
+    def add_packages(self, id, packages):
+        addinfo = {'packages': packages}
+        path = "/filters/%s/add_packages/" % id
+        return self.server.POST(path, addinfo)[1]
+
+    def remove_packages(self, id, packages):
+        rminfo = {'packages': packages}
+        path = "/filters/%s/remove_packages/" % id
+        return self.server.POST(path, rminfo)[1]

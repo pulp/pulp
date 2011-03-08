@@ -20,6 +20,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
+from pulp.server.event.dispatcher import event
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +82,35 @@ class FilterApi(BaseApi):
         """
         return self.collection.find_one({'id': id})
 
+    @event(subject='filter.updated.content')
+    @audit()
+    def add_packages(self, id, packages=[]):
+        '''
+         Add packages to a filter
+         @param id: filter id
+         @param packages: packages
+        '''
+        filter = self.filter(id)
+        for package in packages:
+            if package not in filter['package_list']:
+                filter['package_list'].append(package)
+        self.collection.save(filter, safe=True)
+        log.info("Successfully added packages %s to filter %s" % (packages, id))
+
+    @event(subject='filter.updated.content')
+    @audit()
+    def remove_packages(self, id, packages=[]):
+        '''
+         Remove packages from a filter
+         @param id: filter id
+         @param packages: packages
+        '''
+        filter = self.filter(id)
+        for package in packages:
+            if package in filter['package_list']:
+                filter['package_list'].remove(package)
+        self.collection.save(filter, safe=True)
+        log.info("Successfully removed packages %s from filter %s" % (packages, id))
 
     @audit()
     def clean(self):
@@ -103,6 +133,7 @@ class FilterApi(BaseApi):
         for repo in associated_repos:
             associated_repo_ids.append(repo['id'])
         return associated_repo_ids
+
 
     def remove_association_with_repos(self, id, repoids):
         repo_db = self._getRepoCollection()
