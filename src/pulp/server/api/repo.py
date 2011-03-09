@@ -1746,9 +1746,9 @@ class RepoApi(BaseApi):
         """
         Associates a list of packages to multiple repositories.
         Each package is identified by it's (filename,checksum)
-        @param pkg_info: format is [(((filename,checksum), [repoids]))]
+        @param pkg_info: format is [((filename,checksum), [repoids])]
         @return:    [] on success
-                    or {"filename":{"checksum":"repos"} on error 
+                    or {"filename":{"checksum":[repoids]} on error 
         """
         start_translate = time.time()
         pkg_query = []

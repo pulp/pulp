@@ -827,12 +827,22 @@ class AddPackages(RepoAction):
                 pids.append(pdep['id'])
         else:
             print _("No Source repo specified, skipping dependency lookup")
+        errors = {}
         try:
-            self.repository_api.add_package(id, pids)
+            errors = self.repository_api.add_package(id, pids)
         except Exception:
             system_exit(os.EX_DATAERR, _("Unable to add package [%s] to repo [%s]" % (pnames, id)))
-        print _("Successfully added packages %s to repo [%s]." % (pnames, id))
-
+        if not errors:
+            print _("Successfully added packages %s to repo [%s]." % (pnames, id))
+        else:
+            for e in errors:
+                # Format, [pkg_id, NEVRA, filename, sha256]
+                filename = e[2]
+                checksum = e[3]
+                print _("Error unable to add: %s with sha256sum of %s") % (filename, checksum)
+            print _("Errors occurred see /var/log/pulp/pulp.log for more info")
+            print _("Note: any packages not listed in error output have been added")
+        print _("%s packages added to repo [%s]") % (len(pids) - len(errors), id)
 class RemovePackages(RepoAction):
     description = _('Remove package from the repository.')
 

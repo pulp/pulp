@@ -377,8 +377,8 @@ class RepositoryActions(AsyncController):
         @return: True on successful addition of packages to repository
         """
         data = self.params()
-        api.add_package(id, data['packageid'])
-        return self.ok(True)
+        errors = api.add_package(id, data['packageid'])
+        return self.ok(errors)
 
     def delete_package(self, id):
         """
