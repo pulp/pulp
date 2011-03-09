@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -16,7 +15,6 @@
 
 import web
 
-
 from pulp.server.auditing import events
 from pulp.server.auth.authorization import READ
 from pulp.server.webservices import mongo
@@ -30,16 +28,32 @@ class Events(JSONController):
     @JSONController.auth_required(READ)
     def GET(self):
         """
-        List all available events.
-        This controller supports a number of filters:
-        * principal, api, method=<name>: all filter on event fields
-        * field=<field name>: these filters tell the controller which fields
-          should be returned for each event
-        * limit=<int>: this filter tells the controller the maximum number of
-          events to return
-        * show=errors_only: show only events that have an exception associated
-          with them
-        @return: a list of events.
+        [[wiki]]
+        title: List Audited Events
+        description: List all available audited events.
+        method: GET
+        path: /events/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of event objects
+        object fields:
+         * timestamp (int) - time the event occurred
+         * principal_type (str) - type of the principal
+         * principal (str) - principal that triggered the event
+         * action (str) - name of the audited action
+         * method (str) - name of the method called
+         * params (list of str) - parameter passed to the method
+         * result (str) - result of the method call or null if not recorded
+         * exception (str) - name of the error that occurred, if any
+         * traceback (str) - code traceback for the error, if any
+        filters:
+         * api (str) - the api name
+         * method (str) - the method name
+         * principal (str) - the caller of an api method
+         * field (str) - which fields are returned for each event
+         * limit (int) - limit the number of events returned
+         * show=errors_only - only show events that have a traceback associated with them
         """
         valid_filters = ('principal', 'api', 'method', 'field', 'limit', 'show')
         filters = self.filters(valid_filters)
