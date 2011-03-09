@@ -401,11 +401,11 @@ class TestConsumerHistoryApi(unittest.TestCase):
     def test_query_sort_directions(self):
         # Setup
         e1 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_CREATED, None)
-        self.consumer_history_api.objectdb.insert(e1, safe=True)
+        self.consumer_history_api.collection.insert(e1, safe=True)
 
         e2 = ConsumerHistoryEvent(123, 'admin', consumer_history.TYPE_CONSUMER_DELETED, None)
         e2.timestamp = datetime.datetime.now() + datetime.timedelta(days=1)
-        self.consumer_history_api.objectdb.insert(e2, safe=True)
+        self.consumer_history_api.collection.insert(e2, safe=True)
 
         # Test
         ascending = self.consumer_history_api.query(sort='ascending')
@@ -522,10 +522,10 @@ class TestConsumerHistoryApi(unittest.TestCase):
         e3.timestamp = datetime.datetime(2000, 6, 1).strftime('%s')
         e4.timestamp = datetime.datetime(2000, 10, 1).strftime('%s')
 
-        self.consumer_history_api.objectdb.insert(e1)
-        self.consumer_history_api.objectdb.insert(e2)
-        self.consumer_history_api.objectdb.insert(e3)
-        self.consumer_history_api.objectdb.insert(e4)
+        self.consumer_history_api.collection.insert(e1)
+        self.consumer_history_api.collection.insert(e2)
+        self.consumer_history_api.collection.insert(e3)
+        self.consumer_history_api.collection.insert(e4)
 
     def _populate_for_cull(self):
         '''
@@ -551,8 +551,8 @@ class TestConsumerHistoryApi(unittest.TestCase):
         e4.timestamp = (now - days_ago_90).strftime('%s')
         e5.timestamp = (now - days_ago_120).strftime('%s')
 
-        self.consumer_history_api.objectdb.insert(e1)
-        self.consumer_history_api.objectdb.insert(e2)
-        self.consumer_history_api.objectdb.insert(e3)
-        self.consumer_history_api.objectdb.insert(e4)
-        self.consumer_history_api.objectdb.insert(e5)
+        self.consumer_history_api.collection.insert(e1)
+        self.consumer_history_api.collection.insert(e2)
+        self.consumer_history_api.collection.insert(e3)
+        self.consumer_history_api.collection.insert(e4)
+        self.consumer_history_api.collection.insert(e5)

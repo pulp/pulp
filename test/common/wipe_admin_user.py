@@ -6,6 +6,6 @@ from pulp.server.api.user import UserApi
 uapi = UserApi()
 admin = uapi.user('admin')
 print "Deleting Admin: %s" % admin
-uapi.objectdb.remove(admin)
+uapi.collection.remove(admin)
 print "Admin deleted.  Restart apache and you will get a new one created."
 

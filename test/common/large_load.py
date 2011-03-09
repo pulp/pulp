@@ -37,11 +37,11 @@ from pulp.server.util import random_string
 import pulp.server.util
 from testutil import create_package
 from pulp.client.utils import generatePakageProfile
- 
+
 TEST_PACKAGE_ID = 'random-package'
 
 class LargeLoad(unittest.TestCase):
-    
+
     """
     Util for loading large amounts of data through our API
     """
@@ -61,21 +61,21 @@ class LargeLoad(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
-        # db = self.rapi.objectdb
-        # self.rapi.objectdb.database.connection.drop_database(db)
-        
+        # db = self.rapi.collection
+        # self.rapi.collection.database.connection.drop_database(db)
+
     def create_repos(self):
         print "RPMDIRS: %s" % self.dirlist
         numrepos = 0
         for rdir in self.dirlist:
             id = rdir.replace('/', '.')
-            repo = self.rapi.create(id,'test repo: %s' % rdir, \
+            repo = self.rapi.create(id, 'test repo: %s' % rdir, \
                 'i386', 'local:file://%s' % rdir)
             self.rapi._sync(repo['id'])
             numrepos = numrepos + 1
-        
+
         return numrepos
-    
+
     def add_package(self, profile, package):
         info = {
             'name'          : package['name'],
@@ -85,15 +85,15 @@ class LargeLoad(unittest.TestCase):
             'arch'          : package['arch'],
         }
         profile.append(info)
-        
-    
+
+
     def create_consumers(self):
         last_desc = None
         last_id = None
         repos = self.rapi.repositories()
         consumers = []
         randomPackage = create_package(self.papi, TEST_PACKAGE_ID)
-        repo = random.choice(repos) 
+        repo = random.choice(repos)
         packages = repo['packages']
         packageProfile = generatePakageProfile(packages.values())
         packageProfileRand = copy.deepcopy(packageProfile)
@@ -105,22 +105,22 @@ class LargeLoad(unittest.TestCase):
                 c['package_profile'] = packageProfileRand
             else:
                 c['package_profile'] = packageProfile
-                
+
             last_desc = c.description
             last_id = c.id
             consumers.append(c)
             if (i % 100 == 0):
-                repo = random.choice(repos) 
+                repo = random.choice(repos)
                 packages = repo['packages']
                 packageProfile = generatePakageProfile(packages.values())
-                
+
         print "BULK INSERTING length: %s" % len(consumers)
         self.capi.bulkcreate(consumers)
         print "Done bulk inserting"
-        
+
         return last_desc, last_id
 
-    
+
     def find_consumer(self, last_id):
         # Get entire list.  Make sure its not too slow.
         # When we initially were storing the entire package in the 
@@ -131,7 +131,7 @@ class LargeLoad(unittest.TestCase):
         print "C: %s" % c['package_profile']
         # assert(len(consumers) == self.numconsumers)
         packages = self.capi.packages(c['id'])
-        
+
         randomPackage = random.choice(packages)
         p = ll.papi.package_by_ivera(randomPackage['name'],
                                      randomPackage['version'],
@@ -147,9 +147,9 @@ class LargeLoad(unittest.TestCase):
 
 
 parser = optparse.OptionParser()
-parser.add_option('--dirlist', dest='dirlist', 
+parser.add_option('--dirlist', dest='dirlist',
                  action='store', help='File containing list of directories containing the repos you wish to use for this test')
-parser.add_option('--numconsumers', dest='numconsumers', 
+parser.add_option('--numconsumers', dest='numconsumers',
                  action='store', default=1000, help='Number of consumers you want to load')
 
 parser.add_option('--clean', dest='clean', action='store_true', help='Clean db')
@@ -187,7 +187,7 @@ start = time.time()
 ll = LargeLoad(dirlist, numconsumers, config)
 if (not skipclean):
     ll.clean()
-cleanTime = time.time() - start 
+cleanTime = time.time() - start
 
 start = time.time()
 if (not skiprepos):
@@ -212,8 +212,8 @@ consumerSearchTime = time.time() - start
 numpackages = len(ll.papi.packages())
 print "Your database now has [%s] repositories with [%s] total packages and [%s] consumers" \
       % (numrepos, numpackages, numconsumers)
-           
-print "Timings: cleanTime        : [%s]" % cleanTime 
-print "repo create and list time : [%s]" % repoTime 
+
+print "Timings: cleanTime        : [%s]" % cleanTime
+print "repo create and list time : [%s]" % repoTime
 print "consumer create time      : [%s]" % consumerCreateTime
 print "consumer find time        : [%s]" % consumerSearchTime

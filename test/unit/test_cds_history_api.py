@@ -472,7 +472,7 @@ class TestCDSHistoryApi(unittest.TestCase):
         e3.timestamp = datetime.datetime(2000, 6, 1)
         e4.timestamp = datetime.datetime(2000, 10, 1)
 
-        self.cds_history_api.objectdb.insert(e1)
-        self.cds_history_api.objectdb.insert(e2)
-        self.cds_history_api.objectdb.insert(e3)
-        self.cds_history_api.objectdb.insert(e4)
+        self.cds_history_api.collection.insert(e1)
+        self.cds_history_api.collection.insert(e2)
+        self.cds_history_api.collection.insert(e3)
+        self.cds_history_api.collection.insert(e4)

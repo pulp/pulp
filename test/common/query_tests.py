@@ -15,7 +15,7 @@ papi = PackageApi(dict())
 rapi = RepoApi(dict())
 
 print "finding one consumer"
-c = capi.objectdb.find_one()
+c = capi.collection.find_one()
 
 start = time.time()
 found = capi.consumer(c['id'])
@@ -29,7 +29,7 @@ clist = [found]
 packageFindTime = time.time() - start
 
 consumerWithPackage = random.choice(clist)
-repo = rapi.objectdb.find_one()
+repo = rapi.collection.find_one()
 if repo['id'] in consumerWithPackage['repoids']:
     pass
 else:
@@ -39,7 +39,7 @@ else:
 start = time.time()
 regex = re.compile(".*%s" % repo['id'])
 key = "package_profile.%s" % TEST_PACKAGE_ID
-found = list(capi.objectdb.find({"repoids": regex, key: {"$exists": True}}))
+found = list(capi.collection.find({"repoids": regex, key: {"$exists": True}}))
 packageAndRepoFind = time.time() - start
 print "Num consumers found with repo: %s" % len(found)
 
@@ -50,4 +50,4 @@ print "time to find consumer package + bound to repo   : [%s]" % packageAndRepoF
 
 
 
-  
+
