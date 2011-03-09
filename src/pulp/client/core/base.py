@@ -200,6 +200,8 @@ class Action(object):
                 when = time.mktime(when)
             except:
                 system_exit(-1, _("Unable to parse scheduled time of: %s. Format needs to be in: %s") % (self.opts.when, fmt))
+            if when < time.time():
+                system_exit(-1, _("Scheduled time is in the past: %s.  Please re-run with a valid time.") % (self.opts.when))
         return when
 
     def run(self):
