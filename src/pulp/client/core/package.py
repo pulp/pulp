@@ -18,6 +18,8 @@
 
 import base64
 import os
+import re
+
 import string
 import sys
 import time

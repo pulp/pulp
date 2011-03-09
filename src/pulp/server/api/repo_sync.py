@@ -16,6 +16,8 @@
 import gzip
 import logging
 import os
+import re
+
 import shutil
 import sys
 import time
@@ -34,6 +36,7 @@ from pulp.server import config, constants, updateinfo
 from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
+from pulp.server.api.filter import FilterApi
 from pulp.server.pexceptions import PulpException
 from pulp.server.db.model import DuplicateKeyError
 
@@ -176,6 +179,7 @@ class BaseSynchronizer(object):
         self.package_api = PackageApi()
         self.errata_api = ErrataApi()
         self.distro_api = DistributionApi()
+        self.filter_api = FilterApi()
         self.progress = {
             'status': 'running',
             'item_name': None,
@@ -539,7 +543,7 @@ class LocalSynchronizer(BaseSynchronizer):
         self.progress['num_error'] += 1
 
     def _process_rpm(self, pkg, dst_repo_dir):
-        pkg_info = pulp.server.util.get_rpm_information(pkg)
+        pkg_info = pulp.server.util.get_rpm_information(pkg)     
         pkg_checksum = pulp.server.util.get_file_checksum(hashtype="sha256", filename=pkg)
         pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
                 pkg_info['version'], pkg_info['release'], pkg_info['arch'],
@@ -555,17 +559,64 @@ class LocalSynchronizer(BaseSynchronizer):
         if not os.path.islink(repo_pkg_path):
             pulp.server.util.create_rel_symlink(pkg_location, repo_pkg_path)
 
-    def _sync_rpms(self, dst_repo_dir, src_repo_dir, progress_callback=None):
+    def _find_combined_whitelist_packages(self, repo_filters):
+        combined_whitelist_packages = []
+        for filter_id in repo_filters:
+            filter = self.filter_api.filter(filter_id)
+            if filter['type'] == "whitelist":
+                combined_whitelist_packages.extend(filter['package_list'])
+        return combined_whitelist_packages
+            
+    def _find_combined_blacklist_packages(self, repo_filters):
+        combined_blacklist_packages = []
+        for filter_id in repo_filters:
+            filter = self.filter_api.filter(filter_id)
+            if filter['type'] == "blacklist":
+                combined_blacklist_packages.extend(filter['package_list'])
+        return combined_blacklist_packages
+    
+    def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
+        pkglist = []
+
+        if whitelist_packages:
+            for pkg in unfiltered_pkglist:
+                for whitelist_package in whitelist_packages:
+                    w = re.compile(whitelist_package)
+                    if w.match(os.path.basename(pkg)):
+                        pkglist.append(pkg)
+                        exit
+        else:
+            pkglist = unfiltered_pkglist
+        
+        if blacklist_packages:
+            for pkg in pkglist:
+                for blacklist_package in blacklist_packages:
+                    b = re.compile(blacklist_package)
+                    if b.match(os.path.basename(pkg)):
+                        pkglist.remove(pkg)
+                        exit
+         
+        return pkglist               
+                
+    
+    def _sync_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, 
+                   progress_callback=None):
         # Compute and import packages
-        pkglist = self.list_rpms(src_repo_dir)
+        unfiltered_pkglist = self.list_rpms(src_repo_dir)
+        pkglist = self._find_filtered_package_list(unfiltered_pkglist, whitelist_packages, blacklist_packages)
 
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
             progress_callback(self.progress)
+            
+            
+        filtered_rpms = []
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(pkglist)))
             try:
+                pkg_info = pulp.server.util.get_rpm_information(pkg)
+                log.info("Processing rpm: %s" % os.path.basename(pkg))
                 self._process_rpm(pkg, dst_repo_dir)
                 self.progress['details']["rpm"]["num_success"] += 1
                 self.progress["num_success"] += 1
@@ -646,14 +697,27 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['details']["drpm"]["size_left"] -= item_size
             if progress_callback is not None:
                 progress_callback(self.progress)
-
+                
+    
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
-        self.init_progress_details(src_repo_dir, skip_dict)
+        self.init_progress_details(src_repo_dir, skip_dict) 
 
         try:
             dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
+            
+            # Process repo filters if any
+            if repo['filters']:
+                log.info("Repo filters : %s" % repo['filters'])
+                whitelist_packages = self._find_combined_whitelist_packages(repo['filters'])
+                blacklist_packages = self._find_combined_blacklist_packages(repo['filters'])
+                log.info("combined whitelist packages = %s" % whitelist_packages)
+                log.info("combined blacklist packages = %s" % blacklist_packages)
+            else:
+                whitelist_packages = []
+                blacklist_packages = []
+                
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
             if repo['use_symlinks']:
@@ -673,7 +737,8 @@ class LocalSynchronizer(BaseSynchronizer):
                     os.makedirs(dst_repo_dir)
                 if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
                     log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                    self._sync_rpms(dst_repo_dir, src_repo_dir, progress_callback)
+                    self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, 
+                                    progress_callback)
                     log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
                     log.debug("Starting _sync_drpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
                     self._sync_drpms(dst_repo_dir, src_repo_dir, progress_callback)
