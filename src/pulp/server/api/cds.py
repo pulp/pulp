@@ -110,7 +110,7 @@ class CdsApi(BaseApi):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             raise PulpException('CDS error encountered while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
 
-        self.insert(cds)
+        self.collection.insert(cds, safe=True)
 
         self.cds_history_api.cds_registered(hostname)
 

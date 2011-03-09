@@ -192,7 +192,7 @@ class ConsumerHistoryApi(BaseApi):
         @type  consumer_id: string or number
         '''
         event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_CONSUMER_CREATED, None)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def consumer_deleted(self, consumer_id):
         '''
@@ -202,7 +202,7 @@ class ConsumerHistoryApi(BaseApi):
         @type  consumer_id: string or number
         '''
         event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_CONSUMER_DELETED, None)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def repo_bound(self, consumer_id, repo_id):
         '''
@@ -216,7 +216,7 @@ class ConsumerHistoryApi(BaseApi):
         '''
         details = {'repo_id' : repo_id}
         event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_REPO_BOUND, details)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def repo_unbound(self, consumer_id, repo_id):
         '''
@@ -230,7 +230,7 @@ class ConsumerHistoryApi(BaseApi):
         '''
         details = {'repo_id' : repo_id}
         event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_REPO_UNBOUND, details)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def packages_installed(self, consumer_id, package_nveras, errata_titles=None):
         '''
@@ -261,7 +261,7 @@ class ConsumerHistoryApi(BaseApi):
             event_type = TYPE_PACKAGE_INSTALLED
 
         event = ConsumerHistoryEvent(consumer_id, self._originator(), event_type, details)
-        self.insert(event)
+        self.collection.insert(event, check_keys=False, safe=True)
 
     def packages_removed(self, consumer_id, package_nveras):
         '''
@@ -279,7 +279,7 @@ class ConsumerHistoryApi(BaseApi):
 
         details = {'package_nveras' : package_nveras}
         event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_PACKAGE_UNINSTALLED, details)
-        self.insert(event)
+        self.collection.insert(event, check_keys=False, safe=True)
 
     def profile_updated(self, consumer_id, package_profile):
         '''
@@ -295,7 +295,7 @@ class ConsumerHistoryApi(BaseApi):
         '''
         details = {'package_profile' : package_profile}
         event = ConsumerHistoryEvent(consumer_id, self._originator(), TYPE_PROFILE_CHANGED, details)
-        self.insert(event)
+        self.collection.insert(event, check_keys=False, safe=True)
 
     def cull_history(self, lifetime):
         '''

@@ -25,6 +25,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.event.dispatcher import event
 from pulp.server.db import model
+from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
@@ -43,11 +44,36 @@ class FileApi(BaseApi):
         """
         try:
             f = model.File(filename, checksum_type, checksum, size, description, repo_defined=repo_defined)
-            self.insert(f)
+            self.collection.insert(f, safe=True)
             return f
         except DuplicateKeyError:
             log.error("file with name [%s] and checksum [%s] already exists" % (filename, checksum))
             return self.files(filename=filename, checksum=checksum, checksum_type=checksum_type)[0]
+
+    @audit()
+    def update(self, id, delta):
+        """
+        Updates a file object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
+        """
+        delta.pop('id', None)
+        file = self.file(id)
+        if not file:
+            raise PulpException('File [%s] does not exist', id)
+        for key, value in delta.items():
+            # simple changes
+            if key in ('description',):
+                file[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(file, safe=True)
 
     @audit()
     def delete(self, id, keep_files=False):
@@ -61,7 +87,7 @@ class FileApi(BaseApi):
         file_path = "%s/%s/%s" % (pulp.server.util.top_file_location(),
                                       fileobj['checksum']['sha256'][:3],
                                       fileobj['filename'])
-        BaseApi.delete(self, _id=id)
+        self.collection.remove({'_id':id})
         if not keep_files:
             log.info("file path to be remove %s" % file_path)
             if os.path.exists(file_path):

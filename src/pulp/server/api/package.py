@@ -26,6 +26,7 @@ from pulp.server.api.depsolver import DepSolver
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
+from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -66,8 +67,35 @@ class PackageApi(BaseApi):
         """
         p = model.Package(name, epoch, version, release, arch, description,
                 checksum_type, checksum, filename, repo_defined=repo_defined)
-        self.insert(p)
+        self.collection.insert(p, safe=True)
         return p
+
+    @audit()
+    def update(self, id, delta):
+        """
+        Updates a package object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
+        """
+        delta.pop('id', None)
+        pkg = self.package(id)
+        if not pkg:
+            raise PulpException('Package [%s] does not exist', id)
+        for key, value in delta.items():
+            # simple changes
+            if key in ('description',
+                       'requires',
+                       'provides',
+                       'download_url',):
+                pkg[key] = value
+                continue
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(pkg, safe=True)
 
     @audit()
     def delete(self, id, keep_files=False):
@@ -85,7 +113,7 @@ class PackageApi(BaseApi):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
                 os.remove(pkg_packages_path)
                 self.__pkgdeleted(id, pkg_packages_path)
-        BaseApi.delete(self, _id=id)
+        self.collection.remove({'_id':id})
 
     def package(self, id):
         """

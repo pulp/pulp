@@ -47,13 +47,15 @@ class UserApi(BaseApi):
         self.collection.insert(user, safe=True)
         return user
 
-    @audit(params=['delta'])
-    def update(self, delta):
+    @audit()
+    def update(self, login, delta):
         """
         Update a user and hash the inbound password if it is different
-        from the existing password
+        from the existing password.
+        @param login: The user login.
+        @param delta: A dict of fields to change.
         """
-        login = delta.pop('login')
+        delta.pop('login', None)
         user = self.user(login)
         for key, value in delta.items():
             # simple changes
@@ -69,6 +71,15 @@ class UserApi(BaseApi):
                 'update keyword "%s", not-supported' % key
         self.collection.save(user, safe=True)
         return user
+
+    @audit()
+    def delete(self, login):
+        """
+        Delete a user.
+        @param login: The login.
+        @type login: str
+        """
+        self.collection.remove({'login':login})
 
     def users(self, spec=None, fields=None):
         """

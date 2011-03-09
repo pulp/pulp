@@ -296,8 +296,8 @@ def grant_permission_to_role(resource, role_name, operation_names):
         if op in current_ops:
             continue
         new_ops.append(op)
-    role['permissions'][resource].extend(new_ops)
-    _role_api.update(role)
+    #role['permissions'][resource].extend(new_ops)
+    _role_api.add_permissions(role, resource, new_ops)
     for user in users:
         _permission_api.grant(resource, user, operations)
     return True
@@ -395,7 +395,7 @@ def add_user_to_role(role_name, user_name):
     if role_name in user['roles']:
         return False
     user['roles'].append(role_name)
-    _user_api.update(Delta(user, 'roles', pk='login'))
+    _user_api.update(user['login'], Delta(user, 'roles'))
     for resource, operations in role['permissions'].items():
         _permission_api.grant(resource, user, operations)
     return True
@@ -421,7 +421,7 @@ def remove_user_from_role(role_name, user_name):
     if role_name not in user['roles']:
         return False
     user['roles'].remove(role_name)
-    _user_api.update(Delta(user, 'roles', pk='login'))
+    _user_api.update(user['login'], Delta(user, 'roles'))
     for resource, operations in role['permissions'].items():
         other_roles = _get_other_roles(role, user['roles'])
         user_ops = _operations_not_granted_by_roles(resource,
@@ -488,8 +488,7 @@ def _ensure_super_user_role():
     role = _role_api.role(super_user_role)
     if role is None:
         role = _role_api.create(super_user_role)
-        role['permissions']['/'] = [CREATE, READ, UPDATE, DELETE, EXECUTE]
-        _role_api.update(role)
+        _role_api.add_permissions(role, '/', [CREATE, READ, UPDATE, DELETE, EXECUTE])
 
 
 def _ensure_consumer_user_role():
@@ -499,11 +498,9 @@ def _ensure_consumer_user_role():
     role = _role_api.role(consumer_users_role)
     if role is None:
         role = _role_api.create(consumer_users_role)
-        role['permissions']['/consumers/'] = [CREATE, READ] # XXX not sure this is necessary
-        role['permissions']['/errata/'] = [READ]
-        role['permissions']['/repositories/'] = [READ]
-        _role_api.update(role)
-
+        _role_api.add_permissions(role, '/consumers/', [CREATE, READ]) # XXX not sure this is necessary
+        _role_api.add_permissions(role, '/errata/', [READ])
+        _role_api.add_permissions(role, '/repositories/', [READ])
 
 def ensure_builtin_roles():
     """

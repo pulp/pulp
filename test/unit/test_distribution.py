@@ -101,8 +101,7 @@ class TestDistribution(unittest.TestCase):
         self.assertTrue(found is not None)
         self.assertTrue(found['description'] == description)
         new_description = "test distro"
-        found['description'] = new_description
-        self.dapi.update(found)
+        self.dapi.update(id, {'description':new_description})
         found = self.dapi.distribution(id)
         self.assertTrue(found is not None)
         self.assertTrue(found['description'] == new_description)

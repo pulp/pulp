@@ -26,7 +26,6 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.server.db.model import Delta
 import pulp.server.api.repo
 import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
@@ -63,9 +62,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Update #1 ----------
         repo = self.repo_api.repository(repo_id)
-        d = Delta(repo)
-        d.sync_schedule = sync_schedule
-        repo = self.repo_api.update(d)
+        d = dict(sync_schedule=sync_schedule)
+        repo = self.repo_api.update(repo_id, d)
 
         # Verify
         tab = pulp.server.crontab.CronTab()
@@ -77,9 +75,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Update #2 ----------
         repo = self.repo_api.repository(repo_id)
-        d = Delta(repo)
-        d.sync_schedule = sync_schedule_2
-        repo = self.repo_api.update(d)
+        d = dict(sync_schedule=sync_schedule_2)
+        repo = self.repo_api.update(repo_id, d)
 
         # Verify
         tab = pulp.server.crontab.CronTab()
@@ -90,9 +87,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Delete #1 ----------
         repo = self.repo_api.repository(repo_id)
-        d = Delta(repo)
-        d.sync_schedule = None
-        repo = self.repo_api.update(d)
+        d = dict(sync_schedule=None)
+        repo = self.repo_api.update(repo_id, d)
 
         # Verify
         tab = pulp.server.crontab.CronTab()
@@ -101,9 +97,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # -- Delete #2 ----------
         repo = self.repo_api.repository(repo_id)
-        d = Delta(repo)
-        d.sync_schedule = None
-        repo = self.repo_api.update(d)
+        d = dict(sync_schedule=None)
+        repo = self.repo_api.update(repo_id, d)
 
         # Verify
         tab = pulp.server.crontab.CronTab()

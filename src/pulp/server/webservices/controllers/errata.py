@@ -98,10 +98,10 @@ class Erratum(JSONController):
     def PUT(self, id):
         """
         Update errata
-        @param erratum obj: The erratum object
+        @param delta obj: The erratum delta object
         """
-        erratum = self.params()
-        erratum = api.update(erratum)
+        delta = self.params()
+        erratum = api.update(id, delta)
         return self.ok(True)
 
     @JSONController.error_handler

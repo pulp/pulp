@@ -300,12 +300,12 @@ class TestApi(unittest.TestCase):
         relativepath = 'f11/i386'
         feed = 'yum:http://abc.com/%s' % relativepath
         repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
-        d = dict(id=id, feed='yum:http://xyz.com')
-        repo = self.rapi.update(d)
-        d = dict(id=id, use_symlinks=True)
-        repo = self.rapi.update(d)
-        d = dict(id=id, relative_path='/bla/bla')
-        repo = self.rapi.update(d)
+        d = dict(feed='yum:http://xyz.com')
+        repo = self.rapi.update(id, d)
+        d = dict(use_symlinks=True)
+        repo = self.rapi.update(id, d)
+        d = dict(relative_path='/bla/bla')
+        repo = self.rapi.update(id, d)
         root = top_repos_location()
         # add some phony content and try again
         path = os.path.join(root, repo['relative_path'])
@@ -314,20 +314,20 @@ class TestApi(unittest.TestCase):
         f = open(os.path.join(path, 'package'), 'w')
         f.close()
         try:
-            d = dict(id=id, feed='yum:http://xyz.com/my/new/path')
-            repo = self.rapi.update(d)
+            d = dict(feed='yum:http://xyz.com/my/new/path')
+            repo = self.rapi.update(id, d)
             self.assertTrue(False, 'should fail')
         except:
             pass
         try:
-            d = dict(id=id, use_symlinks=False)
-            repo = self.rapi.update(d)
+            d = dict(use_symlinks=False)
+            repo = self.rapi.update(id, d)
             self.assertTrue(False, 'should fail')
         except:
             pass
         try:
-            d = dict(id=id, relative_path='/bla/bla')
-            repo = self.rapi.update(d)
+            d = dict(relative_path='/bla/bla')
+            repo = self.rapi.update(id, d)
             self.assertTrue(False, 'should fail')
         except:
             pass
@@ -397,7 +397,7 @@ class TestApi(unittest.TestCase):
                                                     'epoch': '0', 'version': '0.3.1', 'release': '1.fc11',
                                                     'arch': 'x86_64'}]}]
 
-        self.eapi.update(Delta(test_errata_1, 'pkglist'))
+        self.eapi.update(id, Delta(test_errata_1, 'pkglist'))
         self.rapi.add_errata(repo['id'], (test_errata_1['id'],))
 
         cid = 'test-consumer'
@@ -731,8 +731,8 @@ class TestApi(unittest.TestCase):
         # Simulate a change that a package was deleted
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         r = self.rapi.repository(r["id"])
-        r["source"] = RepoSource("local:file://%s" % (repo_path))
-        self.rapi.update(r)
+        d = dict(feed="local:file://%s" % repo_path)
+        self.rapi.update(r["id"], d)
         self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])

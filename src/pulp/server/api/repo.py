@@ -562,29 +562,30 @@ class RepoApi(BaseApi):
 
     @event(subject='repo.updated')
     @audit()
-    def update(self, delta={}):
+    def update(self, id, delta):
         """
-        Update a repo by id.
-        @param delta: A dict containing (id) and update keywords.
+        Update a repo object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
         """
-        id = delta.pop('id')
+        delta.pop('id', None)
         repo = self._get_existing_repo(id)
         prevpath = repo.get('relative_path')
         newpath = delta.pop('relative_path', None)
         hascontent = self._hascontent(repo)
-
-        # Keeps a running track of whether or not the changes require notifying
-        # conusmers
+        # Keeps a running track of whether or not the
+        # changes require notifying conusmers
         update_consumers = False
-
         for key, value in delta.items():
             # simple changes
             if key in ('name', 'arch',):
                 repo[key] = value
-
                 if key == 'name':
                     update_consumers = True
-
                 continue
             # Certificate(s) changed
             if key in ('ca', 'cert', 'key',):
@@ -629,7 +630,6 @@ class RepoApi(BaseApi):
         #
         if pathchanged:
             update_consumers = True
-
             if not hascontent:
                 rootdir = pulp.server.util.top_repos_location()
                 path = os.path.join(rootdir, prevpath)
@@ -644,13 +644,9 @@ class RepoApi(BaseApi):
                     "Repository has content, relative path cannot be changed")
         # store changed object
         self.collection.save(repo, safe=True)
-
         # Update subscribed consumers after the object has been saved
         if update_consumers:
             self.update_repo_on_consumers(repo)
-
-        # reset for event handler
-        delta['id'] = id
         return repo
 
     def repositories(self, spec=None, fields=None):

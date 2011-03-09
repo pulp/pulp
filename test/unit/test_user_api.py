@@ -29,7 +29,6 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.server.db.model import Delta
 from pulp.server.api.user import UserApi
 import testutil
 
@@ -90,8 +89,8 @@ class TestUsers(unittest.TestCase):
         login = 'some-login'
         clear_txt_pass = 'some password'
         user = self.uapi.create(login)
-        user['password'] = clear_txt_pass
-        user = self.uapi.update(Delta(user, 'password', pk='login'))
+        d = dict(password=clear_txt_pass)
+        user = self.uapi.update(login, d)
 
         # Lookup user again and verify password is hashed
         user = self.uapi.user(login)

@@ -64,8 +64,8 @@ class RepoEvent(EventHandler):
         @param kwargs: The keyword arguments passed to RepoApi.update()
         @type kwargs: list
         """
-        delta = args[1]
-        id = delta.pop('id')
+        id = args[1]
+        delta = args[2]
         event = dict(id=id, delta=delta,)
         self.producer.send('repo.updated', event)
 

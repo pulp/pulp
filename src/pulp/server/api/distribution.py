@@ -18,6 +18,7 @@ import logging
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
+from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class DistributionApi(BaseApi):
             log.info("Distribution with id %s already exists" % id)
             return d
         d = model.Distribution(id, description, relativepath, files)
-        self.insert(d)
+        self.collection.insert(d, safe=True)
         return d
 
     @audit(params=["id"])
@@ -48,14 +49,32 @@ class DistributionApi(BaseApi):
         """
         Delete distribution object based on "_id" key
         """
-        super(DistributionApi, self).delete(id=id)
+        self.collection.remove({'id':id}, safe=True)
 
     @audit()
-    def update(self, distribution):
+    def update(self, id, delta):
         """
-        Updates an distribution object in the database
+        Updates a consumer object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
         """
-        return super(DistributionApi, self).update(distribution)
+        delta.pop('id', None)
+        dist = self.distribution(id)
+        if not dist:
+            raise PulpException('Distributon [%s] does not exist', id)
+        for key, value in delta.items():
+            # simple changes
+            if key in ('description', 'relativepath', 'files',):
+                dist[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(dist, safe=True)
 
     def distribution(self, id):
         """

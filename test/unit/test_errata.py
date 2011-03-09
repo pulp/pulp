@@ -188,7 +188,7 @@ class TestErrata(unittest.TestCase):
         self.assertTrue(found['title'] == title)
         new_title = "B"
         found['title'] = new_title
-        self.eapi.update(model.Delta(found, 'title'))
+        self.eapi.update(id, model.Delta(found, 'title'))
         found = self.eapi.erratum(id)
         self.assertTrue(found is not None)
         self.assertTrue(found['title'] == new_title)
@@ -338,7 +338,7 @@ class TestErrata(unittest.TestCase):
                                                     'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
                                                     'epoch': '0', 'version': '0.3.1', 'release': '1.fc11',
                                                     'arch': 'x86_64'}]}]
-        self.eapi.update(model.Delta(test_errata_1, 'pkglist'))
+        self.eapi.update(id, model.Delta(test_errata_1, 'pkglist'))
         self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
         cid = 'test-consumer'

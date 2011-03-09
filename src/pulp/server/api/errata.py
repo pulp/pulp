@@ -16,6 +16,7 @@
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
+from pulp.server.pexceptions import PulpException
 
 
 errata_fields = model.Errata(None, None, None, None, None, None).keys()
@@ -42,11 +43,17 @@ class ErrataApi(BaseApi):
         return e
 
     @audit()
-    def update(self, delta):
+    def update(self, id, delta):
         """
-        Updates an errata object in the database
+        Updates an errata object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
         """
-        id = delta.pop('id')
+        delta.pop('id', None)
         erratum = self.erratum(id)
         if not erratum:
             raise Exception('Erratum "%s", not-found', id)

@@ -52,9 +52,33 @@ class ConsumerGroupApi(BaseApi):
                 raise PulpException("No Consumer with id: %s found" % consumerid)
 
         c = model.ConsumerGroup(id, description, consumerids)
-        self.insert(c)
+        self.collection.insert(c, safe=True)
         return c
 
+    @audit()
+    def update(self, id, delta):
+        """
+        Updates a consumer group object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
+        """
+        delta.pop('id', None)
+        group = self.consumergroup(id)
+        if not group:
+            raise PulpException('Group [%s] does not exist', id)
+        for key, value in delta.items():
+            # simple changes
+            if key in ('description',):
+                group[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(group, safe=True)
 
     def consumergroups(self, spec=None, fields=None):
         """
@@ -94,7 +118,7 @@ class ConsumerGroupApi(BaseApi):
                                 'conflicting key-value pairs. You need to delete these key-values from the consumer '
                                 'in order to add it to this consumergroup: %s', consumerid, groupid, conflicting_keyvalues)
         self._add_consumer(consumergroup, consumer)
-        self.update(consumergroup)
+        self.collection.save(consumergroup, safe=True)
 
     def _add_consumer(self, consumergroup, consumer):
         """
@@ -117,7 +141,7 @@ class ConsumerGroupApi(BaseApi):
             return
         consumerids.remove(consumerid)
         consumergroup["consumerids"] = consumerids
-        self.update(consumergroup)
+        self.collection.save(consumergroup, safe=True)
 
     @audit()
     def bind(self, id, repoid):
@@ -222,7 +246,7 @@ class ConsumerGroupApi(BaseApi):
         else:
             raise PulpException('Given key [%s] already exists', key)
         consumergroup['key_value_pairs'] = key_value_pairs
-        self.update(consumergroup)
+        self.collection.save(consumergroup, safe=True)
 
 
     @audit()
@@ -245,7 +269,7 @@ class ConsumerGroupApi(BaseApi):
         else:
             raise PulpException('Given key [%s] does not exist', key)
         consumergroup['key_value_pairs'] = key_value_pairs
-        self.update(consumergroup)
+        self.collection.save(consumergroup, safe=True)
 
     @audit()
     def update_key_value_pair(self, id, key, value):
@@ -276,7 +300,7 @@ class ConsumerGroupApi(BaseApi):
                                     'delete consumer\'s original value.', key, conflicting_consumers)
 
         consumergroup['key_value_pairs'] = key_value_pairs
-        self.update(consumergroup)
+        self.collection.save(consumergroup, safe=True)
 
 
     @audit()

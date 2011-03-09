@@ -38,7 +38,7 @@ from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.pexceptions import PulpException
-from pulp.server.db.model import DuplicateKeyError
+from pulp.server.db.model import Delta, DuplicateKeyError
 
 
 log = logging.getLogger(__name__)
@@ -334,8 +334,11 @@ class BaseSynchronizer(object):
                 newpkg.requires.append(dep[0])
             for prov in package.provides:
                 newpkg.provides.append(prov[0])
+            # update filter
+            filter = ['requires', 'provides']
             # set the download URL
             if repo:
+                filter.append('download_url')
                 newpkg.download_url = \
                     constants.SERVER_SCHEME \
                     + config.config.get('server', 'server_name') \
@@ -345,7 +348,8 @@ class BaseSynchronizer(object):
                     + repo["id"] \
                     + "/" \
                     + file_name
-            self.package_api.update(newpkg)
+            delta = Delta(newpkg, filter)
+            self.package_api.update(newpkg.id, delta)
             return newpkg
         except Exception, e:
             log.error('Package "%s", import failed', file_name, exc_info=True)

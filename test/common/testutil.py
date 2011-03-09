@@ -20,6 +20,7 @@ from datetime import timedelta
 from pulp.server import auditing
 from pulp.server import config
 from pulp.server.db import connection
+from pulp.server.db.model import Delta
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.util import random_string
 from pulp.server.auth.cert_generator import SerialNumber
@@ -111,7 +112,8 @@ def create_random_package(api):
         checksum_type="sha256", checksum=test_checksum, filename=test_filename)
     p['requires'] = test_requires
     p['provides'] = test_requires
-    api.update(p)
+    d = Delta(p, ('requires', 'provides',))
+    api.update(p.id, d)
     return p
 
 

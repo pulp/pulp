@@ -97,8 +97,8 @@ class User(JSONController):
         Update user
         @param login: The user's login
         """
-        user = self.params()
-        user = api.update(user)
+        delta = self.params()
+        user = api.update(login, delta)
         return self.ok(True)
 
     @JSONController.error_handler

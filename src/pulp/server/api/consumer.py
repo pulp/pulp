@@ -77,11 +77,17 @@ class ConsumerApi(BaseApi):
         return c
 
     @audit()
-    def update(self, delta):
+    def update(self, id, delta):
         """
-        Updates a consumer object in the database
+        Updates a consumer object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
         """
-        id = delta.pop('id')
+        delta.pop('id', None)
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] does not exist', id)

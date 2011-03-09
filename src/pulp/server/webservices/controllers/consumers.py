@@ -150,14 +150,14 @@ class Consumer(JSONController):
         @type id: str
         """
         log.debug("PUT called.")
-        consumer_data = self.params()
-        if id != consumer_data['id']:
+        delta = self.params()
+        if id != delta.pop('id', id):
             return self.bad_request('Cannot change the consumer id')
         # remove the deferred fields as they are not manipulated via this method
         for field in itertools.chain(['uri_ref'], # web services only field
                                      ConsumerDeferredFields.exposed_fields):
-            consumer_data.pop(field, None)
-        consumer_api.update(consumer_data)
+            delta.pop(field, None)
+        consumer_api.update(id, delta)
         return self.ok(True)
 
     @JSONController.error_handler

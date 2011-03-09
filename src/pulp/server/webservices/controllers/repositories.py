@@ -153,16 +153,16 @@ class Repository(JSONController):
         @param id: repository id
         @return: True on successful update of repository meta data
         """
-        repo_data = self.params()
-        if repo_data['id'] != id:
+        delta = self.params()
+        if delta.pop('id',id) != id:
             return self.bad_request('You cannot change a repository id')
         # we need to remove the substituted uri references
         # XXX we probably need to add the original data back as well
         for field in itertools.chain(['uri_ref'], # web services only field
                                      RepositoryDeferredFields.exposed_fields):
-            if field in repo_data and isinstance(repo_data[field], basestring):
-                repo_data.pop(field, None)
-        api.update(repo_data)
+            if field in delta and isinstance(delta[field], basestring):
+                delta.pop(field, None)
+        api.update(delta)
         return self.ok(True)
 
     @JSONController.error_handler

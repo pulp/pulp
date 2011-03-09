@@ -146,7 +146,7 @@ class CdsHistoryApi(BaseApi):
             raise PulpException('CDS hostname must be specified')
 
         event = CDSHistoryEvent(cds_hostname, self._originator(), CDSHistoryEventType.REGISTERED)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def cds_unregistered(self, cds_hostname):
         '''
@@ -159,7 +159,7 @@ class CdsHistoryApi(BaseApi):
             raise PulpException('CDS hostname must be specified')
 
         event = CDSHistoryEvent(cds_hostname, self._originator(), CDSHistoryEventType.UNREGISTERED)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def repo_associated(self, cds_hostname, repo_id):
         '''
@@ -179,7 +179,7 @@ class CdsHistoryApi(BaseApi):
 
         details = {'repo_id' : repo_id}
         event = CDSHistoryEvent(cds_hostname, self._originator(), CDSHistoryEventType.REPO_ASSOCIATED, details)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def repo_unassociated(self, cds_hostname, repo_id):
         '''
@@ -199,7 +199,7 @@ class CdsHistoryApi(BaseApi):
 
         details = {'repo_id' : repo_id}
         event = CDSHistoryEvent(cds_hostname, self._originator(), CDSHistoryEventType.REPO_UNASSOCIATED, details)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def sync_started(self, cds_hostname):
         '''
@@ -212,7 +212,7 @@ class CdsHistoryApi(BaseApi):
             raise PulpException('CDS hostname must be specified')
 
         event = CDSHistoryEvent(cds_hostname, self._originator(), CDSHistoryEventType.SYNC_STARTED)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 
     def sync_finished(self, cds_hostname, error=None):
         '''
@@ -230,5 +230,5 @@ class CdsHistoryApi(BaseApi):
 
         details = {'error' : error}
         event = CDSHistoryEvent(cds_hostname, self._originator(), CDSHistoryEventType.SYNC_FINISHED, details)
-        self.insert(event)
+        self.collection.insert(event, safe=True)
 

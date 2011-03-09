@@ -35,14 +35,39 @@ class PermissionAPI(BaseApi):
         if self.permission(resource) is not None:
             raise PulpException('permission for %s already exists' % resource)
         permission = Permission(resource)
-        self.insert(permission)
+        self.collection.insert(permission, safe=True)
         return permission
 
     # base class methods overridden for auditing
 
     @audit()
+    def update(self, id, delta):
+        """
+        Updates a permission object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
+        """
+        delta.pop('id', None)
+        permission = self.permission(id)
+        if not permission:
+            raise PulpException('Permission [%s] does not exist', id)
+        for key, value in delta.items():
+            # simple changes
+            if key in ('users',):
+                permission[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(permission, safe=True)
+
+    @audit()
     def delete(self, permission):
-        super(PermissionAPI, self).delete(resource=permission['resource'])
+        self.collection.remove({'resource':permission['resource']})
 
     @audit()
     def clean(self):
@@ -82,7 +107,7 @@ class PermissionAPI(BaseApi):
             if o in current_ops:
                 continue
             current_ops.append(o)
-        self.update(permission)
+        self.collection.save(permission, safe=True)
 
     @audit()
     def revoke(self, resource, user, operations):
@@ -112,4 +137,4 @@ class PermissionAPI(BaseApi):
         if not permission['users']:
             self.delete(permission)
             return
-        self.update(permission)
+        self.collection.save(permission, safe=True)

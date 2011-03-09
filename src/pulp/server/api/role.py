@@ -35,14 +35,39 @@ class RoleAPI(BaseApi):
         if role is not None:
             raise PulpException('role %s already exists' % name)
         role = Role(name)
-        self.insert(role)
+        self.collection.insert(role, safe=True)
         return role
 
     # base class methods overridden for auditing
 
     @audit()
+    def update(self, id, delta):
+        """
+        Updates a role object.
+        @param id: The repo ID.
+        @type id: str
+        @param delta: A dict containing update keywords.
+        @type delta: dict
+        @return: The updated object
+        @rtype: dict
+        """
+        delta.pop('id', None)
+        role = self.role(id)
+        if not role:
+            raise PulpException('Role [%s] does not exist', id)
+        for key, value in delta.items():
+            # simple changes
+            if key in ('users','permissions',):
+                role[key] = value
+                continue
+            # unsupported
+            raise Exception, \
+                'update keyword "%s", not-supported' % key
+        self.collection.save(role, safe=True)
+
+    @audit()
     def delete(self, role):
-        super(RoleAPI, self).delete(name=role['name'])
+        self.collection.remove({'name':role['name']})
 
     @audit()
     def clean(self):
@@ -66,7 +91,7 @@ class RoleAPI(BaseApi):
             if o in current_ops:
                 continue
             current_ops.append(o)
-        self.update(role)
+        self.collection.save(role, safe=True)
 
     @audit()
     def remove_permissions(self, role, resource, operations):
@@ -80,4 +105,4 @@ class RoleAPI(BaseApi):
         # in no more allowed operations, remove the resource
         if not current_ops:
             del role['permissions'][resource]
-        self.update(role)
+        self.collection.save(role, safe=True)
