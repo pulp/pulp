@@ -613,13 +613,10 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['step'] = ProgressReport.DownloadItems
             progress_callback(self.progress)
             
-            
-        filtered_rpms = []
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(pkglist)))
             try:
-                pkg_info = pulp.server.util.get_rpm_information(pkg)
                 log.info("Processing rpm: %s" % os.path.basename(pkg))
                 self._process_rpm(pkg, dst_repo_dir)
                 self.progress['details']["rpm"]["num_success"] += 1

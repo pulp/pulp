@@ -121,7 +121,6 @@ class Delete(FilterAction):
             force_value = 'false'
         else:
             force_value = 'true'
-        print _("Force value: %s") % force_value
         deleted = self.filter_api.delete(id=id, force=force_value)
         if deleted:
             print _("Successfully deleted Filter [ %s ]") % id

@@ -263,8 +263,7 @@ class CdsApi(BaseApi):
             # Automatically redistribute consumers to pick up these changes
             self.redistribute(repo_id)
 
-    @audit()
-    def sync(self, cds_hostname):
+    def cds_sync(self, cds_hostname):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
         regardless of when its next scheduled sync would be. The CDS will be brought up to
@@ -279,7 +278,6 @@ class CdsApi(BaseApi):
 
         @raise PulpException: if the CDS does not exist
         '''
-
         log.info('Synchronizing CDS [%s]' % cds_hostname)
 
         # Entity load and sanity check on the arguments

@@ -45,11 +45,11 @@ class BaseApi(object):
 #        self.collection.save(object, safe=True)
 #        return object
 
-#    def delete(self, **kwargs):
-#        """
-#        Delete a single stored Object
-#        """
-#        self.collection.remove(kwargs, safe=True)
+    def delete(self, **kwargs):
+        """
+        Delete a single stored Object
+        """
+        self.collection.remove(kwargs, safe=True)
 
     def clean(self):
         """

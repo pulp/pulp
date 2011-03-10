@@ -221,7 +221,8 @@ def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
         for key_name in gpg_keys:
             repo_keys.add_key(key_name, gpg_keys[key_name])
 
-        repo['gpgkey'] = '\n'.join(repo_keys.key_filenames())
+        key_urls = ['file:' + kfn for kfn in repo_keys.key_filenames()]
+        repo['gpgkey'] = '\n'.join(key_urls)
     else:
         repo['gpgcheck'] = '0'
         repo['gpgkey'] = None

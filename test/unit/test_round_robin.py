@@ -278,3 +278,20 @@ class TestRoundRobin(unittest.TestCase):
 
         # Verify
         self.assertTrue(not removed)
+
+    def test_multiple_repos(self):
+        '''
+        Tests having multiple repos in consideration for round robin calculation.
+        The idea here is to make sure the IDs of the DB entities are correctly using
+        the ID.
+        '''
+
+        # Setup
+        round_robin.add_cds_repo_association('cds1', 'repo1')
+        round_robin.add_cds_repo_association('cds2', 'repo1')
+
+        round_robin.add_cds_repo_association('cds1', 'repo2')
+        round_robin.add_cds_repo_association('cds2', 'repo2')
+        round_robin.add_cds_repo_association('cds3', 'repo2')
+
+        

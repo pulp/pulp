@@ -18,7 +18,7 @@ This module contains utilities to support the consumer-related operations that a
 used outside of consumer API itself.
 '''
 
-from pulp.server.config import config
+import pulp.server.config
 from pulp.server.db.model.resource import Consumer
 
 
@@ -69,10 +69,10 @@ def build_bind_data(repo, hostnames, key_list):
 
     # Add in the pulp server itself as the last host in the list if there are CDS
     # instances; if there are none, the pulp server will be the only entry (default case)
-    server_name = config.get('server', 'server_name')
+    server_name = pulp.server.config.config.get('server', 'server_name')
     hostnames.append(server_name)
 
-    repo_hosted_url = config.get('server', 'relative_url')
+    repo_hosted_url = pulp.server.config.config.get('server', 'relative_url')
     repo_relative_path = repo['relative_path']
     repo_urls = []
     for host in hostnames:

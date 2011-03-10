@@ -236,7 +236,7 @@ class TestRepolib(unittest.TestCase):
         self.assertEqual(1, len(loaded['gpgkey'].split('\n')))
         self.assertEqual(1, len(os.listdir(os.path.join(TEST_KEYS_DIR, REPO['id']))))
 
-        key_file = open(loaded['gpgkey'].split('\n')[0], 'r')
+        key_file = open(loaded['gpgkey'].split('\n')[0][5:], 'r')
         contents = key_file.read()
         key_file.close()
 

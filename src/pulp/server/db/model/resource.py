@@ -209,19 +209,20 @@ class File(Model):
 
 class Filter(Model):
     """
-    Class represents a blacklist or whitelist filter that can be applied when syncing a repository
+    Class represents a blacklist or whitelist filter that can be applied when syncing a local repository
     """
     collection_name = 'filters'
     unique_indicies = ('id',)
     other_indicies = ('type')
 
-    def __init__(self, id, type, description=None, package_list=[]):
+    def __init__(self, id, type, description=None, package_list=None):
         self._id = id
         self.id = id
         self.description = description
         self.type = type
+        if not package_list:
+            package_list = []
         self.package_list = package_list
-
 
 # repository models -----------------------------------------------------------
 
