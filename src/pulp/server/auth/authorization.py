@@ -266,11 +266,12 @@ def revoke_all_permissions_from_user(user_name):
     @return: True on success
     """
     user = _get_user(user_name)
-    for permission in _permission_api._getcollection().find():
+    for permission in _permission_api.collection.find():
         if user['login'] not in permission['users']:
             continue
         del permission['users'][user['login']]
-        _permission_api.update(permission['resource'], Delta(user, 'users'))
+        _permission_api.update(permission['resource'],
+                               {'users': permission['users']})
     return True
 
 
