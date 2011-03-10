@@ -53,13 +53,13 @@ class Events(JSONController):
          * principal (str) - the caller of an api method
          * field (str) - which fields are returned for each event
          * limit (int) - limit the number of events returned
-         * show=errors_only - only show events that have a traceback associated with them
+         * errors_only (bool) - only show events that have a traceback associated with them
         """
-        valid_filters = ('principal', 'api', 'method', 'field', 'limit', 'show')
+        valid_filters = ('principal', 'api', 'method', 'field', 'limit', 'errors_only')
         filters = self.filters(valid_filters)
 
-        show = filters.pop('show', [])
-        errors_only = 'errors_only' in show
+        errors_only_flag = filters.pop('errors_only', ['false'])[0].lower()
+        errors_only = errors_only_flag in ('true', 'yes', '1')
 
         limit = filters.pop('limit', None)
         if limit is not None:
