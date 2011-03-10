@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.146
+Version:        0.0.147
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -243,6 +243,13 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Thu Mar 10 2011 Jeff Ortel <jortel@redhat.com> 0.0.147-1
+- Fix so associate_packages doesn't add a problem repo_id twice
+  (jmatthews@redhat.com)
+- 681866 - adding packages to a repo is very slow (jmatthews@redhat.com)
+- 683011 - package symlinks in repos should be relative (fix for
+  repository/add_packages) (jmatthews@redhat.com)
+
 * Tue Mar 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.146-1
 - 682992 - tighten up parallel uploads. (jortel@redhat.com)
 - Fix provides/requires on uploaded packages. (jortel@redhat.com)
