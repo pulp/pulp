@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.147
+Version:        0.0.148
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -229,6 +229,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{_sysconfdir}/gofer/plugins/gofer_cds_plugin.conf
 %{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
+%config(noreplace) %{_sysconfdir}/pulp/cds.conf
 /var/lib/pulp-cds
 /var/log/pulp-cds
 
@@ -242,7 +243,134 @@ popd
 rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
+%post cds
+pushd %{_sysconfdir}/rc.d/init.d
+ln -s goferd pulp-cds
+popd
+
+%postun cds
+rm -f %{_sysconfdir}/rc.d/init.d/pulp-cds
+
+
 %changelog
+* Thu Mar 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.148-1
+- Need to add file: prefix to keys listed in the .repo file.
+  (jason.dobies@redhat.com)
+- Updated relative path (jason.dobies@redhat.com)
+- fix consumer delete. - broken during update semantics work. - uncomment
+  BaseApi.delete(). (jortel@redhat.com)
+- This isn't needed; the test override config now works
+  (jason.dobies@redhat.com)
+- Changed config import so it properly loads the test override.
+  (jason.dobies@redhat.com)
+- Fixes to be able to retrieve a list of CDS sync tasks
+  (jason.dobies@redhat.com)
+- Added ID to round robin collection to make sure multiple repos can be
+  tracked. (jason.dobies@redhat.com)
+- Automatic commit of package [pulp] release [0.0.147-1]. (jortel@redhat.com)
+- second pass at restapi doc generation (jconnor@redhat.com)
+- removed ensure indicies in the package api, as they are now in the Package
+  model class (jconnor@redhat.com)
+- Fix so associate_packages doesn't add a problem repo_id twice
+  (jmatthews@redhat.com)
+- update semantics: Update client for Api.update() signature change.
+  (jortel@redhat.com)
+- removed commented-out code. (jortel@redhat.com)
+- update semantics: - converted remaining APIs - changed update(delta)
+  signature to update(id,delta) - added explicit update() to APIs that relied
+  on BaseApi.update() and BaseApi.delete() - converted to using mongo
+  collection. (jortel@redhat.com)
+- 683011 - package symlinks in repos should be relative (fix for
+  repository/add_packages) (jmatthews@redhat.com)
+- 681866 - adding packages to a repo is very slow (jmatthews@redhat.com)
+-  680444 - exception during status api call - require grinder 0.86
+  (jmatthews@redhat.com)
+- converted audit controller over to rest api script formating
+  (jconnor@redhat.com)
+- initial pass at restapi script (jconnor@redhat.com)
+- cloning filter regex and combined blacklist-whitelist filter support
+  (skarmark@redhat.com)
+- Reworded confirmation message (jason.dobies@redhat.com)
+- 682226 - filename must be unique within a repo (jmatthew@redhat.com)
+- 669759 - Package installations can be scheduled for the past
+  (jmatthew@redhat.com)
+- removed objectdb references from the tests (jconnor@redhat.com)
+- renamed self.objectdb to self.collection in all api classes
+  (jconnor@redhat.com)
+- moved unique indicies from api to model (jconnor@redhat.com)
+- Automatic commit of package [pulp] release [0.0.146-1]. (jortel@redhat.com)
+- importing some of the code cleanup from the api-declassification branch
+  (jconnor@redhat.com)
+- removed config reading from contructor of user api (jconnor@redhat.com)
+- Fix provides/requires on uploaded packages. (jortel@redhat.com)
+- 682992 - tighten up parallel uploads. (jortel@redhat.com)
+- bump to grinder 0.85 to fix relative path issue with symbolic links
+  (jmatthews@redhat.com)
+- 683011 - package symlinks in repos should be relative (jmatthews@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- implementation of filter add_package and remove_package api, cli and test;
+  added logic for confining filters only to local repos (skarmark@redhat.com)
+- added start to the monitoring thread (jconnor@redhat.com)
+- pep8 changes (jconnor@redhat.com)
+- changed the name of the flag file (jconnor@redhat.com)
+- code organization (jconnor@redhat.com)
+- added stacktrace dumping to application and configuration
+  (jconnor@redhat.com)
+- adding "debugging" module to dump stack traces of all active threads on
+  command (jconnor@redhat.com)
+- Merge branch 'master' of ssh://git.fedorahosted.org/git/pulp
+  (jconnor@redhat.com)
+- added wingide files to gitignore (jconnor@redhat.com)
+- Fixed bug where both baseurl and mirrorlist could appear on a host URL update
+  when moving from one to the other. (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Bunch of fixes for CDS binding. (jason.dobies@redhat.com)
+- fixing a small bug in filter delete (skarmark@redhat.com)
+- Adding force flag to filter delete api for removing associations with the
+  repo (skarmark@redhat.com)
+- Fixed typo (jason.dobies@redhat.com)
+- Added method to keystore to load keys and contents without the full path.
+  (jason.dobies@redhat.com)
+- Another fix to config lookup (jason.dobies@redhat.com)
+- Updated to send full keys (jason.dobies@redhat.com)
+- Need to load the config so the DB gets reinitialized to make sure it's
+  actually using the unit test DB. (jason.dobies@redhat.com)
+- Fixes for GPG key messages out to consumers on add/remove key.
+  (jason.dobies@redhat.com)
+- Fixed incorrect config value lookups (jason.dobies@redhat.com)
+- Fixed name for gpg key lookup (jason.dobies@redhat.com)
+- Restructured how the repo API sends repo updates to consumers and renamed the
+  gpg keys parameter to reflect it is the keys, not just the URLs.
+  (jason.dobies@redhat.com)
+- Flushed out repo update unit tests and fixed bugs they uncovered.
+  (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Updated with repo update semantics. (jason.dobies@redhat.com)
+- Reworked bind to handle GPG key contents sent from the server.
+  (jason.dobies@redhat.com)
+- Added object representation of a repo's keys and methods for manipulating the
+  files for those keys on the filesystem. (jason.dobies@redhat.com)
+- Still rethinking the mock approach. Flushed it out with a factory so I can
+  keep track of calls to one consumer v. another. (jason.dobies@redhat.com)
+- Need this import to initialize the database so the test can be run on its
+  own. (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Moved consumer_utils to same directory as other utils.
+  (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Pulled out mock repo proxy so it can be reused across tests.
+  (jason.dobies@redhat.com)
+- Finished test cases (jason.dobies@redhat.com)
+- Added a web service call for redistribute and hooks to auto-redistribute on a
+  CDS repo association. (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Merge branch 'master' into cds (jason.dobies@redhat.com)
+- Implemented redistribute logic to balance consumers across all CDS instances
+  for a repo. (jason.dobies@redhat.com)
+- Pulled out bind data creation since it is used for sending out repo/host url
+  updates as well. (jason.dobies@redhat.com)
+
 * Thu Mar 10 2011 Jeff Ortel <jortel@redhat.com> 0.0.147-1
 - Fix so associate_packages doesn't add a problem repo_id twice
   (jmatthews@redhat.com)
