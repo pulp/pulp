@@ -17,8 +17,6 @@ import logging
 import os
 import re
 
-import pymongo
-
 # Pulp
 import pulp.server.util
 from pulp.server.api.base import BaseApi
@@ -44,20 +42,8 @@ class PackageHasReferences(Exception):
 
 class PackageApi(BaseApi):
 
-    def __init__(self):
-        self.collection.ensure_index([('name', pymongo.DESCENDING),
-            ('epoch', pymongo.DESCENDING),
-            ('version', pymongo.DESCENDING),
-            ('release', pymongo.DESCENDING),
-            ('arch', pymongo.DESCENDING),
-            ('filename', pymongo.DESCENDING),
-            ('checksum', pymongo.DESCENDING)],
-            unique=True, background=True)
-
-
     def _getcollection(self):
         return model.Package.get_collection()
-
 
     @audit()
     def create(self, name, epoch, version, release, arch, description,
