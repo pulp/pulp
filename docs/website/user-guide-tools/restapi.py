@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -19,34 +19,51 @@ import os
 import re
 import sys
 import traceback
+import types
 from optparse import OptionParser
-
-try:
-    from pulp.server.webservices.controllers import (
-        audit, base, cds, consumergroups, consumers, content, distribution,
-        errata, orphaned, packages, permissions, repositories, roles, services,
-        users,)
-except ImportError:
-    print >> sys.stderr, 'this script needs to run from the development src directory'
-    print >> sys.stderr, os.getcwd()
-    raise
-    sys.exit(os.EX_UNAVAILABLE)
-
-
-modules = (audit, cds, consumergroups, consumers, countent, distribution,
-           errata, orphaned, packages, permissions, repositories, roles,
-           services, users)
-
-
-doc_marker = re.compile(r'\[\[wiki\]\]', re.I)
 
 # -----------------------------------------------------------------------------
 
 def parse_args(args=sys.argv[1:]):
     about = "generate trac wiki files for pulp's rest api"
-    parser = OptionParser(about=about)
-    parser.add_option('-d', '--dir', dest='dir', default='.',
+    parser = OptionParser(description=about)
+    parser.add_option('-o', '--out', dest='out', default='.',
                       help='output directory for wiki files')
+    parser.add_option('-s', '--src', dest='src', default=None,
+                      help='source directory')
+    opts, args = parser.parse_args(args)
+    return opts
+
+# -----------------------------------------------------------------------------
+
+_parent_module = 'pulp.server.webservices.controllers'
+
+_module_names = ('audit', 'cds', 'consumergroups', 'consumers', 'content',
+                 'distribution', 'errata', 'filters', 'orphaned', 'packages',
+                 'permissions', 'repositories', 'roles', 'services', 'users')
+
+
+def _import_module(name):
+    module = __import__(name)
+    for part in name.split('.')[1:]:
+        module = getattr(module, part)
+    return module
+
+
+def import_base_class():
+    module = _import_module('.'.join((_parent_module, 'base')))
+    return getattr(module, 'JSONController')
+
+
+def import_modules():
+    modules = []
+    for name in _module_names:
+        modules.append(_import_module('.'.join((_parent_module, name))))
+    return modules
+
+# -----------------------------------------------------------------------------
+
+doc_marker = re.compile(r'\[\[wiki\]\]', re.I)
 
 
 def process_doc_string(doc):
@@ -60,11 +77,12 @@ def gen_docs_for_class(cls):
         if not inspect.isroutine(attr):
             continue
         doc = getattr(attr, '__doc__', None)
+        name = getattr(attr, '__name__', 'Unnamed')
         if doc is None:
-            print >> sys.stderr, 'skipped %s: no doc string' % attr.__name__
+            print >> sys.stderr, 'skipped %s: no doc string' % name
             continue
         if not doc_marker.search(doc):
-            print >> sys.stderr, 'skipped %s: no wiki formatting' % attr.__name__
+            print >> sys.stderr, 'skipped %s: no wiki formatting' % name
             continue
         docs += process_doc_string(doc)
     return docs
@@ -72,8 +90,10 @@ def gen_docs_for_class(cls):
 
 def gen_docs_for_module(module):
     docs = ''
-    for attr in module.__dict__.values():
-        if not issubclass(attr, base.JSONController):
+    cls = import_base_class()
+    for name, attr in module.__dict__.items():
+        print name, type(attr)
+        if not (type(attr) == types.TypeType and issubclass(attr, cls)):
             continue
         docs += gen_docs_for_class(attr)
     return docs
@@ -83,20 +103,22 @@ def write_docs_for_module(name, docs):
     print name
     print docs
 
+# -----------------------------------------------------------------------------
 
 def main():
-    for m in modules:
+    opts = parse_args()
+    sys.path.insert(0, opts.src)
+    for module in import_modules():
         try:
-            docs = gen_docs_for_module(m)
-            write_docs_for_module(m.__name__, docs)
+            docs = gen_docs_for_module(module)
+            write_docs_for_module(module.__name__, docs)
         except Exception, e:
-            print >> sys.stderr, 'doc generation for %s failed' % m.__name__
+            print >> sys.stderr, 'doc generation for %s failed' % module.__name__
             print >> sys.stderr, ''.join(traceback.format_exception(*sys.exc_info()))
             print >> sys.stderr, str(e)
             continue
     return os.EX_OK
 
-# -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
     sys.exit(main())
