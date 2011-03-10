@@ -296,7 +296,6 @@ def grant_permission_to_role(resource, role_name, operation_names):
         if op in current_ops:
             continue
         new_ops.append(op)
-    #role['permissions'][resource].extend(new_ops)
     _role_api.add_permissions(role, resource, new_ops)
     for user in users:
         _permission_api.grant(resource, user, operations)
