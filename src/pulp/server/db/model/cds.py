@@ -28,6 +28,7 @@ class CDS(Model):
 
     def __init__(self, hostname, name=None, description=None):
         Model.__init__(self)
+        self.id = hostname
         self.hostname = hostname
         if name:
             self.name = name
@@ -79,8 +80,10 @@ class CDSRepoRoundRobin(Model):
     generated in the past.
     '''
     collection_name = 'cds_repo_round_robin'
+    unique_indicies = ('id',)
 
     def __init__(self, repo_id, next_permutation):
+        self.id = repo_id
         self.repo_id = repo_id
         self.next_permutation = next_permutation # list of strings
 
