@@ -230,7 +230,7 @@ class RepoApi(BaseApi):
         if not os.path.isdir(source_path):
             os.makedirs(source_path)
         link_path = os.path.join(self.published_path, repo["relative_path"])
-        pulp.server.util.create_symlinks(source_path, link_path)
+        pulp.server.util.create_rel_symlink(source_path, link_path)
 
     def _delete_published_link(self, repo):
         if repo["relative_path"]:
@@ -804,7 +804,7 @@ class RepoApi(BaseApi):
                     repo['relative_path'], package["filename"])
             if not os.path.exists(pkg_repo_path):
                 try:
-                    os.symlink(shared_pkg, pkg_repo_path)
+                    pulp.server.util.create_rel_symlink(shared_pkg, pkg_repo_path)
                 except OSError:
                     log.error("Link %s already exists" % pkg_repo_path)
         self.collection.save(repo, safe=True)
@@ -1517,7 +1517,7 @@ class RepoApi(BaseApi):
             os.makedirs(source_path)
         link_path = os.path.join(self.distro_path, repo["relative_path"])
         log.info("Linking %s" % link_path)
-        pulp.server.util.create_symlinks(source_path, link_path)
+        pulp.server.util.create_rel_symlink(source_path, link_path)
 
     def _delete_ks_link(self, repo):
         link_path = os.path.join(self.distro_path, repo["relative_path"])
