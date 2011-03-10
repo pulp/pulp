@@ -1837,7 +1837,7 @@ class RepoApi(BaseApi):
                     errors[filename] = {}
                 if not errors[filename].has_key(checksum):
                     errors[filename][checksum] = [repo_id]
-                else:
+                elif repo_id not in errors[filename][checksum]:
                     errors[filename][checksum].append(repo_id)
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
