@@ -27,9 +27,9 @@ class UserAPI(PulpAPI):
         path = "/users/"
         return self.server.PUT(path, user_data)[1]
 
-    def update(self, user):
-        path = "/users/%s/" % user['id']
-        return self.server.PUT(path, user)[1]
+    def update(self, id, delta):
+        path = "/users/%s/" % id
+        return self.server.PUT(path, delta)[1]
 
     def delete(self, **kwargs):
         login = kwargs['login']

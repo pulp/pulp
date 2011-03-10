@@ -59,7 +59,7 @@ class UserApi(BaseApi):
         user = self.user(login)
         for key, value in delta.items():
             # simple changes
-            if key in ('roles',):
+            if key in ('name', 'roles',):
                 user[key] = value
                 continue
             # password changed

@@ -162,7 +162,7 @@ class Repository(JSONController):
                                      RepositoryDeferredFields.exposed_fields):
             if field in delta and isinstance(delta[field], basestring):
                 delta.pop(field, None)
-        api.update(delta)
+        api.update(id, delta)
         return self.ok(True)
 
     @JSONController.error_handler

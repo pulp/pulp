@@ -27,9 +27,9 @@ class ConsumerGroupAPI(PulpAPI):
         path = "/consumergroups/"
         return self.server.PUT(path, consumergroup_data)[1]
 
-    def update(self, consumergroup):
-        path = "/consumergroups/%s/" % consumergroup['id']
-        return self.server.PUT(path, consumergroup)[1]
+    def update(self, id, delta):
+        path = "/consumergroups/%s/" % id
+        return self.server.PUT(path, delta)[1]
 
     def delete(self, id):
         path = "/consumergroups/%s/" % id

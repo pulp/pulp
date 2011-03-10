@@ -30,9 +30,9 @@ class ConsumerAPI(PulpAPI):
         path = "/consumers/"
         return self.server.PUT(path, consumerdata)[1]
 
-    def update(self, consumer):
-        path = "/consumers/%s/" % consumer['id']
-        return self.server.PUT(path, consumer)[1]
+    def update(self, id, delta):
+        path = "/consumers/%s/" % id
+        return self.server.PUT(path, delta)[1]
 
     def bulkcreate(self, consumers):
         path = "/consumers/bulk/"

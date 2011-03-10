@@ -91,8 +91,8 @@ class ConsumerGroup(JSONController):
         Update consumer group
         @param id: The consumer group id
         """
-        consumergroup = self.params()
-        consumergroup = api.update(consumergroup)
+        delta = self.params()
+        consumergroup = api.update(id, delta)
         return self.ok(True)
 
     @JSONController.error_handler

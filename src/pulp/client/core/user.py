@@ -99,10 +99,9 @@ class Update(UserAction):
     def run(self):
         username = self.get_required_option('username')
         name = self.opts.name
-
-        user = self.get_user(username)
+        delta = {}
         if name is not None:
-            user['name'] = name
+            delta['name'] = name
         if self.opts.password:
             while True:
                 newpassword = getpass.getpass("Enter new password for user %s: " % username)
@@ -113,10 +112,9 @@ class Update(UserAction):
                     break
                 else:
                     print _("\nPasswords do not match\n")
-            user['password'] = newpassword
-        self.user_api.update(user)
-        print _("Successfully updated [ %s ] with name [ %s ]") % \
-                (user['login'], user["name"])
+            delta['password'] = newpassword
+        self.user_api.update(username, delta)
+        print _("Successfully updated [ %s ]" % username)
 
 
 class Delete(UserAction):

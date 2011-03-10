@@ -49,9 +49,9 @@ class ErrataAPI(PulpAPI):
         path = "/errata/"
         return self.server.POST(path, params)[1]
 
-    def update(self, erratum):
-        path = "/errata/%s/" % erratum['id']
-        return self.server.PUT(path, erratum)[1]
+    def update(self, id, delta):
+        path = "/errata/%s/" % id
+        return self.server.PUT(path, delta)[1]
 
     def delete(self, erratumid):
         path = "/errata/%s/" % erratumid

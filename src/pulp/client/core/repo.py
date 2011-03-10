@@ -589,7 +589,7 @@ class Update(RepoAction):
                 v = f.read()
                 f.close()
             delta[k] = v
-        self.repository_api.update(delta)
+        self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
 
 

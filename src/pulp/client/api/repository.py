@@ -74,9 +74,9 @@ class RepositoryAPI(PulpAPI):
             path += "groupid=%s&" % group
         return self.server.GET(path)[1]
 
-    def update(self, repo):
-        path = "/repositories/%s/" % repo['id']
-        return self.server.PUT(path, repo)[1]
+    def update(self, id, delta):
+        path = "/repositories/%s/" % id
+        return self.server.PUT(path, delta)[1]
 
     def delete(self, id):
         path = "/repositories/%s/" % id
