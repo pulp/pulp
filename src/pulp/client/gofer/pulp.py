@@ -92,13 +92,13 @@ class ProfileUpdateAction:
         Looks up the consumer id and latest pkg profile info and cals
         the api to update the consumer profile
         """
-        pulpserver()
         bundle = ConsumerBundle()
         cid = bundle.getid()
         if not cid:
             log.error("Not Registered")
             return
         try:
+            pulpserver()
             capi = ConsumerAPI()
             pkginfo = PackageProfile().getPackageList()
             capi.profile(cid, pkginfo)
