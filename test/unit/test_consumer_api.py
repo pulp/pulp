@@ -63,6 +63,7 @@ class TestConsumerApi(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
+        self.config.set('server', 'server_name', 'localhost')
 
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()

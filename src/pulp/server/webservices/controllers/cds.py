@@ -203,7 +203,7 @@ class CdsSyncActions(AsyncController):
         timeout = self.timeout(params)
 
         # Kick off the async task
-        task = self.start_task(cds_api.sync, [id], timeout=timeout, unique=True)
+        task = self.start_task(cds_api.cds_sync, [id], timeout=timeout, unique=True)
 
         # If no task was returned, the uniqueness check was tripped which means
         # there's already a sync running for this CDS.
@@ -223,9 +223,8 @@ class CdsSyncActions(AsyncController):
         '''
 
         # Find all sync tasks associated with the given CDS
-        tasks = [t for t in find_async(method_name='sync')
-                 if (t.args and id in t.args) or
-                 (t.kwargs and id in t.kwargs.values())]
+        tasks = [t for t in find_async(method_name='cds_sync')
+                 if id in t.args]
 
         if len(tasks) == 0:
             return self.not_found('No sync tasks found for CDS [%s]' % id)

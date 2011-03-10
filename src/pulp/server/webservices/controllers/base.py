@@ -333,6 +333,15 @@ class AsyncController(JSONController):
         d = dict((f, getattr(task, f)) for f in fields)
         if isinstance(task.exception, Exception):
             d['exception'] = str(task.exception)
+
+        # Convert the date objects to strings; this isn't the cleanest approach,
+        # but we need a more global addressing of dates and JSON encoding
+        if d['start_time']:
+            d['start_time'] = d['start_time'].strftime('%s')
+
+        if d['finish_time']:
+            d['finish_time'] = d['finish_time'].strftime('%s')
+
         return d
 
     def _status_path(self, id):

@@ -581,7 +581,7 @@ class TestCdsApi(unittest.TestCase):
         self.dispatcher.clear()
 
         # Test
-        self.cds_api.sync('cds.example.com')
+        self.cds_api.cds_sync('cds.example.com')
 
         # Verify
         self.assertEqual(1, len(self.dispatcher.call_log)) # the call to sync
@@ -603,7 +603,7 @@ class TestCdsApi(unittest.TestCase):
         '''
 
         # Test
-        self.assertRaises(PulpException, self.cds_api.sync, 'foo.example.com')
+        self.assertRaises(PulpException, self.cds_api.cds_sync, 'foo.example.com')
 
     def test_sync_error(self):
         '''
@@ -623,7 +623,7 @@ class TestCdsApi(unittest.TestCase):
         self.dispatcher.error_to_throw = CdsTimeoutException(None)
 
         # Test
-        self.assertRaises(PulpException, self.cds_api.sync, 'cds.example.com')
+        self.assertRaises(PulpException, self.cds_api.cds_sync, 'cds.example.com')
 
         # Verify
         self.assertEqual(1, len(self.dispatcher.call_log)) # the call to sync
