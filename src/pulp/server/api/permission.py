@@ -41,7 +41,7 @@ class PermissionAPI(BaseApi):
     # base class methods overridden for auditing
 
     @audit()
-    def update(self, id, delta):
+    def update(self, resource, delta):
         """
         Updates a permission object.
         @param id: The repo ID.
@@ -51,8 +51,8 @@ class PermissionAPI(BaseApi):
         @return: The updated object
         @rtype: dict
         """
-        delta.pop('id', None)
-        permission = self.permission(id)
+        delta.pop('resource', None)
+        permission = self.permission(resource)
         if not permission:
             raise PulpException('Permission [%s] does not exist', id)
         for key, value in delta.items():

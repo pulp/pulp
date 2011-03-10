@@ -270,7 +270,7 @@ def revoke_all_permissions_from_user(user_name):
         if user['login'] not in permission['users']:
             continue
         del permission['users'][user['login']]
-        _permission_api.update(permission)
+        _permission_api.update(permission['resource'], Delta(user, 'users'))
     return True
 
 
