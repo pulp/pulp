@@ -249,7 +249,7 @@ class PulpServer(Server):
             # try to split it out
             if isinstance(response_body, basestring) and \
                     response_body.startswith('Traceback'):
-                traceback, message = response_body.rsplit('\n', 1)
+                traceback, message = response_body.strip().rsplit('\n', 1)
                 raise ServerRequestError(response.status, message, traceback)
             raise ServerRequestError(response.status, response_body, None)
         return (response.status, response_body)
