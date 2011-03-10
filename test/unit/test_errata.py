@@ -332,7 +332,7 @@ class TestErrata(unittest.TestCase):
                 checksum_type="sha256", checksum=test_checksum, filename=test_filename)
         print "Package! %s" % p
         # Add this package version to the repo
-        self.rapi.add_package(repo["id"], p['id'])
+        self.rapi.add_package(repo["id"], [p['id']])
         test_errata_1["pkglist"] = [{"packages" : [{'src': 'http://download.fedoraproject.org/pub/fedora/linux/updates/11/x86_64/pulp-test-package-0.3.1-1.fc11.x86_64.rpm',
                                                     'name': 'pulp-test-package',
                                                     'filename': 'pulp-test-package-0.3.1-1.fc11.x86_64.rpm',

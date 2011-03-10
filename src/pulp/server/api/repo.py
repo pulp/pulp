@@ -743,7 +743,6 @@ class RepoApi(BaseApi):
         """
           Return matching Package object in this Repo by filename
         """
-        log.info('looking up pkg filename [%s] in repo [%s]' % (filenames, repo_id))
         repo = self._get_existing_repo(repo_id)
         return self.packageapi.packages_by_id(repo["packages"], filename={"$in":filenames})
 
@@ -769,51 +768,105 @@ class RepoApi(BaseApi):
                     [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error, 
                     where each id represents a package id that couldn't be added
         """
+        if not packageids:
+            log.debug("add_package(%s, %s) called with no packageids to add" % (repoid, packageids))
+            return []
+        def get_pkg_tup(package):
+            return (package['name'], package['epoch'], package['version'], package['release'], package['arch'])
+        def get_pkg_nevra(package):
+            return dict(zip(("name", "epoch", "version", "release", "arch"), get_pkg_tup(package)))
+        def form_error_tup(pkg):
+            pkg_tup = get_pkg_tup(pkg)
+            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"])
+
+        start_add_packages = time.time()
         errors = []
         repo = self._get_existing_repo(repoid)
+        if not repo:
+            log.error("Couldn't find repository [%s]" % (repoid))
+            return [(pkg_id, (None, None, None, None, None), None, None) for pkg_id in packageids]
         repo_path = os.path.join(
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
-        new_pkg_set = set()
-        new_filenames = set()
-        start_add_packages = time.time()
-        for index, pid in enumerate(packageids):
-            package = self.packageapi.package(pid)
-            if package is None:
-                log.error("No Package with id: %s found" % pid)
-                errors.append({pid:"unknown"})
+        packages = {}
+        nevras = {}
+        filenames = {}
+        # Convert package ids to package objects
+        pkg_coll = model.Package.get_collection()
+        result = pkg_coll.find({"id":{"$in":packageids}})
+        pkg_objects = {}
+        for p in result:
+            pkg_objects[p["id"]] = p
+        log.info("Finished created pkg_object in %s seconds" % (time.time() - start_add_packages))
+        # Desire to keep the order dictated by calling arg of 'packageids'
+        for pkg_id in packageids:
+            if not pkg_objects.has_key(pkg_id):
+                # Detect if any packageids passed in could not be located
+                log.error("No Package with id: %s found" % pkg_id)
+                errors.append((pkg_id, (None, None, None, None, None), None, None))
                 continue
-            pkg_tup = (package['name'], package['epoch'], package['version'],
-                    package['release'], package['arch'])
-            nvrea = {'name' : package['name'],
-                     'version' : package['version'],
-                     'release' : package['release'],
-                     'arch'    : package['arch'],
-                     'epoch'   : package['epoch'], }
-            # TODO: For performance could call get_packages_by_nvrea for all packageids prior to loop
-            # need to be careful about marking when a package wasn't added
-            found = self.get_packages_by_nvrea(repo['id'], [nvrea])
-            if found or pkg_tup in new_pkg_set:
-                log.error("Package with same NVREA [%s] already exists in repo [%s]"\
-                           % (nvrea, repo['id']))
-                errors.append((pid, pkg_tup, package["filename"], package["checksum"]["sha256"]))
+            pkg = pkg_objects[pkg_id]
+            pkg_tup = get_pkg_tup(pkg)
+            if nevras.has_key(pkg_tup):
+                log.error("Duplicate NEVRA detected [%s] with package id [%s] and sha256 [%s]" \
+                        % (pkg_tup, pkg["id"], pkg["checksum"]["sha256"]))
+                errors.append(form_error_tup(pkg))
                 continue
-            found = self.get_packages_by_filename(repo["id"], [package["filename"]])
-            if found or package["filename"] in new_filenames:
-                log.error("Package with same filename [%s] already exists in repo [%s]"\
-                           % (package["filename"], repo['id']))
-                errors.append((pid, pkg_tup, package["filename"], package["checksum"]["sha256"]))
+            if filenames.has_key(pkg["filename"]):
+                log.error("Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
+                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"]))
+                errors.append(form_error_tup(pkg))
                 continue
-            self._add_package(repo, package)
-            new_pkg_set.add(pkg_tup)
-            new_filenames.add(package["filename"])
-            log.info("Added: %s to repo: %s, progress %s/%s" % (package['filename'], repo['id'], index, len(packageids)))
+            nevras[pkg_tup] = pkg["id"]
+            filenames[pkg["filename"]] = pkg
+            packages[pkg["id"]] = pkg
+        # Check for duplicate NEVRA already in repo
+        log.info("Finished check of NEVRA/filename in argument data by %s seconds" % (time.time() - start_add_packages))
+        # This took 528 seconds with rhel-i386-vt-5 being added and roughly 14Gig of RAM in mongo
+        # found = self.get_packages_by_nvrea(repo['id'], nevras.values())
+        # Exploring alternate of operating on each nevra one at a time for now
+        found = {}
+        for n in nevras:
+            pkg = pkg_objects[nevras[n]]
+            nevra = get_pkg_nevra(pkg)
+            result = self.get_packages_by_nvrea(repo['id'], [nevra])
+            for f in result:
+                found[f] = result[f]
+        for fname in found:
+            pkg = found[fname]
+            pkg_tup = get_pkg_tup(pkg)
+            if not nevras.has_key(pkg_tup):
+                log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
+                continue
+            log.error("Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id']))
+            errors.append(form_error_tup(pkg))
+            if packages.has_key(nevras[pkg_tup]):
+                del packages[nevras[pkg_tup]]
+        # Check for same filename in calling data or for existing
+        log.info("Finished check of existing NEVRA by %s seconds" % (time.time() - start_add_packages))
+        found = self.get_packages_by_filename(repo["id"], filenames.keys())
+        for pid in found:
+            pkg = found[pid]
+            if not filenames.has_key(pkg["filename"]):
+                log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate filename in repo [%s]" % (pkg["filename"], repo["id"]))
+                continue
+            log.error("Package with same filename [%s] already exists in repo [%s]" \
+                    % (pkg["filename"], repo['id']))
+            errors.append(form_error_tup(pkg))
+            del_pkg_id = filenames[pkg["filename"]]["id"]
+            if packages.has_key(del_pkg_id):
+                del packages[del_pkg_id]
+        log.info("Finished check of get_packages_by_filename() by %s seconds" % (time.time() - start_add_packages))
+        for index, pid in enumerate(packages):
+            pkg = packages[pid]
+            self._add_package(repo, pkg)
+            log.debug("Added: %s to repo: %s, progress %s/%s" % (pkg['filename'], repo['id'], index, len(packages)))
             shared_pkg = pulp.server.util.get_shared_package_path(
-                    package['name'], package['version'], package['release'],
-		    package['arch'], package["filename"], package['checksum'])
+                    pkg['name'], pkg['version'], pkg['release'],
+                    pkg['arch'], pkg["filename"], pkg['checksum'])
             pkg_repo_path = pulp.server.util.get_repo_package_path(
-                    repo['relative_path'], package["filename"])
+                    repo['relative_path'], pkg["filename"])
             if not os.path.exists(pkg_repo_path):
                 try:
                     os.symlink(shared_pkg, pkg_repo_path)
@@ -1751,33 +1804,16 @@ class RepoApi(BaseApi):
                     or {"filename":{"checksum":[repoids]} on error 
         """
         start_translate = time.time()
-        pkg_query = []
-        for p in pkg_info:
-            q = {}
-            q["filename"] = p[0][0]
-            q["checksum.sha256"] = p[0][1]
-            pkg_query.append(q)
-        from pulp.server.api.package import PackageApi
-        papi = PackageApi()
-        #Translate (filename,checksum) to package id
-        start_orquery = time.time()
-        data = papi.or_query(pkg_query)
-        end_orquery = time.time()
-        log.info("Package or_query took %s seconds" % (end_orquery - start_orquery))
-        #Determine what (filename,checksum) pairs were not looked up.
-        errors = {}
+        p_col = model.Package.get_collection()
         repo_pkgs = {}
+        errors = {}
         for item in pkg_info:
             filename = item[0][0]
             checksum = item[0][1]
             repos = item[1]
+            found = p_col.find_one({"filename":filename, "checksum.sha256":checksum}, {"id":1})
             #Lookup package id from returned mongo results
-            pkg_id = None
-            for d in data:
-                if d["filename"] == filename and d["checksum"]["sha256"] == checksum:
-                    pkg_id = d["id"]
-            #If we can't locate the id, record the error so we can notify the caller
-            if not pkg_id:
+            if not found:
                 log.error("Unable to find package id for filename=%s, checksum=%s" % (filename, checksum))
                 if not errors.has_key(filename):
                     errors[filename] = {}
@@ -1786,6 +1822,7 @@ class RepoApi(BaseApi):
                 else:
                     errors[filename][checksum].append(repos)
                 continue
+            pkg_id = found["id"]
             # Build up a list per repository of package ids we want to add
             for r_id in repos:
                 if not repo_pkgs.has_key(r_id):
@@ -1809,7 +1846,6 @@ class RepoApi(BaseApi):
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
-
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync
