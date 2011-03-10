@@ -291,7 +291,7 @@ class BaseSynchronizer(object):
         source_path = os.path.join(pulp.server.util.top_repos_location(),
                 repo["relative_path"])
         link_path = os.path.join(distro_path, repo["relative_path"])
-        pulp.server.util.create_symlinks(source_path, link_path)
+        pulp.server.util.create_rel_symlink(source_path, link_path)
         log.debug("Associated distribution %s to repo %s" % (distro['id'], repo['id']))
 
     def import_package(self, package, repo=None, repo_defined=False):
@@ -722,7 +722,7 @@ class LocalSynchronizer(BaseSynchronizer):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
             if repo['use_symlinks']:
                 log.info("create a symlink to src directory %s %s" % (src_repo_dir, dst_repo_dir))
-                os.symlink(src_repo_dir, dst_repo_dir)
+                pulp.server.util.create_rel_symlink(src_repo_dir, dst_repo_dir)
                 if progress_callback is not None:
                     self.progress['size_total'] = 0
                     self.progress['size_left'] = 0
