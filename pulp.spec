@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.148
+Version:        0.0.149
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -245,6 +245,28 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Fri Mar 11 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.149-1
+- Changed from symlink to goferd to its own init.d script so it can control
+  httpd too. (jason.dobies@redhat.com)
+- 684263 - [cdn] Specify version of python-simplejson in pulp.spec
+  (jmatthews@redhat.com)
+- fixed homebrewed @wraps decorator removed unused json and itertool.wraps
+  imports from standard library (jconnor@redhat.com)
+- Changed gofer config to look up from pulp conf file (jason.dobies@redhat.com)
+- Added pulp branded CDS config file (jason.dobies@redhat.com)
+- Automatic commit of package [pulp] release [0.0.148-1].
+  (jason.dobies@redhat.com)
+- changed revoke_all_permissions to use new permisssion update call
+  (jconnor@redhat.com)
+- Minor fixes in repo filter log messages and updating filter constructor
+  (skarmark@redhat.com)
+- 683861 - Feed type checking error message no longer says what the error is
+  (jmatthews@redhat.com)
+- fix package profile action logging cert errors when not registered.
+  (jortel@redhat.com)
+- changed show=errors_only filter to errors_only=true|yes|1
+  (jconnor@redhat.com)
+
 * Thu Mar 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.148-1
 - Need to add file: prefix to keys listed in the .repo file.
   (jason.dobies@redhat.com)
