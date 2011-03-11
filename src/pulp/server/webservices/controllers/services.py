@@ -22,8 +22,10 @@ from pulp.server.api.cds import CdsApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
+from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
+from pulp.server.agent import Agent
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
@@ -283,6 +285,21 @@ class AssociatePackages(JSONController):
         return self.ok(rapi.associate_packages(pkg_info))
 
 
+class AgentStatus(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(READ)
+    def POST(self):
+        """
+        Get the availabiliy of an agent.
+        @return: {uuid:{status:bool,heatbeat:str}}
+        """
+        data = self.params()
+        filter = data.get('filter', [])
+        log.info("agent status:   GET received")
+        return self.ok(Agent.status(filter))
+
+
 # web.py application ----------------------------------------------------------
 
 URLS = (
@@ -296,6 +313,7 @@ URLS = (
     '/upload/append/([^/]+)/$', 'AppendUpload',
     '/upload/import/$', 'ImportUpload',
     '/status/$', 'StatusService',
+    '/agent/status/$', 'AgentStatus',
 )
 
 application = web.application(URLS, globals())

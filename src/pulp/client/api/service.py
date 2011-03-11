@@ -76,3 +76,8 @@ class ServiceAPI(PulpAPI):
         """
         path = "/services/associate/packages/"
         return self.server.POST(path,{"package_info":package_info})[1]
+
+    def agentstatus(self, filter=[]):
+        path = "/services/agent/status/"
+        d = dict(filter=filter)
+        return self.server.POST(path, d)[1]

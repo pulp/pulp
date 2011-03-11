@@ -23,6 +23,7 @@ from pulp.client import constants
 from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.api.consumer import ConsumerAPI
+from pulp.client.api.service import ServiceAPI
 from pulp.client.config import Config
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
@@ -118,9 +119,21 @@ class Info(ConsumerAction):
         for k, v in key_value_pairs.items():
             kvpair.append("%s  :  %s," % (str(k), str(v)))
 
+        sapi = ServiceAPI()
+        status = sapi.agentstatus([id,])
+        status = status.values()[0]
+        if status["status"]:
+            responding = _('Yes')
+        else:
+            responding = _('No')
         print_header(_("Consumer Information"))
         print constants.AVAILABLE_CONSUMER_INFO % \
-                (cons["id"], cons["description"], cons["repoids"].keys(), '\n \t\t\t'.join(kvpair[:]))
+                (cons["id"],
+                 cons["description"],
+                 cons["repoids"].keys(),
+                 responding,
+                 status["heartbeat"],
+                 '\n \t\t\t'.join(kvpair[:]))
         if not self.opts.show_profile:
             system_exit(os.EX_OK)
         # Construct package profile list

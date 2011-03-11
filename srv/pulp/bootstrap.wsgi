@@ -16,6 +16,7 @@
 
 from pulp.server.logs import start_logging
 from pulp.server.event.dispatcher import EventDispatcher
+from pulp.server.agent import HeartbeatListener
 from pulp.server.async import ReplyHandler
 from pulp.server.config import config
 from gofer.messaging.broker import Broker
@@ -37,3 +38,7 @@ if config.getboolean('events', 'recv_enabled'):
 # start async task reply handler
 replyHandler = ReplyHandler()
 replyHandler.start()
+
+# start agent heartbeat listener
+heartbeatListener = HeartbeatListener()
+heartbeatListener.start()

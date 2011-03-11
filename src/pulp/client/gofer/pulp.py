@@ -19,14 +19,16 @@ Contains recurring actions and remote classes.
 """
 
 import os
+import pulp.client.repolib as repolib
 from pulp.client.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.package_profile import PackageProfile
 from pulp.client.config import Config
-import pulp.client.repolib as repolib
 from pulp.client.repo_file import RepoFile
 from pulp.client.credentials import Consumer as ConsumerBundle
 from gofer.agent.plugin import Plugin
+from gofer.messaging import Topic
+from gofer.messaging.producer import Producer
 from gofer.decorators import *
 from yum import YumBase
 
@@ -45,6 +47,32 @@ def pulpserver():
     pulp = PulpServer(cfg.server.host)
     pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
     set_active_server(pulp)
+
+
+class Heartbeat:
+    """
+    Send agent heartbeat.
+    """
+
+    __producer = None
+    __topic = Topic('heartbeat')
+
+    @classmethod
+    def producer(cls):
+        if not cls.__producer:
+            broker = plugin.getbroker()
+            url = str(broker.url)
+            cls.__producer = Producer(url=url)
+        return cls.__producer
+
+    @action(seconds=30)
+    def heartbeat(self):
+        bundle = ConsumerBundle()
+        cid = bundle.getid()
+        if cid:
+            p = self.producer()
+            p.send(self.__topic, ttl=30, agent=cid)
+        return self
 
 
 class IdentityAction:
