@@ -121,8 +121,8 @@ class Info(ConsumerAction):
 
         sapi = ServiceAPI()
         status = sapi.agentstatus([id,])
-        status = status.values()[0]
-        if status["status"]:
+        status = status[id]
+        if status[0]:
             responding = _('Yes')
         else:
             responding = _('No')
@@ -132,7 +132,7 @@ class Info(ConsumerAction):
                  cons["description"],
                  cons["repoids"].keys(),
                  responding,
-                 status["heartbeat"],
+                 status[1],
                  '\n \t\t\t'.join(kvpair[:]))
         if not self.opts.show_profile:
             system_exit(os.EX_OK)

@@ -176,3 +176,13 @@ CDS_SYNC_DETAILS = '''
 State               \t%-25s
 Start Time          \t%-25s
 Finish Time         \t%-25s'''
+
+
+UNAVAILABLE = '''
+The following consumers appear to be unavailable.
+You may continue with the understanding that your request
+will not complete until all consumers have processed the request.
+
+Unavailable Consumers
+------------------------------
+'''

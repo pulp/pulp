@@ -26,6 +26,7 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 
+from pulp.client.constants import UNAVAILABLE
 from pulp.client import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
@@ -107,19 +108,27 @@ class Install(PackageAction):
             system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
         when = self.parse_scheduled_time_option()
         if consumergroupid:
+            group = self.consumer_group_api.consumergroup(consumergroupid)
+            if not group:
+                system_exit(-1,
+                    _('Invalid group: %s' % consumergroupid))
+            wait = self.getwait(group['consumerids'])
             task = self.consumer_group_api.installpackages(consumergroupid, pnames, when=when)
         else:
+            wait = self.getwait([consumerid,])
             task = self.consumer_api.installpackages(consumerid, pnames, when=when)
         print _('Created task id: %s') % task['id']
         print _('Task is scheduled for: %s') % \
                 time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
+        if not wait:
+            system_exit(0)
         state = None
         status = None
         spath = task['status_path']
+        sys.stdout.write(_('Waiting: [-] '))
+        sys.stdout.flush()
         while state not in ('finished', 'error', 'canceled', 'timed_out'):
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            time.sleep(2)
+            self.printwait()
             status = self.consumer_api.task_status(spath)
             state = status['state']
         if state == 'finished':
@@ -131,6 +140,58 @@ class Install(PackageAction):
                 msg += _('\nException: %s\nTraceback: %s') % \
                         (status['exception'], status['traceback'])
             system_exit(-1, msg)
+
+    def printwait(self):
+        symbols = '|/-\|/-\\'
+        for i in range(0,len(symbols)):
+            sys.stdout.write('\b\b\b')
+            sys.stdout.write(symbols[i])
+            sys.stdout.write('] ')
+            sys.stdout.flush()
+            time.sleep(1)
+
+    def getunavailable(self, ids):
+        lst = []
+        stats = self.service_api.agentstatus(ids)
+        for id in ids:
+            stat = stats[id]
+            if stat[0]:
+                continue
+            lst.append(id)
+        return lst
+
+    def printunavailable(self, ualist):
+        if ualist:
+            sys.stdout.write(UNAVAILABLE)
+            for id in ualist:
+                print id
+
+    def getwait(self, ids):
+        wait = True
+        ualist = self.getunavailable(ids)
+        if ualist:
+            self.printunavailable(ualist)
+            if not self.askcontinue():
+                system_exit(0)
+            wait = self.askwait()
+        return wait
+
+    def askcontinue(self):
+        return self.askquestion('\nContinue? [y/n]:')
+
+    def askwait(self):
+        return self.askquestion('\nWait? [y/n]:')
+
+    def askquestion(self, question):
+        while True:
+            sys.stdout.write(_(question))
+            sys.stdout.flush()
+            reply = sys.stdin.readline()
+            reply = reply.lower()
+            if reply.startswith('y'):
+                return True
+            if reply.startswith('n'):
+                return False
 
 
 class Search(PackageAction):

@@ -55,7 +55,6 @@ class Heartbeat:
     """
 
     __producer = None
-    __topic = Topic('heartbeat')
 
     @classmethod
     def producer(cls):
@@ -65,13 +64,15 @@ class Heartbeat:
             cls.__producer = Producer(url=url)
         return cls.__producer
 
-    @action(seconds=30)
+    @action(seconds=cfg.client.heartbeat)
     def heartbeat(self):
+        topic = Topic('heartbeat')
+        delay = int(cfg.client.heartbeat)
         bundle = ConsumerBundle()
-        cid = bundle.getid()
-        if cid:
+        myid = bundle.getid()
+        if myid:
             p = self.producer()
-            p.send(self.__topic, ttl=30, agent=cid)
+            p.send(topic, ttl=delay, agent=myid, next=delay)
         return self
 
 

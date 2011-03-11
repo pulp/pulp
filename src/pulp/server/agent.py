@@ -88,27 +88,24 @@ class HeartbeatListener(Consumer):
     def status(cls, uuids=[]):
         """
         Get the agent heartbeat status.
-        Heartbeats are expected every 30 seconds. Agents are
-        considered unavailable when 10 seconds overdue.
         @param uuids: An (optional) list of uuids to query.
-        @return: A dict of uuid=(status, last heartbeat)
+        @return: A tuple (status,last-heartbeat)
         """
         cls.__lock()
         try:
             now = dt.utcnow()
-            window = timedelta(seconds=40)
             if not uuids:
                 uuids = cls.__status.keys()
             d = {}
             for uuid in uuids:
                 last = cls.__status.get(uuid)
                 if last:
-                    stat = ( last+window > now )
-                    heartbeat = last.isoformat()
+                    stat = ( last[1] > now )
+                    heartbeat = last[0].isoformat()
                 else:
                     stat = False
                     heartbeat = None
-                d[uuid] = dict(status=stat,heartbeat=heartbeat)
+                d[uuid] = (stat, heartbeat)
             return d
         finally:
             cls.__unlock()
@@ -127,14 +124,19 @@ class HeartbeatListener(Consumer):
 
     def dispatch(self, envelope):
         try:
-            self.__update(envelope.agent)
+            uuid = envelope.agent
+            next = int(envelope.next)
+            self.__update(uuid, next)
         except:
             pass
         self.ack()
 
-    def __update(self, uuid):
+    def __update(self, uuid, next):
         self.__lock()
         try:
-            self.__status[uuid] = dt.utcnow()
+            last = dt.utcnow()
+            next = int(next*1.20)
+            next = last+timedelta(seconds=next)
+            self.__status[uuid] = (last, next)
         finally:
             self.__unlock()
