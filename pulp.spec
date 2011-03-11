@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.149
+Version:        0.0.150
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -245,6 +245,11 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Fri Mar 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.150-1
+- 632277 - Update package install to check consumer availability.
+  (jortel@redhat.com)
+- Add agent heartbeat infrastructure. (jortel@redhat.com)
+
 * Fri Mar 11 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.149-1
 - Changed from symlink to goferd to its own init.d script so it can control
   httpd too. (jason.dobies@redhat.com)
