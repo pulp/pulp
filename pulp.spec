@@ -153,9 +153,9 @@ mkdir -p %{buildroot}/etc/gofer/cds-plugins
 cp etc/gofer/cds-plugins/*.conf %{buildroot}/etc/gofer/plugins
 cp src/pulp/cds/gofer/gofer_cds_plugin.py %{buildroot}/usr/lib/gofer/plugins
 
-# Pulp Init.d
+# Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
-cp etc/rc.d/init.d/pulp-server %{buildroot}/etc/rc.d/init.d/
+cp etc/rc.d/init.d/* %{buildroot}/etc/rc.d/init.d/
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -230,6 +230,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
+%attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 /var/lib/pulp-cds
 /var/log/pulp-cds
 
@@ -241,15 +242,6 @@ popd
 
 %postun client
 rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
-
-
-%post cds
-pushd %{_sysconfdir}/rc.d/init.d
-ln -s goferd pulp-cds
-popd
-
-%postun cds
-rm -f %{_sysconfdir}/rc.d/init.d/pulp-cds
 
 
 %changelog
