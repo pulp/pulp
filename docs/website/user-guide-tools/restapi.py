@@ -66,9 +66,50 @@ def import_modules():
 doc_marker = re.compile(r'\[\[wiki\]\]', re.I)
 
 
+class WikiFormatError(Exception):
+    pass
+
+
+def wiki_doc_to_dict(doc):
+    wiki_dict = {}
+    last_key = None
+    lines = doc.splitlines()
+    for num, line in enumerate(lines):
+        if line.find(':') < 0:
+            if last_key is None:
+                raise WikiFormatError('bad wiki formatting:\n%s' % '\n'.join(lines[:num]))
+            line = line.strip()
+            if line.startswith('*'):
+                line = ' ' + line
+            line += '\n'
+            wiki_dict[last_key] += line
+        else:
+            key, remainder = line.split(':', 1)
+            key = key.strip()
+            remainder = remainder.strip()
+            wiki_dict[key] = remainder + '\n'
+            last_key = key
+    return wiki_dict
+
+
+def format_wiki_doc(doc):
+    wiki_dict = wiki_doc_to_dict(doc)
+    wiki_doc = '== %s ==\n' % wiki_dict.get('title', 'Untitled').strip()
+    wiki_doc += "''%s''\n" % wiki_dict.get('description', 'No description\n').strip()
+    wiki_doc += '[[BR]]\n[[BR]]\n'
+    for key in ('method', 'path', 'permission', 'success response',
+                'failure response', 'return', 'object fields', 'filters'):
+        wiki_doc += "'''%s:''' %s" % (key, wiki_dict.get(key, 'Unspecified\n'))
+        wiki_doc += '[[BR]]\n'
+    return wiki_doc
+
+
 def process_doc_string(doc):
     doc_string, wiki_doc = doc_marker.split(doc)
-    return wiki_doc
+    wiki_doc = wiki_doc.strip()
+    if not wiki_doc:
+        return ''
+    return format_wiki_doc(wiki_doc)
 
 
 def gen_docs_for_class(cls):
@@ -89,19 +130,23 @@ def gen_docs_for_class(cls):
 
 
 def gen_docs_for_module(module):
-    docs = ''
+    docs = []
     cls = import_base_class()
     for name, attr in module.__dict__.items():
-        print name, type(attr)
         if not (type(attr) == types.TypeType and issubclass(attr, cls)):
             continue
-        docs += gen_docs_for_class(attr)
+        docs.append(gen_docs_for_class(attr))
     return docs
 
 
-def write_docs_for_module(name, docs):
-    print name
-    print docs
+def write_docs_for_module(dir, module_name, docs):
+    title = module_name.split('.')[-1]
+    file_name = '%s.wiki' % title
+    file_path = os.path.join(os.path.abspath(dir), file_name)
+    file = open(file_path, 'w')
+    file.write('[[TOC]]\n= %s REST API =' % title.title())
+    file.write('\n\n'.join(docs))
+    file.close()
 
 # -----------------------------------------------------------------------------
 
@@ -111,7 +156,7 @@ def main():
     for module in import_modules():
         try:
             docs = gen_docs_for_module(module)
-            write_docs_for_module(module.__name__, docs)
+            write_docs_for_module(opts.out, module.__name__, docs)
         except Exception, e:
             print >> sys.stderr, 'doc generation for %s failed' % module.__name__
             print >> sys.stderr, ''.join(traceback.format_exception(*sys.exc_info()))
