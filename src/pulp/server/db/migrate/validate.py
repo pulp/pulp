@@ -17,6 +17,7 @@ from logging import getLogger
 
 from pulp.server.db.model.auth import User, Role, Permission
 from pulp.server.db.model.base import Model
+from pulp.server.db.model.cds import CDS, CDSHistoryEvent, CDSRepoRoundRobin
 from pulp.server.db.model.resource import (Consumer, ConsumerGroup,
     ConsumerHistoryEvent, Errata, Package, Distribution, File, Repo)
 
@@ -303,6 +304,7 @@ def _validate_user():
     reference = model.User(u'', u'', None, None)
     return _validate_model(model.User.__name__, objectdb, reference)
 
+
 def _validate_file():
     """
     Validate the File model
@@ -314,6 +316,7 @@ def _validate_file():
     _base_id(reference)
     return _validate_model(model.File.__name__, objectdb, reference)
 
+
 def _validate_distribution():
     """
     Validate the Distribution model
@@ -323,6 +326,33 @@ def _validate_distribution():
     objectdb = Distribution.get_collection()
     reference = model.Distribution(u'', u'', u'', [])
     return _validate_model(model.Distribution.__name__, objectdb, reference)
+
+
+def _validate_cds():
+    '''
+    Validates the CDS model.
+    '''
+    objectdb = CDS.get_collection()
+    reference = CDS(u'', u'')
+    return _validate_model(CDS.__name__, objectdb, reference)
+
+def _validate_cds_history():
+    '''
+    Validates the CDS history event model.
+    '''
+    objectdb = CDSHistoryEvent.get_collection()
+    reference = CDSHistoryEvent(u'', u'', u'')
+    return _validate_model(CDSHistoryEvent.__name__, objectdb, reference)
+
+
+def _validate_cds_round_robin():
+    '''
+    Validates the round robin algorithm collection.
+    '''
+    objectdb = CDSRepoRoundRobin.get_collection()
+    reference = CDSRepoRoundRobin(u'', [])
+    return _validate_model(CDSRepoRoundRobin.__name__, objectdb, reference)
+
 
 # validation api --------------------------------------------------------------
 
@@ -349,4 +379,7 @@ def validate():
     num_errors += _validate_user()
     num_errors += _validate_file()
     num_errors += _validate_distribution()
+    num_errors += _validate_cds()
+    num_errors += _validate_cds_history()
+    num_errors += _validate_cds_round_robin()
     return num_errors
