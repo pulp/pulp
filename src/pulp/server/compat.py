@@ -22,33 +22,21 @@ import itertools
 
 # functools wraps decorator ---------------------------------------------------
 
-try:
-    import xfunctools
-    wraps = functools.wraps
+def _update_wrapper(orig, wrapper):
+    for attr in ('__module__', '__name__', '__doc__'):
+        setattr(wrapper, attr, getattr(orig, attr))
+    for attr in ('__dict__',):
+        getattr(wrapper, attr).update(getattr(orig, attr, {}))
+    return wrapper
 
-except ImportError:
-    def _update_wrapper(orig, wrapper):
-        for attr in ('__module__', '__name__', '__doc__'):
-            setattr(wrapper, attr, getattr(orig, attr))
-        for attr in ('__dict__',):
-            getattr(wrapper, attr).update(getattr(orig, attr, {}))
-        return wrapper
-
-    def wraps(orig):
-        def _wraps(decorator):
-            def _decorator(*args,**kwargs):
-                return decorator(*args,**kwargs)
-            return _update_wrapper(decorator, _decorator)
-        return _wraps
+def wraps(orig):
+    def _wraps(decorator):
+        return _update_wrapper(orig, decorator)
+    return _wraps
 
 # stdlib json serialization ---------------------------------------------------
 
-try:
-    import xjson
-
-except ImportError:
-    import simplejson as json
-
+import simplejson as json
 
 # itertools.chain --------------------------------------------------------------
 
