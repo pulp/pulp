@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# pulpd         Startup script for the Pulp Web Services
+# pulp-server         Startup script for the Pulp Web Services
 #
 # chkconfig: - 97 9
 #
 ### BEGIN INIT INFO
 # Required-Start: $mongod $qpidd $httpd
 # Required-Stop: $httpd $qpidd $mongod
-# Short-Description: start and stop the pulp webservices
+# Short-Description: start and stop the Pulp webservices
 # Description: Pulp is comprehensive content repository and consumer management 
 
 . /etc/rc.d/init.d/functions
