@@ -83,7 +83,7 @@ class List(ConsumerAction):
                 key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
                 for k, v in key_value_pairs.items():
                     kvpair.append("%s  :  %s," % (str(k), str(v)))
-                stat = status[con['id']]
+                stat = status.get(con['id'], (False, None))
                 if stat[0]:
                     responding = _('Yes')
                 else:
