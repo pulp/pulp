@@ -355,8 +355,6 @@ class CdsApi(BaseApi):
         if len(consumers) == 0:
             return
 
-        log.info('After consumers')
-
         # Load the repo data
         repo = list(Repo.get_collection().find({'id' : repo_id}))[0]
 
