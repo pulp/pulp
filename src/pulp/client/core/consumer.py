@@ -73,6 +73,9 @@ class List(ConsumerAction):
         for con in cons:
             con['package_profile'] = urlparse.urljoin(baseurl,
                                                       con['package_profile'])
+        sapi = ServiceAPI()
+        status = sapi.agentstatus()
+
         if key is None:
             print_header(_("Consumer Information"))
             for con in cons:
@@ -80,9 +83,18 @@ class List(ConsumerAction):
                 key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
                 for k, v in key_value_pairs.items():
                     kvpair.append("%s  :  %s," % (str(k), str(v)))
+                stat = status[con['id']]
+                if stat[0]:
+                    responding = _('Yes')
+                else:
+                    responding = _('No')
                 print constants.AVAILABLE_CONSUMER_INFO % \
-                        (con["id"], con["description"], \
-                         con["repoids"].keys(), '\n \t\t\t'.join(kvpair[:]))
+                        (con["id"],
+                         con["description"], \
+                         con["repoids"].keys(),
+                         responding,
+                         stat[1],
+                         '\n \t\t\t'.join(kvpair[:]))
             system_exit(os.EX_OK)
 
         if value is None:
