@@ -23,7 +23,7 @@ Requires: %{name}-common = %{version}
 Requires: pymongo >= 1.9
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-simplejson
+Requires: python-simplejson >= 2.0.9
 Requires: python-oauth2
 Requires: python-httplib2
 Requires: grinder >= 0.0.86
