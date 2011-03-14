@@ -13,6 +13,23 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+"""
+[[wiki]]
+title: Auditing RESTful Interface
+description: RESTful interface for querying events audited by the system.
+             Events are returned as Event objects.
+Event object fields:
+ * timestamp (int) - time the event occurred
+ * principal_type (str) - type of the principal
+ * principal (str) - principal that triggered the event
+ * action (str) - name of the audited action
+ * method (str) - name of the method called
+ * params (list of str) - parameter passed to the method
+ * result (str) - result of the method call or null if not recorded
+ * exception (str) - name of the error that occurred, if any
+ * traceback (str) - code traceback for the error, if any
+"""
+
 import web
 
 from pulp.server.auditing import events
@@ -37,16 +54,6 @@ class Events(JSONController):
         success response: 200 OK
         failure response: None
         return: list of event objects
-        object fields:
-         * timestamp (int) - time the event occurred
-         * principal_type (str) - type of the principal
-         * principal (str) - principal that triggered the event
-         * action (str) - name of the audited action
-         * method (str) - name of the method called
-         * params (list of str) - parameter passed to the method
-         * result (str) - result of the method call or null if not recorded
-         * exception (str) - name of the error that occurred, if any
-         * traceback (str) - code traceback for the error, if any
         filters:
          * api (str) - the api name
          * method (str) - the method name
