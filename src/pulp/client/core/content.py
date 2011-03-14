@@ -82,7 +82,7 @@ class Upload(ContentAction):
         uapi = UploadAPI()
         for f in files:
             try:
-                if not self.opts.nosig and not utils.is_signed(f):
+                if not self.opts.nosig and f.endswith(".rpm") and not utils.is_signed(f):
                     msg = _("Package [%s] is not signed. Please use --nosig. Skipping " % f)
                     log.error(msg)
                     if self.opts.verbose:
