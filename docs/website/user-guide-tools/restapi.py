@@ -92,24 +92,52 @@ def wiki_doc_to_dict(doc):
     return wiki_dict
 
 
-def format_wiki_doc(doc):
+def format_method_wiki_doc(doc):
     wiki_dict = wiki_doc_to_dict(doc)
     wiki_doc = '== %s ==\n' % wiki_dict.get('title', 'Untitled').strip()
     wiki_doc += "''%s''\n" % wiki_dict.get('description', 'No description\n').strip()
     wiki_doc += '[[BR]]\n[[BR]]\n'
     for key in ('method', 'path', 'permission', 'success response',
-                'failure response', 'return', 'object fields', 'filters'):
+                'failure response', 'return', 'filters'):
         wiki_doc += "'''%s:''' %s" % (key, wiki_dict.get(key, 'Unspecified\n'))
         wiki_doc += '[[BR]]\n'
     return wiki_doc
 
 
-def process_doc_string(doc):
+
+def format_module_wiki_doc(module_name, doc):
+
+    def module_title():
+        title = module_name.rsplit('.', 1)[1]
+        return '= %s REST API =\n' % title.title()
+
+    if doc is None:
+        return module_title()
+
+    wiki_dict = wiki_doc_to_dict(doc)
+    wiki_doc = ''
+    if 'title' not in wiki_dict:
+        wiki_doc += module_title()
+    else:
+        wiki_doc = '= %s =\n' % wiki_dict.pop('title').strip()
+    wiki_doc += "''%s''\n" % wiki_dict.pop('description', 'No description\n').strip()
+    wiki_doc += '[[BR]]\n[[BR]]\n'
+    for key, value in wiki_dict.items():
+        wiki_doc += "'''%s:''' %s" % (key, value)
+    return wiki_doc
+
+
+def get_wiki_doc_string(obj):
+    name = getattr(obj, '__name__', 'Unamed')
+    doc = getattr(obj, '__doc__', None)
+    if doc is None:
+        print >> sys.stderr, 'skipped %s: no doc string' % name
+        return None
+    if not doc_marker.search(doc):
+        print >> sys.stderr, 'skipped %s: no wiki formatting' % name
+        return None
     doc_string, wiki_doc = doc_marker.split(doc)
-    wiki_doc = wiki_doc.strip()
-    if not wiki_doc:
-        return ''
-    return format_wiki_doc(wiki_doc)
+    return wiki_doc.strip()
 
 
 def gen_docs_for_class(cls):
@@ -117,20 +145,16 @@ def gen_docs_for_class(cls):
     for attr in cls.__dict__.values():
         if not inspect.isroutine(attr):
             continue
-        doc = getattr(attr, '__doc__', None)
-        name = getattr(attr, '__name__', 'Unnamed')
-        if doc is None:
-            print >> sys.stderr, 'skipped %s: no doc string' % name
-            continue
-        if not doc_marker.search(doc):
-            print >> sys.stderr, 'skipped %s: no wiki formatting' % name
-            continue
-        docs += process_doc_string(doc)
+        wiki_doc = get_wiki_doc_string(attr)
+        if wiki_doc is not None:
+            docs += format_method_wiki_doc(wiki_doc)
     return docs
 
 
 def gen_docs_for_module(module):
     docs = []
+    wiki_doc = get_wiki_doc_string(module)
+    docs.append(format_module_wiki_doc(module.__name__, wiki_doc))
     cls = import_base_class()
     for name, attr in module.__dict__.items():
         if not (type(attr) == types.TypeType and issubclass(attr, cls)):
@@ -144,7 +168,7 @@ def write_docs_for_module(dir, module_name, docs):
     file_name = '%s.wiki' % title
     file_path = os.path.join(os.path.abspath(dir), file_name)
     file = open(file_path, 'w')
-    file.write('[[TOC]]\n= %s REST API =' % title.title())
+    file.write('[[TOC]]\n')
     file.write('\n\n'.join(docs))
     file.close()
 
