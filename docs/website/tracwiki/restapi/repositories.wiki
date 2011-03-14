@@ -1,0 +1,1638 @@
+[[TOC]]
+= Repositories RESTful Interface =
+''RESTfule interface for the creation, querying, and management of
+repositories managed by Pulp. Repositories are represented as
+Repo objects. Some of the Repo object fields''
+[[BR]]
+[[BR]]
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''Repo object fields:''' 
+ * id (str) - repository identifier
+ * source (RepoSource object) - upstream content source
+ * name (str) - human-friendly name
+ * arch (str) - hardware architecture that repository is for
+ * release (str) - release number
+ * packages (list of str) - list of package ids in the repository [deferred field]
+ * package_count (int) - number of packages in the repository
+ * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
+ * repomd_xml_path (str) - path to the repository's repomd xml file
+ * group_xml_path (str) - path to the repository's group xml file
+ * group_gz_xml_path (str) - path to the repository's compressed group xml file
+ * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * last_sync (timestamp) - date and time of last successful sync
+ * use_symlinks (bool) - whether or not the repository uses symlinks for its content
+ * ca (str) - the repository's certificate authority
+ * cert (str) - the repository's certificate
+ * key (str) - the repository's private key
+ * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
+ * groupid (list of str) - list of repository group ids this repository belongs to
+ * relative_path (str) - repository's path relative to the configured root
+ * files (list of str) - list of ids of the non-package files in the repository [deferred field]
+ * publish (bool) - whether or not the repository is available
+ * clone_ids (list of str) - list of repository ids that are clones of this repository
+ * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type (str) - name of the algorithm used for checksums of the repository's content
+ * filters (list of str) - list of filter ids associated with the repository
+'''RepoSource object fields:''' 
+ * supported_types (list of str) - list of supported types of repositories
+ * type (str) - repository source type
+ * url (str) - repository source url
+'''RepoSource object fields:''' 
+ * supported_types (list of str) - list of supported types of repositories
+ * type (str) - repository source type
+ * url (str) - repository source url
+'''RepoSource object fields:''' 
+ * supported_types (list of str) - list of supported types of repositories
+ * type (str) - repository source type
+ * url (str) - repository source url
+'''RepoSource object fields:''' 
+ * supported_types (list of str) - list of supported types of repositories
+ * type (str) - repository source type
+ * url (str) - repository source url
+
+
+== Repository Clone ==
+''Create a new repository by cloning an existing one.''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/clone/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 202 Accepted
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository;
+409 Conflict if the parameters match an existing repository;
+[[BR]]
+'''return:''' a Task object
+[[BR]]
+'''parameters:''' 
+ * clone_id (str) - the id of the clone repository
+ * clone_name (str) - the namd of clone repository
+[[BR]]
+
+
+== Repository Sychronization ==
+''Synchronize the repository's content from its source.''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/sync/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 202 Accepted
+[[BR]]
+'''failure response:''' 406 Not Acceptable if the repository does not have a source;
+409 Conflict if a sync is already in progress for the repository
+[[BR]]
+'''return:''' a Task object
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+== Repository Sychronization ==
+''Synchronize the repository's content from its source.''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/sync/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 202 Accepted
+[[BR]]
+'''failure response:''' 406 Not Acceptable if the repository does not have a source;
+409 Conflict if a sync is already in progress for the repository
+[[BR]]
+'''return:''' a Task object
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+==  ==
+''''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' EXECUTE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' 
+[[BR]]
+'''parameters:''' 
+[[BR]]
+
+
+== Repository Files ==
+''List the non-package files in the repository.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/files/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' list of File objects
+[[BR]]
+
+
+== Repository GPG Keys ==
+''List the gpg keys used by the repository.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/keys/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' list of gpg keys
+[[BR]]
+
+
+== Repository Errata ==
+''List the applicable errata for the repository.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/errata/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' list of Errata objects
+[[BR]]
+'''filters:''' 
+ * type (str) - type of errata
+[[BR]]
+
+
+== Repository Comps XML ==
+''Get the xml content of the repository comps file''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/comps/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' xml comps file
+[[BR]]
+
+
+== Repository Package Group Categories ==
+''Get the package group categories in the repository.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/packagegroupcategories/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' list of package group catagory names
+[[BR]]
+'''filters:''' 
+ * id (str) - package group category id
+ * packagegroupcategories (str) - package group category name
+[[BR]]
+
+
+== Repository Distribution ==
+''List the distributions the repository is part of.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/distribution/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' list of Distribution objects
+[[BR]]
+
+
+== Repository Packages ==
+''Get the packages in a repository''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/packages/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' list of Package objects
+[[BR]]
+'''filters:''' 
+ * name (str) - package name
+ * version (str) - package version
+ * release (str) - package release
+ * epoch (int) - package epoch
+ * arach (str) - package architecture
+ * filename (str) - name of package file
+ * field (str) - field to include in Package objects
+[[BR]]
+
+
+== Repository Package Groups ==
+''Get the package groups in the repositories.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/packagegroups/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' list of package group names
+[[BR]]
+'''filters:''' 
+ * id (str) - package groupd id
+ * packagegroups (str) - package group name
+[[BR]]
+
+
+== Update A Repository ==
+''Change an exisiting repository.''
+[[BR]]
+[[BR]]
+'''method:''' PUT
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' UPDATE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 400 Bad Request when trying to change the id
+[[BR]]
+'''return:''' true
+[[BR]]
+'''parameters:''' any field of a Repo object except id
+[[BR]]
+
+
+== Get A Repository ==
+''Get a Repo object for a specific repository''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' 404 Not Found if the id does not match a repository
+[[BR]]
+'''return:''' a Repo object
+[[BR]]
+
+
+== Delete A Repository ==
+''Delete a single repository''
+[[BR]]
+[[BR]]
+'''method:''' DELETE
+[[BR]]
+'''path:''' /repositories/<id>/
+[[BR]]
+'''permission:''' DELETE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' true
+[[BR]]
+
+
+== List Available Repositories ==
+''Get a list of all repositories managed by Pulp.''
+[[BR]]
+[[BR]]
+'''method:''' GET
+[[BR]]
+'''path:''' /repositories/
+[[BR]]
+'''permission:''' READ
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' list of Repo objects
+[[BR]]
+'''filters:''' 
+ * id (str) - repository id
+ * name (str) - repository name
+ * arch (str) repository contect architecture
+ * groupid (str) - repository group id
+ * relative_path (str) repository's on disk path
+[[BR]]
+
+
+== Create a Repository ==
+''Create a new repository based on the passed information''
+[[BR]]
+[[BR]]
+'''method:''' POST
+[[BR]]
+'''path:''' /repositories/
+[[BR]]
+'''permission:''' CREATE
+[[BR]]
+'''success response:''' 201 Created
+[[BR]]
+'''failure response:''' 409 Conflict if the parameters matches an existing repository
+[[BR]]
+'''return:''' new Repo object
+[[BR]]
+'''parameters:''' 
+ * id (str)
+ * name (str)
+ * arch (str)
+[[BR]]
+
+
+== Delete All Repositories ==
+''Delete all repositories managed by Pulp.''
+[[BR]]
+[[BR]]
+'''method:''' DELETE
+[[BR]]
+'''path:''' /repositories/
+[[BR]]
+'''permission:''' DELETE
+[[BR]]
+'''success response:''' 200 OK
+[[BR]]
+'''failure response:''' None
+[[BR]]
+'''return:''' True
+[[BR]]

@@ -1,6 +1,2 @@
 [[TOC]]
 = Content REST API =
-
-
-
-

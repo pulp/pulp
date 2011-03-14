@@ -1,10 +1,2 @@
 [[TOC]]
 = Roles REST API =
-
-
-
-
-
-
-
-

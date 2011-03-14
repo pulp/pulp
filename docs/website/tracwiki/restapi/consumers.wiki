@@ -1,18 +1,2 @@
 [[TOC]]
 = Consumers REST API =
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

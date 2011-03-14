@@ -1,12 +1,2 @@
 [[TOC]]
 = Errata REST API =
-
-
-
-
-
-
-
-
-
-

@@ -1,12 +1,2 @@
 [[TOC]]
 = Filters REST API =
-
-
-
-
-
-
-
-
-
-

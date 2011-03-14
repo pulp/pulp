@@ -1,14 +1,2 @@
 [[TOC]]
 = Packages REST API =
-
-
-
-
-
-
-
-
-
-
-
-
