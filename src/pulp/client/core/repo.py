@@ -562,8 +562,10 @@ class Update(RepoAction):
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
         self.parser.add_option("--relativepath", dest="relative_path",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified (repository must be empty)"))
-        self.parser.add_option("--groupid", dest="groupid",
-                               help=_("a group to which the repository belongs; this is just a string identifier"))
+        self.parser.add_option("--addgroup", dest="addgroup",
+                               help=_("group id to be added to the repository"))
+        self.parser.add_option("--rmgroup", dest="rmgroup",
+                               help=_("group id to be removed from the repository"))
         self.parser.add_option("--addkeys", dest="addkeys",
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
@@ -574,6 +576,12 @@ class Update(RepoAction):
         optdict = vars(self.opts)
         for k, v in optdict.items():
             if not v:
+                continue
+            if k == 'addgroup':
+                self.repository_api.add_group(id, v)
+                continue
+            if k == 'rmgroup':
+                self.repository_api.remove_group(id, v)
                 continue
             if k == 'addkeys':
                 reader = KeyReader()

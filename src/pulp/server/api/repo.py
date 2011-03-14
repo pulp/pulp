@@ -1786,6 +1786,33 @@ class RepoApi(BaseApi):
         log.info('repository (%s), removed filters: %s', id, filter_ids)
 
 
+    @audit(params=['id', 'addgrp'])
+    def add_group(self, id, addgrp):
+        repo = self._get_existing_repo(id)
+        groupids = repo['groupid']
+        if addgrp not in groupids:
+            groupids.append(addgrp)
+
+        repo["groupid"] = groupids
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), added group: %s', id, addgrp)
+
+
+
+    @audit(params=['id', 'rmgrp'])
+    def remove_group(self, id, rmgrp):
+        repo = self._get_existing_repo(id)
+        groupids = repo['groupid']
+        if rmgrp in groupids:
+            groupids.remove(rmgrp)
+        
+        repo["groupid"] = groupids
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), removed group: %s', id, rmgrp)
+
+
+
+
     def list_filters(self, id):
         repo = self._get_existing_repo(id)
         return repo['filters']

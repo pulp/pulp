@@ -308,7 +308,9 @@ class RepositoryActions(AsyncController):
         'update_publish',
         'import_comps',
         'add_filters',
-        'remove_filters'
+        'remove_filters',
+        'add_group',
+        'remove_group'
     )
 
     def sync(self, id):
@@ -626,6 +628,24 @@ class RepositoryActions(AsyncController):
         """
         data = self.params()
         api.remove_filters(id=id, filter_ids=data['filters'])
+        return self.ok(True)
+    
+    def add_group(self, id):
+        """
+        @param id: repository id
+        @return: True on successful addition of group to repository
+        """
+        data = self.params()
+        api.add_group(id=id, addgrp=data['addgrp'])
+        return self.ok(True)
+
+    def remove_group(self, id):
+        """
+        @param id: repository id
+        @return: True on successful removal of group from repository
+        """
+        data = self.params()
+        api.remove_group(id=id, rmgrp=data['rmgrp'])
         return self.ok(True)
 
     def update_publish(self, id):
