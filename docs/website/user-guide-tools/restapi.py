@@ -66,16 +66,43 @@ def import_modules():
 doc_marker = re.compile(r'\[\[wiki\]\]', re.I)
 
 
+class WikiDict(dict):
+    """
+    "Ordered" dictionary class.
+    """
+    def __init__(self, *args, **kwargs):
+        super(WikiDict, self).__init__(*args, **kwargs)
+        self._keys = []
+
+    def __setitem__(self, key, value):
+        super(WikiDict, self).__setitem__(key, value)
+        self._keys.append(key)
+
+    def __delitem__(self, key):
+        super(WikiDict, self).__delitem__(key)
+        self._keys.remove(key)
+
+    def keys(self):
+        return self._keys[:]
+
+    def values(self):
+        return (self[k] for k in self.keys())
+
+    def items(self):
+        return ((k, self[k]) for k in self.keys())
+
+
 class WikiFormatError(Exception):
     pass
 
+# -----------------------------------------------------------------------------
 
 def wiki_doc_to_dict(doc):
-    wiki_dict = {}
+    wiki_dict = WikiDict()
     last_key = None
     lines = doc.splitlines()
     for num, line in enumerate(lines):
-        if line.find(':') < 0:
+        if line.find(':') < 0 or line.startswith('*'):
             if last_key is None:
                 raise WikiFormatError('bad wiki formatting:\n%s' % '\n'.join(lines[:num]))
             line = line.strip()
@@ -91,6 +118,7 @@ def wiki_doc_to_dict(doc):
             last_key = key
     return wiki_dict
 
+# -----------------------------------------------------------------------------
 
 def format_method_wiki_doc(doc):
     wiki_dict = wiki_doc_to_dict(doc)
@@ -98,7 +126,9 @@ def format_method_wiki_doc(doc):
     wiki_doc += "''%s''\n" % wiki_dict.get('description', 'No description\n').strip()
     wiki_doc += '[[BR]]\n[[BR]]\n'
     for key in ('method', 'path', 'permission', 'success response',
-                'failure response', 'return', 'filters'):
+                'failure response', 'return', 'parameters', 'filters'):
+        if key in ('parameters', 'filters') and key not in wiki_dict:
+            continue
         wiki_doc += "'''%s:''' %s" % (key, wiki_dict.get(key, 'Unspecified\n'))
         wiki_doc += '[[BR]]\n'
     return wiki_doc
@@ -126,6 +156,7 @@ def format_module_wiki_doc(module_name, doc):
         wiki_doc += "'''%s:''' %s" % (key, value)
     return wiki_doc
 
+# -----------------------------------------------------------------------------
 
 def get_wiki_doc_string(obj):
     name = getattr(obj, '__name__', 'Unamed')
@@ -162,6 +193,7 @@ def gen_docs_for_module(module):
         docs.append(gen_docs_for_class(attr))
     return docs
 
+# -----------------------------------------------------------------------------
 
 def write_docs_for_module(dir, module_name, docs):
     title = module_name.split('.')[-1]
