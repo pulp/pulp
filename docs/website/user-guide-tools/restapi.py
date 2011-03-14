@@ -78,18 +78,14 @@ class WikiDict(dict):
         super(WikiDict, self).__setitem__(key, value)
         self._keys.append(key)
 
-    def __delitem__(self, key):
-        super(WikiDict, self).__delitem__(key)
-        self._keys.remove(key)
-
     def keys(self):
         return self._keys[:]
 
     def values(self):
-        return (self[k] for k in self.keys())
+        return (self[k] for k in self.keys() if k in self)
 
     def items(self):
-        return ((k, self[k]) for k in self.keys())
+        return ((k, self[k]) for k in self.keys() if k in self)
 
 
 class WikiFormatError(Exception):
@@ -172,13 +168,13 @@ def get_wiki_doc_string(obj):
 
 
 def gen_docs_for_class(cls):
-    docs = ''
+    docs = []
     for attr in cls.__dict__.values():
         if not inspect.isroutine(attr):
             continue
         wiki_doc = get_wiki_doc_string(attr)
         if wiki_doc is not None:
-            docs += format_method_wiki_doc(wiki_doc)
+            docs.append(format_method_wiki_doc(wiki_doc))
     return docs
 
 
@@ -187,10 +183,11 @@ def gen_docs_for_module(module):
     wiki_doc = get_wiki_doc_string(module)
     docs.append(format_module_wiki_doc(module.__name__, wiki_doc))
     cls = import_base_class()
+    # XXX this isn't ordered!
     for name, attr in module.__dict__.items():
         if not (type(attr) == types.TypeType and issubclass(attr, cls)):
             continue
-        docs.append(gen_docs_for_class(attr))
+        docs.extend(gen_docs_for_class(attr))
     return docs
 
 # -----------------------------------------------------------------------------
