@@ -180,12 +180,12 @@ def processFile(filename, relativeDir=None):
     hash['checksum'] = getFileChecksum(hash['hashtype'], filename=filename)
     hash['pkgname'] = os.path.basename(filename)
     # Read the header
-    try:
+    if filename.endswith(".rpm"):
         ts = rpm.TransactionSet()
         ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         h = readRpmHeader(ts, filename)
         hash["type"] = "rpm"
-    except:
+    else:
         hash['type'] = "file"
         hash['description'] =  None
         return hash
