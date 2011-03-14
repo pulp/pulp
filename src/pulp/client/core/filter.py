@@ -17,6 +17,7 @@
 #
 
 import os
+import re
 from gettext import gettext as _
 
 from pulp.client import constants
@@ -52,8 +53,11 @@ class List(FilterAction):
             system_exit(os.EX_OK, _("No filters available to list"))
         print_header(_('Available Filters'))
         for filter in filters:
+            package_list = []
+            for package in filter["package_list"]:
+                package_list.append(str(package))
             print constants.AVAILABLE_FILTERS_LIST % (filter["id"], filter["description"],
-                                                    filter["type"], filter["package_list"])
+                                                    filter["type"], package_list)
 
 
 class Info(FilterAction):
@@ -70,8 +74,11 @@ class Info(FilterAction):
         if not filter:
             system_exit(os.EX_DATAERR, _("No filter with give id"))
         else:
+            package_list = []
+            for package in filter["package_list"]:
+                package_list.append(str(package))
             print constants.AVAILABLE_FILTERS_LIST % (filter["id"], filter["description"],
-                                                    filter["type"], filter["package_list"])
+                                                    filter["type"], package_list)
 
 
 class Create(FilterAction):
@@ -97,11 +104,19 @@ class Create(FilterAction):
 
         description = self.opts.description or id
         pnames = self.opts.pnames or []
-       
-        filter = self.filter_api.create(id, type, description, pnames)
-        print _("Successfully created filter [ %s ]" % filter['id'])
-
-
+        invalid_regexes = []
+        for pname in pnames:
+            try:
+                re.compile(pname)
+            except:
+                invalid_regexes.append(pname)
+        
+        if not invalid_regexes:       
+            filter = self.filter_api.create(id, type, description, pnames)
+            print _("Successfully created filter [ %s ]" % filter['id'])
+        else:
+            print _("Following regexes are not compatible with python 're' library: %s" % invalid_regexes)
+            
 class Delete(FilterAction):
 
     description = _('delete a filter')
