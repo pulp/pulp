@@ -228,8 +228,8 @@ class Repository(JSONController):
             repo[field] = http.extend_uri_path(field)
         repo['uri_ref'] = http.uri_path()
         #repo['package_count'] = api.package_count(id)
-        # XXX this was a sersious problem with packages
-        # why would packages be any different
+        # XXX this was a serious problem with packages
+        # why would files be any different
         repo['files_count'] = len(repo['files'])
         return self.ok(repo)
 
@@ -391,7 +391,6 @@ class RepositoryDeferredFields(JSONController):
         path: /repositories/<id>/distribution/
         permission: READ
         success response: 200 OK
-        failure response: None
         return: list of Distribution objects
         """
         return self.ok(api.list_distributions(id))
@@ -405,7 +404,6 @@ class RepositoryDeferredFields(JSONController):
         path: /repositories/<id>/files/
         permission: READ
         success response: 200 OK
-        failure response: None
         return: list of File objects
         """
         return self.ok(api.list_files(id))
@@ -419,7 +417,6 @@ class RepositoryDeferredFields(JSONController):
         path: /repositories/<id>/keys/
         permission: READ
         success response: 200 OK
-        failure response: None
         return: list of gpg keys
         """
         keylist = api.listkeys(id)
@@ -434,7 +431,6 @@ class RepositoryDeferredFields(JSONController):
         path: /repositories/<id>/comps/
         permission: READ
         success response: 200 OK
-        failure response: None
         return: xml comps file
         """
         return self.ok(api.export_comps(id))
@@ -566,20 +562,20 @@ class RepositoryActions(AsyncController):
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
 
-    # TODO I'm right here
 
     def upload(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Repository Upload
+        description: Upload a package to the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/upload/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * pkginfo (str) - package information
+         * pkgstream (bin) - package data
         """
         data = self.params()
         api.upload(id,
@@ -590,15 +586,15 @@ class RepositoryActions(AsyncController):
     def add_package(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add A Package
+        description: Add a new package to the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/add_package/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: list of errors
         parameters:
+         * packageid (str) - id of package to add
         """
         data = self.params()
         errors = api.add_package(id, data['packageid'])
@@ -607,33 +603,21 @@ class RepositoryActions(AsyncController):
     def delete_package(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Delete A Package
+        description: Delete a package from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/delete_package/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * package (Package object) - package to delete
         """
         data = self.params()
         api.remove_packages(id, data['package'])
         return self.ok(True)
 
     def get_package(self, id):
-        """
-        [[wiki]]
-        title:
-        description:
-        method: POST
-        path: /repositories/<id>/
-        permission: EXECUTE
-        success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
-        parameters:
-        """
         """
         @deprecated: use deferred fields: packages with filters instead
         """
@@ -643,21 +627,23 @@ class RepositoryActions(AsyncController):
     def add_packages_to_group(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add Packages To Package Group
+        description: Add packages to a package group that is in the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/add_packages_to_group/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+        return: nil
         parameters:
+         * groupid (str) - package group id
+         * packagenames (list of str) - list of packages to add to the package group
         """
         p = self.params()
         if "groupid" not in p:
-            return self.not_found('No groupid specified')
+            return self.bad_request('No groupid specified')
         if "packagenames" not in p:
-            return self.not_found('No package name specified')
+            return self.bad_request('No package name specified')
         groupid = p["groupid"]
         pkg_names = p.get('packagenames', [])
         gtype = "default"
@@ -666,56 +652,61 @@ class RepositoryActions(AsyncController):
             gtype = p["type"]
         if p.has_key("requires"):
             requires = p["requires"]
+        api.add_packages_to_group(id, groupid, pkg_names, gtype, requires)
         return self.ok(api.add_packages_to_group(id, groupid, pkg_names, gtype, requires))
 
     def delete_package_from_group(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Delete A Package From A Package Group
+        description: Delete a package from a package group in the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/delete_package_from_group/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+        return: nil
         parameters:
+         * groupid (str) - package group id
+         * name (str) - package name to remove
         """
         p = self.params()
         if "groupid" not in p:
-            return self.not_found('No groupid specified')
+            return self.bad_request('No groupid specified')
         if "name" not in p:
-            return self.not_found('No package name specified')
+            return self.bad_request('No package name specified')
         groupid = p["groupid"]
         pkg_name = p["name"]
         gtype = "default"
         if p.has_key("type"):
             gtype = p["type"]
-        requires = None
         return self.ok(api.delete_package_from_group(id, groupid, pkg_name, gtype))
 
     def create_packagegroup(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Create A Package Group
+        description: Create a new package group in the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/create_packagegroup/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
+        failure response: 400 Bad Request if the required parameters are not present
         return:
         parameters:
+         * groupid (str) - id of the package group
+         * groupname (str) - name of the package group
+         * description (str) package group description
         """
         p = self.params()
         if "groupid" not in p:
-            return self.not_found('No groupid specified')
+            return self.bad_request('No groupid specified')
         groupid = p["groupid"]
         if "groupname" not in p:
-            return self.not_found('No groupname specified')
+            return self.bad_request('No groupname specified')
         groupname = p["groupname"]
         if "description" not in p:
-            return self.not_found('No description specified')
+            return self.bad_request('No description specified')
         descrp = p["description"]
         return self.ok(api.create_packagegroup(id, groupid, groupname,
                                                descrp))
@@ -723,13 +714,12 @@ class RepositoryActions(AsyncController):
     def import_comps(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Import Comps
+        description: Import an XML comps file into the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/import_comps/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
         return:
         parameters:
         """
