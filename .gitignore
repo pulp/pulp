@@ -9,3 +9,4 @@ dist
 *.egg-info
 .settings
 *.wpr
+.idea
