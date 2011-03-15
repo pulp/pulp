@@ -39,20 +39,20 @@
    <div class="wikipage">
     <div id="searchable"><h1 id="Content">Content</h1>
 <p>
-A <i>content</i> corresponds to any file type including RPM, SRPM, isos, msi etc in the Pulp server, regardless of whether it was synchronized from a repository feed or manually uploaded by a user.
+In Pulp, the term <i>content</i> refers to any file managed by a Pulp server, regardless of type (RPM, SRPM, ISOs, MSI, etc.). The term content covers files that were either synchronized from a repository feed or manually uploaded by a user.
 </p>
 <hr />
 <h2 id="upload">Upload</h2>
 <p>
-Uploads content to the pulp server and stores them in a central location. If a repository is specified the uploaded content will be associated to the repo. The following arguments are optional:
+The <tt>content upload</tt> command uploads content to the Pulp server and stores it in a central location. If a repository is specified, the uploaded content will be associated to the given repo. The following arguments are supported (all are optional):
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> RPM Directory </td><td> <tt>--dir</tt> </td><td> Local path to the directory containing the files to upload. 
-</td></tr><tr><td> REPO ID </td><td> <tt>--repoid</tt> </td><td> Identifies the repository into which the content will be uploaded. specify multiple to associate to more than one repo.
-</td></tr><tr><td> NOSIG   </td><td> <tt>--nosig</tt>  </td><td> pushes unsigned content(rpms) 
-</td></tr><tr><td> CHUNKSIZE</td><td> <tt>--chunksize</tt> </td><td> chunk size to use for uploads. Default:10485760 
-</td></tr><tr><td> VERBOSE </td><td> <tt>--verbose</tt> </td><td> provides a more verbose output.
+</td></tr><tr><td> Directory </td><td> <tt>--dir</tt> </td><td> Local path to the directory containing the files to upload. 
+</td></tr><tr><td> Repository ID </td><td> <tt>--repoid</tt> </td><td> Identifies the repository into which the content will be uploaded. Multiple repos may be specified to associate to more than one repo.
+</td></tr><tr><td> Signature Verification   </td><td> <tt>--nosig</tt>  </td><td> Pushes unsigned content (RPM only). 
+</td></tr><tr><td> Chunk Size </td><td> <tt>--chunksize</tt> </td><td> Chunk size to use for uploads. Default: 10485760 
+</td></tr><tr><td> Verbose </td><td> <tt>--verbose</tt> </td><td> Provides a more verbose output. 
 </td></tr></table>
 <h4 id="Example:UploadadirectoryofcontenttothePulpserverandassociateittoarepository">Example: Upload a directory of content to the Pulp server and associate it to a repository</h4>
 <pre class="wiki">$ pulp-admin content upload --dir /root/cloud-rpms --repoid testrepo
@@ -62,32 +62,34 @@ Uploads content to the pulp server and stores them in a central location. If a r
 <pre class="wiki">$ pulp-admin content upload zbar-qt-devel-0.10-6.fc14.i686.rpm
 </pre><h4 id="Example:Uploadanisotothepulpserver">Example: Upload an iso to the pulp server</h4>
 <pre class="wiki">$ pulp-admin content upload fedora-14.iso
-</pre><h2 id="delete">Delete</h2>
+</pre><hr />
+<h2 id="delete">Delete</h2>
 <p>
-Delete uploaded content from pulp server. The delete will skip if content has any repo associations
+The <tt>content delete</tt> command is used to delete content from the Pulp server. The delete will skip the specified file if it is currently associated with one or more repositories.
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> FILES </td><td> <tt>--filenames</tt> </td><td> content filename to delete from server. 
-</td></tr><tr><td> CSV </td><td> <tt>--csv</tt> </td><td> a content csv with list of files to remove;format:filename,checksum. 
+</td></tr><tr><td> Files </td><td> <tt>--filenames</tt> </td><td> Name of the file to delete from the server. 
+</td></tr><tr><td> CSV </td><td> <tt>--csv</tt> </td><td> Path to a CSV file with a list of files to remove. Format: filename,checksum 
 </td></tr></table>
 <h4 id="Example:Deletethecontent">Example: Delete the content</h4>
 <pre class="wiki">$ pulp-admin content delete -f zbar-qt-devel-0.10-6.fc14.i686.rpm 
 </pre><h4 id="Example:Deletethecontentusingacsv">Example: Delete the content using a csv</h4>
 <pre class="wiki">$ pulp-admin content delete --csv=package.csv
-</pre><h2 id="list">List</h2>
+</pre><hr />
+<h2 id="list">List</h2>
 <p>
-List available content on pulp server. This should list any content type with format filename,checksum
+Available content on the Pulp server is displayed using the <tt>content list</tt> command. The output of this command will list files in the format: filename,checksum
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ORPHANED </td><td> <tt>--orphaned</tt> </td><td> list of orphaned content. 
-</td></tr><tr><td> REPOID </td><td> <tt>--repoid</tt> </td><td> list content in specified repo 
+</td></tr><tr><td> Show Orphaned </td><td> <tt>--orphaned</tt> </td><td> list of orphaned content. 
+</td></tr><tr><td> Repository ID </td><td> <tt>--repoid</tt> </td><td> Limits the content list to the specified repository. 
 </td></tr></table>
 <h4 id="Example:Listtheorphanedcontent">Example: List the orphaned content</h4>
 <pre class="wiki">$ pulp-admin content list --orphaned
 </pre><h4 id="Example:Listtherepocontent">Example: List the repo content</h4>
-<pre class="wiki">$ pulp-admin content list --repoid=testrepo
+<pre class="wiki">$ pulp-admin content list --repoid testrepo
 </pre></div>
    </div>
    

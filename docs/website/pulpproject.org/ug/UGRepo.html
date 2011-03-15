@@ -245,64 +245,80 @@ In addition to the <tt>-F</tt> flag, the following options are available to the 
 </td></tr><tr><td> Skip Distributions </td><td> <tt>--no-distribution</tt> </td><td> If specified, distributions found in the feed will not be synchronized. 
 </td></tr></table>
 <hr />
-<h2 id="errata">Errata</h2>
+<h2 id="packages">Packages</h2>
+<h3 id="AddPackage">Add Package</h3>
 <p>
-By default, repositories synchronize any errata in the feed repo. Errata information is available for review and installation on consumers.
-</p>
-<h3 id="Display1">Display</h3>
-<p>
-An individual erratum's details are displayed using the <tt>errata info</tt> command:
-</p>
-<pre class="wiki">$ pulp-admin errata info --id=FEDORA-2010-11507
-
-Id                    	FEDORA-2010-11507        
-Title                 	fedora-packager-0.5.1.0-1.fc13
-Description           	Massive updates for dist-git production setup.
-Type                  	enhancement              
-Issued                	2010-07-30 07:44:12      
-Updated               	                         
-Version               	1.4                      
-Release               	Fedora 13                
-Status                	stable                   
-Packages Effected     	['fedora-packager-0.5.1.0-1.fc13.noarch.rpm', 'fedora-packager-0.5.1.0-1.fc13.src.rpm']
-References            	[]              
-</pre><p>
-All errata in a given repository can be found by passing <tt>--repoid</tt> to the <tt>errata list</tt> command:
-</p>
-<pre class="wiki">$ pulp-admin errata list --repoid rhntest
-+------------------------------------------+
-     Available Errata in Repo [rhntest]
-+------------------------------------------+
-RHBA-2010:0826 , RHBA-2010:0254 , RHBA-2009:1653 , RHBA-2009:1652 , RHBA-2009:1655
-
-# Output trimmed for user guide
-</pre><p>
-The errata applicable to a particular consumer, as determined by the consumer's package profile and repository bindings, can be viewed using the 
-</p>
-<pre class="wiki">$ pulp-admin errata list --consumerid test-consumer
-+------------------------------------------+
-     Available Errata in Repo [rhntest]
-+------------------------------------------+
-RHBA-2010:0826 , RHBA-2010:0254
-</pre><h3 id="Installation">Installation</h3>
-<p>
-Errata can be installed from the <tt>pulp-admin</tt> script on a remote consumer using the <tt>errata install</tt> command.
+Packages can be associated with a repository using the <tt>pulp-admin</tt> script. When add_package is invoked, a package is selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
 </p>
 <p>
-The <tt>errata install</tt> command takes following arguments:
+The <tt>repo add_package</tt> command takes following arguments:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> Names </td><td> <tt>-e</tt> or <tt>--erratum</tt> </td><td> Name of an erratum to install. Multiple errata can be specified with multiple uses of this flag. 
-</td></tr><tr><td> Automated </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Answers yes to any suggested actions on a successful install, such as rebooting the consumer. If this is not specified, the value will be taken from the consumer's <tt>/etc/pulp/client.conf</tt> file. 
-</td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to install the errata. 
-</td></tr><tr><td> Consumer Group ID </td><td> <tt>--consumergroupid</tt> </td><td> ID of the consumer group on which the errata will be installed. 
-</td></tr>
-</table>
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to add the package. 
+</td></tr><tr><td> Package Name </td><td> <tt>-p</tt> or <tt>--package</tt> </td><td> Package filename to add to this repository. 
+</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified packages to perform add. 
+</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of add operation. 
+</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
+</td></tr></table>
+<h4 id="Example:Addapackagefromsourcetotargetrepositorytopleveldependencyresolution">Example: Add a package from source to target repository (top level dependency resolution)</h4>
+<pre class="wiki"> $ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 
+</pre><h4 id="Example:Addapackagefromsourcetotargetrepositoryrecursive">Example: Add a package from source to target repository (recursive)</h4>
+<pre class="wiki">pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 -r
+</pre><h3 id="DeletePackage">Delete Package</h3>
 <p>
-For example:
+The <tt>repo delete_package</tt> command is used to indicate a package to remove from a Pulp repository. During this process, a dependency lookup happens for the requested package and the call provides a suggestive option to choose to any dependencies required by this call.
 </p>
-<pre class="wiki">$ pulp-admin errata install --consumeridtest-consumer RHBA-2010:0826 -y
+<p>
+The <tt>repo delete_package</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to delete the package. 
+</td></tr><tr><td> Package Name </td><td> <tt>-p</tt> or <tt>--package</tt> </td><td> Package filename to delete from this repository. 
+</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of delete operation. 
+</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
+</td></tr></table>
+<h4 id="Example:Removeapackagefromrepositorytopleveldependencyresolution">Example: Remove a package from repository (top level dependency resolution)</h4>
+<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64
+</pre><h4 id="Example:Removeapackagefromrepositoryrecursive">Example: Remove a package from repository (recursive)</h4>
+<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64 -r
+</pre><hr />
+<h2 id="files">Files</h2>
+<h3 id="AddFile">Add File</h3>
+<p>
+Files can be associated with a repository using the <tt>pulp-admin</tt> script. When add_file is invoked, a file is selected from a source repository (if specified) or from the Pulp server in general and added to the destination repository.
+</p>
+<p>
+The <tt>repo add_file</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the target repository to add files to. 
+</td></tr><tr><td> Files </td><td> <tt>-f</tt> or <tt>--files</tt> </td><td> File(s) to add to this repository. 
+</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified file to perform add (optional). 
+</td></tr><tr><td> CSV File </td><td> <tt>--csv</tt> </td><td> A csv file to perform batch operations on. Format: filename,checksum 
+</td></tr></table>
+<h4 id="Example:Addfilefromsourcetotargetrepository">Example: Add file from source to target repository</h4>
+<pre class="wiki">$ pulp-admin repo add_file --id testrepo --source myfiles -f test.iso
+</pre><h4 id="Example:Addanorphanedfiletotargetrepository">Example: Add an orphaned file to target repository</h4>
+<pre class="wiki">$ pulp-admin repo add_file --id testrepo -f test.iso
+</pre><h4 id="Example:Addabatchoffilestotargetrepository">Example: Add a batch of files to target repository</h4>
+<pre class="wiki">$ pulp-admin repo add_file --id testrepo --csv test.csv
+</pre><h3 id="DeleteFile">Delete File</h3>
+<p>
+The <tt>repo remove_file</tt> command is used to remove files from a repository. It takes the following arguments: 
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the target repository to remove files from. 
+</td></tr><tr><td> Files </td><td> <tt>-f</tt> or <tt>--files</tt> </td><td> File(s) to remove to this repository. 
+</td></tr><tr><td> CSV File </td><td> <tt>--csv</tt> </td><td> A CSV file to perform batch operations on. Format: filename,checksum 
+</td></tr></table>
+<h4 id="Example:removefilefromtargetrepository">Example: remove file from target repository</h4>
+<pre class="wiki">$ pulp-admin repo remove_file --id testrepo -f test.iso
+</pre><h4 id="Example:removeabatchoffilestotargetrepository">Example: remove a batch of files to target repository</h4>
+<pre class="wiki">$ pulp-admin repo remove_file --id testrepo --csv test.csv
 </pre><hr />
 <h2 id="cloning">Cloning</h2>
 <p>
@@ -346,170 +362,87 @@ You can safely CTRL+C this current command and it will continue
 [==================================================] 100% (10 of 10 pkgs)
 Clone: Finished
 </pre><hr />
-<h2 id="distributions">Distributions</h2>
+<h2 id="filters">Filters</h2>
 <p>
-As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <i>distribution</i>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
+Repository filters are ways of filtering the available content for repositories <strong>with local feed</strong>. 
 </p>
 <p>
-Distributions in a Pulp server are retrieved using the <tt>distribution list</tt> command:
+Filters are of 2 types -
 </p>
-<pre class="wiki">$ pulp-admin distribution list
-+------------------------------------------+
-       List of Available Distributions
-+------------------------------------------+
-
-Id                    	ks-f14-x86_64        
-Description           	Kickstart Trees for f14-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
-
-Id                    	ks-f13-x86_64        
-Description           	Kickstart Trees for f13-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-13/GOLD/Fedora/x86_64/os
+<ul><li>Blacklist filters - It contains a list of packages that should be omitted when syncing associated repository.
+</li><li>Whitelist filters - In this case, only the packages matching a list of packages in whitelist filter should be synced from source. 
+</li></ul><p>
+A filter can be associated with multiple repositories and a repository can have multiple filters. If a repository has whitelist as well as blacklist filters associated with it, all the source packages matching whitelist filters are synced except for ones matching blacklist filters. 
+</p>
+<h3 id="CreationandUpdate">Creation and Update</h3>
+<p>
+Filters can be created using <tt>filter create</tt> command in the <tt>pulp-admin</tt> script. For example, to create a filter that filter out all openoffice.org packages and broadcom-wl-5.100.82.38-1.fc13.noarch package, the following command would be used:
+</p>
+<pre class="wiki">$ pulp-admin filter create --id=test-filter --type=blacklist --description="Openoffice and broad-wl filter" -p "openoffice.org*" -p "broadcom-wl-5.100.82.38-1.fc13.noarch" 
+Successfully created filter [ test-filter ]
 </pre><p>
-The list of distributions can be scoped to a particular repository using the <tt>--repoid</tt> argument:
+Id and type are the required attributes, however, you do not have to provide packages at the time of creation. You can do so later by using "filter add_packages" and "filter remove_packages" commands. You can provide multiple packages as shown using multiple -p options. You can provide a package name, full NVRA or a regex as an argument to -p option. 
 </p>
-<pre class="wiki">$ pulp-admin distribution list --repoid=f14-x64
+<pre class="wiki">$ pulp-admin filter create --id=pulp-whitelist-filter --type=whitelist
+Successfully created filter [ pulp-whitelist-filter ]
+
+$ pulp-admin filter add_packages --id=pulp-whitelist-filter -p "pulp*" -p "grinder"
+Successfully added packages to filter [ pulp-whitelist-filter ]
+
+$ pulp-admin filter remove_packages --id=pulp-whitelist-filter -p "grinder"
+Successfully removed packages to filter [ pulp-whitelist-filter ]
+</pre><h3 id="ListandInfo">List and Info</h3>
+<p>
+All repo filters can be listed using "filter list" and individual filter information is available through "filter info".
+</p>
+<pre class="wiki">$ sudo pulp-admin filter list
 +------------------------------------------+
-       List of Available Distributions
+              Available Filters
 +------------------------------------------+
 
-Id                    	ks-f14-x86_64        
-Description           	Kickstart Trees for f14-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+Id           :               	test-filter              
+Description  :               	Openoffice and broad-wl filter
+Type         :               	blacklist                
+Package List :               	[u'openoffice.org*', u'broadcom-wl-5.100.82.38-1.fc13.noarch']
+
+
+Id           :               	pulp-whitelist-filter    
+Description  :               	pulp-whitelist-filter    
+Type         :               	whitelist                
+Package List :               	[u'pulp*']               
+</pre><pre class="wiki">$ sudo pulp-admin filter info --id=test-filter
+
+Id           :               	test-filter              
+Description  :               	Openoffice and broad-wl filter
+Type         :               	blacklist                
+Package List :               	[u'openoffice.org*', u'broadcom-wl-5.100.82.38-1.fc13.noarch']
+</pre><h3 id="Delete">Delete</h3>
+<p>
+A filter can be deleted using "filter delete". If a filter is associated with any repositories, "filter delete" will not delete the filter unless you provide --force option. If --force is provided, all associations of this filter are deleted along with filter.
+</p>
+<pre class="wiki">$ pulp-admin filter delete --id=test-filter --force
+Successfully deleted Filter [ test-filter ]
+</pre><h3 id="AssociationwithRepositories">Association with Repositories</h3>
+<p>
+There are two ways in which you can associate filters with repositories -
+</p>
+<p>
+* Filters applied during cloning a repository: You can specify one or more filters while cloning a repo. As a result of this, cloned respository is associated with these filters and they are applied during cloning operation. 
+</p>
+<pre class="wiki">$ pulp-admin repo clone --id=test-repo --clone_id=clone-test-repo -f filter1 -f filter2
 </pre><p>
-More information on a specific distribution is retrieved using the <tt>distribution info</tt> command and specifying the distribution in question with <tt>--id</tt>:
+Multiple filters can be specified using multiple -f options. You can verify packages synced using "repo content" to make sure filters were applied successfully. Note that this will not work with repo clone with "origin" feed as filters work only with repositories with "local" feed. 
 </p>
-<pre class="wiki">$ pulp-admin distribution info --id=ks-f14-x86_64
-+------------------------------------------+
-   Distribution Info for ks-f14-x64-noarch
-+------------------------------------------+
-
-Id                    	ks-f14-x86_64        
-Description           	Kickstart Trees for f14-x86_64         
-URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
-Files                 	/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img
- 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz
-relativepath          	released/F-14/GOLD/Fedora/x86_64/os
-
-NOTE: The url that you see above can be used directly for baremetal kickstarts.
+<p>
+Successive syncs with continue to apply filters associated with repository unless you remove them using "repo remove_filters" command as shown- 
+</p>
+<pre class="wiki">$ pulp-admin repo remove_filters --id=clone-test-repo -f filter1
+Successfully removed filters ['filter1'] from repository [clone-test-repo]
 </pre><p>
-Distribution membership in a repository is also displayed in repository information commands. For more information, see the <a class="wiki" href="UGRepo.html#crud">Repository Display</a> documentation.
+* Filters added manually to a repository using "repo add_filters" command. 
 </p>
-<h2 id="add_package">Add Package</h2>
-<p>
-Associate a package to a repository. When add_package is invoked, a package is selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
-</p>
-<p>
-The <tt>repo add_package</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to add the package. 
-</td></tr><tr><td> Package Name </td><td> <tt>-p</tt> or <tt>--package</tt> </td><td> Package filename to add to this repository. 
-</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified packages to perform add. 
-</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of add operation. 
-</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
-</td></tr></table>
-<h4 id="Example:Addapackagefromsourcetotargetrepositorytopleveldependencyresolution">Example: Add a package from source to target repository (top level dependency resolution)</h4>
-<pre class="wiki"> $ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 
-</pre><h4 id="Example:Addapackagefromsourcetotargetrepositoryrecursive">Example: Add a package from source to target repository (recursive)</h4>
-<pre class="wiki">pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 -r
-</pre><h2 id="delete_package">Delete Package</h2>
-<p>
-Remove a package to a repository. When delete_package is invoked, a package is selected from a source repository and removed. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
-</p>
-<p>
-The <tt>repo delete_package</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to delete the package. 
-</td></tr><tr><td> Package Name </td><td> <tt>-p</tt> or <tt>--package</tt> </td><td> Package filename to delete from this repository. 
-</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of delete operation. 
-</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
-</td></tr></table>
-<h4 id="Example:Removeapackagefromrepositorytopleveldependencyresolution">Example: Remove a package from repository (top level dependency resolution)</h4>
-<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64
-</pre><h4 id="Example:Removeapackagefromrepositoryrecursive">Example: Remove a package from repository (recursive)</h4>
-<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64 -r
-</pre><h2 id="add_errata">Add Errata</h2>
-<p>
-Associate an errata and its packages to a repository. When add_errata is invoked, an errata and its associated packages are selected from a source repository and added to the destination repository. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
-</p>
-<p>
-The <tt>repo add_errata</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to add the errata. 
-</td></tr><tr><td> Errata ID </td><td> <tt>-e</tt> or <tt>--errata</tt> </td><td> Errata Id to add to this repository. 
-</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified errata to perform add. 
-</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of add operation. 
-</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
-</td></tr></table>
-<h4 id="Example:Addanerratafromsourcetotargetrepositorytopleveldependencyresolution">Example: Add an errata from source to target repository (top level dependency resolution)</h4>
-<pre class="wiki"> $ pulp-admin repo add_errata --id=test17 --source=f13-updates -e  FEDORA-2010-5816
-</pre><h4 id="Example:Addanerratafromsourcetotargetrepositoryrecursive">Example: Add an errata from source to target repository (recursive)</h4>
-<pre class="wiki">pulp-admin repo add_errata --id=test17 --source=f13-updates -e FEDORA-2010-5816 -r
-</pre><h2 id="delete_errata">Delete Errata</h2>
-<p>
-Remove an errata from repository. When delete_package is invoked, an errata and its associated packages are selected from a repository and removed. During this process, a dependency lookup happens for the requested package(s) and the call provides a suggestive option to choose to any dependencies required by this call.
-</p>
-<p>
-The <tt>repo delete_errata</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to delete the errata from. 
-</td></tr><tr><td> Errata ID </td><td> <tt>-e</tt> or <tt>--errata</tt> </td><td> Errata Id to delete from this repository. 
-</td></tr><tr><td> Assume Yes </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically process dependencies as part of delete operation. 
-</td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
-</td></tr></table>
-<h4 id="Example:Deleteanerratafromrepositorytopleveldependencyresolution">Example: Delete an errata from repository (top level dependency resolution)</h4>
-<pre class="wiki"> $ pulp-admin repo delete_errata --id=test17 -e  FEDORA-2010-5816
-</pre><h4 id="Example:Deleteanerratafromrepositoryrecursive">Example: Delete an errata from repository (recursive)</h4>
-<pre class="wiki">pulp-admin repo delete_errata --id=test17 -e FEDORA-2010-5816 -r
-</pre><h2 id="add_file">Add File</h2>
-<p>
-Associate a file to a repository. When add_file is invoked, aa file is selected from a source repository(if specified) or from pulp server in general and added to the destination repository.
-</p>
-<p>
-The <tt>repo add_file</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to add files. 
-</td></tr><tr><td> FILES </td><td> <tt>-f</tt> or <tt>--files</tt> </td><td> file(s) to add to this repository. 
-</td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified file to perform add.(optional) 
-</td></tr><tr><td> CSV </td><td> <tt>--csv</tt> </td><td> A csv file to perform batch operations on Format:filename,checksum. 
-</td></tr></table>
-<h4 id="Example:Addfilefromsourcetotargetrepository">Example: Add file from source to target repository</h4>
-<pre class="wiki"> $ pulp-admin repo add_file --id=testrepo --source=myfiles -f test.iso
-</pre><h4 id="Example:Addanorphanedfiletotargetrepository">Example: Add an orphaned file to target repository</h4>
-<pre class="wiki">pulp-admin repo add_file --id=testrepo -f test.iso
-</pre><h4 id="Example:Addabatchoffilestotargetrepository">Example: Add a batch of files to target repository</h4>
-<pre class="wiki">pulp-admin repo add_file --id=testrepo --csv test.csv
-</pre><h2 id="remove_file">Delete File</h2>
-<p>
-Remove a file from repository. When remove_file is invoked, file(s) are selected from a repository and removed. 
-</p>
-<p>
-The <tt>repo remove_file</tt> command takes following arguments:
-</p>
-<table class="wiki">
-<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
-</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Target repository Id to remove files. 
-</td></tr><tr><td> FILES </td><td> <tt>-f</tt> or <tt>--files</tt> </td><td> file(s) to remove to this repository. 
-</td></tr><tr><td> CSV </td><td> <tt>--csv</tt> </td><td> A csv file to perform batch operations on Format:filename,checksum. 
-</td></tr></table>
-<h4 id="Example:removefilefromtargetrepository">Example: remove file from target repository</h4>
-<pre class="wiki"> $ pulp-admin repo remove_file --id=testrepo -f test.iso
-</pre><h4 id="Example:removeabatchoffilestotargetrepository">Example: remove a batch of files to target repository</h4>
-<pre class="wiki">pulp-admin repo remove_file --id=testrepo --csv test.csv
+<pre class="wiki">$ pulp-admin repo add_filters --id=clone-test-repo -f filter1 -f filter2
+Successfully added filters ['filter1','filter2'] to repository [clone-test-repo]
 </pre></div>
    </div>
    

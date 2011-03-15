@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h2 id="distributions">Distributions</h2>
+<p>
+As part of Pulp's repo sync, kickstart trees are synchronized if they are present in the feed repository. In Pulp termniology, a kickstart tree is referred to as a <i>distribution</i>. A distribution is associated with the repository from which is was synchronized and all files related to the distribution are found in the same location as the repository's files.
+</p>
+<p>
+Distributions in a Pulp server are retrieved using the <tt>distribution list</tt> command:
+</p>
+<pre class="wiki">$ pulp-admin distribution list
++------------------------------------------+
+       List of Available Distributions
++------------------------------------------+
+
+Id                    	ks-f14-x86_64        
+Description           	Kickstart Trees for f14-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+
+Id                    	ks-f13-x86_64        
+Description           	Kickstart Trees for f13-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-13/GOLD/Fedora/x86_64/os
+</pre><p>
+The list of distributions can be scoped to a particular repository using the <tt>--repoid</tt> argument:
+</p>
+<pre class="wiki">$ pulp-admin distribution list --repoid=f14-x64
++------------------------------------------+
+       List of Available Distributions
++------------------------------------------+
+
+Id                    	ks-f14-x86_64        
+Description           	Kickstart Trees for f14-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+</pre><p>
+More information on a specific distribution is retrieved using the <tt>distribution info</tt> command and specifying the distribution in question with <tt>--id</tt>:
+</p>
+<pre class="wiki">$ pulp-admin distribution info --id=ks-f14-x86_64
++------------------------------------------+
+   Distribution Info for ks-f14-x64-noarch
++------------------------------------------+
+
+Id                    	ks-f14-x86_64        
+Description           	Kickstart Trees for f14-x86_64         
+URL                   	http://localhost/pulp/ks/released/F-14/GOLD/Fedora/x86_64/os
+Files                 	/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/install.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efiboot.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/boot.iso
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/efidisk.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/initrd.img
+ 			/var/lib/pulp/repos/released/F-14/GOLD/Fedora/x86_64/os/images/pxeboot/vmlinuz
+relativepath          	released/F-14/GOLD/Fedora/x86_64/os
+
+# NOTE: The url that you see above can be used directly for baremetal kickstarts.
+</pre><p>
+Distribution membership in a repository is also displayed in repository information commands. For more information, see the <a class="wiki" href="UGRepo.html#crud">Repository Display</a> documentation.
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

@@ -201,6 +201,44 @@ QPID RPMs are not available in the default CentOS repositories. Instructions on 
 4. Start the agent:
 </p>
 <pre class="wiki">$ service pulp-agent start
+</pre><hr />
+<h3 id="fcds">Content Delivery Server</h3>
+<p>
+1. Download the necessary repository configuration files:
+</p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #0000bb; background: #ddddff; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #0000bb">
+Fedora
+</span>
+<pre class="wiki" style="background: #ccccee; border: 1px solid #0000bb; border-radius: 10px; -moz-border-radius: 10px">
+$ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+</pre>
+</div>
+<p>
+<br />
+</p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #bb0000">
+Red Hat Enterprise Linux
+</span>
+<pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
+$ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+</pre>
+</div>
+<p>
+2. Install the CDS RPM and its dependencies:
+</p>
+<pre class="wiki">$ yum install pulp-cds
+</pre><p>
+3. Configure the CDS to connect to the Pulp server's message broker by editing <tt>/etc/pulp/cds.conf</tt> and changing the <tt>host</tt> property. 
+</p>
+<p>
+4. Ensure the appropriate messaging port is open on the CDS instance (see Prerequisites above for information on the port number).
+</p>
+<p>
+5. Start the Pulp CDS daemon:
+</p>
+<pre class="wiki">$ service pulp-cds start
 </pre></div>
    </div>
    

@@ -46,7 +46,8 @@
 <a href="UGREST-Services.html#AppendFileContent">Append File Content</a></li><li class="active">
 <a href="UGREST-Services.html#ImportFile">Import File</a></li><li class="active">
 <a href="UGREST-Services.html#LookuppackageChecksums">Lookup package Checksums</a></li><li class="active">
-<a href="UGREST-Services.html#LookupfileChecksums">Lookup file Checksums</a></li></ol></li></ol></div>
+<a href="UGREST-Services.html#LookupfileChecksums">Lookup file Checksums</a></li><li class="active">
+<a href="UGREST-Services.html#AssociatePackages">Associate Packages</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -379,6 +380,47 @@ Response: <strong>200 OK</strong>
 <div class="code"><pre>{<B><span class="code-string">&quot;filename1&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
  <B><span class="code-string">&quot;filename2&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
  ...}
+</pre></div><hr />
+<h2 id="AssociatePackages">Associate Packages</h2>
+<p>
+Associate a list of packages to a number of repositories
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/services/associate/packages/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<ul><li>package_info : list
+<div class="code"><pre>[((filename,checksum),[repoid_1, repoid_2, repoid_3])]
+</pre></div></li></ul><p>
+ 
+Authentication:
+</p>
+<blockquote>
+<p>
+username/password or client certificate
+</p>
+</blockquote>
+<p>
+Filters:
+</p>
+<blockquote>
+<p>
+None
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>[] - on successful association of all package ids
+{<B><span class="code-string">&quot;filename&quot;</span></b>:{<B><span class="code-string">&quot;checksum&quot;</span></b>:[error_repoids]}} - on error <B><span class="code-lang">for</span></b> each (filename,checksum) which failed to associate to a repo
 </pre></div><hr />
 </div>
    </div>

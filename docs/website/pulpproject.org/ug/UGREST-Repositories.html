@@ -67,7 +67,9 @@
 <a href="UGREST-Repositories.html#ListGPGKeys">List GPG Keys</a></li><li class="active">
 <a href="UGREST-Repositories.html#GetPackagebyNVREA">Get Package by NVREA</a></li><li class="active">
 <a href="UGREST-Repositories.html#PublishaRepository">Publish a Repository</a></li><li class="active">
-<a href="UGREST-Repositories.html#ViewSyncSchedulesforAllRepositories">View Sync Schedules for All Repositories</a></li></ol></li></ol></div>
+<a href="UGREST-Repositories.html#ViewSyncSchedulesforAllRepositories">View Sync Schedules for All Repositories</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddFilters">Add Filters</a></li><li class="active">
+<a href="UGREST-Repositories.html#Removefilters">Remove filters</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -907,7 +909,8 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>True
+<div class="code"><pre>[] - on successful add of all package ids
+[[package_id, (name, epoch, version, release, arch), filename, sha256checksum]] - on an error, only those packages which were <B><span class="code-lang">not</span></b> added are returned <B><span class="code-lang">in</span></b> this list
 </pre></div><p>
 Error: <strong>404 Not Found</strong> if there is no such repository
 </p>
@@ -1418,6 +1421,72 @@ None
 <p>
 Response: <strong>200 OK</strong>
 </p>
+<hr />
+<h2 id="AddFilters">Add Filters</h2>
+<p>
+Add filters to this repository
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;repository id&gt;/add_filters/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/password or consumer certificate
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<div class="code"><pre>{<B><span class="code-string">'filters'</span></b>: [<B><span class="code-string">'filter1'</span></b>, <B><span class="code-string">'filter2'</span></b>]}
+</pre></div><p>
+Error: <strong>404 Not Found</strong> if no such resource exists
+</p>
+<hr />
+<h2 id="Removefilters">Remove filters</h2>
+<p>
+Remove filters from a repository
+</p>
+<p>
+Status: <strong>complete</strong>
+</p>
+<p>
+Path: <strong>/repositories/&lt;repository id&gt;/remove_filters/</strong>
+</p>
+<p>
+Method: <strong>POST</strong>
+</p>
+<p>
+Parameters:
+</p>
+<pre class="wiki">#!
+{'filters': ['filter1', 'filter2']}
+</pre><p>
+Authentication:
+</p>
+<blockquote>
+<p>
+username/password or consumer certificate
+</p>
+</blockquote>
+<p>
+Response: <strong>200 OK</strong>
+</p>
+<p>
+Error: <strong>404 Not Found</strong> if no such resource exists
+</p>
+<hr />
 </div>
    </div>
    

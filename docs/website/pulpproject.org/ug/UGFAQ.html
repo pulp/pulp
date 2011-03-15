@@ -48,7 +48,6 @@
 <a href="UGFAQ.html#Igetatracebackusingadmincertswithpulp-adminonfedora-14">I get a traceback using admin certs with pulp-admin on fedora-14</a></li><li class="active">
 <a href="UGFAQ.html#Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</a></li><li class="active">
 <a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a></li><li class="active">
-<a href="UGFAQ.html#mongoshellthrowsaconnectfailed">mongo shell throws a connect failed</a></li><li class="active">
 <a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a></li></ol></li></ol></div>
 
 </p>
@@ -86,19 +85,19 @@ Also keep in mind that your client machine must be able to resolve that hostname
 </pre><hr />
 <h2 id="CanIoverridesettingsinetcpulpclient.confonaperuserbasis">Can I override settings in /etc/pulp/client.conf on a per user basis?</h2>
 <p>
-When the pulp client runs, it will automatically look in ~/.pulp for a file named client.conf. If this file exists, any values it specifies will override those used in /etc/pulp/client.conf.
+When the pulp client runs, it will automatically look in <tt>~/.pulp</tt> for a file named <tt>client.conf</tt>. If this file exists, any values it specifies will override those used in <tt>/etc/pulp/client.conf</tt>.
 </p>
 <hr />
 <h2 id="Whyispulptimingouthanging">Why is pulp timing out/hanging?</h2>
 <p>
 This is most likely because qpidd isn't running. This may manifest itself in either hanging unit tests or timeouts when accessing the API. Make sure qpidd is running by executing:
 </p>
-<pre class="wiki">service qpidd start
+<pre class="wiki">$ service qpidd start
 </pre><p>
 To ensure qpidd starts automatically when the server starts:
 </p>
-<pre class="wiki"># chkconfig qpidd on
-# chkconfig --list qpidd
+<pre class="wiki">$ chkconfig qpidd on
+$ chkconfig --list qpidd
 qpidd          	0:off	1:off	2:on	3:on	4:on	5:on	6:off
 </pre><hr />
 <h2 id="Whyarepackageinstallsgettingrequesttimeouts">Why are package installs getting request timeouts?</h2>
@@ -106,10 +105,10 @@ qpidd          	0:off	1:off	2:on	3:on	4:on	5:on	6:off
 This is usually a configuration issue. Most likely candidates to check are,
 </p>
 <p>
-Make sure pulpd and qpidd are running
+Make sure <tt>pulp-server</tt> and <tt>qpidd</tt> are running
 </p>
-<pre class="wiki"> service qpidd start
- service pulpd start
+<pre class="wiki">$ service qpidd start
+$ service pulp-server start
 </pre><p>
 make sure client.conf is pointing to your pulp server, defaults to localhost. So if you client is not on same box as pulp server then make sure to update
 </p>
@@ -138,14 +137,14 @@ ValueError: need more than 1 value to unpack
 </pre><p>
 The easiest way to correct this, is to blow away the pulp database. <strong><i>WARNING:</i></strong> This will delete any existing data you have stored.
 </p>
-<pre class="wiki"># sudo service mongod stop
-# sudo rm -rf /var/lib/mongo/* ; on f14 -&gt; sudo rm -rf /var/lib/mongodb/*
-# sudo service mongod start
-# sudo service httpd restart
+<pre class="wiki">$ service mongod stop
+$ rm -rf /var/lib/mongo/* ; on f14 -&gt; sudo rm -rf /var/lib/mongodb/*
+$ service mongod start
+$ service httpd restart
 </pre><p>
 If you need to correct this, but need to keep your existing database, currently the only way is with a python interpreter:
 </p>
-<pre class="wiki"># python
+<pre class="wiki">$ python
 &gt;&gt;&gt; from pulp.server.api.user import UserApi
 &gt;&gt;&gt; api = UserApi()
 &gt;&gt;&gt; api.default_login = 'foo'
@@ -218,14 +217,16 @@ TypeError: sequence item 0: expected string, NoneType found
 <p>
 Actually, we don't know. But we do know how to fix it:
 </p>
-<pre class="wiki">rm /var/lock/subsys/mongod
+<pre class="wiki">$ rm /var/lock/subsys/mongod
+$ rm -f /var/lib/mongodb/mongod.lock
 </pre><p>
 For example:
 </p>
-<pre class="wiki"># sudo service mongod status
+<pre class="wiki">$ service mongod status
 mongod dead but subsys locked
-# sudo rm /var/lock/subsys/mongod
-# sudo service mongod status
+$ rm -f /var/lock/subsys/mongod
+$ rm -f /var/lib/mongodb/mongod.lock
+$ sudo service mongod status
 mongod is stopped
 </pre><hr />
 <h2 id="MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</h2>
@@ -238,21 +239,9 @@ to write the database in that directory.
 <p>
 The fix (as root or sudo):
 </p>
-<pre class="wiki"># mkdir /var/lib/mongodb
-# chown mongodb /var/lib/mongodb
-# chgrp mongodb /var/lib/mongodb
-</pre><hr />
-<h2 id="mongoshellthrowsaconnectfailed">mongo shell throws a connect failed</h2>
-<pre class="wiki">$ mongo
-MongoDB shell version: 1.6.3
-connecting to: test
-Tue Dec 14 16:01:38 Error: couldn't connect to server 127.0.0.1 (anon):1137
-exception: connect failed
-</pre><p>
-The fix is to remove the lock:
-</p>
-<pre class="wiki">$ rm -f /var/lib/mongodb/mongod.lock
-$ /etc/init.d/mongod restart
+<pre class="wiki">$ mkdir /var/lib/mongodb
+$ chown mongodb /var/lib/mongodb
+$ chgrp mongodb /var/lib/mongodb
 </pre><hr />
 <h2 id="HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</h2>
 <p>
