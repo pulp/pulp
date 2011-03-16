@@ -90,7 +90,8 @@ default_fields = [
     'clone_ids',
     'distributionid',
     'checksum_type',
-    'filters'
+    'filters',
+    'package_count',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -126,7 +127,7 @@ class Repositories(JSONController):
 
         for repo in repositories:
             repo['uri_ref'] = http.extend_uri_path(repo['id'])
-            repo['package_count'] = api.package_count(repo['id'])
+            #repo['package_count'] = api.package_count(repo['id'])
             repo['files_count'] = len(repo['files'])
             for field in RepositoryDeferredFields.exposed_fields:
                 repo[field] = http.extend_uri_path('/'.join((repo['id'], field)))
