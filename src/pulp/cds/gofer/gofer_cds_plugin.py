@@ -16,10 +16,12 @@ import logging
 import os
 import shutil
 import socket
+from uuid import uuid4
 
 # 3rd Party
 from gofer.agent.plugin import Plugin
 from gofer.decorators import remote
+from gofer import Singleton
 from grinder.RepoFetch import YumRepoGrinder
 
 
@@ -33,9 +35,20 @@ config = plugin.cfg()
 
 REPO_LIST_FILENAME = 'cds_repo_list'
 
+
+def getsecret():
+    '''
+    Function used in gofer decorator to get the shared secret.
+    @return: The shared secret.
+    @rtype: str
+    '''
+    secret = Secret()
+    return secret.read()
+
+
 class CdsGoferReceiver(object):
 
-    @remote
+    @remote(secret=getsecret)
     def initialize(self):
         '''
         Performs any initialization needed when a pulp server registered this CDS.
@@ -45,8 +58,21 @@ class CdsGoferReceiver(object):
         acknowledges it was successfully registered.
         '''
         log.info('Received initialize call')
+        uuid = str(uuid4())
+        secret = Secret()
+        return secret.write(uuid)
 
-    @remote
+    @remote(secret=getsecret)
+    def release(self):
+        '''
+        Release the CDS.
+        Clear the shared secret.
+        '''
+        log.info('Received release call')
+        secret = Secret()
+        secret.delete()
+
+    @remote(secret=getsecret)
     def sync(self, base_url, repos):
         '''
         Synchronizes the given repos to this CDS. This list is the definitive list of what
@@ -163,6 +189,71 @@ class CdsGoferReceiver(object):
             doomed = os.path.join(packages_dir, relative_path)
             log.info('Removing old repo [%s]' % doomed)
             shutil.rmtree(doomed)
+
+
+class Secret:
+    '''
+    Represents the persistent shared secret.
+    @cvar __cached: The cached secret.
+    @type __cached: str
+    '''
+    __metaclass__ = Singleton
+    PATH = config.messaging.secret_file
+    __cached = None
+
+    def __init__(self, path=PATH):
+        '''
+        @param path: The absolute to the file where the secret
+            is stored.  The directory is created automatically.
+        @type path: str
+        '''
+        self.path = path
+        self.__mkdir()
+
+    def read(self):
+        '''
+        Read and return the stored secret.
+        @return: The cached secret if not (None),
+            else the stored secret.
+        @rtype: str
+        '''
+        if self.__cached:
+            return self.__cached
+        try:
+            f = open(self.path)
+            secret = f.read()
+            f.close()
+        except:
+            secret = None
+        return secret
+
+    def write(self, secret):
+        '''
+        Store the specified secret and update the cache.
+        @param secret: The secret to store.
+        @type secret: str
+        '''
+        f = open(self.path, 'w')
+        f.write(secret)
+        self.__cached = secret
+        f.close()
+        return secret
+
+    def delete(self):
+        '''
+        Delete the stored secret and clear the cache.
+        '''
+        self.__cached = None
+        os.unlink(self.path)
+
+    def __mkdir(self):
+        '''
+        Ensure directory exists.
+        '''
+        path = os.path.dirname(self.path)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
 
 if __name__ == '__main__':
     r = {'name'          : 'main-pulp-testing',

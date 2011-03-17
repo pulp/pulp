@@ -47,6 +47,7 @@ class MockCdsDispatcher(object):
     # Strings to add to the call_log so the test can verify that the correct calls
     # were made into the dispatcher
     INIT = 'init'
+    RELEASE = 'release'
     SYNC = 'sync'
 
     def __init__(self, error_to_throw=None):
@@ -72,6 +73,12 @@ class MockCdsDispatcher(object):
         self.call_log.append(self.call_log_message(MockCdsDispatcher.INIT, cds))
         self.cds = cds
 
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def release_cds(self, cds):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.RELEASE, cds))
+        self.cds = cds
         if self.error_to_throw is not None:
             raise self.error_to_throw
 

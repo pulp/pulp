@@ -37,6 +37,7 @@ class CDS(Model):
         self.description = description
         self.repo_ids = []
         self.last_sync = None
+        self.secret = None
 
     def __str__(self):
         return self.hostname

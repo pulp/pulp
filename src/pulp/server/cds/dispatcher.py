@@ -23,7 +23,7 @@ import sys
 
 # 3rd Party
 from gofer.messaging.dispatcher import DispatchError
-from gofer.messaging.policy import RequestTimeout
+from gofer.messaging.policy import RequestTimeout, NotAuthorized
 
 # Pulp
 from pulp.server import config, constants
@@ -59,6 +59,14 @@ class CdsCommunicationsException(CdsDispatcherException):
     def __init__(self, wrapped_exception):
         CdsDispatcherException.__init__(self, wrapped_exception)
 
+class CdsAuthException(CdsDispatcherException):
+    '''
+    General exception for any authorization error that came out of the
+    underlying communications framework.
+    '''
+    def __init__(self, wrapped_exception):
+        CdsDispatcherException.__init__(self, wrapped_exception)
+
 class CdsMethodException(CdsDispatcherException):
     '''
     General exception for any error that was raised by the CDS execution of pulp code.
@@ -83,11 +91,32 @@ class GoferDispatcher(object):
         # block differentiates and throws the appropriate dispatcher exception.
 
         try:
-            self._cds_stub(cds).initialize()
+            secret = self._cds_stub(cds).initialize()
+            return secret
         except RequestTimeout, e:
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
         except DispatchError, e:
             raise CdsCommunicationsException(e), None, sys.exc_info()[2]
+        except NotAuthorized, e:
+            raise CdsAuthException(e), None, sys.exc_info()[2]
+        except Exception, e:
+            raise CdsMethodException(e), None, sys.exc_info()[2]
+
+    def release_cds(self, cds):
+        '''
+        Contacts the CDS and requests that it do any releasing tasks it needs to.
+
+        This method runs synchronously and will not return until after the CDS has responded
+        or an error occurs.
+        '''
+        try:
+            return self._cds_stub(cds).release()
+        except RequestTimeout, e:
+            raise CdsTimeoutException(e), None, sys.exc_info()[2]
+        except DispatchError, e:
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
+        except NotAuthorized, e:
+            raise CdsAuthException(e), None, sys.exc_info()[2]
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
@@ -115,6 +144,8 @@ class GoferDispatcher(object):
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
         except DispatchError, e:
             raise CdsCommunicationsException(e), None, sys.exc_info()[2]
+        except NotAuthorized, e:
+            raise CdsAuthException(e), None, sys.exc_info()[2]
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
@@ -129,8 +160,9 @@ class GoferDispatcher(object):
         @return: gofer stub
         @rtype:  object with the same methods as the CDS plugin
         '''
+        secret = cds.get('secret')
         agent = Agent(self._cds_uuid(cds))
-        stub = agent.CdsGoferReceiver()
+        stub = agent.CdsGoferReceiver(secret=secret)
         return stub
 
     def _cds_uuid(self, cds):

@@ -27,7 +27,7 @@ from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
-    CdsMethodException)
+    CdsAuthException, CdsMethodException,)
 from pulp.server.db.model import CDS, Repo
 from pulp.server.pexceptions import PulpException
 
@@ -96,13 +96,19 @@ class CdsApi(BaseApi):
         cds = CDS(hostname, name, description)
 
         # Add call here to fire off initialize call to the CDS
+        # and pdate the shared secret
         try:
-            self.dispatcher.init_cds(cds)
+            secret = self.dispatcher.init_cds(cds)
+            cds.secret = secret
         except CdsTimeoutException:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             raise PulpException('Timeout occurred attempting to initialize CDS [%s]' % hostname), None, exc_traceback
         except CdsCommunicationsException:
             log.exception('Communications exception occurred initializing CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Communications error while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+        except CdsAuthException:
+            log.exception('Authorization exception occurred initializing CDS [%s]' % hostname)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             raise PulpException('Communications error while attempting to initialize CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
         except CdsMethodException:
@@ -132,8 +138,23 @@ class CdsApi(BaseApi):
         if not doomed:
             raise PulpException('Could not find CDS with hostname [%s]' % hostname)
 
-        # Add call here to fire off unregister call to the CDS
-        # Decide what should happen if the unregister fails
+        try:
+            self.dispatcher.release_cds(doomed)
+        except CdsTimeoutException:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Timeout occurred attempting to release CDS [%s]' % hostname), None, exc_traceback
+        except CdsCommunicationsException:
+            log.exception('Communications exception occurred releasing CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Communications error while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+        except CdsAuthException:
+            log.exception('Authorization exception occurred releasing CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('Communications error while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
+        except CdsMethodException:
+            log.exception('CDS error encountered while attempting to releasing CDS [%s]' % hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            raise PulpException('CDS error encountered while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
 
         self.collection.remove({'hostname' : hostname}, safe=True)
 
@@ -311,6 +332,11 @@ class CdsApi(BaseApi):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_traceback = exc_traceback
             sync_error_msg = 'Unknown communications error during sync'
+        except CdsAuthsException:
+            log.exception('Authorization error during sync to CDS [%s]' % cds_hostname)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            sync_traceback = exc_traceback
+            sync_error_msg = 'Unknown authorization error during sync'
         except CdsMethodException:
             log.exception('CDS threw an error during sync to CDS [%s]' % cds_hostname)
             exc_type, exc_value, exc_traceback = sys.exc_info()
