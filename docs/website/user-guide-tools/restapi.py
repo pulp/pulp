@@ -102,7 +102,15 @@ def wiki_doc_to_dict(doc):
                 raise WikiFormatError('bad wiki formatting:\n%s' % '\n'.join(lines[:num]))
             line = line.strip()
             if line.startswith('*'):
-                line = ' ' + line
+                line = line[1:]
+                try:
+                    # try to split it out in to name, type, description
+                    # and format it accordingly
+                    n, t, d = line.split(',', 2)
+                    line = "%s (%s) ''%s''" % (n.strip(), t.strip(), d.strip())
+                except ValueError:
+                    pass
+                line = ' * ' + line
             line += '\n'
             wiki_dict[last_key] += line
         else:
@@ -168,7 +176,8 @@ def get_wiki_doc_string(obj):
 
 def gen_docs_for_class(cls):
     docs = []
-    for attr in cls.__dict__.values():
+    # XXX this sorting isn't ideal
+    for name, attr in sorted(cls.__dict__.items()):
         if not inspect.isroutine(attr):
             continue
         wiki_doc = get_wiki_doc_string(attr)
@@ -182,11 +191,15 @@ def gen_docs_for_module(module):
     wiki_doc = get_wiki_doc_string(module)
     docs.append(format_module_wiki_doc(module.__name__, wiki_doc))
     cls = import_base_class()
-    # XXX this isn't ordered!
-    for name, attr in module.__dict__.items():
+    # XXX this sorting isn't ideal
+    for name, attr in sorted(module.__dict__.items()):
         if not (type(attr) == types.TypeType and issubclass(attr, cls)):
             continue
-        docs.extend(gen_docs_for_class(attr))
+        cls_docs = gen_docs_for_class(attr)
+        if not cls_docs:
+            continue
+        docs.append('----\n')
+        docs.extend(cls_docs)
     return docs
 
 # -----------------------------------------------------------------------------
