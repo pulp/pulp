@@ -16,12 +16,12 @@
 """
 [[wiki]]
 title: Repositories RESTful Interface
-description: RESTfule interface for the creation, querying, and management of
+description: RESTful interface for the creation, querying, and management of
              repositories managed by Pulp. Repositories are represented as
              Repo objects. Some of the Repo object fields
 Repo object fields:
  * id, str, repository identifier
- * source (RepoSource object) - upstream content source
+ * source, RepoSource object, upstream content source
  * name, str, human-friendly name
  * arch, str, hardware architecture that repository is for
  * release, str, release number
@@ -33,7 +33,7 @@ Repo object fields:
  * group_xml_path, str, path to the repository's group xml file
  * group_gz_xml_path, str, path to the repository's compressed group xml file
  * sync_schedule, str, crontab entry representing recurring sync schedule
- * last_sync (timestamp) - date and time of last successful sync
+ * last_sync, timestamp, date and time of last successful sync
  * use_symlinks, bool, whether or not the repository uses symlinks for its content
  * ca, str, the repository's certificate authority
  * cert, str, the repository's certificate
