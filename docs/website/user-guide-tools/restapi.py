@@ -29,8 +29,6 @@ def parse_args(args=sys.argv[1:]):
     parser = OptionParser(description=about)
     parser.add_option('-o', '--out', dest='out', default='.',
                       help='output directory for wiki files')
-    parser.add_option('-s', '--src', dest='src', default=None,
-                      help='source directory')
     opts, args = parser.parse_args(args)
     return opts
 
@@ -206,7 +204,6 @@ def write_docs_for_module(dir, module_name, docs):
 
 def main():
     opts = parse_args()
-    sys.path.insert(0, opts.src)
     for module in import_modules():
         try:
             docs = gen_docs_for_module(module)
