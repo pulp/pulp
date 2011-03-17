@@ -41,6 +41,10 @@ Requires: mongodb-server
 Requires: qpid-cpp-server
 Requires: qpid-cpp-server-ssl
 Requires: qpid-cpp-server-store
+%if 0%{?fedora}
+# Fedora
+Requires: mod_python
+%endif
 %if !0%{?fedora}
 # RHEL
 Requires: python-uuid
@@ -181,6 +185,12 @@ rm -rf %{buildroot}
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
+
+# For Fedora, enable the mod_python handler in the httpd config
+%if 0%{?fedora}
+# Remove the comment flags for the auth handler lines (special format on those is #-)
+sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
+%endif
 
 
 %files
