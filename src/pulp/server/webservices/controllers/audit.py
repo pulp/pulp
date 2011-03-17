@@ -19,15 +19,15 @@ title: Auditing RESTful Interface
 description: RESTful interface for querying events audited by the system.
              Events are returned as Event objects.
 Event object fields:
- * timestamp (int) - time the event occurred
- * principal_type (str) - type of the principal
- * principal (str) - principal that triggered the event
- * action (str) - name of the audited action
- * method (str) - name of the method called
- * params (list of str) - parameter passed to the method
- * result (str) - result of the method call or null if not recorded
- * exception (str) - name of the error that occurred, if any
- * traceback (str) - code traceback for the error, if any
+ * timestamp, int, time the event occurred
+ * principal_type, str, type of the principal
+ * principal, str, principal that triggered the event
+ * action, str, name of the audited action
+ * method, str, name of the method called
+ * params, list of str, parameter passed to the method
+ * result, str, result of the method call or null if not recorded
+ * exception, str, name of the error that occurred, if any
+ * traceback, str, code traceback for the error, if any
 """
 
 import web
@@ -55,12 +55,12 @@ class Events(JSONController):
         failure response: None
         return: list of event objects
         filters:
-         * api (str) - the api name
-         * method (str) - the method name
-         * principal (str) - the caller of an api method
-         * field (str) - which fields are returned for each event
-         * limit (int) - limit the number of events returned
-         * errors_only (bool) - only show events that have a traceback associated with them
+         * api, str, the api name
+         * method, str, the method name
+         * principal, str, the caller of an api method
+         * field, str, which fields are returned for each event
+         * limit, int, limit the number of events returned
+         * errors_only, bool, only show events that have a traceback associated with them
         """
         valid_filters = ('principal', 'api', 'method', 'field', 'limit', 'errors_only')
         filters = self.filters(valid_filters)
