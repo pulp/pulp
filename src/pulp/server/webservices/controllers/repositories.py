@@ -20,37 +20,37 @@ description: RESTfule interface for the creation, querying, and management of
              repositories managed by Pulp. Repositories are represented as
              Repo objects. Some of the Repo object fields
 Repo object fields:
- * id (str) - repository identifier
+ * id, str, repository identifier
  * source (RepoSource object) - upstream content source
- * name (str) - human-friendly name
- * arch (str) - hardware architecture that repository is for
- * release (str) - release number
- * packages (list of str) - list of package ids in the repository [deferred field]
- * package_count (int) - number of packages in the repository
- * packagegroups (object) - map of package group names to list of package ids in the group [deferred field]
- * packagegroupcategories (object) - map of categories to lists of package group names [deferred field]
- * repomd_xml_path (str) - path to the repository's repomd xml file
- * group_xml_path (str) - path to the repository's group xml file
- * group_gz_xml_path (str) - path to the repository's compressed group xml file
- * sync_schedule (str) - crontab entry representing recurring sync schedule
+ * name, str, human-friendly name
+ * arch, str, hardware architecture that repository is for
+ * release, str, release number
+ * packages, list of str, list of package ids in the repository [deferred field]
+ * package_count, int, number of packages in the repository
+ * packagegroups, object, map of package group names to list of package ids in the group [deferred field]
+ * packagegroupcategories, object, map of categories to lists of package group names [deferred field]
+ * repomd_xml_path, str, path to the repository's repomd xml file
+ * group_xml_path, str, path to the repository's group xml file
+ * group_gz_xml_path, str, path to the repository's compressed group xml file
+ * sync_schedule, str, crontab entry representing recurring sync schedule
  * last_sync (timestamp) - date and time of last successful sync
- * use_symlinks (bool) - whether or not the repository uses symlinks for its content
- * ca (str) - the repository's certificate authority
- * cert (str) - the repository's certificate
- * key (str) - the repository's private key
- * errata (object) - map of errata names to lists of package ids in each errata [deferred field]
- * groupid (list of str) - list of repository group ids this repository belongs to
- * relative_path (str) - repository's path relative to the configured root
- * files (list of str) - list of ids of the non-package files in the repository [deferred field]
- * publish (bool) - whether or not the repository is available
- * clone_ids (list of str) - list of repository ids that are clones of this repository
- * distributionid (list of str) - list of distribution ids this repository belongs to [deferred fields]
- * checksum_type (str) - name of the algorithm used for checksums of the repository's content
- * filters (list of str) - list of filter ids associated with the repository
+ * use_symlinks, bool, whether or not the repository uses symlinks for its content
+ * ca, str, the repository's certificate authority
+ * cert, str, the repository's certificate
+ * key, str, the repository's private key
+ * errata, object, map of errata names to lists of package ids in each errata [deferred field]
+ * groupid, list of str, list of repository group ids this repository belongs to
+ * relative_path, str, repository's path relative to the configured root
+ * files, list of str, list of ids of the non-package files in the repository [deferred field]
+ * publish, bool, whether or not the repository is available
+ * clone_ids, list of str, list of repository ids that are clones of this repository
+ * distributionid, list of str, list of distribution ids this repository belongs to [deferred fields]
+ * checksum_type, str, name of the algorithm used for checksums of the repository's content
+ * filters, list of str, list of filter ids associated with the repository
 RepoSource object fields:
- * supported_types (list of str) - list of supported types of repositories
- * type (str) - repository source type
- * url (str) - repository source url
+ * supported_types, list of str, list of supported types of repositories
+ * type, str, repository source type
+ * url, str, repository source url
 """
 
 import itertools
@@ -112,11 +112,11 @@ class Repositories(JSONController):
         failure response: None
         return: list of Repo objects
         filters:
-         * id (str) - repository id
-         * name (str) - repository name
-         * arch (str) repository contect architecture
-         * groupid (str) - repository group id
-         * relative_path (str) repository's on disk path
+         * id, str, repository id
+         * name, str, repository name
+         * arch, str, repository contect architecture
+         * groupid, str, repository group id
+         * relative_path, str, repository's on disk path
         """
         valid_filters = ['id', 'name', 'arch', 'groupid', 'relative_path']
 
@@ -148,17 +148,17 @@ class Repositories(JSONController):
         failure response: 409 Conflict if the parameters matches an existing repository
         return: new Repo object
         parameters:
-         * id (str)
-         * name (str)
-         * arch (str)
-         * feed (str) - repository feed in the form of <type>:<url>
-         * use_symlinks (bool) - optional, defaults to false
-         * sync_schedule (str) - crontab entry format; optional
-         * cert_data (str) - repository certificate information; optional
-         * relative_path (str) - repository on disk path; optional
-         * groupid (list of str) - list of repository group ids this repository belongs to; optional
-         * gpgkeys (list of str) - list of gpg keys used for signing content; optional
-         * checksum_type (str) - name of the algorithm to use for content checksums; optional, defaults to sha256
+         * id, str,
+         * name, str,
+         * arch, str,
+         * feed, str, repository feed in the form of <type>:<url>
+         * use_symlinks, bool, optional, defaults to false
+         * sync_schedule, str, crontab entry format; optional
+         * cert_data, str, repository certificate information; optional
+         * relative_path, str, repository on disk path; optional
+         * groupid, list of str, list of repository group ids this repository belongs to; optional
+         * gpgkeys, list of str, list of gpg keys used for signing content; optional
+         * checksum_type, str, name of the algorithm to use for content checksums; optional, defaults to sha256
         """
         repo_data = self.params()
 
@@ -304,13 +304,13 @@ class RepositoryDeferredFields(JSONController):
         failure response: 404 Not Found if the id does not match a repository
         return: list of Package objects
         filters:
-         * name (str) - package name
-         * version (str) - package version
-         * release (str) - package release
-         * epoch (int) - package epoch
-         * arach (str) - package architecture 
-         * filename (str) - name of package file
-         * field (str) - field to include in Package objects
+         * name, str, package name
+         * version, str, package version
+         * release, str, package release
+         * epoch, int, package epoch
+         * arach, str, package architecture 
+         * filename, str, name of package file
+         * field, str, field to include in Package objects
         """
         valid_filters = ('name', 'version', 'release', 'epoch', 'arch',
                         'filename', 'field')
@@ -336,8 +336,8 @@ class RepositoryDeferredFields(JSONController):
         failure response: 404 Not Found if the id does not match a repository
         return: list of package group names
         filters:
-         * id (str) - package groupd id
-         * packagegroups (str) - package group name
+         * id, str, package groupd id
+         * packagegroups, str, package group name
         """
         repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
@@ -356,8 +356,8 @@ class RepositoryDeferredFields(JSONController):
         failure response: 404 Not Found if the id does not match a repository
         return: list of package group catagory names
         filters:
-         * id (str) - package group category id
-         * packagegroupcategories (str) - package group category name
+         * id, str, package group category id
+         * packagegroupcategories, str, package group category name
         """
         repo = api.repository(id, ['id', 'packagegroupcategories'])
         if repo is None:
@@ -376,7 +376,7 @@ class RepositoryDeferredFields(JSONController):
         failure response: 404 Not Found if the id does not match a repository
         return: list of Errata objects
         filters:
-         * type (str) - type of errata
+         * type, str, type of errata
         """
         valid_filters = ('type')
         types = self.filters(valid_filters).get('type', [])
@@ -500,12 +500,13 @@ class RepositoryActions(AsyncController):
         path: /repositories/<id>/sync/
         permission: EXECUTE
         success response: 202 Accepted 
-        failure response: 406 Not Acceptable if the repository does not have a source;
+        failure response: 404 Not Found if the id does not match a repository
+                          406 Not Acceptable if the repository does not have a source;
                           409 Conflict if a sync is already in progress for the repository
         return: a Task object
         parameters:
-         * timeout (str) - timeout in <value>:<units> format (e.g. 2:hours)
-         * skip (object) - yum skip dict
+         * timeout, str, timeout in <value>:<units> format (e.g. 2:hours)
+         * skip, object, yum skip dict
         """
         repo = api.repository(id, fields=['source'])
         if repo['source'] is None:
@@ -536,12 +537,12 @@ class RepositoryActions(AsyncController):
                           409 Conflict if the parameters match an existing repository;
         return: a Task object
         parameters:
-         * clone_id (str) - the id of the clone repository
-         * clone_name (str) - the namd of clone repository
-         * feed (str) - feed of the clone repository in <type>:<url> format
-         * relative_path (str) - clone repository on disk path; optional
-         * groupid (str) - repository groups that clone belongs to
-         * filters (list of objects) - synchronization filters to apply to the clone
+         * clone_id, str, the id of the clone repository
+         * clone_name, str, the namd of clone repository
+         * feed, str, feed of the clone repository in <type>:<url> format
+         * relative_path, str, clone repository on disk path; optional
+         * groupid, str, repository groups that clone belongs to
+         * filters, list of objects, synchronization filters to apply to the clone
         """
         repo_data = self.params()
         if api.repository(id, default_fields) is None:
@@ -572,10 +573,11 @@ class RepositoryActions(AsyncController):
         path: /repositories/<id>/upload/
         permission: EXECUTE
         success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
         return: true
         parameters:
-         * pkginfo (str) - package information
-         * pkgstream (bin) - package data
+         * pkginfo, str, package information
+         * pkgstream, binary, package data
         """
         data = self.params()
         api.upload(id,
@@ -592,9 +594,10 @@ class RepositoryActions(AsyncController):
         path: /repositories/<id>/add_package/
         permission: EXECUTE
         success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
         return: list of errors
         parameters:
-         * packageid (str) - id of package to add
+         * packageid, str, id of package to add
         """
         data = self.params()
         errors = api.add_package(id, data['packageid'])
@@ -609,9 +612,10 @@ class RepositoryActions(AsyncController):
         path: /repositories/<id>/delete_package/
         permission: EXECUTE
         success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
         return: true
         parameters:
-         * package (Package object) - package to delete
+         * package, Package object, package to delete
         """
         data = self.params()
         api.remove_packages(id, data['package'])
@@ -634,10 +638,11 @@ class RepositoryActions(AsyncController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
         return: nil
         parameters:
-         * groupid (str) - package group id
-         * packagenames (list of str) - list of packages to add to the package group
+         * groupid, str, package group id
+         * packagenames, list of str, list of packages to add to the package group
         """
         p = self.params()
         if "groupid" not in p:
@@ -665,10 +670,11 @@ class RepositoryActions(AsyncController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
         return: nil
         parameters:
-         * groupid (str) - package group id
-         * name (str) - package name to remove
+         * groupid, str, package group id
+         * name, str, package name to remove
         """
         p = self.params()
         if "groupid" not in p:
@@ -692,11 +698,12 @@ class RepositoryActions(AsyncController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
         return:
         parameters:
-         * groupid (str) - id of the package group
-         * groupname (str) - name of the package group
-         * description (str) package group description
+         * groupid, str, id of the package group
+         * groupname, str, name of the package group
+         * description, str, package group description
         """
         p = self.params()
         if "groupid" not in p:
@@ -715,13 +722,15 @@ class RepositoryActions(AsyncController):
         """
         [[wiki]]
         title: Import Comps
-        description: Import an XML comps file into the repository.
+        description: Create packagegroups and categories from a comps.xml file.
         method: POST
         path: /repositories/<id>/import_comps/
         permission: EXECUTE
         success response: 200 OK
-        return:
+        failure response: 404 Not Found if the id does not match a repository
+        return: True on success, False on failure
         parameters:
+         * xml comps file body
         """
         comps_data = self.params()
         return self.ok(api.import_comps(id, comps_data))
@@ -729,34 +738,45 @@ class RepositoryActions(AsyncController):
     def delete_packagegroup(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Delete A Package Group
+        description: Delete a package group from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/delete_packagegroup/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
+        return: nil
         parameters:
+         * groupid, str, id of the package group
         """
+#        """
+#        Removes a packagegroup from a repository
+#        @param id: repository id
+#        @return: 
+#        """
         p = self.params()
         if "groupid" not in p:
-            return self.not_found('No groupid specified')
+            return self.bad_request('No groupid specified')
         groupid = p["groupid"]
         return self.ok(api.delete_packagegroup(id, groupid))
 
     def create_packagegroupcategory(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Create Package Group Category
+        description: Create a new package group category in the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/create_packagegroupcategory/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
+        return: PackageGroupCategory object
         parameters:
+         * categoryid, str, package group category id
+         * categoryname, str, package group category name
+         * description, str, description of the package group category
         """
         _log.info("create_packagegroupcategory invoked")
         p = self.params()
@@ -775,42 +795,47 @@ class RepositoryActions(AsyncController):
     def delete_packagegroupcategory(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Delete Package Group Category
+        description: Delete a package group category from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/delete_packagegroupcategory/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
+        return: nil
         parameters:
+         * categoryid, str, package group category id
         """
         _log.info("delete_packagegroupcategory invoked")
         p = self.params()
         if "categoryid" not in p:
-            return self.not_found('No categoryid specified')
+            return self.bad_request('No categoryid specified')
         categoryid = p["categoryid"]
         return self.ok(api.delete_packagegroupcategory(id, categoryid))
 
     def add_packagegroup_to_category(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add Package Group To Category
+        description: Add a package group to one of the repository's package group categories.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/add_packagegroup_to_category/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
+        return: nil
         parameters:
+         * categoryid, str, package group category id
+         * groupid, str, package group id
         """
         _log.info("add_packagegroup_to_category invoked")
         p = self.params()
         if "categoryid" not in p:
-            return self.not_found("No categoryid specified")
+            return self.bad_request("No categoryid specified")
         if "groupid" not in p:
-            return self.not_found('No groupid specified')
+            return self.bad_request('No groupid specified')
         groupid = p["groupid"]
         categoryid = p["categoryid"]
         return self.ok(api.add_packagegroup_to_category(id, categoryid, groupid))
@@ -818,15 +843,18 @@ class RepositoryActions(AsyncController):
     def delete_packagegroup_from_category(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Delete Package Group From Category
+        description: Delete a package group from one of the repository's package group categories.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/delete_pacakgegroup_from_category/
         permission: EXECUTE
         success response: 200 OK
-        failure response: 404 Not Found if the id does not match a repository
-        return:
+        failure response: 400 Bad Request if the required parameters are not present
+                          404 Not Found if the id does not match a repository
+        return: nil
         parameters:
+         * categoryid, str, package group category id
+         * groupid, str, package group id
         """
         _log.info("delete_packagegroup_from_category")
         p = self.params()
@@ -841,15 +869,16 @@ class RepositoryActions(AsyncController):
     def add_errata(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add Errata
+        description: Add errata to the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/add_errata/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: nil
         parameters:
+         * errataid, str, errata id
         """
         data = self.params()
         api.add_errata(id, data['errataid'])
@@ -858,15 +887,16 @@ class RepositoryActions(AsyncController):
     def delete_errata(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Delete Errata
+        description: Delete errata from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/delete_errata/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * errataid, str, errata id
         """
         data = self.params()
         api.delete_errata(id, data['errataid'])
@@ -875,15 +905,16 @@ class RepositoryActions(AsyncController):
     def add_file(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add File
+        description: Add files to the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/add_file/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * fileids, list of str, list of file ids
         """
         data = self.params()
         api.add_file(id, data['fileids'])
@@ -892,15 +923,16 @@ class RepositoryActions(AsyncController):
     def remove_file(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Remove File
+        description: Remove files from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/remove_file/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * fileids, list of str, list of file ids
         """
         data = self.params()
         api.remove_file(id, data['fileids'])
@@ -909,15 +941,16 @@ class RepositoryActions(AsyncController):
     def addkeys(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add Keys
+        description: Add gpg keys to the repsository
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/addkeys/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * keylist, list of str binary lists, list of (key name, content) tuples
         """
         data = self.params()
         api.addkeys(id, data['keylist'])
@@ -926,15 +959,16 @@ class RepositoryActions(AsyncController):
     def get_package_by_nvrea(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Get Package By NVREA
+        description: Get packages from the repository by specifying package name, version, release, epoc, and architecture
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/get_package_by_nvrea/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: object of package file names to Package objects
         parameters:
+         * nvrea, list of str, list of name, version, release, epoch, architecture specifications
         """
         data = self.params()
         return self.ok(api.get_packages_by_nvrea(id, data['nvrea']))
@@ -942,15 +976,16 @@ class RepositoryActions(AsyncController):
     def get_package_by_filename(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Get Package By File Name
+        description: Get packages from the repository by specifying the file names.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/get_package_by_filename/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: list of Package Objects
         parameters:
+         * filename, list of str, list of file names
         """
         data = self.params()
         return self.ok(api.get_packages_by_filename(id, data['filename']))
@@ -958,15 +993,16 @@ class RepositoryActions(AsyncController):
     def rmkeys(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Remove Keys
+        description: Remove gpg keys from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/rmkeys/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * keys list, list 
         """
         data = self.params()
         api.rmkeys(id, data['keylist'])
@@ -975,15 +1011,16 @@ class RepositoryActions(AsyncController):
     def add_filters(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Add Filters
+        description: Add filters to the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/add_filters/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * filters, list of str, list of filter ids 
         """
         data = self.params()
         api.add_filters(id=id, filter_ids=data['filters'])
@@ -992,15 +1029,16 @@ class RepositoryActions(AsyncController):
     def remove_filters(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Remove Filters
+        description: Remove filters from the repository.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/remove_filters/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: true
         parameters:
+         * filters, list of str, list of filter ids 
         """
         data = self.params()
         api.remove_filters(id=id, filter_ids=data['filters'])
@@ -1008,8 +1046,17 @@ class RepositoryActions(AsyncController):
 
     def add_group(self, id):
         """
-        @param id: repository id
-        @return: True on successful addition of group to repository
+        [[wiki]]
+        title: Add Group
+        description:
+        method: POST
+        path: /repositories/<id>/add_group/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
+        return: true
+        parameters:
+         * addgrp, str, group id
         """
         data = self.params()
         api.add_group(id=id, addgrp=data['addgrp'])
@@ -1017,8 +1064,17 @@ class RepositoryActions(AsyncController):
 
     def remove_group(self, id):
         """
-        @param id: repository id
-        @return: True on successful removal of group from repository
+        [[wiki]]
+        title: Remove Group
+        description:
+        method: POST
+        path: /repositories/<id>/remove_group/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the id does not match a repository
+        return:
+        filters:
+        parameters:
         """
         data = self.params()
         api.remove_group(id=id, rmgrp=data['rmgrp'])
@@ -1027,15 +1083,18 @@ class RepositoryActions(AsyncController):
     def update_publish(self, id):
         """
         [[wiki]]
-        title:
-        description:
+        title: Update Publish
+        description: Update a repository's 'publish' state.
+                     True means the repository is exposed through Apache.
+                     False means to stop exposing from Apache.
         method: POST
-        path: /repositories/<id>/
+        path: /repositories/<id>/update_publish/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
+        return: True on successful update, False otherwise
         parameters:
+         * state, bool, puplish state
         """
         data = self.params()
         return self.ok(api.publish(id, bool(data['state'])))
