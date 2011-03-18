@@ -14,14 +14,15 @@
 # in this software or its documentation.
 
 """
+Some more comments
 [[wiki]]
 title: Repositories RESTful Interface
-description: RESTful interface for the creation, querying, and management of
-             repositories managed by Pulp. Repositories are represented as
-             Repo objects. Some of the Repo object fields
+description:
+ RESTful interface for the creation, querying, and management of repositories managed by Pulp.
+ Repositories are represented as Repo objects.
 Repo object fields:
  * id, str, repository identifier
- * source, RepoSource object, upstream content source
+ * source, !RepoSource object, upstream content source
  * name, str, human-friendly name
  * arch, str, hardware architecture that repository is for
  * release, str, release number
@@ -47,7 +48,7 @@ Repo object fields:
  * distributionid, list of str, list of distribution ids this repository belongs to [deferred fields]
  * checksum_type, str, name of the algorithm used for checksums of the repository's content
  * filters, list of str, list of filter ids associated with the repository
-RepoSource object fields:
+!RepoSource object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
  * url, str, repository source url
@@ -110,7 +111,7 @@ class Repositories(JSONController):
         permission: READ
         success response: 200 OK
         failure response: None
-        return: list of Repo objects
+        return: list of Repo objects, possibly empty
         filters:
          * id, str, repository id
          * name, str, repository name
@@ -148,17 +149,17 @@ class Repositories(JSONController):
         failure response: 409 Conflict if the parameters matches an existing repository
         return: new Repo object
         parameters:
-         * id, str,
-         * name, str,
-         * arch, str,
+         * id, str, the repository's unique id
+         * name, str, a human-friendly name for the repsitory
+         * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
-         * use_symlinks, bool, optional, defaults to false
-         * sync_schedule, str, crontab entry format; optional
-         * cert_data, str, repository certificate information; optional
-         * relative_path, str, repository on disk path; optional
-         * groupid, list of str, list of repository group ids this repository belongs to; optional
-         * gpgkeys, list of str, list of gpg keys used for signing content; optional
-         * checksum_type, str, name of the algorithm to use for content checksums; optional, defaults to sha256
+         * use_symlinks?, bool, defaults to false
+         * sync_schedule?, str, crontab entry format
+         * cert_data?, str, repository certificate information
+         * relative_path?, str, repository on disk path
+         * groupid?, list of str, list of repository group ids this repository belongs to
+         * gpgkeys?, list of str, list of gpg keys used for signing content
+         * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
         """
         repo_data = self.params()
 
@@ -308,7 +309,7 @@ class RepositoryDeferredFields(JSONController):
          * version, str, package version
          * release, str, package release
          * epoch, int, package epoch
-         * arach, str, package architecture 
+         * arch, str, package architecture 
          * filename, str, name of package file
          * field, str, field to include in Package objects
         """
@@ -533,8 +534,8 @@ class RepositoryActions(AsyncController):
         path: /repositories/<id>/clone/
         permission: EXECUTE
         success response: 202 Accepted
-        failure response: 404 Not Found if the id does not match a repository;
-                          409 Conflict if the parameters match an existing repository;
+        failure response: 404 Not Found if the id does not match a repository
+                          409 Conflict if the parameters match an existing repository
         return: a Task object
         parameters:
          * clone_id, str, the id of the clone repository
@@ -772,7 +773,7 @@ class RepositoryActions(AsyncController):
         success response: 200 OK
         failure response: 400 Bad Request if the required parameters are not present
                           404 Not Found if the id does not match a repository
-        return: PackageGroupCategory object
+        return: !PackageGroupCategory object
         parameters:
          * categoryid, str, package group category id
          * categoryname, str, package group category name
@@ -1002,7 +1003,7 @@ class RepositoryActions(AsyncController):
         failure response: 404 Not Found if the id does not match a repository
         return: true
         parameters:
-         * keys list, list 
+         * keys list, list of str, list of key names to remove
         """
         data = self.params()
         api.rmkeys(id, data['keylist'])
@@ -1048,7 +1049,7 @@ class RepositoryActions(AsyncController):
         """
         [[wiki]]
         title: Add Group
-        description:
+        description: Add a group to the repository.
         method: POST
         path: /repositories/<id>/add_group/
         permission: EXECUTE
@@ -1066,15 +1067,15 @@ class RepositoryActions(AsyncController):
         """
         [[wiki]]
         title: Remove Group
-        description:
+        description: Remove a group from the repository.
         method: POST
         path: /repositories/<id>/remove_group/
         permission: EXECUTE
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
-        return:
-        filters:
+        return: true
         parameters:
+         * rmgrp, str, group id
         """
         data = self.params()
         api.remove_group(id=id, rmgrp=data['rmgrp'])
