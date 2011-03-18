@@ -125,9 +125,6 @@ def _write_cert_bundle(file_prefix, repo_id, bundle):
              to where it is stored on disk
     '''
 
-    # Sanity check
-    validate_cert_bundle(bundle)
-
     # Create the cert directory if it doesn't exist
     cert_dir = _cert_directory(repo_id)
 
