@@ -46,7 +46,17 @@ The validate_cert_bundle method is used to ensure that only these keys are prese
 in a cert bundle dict.
 '''
 
+import logging
+import os
+
+from pulp.server.pexceptions import PulpException
+import pulp.server.config as config
+
+
 VALID_BUNDLE_KEYS = ['ca', 'cert', 'key']
+
+LOG = logging.getLogger(__name__)
+
 
 def validate_cert_bundle(bundle):
     '''
@@ -73,3 +83,79 @@ def validate_cert_bundle(bundle):
     extra_keys = [k for k in bundle.keys() if k not in VALID_BUNDLE_KEYS]
     if len(extra_keys) > 0:
         raise ValueError('Unexpected items in cert bundle [%s]' % ', '.join(extra_keys))
+
+def write_feed_cert_bundle(repo_id, bundle):
+    '''
+    Writes the given feed cert bundle to disk.
+
+    See _write_cert_bundle for details on params and return.
+    '''
+    _write_cert_bundle('feed', repo_id, bundle)
+
+def write_consumer_cert_bundle(repo_id, bundle):
+    '''
+    Writes the given consumer cert bundle to disk.
+
+    See _write_cert_bundle for details on params and return.
+    '''
+    _write_cert_bundle('consumer', repo_id, bundle)
+
+def _write_cert_bundle(file_prefix, repo_id, bundle):
+    '''
+    Writes the files represented by the cert bundle to a directory on the
+    Pulp server unique to the given repo. If certificates already exist in the
+    repo's certificate directory, they will be overwritten. The file prefix
+    will be used to differentiate between files that belong to the feed
+    bundle v. those that belong to the consumer bundle.
+
+    @param file_prefix: used in the filename of the bundle item to differentiate it
+                        from other bundles; cannot be None
+    @type  file_prefix: str
+
+    @param repo_id: identifies the repo to which the cert bundle belongs;
+                    cannot be None
+    @type  repo_id: str
+
+    @param bundle: cert bundle (see module docs for more information on format)
+    @type  bundle: dict {str, str}
+
+    @raises ValueError: if bundle is invalid (see validate_cert_bundle)
+
+    @return: mapping of cert bundle item (see module docs) to the absolute path
+             to where it is stored on disk
+    '''
+
+    # Sanity check
+    validate_cert_bundle(bundle)
+
+    # Create the cert directory if it doesn't exist
+    cert_dir = _cert_directory(repo_id)
+
+    if not os.path.exists(cert_dir):
+        os.makedirs(cert_dir)
+
+    # For each item in the cert bundle, save it to disk using the given prefix
+    # to identify the type of bundle it belongs to
+    cert_files = {}
+    for key, value in bundle.items():
+        filename = os.path.join(cert_dir, '%s-%s.%s' % (file_prefix, repo_id, key))
+        try:
+            LOG.info('Storing repo cert file [%s]' % filename)
+            f = open(filename, 'w')
+            f.write(value)
+            f.close()
+            cert_files[key] = str(filename)
+        except:
+            LOG.exception('Error storing certificate file [%s]' % filename)
+            raise PulpException('Error storing certificate file [%s]' % filename)
+        
+    return cert_files
+
+def _cert_directory(repo_id):
+    '''
+    Returns the absolute path to the directory in which certificates for the
+    given repo are stored.
+    '''
+    cert_location = config.config.get('repos', 'cert_location')
+    cert_dir = os.path.join(cert_location, repo_id)
+    return cert_dir
