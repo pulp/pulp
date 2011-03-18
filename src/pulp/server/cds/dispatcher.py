@@ -84,6 +84,12 @@ class GoferDispatcher(object):
 
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
+
+        @param cds: A cds to be initialized.
+        @type cds: CDS model object.
+
+        @return: The CDS shared secret.
+        @rtype: str
         '''
 
         # Gofer doesn't have a good way of differentiating between issues contacting
@@ -95,10 +101,10 @@ class GoferDispatcher(object):
             return secret
         except RequestTimeout, e:
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except NotAuthorized, e:
             raise CdsAuthException(e), None, sys.exc_info()[2]
+        except DispatchError, e:
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
@@ -108,15 +114,18 @@ class GoferDispatcher(object):
 
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
+
+        @param cds: A cds to be released.
+        @type cds: CDS model object.
         '''
         try:
             return self._cds_stub(cds).release()
         except RequestTimeout, e:
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except NotAuthorized, e:
             raise CdsAuthException(e), None, sys.exc_info()[2]
+        except DispatchError, e:
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
@@ -129,6 +138,12 @@ class GoferDispatcher(object):
 
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
+
+        @param cds: A cds to be synced.
+        @type cds: CDS model object.
+
+        @param repos: A list of repos to be synced.
+        @type repos: list
         '''
 
         # Gofer doesn't have a good way of differentiating between issues contacting
@@ -142,10 +157,10 @@ class GoferDispatcher(object):
             self._cds_stub(cds).sync(repo_base_url, repos)
         except RequestTimeout, e:
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except NotAuthorized, e:
             raise CdsAuthException(e), None, sys.exc_info()[2]
+        except DispatchError, e:
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 

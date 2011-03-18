@@ -21,7 +21,6 @@ from uuid import uuid4
 # 3rd Party
 from gofer.agent.plugin import Plugin
 from gofer.decorators import remote
-from gofer import Singleton
 from grinder.RepoFetch import YumRepoGrinder
 
 
@@ -34,6 +33,7 @@ plugin = Plugin.find(__name__)
 config = plugin.cfg()
 
 REPO_LIST_FILENAME = 'cds_repo_list'
+SECRET_FILE = config.messaging.secret_file
 
 
 def getsecret():
@@ -42,7 +42,7 @@ def getsecret():
     @return: The shared secret.
     @rtype: str
     '''
-    secret = Secret()
+    secret = SecretFile(SECRET_FILE)
     return secret.read()
 
 
@@ -59,8 +59,9 @@ class CdsGoferReceiver(object):
         '''
         log.info('Received initialize call')
         uuid = str(uuid4())
-        secret = Secret()
-        return secret.write(uuid)
+        secret = SecretFile(SECRET_FILE)
+        secret.write(uuid)
+        return uuid
 
     @remote(secret=getsecret)
     def release(self):
@@ -69,7 +70,7 @@ class CdsGoferReceiver(object):
         Clear the shared secret.
         '''
         log.info('Received release call')
-        secret = Secret()
+        secret = SecretFile(SECRET_FILE)
         secret.delete()
 
     @remote(secret=getsecret)
@@ -191,17 +192,12 @@ class CdsGoferReceiver(object):
             shutil.rmtree(doomed)
 
 
-class Secret:
+class SecretFile:
     '''
     Represents the persistent shared secret.
-    @cvar __cached: The cached secret.
-    @type __cached: str
     '''
-    __metaclass__ = Singleton
-    PATH = config.messaging.secret_file
-    __cached = None
 
-    def __init__(self, path=PATH):
+    def __init__(self, path):
         '''
         @param path: The absolute to the file where the secret
             is stored.  The directory is created automatically.
@@ -213,38 +209,32 @@ class Secret:
     def read(self):
         '''
         Read and return the stored secret.
-        @return: The cached secret if not (None),
-            else the stored secret.
+        @return: The stored secret.
         @rtype: str
         '''
-        if self.__cached:
-            return self.__cached
-        try:
+        if os.path.exists(self.path):
             f = open(self.path)
             secret = f.read()
             f.close()
-        except:
-            secret = None
-        return secret
+            return secret
 
     def write(self, secret):
         '''
-        Store the specified secret and update the cache.
+        Store the specified secret.
         @param secret: The secret to store.
         @type secret: str
         '''
         f = open(self.path, 'w')
         f.write(secret)
-        self.__cached = secret
         f.close()
         return secret
 
     def delete(self):
         '''
-        Delete the stored secret and clear the cache.
+        Delete the stored secret.
         '''
-        self.__cached = None
-        os.unlink(self.path)
+        if os.path.exists(self.path):
+            os.unlink(self.path)
 
     def __mkdir(self):
         '''
