@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.151
+Version:        0.0.153
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,64 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Fri Mar 18 2011 John Matthews <jmatthew@redhat.com> 0.0.153-1
+- Testing builds of pulp in RHEL-6-CLOUDE for brew (jmatthew@redhat.com)
+- Added write cert bundle methods and test cases (jason.dobies@redhat.com)
+- Started to extract out repo cert bundle related functionality and add test
+  cases. (jason.dobies@redhat.com)
+- 688938 - Added missing protocol prefix. (jason.dobies@redhat.com)
+- Scope secret file within gofer dir. (jortel@redhat.com)
+- CDS: add shared secret authentication. (jortel@redhat.com)
+- Renamed test_api to test_repo_api since all tests were related to the repo
+  api (jason.dobies@redhat.com)
+- newly generated docs for controller modules (jconnor@redhat.com)
+- Add in mod_python and enable auth handler hooks when building on Fedora.
+  (jason.dobies@redhat.com)
+- Formatting cleanup and truncated changelog (jason.dobies@redhat.com)
+- added package_count as a default field (jconnor@redhat.com)
+- added pycharm configuration to git ignore (jconnor@redhat.com)
+- removed python binary and update copyright (jconnor@redhat.com)
+- more wiki documentation for controllers (jconnor@redhat.com)
+- fixed a bug in ordered dict that allowed duplicate keys (jconnor@redhat.com)
+- fixed key error bug in ordered dict (jconnor@redhat.com)
+- added module level doc string support (jconnor@redhat.com)
+- first commit of new wiki rest documentation (jconnor@redhat.com)
+- community release: 9. (jortel@redhat.com)
+- Updated user guide for community release 9 (jason.dobies@redhat.com)
+- Removing u' from filter names and added additional checking for valid regexes
+  (skarmark@redhat.com)
+- 681551 - removing 'not an rpm' warning messages when uploading content
+  (skarmark@redhat.com)
+- 681551 - removing 'not an rpm' warning messages when uploading content
+  (skarmark@redhat.com)
+- 674901 - Adding a way to remove a repo from a group - 'repo update --rmgroup'
+  (skarmark@redhat.com)
+
+* Fri Mar 18 2011 John Matthews <jmatthew@redhat.com> 0.0.152-1
+- Testing builds of pulp in RHEL-6-CLOUDE for brew (jmatthew@redhat.com)
+- Added write cert bundle methods and test cases (jason.dobies@redhat.com)
+- Started to extract out repo cert bundle related functionality and add test
+  cases. (jason.dobies@redhat.com)
+- 688938 - Added missing protocol prefix. (jason.dobies@redhat.com)
+- Scope secret file within gofer dir. (jortel@redhat.com)
+- CDS: add shared secret authentication. (jortel@redhat.com)
+- newly generated docs for controller modules (jconnor@redhat.com)
+- Add in mod_python and enable auth handler hooks when building on Fedora.
+  (jason.dobies@redhat.com)
+- added package_count as a default field (jconnor@redhat.com)
+- added pycharm configuration to git ignore (jconnor@redhat.com)
+- removed python binary and update copyright (jconnor@redhat.com)
+- community release: 9. (jortel@redhat.com)
+- Updated user guide for community release 9 (jason.dobies@redhat.com)
+- Removing u' from filter names and added additional checking for valid regexes
+  (skarmark@redhat.com)
+- 681551 - removing 'not an rpm' warning messages when uploading content
+  (skarmark@redhat.com)
+- 681551 - removing 'not an rpm' warning messages when uploading content
+  (skarmark@redhat.com)
+- 674901 - Adding a way to remove a repo from a group - 'repo update --rmgroup'
+  (skarmark@redhat.com)
+
 * Fri Mar 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.151-1
 - Fix consumer list accessing uncollected heartbeat stats. (jortel@redhat.com)
 * Fri Mar 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.150-1
