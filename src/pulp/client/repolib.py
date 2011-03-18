@@ -245,7 +245,7 @@ def _handle_host_urls(repo, url_list, mirror_list_filename):
         mirror_list_file.add_entries(url_list)
         mirror_list_file.save()
 
-        repo['mirrorlist'] = mirror_list_filename
+        repo['mirrorlist'] = 'file:' + mirror_list_filename
         repo['baseurl'] = None # make sure to zero this out in case of an update
 
         log.info('Created mirrorlist for repo [%s] at [%s]' % (repo.id, mirror_list_filename))
