@@ -303,7 +303,7 @@ class TestRepolib(unittest.TestCase):
 
         loaded = repo_file.get_repo(REPO['id'])
         self.assertTrue('baseurl' not in loaded)
-        self.assertEqual(loaded['mirrorlist'], TEST_MIRROR_LIST_FILENAME)
+        self.assertEqual(loaded['mirrorlist'], 'file:' + TEST_MIRROR_LIST_FILENAME)
 
         mirror_list_file = MirrorListFile(TEST_MIRROR_LIST_FILENAME)
         mirror_list_file.load()
