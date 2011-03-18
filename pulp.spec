@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.153
+Version:        0.0.154
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -255,6 +255,15 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Fri Mar 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.154-1
+- 684890 - using get_required_option instead of separate checking in cli for
+  consistency (skarmark@redhat.com)
+- require gofer 0.24. (jortel@redhat.com)
+- Apply review comments. (jortel@redhat.com)
+- Added method to delete bundles for a repo. (jason.dobies@redhat.com)
+- Allow a single item in the cert bundle to be written.
+  (jason.dobies@redhat.com)
+
 * Fri Mar 18 2011 John Matthews <jmatthew@redhat.com> 0.0.153-1
 - Testing builds of pulp in RHEL-6-CLOUDE for brew (jmatthew@redhat.com)
 - Added write cert bundle methods and test cases (jason.dobies@redhat.com)
