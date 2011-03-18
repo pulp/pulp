@@ -15,6 +15,7 @@
 # in this software or its documentation.
 
 # Python
+import shutil
 import sys
 import os
 import unittest
@@ -30,7 +31,10 @@ import pulp.server.repo_cert_utils as utils
 import testutil
 
 
-class TestRepoCertUtils(unittest.TestCase):
+CERT_DIR = '/tmp/test_repo_cert_utils/repos'
+
+
+class TestValidateCertBundle(unittest.TestCase):
 
     def test_validate_cert_bundle_valid(self):
         '''
@@ -81,4 +85,67 @@ class TestRepoCertUtils(unittest.TestCase):
 
         # Test
         self.assertRaises(ValueError, utils.validate_cert_bundle, bundle)
+
+
+class TestCertStorage(unittest.TestCase):
+
+    def clean(self):
+        if os.path.exists(CERT_DIR):
+            shutil.rmtree(CERT_DIR)
+
+    def setUp(self):
+        self.config = testutil.load_test_config()
+        self.config.set('repos', 'cert_location', CERT_DIR)
+
+        self.clean()
+
+    def tearDown(self):
+        self.clean()
+
+    def test_write_feed_certs(self):
+        '''
+        Tests writing repo feed certificates to disk.
+        '''
+
+        # Setup
+        repo_id = 'test-repo-1'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        utils.write_feed_cert_bundle(repo_id, bundle)
+
+        # Verify
+        repo_cert_dir = utils._cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        self._verify_file_contents(repo_id, 'feed-%s.ca' % repo_id, bundle['ca'])
+        self._verify_file_contents(repo_id, 'feed-%s.cert' % repo_id, bundle['cert'])
+        self._verify_file_contents(repo_id, 'feed-%s.key' % repo_id, bundle['key'])
+
+    def test_write_consumer_certs(self):
+        '''
+        Tests writing repo consumer certificates to disk.        
+        '''
+
+        # Setup
+        repo_id = 'test-repo-1'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        utils.write_consumer_cert_bundle(repo_id, bundle)
+
+        # Verify
+        repo_cert_dir = utils._cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        self._verify_file_contents(repo_id, 'consumer-%s.ca' % repo_id, bundle['ca'])
+        self._verify_file_contents(repo_id, 'consumer-%s.cert' % repo_id, bundle['cert'])
+        self._verify_file_contents(repo_id, 'consumer-%s.key' % repo_id, bundle['key'])
         
+    def _verify_file_contents(self, repo_id, filename, contents):
+        full_filename = os.path.join(utils._cert_directory(repo_id), filename)
+        f = open(full_filename, 'r')
+        read_contents = f.read()
+        f.close()
+
+        self.assertEqual(read_contents, contents)
