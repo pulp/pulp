@@ -92,69 +92,123 @@ class WikiFormatError(Exception):
 
 # -----------------------------------------------------------------------------
 
+def format_title(title):
+    return ' '.join(t for t in title if t)
+
+
+def format_description(description):
+    return ' [[BR]]\n'.join("''%s''" % l for l in description) + ' [[BR]]\n'
+
+
+def format_lines(lines):
+    if len(lines) == 1:
+        return lines[0] + ' [[BR]]\n'
+    return '\n' + ' [[BR]]\n'.join(' ' + l for l in lines) + ' [[BR]]\n'
+
+
+def format_list_entry(entry):
+    entry = entry[2:].strip()
+    try:
+        # try to split it out in to name, type, description
+        n, t, d = entry.split(',', 2)
+        n = n.strip()
+        t = t.strip()
+        d = d.strip()
+        if n.endswith('?'):
+            n = n[:-1]
+            n += " ''(optional)''"
+        entry = "%s <%s> ''%s''" % (n, t, d)
+    except ValueError:
+        print >> sys.stderr, 'WARN: cannot list format: %s' % entry
+    entry = ' * ' + entry
+    return entry
+
+
+def format_bulleted_list(blist):
+    return '\n' + '\n'.join(format_list_entry(e) for e in blist) + '\n'
+
+
+def format_value(key, value):
+    if not value:
+        return ''
+    if key == 'title':
+        return format_title(value)
+    if key == 'description':
+        return format_description(value)
+    if value[-1].startswith('*'):
+        return format_bulleted_list(value)
+    return format_lines(value)
+
+# -----------------------------------------------------------------------------
+
 def wiki_doc_to_dict(doc):
+    """
+    **THIS IS THE MAIN PARSER**
+    Go through the wiki portion of the docstring and split out the key: value
+    portions, and put them into an ordered dictionary.
+    This function also does the majority of the formating.
+    """
     wiki_dict = WikiDict()
     last_key = None
+    last_value = []
     lines = doc.splitlines()
     for num, line in enumerate(lines):
+        line = line.strip()
         if line.find(':') < 0 or line.startswith('*'):
             if last_key is None:
                 raise WikiFormatError('bad wiki formatting:\n%s' % '\n'.join(lines[:num]))
-            line = line.strip()
-            if line.startswith('*'):
-                line = line[1:]
-                try:
-                    # try to split it out in to name, type, description
-                    # and format it accordingly
-                    n, t, d = line.split(',', 2)
-                    line = "%s (%s) ''%s''" % (n.strip(), t.strip(), d.strip())
-                except ValueError:
-                    pass
-                line = ' * ' + line
-            line += '\n'
-            wiki_dict[last_key] += line
+            if line:
+                last_value.append(line)
         else:
+            if last_key is not None:
+                wiki_dict[last_key] = format_value(last_key, last_value)
             key, remainder = line.split(':', 1)
-            key = key.strip()
+            last_key = key.strip()
+            last_value = []
             remainder = remainder.strip()
-            wiki_dict[key] = remainder + '\n'
-            last_key = key
+            if remainder:
+                last_value.append(remainder)
+        if last_key is not None:
+            wiki_dict[last_key] = format_value(last_key, last_value)
     return wiki_dict
 
 # -----------------------------------------------------------------------------
 
 def format_method_wiki_doc(doc):
+    """
+    Format the wiki portion of a method (read: controller) docstring.
+    """
     wiki_dict = wiki_doc_to_dict(doc)
+    # XXX need to figure out if there's a implicit way to reference the current page
+    #wiki_doc = '[wiki:.#top back to top]\n'
     wiki_doc = '== %s ==\n' % wiki_dict.get('title', 'Untitled').strip()
-    wiki_doc += "''%s''\n" % wiki_dict.get('description', 'No description\n').strip()
-    wiki_doc += '[[BR]]\n[[BR]]\n'
+    wiki_doc += wiki_dict.get('description', "''No description'' [[BR]]\n")
+    wiki_doc += '[[BR]]\n'
     for key in ('method', 'path', 'permission', 'success response',
                 'failure response', 'return', 'parameters', 'filters'):
         if key in ('parameters', 'filters') and key not in wiki_dict:
             continue
-        wiki_doc += "'''%s:''' %s" % (key, wiki_dict.get(key, 'Unspecified\n'))
+        value = wiki_dict.get(key, 'Unspecified [[BR]]\n')
+        wiki_doc += "'''%s:''' %s" % (key, value)
         wiki_doc += '[[BR]]\n'
     return wiki_doc
 
 
 
 def format_module_wiki_doc(module_name, doc):
-
+    """
+    Format the wiki portion of a module docstring.
+    """
     def module_title():
         title = module_name.rsplit('.', 1)[1]
-        return '= %s REST API =\n' % title.title()
+        return '%s RESTful API' % title.title()
 
     if doc is None:
-        return module_title()
-
+        doc = ''
     wiki_dict = wiki_doc_to_dict(doc)
-    wiki_doc = ''
-    if 'title' not in wiki_dict:
-        wiki_doc += module_title()
-    else:
-        wiki_doc = '= %s =\n' % wiki_dict.pop('title').strip()
-    wiki_doc += "''%s''\n" % wiki_dict.pop('description', 'No description\n').strip()
-    wiki_doc += '[[BR]]\n[[BR]]\n'
+    wiki_doc = '= %s = #top\n' % wiki_dict.pop('title', module_title()).strip()
+    wiki_doc += wiki_dict.pop('description', "'''No description'' [[BR]]\n")
+    wiki_doc += '[[BR]]\n'
     for key, value in wiki_dict.items():
         wiki_doc += "'''%s:''' %s" % (key, value)
     return wiki_doc
@@ -162,7 +216,11 @@ def format_module_wiki_doc(module_name, doc):
 # -----------------------------------------------------------------------------
 
 def get_wiki_doc_string(obj):
-    name = getattr(obj, '__name__', 'Unamed')
+    """
+    Grok through an object's doc string, looking for the [[wiki]] sentinel.
+    Return everything after the sentinel if it's found, return None otherwise.
+    """
+    name = getattr(obj, '__name__', 'Unnamed')
     doc = getattr(obj, '__doc__', None)
     if doc is None:
         print >> sys.stderr, 'skipped %s: no doc string' % name
@@ -175,6 +233,9 @@ def get_wiki_doc_string(obj):
 
 
 def gen_docs_for_class(cls):
+    """
+    Generate wiki docs from all of the docstrings found in a class.
+    """
     docs = []
     # XXX this sorting isn't ideal
     for name, attr in sorted(cls.__dict__.items()):
@@ -187,6 +248,9 @@ def gen_docs_for_class(cls):
 
 
 def gen_docs_for_module(module):
+    """
+    Generate wiki docs for all of the docstrings found in a module.
+    """
     docs = []
     wiki_doc = get_wiki_doc_string(module)
     docs.append(format_module_wiki_doc(module.__name__, wiki_doc))
@@ -198,19 +262,22 @@ def gen_docs_for_module(module):
         cls_docs = gen_docs_for_class(attr)
         if not cls_docs:
             continue
-        docs.append('----\n')
+        docs.append('----')
         docs.extend(cls_docs)
     return docs
 
 # -----------------------------------------------------------------------------
 
 def write_docs_for_module(dir, module_name, docs):
+    """
+    Write out the wiki docs for a module to a text file.
+    """
     title = module_name.split('.')[-1]
     file_name = '%s.wiki' % title
     file_path = os.path.join(os.path.abspath(dir), file_name)
     file = open(file_path, 'w')
     file.write('[[TOC]]\n')
-    file.write('\n\n'.join(docs))
+    file.write('\n'.join(docs))
     file.close()
 
 # -----------------------------------------------------------------------------
