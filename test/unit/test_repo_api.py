@@ -183,13 +183,32 @@ class TestRepoApi(unittest.TestCase):
         assert(found is not None)
         assert(found['id'] == 'some-id')
 
-    def test_repository_with_groupid(self):
+    def test_repo_add_group(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com/mypath', groupid=["testgroup"])
+            'i386', 'yum:http://example.com/mypath')
         found = self.rapi.repository('some-id')
         assert(found is not None)
         assert(found['id'] == 'some-id')
-        assert(found['groupid'] == ["testgroup"])
+        group_dict =  {'env' : ['qa']}
+        self.rapi.add_group(found['id'], group_dict)
+        found = self.rapi.repository('some-id')
+        assert(group_dict == dict(found['groupid'])) 
+    
+    def test_repo_remove_group(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com/mypath')
+        found = self.rapi.repository('some-id')
+        assert(found is not None)
+        assert(found['id'] == 'some-id')
+        group_dict =  {'env' : ['qa']}
+        self.rapi.add_group(found['id'], group_dict)
+        found = self.rapi.repository('some-id')
+        assert(group_dict == dict(found['groupid'])) 
+        
+        self.rapi.remove_group(found['id'], group_dict)
+        found = self.rapi.repository('some-id')
+        print "DDDDDDDDDDd",found['groupid']
+        assert(len(dict(found['groupid'])) == 0) 
 
     def test_repository_with_relativepath(self):
         repo = self.rapi.create('some-id-mypath', 'some name', \

@@ -258,7 +258,7 @@ class Repo(Model):
         self.cert = None
         self.key = None
         self.errata = {}
-        self.groupid = []
+        self.groupid = {}
         self.relative_path = None
         self.files = []
         self.publish = False

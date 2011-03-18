@@ -40,7 +40,7 @@ Repo object fields:
  * cert, str, the repository's certificate
  * key, str, the repository's private key
  * errata, object, map of errata names to lists of package ids in each errata [deferred field]
- * groupid, list of str, list of repository group ids this repository belongs to
+ * groupid, dict, a hashmap of repository group data this repository belongs to
  * relative_path, str, repository's path relative to the configured root
  * files, list of str, list of ids of the non-package files in the repository [deferred field]
  * publish, bool, whether or not the repository is available
@@ -116,7 +116,7 @@ class Repositories(JSONController):
          * id, str, repository id
          * name, str, repository name
          * arch, str, repository contect architecture
-         * groupid, str, repository group id
+         * groupid, dict, repository group 
          * relative_path, str, repository's on disk path
         """
         valid_filters = ['id', 'name', 'arch', 'groupid', 'relative_path']
@@ -157,7 +157,7 @@ class Repositories(JSONController):
          * sync_schedule?, str, crontab entry format
          * cert_data?, str, repository certificate information
          * relative_path?, str, repository on disk path
-         * groupid?, list of str, list of repository group ids this repository belongs to
+         * groupid?, dict, a hash map of group data this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
         """
@@ -542,7 +542,7 @@ class RepositoryActions(AsyncController):
          * clone_name, str, the namd of clone repository
          * feed, str, feed of the clone repository in <type>:<url> format
          * relative_path, str, clone repository on disk path; optional
-         * groupid, str, repository groups that clone belongs to
+         * groupid, dict, repository groups that clone belongs to
          * filters, list of objects, synchronization filters to apply to the clone
         """
         repo_data = self.params()
@@ -556,7 +556,7 @@ class RepositoryActions(AsyncController):
                          repo_data['clone_name'],
                          repo_data['feed'],
                          relative_path=repo_data.get('relative_path', None),
-                         groupid=repo_data.get('groupid', None),
+                         groupid=repo_data.get('groupid', {}),
                          filters=repo_data.get('filters', []))
         if not task:
             return self.conflict('Error in cloning repo [%s]' % id)
@@ -1060,7 +1060,7 @@ class RepositoryActions(AsyncController):
          * addgrp, str, group id
         """
         data = self.params()
-        api.add_group(id=id, addgrp=data['addgrp'])
+        api.add_group(id, data['addgrp'])
         return self.ok(True)
 
     def remove_group(self, id):
@@ -1078,7 +1078,7 @@ class RepositoryActions(AsyncController):
          * rmgrp, str, group id
         """
         data = self.params()
-        api.remove_group(id=id, rmgrp=data['rmgrp'])
+        api.remove_group(id, data['rmgrp'])
         return self.ok(True)
 
     def update_publish(self, id):
