@@ -141,6 +141,30 @@ class TestCertStorage(unittest.TestCase):
         self._verify_file_contents(repo_id, 'consumer-%s.ca' % repo_id, bundle['ca'])
         self._verify_file_contents(repo_id, 'consumer-%s.cert' % repo_id, bundle['cert'])
         self._verify_file_contents(repo_id, 'consumer-%s.key' % repo_id, bundle['key'])
+
+    def test_delete_bundles(self):
+        '''
+        Tests deleting bundles for a repo.
+        '''
+
+        # Setup
+        repo_id = 'test-repo-2'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        utils.write_feed_cert_bundle(repo_id, bundle)
+        utils.write_consumer_cert_bundle(repo_id, bundle)
+
+        repo_cert_dir = utils._cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        cert_files = os.listdir(repo_cert_dir)
+        self.assertEqual(6, len(cert_files)) # 2 bundles, 3 files each
+
+        # Test
+        utils.delete_for_repo(repo_id)
+
+        # Verify
+        self.assertTrue(not os.path.exists(repo_cert_dir))
         
     def _verify_file_contents(self, repo_id, filename, contents):
         full_filename = os.path.join(utils._cert_directory(repo_id), filename)

@@ -47,6 +47,7 @@ in a cert bundle dict.
 '''
 
 import logging
+import shutil
 import os
 
 from pulp.server.pexceptions import PulpException
@@ -83,6 +84,20 @@ def validate_cert_bundle(bundle):
     extra_keys = [k for k in bundle.keys() if k not in VALID_BUNDLE_KEYS]
     if len(extra_keys) > 0:
         raise ValueError('Unexpected items in cert bundle [%s]' % ', '.join(extra_keys))
+
+def delete_for_repo(repo_id):
+    '''
+    Deletes all cert bundles for the given repo. If no cert bundles have been
+    stored for this repo, this method does nothing (will not throw an error).
+
+    @param repo_id: identifies the repo
+    @type  repo_id: str
+    '''
+    repo_dir = _cert_directory(repo_id)
+
+    if os.path.exists(repo_dir):
+        LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
+        shutil.rmtree(repo_dir)
 
 def write_feed_cert_bundle(repo_id, bundle):
     '''
