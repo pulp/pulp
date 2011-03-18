@@ -257,27 +257,19 @@ class Create(ErrataAction):
         
         
     def run(self):
-        if not self.opts.id:
-            system_exit(os.EX_USAGE, _("Errata Id is required; see --help"))
-        
-        if not self.opts.title:
-            system_exit(os.EX_USAGE, _("Errata title is required; see --help"))
+        errata_id = self.get_required_option('id')
+        errata_title = self.get_required_option('title')
             
         if not self.opts.description:
             self.opts.description = self.opts.title
             
-        if not self.opts.version:
-            system_exit(os.EX_USAGE, _("Errata version is required; see --help"))
-            
-        if not self.opts.release:
-            system_exit(os.EX_USAGE, _("Errata release is required; see --help"))
-            
-        if not self.opts.type:
-            system_exit(os.EX_USAGE, _("Errata type is required; see --help"))
-            
-        found = self.errata_api.erratum(self.opts.id)
+        errata_version = self.get_required_option('version')
+        errata_release = self.get_required_option('release')
+        errata_type = self.get_required_option('type')
+
+        found = self.errata_api.erratum(errata_id)
         if found:
-            system_exit(os.EX_DATAERR, _("Erratum with id [%s] already exists on server." % self.opts.id))
+            system_exit(os.EX_DATAERR, _("Erratum with id [%s] already exists on server." % errata_id))
         # process package list
         references = []
         if self.opts.refcsv:
@@ -307,13 +299,13 @@ class Create(ErrataAction):
                              epoch=epoch, arch=arch, filename=filename, sums=sums, type=type, src=sourceurl)
                 pkgs.append(pdict)
             plistdict = {'packages' : pkgs,
-                         'name'     : self.opts.release,
+                         'name'     : errata_release,
                          'short'    : self.opts.short or ""} 
             pkglist = [plistdict]
         #create an erratum
 
-        erratum_new = self.errata_api.create(self.opts.id, self.opts.title, self.opts.description,
-                               self.opts.version, self.opts.release, self.opts.type,
+        erratum_new = self.errata_api.create(errata_id, errata_title, self.opts.description,
+                               errata_version, errata_release, errata_type,
                                status=self.opts.status, updated=self.opts.updated or "", 
                                issued=self.opts.issued or "", pushcount=self.opts.pushcount or "", 
                                update_id="", from_str=self.opts.fromstr or "", 
