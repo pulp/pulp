@@ -62,7 +62,7 @@ logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
-class TestApi(unittest.TestCase):
+class TestRepoApi(unittest.TestCase):
 
     def clean(self):
         self.rapi.clean()
