@@ -233,6 +233,7 @@ class Task(object):
         self.finish_time = datetime.datetime.now()
         self.__complete()
 
+
 class AsyncTask(Task):
     """
     Asynchronous Task class

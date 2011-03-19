@@ -128,12 +128,14 @@ class _ThreadInterruptionError(Exception):
     """
     pass
 
+
 class ThreadStateError(Exception):
     '''
     Exception class used to indicate one or more child threads is in a state that cannot
     currently be canceled.
     '''
     pass
+
 
 def _tid(thread):
     """
@@ -157,6 +159,7 @@ def _tid(thread):
             return tid
 
     raise ThreadStateError()
+
 
 def _raise_exception_in_thread(tid, exc_type):
     """
