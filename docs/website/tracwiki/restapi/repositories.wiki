@@ -2,691 +2,769 @@
 = Repositories RESTful Interface = #top
 ''RESTful interface for the creation, querying, and management of repositories managed by Pulp.'' [[BR]]
 ''Repositories are represented as Repo objects.'' [[BR]]
+''Some operations on repositories happen asynchronously, as such, these operations return Task objects.'' [[BR]]
 [[BR]]
-'''Repo object fields:''' 
- * id <str> ''repository identifier''
- * source <!RepoSource object> ''upstream content source''
- * name <str> ''human-friendly name''
- * arch <str> ''hardware architecture that repository is for''
- * release <str> ''release number''
- * packages <list of str> ''list of package ids in the repository [deferred field]''
- * package_count <int> ''number of packages in the repository''
- * packagegroups <object> ''map of package group names to list of package ids in the group [deferred field]''
- * packagegroupcategories <object> ''map of categories to lists of package group names [deferred field]''
- * repomd_xml_path <str> ''path to the repository's repomd xml file''
- * group_xml_path <str> ''path to the repository's group xml file''
- * group_gz_xml_path <str> ''path to the repository's compressed group xml file''
- * sync_schedule <str> ''crontab entry representing recurring sync schedule''
- * last_sync <timestamp> ''date and time of last successful sync''
- * use_symlinks <bool> ''whether or not the repository uses symlinks for its content''
- * ca <str> ''the repository's certificate authority''
- * cert <str> ''the repository's certificate''
- * key <str> ''the repository's private key''
- * errata <object> ''map of errata names to lists of package ids in each errata [deferred field]''
- * groupid <list of str> ''list of repository group ids this repository belongs to''
- * relative_path <str> ''repository's path relative to the configured root''
- * files <list of str> ''list of ids of the non-package files in the repository [deferred field]''
- * publish <bool> ''whether or not the repository is available''
- * clone_ids <list of str> ''list of repository ids that are clones of this repository''
- * distributionid <list of str> ''list of distribution ids this repository belongs to [deferred fields]''
- * checksum_type <str> ''name of the algorithm used for checksums of the repository's content''
- * filters <list of str> ''list of filter ids associated with the repository''
-'''!RepoSource object fields:''' 
- * supported_types <list of str> ''list of supported types of repositories''
- * type <str> ''repository source type''
- * url <str> ''repository source url''
+'''Repo object fields''': 
+ * '''id''' <str> ''repository identifier''
+ * '''source''' <!RepoSource object> ''upstream content source''
+ * '''name''' <str> ''human-friendly name''
+ * '''arch''' <str> ''hardware architecture that repository is for''
+ * '''release''' <str> ''release number''
+ * '''packages''' <list of str> ''list of package ids in the repository [deferred field]''
+ * '''package_count''' <int> ''number of packages in the repository''
+ * '''packagegroups''' <object> ''map of package group names to list of package ids in the group [deferred field]''
+ * '''packagegroupcategories''' <object> ''map of categories to lists of package group names [deferred field]''
+ * '''repomd_xml_path''' <str> ''path to the repository's repomd xml file''
+ * '''group_xml_path''' <str> ''path to the repository's group xml file''
+ * '''group_gz_xml_path''' <str> ''path to the repository's compressed group xml file''
+ * '''sync_schedule''' <str> ''crontab entry representing recurring sync schedule''
+ * '''last_sync''' <timestamp> ''date and time of last successful sync''
+ * '''use_symlinks''' <bool> ''whether or not the repository uses symlinks for its content''
+ * '''ca''' <str> ''the repository's certificate authority''
+ * '''cert''' <str> ''the repository's certificate''
+ * '''key''' <str> ''the repository's private key''
+ * '''errata''' <object> ''map of errata names to lists of package ids in each errata [deferred field]''
+ * '''groupid''' <list of str> ''list of repository group ids this repository belongs to''
+ * '''relative_path''' <str> ''repository's path relative to the configured root''
+ * '''files''' <list of str> ''list of ids of the non-package files in the repository [deferred field]''
+ * '''publish''' <bool> ''whether or not the repository is available''
+ * '''clone_ids''' <list of str> ''list of repository ids that are clones of this repository''
+ * '''distributionid''' <list of str> ''list of distribution ids this repository belongs to [deferred fields]''
+ * '''checksum_type''' <str> ''name of the algorithm used for checksums of the repository's content''
+ * '''filters''' <list of str> ''list of filter ids associated with the repository''
+'''!RepoSource object fields''': 
+ * '''supported_types''' <list of str> ''list of supported types of repositories''
+ * '''type''' <str> ''repository source type''
+ * '''url''' <str> ''repository source url''
+'''Task object fields''': 
+ * '''id''' <str> ''unique id (usually a uuid) for the task''
+ * '''method_name''' <str> ''name of the pulp library method that was called''
+ * '''state''' <str> ''one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended''
+ * '''start_time''' <timestamp or nil> ''time the task started running, nil if the task has not yet started''
+ * '''finish_time''' <timestamp or nil> ''time the task finished running, nil if the task has not yet finished''
+ * '''result''' <object or nil> ''the result of the pulp library method upon return, usually nil''
+ * '''exception''' <str or nil> ''a string representation of an error in the pulp librry call, if any''
+ * '''traceback''' <str or nil> ''a string print out of the trace back for the exception, if any''
+ * '''progress''' <object or nil> ''object representing the pulp library call's progress, nill if no information is available''
+ * '''scheduled_time''' <timestamp or nil> ''time the task is scheduled to run, applicable only for scheduled tasks''
+ * '''status_path''' <str> ''complete uri path to poll for the task's progress using http GET''
+'''Progress object fields''': 
+ * '''step''' <str> ''name of the step the pulp library call is on''
+ * '''items_total''' <int> ''the total number of items to be processed by the call''
+ * '''items_left''' <int> ''the remaining number of items to be processed by the call''
+ * '''details''' <object> ''object providing further details on the progress''
+'''Details object fields''': 
+ * '''num_success''' <int> ''the number of items successfully processed''
+ * '''total_count''' <int> ''the number of items that were attempted to be processed''
 
 ----
+
 == Delete All Repositories ==
 ''Delete all repositories managed by Pulp.'' [[BR]]
 [[BR]]
-'''method:''' DELETE [[BR]]
+'''method''': DELETE [[BR]]
 [[BR]]
-'''path:''' /repositories/ [[BR]]
+'''path''': /repositories/ [[BR]]
 [[BR]]
-'''permission:''' DELETE [[BR]]
+'''permission''': DELETE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' None [[BR]]
+'''failure response''': None [[BR]]
 [[BR]]
-'''return:''' True [[BR]]
+'''return''': True [[BR]]
 [[BR]]
 
 == List Available Repositories ==
 ''Get a list of all repositories managed by Pulp.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/ [[BR]]
+'''path''': /repositories/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' None [[BR]]
+'''failure response''': None [[BR]]
 [[BR]]
-'''return:''' list of Repo objects, possibly empty [[BR]]
+'''return''': list of Repo objects, possibly empty [[BR]]
 [[BR]]
-'''filters:''' 
- * id <str> ''repository id''
- * name <str> ''repository name''
- * arch <str> ''repository contect architecture''
- * groupid <str> ''repository group id''
- * relative_path <str> ''repository's on disk path''
+'''filters''': 
+ * '''id''' <str> ''repository id''
+ * '''name''' <str> ''repository name''
+ * '''arch''' <str> ''repository contect architecture''
+ * '''groupid''' <str> ''repository group id''
+ * '''relative_path''' <str> ''repository's on disk path''
 [[BR]]
 
 == Create a Repository ==
 ''Create a new repository based on the passed information'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/ [[BR]]
+'''path''': /repositories/ [[BR]]
 [[BR]]
-'''permission:''' CREATE [[BR]]
+'''permission''': CREATE [[BR]]
 [[BR]]
-'''success response:''' 201 Created [[BR]]
+'''success response''': 201 Created [[BR]]
 [[BR]]
-'''failure response:''' 409 Conflict if the parameters matches an existing repository [[BR]]
+'''failure response''': 409 Conflict if the parameters matches an existing repository [[BR]]
 [[BR]]
-'''return:''' new Repo object [[BR]]
+'''return''': new Repo object [[BR]]
 [[BR]]
-'''parameters:''' 
- * id <str> ''the repository's unique id''
- * name <str> ''a human-friendly name for the repsitory''
- * arch <str> ''the main architecture of packages contained in the repository''
- * feed <str> ''repository feed in the form of <type>:<url>''
- * use_symlinks ''(optional)'' <bool> ''defaults to false''
- * sync_schedule ''(optional)'' <str> ''crontab entry format''
- * cert_data ''(optional)'' <str> ''repository certificate information''
- * relative_path ''(optional)'' <str> ''repository on disk path''
- * groupid ''(optional)'' <list of str> ''list of repository group ids this repository belongs to''
- * gpgkeys ''(optional)'' <list of str> ''list of gpg keys used for signing content''
- * checksum_type ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
+'''parameters''': 
+ * '''id''' <str> ''the repository's unique id''
+ * '''name''' <str> ''a human-friendly name for the repsitory''
+ * '''arch''' <str> ''the main architecture of packages contained in the repository''
+ * '''feed''' <str> ''repository feed in the form of <type>:<url>''
+ * '''use_symlinks''' ''(optional)'' <bool> ''defaults to false''
+ * '''sync_schedule''' ''(optional)'' <str> ''crontab entry format''
+ * '''cert_data''' ''(optional)'' <str> ''repository certificate information''
+ * '''relative_path''' ''(optional)'' <str> ''repository on disk path''
+ * '''groupid''' ''(optional)'' <list of str> ''list of repository group ids this repository belongs to''
+ * '''gpgkeys''' ''(optional)'' <list of str> ''list of gpg keys used for signing content''
+ * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
 [[BR]]
 
 ----
+
 == Delete A Repository ==
 ''Delete a single repository'' [[BR]]
 [[BR]]
-'''method:''' DELETE [[BR]]
+'''method''': DELETE [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/ [[BR]]
+'''path''': /repositories/<id>/ [[BR]]
 [[BR]]
-'''permission:''' DELETE [[BR]]
+'''permission''': DELETE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' None [[BR]]
+'''failure response''': None [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
 
 == Get A Repository ==
 ''Get a Repo object for a specific repository'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/ [[BR]]
+'''path''': /repositories/<id>/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' a Repo object [[BR]]
+'''return''': a Repo object [[BR]]
 [[BR]]
 
 == Update A Repository ==
 ''Change an exisiting repository.'' [[BR]]
 [[BR]]
-'''method:''' PUT [[BR]]
+'''method''': PUT [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/ [[BR]]
+'''path''': /repositories/<id>/ [[BR]]
 [[BR]]
-'''permission:''' UPDATE [[BR]]
+'''permission''': UPDATE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 400 Bad Request when trying to change the id [[BR]]
+'''failure response''': 400 Bad Request when trying to change the id [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' any field of a Repo object except id [[BR]]
+'''parameters''': any field of a Repo object except id [[BR]]
 [[BR]]
 
 ----
+
+== Cancel A Task ==
+[[BR]]
+'''method''': DELETE [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/<action name>/<task id>/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 
+ 202 Accepted [[BR]]
+ 204 No Content if the task has already finished [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the task id does nat match a task for the repository [[BR]]
+[[BR]]
+'''return''': Task object on 202 [[BR]]
+[[BR]]
+
+== Action Status ==
+''Check the status of a previously returned task.'' [[BR]]
+''This url path should match the status_uri of a Task object.'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/<action name>/<task id>/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 404 Not Found if the task id does not match a task for the repository [[BR]]
+[[BR]]
+'''return''': Task object [[BR]]
+[[BR]]
+
+----
+
+== List Actions ==
+''Get a list of actions that were executed asynchronously on a repository.'' [[BR]]
+''This method only works for actions that returned a 202 Accepted response.'' [[BR]]
+''e.g. /repositories/my-repo/sync/'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/<action name>/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': None [[BR]]
+[[BR]]
+'''return''': list of Task objects [[BR]]
+[[BR]]
+
 == Repository Sychronization ==
 ''Synchronize the repository's content from its source.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/sync/ [[BR]]
+'''path''': /repositories/<id>/sync/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 202 Accepted [[BR]]
+'''success response''': 202 Accepted [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source; [[BR]]
+ 406 Not Acceptable if the repository does not have a source [[BR]]
  409 Conflict if a sync is already in progress for the repository [[BR]]
 [[BR]]
-'''return:''' a Task object [[BR]]
+'''return''': a Task object [[BR]]
 [[BR]]
-'''parameters:''' 
- * timeout <str> ''timeout in <value>:<units> format (e.g. 2:hours)''
- * skip <object> ''yum skip dict''
+'''parameters''': 
+ * '''timeout''' ''(optional)'' <str> ''timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks''
+ * '''skip''' ''(optional)'' <object> ''yum skip dict''
 [[BR]]
 
 == Add Errata ==
 ''Add errata to the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_errata/ [[BR]]
+'''path''': /repositories/<id>/add_errata/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * errataid <str> ''errata id''
+'''parameters''': 
+ * '''errataid''' <str> ''errata id''
 [[BR]]
 
 == Add File ==
 ''Add files to the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_file/ [[BR]]
+'''path''': /repositories/<id>/add_file/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * fileids <list of str> ''list of file ids''
+'''parameters''': 
+ * '''fileids''' <list of str> ''list of file ids''
 [[BR]]
 
 == Add Filters ==
 ''Add filters to the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_filters/ [[BR]]
+'''path''': /repositories/<id>/add_filters/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * filters <list of str> ''list of filter ids''
+'''parameters''': 
+ * '''filters''' <list of str> ''list of filter ids''
 [[BR]]
 
 == Add Group ==
 ''Add a group to the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_group/ [[BR]]
+'''path''': /repositories/<id>/add_group/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * addgrp <str> ''group id''
+'''parameters''': 
+ * '''addgrp''' <str> ''group id''
 [[BR]]
 
 == Add A Package ==
 ''Add a new package to the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_package/ [[BR]]
+'''path''': /repositories/<id>/add_package/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' list of errors [[BR]]
+'''return''': list of errors [[BR]]
 [[BR]]
-'''parameters:''' 
- * packageid <str> ''id of package to add''
+'''parameters''': 
+ * '''packageid''' <str> ''id of package to add''
 [[BR]]
 
 == Add Package Group To Category ==
 ''Add a package group to one of the repository's package group categories.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_packagegroup_to_category/ [[BR]]
+'''path''': /repositories/<id>/add_packagegroup_to_category/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * categoryid <str> ''package group category id''
- * groupid <str> ''package group id''
+'''parameters''': 
+ * '''categoryid''' <str> ''package group category id''
+ * '''groupid''' <str> ''package group id''
 [[BR]]
 
 == Add Packages To Package Group ==
 ''Add packages to a package group that is in the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/add_packages_to_group/ [[BR]]
+'''path''': /repositories/<id>/add_packages_to_group/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * groupid <str> ''package group id''
- * packagenames <list of str> ''list of packages to add to the package group''
+'''parameters''': 
+ * '''groupid''' <str> ''package group id''
+ * '''packagenames''' <list of str> ''list of packages to add to the package group''
 [[BR]]
 
 == Add Keys ==
 ''Add gpg keys to the repsository'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/addkeys/ [[BR]]
+'''path''': /repositories/<id>/addkeys/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * keylist <list of str binary lists> ''list of (key name, content) tuples''
+'''parameters''': 
+ * '''keylist''' <list of str binary lists> ''list of (key name, content) tuples''
 [[BR]]
 
 == Repository Clone ==
 ''Create a new repository by cloning an existing one.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/clone/ [[BR]]
+'''path''': /repositories/<id>/clone/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 202 Accepted [[BR]]
+'''success response''': 202 Accepted [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
  409 Conflict if the parameters match an existing repository [[BR]]
 [[BR]]
-'''return:''' a Task object [[BR]]
+'''return''': a Task object [[BR]]
 [[BR]]
-'''parameters:''' 
- * clone_id <str> ''the id of the clone repository''
- * clone_name <str> ''the namd of clone repository''
- * feed <str> ''feed of the clone repository in <type>:<url> format''
- * relative_path <str> ''clone repository on disk path; optional''
- * groupid <str> ''repository groups that clone belongs to''
- * filters <list of objects> ''synchronization filters to apply to the clone''
+'''parameters''': 
+ * '''clone_id''' <str> ''the id of the clone repository''
+ * '''clone_name''' <str> ''the namd of clone repository''
+ * '''feed''' <str> ''feed of the clone repository in <type>:<url> format''
+ * '''relative_path''' ''(optional)'' <str> ''clone repository on disk path''
+ * '''groupid''' ''(optional)'' <str> ''repository groups that clone belongs to''
+ * '''filters''' ''(optional)'' <list of objects> ''synchronization filters to apply to the clone''
 [[BR]]
 
 == Create A Package Group ==
 ''Create a new package group in the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/create_packagegroup/ [[BR]]
+'''path''': /repositories/<id>/create_packagegroup/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' [[BR]]
-'''parameters:''' 
- * groupid <str> ''id of the package group''
- * groupname <str> ''name of the package group''
- * description <str> ''package group description''
+'''return''': [[BR]]
+'''parameters''': 
+ * '''groupid''' <str> ''id of the package group''
+ * '''groupname''' <str> ''name of the package group''
+ * '''description''' <str> ''package group description''
 [[BR]]
 
 == Create Package Group Category ==
 ''Create a new package group category in the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/create_packagegroupcategory/ [[BR]]
+'''path''': /repositories/<id>/create_packagegroupcategory/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' !PackageGroupCategory object [[BR]]
+'''return''': !PackageGroupCategory object [[BR]]
 [[BR]]
-'''parameters:''' 
- * categoryid <str> ''package group category id''
- * categoryname <str> ''package group category name''
- * description <str> ''description of the package group category''
+'''parameters''': 
+ * '''categoryid''' <str> ''package group category id''
+ * '''categoryname''' <str> ''package group category name''
+ * '''description''' <str> ''description of the package group category''
 [[BR]]
 
 == Delete Errata ==
 ''Delete errata from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/delete_errata/ [[BR]]
+'''path''': /repositories/<id>/delete_errata/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * errataid <str> ''errata id''
+'''parameters''': 
+ * '''errataid''' <str> ''errata id''
 [[BR]]
 
 == Delete A Package ==
 ''Delete a package from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/delete_package/ [[BR]]
+'''path''': /repositories/<id>/delete_package/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * package <Package object> ''package to delete''
+'''parameters''': 
+ * '''package''' <Package object> ''package to delete''
 [[BR]]
 
 == Delete A Package From A Package Group ==
 ''Delete a package from a package group in the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/delete_package_from_group/ [[BR]]
+'''path''': /repositories/<id>/delete_package_from_group/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * groupid <str> ''package group id''
- * name <str> ''package name to remove''
+'''parameters''': 
+ * '''groupid''' <str> ''package group id''
+ * '''name''' <str> ''package name to remove''
 [[BR]]
 
 == Delete A Package Group ==
 ''Delete a package group from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/delete_packagegroup/ [[BR]]
+'''path''': /repositories/<id>/delete_packagegroup/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * groupid <str> ''id of the package group''
+'''parameters''': 
+ * '''groupid''' <str> ''id of the package group''
 [[BR]]
 
 == Delete Package Group From Category ==
 ''Delete a package group from one of the repository's package group categories.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/delete_pacakgegroup_from_category/ [[BR]]
+'''path''': /repositories/<id>/delete_pacakgegroup_from_category/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * categoryid <str> ''package group category id''
- * groupid <str> ''package group id''
+'''parameters''': 
+ * '''categoryid''' <str> ''package group category id''
+ * '''groupid''' <str> ''package group id''
 [[BR]]
 
 == Delete Package Group Category ==
 ''Delete a package group category from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/delete_packagegroupcategory/ [[BR]]
+'''path''': /repositories/<id>/delete_packagegroupcategory/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  400 Bad Request if the required parameters are not present [[BR]]
  404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' nil [[BR]]
+'''return''': nil [[BR]]
 [[BR]]
-'''parameters:''' 
- * categoryid <str> ''package group category id''
+'''parameters''': 
+ * '''categoryid''' <str> ''package group category id''
 [[BR]]
 
 == Get Package By File Name ==
 ''Get packages from the repository by specifying the file names.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/get_package_by_filename/ [[BR]]
+'''path''': /repositories/<id>/get_package_by_filename/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' list of Package Objects [[BR]]
+'''return''': list of Package Objects [[BR]]
 [[BR]]
-'''parameters:''' 
- * filename <list of str> ''list of file names''
+'''parameters''': 
+ * '''filename''' <list of str> ''list of file names''
 [[BR]]
 
 == Get Package By NVREA ==
 ''Get packages from the repository by specifying package name, version, release, epoc, and architecture'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/get_package_by_nvrea/ [[BR]]
+'''path''': /repositories/<id>/get_package_by_nvrea/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' object of package file names to Package objects [[BR]]
+'''return''': object of package file names to Package objects [[BR]]
 [[BR]]
-'''parameters:''' 
- * nvrea <list of str> ''list of name, version, release, epoch, architecture specifications''
+'''parameters''': 
+ * '''nvrea''' <list of str> ''list of name, version, release, epoch, architecture specifications''
 [[BR]]
 
 == Import Comps ==
 ''Create packagegroups and categories from a comps.xml file.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/import_comps/ [[BR]]
+'''path''': /repositories/<id>/import_comps/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' True on success, False on failure [[BR]]
+'''return''': True on success, False on failure [[BR]]
 [[BR]]
-'''parameters:''' 
+'''parameters''': 
  * xml comps file body
 [[BR]]
 
 == Remove File ==
 ''Remove files from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/remove_file/ [[BR]]
+'''path''': /repositories/<id>/remove_file/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * fileids <list of str> ''list of file ids''
+'''parameters''': 
+ * '''fileids''' <list of str> ''list of file ids''
 [[BR]]
 
 == Remove Filters ==
 ''Remove filters from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/remove_filters/ [[BR]]
+'''path''': /repositories/<id>/remove_filters/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * filters <list of str> ''list of filter ids''
+'''parameters''': 
+ * '''filters''' <list of str> ''list of filter ids''
 [[BR]]
 
 == Remove Group ==
 ''Remove a group from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/remove_group/ [[BR]]
+'''path''': /repositories/<id>/remove_group/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * rmgrp <str> ''group id''
+'''parameters''': 
+ * '''rmgrp''' <str> ''group id''
 [[BR]]
 
 == Remove Keys ==
 ''Remove gpg keys from the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/rmkeys/ [[BR]]
+'''path''': /repositories/<id>/rmkeys/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * keys list <list of str> ''list of key names to remove''
+'''parameters''': 
+ * '''keys list''' <list of str> ''list of key names to remove''
 [[BR]]
 
 == Repository Sychronization ==
 ''Synchronize the repository's content from its source.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/sync/ [[BR]]
+'''path''': /repositories/<id>/sync/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 202 Accepted [[BR]]
+'''success response''': 202 Accepted [[BR]]
 [[BR]]
-'''failure response:''' 
+'''failure response''': 
  404 Not Found if the id does not match a repository [[BR]]
- 406 Not Acceptable if the repository does not have a source; [[BR]]
+ 406 Not Acceptable if the repository does not have a source [[BR]]
  409 Conflict if a sync is already in progress for the repository [[BR]]
 [[BR]]
-'''return:''' a Task object [[BR]]
+'''return''': a Task object [[BR]]
 [[BR]]
-'''parameters:''' 
- * timeout <str> ''timeout in <value>:<units> format (e.g. 2:hours)''
- * skip <object> ''yum skip dict''
+'''parameters''': 
+ * '''timeout''' ''(optional)'' <str> ''timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks''
+ * '''skip''' ''(optional)'' <object> ''yum skip dict''
 [[BR]]
 
 == Update Publish ==
@@ -694,187 +772,206 @@
 ''True means the repository is exposed through Apache.'' [[BR]]
 ''False means to stop exposing from Apache.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/update_publish/ [[BR]]
+'''path''': /repositories/<id>/update_publish/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' True on successful update, False otherwise [[BR]]
+'''return''': True on successful update, False otherwise [[BR]]
 [[BR]]
-'''parameters:''' 
- * state <bool> ''puplish state''
+'''parameters''': 
+ * '''state''' <bool> ''puplish state''
 [[BR]]
 
 == Repository Upload ==
 ''Upload a package to the repository.'' [[BR]]
 [[BR]]
-'''method:''' POST [[BR]]
+'''method''': POST [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/upload/ [[BR]]
+'''path''': /repositories/<id>/upload/ [[BR]]
 [[BR]]
-'''permission:''' EXECUTE [[BR]]
+'''permission''': EXECUTE [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' true [[BR]]
+'''return''': true [[BR]]
 [[BR]]
-'''parameters:''' 
- * pkginfo <str> ''package information''
- * pkgstream <binary> ''package data''
+'''parameters''': 
+ * '''pkginfo''' <str> ''package information''
+ * '''pkgstream''' <binary> ''package data''
 [[BR]]
 
 ----
+
 == Repository Comps XML ==
 ''Get the xml content of the repository comps file'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/comps/ [[BR]]
+'''path''': /repositories/<id>/comps/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' Unspecified [[BR]]
+'''failure response''': Unspecified [[BR]]
 [[BR]]
-'''return:''' xml comps file [[BR]]
+'''return''': xml comps file [[BR]]
 [[BR]]
 
 == Repository Distribution ==
 ''List the distributions the repository is part of.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/distribution/ [[BR]]
+'''path''': /repositories/<id>/distribution/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' Unspecified [[BR]]
+'''failure response''': Unspecified [[BR]]
 [[BR]]
-'''return:''' list of Distribution objects [[BR]]
+'''return''': list of Distribution objects [[BR]]
 [[BR]]
 
 == Repository Errata ==
 ''List the applicable errata for the repository.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/errata/ [[BR]]
+'''path''': /repositories/<id>/errata/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' list of Errata objects [[BR]]
+'''return''': list of Errata objects [[BR]]
 [[BR]]
-'''filters:''' 
- * type <str> ''type of errata''
+'''filters''': 
+ * '''type''' <str> ''type of errata''
 [[BR]]
 
 == Repository Files ==
 ''List the non-package files in the repository.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/files/ [[BR]]
+'''path''': /repositories/<id>/files/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' Unspecified [[BR]]
+'''failure response''': Unspecified [[BR]]
 [[BR]]
-'''return:''' list of File objects [[BR]]
+'''return''': list of File objects [[BR]]
 [[BR]]
 
 == Repository GPG Keys ==
 ''List the gpg keys used by the repository.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/keys/ [[BR]]
+'''path''': /repositories/<id>/keys/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' Unspecified [[BR]]
+'''failure response''': Unspecified [[BR]]
 [[BR]]
-'''return:''' list of gpg keys [[BR]]
+'''return''': list of gpg keys [[BR]]
 [[BR]]
 
 == Repository Package Group Categories ==
 ''Get the package group categories in the repository.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/packagegroupcategories/ [[BR]]
+'''path''': /repositories/<id>/packagegroupcategories/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' list of package group catagory names [[BR]]
+'''return''': list of package group catagory names [[BR]]
 [[BR]]
-'''filters:''' 
- * id <str> ''package group category id''
- * packagegroupcategories <str> ''package group category name''
+'''filters''': 
+ * '''id''' <str> ''package group category id''
+ * '''packagegroupcategories''' <str> ''package group category name''
 [[BR]]
 
 == Repository Package Groups ==
 ''Get the package groups in the repositories.'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/packagegroups/ [[BR]]
+'''path''': /repositories/<id>/packagegroups/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' list of package group names [[BR]]
+'''return''': list of package group names [[BR]]
 [[BR]]
-'''filters:''' 
- * id <str> ''package groupd id''
- * packagegroups <str> ''package group name''
+'''filters''': 
+ * '''id''' <str> ''package groupd id''
+ * '''packagegroups''' <str> ''package group name''
 [[BR]]
 
 == Repository Packages ==
 ''Get the packages in a repository'' [[BR]]
 [[BR]]
-'''method:''' GET [[BR]]
+'''method''': GET [[BR]]
 [[BR]]
-'''path:''' /repositories/<id>/packages/ [[BR]]
+'''path''': /repositories/<id>/packages/ [[BR]]
 [[BR]]
-'''permission:''' READ [[BR]]
+'''permission''': READ [[BR]]
 [[BR]]
-'''success response:''' 200 OK [[BR]]
+'''success response''': 200 OK [[BR]]
 [[BR]]
-'''failure response:''' 404 Not Found if the id does not match a repository [[BR]]
+'''failure response''': 404 Not Found if the id does not match a repository [[BR]]
 [[BR]]
-'''return:''' list of Package objects [[BR]]
+'''return''': list of Package objects [[BR]]
 [[BR]]
-'''filters:''' 
- * name <str> ''package name''
- * version <str> ''package version''
- * release <str> ''package release''
- * epoch <int> ''package epoch''
- * arch <str> ''package architecture''
- * filename <str> ''name of package file''
- * field <str> ''field to include in Package objects''
+'''filters''': 
+ * '''name''' <str> ''package name''
+ * '''version''' <str> ''package version''
+ * '''release''' <str> ''package release''
+ * '''epoch''' <int> ''package epoch''
+ * '''arch''' <str> ''package architecture''
+ * '''filename''' <str> ''name of package file''
+ * '''field''' <str> ''field to include in Package objects''
+[[BR]]
+
+----
+
+== Repository Synchronization Schedules ==
+''List all repository synchronization schedules.'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /repositories/schedules/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': None [[BR]]
+[[BR]]
+'''return''': list of object that are mappings of repository id to synchronization schedule [[BR]]
 [[BR]]
