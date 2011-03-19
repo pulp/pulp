@@ -139,7 +139,3 @@ class VolatileStorage(object):
             if matches == num_criteria:
                 tasks.append(task)
         return tasks
-
-    def compare_tasks(a, b):
-        return cmp(a["schedule_time"], b["schedule_time"])
-
