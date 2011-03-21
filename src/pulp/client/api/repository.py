@@ -27,8 +27,8 @@ class RepositoryAPI(PulpAPI):
     Connection class to access repo specific calls
     """
     def create(self, id, name, arch, feed=None, symlinks=False,
-               sync_schedule=None, cert_data=None, relative_path=None,
-               groupid=None, gpgkeys=None, checksum_type="sha256"):
+               sync_schedule=None, feed_cert_data=None, consumer_cert_data=None,
+               relative_path=None, groupid=None, gpgkeys=None, checksum_type="sha256"):
         path = "/repositories/"
         repodata = {"id": id,
                     "name": name,
@@ -36,14 +36,15 @@ class RepositoryAPI(PulpAPI):
                     "feed": feed,
                     "use_symlinks": symlinks,
                     "sync_schedule": sync_schedule,
-                    "cert_data": cert_data,
+                    "feed_cert_data": feed_cert_data,
+                    "consumer_cert_data": consumer_cert_data,
                     "relative_path": relative_path,
                     "groupid": groupid,
                     "gpgkeys": gpgkeys,
                     "checksum_type" : checksum_type}
         return self.server.PUT(path, repodata)[1]
 
-    def repository(self, id, fields=[]):
+    def repository(self, id, fields=()):
         path = "/repositories/%s/" % str(id)
         repo = self.server.GET(path)[1]
         if repo is None:
@@ -53,7 +54,7 @@ class RepositoryAPI(PulpAPI):
         return repo
 
     def clone(self, repoid, clone_id, clone_name, feed='parent',
-              relative_path=None, groupid=None, timeout=None, filters=[]):
+              relative_path=None, groupid=None, timeout=None, filters=()):
         path = "/repositories/%s/clone/" % repoid
         data = {"clone_id": clone_id,
                 "clone_name": clone_name,
@@ -68,7 +69,7 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/"
         return self.server.GET(path)[1]
 
-    def repositories_by_groupid(self, groups=[]):
+    def repositories_by_groupid(self, groups=()):
         path = "/repositories/?"
         for group in groups:
             path += "groupid=%s&" % group
@@ -106,7 +107,7 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/add_package/" % repoid
         return self.server.POST(path, addinfo)[1]
 
-    def remove_package(self, repoid, pkgobj=[]):
+    def remove_package(self, repoid, pkgobj=()):
         rminfo = {'repoid': repoid, 'package': pkgobj, }
         path = "/repositories/%s/delete_package/" % repoid
         return self.server.POST(path, rminfo)[1]
@@ -117,7 +118,7 @@ class RepositoryAPI(PulpAPI):
         path = '/repositories/%s/packages/' % repoid
         return self.server.GET(path, (('name', pkg_name),))[1]
 
-    def find_package_by_nvrea(self, id, nvrea=[]):
+    def find_package_by_nvrea(self, id, nvrea=()):
         path = "/repositories/%s/get_package_by_nvrea/" % id
         return self.server.POST(path, {'nvrea' : nvrea})[1]
         # FIXME newer call that's using correct controller, still needs testing
@@ -211,7 +212,7 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/delete_errata/" % id
         return self.server.POST(path, erratainfo)[1]
 
-    def errata(self, id, types=[]):
+    def errata(self, id, types=()):
         path = "/repositories/%s/errata/" % id
         queries = [('type', t) for t in types]
         return self.server.GET(path, queries)[1]
@@ -234,7 +235,7 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/update_publish/" % id
         return self.server.POST(path, {"state": state})[1]
 
-    def add_file(self, repoid, fileids=[]):
+    def add_file(self, repoid, fileids=()):
         addinfo = {'repoid': repoid, 'fileids': fileids}
         path = "/repositories/%s/add_file/" % repoid
         return self.server.POST(path, addinfo)[1]

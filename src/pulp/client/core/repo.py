@@ -286,8 +286,12 @@ class List(RepoAction):
             filters = []    
             for filter in repo['filters']:
                 filters.append(str(filter))
+
+            feed_cert = 'No'
+            if repo['feed_cert']:
+                feed_cert = 'Yes'
             print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], feedUrl, feedType, repo["arch"],
+                    repo["id"], repo["name"], feedUrl, feedType, feed_cert, repo["arch"],
                     repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters)
@@ -404,12 +408,12 @@ class Create(RepoAction):
                                help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
                                help=_("url feed to populate the repository; feed format is type:url, where supported types include yum,rhn or local "))
-        self.parser.add_option("--cacert", dest="cacert",
-                               help=_("path location to ca certificate"))
-        self.parser.add_option("--cert", dest="cert",
-                               help=_("path location to entitlement certificate"))
-        self.parser.add_option("--key", dest="key",
-                               help=_("path location to entitlement certificate key"))
+        self.parser.add_option("--feed_ca", dest="feed_ca",
+                               help=_("path location to the feed's ca certificate"))
+        self.parser.add_option("--feed_cert", dest="feed_cert",
+                               help=_("path location to the feed's entitlement certificate"))
+        self.parser.add_option("--feed_key", dest="feed_key",
+                               help=_("path location to the feed's entitlement certificate key"))
         self.parser.add_option("--schedule", dest="schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
@@ -424,11 +428,12 @@ class Create(RepoAction):
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
 
     def _get_cert_options(self):
-        cacert = self.opts.cacert
-        cert = self.opts.cert
-        key = self.opts.key
+        cacert = self.opts.feed_ca
+        cert = self.opts.feed_cert
+        key = self.opts.feed_key
         if not (cacert and cert and key):
             return None
+        
         return {"ca": utils.readFile(cacert),
                 "cert": utils.readFile(cert),
                 "key": utils.readFile(key)}
@@ -453,7 +458,7 @@ class Create(RepoAction):
             reader = KeyReader()
             keylist = reader.expand(keylist)
         repo = self.repository_api.create(id, name, arch, feed, symlinks, schedule,
-                                 cert_data=cert_data,
+                                 feed_cert_data=cert_data,
                                  relative_path=relative_path,
                                  groupid=groups,
                                  gpgkeys=keylist, checksum_type=self.opts.checksum_type)
@@ -558,12 +563,12 @@ class Update(RepoAction):
                                help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
                                help=_("url feed to populate the repository (repository must be empty to change path component of the url)"))
-        self.parser.add_option("--cacert", dest="ca",
-                               help=_("path location to ca certificate"))
-        self.parser.add_option("--cert", dest="cert",
-                               help=_("path location to an entitlement certificate"))
-        self.parser.add_option("--key", dest="key",
-                               help=_("path location to an entitlement certificate's private key"))
+        self.parser.add_option("--feed_ca", dest="feed_ca",
+                               help=_("path location to the feed's ca certificate"))
+        self.parser.add_option("--feed_cert", dest="feed_cert",
+                               help=_("path location to the feed's entitlement certificate"))
+        self.parser.add_option("--feed_key", dest="feed_key",
+                               help=_("path location to the feed's entitlement certificate key"))
         self.parser.add_option("--schedule", dest="sync_schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
@@ -578,6 +583,7 @@ class Update(RepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
+
     def run(self):
         id = self.get_required_option('id')
         delta = {}
@@ -604,7 +610,7 @@ class Update(RepoAction):
                 keylist = v.split(',')
                 self.repository_api.rmkeys(id, keylist)
                 continue
-            if k in ('ca', 'cert', 'key',):
+            if k in ('feed_ca', 'feed_cert', 'feed_key',):
                 f = open(v)
                 v = f.read()
                 f.close()

@@ -36,6 +36,7 @@ from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
+import pulp.server.repo_cert_utils as repo_cert_utils
 from pulp.server import updateinfo
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
@@ -130,7 +131,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               cert_data=None, groupid={}, relative_path=None, gpgkeys=(), checksum_type="sha256"):
+               feed_cert_data=None, consumer_cert_data=None, groupid={}, relative_path=None, gpgkeys=(), checksum_type="sha256"):
         """
         Create a new Repository object and return it
         """
@@ -146,13 +147,29 @@ class RepoApi(BaseApi):
 
         self._validate_schedule(sync_schedule)
 
+        if feed_cert_data:
+            repo_cert_utils.validate_cert_bundle(feed_cert_data)
+
+        if consumer_cert_data:
+            repo_cert_utils.validate_cert_bundle(consumer_cert_data)
+
         r = model.Repo(id, name, arch, feed)
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
-        if cert_data:
-            cert_files = self._write_certs_to_disk(id, cert_data)
-            for key, value in cert_files.items():
-                r[key] = value
+
+        # Store any certificates and add the full paths to their files in the repo object
+        if feed_cert_data:
+            feed_cert_files = repo_cert_utils.write_feed_cert_bundle(id, feed_cert_data)
+            r['feed_ca'] = feed_cert_files['ca']
+            r['feed_cert'] = feed_cert_files['cert']
+            r['feed_key'] = feed_cert_files['key']
+
+        if consumer_cert_data:
+            consumer_cert_files = repo_cert_utils.write_consumer_cert_bundle(id, consumer_cert_data)
+            r['consumer_ca'] = consumer_cert_files['ca']
+            r['consumer_cert'] = consumer_cert_files['cert']
+            r['consumer_key'] = consumer_cert_files['key']
+            
         if groupid:
             for key, value in groupid.items():
                 if key not in r['groupid'].keys():
@@ -243,7 +260,7 @@ class RepoApi(BaseApi):
                 os.unlink(link_path)
 
     def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None,
-               filters=[], progress_callback=None):
+               filters=(), progress_callback=None):
         repo = self.repository(id)
         if repo is None:
             raise PulpException("A Repo with id %s does not exist" % id)
@@ -253,19 +270,37 @@ class RepoApi(BaseApi):
 
         REPOS_LOCATION = pulp.server.util.top_repos_location()
         parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
-        cert_data = {}
-        if repo['ca'] and repo['cert'] and repo['key']:
-            cert_data = {'ca' : open(repo['ca'], "rb").read(),
-                         'cert' : open(repo['cert'], "rb").read(),
-                         'key'  : open(repo['key'], "rb").read()}
+
+        feed_cert_data = {}
+        consumer_cert_data = {}
+
+        # Utility function to save space making sure files are closed after reading
+        def read_cert_file(filename):
+            f = open(filename, 'r')
+            contents = f.read()
+            f.close()
+            return contents
+        
+        if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
+            feed_cert_data = {'ca' : read_cert_file(repo['feed_ca']),
+                              'cert' : read_cert_file(repo['feed_cert']),
+                              'key'  : read_cert_file(repo['feed_key']),}
+
+        if repo['consumer_ca'] and repo['consumer_cert'] and repo['consumer_key']:
+            consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
+                                  'cert' : read_cert_file(repo['consumer_cert']),
+                                  'key' : read_cert_file(repo['consumer_key']),}
+
         log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
         if feed == 'origin':
             origin_feed = repo['source']['type'] + ":" + repo['source']['url']
             self.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
-                        relative_path=clone_id, cert_data=cert_data, checksum_type=repo['checksum_type'])
+                        relative_path=clone_id, feed_cert_data=feed_cert_data,
+                        consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
         else:
             self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
-                        relative_path=relative_path, cert_data=cert_data, checksum_type=repo['checksum_type'])
+                        relative_path=relative_path, feed_cert_data=feed_cert_data,
+                        consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
 
         # Associate filters if specified
         if len(filters) > 0:
@@ -321,25 +356,6 @@ class RepoApi(BaseApi):
             task.set_progress('progress_callback', yum_rhn_progress_callback)
         return task
 
-    def _write_certs_to_disk(self, repoid, cert_data):
-        CONTENT_CERTS_PATH = config.config.get("repos", "content_cert_location")
-        cert_dir = os.path.join(CONTENT_CERTS_PATH, repoid)
-
-        if not os.path.exists(cert_dir):
-            os.makedirs(cert_dir)
-        cert_files = {}
-        for key, value in cert_data.items():
-            fname = os.path.join(cert_dir, repoid + "." + key)
-            try:
-                log.info("storing file %s" % fname)
-                f = open(fname, 'w')
-                f.write(value)
-                f.close()
-                cert_files[key] = str(fname)
-            except:
-                raise PulpException("Error storing certificate file %s " % key)
-        return cert_files
-
     @audit(params=['groupid', 'content_set'])
     def create_product_repo(self, content_set, cert_data, groupid=None, gpg_keys=None):
         """
@@ -357,7 +373,7 @@ class RepoApi(BaseApi):
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
-        cert_files = self._write_certs_to_disk(groupid, cert_data)
+        cert_files = repo_cert_utils.write_feed_cert_bundle(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
@@ -369,7 +385,7 @@ class RepoApi(BaseApi):
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
                                    feed="yum:" + CDN_URL + '/' + uri,
-                                   cert_data=cert_data, groupid=[groupid],
+                                   feed_cert_data=cert_data, groupid=[groupid],
                                    relative_path=uri)
                 repo['release'] = label.split("-")[-2]
                 self.addkeys(repo['id'], gkeys)
@@ -397,7 +413,7 @@ class RepoApi(BaseApi):
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
-        cert_files = self._write_certs_to_disk(groupid, cert_data)
+        cert_files = repo_cert_utils.write_feed_cert_bundle(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
         serv = CDNConnection(CDN_HOST, cacert=cert_files['ca'],
@@ -410,7 +426,7 @@ class RepoApi(BaseApi):
                 repo = self._get_existing_repo(label)
                 repo['feed'] = "yum:" + CDN_URL + '/' + uri
                 if cert_data:
-                    cert_files = self._write_certs_to_disk(label, cert_data)
+                    cert_files = repo_cert_utils.write_feed_cert_bundle(label, cert_data)
                     for key, value in cert_files.items():
                         repo[key] = value
                 repo['arch'] = label.split("-")[-1]
@@ -543,8 +559,9 @@ class RepoApi(BaseApi):
                 continue
 
         repo_location = pulp.server.util.top_repos_location()
+
         #delete any data associated to this repo
-        for field in ['relative_path', 'cert', 'key', 'ca']:
+        for field in ['relative_path']:
             if field == 'relative_path' and repo[field]:
                 fpath = os.path.join(repo_location, repo[field])
             else:
@@ -560,6 +577,9 @@ class RepoApi(BaseApi):
                     #file removal failed
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
+
+        # Delete any certificate bundles for the repo
+        repo_cert_utils.delete_for_repo(id)
 
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
@@ -592,9 +612,11 @@ class RepoApi(BaseApi):
                     update_consumers = True
                 continue
             # Certificate(s) changed
-            if key in ('ca', 'cert', 'key',):
-                value = self._write_certs_to_disk(id, {key:value})
-                repo[key] = value[key]
+            if key in ('feed_ca', 'feed_cert', 'feed_key',):
+                # The bundle doesn't want the feed_ part, so rip that off
+                bundle_key = key[5:]
+                value = repo_cert_utils.write_feed_cert_bundle(id, {bundle_key:value})
+                repo[key] = value[bundle_key]
                 continue
             # feed changed
             if key == 'feed':

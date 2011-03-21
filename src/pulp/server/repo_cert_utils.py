@@ -105,7 +105,7 @@ def write_feed_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    _write_cert_bundle('feed', repo_id, bundle)
+    return _write_cert_bundle('feed', repo_id, bundle)
 
 def write_consumer_cert_bundle(repo_id, bundle):
     '''
@@ -113,7 +113,7 @@ def write_consumer_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    _write_cert_bundle('consumer', repo_id, bundle)
+    return _write_cert_bundle('consumer', repo_id, bundle)
 
 def _write_cert_bundle(file_prefix, repo_id, bundle):
     '''

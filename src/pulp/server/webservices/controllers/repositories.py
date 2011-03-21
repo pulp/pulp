@@ -114,6 +114,8 @@ default_fields = [
     'checksum_type',
     'filters',
     'package_count',
+    'feed_cert',
+    'consumer_cert',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -176,6 +178,8 @@ class Repositories(JSONController):
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
          * sync_schedule?, str, crontab entry format
+         * feed_cert_data?, str, certificate information to use when connecting to the feed
+         * consumer_cert_data?, str, certificate information to use when validating consumers of this repo
          * cert_data?, str, repository certificate information
          * relative_path?, str, repository on disk path
          * groupid?, dict, a hash map of group data this repository belongs to
@@ -194,7 +198,8 @@ class Repositories(JSONController):
                           feed=repo_data.get('feed', None),
                           symlinks=repo_data.get('use_symlinks', False),
                           sync_schedule=repo_data.get('sync_schedule', None),
-                          cert_data=repo_data.get('cert_data', None),
+                          feed_cert_data=repo_data.get('feed_cert_data', None),
+                          consumer_cert_data=repo_data.get('consumer_cert_data', None),
                           relative_path=repo_data.get('relative_path', None),
                           groupid=repo_data.get('groupid', None),
                           gpgkeys=repo_data.get('gpgkeys', None),

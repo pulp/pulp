@@ -112,9 +112,12 @@ class TestCertStorage(unittest.TestCase):
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
 
         # Test
-        utils.write_feed_cert_bundle(repo_id, bundle)
+        files = utils.write_feed_cert_bundle(repo_id, bundle)
 
         # Verify
+        self.assertTrue(files is not None)
+        self.assertEqual(3, len(files))
+
         repo_cert_dir = utils._cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
@@ -132,9 +135,12 @@ class TestCertStorage(unittest.TestCase):
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
 
         # Test
-        utils.write_consumer_cert_bundle(repo_id, bundle)
+        files = utils.write_consumer_cert_bundle(repo_id, bundle)
 
         # Verify
+        self.assertTrue(files is not None)
+        self.assertEqual(3, len(files))
+
         repo_cert_dir = utils._cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 

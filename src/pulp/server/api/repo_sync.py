@@ -431,10 +431,10 @@ class YumSynchronizer(BaseSynchronizer):
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         cacert = clicert = clikey = None
-        if repo['ca'] and repo['cert'] and repo['key']:
-            cacert = repo['ca'].encode('utf8')
-            clicert = repo['cert'].encode('utf8')
-            clikey = repo['key'].encode('utf8')
+        if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
+            cacert = repo['feed_ca'].encode('utf8')
+            clicert = repo['feed_cert'].encode('utf8')
+            clikey = repo['feed_key'].encode('utf8')
 
         num_threads = config.config.getint('yum', 'threads')
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
