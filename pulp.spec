@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.154
+Version:        0.0.156
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -45,10 +45,16 @@ Requires: qpid-cpp-server-store
 # Fedora
 Requires: mod_python
 %endif
-%if !0%{?fedora}
-# RHEL
+%if 0%{?el5}
+# RHEL-5
 Requires: python-uuid
 Requires: python-ssl
+Requires: python-ctypes
+Requires: python-hashlib
+%endif
+%if 0%{?el6}
+# RHEL-6
+Requires: python-uuid
 Requires: python-ctypes
 Requires: python-hashlib
 %endif
@@ -255,6 +261,12 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Mon Mar 21 2011 John Matthews <jmatthews@redhat.com> 0.0.156-1
+- fixed changelog edit (jmatthews@redhat.com)
+* Mon Mar 21 2011 John Matthews <jmatthew@redhat.com> 0.0.155-1
+- Add distinction of el5 or el6 in pulp.spec, remove python-ssl from el6
+  (jmatthews@redhat.com)
+
 * Fri Mar 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.154-1
 - 684890 - using get_required_option instead of separate checking in cli for
   consistency (skarmark@redhat.com)
