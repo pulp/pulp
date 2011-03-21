@@ -5,7 +5,7 @@
 Name:			python-oauth2
 Summary:		Python support for improved oauth
 Version:		1.2.1
-Release:		2%{?dist}
+Release:		3%{?dist}
 License:		MIT
 Group:			System Environment/Libraries
 Source0:		http://pypi.python.org/packages/source/o/oauth2/oauth2-%{oldversion}.tar.gz
@@ -59,6 +59,9 @@ number of notable differences exist between this code and its forefathers:
 %{python_sitelib}/oauth2-%{version}-*.egg-info/
 
 %changelog
+* Mon Mar 21 2011 John Matthews <jmatthew@redhat.com> 1.2.1-3
+- Add release tagger to python-oauth2 (jmatthew@redhat.com)
+
 * Fri Jan 14 2011 Jeff Ortel <jortel@redhat.com> 1.2.1-2
 - Patch oauth2 to work on rhel5. (jortel@redhat.com)
 
