@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.154
+Version:        0.0.155
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -261,6 +261,10 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Mon Mar 21 2011 John Matthews <jmatthew@redhat.com> 0.0.155-1
+- Add distinction of el5 or el6 in pulp.spec, remove python-ssl from el6
+  (jmatthews@redhat.com)
+
 * Fri Mar 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.154-1
 - 684890 - using get_required_option instead of separate checking in cli for
   consistency (skarmark@redhat.com)
