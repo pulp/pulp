@@ -92,12 +92,25 @@ class WikiFormatError(Exception):
 
 # -----------------------------------------------------------------------------
 
+def bold(s):
+    return "'''%s'''" % s
+
+
+def italic(s):
+    return "''%s''" % s
+
+
+def underline(s):
+    return '__%s__' % s
+
+# -----------------------------------------------------------------------------
+
 def format_title(title):
     return ' '.join(t for t in title if t)
 
 
 def format_description(description):
-    return ' [[BR]]\n'.join("''%s''" % l for l in description) + ' [[BR]]\n'
+    return ' [[BR]]\n'.join(italic(l) for l in description) + ' [[BR]]\n'
 
 
 def format_lines(lines):
@@ -115,9 +128,11 @@ def format_list_entry(entry):
         t = t.strip()
         d = d.strip()
         if n.endswith('?'):
-            n = n[:-1]
-            n += " ''(optional)''"
-        entry = "%s <%s> ''%s''" % (n, t, d)
+            n = bold(n[:-1])
+            n += " %s" % italic('(optional)')
+        else:
+            n = bold(n)
+        entry = "%s <%s> %s" % (n, t, italic(d))
     except ValueError:
         print >> sys.stderr, 'WARN: cannot list format: %s' % entry
     entry = ' * ' + entry
@@ -182,14 +197,14 @@ def format_method_wiki_doc(doc):
     # XXX need to figure out if there's a implicit way to reference the current page
     #wiki_doc = '[wiki:.#top back to top]\n'
     wiki_doc = '== %s ==\n' % wiki_dict.get('title', 'Untitled').strip()
-    wiki_doc += wiki_dict.get('description', "''No description'' [[BR]]\n")
+    wiki_doc += wiki_dict.get('description', "%s [[BR]]\n" % italic('No description.'))
     wiki_doc += '[[BR]]\n'
     for key in ('method', 'path', 'permission', 'success response',
                 'failure response', 'return', 'parameters', 'filters'):
         if key in ('parameters', 'filters') and key not in wiki_dict:
             continue
         value = wiki_dict.get(key, 'Unspecified [[BR]]\n')
-        wiki_doc += "'''%s:''' %s" % (key, value)
+        wiki_doc += "%s: %s" % (bold(key), value)
         wiki_doc += '[[BR]]\n'
     return wiki_doc
 
@@ -207,10 +222,10 @@ def format_module_wiki_doc(module_name, doc):
         doc = ''
     wiki_dict = wiki_doc_to_dict(doc)
     wiki_doc = '= %s = #top\n' % wiki_dict.pop('title', module_title()).strip()
-    wiki_doc += wiki_dict.pop('description', "'''No description'' [[BR]]\n")
+    wiki_doc += wiki_dict.pop('description', "%s [[BR]]\n" % italic('No description.'))
     wiki_doc += '[[BR]]\n'
     for key, value in wiki_dict.items():
-        wiki_doc += "'''%s:''' %s" % (key, value)
+        wiki_doc += "%s: %s" % (bold(key), value)
     return wiki_doc
 
 # -----------------------------------------------------------------------------
@@ -262,7 +277,7 @@ def gen_docs_for_module(module):
         cls_docs = gen_docs_for_class(attr)
         if not cls_docs:
             continue
-        docs.append('----')
+        docs.append('----\n')
         docs.extend(cls_docs)
     return docs
 

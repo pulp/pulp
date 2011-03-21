@@ -1,4 +1,4 @@
 [[TOC]]
 = Consumers RESTful API = #top
-'''No description'' [[BR]]
+''No description.'' [[BR]]
 [[BR]]

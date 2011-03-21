@@ -1,4 +1,4 @@
 [[TOC]]
 = Services RESTful API = #top
-'''No description'' [[BR]]
+''No description.'' [[BR]]
 [[BR]]

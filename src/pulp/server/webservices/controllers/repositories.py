@@ -20,6 +20,7 @@ title: Repositories RESTful Interface
 description:
  RESTful interface for the creation, querying, and management of repositories managed by Pulp.
  Repositories are represented as Repo objects.
+ Some operations on repositories happen asynchronously, as such, these operations return Task objects.
 Repo object fields:
  * id, str, repository identifier
  * source, !RepoSource object, upstream content source
@@ -52,6 +53,26 @@ Repo object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
  * url, str, repository source url
+Task object fields:
+ * id, str, unique id (usually a uuid) for the task
+ * method_name, str, name of the pulp library method that was called
+ * state, str, one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended
+ * start_time, timestamp or nil, time the task started running, nil if the task has not yet started
+ * finish_time, timestamp or nil, time the task finished running, nil if the task has not yet finished
+ * result, object or nil, the result of the pulp library method upon return, usually nil
+ * exception, str or nil, a string representation of an error in the pulp librry call, if any
+ * traceback, str or nil, a string print out of the trace back for the exception, if any
+ * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
+ * scheduled_time, timestamp or nil, time the task is scheduled to run, applicable only for scheduled tasks
+ * status_path, str, complete uri path to poll for the task's progress using http GET
+Progress object fields:
+ * step, str, name of the step the pulp library call is on
+ * items_total, int, the total number of items to be processed by the call
+ * items_left, int, the remaining number of items to be processed by the call
+ * details, object, object providing further details on the progress
+Details object fields:
+ * num_success, int, the number of items successfully processed
+ * total_count, int, the number of items that were attempted to be processed
 """
 
 import itertools
@@ -502,12 +523,12 @@ class RepositoryActions(AsyncController):
         permission: EXECUTE
         success response: 202 Accepted 
         failure response: 404 Not Found if the id does not match a repository
-                          406 Not Acceptable if the repository does not have a source;
+                          406 Not Acceptable if the repository does not have a source
                           409 Conflict if a sync is already in progress for the repository
         return: a Task object
         parameters:
-         * timeout, str, timeout in <value>:<units> format (e.g. 2:hours)
-         * skip, object, yum skip dict
+         * timeout?, str, timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks
+         * skip?, object, yum skip dict
         """
         repo = api.repository(id, fields=['source'])
         if repo['source'] is None:
@@ -541,9 +562,9 @@ class RepositoryActions(AsyncController):
          * clone_id, str, the id of the clone repository
          * clone_name, str, the namd of clone repository
          * feed, str, feed of the clone repository in <type>:<url> format
-         * relative_path, str, clone repository on disk path; optional
-         * groupid, dict, repository groups that clone belongs to
-         * filters, list of objects, synchronization filters to apply to the clone
+         * relative_path?, str, clone repository on disk path
+         * groupid?, str, repository groups that clone belongs to
+         * filters?, list of objects, synchronization filters to apply to the clone
         """
         repo_data = self.params()
         if api.repository(id, default_fields) is None:
@@ -1125,7 +1146,17 @@ class RepositoryActions(AsyncController):
     @JSONController.auth_required(READ)
     def GET(self, id, action_name):
         """
-        Get information on a given action and repository.
+        [[wiki]]
+        title: List Actions
+        description: Get a list of actions that were executed asynchronously on a repository.
+        This method only works for actions that returned a 202 Accepted response.
+        e.g. /repositories/my-repo/sync/
+        method: GET
+        path: /repositories/<id>/<action name>/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of Task objects
         """
         action_methods = {
             'sync': '_sync',
@@ -1154,11 +1185,16 @@ class RepositoryActionStatus(AsyncController):
     @JSONController.auth_required(EXECUTE) # this is checking an execute, not reading a resource
     def GET(self, id, action_name, action_id):
         """
-        Check the status of a sync operation.
-        @param id: repository id
-        @param action_name: name of the action
-        @param action_id: action id
-        @return: action status information
+        [[wiki]]
+        title: Action Status
+        description: Check the status of a previously returned task.
+        This url path should match the status_uri of a Task object.
+        method: GET
+        path: /repositories/<id>/<action name>/<task id>/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 404 Not Found if the task id does not match a task for the repository
+        return: Task object
         """
         task_info = self.task_status(action_id)
         if task_info is None:
@@ -1169,7 +1205,16 @@ class RepositoryActionStatus(AsyncController):
     @JSONController.auth_required(EXECUTE) # this is stopping an execute, not deleting a resource
     def DELETE(self, id, action_name, action_id):
         """
-        Cancel an action
+        [[wiki]]
+        title: Cancel A Task
+        description:
+        method: DELETE
+        path: /repositories/<id>/<action name>/<task id>/
+        permission: READ
+        success response: 202 Accepted
+         204 No Content if the task has already finished
+        failure response: 404 Not Found if the task id does nat match a task for the repository
+        return: Task object on 202
         """
         task = self.find_task(action_id)
         if task is None:
@@ -1187,12 +1232,17 @@ class Schedules(JSONController):
     @JSONController.error_handler
     @JSONController.auth_required(READ)
     def GET(self):
-        '''
-        Retrieve a map of all repository IDs to their associated synchronization
-        schedules.
-
-        @return: key - repository ID, value - synchronization schedule
-        '''
+        """
+        [[wiki]]
+        title: Repository Synchronization Schedules
+        description: List all repository synchronization schedules.
+        method: GET
+        path: /repositories/schedules/
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of object that are mappings of repository id to synchronization schedule
+        """
         # XXX this returns all scheduled tasks, it should only return those
         # tasks that are specified by the action_name
         schedules = api.all_schedules()
