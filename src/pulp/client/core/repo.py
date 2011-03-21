@@ -416,7 +416,7 @@ class Create(RepoAction):
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
-        self.parser.add_option("--group", action="append", dest="group",
+        self.parser.add_option("--group", action="append", dest="group", default=[],
                                help=_("a group to which the repository belongs; format: key:value; eg: env:dev"))
         self.parser.add_option("--gpgkeys", dest="keys",
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
