@@ -45,14 +45,14 @@ Requires: qpid-cpp-server-store
 # Fedora
 Requires: mod_python
 %endif
-%if 0%{el5}
+%if 0%{?el5}
 # RHEL-5
 Requires: python-uuid
 Requires: python-ssl
 Requires: python-ctypes
 Requires: python-hashlib
 %endif
-%if 0%{el6}
+%if 0%{?el6}
 # RHEL-6
 Requires: python-uuid
 Requires: python-ctypes
