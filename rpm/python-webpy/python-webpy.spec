@@ -2,7 +2,7 @@
 %define pkgname webpy
 
 Name:           python-webpy
-Version:        0.33
+Version:        0.34
 Release:        1%{?dist}
 Summary:        A simple web framework for Python
 Group:          Development/Libraries
@@ -62,6 +62,9 @@ purpose with absolutely no restrictions.
 %{python_sitelib}/*
 
 %changelog
+* Mon Mar 21 2011 John Matthews <jmatthews@redhat.com> 0.34-1
+- 
+
 * Mon Mar 21 2011 John Matthews <jmatthews@redhat.com> 0.33-1
 - 
 
