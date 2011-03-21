@@ -28,6 +28,11 @@ from gofer.messaging import Topic
 from gofer.messaging.consumer import Consumer
 from gofer.messaging.producer import Producer
 from pulp.server.config import config
+from logging import getLogger
+
+
+log = getLogger(__name__)
+
 
 def retrieve_agent(uuid, **options):
     '''
@@ -100,12 +105,14 @@ class HeartbeatListener(Consumer):
             for uuid in uuids:
                 last = cls.__status.get(uuid)
                 if last:
-                    stat = ( last[1] > now )
+                    status = ( last[1] > now )
                     heartbeat = last[0].isoformat()
+                    any = last[2]
                 else:
-                    stat = False
+                    status = False
                     heartbeat = None
-                d[uuid] = (stat, heartbeat)
+                    any = {}
+                d[uuid] = (status, heartbeat, any)
             return d
         finally:
             cls.__unlock()
@@ -124,19 +131,19 @@ class HeartbeatListener(Consumer):
 
     def dispatch(self, envelope):
         try:
-            uuid = envelope.agent
-            next = int(envelope.next)
-            self.__update(uuid, next)
+            self.__update(envelope.heartbeat)
         except:
-            pass
+            log.error(envelope, exec_info=True)
         self.ack()
 
-    def __update(self, uuid, next):
+    def __update(self, body):
         self.__lock()
         try:
+            uuid = body.pop('uuid')
+            next = body.pop('next')
             last = dt.utcnow()
             next = int(next*1.20)
             next = last+timedelta(seconds=next)
-            self.__status[uuid] = (last, next)
+            self.__status[uuid] = (last, next, body)
         finally:
             self.__unlock()
