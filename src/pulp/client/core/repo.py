@@ -416,8 +416,8 @@ class Create(RepoAction):
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified"))
-        self.parser.add_option("--groupid", action="append", dest="groupid",
-                               help=_("a group to which the repository belongs; this is just a string identifier"))
+        self.parser.add_option("--group", action="append", dest="group", default=[],
+                               help=_("a group to which the repository belongs; format: key:value; eg: env:dev"))
         self.parser.add_option("--gpgkeys", dest="keys",
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
@@ -441,7 +441,12 @@ class Create(RepoAction):
         symlinks = self.opts.symlinks or False
         schedule = self.opts.schedule
         relative_path = self.opts.relativepath
-        groupid = self.opts.groupid
+        groups={}
+        for gkey in self.opts.group:
+            k, v = gkey.split(':')
+            if k not in groups.keys():
+                groups[k] = []
+            groups[k].append(v)
         cert_data = self._get_cert_options()
         keylist = self.opts.keys
         if keylist:
@@ -450,7 +455,7 @@ class Create(RepoAction):
         repo = self.repository_api.create(id, name, arch, feed, symlinks, schedule,
                                  cert_data=cert_data,
                                  relative_path=relative_path,
-                                 groupid=groupid,
+                                 groupid=groups,
                                  gpgkeys=keylist, checksum_type=self.opts.checksum_type)
         print _("Successfully created repository [ %s ]") % repo['id']
 
@@ -467,7 +472,7 @@ class Clone(RepoProgressAction):
         self.parser.add_option("--feed", dest="feed",
                                help=_("feed of cloned_repo: parent/origin/none"))
         self.parser.add_option("--groupid", dest="groupid",
-                               help=_("a group to which the repository belongs; this is just a string identifier"))
+                               help=_("a group to which the repository belongs; format: key:value; eg: env:dev"))
         self.parser.add_option("--timeout", dest="timeout",
                                help=_("repository clone timeout"))
         self.parser.add_option('-F', '--foreground', dest='foreground',
@@ -514,7 +519,8 @@ class Clone(RepoProgressAction):
         clone_id = self.get_required_option('clone_id')
         clone_name = self.opts.clone_name or clone_id
         feed = self.opts.feed or 'parent'
-        groupid = self.opts.groupid
+        key, value = self.opts.groupid.split(':')
+        groupid = {key : [value]}
         timeout = self.opts.timeout
         filters = self.opts.filters or []
         task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
@@ -565,9 +571,9 @@ class Update(RepoAction):
         self.parser.add_option("--relativepath", dest="relative_path",
                                help=_("relative path where the repository is stored and exposed to clients; this defaults to feed path if not specified (repository must be empty)"))
         self.parser.add_option("--addgroup", dest="addgroup",
-                               help=_("group id to be added to the repository"))
+                               help=_("group info to be added to the repository; format:key:value; eg: env:dev"))
         self.parser.add_option("--rmgroup", dest="rmgroup",
-                               help=_("group id to be removed from the repository"))
+                               help=_("group info to be removed from the repository; format:key:value; eg: env:dev"))
         self.parser.add_option("--addkeys", dest="addkeys",
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
@@ -580,10 +586,14 @@ class Update(RepoAction):
             if not v:
                 continue
             if k == 'addgroup':
-                self.repository_api.add_group(id, v)
+                key, val = v.split(':')
+                groupinfo = {key:[val]}
+                self.repository_api.add_group(id, groupinfo)
                 continue
             if k == 'rmgroup':
-                self.repository_api.remove_group(id, v)
+                key, val = v.split(':')
+                groupinfo = {key:val}
+                self.repository_api.remove_group(id, groupinfo)
                 continue
             if k == 'addkeys':
                 reader = KeyReader()
