@@ -611,11 +611,18 @@ class RepoApi(BaseApi):
                 if key == 'name':
                     update_consumers = True
                 continue
-            # Certificate(s) changed
+            # Feed certificate bundle changed
             if key in ('feed_ca', 'feed_cert', 'feed_key',):
                 # The bundle doesn't want the feed_ part, so rip that off
                 bundle_key = key[5:]
                 value = repo_cert_utils.write_feed_cert_bundle(id, {bundle_key:value})
+                repo[key] = value[bundle_key]
+                continue
+            # Consumer certificate bundle changed
+            if key in ('consumer_ca', 'consumer_cert', 'consumer_key',):
+                # The bundle doesn't want the consumer_ part, so rip that off
+                bundle_key = key[9:]
+                value = repo_cert_utils.write_consumer_cert_bundle(id, {bundle_key:value})
                 repo[key] = value[bundle_key]
                 continue
             # feed changed

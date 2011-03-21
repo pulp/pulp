@@ -290,9 +290,14 @@ class List(RepoAction):
             feed_cert = 'No'
             if repo['feed_cert']:
                 feed_cert = 'Yes'
+
+            consumer_cert = 'No'
+            if repo['consumer_cert']:
+                consumer_cert = 'Yes'
+
             print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], feedUrl, feedType, feed_cert, repo["arch"],
-                    repo["sync_schedule"], repo['package_count'],
+                    repo["id"], repo["name"], feedUrl, feedType, feed_cert, consumer_cert,
+                    repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters)
 
@@ -414,6 +419,12 @@ class Create(RepoAction):
                                help=_("path location to the feed's entitlement certificate"))
         self.parser.add_option("--feed_key", dest="feed_key",
                                help=_("path location to the feed's entitlement certificate key"))
+        self.parser.add_option("--consumer_ca", dest="consumer_ca",
+                               help=_("path location to the ca certificate used to verify consumer requests"))
+        self.parser.add_option("--consumer_cert", dest="consumer_cert",
+                               help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
+        self.parser.add_option("--consumer_key", dest="consumer_key",
+                               help=_("path location to the consumer entitlement certificate key"))
         self.parser.add_option("--schedule", dest="schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
@@ -426,17 +437,6 @@ class Create(RepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
-
-    def _get_cert_options(self):
-        cacert = self.opts.feed_ca
-        cert = self.opts.feed_cert
-        key = self.opts.feed_key
-        if not (cacert and cert and key):
-            return None
-        
-        return {"ca": utils.readFile(cacert),
-                "cert": utils.readFile(cert),
-                "key": utils.readFile(key)}
 
     def run(self):
         id = self.get_required_option('id')
@@ -452,13 +452,34 @@ class Create(RepoAction):
             if k not in groups.keys():
                 groups[k] = []
             groups[k].append(v)
-        cert_data = self._get_cert_options()
+
+        # Feed cert bundle
+        feed_cert_data = None
+        cacert = self.opts.feed_ca
+        cert = self.opts.feed_cert
+        key = self.opts.feed_key
+        if cacert and cert and key:
+            feed_cert_data = {"ca": utils.readFile(cacert),
+                              "cert": utils.readFile(cert),
+                              "key": utils.readFile(key)}
+
+        # Consumer cert bundle
+        consumer_cert_data = None
+        cacert = self.opts.consumer_ca
+        cert = self.opts.consumer_cert
+        key = self.opts.consumer_key
+        if cacert and cert and key:
+            consumer_cert_data = {"ca": utils.readFile(cacert),
+                                  "cert": utils.readFile(cert),
+                                  "key": utils.readFile(key)}
+
         keylist = self.opts.keys
         if keylist:
             reader = KeyReader()
             keylist = reader.expand(keylist)
         repo = self.repository_api.create(id, name, arch, feed, symlinks, schedule,
-                                 feed_cert_data=cert_data,
+                                 feed_cert_data=feed_cert_data,
+                                 consumer_cert_data=consumer_cert_data,
                                  relative_path=relative_path,
                                  groupid=groups,
                                  gpgkeys=keylist, checksum_type=self.opts.checksum_type)
@@ -569,6 +590,12 @@ class Update(RepoAction):
                                help=_("path location to the feed's entitlement certificate"))
         self.parser.add_option("--feed_key", dest="feed_key",
                                help=_("path location to the feed's entitlement certificate key"))
+        self.parser.add_option("--consumer_ca", dest="consumer_ca",
+                               help=_("path location to the ca certificate used to verify consumer requests"))
+        self.parser.add_option("--consumer_cert", dest="consumer_cert",
+                               help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
+        self.parser.add_option("--consumer_key", dest="consumer_key",
+                               help=_("path location to the consumer entitlement certificate key"))
         self.parser.add_option("--schedule", dest="sync_schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
@@ -610,7 +637,7 @@ class Update(RepoAction):
                 keylist = v.split(',')
                 self.repository_api.rmkeys(id, keylist)
                 continue
-            if k in ('feed_ca', 'feed_cert', 'feed_key',):
+            if k in ('feed_ca', 'feed_cert', 'feed_key', 'consumer_ca', 'consumer_cert', 'consumer_key'):
                 f = open(v)
                 v = f.read()
                 f.close()
