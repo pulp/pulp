@@ -202,15 +202,14 @@ class Task(object):
         @param tb: The formatted traceback.
         @type tb: str
         """
-        self.state = task_error
-        self.finish_time = datetime.datetime.now()
         self.exception = repr(exception)
-        #self._exception_delivered()
-        self._complete()
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
         _log.error('Task id:%s, method_name:%s:\n%s' % (self.id,
                                                         self.method_name,
                                                         ''.join(self.traceback)))
+        self.state = task_error
+        self.finish_time = datetime.datetime.now()
+        self._complete()
 
     def _complete(self):
         """
