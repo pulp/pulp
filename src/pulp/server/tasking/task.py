@@ -208,7 +208,7 @@ class Task(object):
         self.state = task_error
         self.finish_time = datetime.datetime.now()
         self.exception = repr(exception)
-        self._exception_delivered()
+        #self._exception_delivered()
         self._complete()
         if tb:
             self.traceback = tb
