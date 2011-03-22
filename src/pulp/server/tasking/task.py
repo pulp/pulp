@@ -174,6 +174,8 @@ class Task(object):
         except Exception, e:
             self.failed(e)
 
+    # -------------------------------------------------------------------------
+
     def invoked(self, result):
         """
         Post I{method} invoked behavior.
@@ -233,7 +235,13 @@ class Task(object):
     # -------------------------------------------------------------------------
 
     def cancel(self):
-        if self.thread:
+        """
+        Cancel a running task.
+        NOTE: this is a noop if the task is already complete.
+        """
+        if self.state in task_complete_states:
+            return
+        if hasattr(self.thread, 'cancel'):
             self.thread.cancel()
         self.state = task_canceled
         self.finish_time = datetime.datetime.now()
