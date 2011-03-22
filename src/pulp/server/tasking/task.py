@@ -143,13 +143,13 @@ class Task(object):
 
     # -------------------------------------------------------------------------
 
-    def _exception_delivered(self):
-        """
-        Let the contextual thread know that an exception has been received.
-        """
-        if not hasattr(self.thread, 'exception_delivered'):
-            return
-        self.thread.exception_delivered()
+    #def _exception_delivered(self):
+    #    """
+    #    Let the contextual thread know that an exception has been received.
+    #    """
+    #    if not hasattr(self.thread, 'exception_delivered'):
+    #        return
+    #    self.thread.exception_delivered()
 
     def run(self):
         """
@@ -163,12 +163,12 @@ class Task(object):
             self.invoked(result)
         except TimeoutException:
             self.state = task_timed_out
-            self._exception_delivered()
+            #self._exception_delivered()
             _log.error('Task id:%s, method_name:%s: TIMED OUT' %
                        (self.id, self.method_name))
         except CancelException:
             self.state = task_canceled
-            self._exception_delivered()
+            #self._exception_delivered()
             _log.info('Task id:%s, method_name:%s: CANCELLED' %
                       (self.id, self.method_name))
         except Exception, e:
