@@ -34,7 +34,6 @@ task_finished = 'finished'
 task_error = 'error'
 task_timed_out = 'timed out'
 task_canceled = 'canceled'
-task_reset = 'reset'
 task_suspended = 'suspended'
 
 task_states = (
@@ -44,13 +43,11 @@ task_states = (
     task_error,
     task_timed_out,
     task_canceled,
-    task_reset,
     task_suspended,
 )
 
 task_ready_states = (
     task_waiting,
-    task_reset,
 )
 
 task_complete_states = (
@@ -107,11 +104,9 @@ class Task(object):
         """
         Reset this task's recorded data.
         """
-        if self.state not in task_complete_states:
-            return
-        self.state = task_reset
+        assert self.state in task_complete_states
+        self.state = task_waiting
         self.progress = None
-        self._progress_callback = None
         self.start_time = None
         self.finish_time = None
         self.result = None
