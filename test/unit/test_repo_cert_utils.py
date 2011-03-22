@@ -30,9 +30,20 @@ sys.path.insert(0, commondir)
 import pulp.server.repo_cert_utils as utils
 import testutil
 
+# -- constants -----------------------------------------------------------------------
 
 CERT_DIR = '/tmp/test_repo_cert_utils/repos'
 
+# Used to sign the test certificate
+VALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/valid_ca.crt'
+
+# Not used to sign the test certificate  :)
+INVALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/invalid_ca.crt'
+
+# Test certificate
+CERT = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/cert.crt'
+
+# -- test cases ----------------------------------------------------------------------
 
 class TestValidateCertBundle(unittest.TestCase):
 
@@ -179,3 +190,18 @@ class TestCertStorage(unittest.TestCase):
         f.close()
 
         self.assertEqual(read_contents, contents)
+
+
+class TestCertVerify(unittest.TestCase):
+
+    def test_valid(self):
+        '''
+        Tests that verifying a cert with its signing CA returns true.
+        '''
+        self.assertTrue(utils.validate_certificate(CERT, VALID_CA))
+
+    def test_invalid(self):
+        '''
+        Tests that verifying a cert with an incorrect CA returns false.
+        '''
+        self.assertTrue(not utils.validate_certificate(CERT, INVALID_CA))

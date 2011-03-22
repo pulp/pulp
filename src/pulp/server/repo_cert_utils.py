@@ -50,6 +50,8 @@ import logging
 import shutil
 import os
 
+from M2Crypto import X509
+
 from pulp.server.pexceptions import PulpException
 import pulp.server.config as config
 
@@ -115,6 +117,24 @@ def write_consumer_cert_bundle(repo_id, bundle):
     '''
     return _write_cert_bundle('consumer', repo_id, bundle)
 
+def validate_certificate(cert_filename, ca_filename):
+    '''
+    Validates a certificate against a CA certificate.
+
+    @param cert_filename: full path to the PEM encoded certificate to validate
+    @type  cert_filename: str
+
+    @param ca_filename: full path to the PEM encoded CA certificate
+    @type  ca_filename: str
+
+    @return: true if the certificate was signed by the given CA; false otherwise
+    @rtype:  boolean
+    '''
+
+    ca = X509.load_cert(ca_filename)
+    cert = X509.load_cert(cert_filename)
+    return cert.verify(ca.get_pubkey())
+    
 def _write_cert_bundle(file_prefix, repo_id, bundle):
     '''
     Writes the files represented by the cert bundle to a directory on the
