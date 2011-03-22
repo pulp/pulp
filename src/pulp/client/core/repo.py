@@ -545,8 +545,10 @@ class Clone(RepoProgressAction):
         clone_id = self.get_required_option('clone_id')
         clone_name = self.opts.clone_name or clone_id
         feed = self.opts.feed or 'parent'
-        key, value = self.opts.groupid.split(':')
-        groupid = {key : [value]}
+        groupid = {}
+        if self.opts.groupid:
+            key, value = self.opts.groupid.split(':')
+            groupid = {key : [value]}
         timeout = self.opts.timeout
         filters = self.opts.filters or []
         task = self.repository_api.clone(id, clone_id=clone_id, clone_name=clone_name, feed=feed,
