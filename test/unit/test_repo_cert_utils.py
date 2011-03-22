@@ -27,7 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-import pulp.server.repo_cert_utils as utils
+import pulp.repo_auth.repo_cert_utils as utils
 import testutil
 
 # -- constants -----------------------------------------------------------------------

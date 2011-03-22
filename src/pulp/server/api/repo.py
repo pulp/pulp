@@ -36,7 +36,7 @@ from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
-import pulp.server.repo_cert_utils as repo_cert_utils
+import pulp.repo_auth.repo_cert_utils as repo_cert_utils
 from pulp.server import updateinfo
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection

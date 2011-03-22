@@ -37,7 +37,7 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util
 
-from pulp.server import repo_cert_utils
+from pulp.repo_auth import repo_cert_utils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi, PackageHasReferences
