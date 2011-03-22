@@ -18,8 +18,8 @@ from logging import getLogger
 from gofer.messaging import Queue
 from gofer.messaging.async import ReplyConsumer, Listener
 
+from pulp.server import config
 from pulp.server.agent import Agent
-from pulp.server.config import config
 from pulp.server.tasking.queue.fifo import FIFOTaskQueue
 from pulp.server.tasking.task import Task, AsyncTask
 
@@ -211,7 +211,7 @@ class RemoteMethod:
         @return: Whatever is returned by the async RMI.
         @rtype: object
         """
-        url = config.get('messaging', 'url')
+        url = config.config.get('messaging', 'url')
         agent = Agent(
             self.id,
             url=url,
@@ -230,7 +230,7 @@ class ReplyHandler(Listener):
     """
     def __init__(self):
         ctag = RemoteMethod.CTAG
-        url = config.get('messaging', 'url')
+        url = config.config.get('messaging', 'url')
         queue = Queue(ctag)
         self.consumer = ReplyConsumer(queue, url=url)
 
