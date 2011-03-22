@@ -193,7 +193,7 @@ class Task(object):
         self.result = result
         self.state = task_finished
         self.finish_time = datetime.datetime.now()
-        self.__complete()
+        self._complete()
 
     def failed(self, exception, tb=None):
         """
@@ -207,7 +207,7 @@ class Task(object):
         self.finish_time = datetime.datetime.now()
         self.exception = repr(exception)
         self._exception_delivered()
-        self.__complete()
+        self._complete()
         if tb:
             self.traceback = tb
         else:
@@ -219,7 +219,7 @@ class Task(object):
              self.method_name,
              ''.join(self.traceback)))
 
-    def __complete(self):
+    def _complete(self):
         """
         Safely call the complete callback
         """
@@ -237,7 +237,7 @@ class Task(object):
             self.thread.cancel()
         self.state = task_canceled
         self.finish_time = datetime.datetime.now()
-        self.__complete()
+        self._complete()
 
 
 class AsyncTask(Task):
