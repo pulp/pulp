@@ -167,16 +167,14 @@ def _raise_exception_in_thread(tid, exc_type):
     """
     assert inspect.isclass(exc_type)
     # NOTE this returns the number of threads that it modified, which should
-    # only be 1 or 0 (if the thread id wasn't found)
+    # only be 1 or 0 (if the thread has already exited)
     long_tid = ctypes.c_long(tid)
     exc_ptr = ctypes.py_object(exc_type)
     num = ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, exc_ptr)
-    if num == 1:
+    # if num == 0, it's not an error condition as the net effect is the same,
+    # the thread has ended
+    if num in (0, 1):
         return
-
-    # We used to have a check in here to throw an error if num == 0. This doesn't represent
-    # an error condition; the net effect is still that the thread is ended.
-
     # NOTE if it returns a number greater than one, we're in trouble, and
     # should call it again with exc=NULL to revert the effect
     null_ptr = ctypes.py_object()
