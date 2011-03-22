@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
+
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+
 import logging
 
 from pulp.server.db.model.resource import Repo
@@ -24,17 +25,6 @@ _log = logging.getLogger('pulp')
 
 version = 6
 
-def _migrate_repo_model():
-    collection = Repo.get_collection()
-    for repo in collection.find():
-        modified = False
-        if isinstance(repo['groupid'], list):
-            repo['groupid'] = {}
-            modified = True
-        if modified:
-            collection.save(repo, safe=True)
-
+# NOTE: This db change has been reverted until its deemed necessary. bug#681344
 def migrate():
-    _log.info('migration to data model version 6 started')
-    _migrate_repo_model()
-    _log.info('migration to data model version 6 complete')
+    pass

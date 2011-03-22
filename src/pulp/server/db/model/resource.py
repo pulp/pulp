@@ -261,7 +261,7 @@ class Repo(Model):
         self.consumer_cert = None
         self.consumer_key = None
         self.errata = {}
-        self.groupid = {}
+        self.groupid = []
         self.relative_path = None
         self.files = []
         self.publish = False

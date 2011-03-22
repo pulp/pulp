@@ -131,7 +131,8 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               feed_cert_data=None, consumer_cert_data=None, groupid={}, relative_path=None, gpgkeys=(), checksum_type="sha256"):
+               feed_cert_data=None, consumer_cert_data=None, groupid=(), 
+               relative_path=None, gpgkeys=(), checksum_type="sha256"):
         """
         Create a new Repository object and return it
         """
@@ -171,12 +172,8 @@ class RepoApi(BaseApi):
             r['consumer_key'] = consumer_cert_files['key']
             
         if groupid:
-            for key, value in groupid.items():
-                if key not in r['groupid'].keys():
-                    r['groupid'][key] = value
-                else:
-                    r['groupid'][key].append(value)
-#            self.add_group(r['id'], groupid)
+            for gid in groupid:
+                r['groupid'].append(gid)
 
         if relative_path is None or relative_path == "":
             if r['source'] is not None :
@@ -341,7 +338,7 @@ class RepoApi(BaseApi):
         self.addkeys(clone_id, keylist)
 
     @audit()
-    def clone(self, id, clone_id, clone_name, feed='parent', groupid={}, relative_path=None,
+    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None,
               progress_callback=None, timeout=None, filters=[]):
         """
         Run a repo clone asynchronously.
@@ -1112,52 +1109,6 @@ class RepoApi(BaseApi):
                     ret_val.append(r["id"])
                     break
         return ret_val
-    
-    def add_group(self, id, group={}):
-        """
-        Add groups to a repository
-        @param id: repository id
-        @param group: group data to add eg: {'env' : ['qa'], 'product' : ['a', 'b']}
-        """
-        if not isinstance(group, dict):
-            log.error("group info should be a dictionary")
-            raise PulpException("group info should be a dictionary")
-        repo = self._get_existing_repo(id)
-        if not repo:
-            raise PulpException("Unable to find repository [%s]" % (id))
-        for key, value in group.items():
-            if not isinstance(value, list):
-                value = [value]
-            if key not in repo['groupid'].keys():
-                repo['groupid'][key] = value
-            else:
-                repo['groupid'][key] = list(set(repo['groupid'][key] + value)) #list(set.union(set(repo['groupid'][key]), set(value)))
-            log.info("group [%s] added to the repository [%s]" % ({key:value}, id))
-        self.collection.save(repo, safe=True)
-        
-    def remove_group(self, id, group={}):
-        """
-        Remove groups from a repository
-        @param id: repository id
-        @param group: group data to add eg: {'env' : 'qa', 'product' : 'a'}
-        """
-        if not isinstance(group, dict):
-            log.error("group info should be a dictionary")
-            raise PulpException("group info should be a dictionary")
-        repo = self._get_existing_repo(id)
-        if not repo:
-            raise PulpException("Unable to find repository [%s]" % (id))
-        for key, value in group.items():
-            check_val = True in [v in value for v in repo['groupid'][key]]
-            if key in repo['groupid'].keys() and check_val:
-                if len(repo['groupid'][key]) == 1:
-                    del repo['groupid'][key]
-                else:
-                    del repo['groupid'][key][repo['groupid'][key].index(value)]
-            else:
-                continue
-            log.info("group [%s] removed from the repository [%s]" % ({key:value}, id))
-        self.collection.save(repo, safe=True)
 
     @audit(params=['repoid', 'group_id', 'group_name'])
     def create_packagegroup(self, repoid, group_id, group_name, description):
@@ -1863,6 +1814,34 @@ class RepoApi(BaseApi):
         repo["filters"] = filters
         self.collection.save(repo, safe=True)
         log.info('repository (%s), removed filters: %s', id, filter_ids)
+
+
+    @audit(params=['id', 'addgrp'])
+    def add_group(self, id, addgrp):
+        repo = self._get_existing_repo(id)
+        groupids = repo['groupid']
+        if addgrp not in groupids:
+            groupids.append(addgrp)
+
+        repo["groupid"] = groupids
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), added group: %s', id, addgrp)
+
+
+
+    @audit(params=['id', 'rmgrp'])
+    def remove_group(self, id, rmgrp):
+        repo = self._get_existing_repo(id)
+        groupids = repo['groupid']
+        if rmgrp in groupids:
+            groupids.remove(rmgrp)
+        
+        repo["groupid"] = groupids
+        self.collection.save(repo, safe=True)
+        log.info('repository (%s), removed group: %s', id, rmgrp)
+
+
+
 
     def list_filters(self, id):
         repo = self._get_existing_repo(id)
