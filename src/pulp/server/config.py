@@ -75,6 +75,9 @@ _default_values = {
         'debugging_mode': 'true', # XXX should change to false,
                                   # after we find the cause of bz #677735
     },
+    'tasking': {
+        'max_concurrent': '4',
+    },
     'yum': {
         'threads': '5',
     },

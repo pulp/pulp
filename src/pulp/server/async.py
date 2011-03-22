@@ -81,7 +81,8 @@ def initialize():
     Explicitly start-up the asynchronous sub-system
     """
     global _queue
-    _queue = FIFOTaskQueue()
+    max_concurrent = config.config.getint('tasking', 'max_concurrent')
+    _queue = FIFOTaskQueue(max_concurrent)
 
 
 def finalize():
