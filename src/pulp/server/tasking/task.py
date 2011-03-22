@@ -226,7 +226,7 @@ class Task(object):
         except Exception, e:
             _log.exception(e)
 
-    def stop(self):
+    def cancel(self):
         if self.thread:
             self.thread.cancel()
         self.state = task_canceled
@@ -257,7 +257,7 @@ class AsyncTask(Task):
 class RepoSyncTask(Task):
     """
     Repository Synchronization Task
-    This task is responsible for implementing stop logic for a 
+    This task is responsible for implementing cancel logic for a 
     repository synchronization 
     """
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
@@ -268,12 +268,12 @@ class RepoSyncTask(Task):
         self.synchronizer = sync_obj
         self.kwargs['synchronizer'] = self.synchronizer
 
-    def stop(self):
-        _log.info("RepoSyncTask stop invoked")
+    def cancel(self):
+        _log.info("RepoSyncTask cancel invoked")
         if self.synchronizer:
-            self.synchronizer.stop()
+            self.synchronizer.cancel()
             # All synchronization work should be stopped
             # when this returns.  Will pass through to 
-            # default stop behavior as a backup in case
-            # something didn't stop
-        super(RepoSyncTask, self).stop()
+            # default cancel behavior as a backup in case
+            # something didn't cancel
+        super(RepoSyncTask, self).cancel()

@@ -125,7 +125,7 @@ class FIFOTaskQueue(TaskQueue):
             # leave it on the queue so we attempt to cancel it again the next time the
             # dispatcher runs a cancel.
             try:
-                task.stop()
+                task.cancel()
                 self.__canceled_tasks.remove(task)
             except ThreadStateError:
                 task.cancel_attempts += 1
