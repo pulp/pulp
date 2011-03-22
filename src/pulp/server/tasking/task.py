@@ -101,13 +101,22 @@ class Task(object):
         self.traceback = None
         self.scheduled_time = 0
 
-    def _exception_delivered(self):
+    def reset(self):
         """
-        Let the contextual thread know that an exception has been received.
+        Reset this task's recorded data.
         """
-        if not hasattr(self.thread, 'exception_delivered'):
+        if self.state not in task_complete_states:
             return
-        self.thread.exception_delivered()
+        self.state = task_reset
+        self.progress = None
+        self._progress_callback = None
+        self.start_time = None
+        self.finish_time = None
+        self.result = None
+        self.exception = None
+        self.traceback = None
+
+    # -------------------------------------------------------------------------
 
     def set_progress(self, arg, callback):
         """
@@ -119,6 +128,28 @@ class Task(object):
         """
         self.kwargs[arg] = self.progress_callback
         self._progress_callback = callback
+
+    def progress_callback(self, *args, **kwargs):
+        """
+        Provide a callback for runtime progress reporting.
+        """
+        try:
+            # NOTE, the self._progress_callback method should return a dict
+            self.progress = self._progress_callback(*args, **kwargs)
+        except Exception, e:
+            _log.error('Exception, %s, in task %s progress callback: %s' %
+                       (repr(e), self.id, self._progress_callback.__name__))
+            raise
+
+    # -------------------------------------------------------------------------
+
+    def _exception_delivered(self):
+        """
+        Let the contextual thread know that an exception has been received.
+        """
+        if not hasattr(self.thread, 'exception_delivered'):
+            return
+        self.thread.exception_delivered()
 
     def run(self):
         """
@@ -143,32 +174,14 @@ class Task(object):
         except Exception, e:
             self.failed(e)
 
-    def progress_callback(self, *args, **kwargs):
+    def invoked(self, result):
         """
-        Provide a callback for runtime progress reporting.
+        Post I{method} invoked behavior.
+        For synchronous I{methods}, we simply call I{succeeded()}
+        @param result: The object returned by the I{method}.
+        @type result: object.
         """
-        try:
-            # NOTE, the self._progress_callback method should return a dict
-            self.progress = self._progress_callback(*args, **kwargs)
-        except Exception, e:
-            _log.error('Exception, %s, in task %s progress callback: %s' %
-                       (repr(e), self.id, self._progress_callback.__name__))
-            raise
-
-    def reset(self):
-        """
-        Reset this task's recorded data.
-        """
-        if self.state not in task_complete_states:
-            return
-        self.state = task_reset
-        self.progress = None
-        self._progress_callback = None
-        self.start_time = None
-        self.finish_time = None
-        self.result = None
-        self.exception = None
-        self.traceback = None
+        self.succeeded(result)
 
     def succeeded(self, result):
         """
@@ -206,15 +219,6 @@ class Task(object):
              self.method_name,
              ''.join(self.traceback)))
 
-    def invoked(self, result):
-        """
-        Post I{method} invoked behavior.
-        For synchronous I{methods}, we simply call I{succeeded()}
-        @param result: The object returned by the I{method}.
-        @type result: object.
-        """
-        self.succeeded(result)
-
     def __complete(self):
         """
         Safely call the complete callback
@@ -225,6 +229,8 @@ class Task(object):
             self.complete_callback(self)
         except Exception, e:
             _log.exception(e)
+
+    # -------------------------------------------------------------------------
 
     def cancel(self):
         if self.thread:
