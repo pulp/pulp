@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,16 +13,18 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server.agent import Agent
-from pulp.server.tasking.queue.fifo import FIFOTaskQueue
-from pulp.server.tasking.task import Task, AsyncTask
-from pulp.server.config import config
-from gofer.messaging import Queue
-from gofer.messaging.async import ReplyConsumer, Listener
 from logging import getLogger
 
-log = getLogger(__name__)
+from gofer.messaging import Queue
+from gofer.messaging.async import ReplyConsumer, Listener
 
+from pulp.server.agent import Agent
+from pulp.server.config import config
+from pulp.server.tasking.queue.fifo import FIFOTaskQueue
+from pulp.server.tasking.task import Task, AsyncTask
+
+
+log = getLogger(__name__)
 
 # async execution queue -------------------------------------------------------
 
@@ -99,7 +101,6 @@ class AsyncAgent:
     @ivar __id: The agent (consumer) id.  Or, list of IDs.
     @type __id: (str|[str,..])
     """
-
     def __init__(self, id):
         """
         @param id: The agent ID.  Or, list of IDs.
@@ -130,7 +131,6 @@ class RemoteClass:
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
     """
-
     def __init__(self, id, name):
         """
         @param id: The agent (consumer) id.
@@ -228,7 +228,6 @@ class ReplyHandler(Listener):
     @ivar consumer: The reply consumer.
     @type consumer: L{ReplyConsumer}
     """
-
     def __init__(self):
         ctag = RemoteMethod.CTAG
         url = config.get('messaging', 'url')
@@ -266,12 +265,10 @@ class ReplyHandler(Listener):
         pass
 
 
-
 class AgentTask(AsyncTask):
     """
     Task represents an async task involving an RMI to the agent.
     """
-
     def succeeded(self, sn, result):
         """
         The RMI succeeded.
@@ -301,3 +298,4 @@ class AgentTask(AsyncTask):
         """
         if _queue.enqueue(self, unique):
             return self
+
