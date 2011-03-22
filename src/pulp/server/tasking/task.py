@@ -79,9 +79,9 @@ class Task(object):
         self.callable = callable
         self.args = args
         self.kwargs = kwargs
-        self._progress_callback = None
         self.timeout = timeout
         self.cancel_attempts = 0
+        self._progress_callback = None
 
         # resources managed by the task queue to deliver events
         self.complete_callback = None
