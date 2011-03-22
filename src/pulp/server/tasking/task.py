@@ -210,16 +210,10 @@ class Task(object):
         self.exception = repr(exception)
         #self._exception_delivered()
         self._complete()
-        if tb:
-            self.traceback = tb
-        else:
-            self.traceback = \
-                traceback.format_exception(*sys.exc_info())
-        _log.error(
-            'Task id:%s, method_name:%s:\n%s' %
-            (self.id,
-             self.method_name,
-             ''.join(self.traceback)))
+        self.traceback = tb or traceback.format_exception(*sys.exc_info())
+        _log.error('Task id:%s, method_name:%s:\n%s' % (self.id,
+                                                        self.method_name,
+                                                        ''.join(self.traceback)))
 
     def _complete(self):
         """
