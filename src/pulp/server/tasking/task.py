@@ -93,13 +93,15 @@ class Task(object):
         # resources for a task run
         self.method_name = callable.__name__
         self.state = task_waiting
-        self.progress = None
+        # task run times
+        self.scheduled_time = 0
         self.start_time = None
         self.finish_time = None
+        # task progress, result, and error reporting
+        self.progress = None
         self.result = None
         self.exception = None
         self.traceback = None
-        self.scheduled_time = 0
 
     def reset(self):
         """
@@ -242,6 +244,7 @@ class Task(object):
         self.finish_time = datetime.datetime.now()
         self._complete()
 
+# asynchronous task -----------------------------------------------------------
 
 class AsyncTask(Task):
     """
@@ -252,7 +255,6 @@ class AsyncTask(Task):
     transition to a finished state.  Rather, the Task state is advanced
     by external processing.
     """
-
     def invoked(self, result):
         """
         The I{method} has been successfully invoked.
@@ -260,6 +262,7 @@ class AsyncTask(Task):
         by external processing.
         """
         pass
+
 
 # Note: We want the "invoked" from Task, so we are not inheriting from
 # AsyncTask
