@@ -219,6 +219,7 @@ class Task(object):
         """
         Safely call the complete callback
         """
+        assert self.state in task_complete_states
         if self.complete_callback is None:
             return
         try:
