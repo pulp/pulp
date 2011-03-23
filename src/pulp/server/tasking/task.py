@@ -21,6 +21,7 @@ import traceback
 import uuid
 
 from pulp.server.tasking.queue.thread import TimeoutException, CancelException
+from pulp.server.tasking.scheduler import ImmediateScheduler
 
 
 _log = logging.getLogger(__name__)
@@ -49,6 +50,11 @@ task_ready_states = (
     task_waiting,
 )
 
+task_incomplete_states = (
+    task_waiting,
+    task_running,
+)
+
 task_complete_states = (
     task_finished,
     task_error,
@@ -63,12 +69,20 @@ class Task(object):
     Task class
     Meta data for executing a long-running task.
     """
-    def __init__(self, callable, args=[], kwargs={}, timeout=None):
+    def __init__(self,
+                 callable,
+                 args=[],
+                 kwargs={},
+                 scheduler=None,
+                 timeout=None):
         """
         Create a Task for the passed in callable and arguments.
         @param callable: function, method, lambda, or object with __call__
         @param args: positional arguments to be passed into the callable
         @param kwargs: keyword arguments to be passed into the callable
+        @type scheduler: None or L{scheduler.Scheduler} instance
+        @param scheduler: scheduler to use when scheduling the task
+                          defaults to ImmediateSchedule if None is passed in
         @type timeout: datetime.timedelta instance or None
         @param timeout: maximum length of time to allow task to run,
                         None means indefinitely
@@ -78,6 +92,7 @@ class Task(object):
         self.callable = callable
         self.args = args
         self.kwargs = kwargs
+        self.scheduler = scheduler or ImmediateScheduler()
         self.timeout = timeout
         self.cancel_attempts = 0
         self._progress_callback = None
@@ -89,8 +104,7 @@ class Task(object):
         # resources for a task run
         self.method_name = callable.__name__
         self.state = task_waiting
-        # task run times
-        self.scheduled_time = 0
+        self.scheduled_time = None
         self.start_time = None
         self.finish_time = None
         # task progress, result, and error reporting
@@ -101,7 +115,7 @@ class Task(object):
 
     def reset(self):
         """
-        Reset this task's recorded data.
+        Reset this task to run again.
         """
         assert self.state in task_complete_states
         self.state = task_waiting
@@ -111,6 +125,15 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
+
+    def schedule(self):
+        """
+        Schedule the task's next run time.
+        @rtype: bool
+        @return: True if the task is scheduled to run again, False if it's not
+        """
+        self.scheduled_time = self.scheduler.schedule(self.scheduled_time)
+        return self.scheduled_time is not None
 
     # -------------------------------------------------------------------------
 
