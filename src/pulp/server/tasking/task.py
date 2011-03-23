@@ -125,6 +125,15 @@ class Task(object):
         self.exception = None
         self.traceback = None
 
+    def __cmp__(self, other):
+        """
+        Use the task's scheduled time to order them.
+        """
+        if not isinstance(other, Task):
+            raise ValueError('No comparison defined between task and %s' %
+                             type(other))
+        return cmp(self.scheduled_time, other.scheduled_time)
+
     def reset(self):
         """
         Reset this task to run again.
