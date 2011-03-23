@@ -532,7 +532,7 @@ class RepositoryActions(AsyncController):
                           409 Conflict if a sync is already in progress for the repository
         return: a Task object
         parameters:
-         * timeout?, str, timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks
+         * timeout?, str, timeout in <units>:<value> format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks
          * skip?, object, yum skip dict
         """
         repo = api.repository(id, fields=['source'])
@@ -540,6 +540,7 @@ class RepositoryActions(AsyncController):
             return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
         repo_params = self.params()
         timeout = self.timeout(repo_params)
+        _log.info("sync timeout passed : %s" % timeout)
         skip = repo_params.get('skip', {})
         task = api.sync(id, timeout, skip)
         if not task:

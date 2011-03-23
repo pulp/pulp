@@ -642,7 +642,8 @@ class Sync(RepoProgressAction):
     def setup_parser(self):
         super(Sync, self).setup_parser()
         self.parser.add_option("--timeout", dest="timeout",
-                               help=_("synchronization timeout"))
+                               help=_("sync timeout in <units>:<value> format (e.g. hours:2 " +
+                                      "valid units: seconds, minutes, hours, days, weeks"))
         self.parser.add_option("--no-packages", action="store_true", dest="nopackages",
                                help=_("skip packages from the sync process"))
         self.parser.add_option("--no-errata", action="store_true", dest="noerrata",
