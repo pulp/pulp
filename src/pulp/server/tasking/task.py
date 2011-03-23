@@ -87,8 +87,14 @@ class Task(object):
         @param timeout: maximum length of time to allow task to run,
                         None means indefinitely
         """
-        # task resources
+        # identification
         self.id = str(uuid.uuid1(clock_seq=int(time.time() * 1000)))
+        self.class_name = None
+        if hasattr(callable, 'im_class'):
+            self.class_name = callable.im_class.__name__
+        self.method_name = callable.__name__
+
+        # task resources
         self.callable = callable
         self.args = args
         self.kwargs = kwargs
@@ -102,11 +108,11 @@ class Task(object):
         self.thread = None
 
         # resources for a task run
-        self.method_name = callable.__name__
         self.state = task_waiting
         self.scheduled_time = None
         self.start_time = None
         self.finish_time = None
+
         # task progress, result, and error reporting
         self.progress = None
         self.result = None
