@@ -20,7 +20,7 @@ from gofer.messaging.async import ReplyConsumer, Listener
 
 from pulp.server import config
 from pulp.server.agent import Agent
-from pulp.server.tasking.queue.fifo import FIFOTaskQueue
+from pulp.server.tasking.queue import TaskQueue
 from pulp.server.tasking.task import Task, AsyncTask
 
 
@@ -82,7 +82,7 @@ def initialize():
     """
     global _queue
     max_concurrent = config.config.getint('tasking', 'max_concurrent')
-    _queue = FIFOTaskQueue(max_concurrent)
+    _queue = TaskQueue(max_concurrent)
 
 
 def finalize():
