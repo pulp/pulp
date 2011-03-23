@@ -67,7 +67,10 @@ task_complete_states = (
 class Task(object):
     """
     Task class
-    Meta data for executing a long-running task.
+    Callable wrapper that schedules the call to take place at some later time
+    than the immediate future. Provides framework for progress, result, and 
+    error reporting as well as time limits on the call runtime in the form of a
+    timeout and the ability to cancel the call.
     """
     def __init__(self,
                  callable,
@@ -77,8 +80,11 @@ class Task(object):
                  timeout=None):
         """
         Create a Task for the passed in callable and arguments.
+        @type callable: python callable
         @param callable: function, method, lambda, or object with __call__
+        @type args: list
         @param args: positional arguments to be passed into the callable
+        @type kwargs: dict
         @param kwargs: keyword arguments to be passed into the callable
         @type scheduler: None or L{scheduler.Scheduler} instance
         @param scheduler: scheduler to use when scheduling the task
@@ -157,6 +163,8 @@ class Task(object):
     def progress_callback(self, *args, **kwargs):
         """
         Provide a callback for runtime progress reporting.
+        This is a pass-through to the function set by the set_progress method
+        that records the results.
         """
         try:
             # NOTE, the self._progress_callback method should return a dict
