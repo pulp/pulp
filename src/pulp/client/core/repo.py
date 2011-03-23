@@ -347,21 +347,19 @@ class Content(RepoAction):
     def setup_parser(self):
         super(Content, self).setup_parser()
         opt_group = self.parser.add_option_group("Updates Only")
-        opt_group.add_option("--updates", action="store_true", dest="updates",
-                               help=_("only list available updates"))
         opt_group.add_option("--consumerid", dest="consumerid",
-                               help=_("consumer id to list available updates."))
+                               help=_("optional consumer id to list only available updates;"))
     def run(self):
         id = self.get_required_option('id')
-        if self.opts.updates and not self.opts.consumerid:
-            system_exit(os.EX_USAGE, _('Consumer Id is required with --updates option.'))
         repo = self.get_repo(id)
         all_packages = self.repository_api.packages(id)
         all_pnames = [pkg['filename'] for pkg in all_packages]
         all_errata = self.repository_api.errata(repo['id'])
-        if self.opts.updates:
-            consumerid = self.opts.consumerid
-            errata_pkg_updates = self.consumer_api.errata_package_updates(consumerid)
+        if self.opts.consumerid is not None:
+            if not len(self.opts.consumerid):
+                self.parser.error(_("error: --consumerid requires an argument"))
+            consumer = self.consumer_api.consumer(self.opts.consumerid)
+            errata_pkg_updates = self.consumer_api.errata_package_updates(consumer['id'])
             pkg_updates = errata_pkg_updates['packages']
             pkgs = []
             for p in pkg_updates:
