@@ -21,7 +21,6 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
-from pulp.server.tasking.queue.base import TaskQueue
 from pulp.server.tasking.queue.thread import  DRLock, TaskThread, ThreadStateError
 from pulp.server.tasking.queue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states
@@ -32,7 +31,7 @@ _log = logging.getLogger('pulp')
 
 # fifo task queue -------------------------------------------------------------
 
-class FIFOTaskQueue(TaskQueue):
+class FIFOTaskQueue(object):
     """
     Task queue with threaded dispatcher that fires off tasks in the order in
     which they were enqueued and stores the finished tasks for a specified
@@ -166,6 +165,17 @@ class FIFOTaskQueue(TaskQueue):
     # public methods: queue operations
 
     def enqueue(self, task, unique=False):
+        """
+        Add a task to the task queue
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        @type unique: bool
+        @param unique: If True, the task will only be added if there are no
+                       non-finished tasks with the same method_name, args,
+                       and kwargs; otherwise the task will always be added
+        @return: True if a new task was created; False if it was rejected (due to
+                 the unique flag
+        """
         self.__lock.acquire()
         try:
             fields = ('method_name', 'args', 'kwargs')
@@ -179,6 +189,11 @@ class FIFOTaskQueue(TaskQueue):
             self.__lock.release()
 
     def run(self, task):
+        """
+        Run a task from this task queue
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
         self.__lock.acquire()
         try:
             self.__running_count += 1
@@ -189,6 +204,11 @@ class FIFOTaskQueue(TaskQueue):
             self.__lock.release()
 
     def complete(self, task):
+        """
+        Mark a task run as completed
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
         self.__lock.acquire()
         try:
             self.__running_count -= 1
@@ -199,6 +219,11 @@ class FIFOTaskQueue(TaskQueue):
             self.__lock.release()
 
     def cancel(self, task):
+        """
+        Cancel a running task.
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
         self.__lock.acquire()
         try:
             self.__canceled_tasks.append(task)
@@ -206,8 +231,56 @@ class FIFOTaskQueue(TaskQueue):
             self.__lock.release()
 
     def find(self, **kwargs):
+        """
+        Find tasks in this task queue.
+        @type kwargs: dict
+        @param kwargs: task attributes and values as search criteria
+        @type include_finished: bool
+        @return: list of L{Task} instances, empty if no tasks match
+        """
         self.__lock.acquire()
         try:
             return self.__storage.find_tasks(kwargs)
         finally:
             self.__lock.release()
+
+    def exists(self, task, criteria, include_finished=True):
+        """
+        Returns whether or not the given task exists in this queue. The list
+        of which attributes that will be checked on the task for equality is
+        determined by the entries in the criteria list.
+
+        @type  task: Task instance
+        @param task: Values in this task will be used to test for this task's
+                     existence in the queue
+
+        @type  criteria: List; cannot be None
+        @param criteria: List of attribute names in the Task class; a task is
+                         considered equal to the given task if the values for
+                         all attributes listed in here are equal in an existing
+                         task in the queue
+
+        @type  include_finished: bool
+        @param include_finished: If True, finished tasks will be included in the search;
+                                 otherwise only running and waiting tasks are searched
+                                 (defaults to True)
+        """
+
+        # Convert the list of attributes to check into a criteria dict used
+        # by the storage API, using the task to test as the values
+        find_criteria = {}
+        for attr_name in criteria:
+            if not hasattr(task, attr_name):
+                raise ValueError('Task has no attribute named [%s]' % attr_name)
+            find_criteria[attr_name] = getattr(task, attr_name)
+
+        # Use the find functionality to determine if a task matches
+        tasks = self.find(**find_criteria)
+        if not tasks:
+            return False
+        if include_finished:
+            return True
+        for t in tasks:
+            if t.state not in task_complete_states:
+                return True
+        return False
