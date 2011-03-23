@@ -539,8 +539,15 @@ class RepositoryActions(AsyncController):
         if repo['source'] is None:
             return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
         repo_params = self.params()
-        timeout = self.timeout(repo_params)
+        timeout = repo_params.get('timeout', None)
         _log.info("sync timeout passed : %s" % timeout)
+        
+        # Check for valid timeout values
+        if timeout:
+            timeout = self.timeout(repo_params)
+            if not timeout: 
+                raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
+      
         skip = repo_params.get('skip', {})
         task = api.sync(id, timeout, skip)
         if not task:
