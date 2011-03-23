@@ -114,6 +114,8 @@ default_fields = [
     'checksum_type',
     'filters',
     'package_count',
+    'feed_cert',
+    'consumer_cert',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -176,6 +178,8 @@ class Repositories(JSONController):
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
          * sync_schedule?, str, crontab entry format
+         * feed_cert_data?, str, certificate information to use when connecting to the feed
+         * consumer_cert_data?, str, certificate information to use when validating consumers of this repo
          * cert_data?, str, repository certificate information
          * relative_path?, str, repository on disk path
          * groupid?, list of str, list of repository group ids this repository belongs to
@@ -194,7 +198,8 @@ class Repositories(JSONController):
                           feed=repo_data.get('feed', None),
                           symlinks=repo_data.get('use_symlinks', False),
                           sync_schedule=repo_data.get('sync_schedule', None),
-                          cert_data=repo_data.get('cert_data', None),
+                          feed_cert_data=repo_data.get('feed_cert_data', None),
+                          consumer_cert_data=repo_data.get('consumer_cert_data', None),
                           relative_path=repo_data.get('relative_path', None),
                           groupid=repo_data.get('groupid', None),
                           gpgkeys=repo_data.get('gpgkeys', None),
@@ -527,14 +532,22 @@ class RepositoryActions(AsyncController):
                           409 Conflict if a sync is already in progress for the repository
         return: a Task object
         parameters:
-         * timeout?, str, timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks
+         * timeout?, str, timeout in <units>:<value> format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks
          * skip?, object, yum skip dict
         """
         repo = api.repository(id, fields=['source'])
         if repo['source'] is None:
             return self.not_acceptable('Repo [%s] is not setup for sync. Please add packages using upload.' % id)
         repo_params = self.params()
-        timeout = self.timeout(repo_params)
+        timeout = repo_params.get('timeout', None)
+        _log.info("sync timeout passed : %s" % timeout)
+        
+        # Check for valid timeout values
+        if timeout:
+            timeout = self.timeout(repo_params)
+            if not timeout: 
+                raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
+      
         skip = repo_params.get('skip', {})
         task = api.sync(id, timeout, skip)
         if not task:

@@ -1,0 +1,118 @@
+#!/usr/bin/python
+#
+# Copyright (c) 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+
+from pulp.repo_auth import oid_validation, identity_validation
+
+try:
+    from mod_python import apache
+except:
+    # The import for apache fails when run outside of apache itself, such as in unit tests.
+    # As annoying as this is, we still need to be able to test this class. So if it fails
+    # to load, mock out our usage of it. Since the RPM required modpython to install, there
+    # should be little risk of running into this scenario when actually running the code.
+
+    class apache(object):
+        HTTP_UNAUTHORIZED = 'unauthorized'
+        OK = 'ok'
+        APLOG_INFO = 'info'
+
+        @classmethod
+        def log_error(cls, message, level):
+            pass
+
+# -- constants --------------------------------------------------------------------
+
+REQUIRED_PLUGINS = ()
+OPTIONAL_PLUGINS = (oid_validation.authenticate, identity_validation.authenticate)
+
+# -- modpython --------------------------------------------------------------------
+
+def authenhandler(request):
+    '''
+    Hook into modpython to be invoked when a request is determining authentication.
+    If the authentication is successful, this method populates the user inside of
+    the request and returns an HTTP OK. If validation fails, the HTTP UNAUTHORIZED
+    code is returned.
+
+    @return: HTTP status code reflecting the result of authentication
+    @rtype:  L{modpython.apache.OK} or L{modpython.apache.UNAUTHORIZED}
+    '''
+    code = _handle(request)
+
+    # If the authentication was successful, we need to provide user information for apache,
+    # since this handler will be configured as the authoritative source for user logins.
+    # We don't actually need the user details anywhere else, so we can simply put anything
+    # in the request's user value.
+    if code == apache.OK:
+        request.user = 'pulp_user'
+
+    return code
+
+# -- private -----------------------------------------------------------------------
+
+def _handle(request):
+    '''
+    Performs the logic of authenticating the request against all registered plugins. The
+    logic is as follows:
+
+    - *All* required plugins must indicate that the authentication is valid
+    - If any optional plugins are defined, *at least one* must indicate the authentication
+      is valid
+
+    Both of the above operations will short-circuit once the minimum requirements are met;
+    there is no guarantee that every plugin will run on every request.
+
+    @return: the coresponding HTTP access code (OK or UNAUTHORIZED) based on the results of
+             the plugins and the above logic
+    @rtype:  L{modpython.apache.OK} or L{modpython.apache.UNAUTHORIZED}
+    '''
+
+    # Needed to stuff the SSL variables into the request, do this now so all plugins
+    # have access to this data
+    request.add_common_vars()
+
+    # First apply to the required handlers; if any of these fail we are immediately
+    # unauthorized
+    for f in REQUIRED_PLUGINS:
+        result = f(request, _log)
+
+        if not result:
+            _log('Authorization failed by plugin [%s]' % f.__module__)
+            return apache.HTTP_UNAUTHORIZED
+
+        # If we get this far, the required plugins have passed. Run the optional plugins
+        # and ensure that at least one of them passes.
+    if len(OPTIONAL_PLUGINS) == 0:
+        return apache.OK
+
+    for f in OPTIONAL_PLUGINS:
+        result = f(request, _log)
+
+        if result:
+            return apache.OK
+
+    return apache.HTTP_UNAUTHORIZED
+
+def _log(message):
+    '''
+    Wrapper method around accessing the Apache log through mod_python. This method
+    is passed into plugins when they are invoked and is used to hide the specifics
+    of the Apache logger API in case we ever find a way to use another logging
+    mechanism.
+
+    @param message: text to output to the log
+    @type  message: str
+    '''
+    apache.log_error(message, apache.APLOG_INFO)

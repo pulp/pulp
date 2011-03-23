@@ -37,6 +37,7 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util
 
+from pulp.repo_auth import repo_cert_utils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi, PackageHasReferences
@@ -62,6 +63,8 @@ logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
 qpid.setLevel(logging.ERROR)
 
+CERTS_DIR = '/tmp/test_repo_api/repos'
+
 class TestRepoApi(unittest.TestCase):
 
     def clean(self):
@@ -70,13 +73,20 @@ class TestRepoApi(unittest.TestCase):
         self.capi.clean()
         self.cgapi.clean()
         self.eapi.clean()
+
+        if os.path.exists(CERTS_DIR):
+            shutil.rmtree(CERTS_DIR)
+        
         testutil.common_cleanup()
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
+
         sn = SerialNumber()
         sn.reset()
 
     def setUp(self):
         self.config = testutil.load_test_config()
+        self.config.set('repos', 'cert_location', CERTS_DIR)
+
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         self.rapi = RepoApi()
@@ -100,6 +110,82 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_create_bad_arch(self):
         self.assertRaises(PulpException, self.rapi.create, 'valid-id', 'valid-name', 'bad-arch')
+
+    def test_repo_create_with_feed_certs(self):
+        '''
+        Tests that creating a repo specifying a feed cert bundle correctly writes them
+        to disk.
+        '''
+
+        # Setup
+        repo_id = 'test_feed_cert'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=bundle)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        repo_certs = os.listdir(repo_cert_dir)
+        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
+
+    def test_repo_create_with_consumer_certs(self):
+        '''
+        Tests that creating a repo specifying a consumer cert bundle correctly writes them
+        to disk.
+        '''
+
+        # Setup
+        repo_id = 'test_consumer_cert'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        repo_certs = os.listdir(repo_cert_dir)
+        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('consumer')]))
+
+    def test_repo_create_with_both_certs(self):
+        '''
+        Tests that creating a repo specifying both consumer and feed bundles correctly
+        write them to disk
+        '''
+
+        # Setup
+        repo_id = 'test_both_cert'
+        feed_bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        consumer_bundle = {'ca' : 'WOMBAT', 'cert' : 'WOCKET', 'key' : 'ZOMBIE'}
+
+        # Test
+        self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=feed_bundle,
+                         consumer_cert_data=consumer_bundle)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        repo_certs = os.listdir(repo_cert_dir)
+        self.assertEqual(6, len(repo_certs))
+        self.assertEqual(3, len([fn for fn in repo_certs if fn.startswith('feed')]))
+        self.assertEqual(3, len([fn for fn in repo_certs if fn.startswith('consumer')]))
+
 
     def test_repo_duplicate(self):
         id = 'some-id'

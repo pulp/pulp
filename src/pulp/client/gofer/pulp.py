@@ -72,7 +72,8 @@ class Heartbeat:
         myid = bundle.getid()
         if myid:
             p = self.producer()
-            p.send(topic, ttl=delay, agent=myid, next=delay)
+            body = dict(uuid=myid, next=delay)
+            p.send(topic, ttl=delay, heartbeat=body)
         return self
 
 
