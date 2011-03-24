@@ -29,11 +29,14 @@ sys.path.insert(0, commondir)
 
 from pulp.repo_auth import repo_cert_utils
 from pulp.server.api.auth import AuthApi
+from pulp.server.api.cds import CdsApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
+
+from mocks import MockCdsDispatcher
 import testutil
 
 SerialNumber.PATH = '/tmp/sn.dat'
@@ -53,6 +56,10 @@ class TestAuthApi(unittest.TestCase):
             shutil.rmtree(GLOBAL_CERT_DIR)
 
         self.user_api.clean()
+
+        self.cds_api.clean()
+        self.dispatcher.clear()
+
         testutil.common_cleanup()
 
     def setUp(self):
@@ -62,6 +69,13 @@ class TestAuthApi(unittest.TestCase):
 
         self.auth_api = AuthApi()
         self.user_api = UserApi()
+
+        self.cds_api = CdsApi()
+        self.dispatcher = MockCdsDispatcher()
+
+        self.cds_api.dispatcher = MockCdsDispatcher() # different mock; don't care about tracking setup calls
+        self.auth_api.cds_api.dispatcher = self.dispatcher
+
         self.clean()
         sn = SerialNumber()
         sn.reset()
@@ -97,6 +111,9 @@ class TestAuthApi(unittest.TestCase):
         # Setup
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
 
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+
         # Test
         self.auth_api.enable_global_repo_auth(bundle)
 
@@ -105,6 +122,11 @@ class TestAuthApi(unittest.TestCase):
 
         self.assertTrue(read_bundle is not None)
         self.assertEqual(read_bundle, bundle)
+
+        self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
+        self.assertEqual(self.dispatcher.cert_bundle, bundle)
+        for entry in self.dispatcher.call_log:
+            self.assertTrue(entry.startswith(MockCdsDispatcher.ENABLE_GLOBAL_REPO_AUTH))
 
     def test_disable_global_repo_auth(self):
         '''
@@ -116,9 +138,17 @@ class TestAuthApi(unittest.TestCase):
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
         self.auth_api.enable_global_repo_auth(bundle)
 
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+
         # Test
         self.auth_api.disable_global_repo_auth()
 
         # Verify
         read_bundle = repo_cert_utils.read_global_cert_bundle()
         self.assertTrue(read_bundle is None)
+
+        self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
+        self.assertEqual(self.dispatcher.cert_bundle, None)
+        for entry in self.dispatcher.call_log:
+            self.assertTrue(entry.startswith(MockCdsDispatcher.DISABLE_GLOBAL_REPO_AUTH))

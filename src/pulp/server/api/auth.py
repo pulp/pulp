@@ -14,11 +14,15 @@
 
 from pulp.repo_auth import repo_cert_utils
 from pulp.server.api.base import BaseApi
+from pulp.server.api.cds import CdsApi
 from pulp.server.auditing import audit
 from pulp.server.auth import cert_generator, principal
 
 
 class AuthApi(BaseApi):
+
+    def __init__(self):
+        self.cds_api = CdsApi()
 
     @audit()
     def admin_certificate(self):
@@ -63,6 +67,7 @@ class AuthApi(BaseApi):
         repo_cert_utils.write_global_repo_cert_bundle(cert_bundle)
 
         # Call out to all CDS instances to inform them of the auth change
+        self.cds_api.enable_global_repo_auth(cert_bundle)
 
     def disable_global_repo_auth(self):
         '''
@@ -75,3 +80,4 @@ class AuthApi(BaseApi):
         repo_cert_utils.delete_global_cert_bundle()
 
         # Call out to all CDS instances to inform them of the auth change
+        self.cds_api.disable_global_repo_auth()

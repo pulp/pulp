@@ -164,6 +164,16 @@ class GoferDispatcher(object):
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
+    def enable_global_repo_auth(self, cds, cert_bundle):
+        '''
+        Sends the enable global repo authentication message to a specific CDS.
+        '''
+
+    def disable_global_repo_auth(self, cds):
+        '''
+        Sends the disable global repo authentication message to a specific CDS.
+        '''
+
     def _cds_stub(self, cds):
         '''
         Instantiates a stub to the CDS. Invocations on the CDS may be done through
