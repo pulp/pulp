@@ -82,3 +82,89 @@ class MockRepoProxyFactory(object):
         Removes the cache of proxies used.
         '''
         self.proxies.clear()
+
+class MockCdsDispatcher(object):
+
+    # Strings to add to the call_log so the test can verify that the correct calls
+    # were made into the dispatcher
+    INIT = 'init'
+    RELEASE = 'release'
+    SYNC = 'sync'
+    ENABLE_GLOBAL_REPO_AUTH = 'enable_global_repo_auth'
+    DISABLE_GLOBAL_REPO_AUTH = 'disable_global_repo_auth'
+
+    def __init__(self, error_to_throw=None):
+        '''
+        Creates a new mock dispatcher that should be added to any CDS classes that
+        make dispatcher calls (likely just the CdsApi class). All method calls on
+        this object will be added to a running list called call_log. All entries in
+        that list will follow the format provided by the call_log_message method.
+
+        @param error_to_throw: if this is specified, any calls into this object will
+                               throw the given error, otherwise the method will appear
+                               to execute correctly; defaults to None
+        @type  error_to_throw: L{Exception} or subclass
+        '''
+        self.error_to_throw = error_to_throw
+        self.call_log = []
+
+        # Stores the values that were passed into calls
+        self.cds = None
+        self.repos = None
+
+    def init_cds(self, cds):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.INIT, cds))
+        self.cds = cds
+
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def release_cds(self, cds):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.RELEASE, cds))
+        self.cds = cds
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def sync(self, cds, repos):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.SYNC, cds))
+        self.cds = cds
+        self.repos = repos
+
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def enable_global_repo_auth(self, cds, cert_bundle):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.ENABLE_GLOBAL_REPO_AUTH, cds))
+        self.cert_bundle = cert_bundle
+
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def disable_global_repo_auth(self, cds):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.DISABLE_GLOBAL_REPO_AUTH, cds))
+        self.cert_bundle = None
+
+        if self.error_to_throw is not None:
+            raise self.error_to_throw
+
+    def call_log_message(self, type, cds):
+        '''
+        Generates the message that will be logged to call_log when a method is invoked.
+        This is largely to ease the comparison between what's put in the log against
+        what the test case wants to verify.
+
+        @param type: string identifying the method called; will be a constant in this class
+        @type  type: string
+
+        @param cds: CDS domain object that was passed to the invoked method
+        @type  cds: L{CDS}
+        '''
+        return type + '-' + cds['hostname']
+
+    def clear(self):
+        '''
+        Resets the state of the dispatcher to as if it were never called.
+        '''
+        self.cds = None
+        self.repos = None
+        self.call_log = []
