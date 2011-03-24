@@ -128,7 +128,7 @@ class TestRepoApi(unittest.TestCase):
 
         #   repo_cert_utils will verify the contents are correct, just make sure
         #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._cert_directory(repo_id)
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -152,7 +152,7 @@ class TestRepoApi(unittest.TestCase):
 
         #   repo_cert_utils will verify the contents are correct, just make sure
         #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._cert_directory(repo_id)
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -178,7 +178,7 @@ class TestRepoApi(unittest.TestCase):
 
         #   repo_cert_utils will verify the contents are correct, just make sure
         #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._cert_directory(repo_id)
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
