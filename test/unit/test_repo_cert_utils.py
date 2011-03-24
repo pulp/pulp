@@ -33,6 +33,7 @@ import testutil
 # -- constants -----------------------------------------------------------------------
 
 CERT_DIR = '/tmp/test_repo_cert_utils/repos'
+GLOBAL_CERT_DIR = '/tmp/test_repo_cert_utils/global'
 
 # Used to sign the test certificate
 VALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/valid_ca.crt'
@@ -104,9 +105,13 @@ class TestCertStorage(unittest.TestCase):
         if os.path.exists(CERT_DIR):
             shutil.rmtree(CERT_DIR)
 
+        if os.path.exists(GLOBAL_CERT_DIR):
+            shutil.rmtree(GLOBAL_CERT_DIR)
+
     def setUp(self):
         self.config = testutil.load_test_config()
         self.config.set('repos', 'cert_location', CERT_DIR)
+        self.config.set('repos', 'global_cert_location', GLOBAL_CERT_DIR)
 
         self.clean()
 
@@ -129,12 +134,12 @@ class TestCertStorage(unittest.TestCase):
         self.assertTrue(files is not None)
         self.assertEqual(3, len(files))
 
-        repo_cert_dir = utils._cert_directory(repo_id)
+        repo_cert_dir = utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
-        self._verify_file_contents(repo_id, 'feed-%s.ca' % repo_id, bundle['ca'])
-        self._verify_file_contents(repo_id, 'feed-%s.cert' % repo_id, bundle['cert'])
-        self._verify_file_contents(repo_id, 'feed-%s.key' % repo_id, bundle['key'])
+        self._verify_repo_file_contents(repo_id, 'feed-%s.ca' % repo_id, bundle['ca'])
+        self._verify_repo_file_contents(repo_id, 'feed-%s.cert' % repo_id, bundle['cert'])
+        self._verify_repo_file_contents(repo_id, 'feed-%s.key' % repo_id, bundle['key'])
 
     def test_write_consumer_certs(self):
         '''
@@ -152,12 +157,57 @@ class TestCertStorage(unittest.TestCase):
         self.assertTrue(files is not None)
         self.assertEqual(3, len(files))
 
-        repo_cert_dir = utils._cert_directory(repo_id)
+        repo_cert_dir = utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
-        self._verify_file_contents(repo_id, 'consumer-%s.ca' % repo_id, bundle['ca'])
-        self._verify_file_contents(repo_id, 'consumer-%s.cert' % repo_id, bundle['cert'])
-        self._verify_file_contents(repo_id, 'consumer-%s.key' % repo_id, bundle['key'])
+        self._verify_repo_file_contents(repo_id, 'consumer-%s.ca' % repo_id, bundle['ca'])
+        self._verify_repo_file_contents(repo_id, 'consumer-%s.cert' % repo_id, bundle['cert'])
+        self._verify_repo_file_contents(repo_id, 'consumer-%s.key' % repo_id, bundle['key'])
+
+    def test_write_global_certs(self):
+        '''
+        Tests writing out the global repo cert bundle.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        files = utils.write_global_repo_cert_bundle(bundle)
+
+        # Verify
+        self.assertTrue(files is not None)
+        self.assertEqual(3, len(files))
+
+        global_cert_dir = utils._global_cert_directory()
+        self.assertTrue(os.path.exists(global_cert_dir))
+
+        self._verify_global_file_contents('pulp-global-repo.ca', bundle['ca'])
+        self._verify_global_file_contents('pulp-global-repo.cert', bundle['cert'])
+        self._verify_global_file_contents('pulp-global-repo.key', bundle['key'])
+
+    def test_write_partial_bundle(self):
+        '''
+        Tests that only a subset of the bundle components can be specified and still
+        correctly written out.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO'}
+
+        # Test
+        files = utils.write_global_repo_cert_bundle(bundle)
+
+        # Verify
+        self.assertTrue(files is not None)
+        self.assertEqual(1, len(files))
+
+        global_cert_dir = utils._global_cert_directory()
+        self.assertTrue(os.path.exists(global_cert_dir))
+
+        self._verify_global_file_contents('pulp-global-repo.ca', bundle['ca'])
+        self.assertTrue(not os.path.exists(os.path.join(utils._global_cert_directory(), 'pulp-global-repo.cert')))
+        self.assertTrue(not os.path.exists(os.path.join(utils._global_cert_directory(), 'pulp-global-repo.key')))
 
     def test_delete_bundles(self):
         '''
@@ -171,7 +221,7 @@ class TestCertStorage(unittest.TestCase):
         utils.write_feed_cert_bundle(repo_id, bundle)
         utils.write_consumer_cert_bundle(repo_id, bundle)
 
-        repo_cert_dir = utils._cert_directory(repo_id)
+        repo_cert_dir = utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         cert_files = os.listdir(repo_cert_dir)
@@ -183,14 +233,21 @@ class TestCertStorage(unittest.TestCase):
         # Verify
         self.assertTrue(not os.path.exists(repo_cert_dir))
         
-    def _verify_file_contents(self, repo_id, filename, contents):
-        full_filename = os.path.join(utils._cert_directory(repo_id), filename)
+    def _verify_repo_file_contents(self, repo_id, filename, contents):
+        full_filename = os.path.join(utils._repo_cert_directory(repo_id), filename)
         f = open(full_filename, 'r')
         read_contents = f.read()
         f.close()
 
         self.assertEqual(read_contents, contents)
 
+    def _verify_global_file_contents(self, filename, contents):
+        full_filename = os.path.join(utils._global_cert_directory(), filename)
+        f = open(full_filename, 'r')
+        read_contents = f.read()
+        f.close()
+
+        self.assertEqual(read_contents, contents)
 
 class TestCertVerify(unittest.TestCase):
 
