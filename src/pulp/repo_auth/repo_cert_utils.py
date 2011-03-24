@@ -115,13 +115,8 @@ def write_feed_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-
-    try:
-        WRITE_LOCK.acquire()
-        cert_dir = _repo_cert_directory(repo_id)
-        return _write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle)
-    finally:
-        WRITE_LOCK.release()
+    cert_dir = _repo_cert_directory(repo_id)
+    return _write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle)
 
 def write_consumer_cert_bundle(repo_id, bundle):
     '''
@@ -129,12 +124,8 @@ def write_consumer_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    try:
-        WRITE_LOCK.acquire()
-        cert_dir = _repo_cert_directory(repo_id)
-        return _write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle)
-    finally:
-        WRITE_LOCK.release()
+    cert_dir = _repo_cert_directory(repo_id)
+    return _write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle)
 
 def write_global_repo_cert_bundle(bundle):
     '''
@@ -142,12 +133,8 @@ def write_global_repo_cert_bundle(bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    try:
-        WRITE_LOCK.acquire()
-        cert_dir = _global_cert_directory()
-        return _write_cert_bundle('pulp-global-repo', cert_dir, bundle)
-    finally:
-        WRITE_LOCK.release()
+    cert_dir = _global_cert_directory()
+    return _write_cert_bundle('pulp-global-repo', cert_dir, bundle)
 
 def validate_certificate(cert_filename, ca_filename):
     '''
@@ -194,26 +181,32 @@ def _write_cert_bundle(file_prefix, cert_dir, bundle):
              to where it is stored on disk
     '''
 
-    # Create the cert directory if it doesn't exist
-    if not os.path.exists(cert_dir):
-        os.makedirs(cert_dir)
+    WRITE_LOCK.acquire()
 
-    # For each item in the cert bundle, save it to disk using the given prefix
-    # to identify the type of bundle it belongs to
-    cert_files = {}
-    for key, value in bundle.items():
-        filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
-        try:
-            LOG.info('Storing repo cert file [%s]' % filename)
-            f = open(filename, 'w')
-            f.write(value)
-            f.close()
-            cert_files[key] = str(filename)
-        except:
-            LOG.exception('Error storing certificate file [%s]' % filename)
-            raise PulpException('Error storing certificate file [%s]' % filename)
-        
-    return cert_files
+    try:
+        # Create the cert directory if it doesn't exist
+        if not os.path.exists(cert_dir):
+            os.makedirs(cert_dir)
+
+        # For each item in the cert bundle, save it to disk using the given prefix
+        # to identify the type of bundle it belongs to
+        cert_files = {}
+        for key, value in bundle.items():
+            filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
+            try:
+                LOG.info('Storing repo cert file [%s]' % filename)
+                f = open(filename, 'w')
+                f.write(value)
+                f.close()
+                cert_files[key] = str(filename)
+            except:
+                LOG.exception('Error storing certificate file [%s]' % filename)
+                raise PulpException('Error storing certificate file [%s]' % filename)
+
+        return cert_files
+    
+    finally:
+        WRITE_LOCK.release()
 
 def _repo_cert_directory(repo_id):
     '''
