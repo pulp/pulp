@@ -48,6 +48,7 @@ in a cert bundle dict.
 
 import logging
 import shutil
+from threading import RLock
 import os
 
 from M2Crypto import X509
@@ -56,10 +57,17 @@ from pulp.server.pexceptions import PulpException
 import pulp.server.config as config
 
 
+# -- constants ----------------------------------------------------------------------------
+
 VALID_BUNDLE_KEYS = ['ca', 'cert', 'key']
+
+# Single write lock for all repos and global; the usage should be infrequent enough
+# that it's not an issue.
+WRITE_LOCK = RLock()
 
 LOG = logging.getLogger(__name__)
 
+# -- public ----------------------------------------------------------------------------
 
 def validate_cert_bundle(bundle):
     '''
@@ -107,8 +115,13 @@ def write_feed_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    cert_dir = _repo_cert_directory(repo_id)
-    return _write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle)
+
+    try:
+        WRITE_LOCK.acquire()
+        cert_dir = _repo_cert_directory(repo_id)
+        return _write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle)
+    finally:
+        WRITE_LOCK.release()
 
 def write_consumer_cert_bundle(repo_id, bundle):
     '''
@@ -116,8 +129,12 @@ def write_consumer_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    cert_dir = _repo_cert_directory(repo_id)
-    return _write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle)
+    try:
+        WRITE_LOCK.acquire()
+        cert_dir = _repo_cert_directory(repo_id)
+        return _write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle)
+    finally:
+        WRITE_LOCK.release()
 
 def write_global_repo_cert_bundle(bundle):
     '''
@@ -125,8 +142,12 @@ def write_global_repo_cert_bundle(bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    cert_dir = _global_cert_directory()
-    return _write_cert_bundle('pulp-global-repo', cert_dir, bundle)
+    try:
+        WRITE_LOCK.acquire()
+        cert_dir = _global_cert_directory()
+        return _write_cert_bundle('pulp-global-repo', cert_dir, bundle)
+    finally:
+        WRITE_LOCK.release()
 
 def validate_certificate(cert_filename, ca_filename):
     '''
@@ -145,6 +166,8 @@ def validate_certificate(cert_filename, ca_filename):
     ca = X509.load_cert(ca_filename)
     cert = X509.load_cert(cert_filename)
     return cert.verify(ca.get_pubkey())
+
+# -- private ----------------------------------------------------------------------------
     
 def _write_cert_bundle(file_prefix, cert_dir, bundle):
     '''
