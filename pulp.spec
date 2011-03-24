@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.156
+Version:        0.0.157
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -262,6 +262,31 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Thu Mar 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.157-1
+- Add the repo auth package to the server RPM (will clean this up later, just
+  need to make sure this isn't breaking the RPM build)
+  (jason.dobies@redhat.com)
+- Added reentrant locking to cert writes (jason.dobies@redhat.com)
+- Added support for global repo cert bundles. (jason.dobies@redhat.com)
+- 674119 - fixing the options for repo content (pkilambi@redhat.com)
+- 669422 - Added validation for timeout values (skarmark@redhat.com)
+- 668087 - Repo sync --timeout help now indicates units and an example
+  (skarmark@redhat.com)
+- Moved repo cert utils into the repo_auth package. (jason.dobies@redhat.com)
+- 681344 - repo group is back to an array of strings until we see it necessary
+  to be a hash (pkilambi@redhat.com)
+- Added function to verify a cert against a CA without shelling out to openssl.
+  (jason.dobies@redhat.com)
+- Added auth handler framework so we can support multiple types of
+  authentication styles. (jason.dobies@redhat.com)
+- Hooked up consumer cert bundle to CLI. (jason.dobies@redhat.com)
+- Provide for arbitrary data to be sent with heartbeat. (jortel@redhat.com)
+- DB version 7 (jason.dobies@redhat.com)
+- Updated repo API to accept two cert bundles, one for consumer certs and one
+  for feed certs. (jason.dobies@redhat.com)
+- 681344 - changing repo group id to be a hash instead of a list of strings.
+  (pkilambi@redhat.com)
+
 * Mon Mar 21 2011 John Matthews <jmatthews@redhat.com> 0.0.156-1
 - fixed changelog edit (jmatthews@redhat.com)
 * Mon Mar 21 2011 John Matthews <jmatthew@redhat.com> 0.0.155-1
