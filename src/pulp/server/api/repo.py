@@ -1702,6 +1702,7 @@ class RepoApi(BaseApi):
          @param fileid: file ID.
         '''
         repo = self._get_existing_repo(repoid)
+        changed = False
         for fid in fileids:
             fileobj = self.fileapi.file(fid)
             if fileobj is None:
@@ -1709,7 +1710,19 @@ class RepoApi(BaseApi):
                 continue
             if fid not in repo['files']:
                 repo['files'].append(fid)
+                changed = True
+                shared_file = "%s/%s/%s" % (pulp.server.util.top_file_location(), 
+                                            fileobj['checksum']['sha256'][:3], fileobj['filename'])
+                file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
+                                               repo['relative_path'], fileobj["filename"])
+                if not os.path.exists(file_repo_path):
+                    try:
+                        pulp.server.util.create_symlinks(shared_file, file_repo_path)
+                    except OSError:
+                        log.error("Link %s already exists" % file_repo_path)
         self.collection.save(repo, safe=True)
+        if changed:
+            self._generate_file_manifest(repo)
         log.info("Successfully added files %s to repo %s" % (fileids, repoid))
 
     @event(subject='repo.updated.content')
@@ -1721,6 +1734,7 @@ class RepoApi(BaseApi):
          @param fileid: file ID.
         '''
         repo = self._get_existing_repo(repoid)
+        changed = False
         for fid in fileids:
             fileobj = self.fileapi.file(fid)
             if fileobj is None:
@@ -1728,11 +1742,41 @@ class RepoApi(BaseApi):
                 continue
             if fid in repo['files']:
                 del repo['files'][repo['files'].index(fid)]
-            self.collection.save(repo, safe=True)
-            log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
-        else:
-            log.error("No file with ID %s associated to this repo" % fileids)
-
+                changed = True
+                # Remove package from repo location on file system
+                file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
+                                            repo['relative_path'], fileobj["filename"])
+                if os.path.exists(file_repo_path):
+                    log.debug("Delete file %s at %s" % (fileobj["filename"], file_repo_path))
+                    os.remove(file_repo_path)
+        self.collection.save(repo, safe=True)
+        if changed: 
+            self._generate_file_manifest(repo)
+        log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
+            
+    def _generate_file_manifest(self, repo):
+        """
+         generate a file manifest for all files in a repo
+         @param repo: The repo object.
+        """
+        fileids = repo['files']
+        if not len(fileids):
+            # No file info to add to manifest, exit
+            return
+        try:
+            manifest_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(), repo['relative_path'], "MANIFEST")
+            f = open(manifest_path, "w")
+            for fileid in fileids:
+                fileobj = self.fileapi.file(fileid)
+                if fileobj is None:
+                    log.error("File ID [%s] does not exist" % fileid)
+                    continue
+                write_str = "%s\t%s\n" % (fileobj['checksum']['sha256'], fileobj['filename'])
+                f.write(write_str)
+            f.close()
+        except:
+            log.error("Error creating manifest for repo [%s]" % repo['id'])
+            
     def list_files(self, repoid):
         '''
          List files in a given repo
