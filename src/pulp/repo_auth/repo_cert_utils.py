@@ -59,11 +59,13 @@ import pulp.server.config as config
 
 # -- constants ----------------------------------------------------------------------------
 
-VALID_BUNDLE_KEYS = ['ca', 'cert', 'key']
+VALID_BUNDLE_KEYS = ('ca', 'cert', 'key')
 
 # Single write lock for all repos and global; the usage should be infrequent enough
 # that it's not an issue.
 WRITE_LOCK = RLock()
+
+GLOBAL_BUNDLE_PREFIX = 'pulp-global-repo'
 
 LOG = logging.getLogger(__name__)
 
@@ -109,6 +111,54 @@ def delete_for_repo(repo_id):
         LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
         shutil.rmtree(repo_dir)
 
+def delete_global_cert_bundle():
+    '''
+    Deletes the global repo certificate bundle. If it does not exist, this call
+    has no effect (no error is raised).
+    '''
+    cert_dir = _global_cert_directory()
+
+    # Currently, _write_cert_bundle appends the suffix of the bundle key to
+    # the file when generating it's filename; this method assumes that logic
+    for suffix in VALID_BUNDLE_KEYS:
+        filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
+        if os.path.exists(filename):
+            LOG.info('Deleting global repo cert bundle file [%s]' % filename)
+            os.remove(filename)
+
+def read_global_cert_bundle(pieces=VALID_BUNDLE_KEYS):
+    '''
+    Loads the contents of the global cert bundle. If pieces is specified, only
+    the bundle pieces specified will be loaded (must be a subset of VALID_BUNDLE_KEYS).
+
+    @param pieces: list of pieces of the bundle to load in this call; if unspecified,
+                   all of the bundle components will be loaded
+    @type  pieces: list of str
+
+    @return: mapping of bundle piece to the contents of that bundle item (i.e. the
+             PEM encoded certificate, not a filename); returns None if the global
+             cert bundle does not exist
+    @rtype:  dict {str, str} - keys will be taken from the pieces parameter; None
+             is returned if the global cert bundle does not exist
+    '''
+
+    cert_dir = _global_cert_directory()
+
+    result = {}
+    for suffix in pieces:
+        filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
+
+        if os.path.exists(filename):
+            f = open(filename, 'r')
+            contents = f.read()
+            f.close()
+            result[suffix] = contents
+
+    if len(result) == 0:
+        return None
+    else:
+        return result
+
 def write_feed_cert_bundle(repo_id, bundle):
     '''
     Writes the given feed cert bundle to disk.
@@ -134,7 +184,7 @@ def write_global_repo_cert_bundle(bundle):
     See _write_cert_bundle for details on params and return.
     '''
     cert_dir = _global_cert_directory()
-    return _write_cert_bundle('pulp-global-repo', cert_dir, bundle)
+    return _write_cert_bundle(GLOBAL_BUNDLE_PREFIX, cert_dir, bundle)
 
 def validate_certificate(cert_filename, ca_filename):
     '''

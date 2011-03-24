@@ -164,7 +164,7 @@ class TestCertStorage(unittest.TestCase):
         self._verify_repo_file_contents(repo_id, 'consumer-%s.cert' % repo_id, bundle['cert'])
         self._verify_repo_file_contents(repo_id, 'consumer-%s.key' % repo_id, bundle['key'])
 
-    def test_write_global_certs(self):
+    def test_write_read_global_certs(self):
         '''
         Tests writing out the global repo cert bundle.
         '''
@@ -172,21 +172,37 @@ class TestCertStorage(unittest.TestCase):
         # Setup
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
 
-        # Test
+        # Test Write
         files = utils.write_global_repo_cert_bundle(bundle)
 
-        # Verify
+        # Verify Write
         self.assertTrue(files is not None)
         self.assertEqual(3, len(files))
 
         global_cert_dir = utils._global_cert_directory()
         self.assertTrue(os.path.exists(global_cert_dir))
 
-        self._verify_global_file_contents('pulp-global-repo.ca', bundle['ca'])
-        self._verify_global_file_contents('pulp-global-repo.cert', bundle['cert'])
-        self._verify_global_file_contents('pulp-global-repo.key', bundle['key'])
+        # -----
 
-    def test_write_partial_bundle(self):
+        # Test Read All
+        read_bundle = utils.read_global_cert_bundle()
+
+        # Verify Read All
+        self.assertTrue(read_bundle is not None)
+        self.assertEqual(read_bundle, bundle)
+
+        # -----
+
+        # Test Read Subset
+        read_bundle  = utils.read_global_cert_bundle(['key'])
+
+        # Verify Read Subset
+        self.assertTrue(read_bundle is not None)
+        self.assertEqual(1, len(read_bundle))
+        self.assertTrue('key' in read_bundle)
+        self.assertEqual(read_bundle['key'], bundle['key'])
+        
+    def test_write_read_partial_bundle(self):
         '''
         Tests that only a subset of the bundle components can be specified and still
         correctly written out.
@@ -205,9 +221,24 @@ class TestCertStorage(unittest.TestCase):
         global_cert_dir = utils._global_cert_directory()
         self.assertTrue(os.path.exists(global_cert_dir))
 
-        self._verify_global_file_contents('pulp-global-repo.ca', bundle['ca'])
+        read_bundle = utils.read_global_cert_bundle(['ca'])
+
+        self.assertEqual(read_bundle['ca'], bundle['ca'])
+
         self.assertTrue(not os.path.exists(os.path.join(utils._global_cert_directory(), 'pulp-global-repo.cert')))
         self.assertTrue(not os.path.exists(os.path.join(utils._global_cert_directory(), 'pulp-global-repo.key')))
+
+    def test_read_global_no_bundle(self):
+        '''
+        Tests that attempting to read the global repo bundle when it doesn't exist
+        returns None.
+        '''
+
+        # Test
+        bundle = utils.read_global_cert_bundle()
+
+        # Verify
+        self.assertTrue(bundle is None)
 
     def test_delete_bundles(self):
         '''
@@ -232,17 +263,26 @@ class TestCertStorage(unittest.TestCase):
 
         # Verify
         self.assertTrue(not os.path.exists(repo_cert_dir))
-        
+
+    def test_delete_global_bundle(self):
+        '''
+        Tests deleting the global repo auth bundle.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        utils.write_global_repo_cert_bundle(bundle)
+
+        # Test
+        utils.delete_global_cert_bundle()
+
+        # Verify
+        read_bundle = utils.read_global_cert_bundle()
+        self.assertTrue(read_bundle is None)
+
     def _verify_repo_file_contents(self, repo_id, filename, contents):
         full_filename = os.path.join(utils._repo_cert_directory(repo_id), filename)
-        f = open(full_filename, 'r')
-        read_contents = f.read()
-        f.close()
-
-        self.assertEqual(read_contents, contents)
-
-    def _verify_global_file_contents(self, filename, contents):
-        full_filename = os.path.join(utils._global_cert_directory(), filename)
         f = open(full_filename, 'r')
         read_contents = f.read()
         f.close()
