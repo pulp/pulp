@@ -204,6 +204,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %doc
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/server/
+%{python_sitelib}/pulp/repo_auth/
 %config(noreplace) %{_sysconfdir}/pulp/pulp.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
