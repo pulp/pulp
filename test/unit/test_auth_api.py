@@ -16,6 +16,7 @@
 
 # Python
 import os
+import shutil
 import sys
 import unittest
 
@@ -26,6 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+from pulp.repo_auth import repo_cert_utils
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.user import UserApi
 from pulp.server.auth import principal
@@ -37,15 +39,27 @@ import testutil
 SerialNumber.PATH = '/tmp/sn.dat'
 
 
+CERT_DIR = '/tmp/test_repo_cert_utils/repos'
+GLOBAL_CERT_DIR = '/tmp/test_repo_cert_utils/global'
+
 
 class TestAuthApi(unittest.TestCase):
 
     def clean(self):
+        if os.path.exists(CERT_DIR):
+            shutil.rmtree(CERT_DIR)
+
+        if os.path.exists(GLOBAL_CERT_DIR):
+            shutil.rmtree(GLOBAL_CERT_DIR)
+
         self.user_api.clean()
         testutil.common_cleanup()
 
     def setUp(self):
         self.config = testutil.load_test_config()
+        self.config.set('repos', 'cert_location', CERT_DIR)
+        self.config.set('repos', 'global_cert_location', GLOBAL_CERT_DIR)
+
         self.auth_api = AuthApi()
         self.user_api = UserApi()
         self.clean()
@@ -73,3 +87,38 @@ class TestAuthApi(unittest.TestCase):
 
         self.assertEqual(username, admin_user.login)
         self.assertEqual(id, admin_user.id)
+
+    def test_enable_global_repo_auth(self):
+        '''
+        Tests that enabling global repo auth correctly saves the bundle and informs
+        the CDS instances of the change.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        self.auth_api.enable_global_repo_auth(bundle)
+
+        # Verify
+        read_bundle = repo_cert_utils.read_global_cert_bundle()
+
+        self.assertTrue(read_bundle is not None)
+        self.assertEqual(read_bundle, bundle)
+
+    def test_disable_global_repo_auth(self):
+        '''
+        Tests that disabling global repo auth correctly removes the bundle and informs
+        the CDS instances of the change.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.auth_api.enable_global_repo_auth(bundle)
+
+        # Test
+        self.auth_api.disable_global_repo_auth()
+
+        # Verify
+        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        self.assertTrue(read_bundle is None)
