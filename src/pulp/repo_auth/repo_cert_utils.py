@@ -95,7 +95,7 @@ def delete_for_repo(repo_id):
     @param repo_id: identifies the repo
     @type  repo_id: str
     '''
-    repo_dir = _cert_directory(repo_id)
+    repo_dir = _repo_cert_directory(repo_id)
 
     if os.path.exists(repo_dir):
         LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
@@ -107,7 +107,8 @@ def write_feed_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    return _write_cert_bundle('feed', repo_id, bundle)
+    cert_dir = _repo_cert_directory(repo_id)
+    return _write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle)
 
 def write_consumer_cert_bundle(repo_id, bundle):
     '''
@@ -115,7 +116,17 @@ def write_consumer_cert_bundle(repo_id, bundle):
 
     See _write_cert_bundle for details on params and return.
     '''
-    return _write_cert_bundle('consumer', repo_id, bundle)
+    cert_dir = _repo_cert_directory(repo_id)
+    return _write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle)
+
+def write_global_repo_cert_bundle(bundle):
+    '''
+    Writes the given bundle to the global repo auth location.
+
+    See _write_cert_bundle for details on params and return.
+    '''
+    cert_dir = _global_cert_directory()
+    return _write_cert_bundle('pulp-global-repo', cert_dir, bundle)
 
 def validate_certificate(cert_filename, ca_filename):
     '''
@@ -135,7 +146,7 @@ def validate_certificate(cert_filename, ca_filename):
     cert = X509.load_cert(cert_filename)
     return cert.verify(ca.get_pubkey())
     
-def _write_cert_bundle(file_prefix, repo_id, bundle):
+def _write_cert_bundle(file_prefix, cert_dir, bundle):
     '''
     Writes the files represented by the cert bundle to a directory on the
     Pulp server unique to the given repo. If certificates already exist in the
@@ -147,9 +158,9 @@ def _write_cert_bundle(file_prefix, repo_id, bundle):
                         from other bundles; cannot be None
     @type  file_prefix: str
 
-    @param repo_id: identifies the repo to which the cert bundle belongs;
-                    cannot be None
-    @type  repo_id: str
+    @param cert_dir: absolute path to the location in which the cert bundle should
+                     be written; cannot be None
+    @type  cert_dir: str
 
     @param bundle: cert bundle (see module docs for more information on format)
     @type  bundle: dict {str, str}
@@ -161,8 +172,6 @@ def _write_cert_bundle(file_prefix, repo_id, bundle):
     '''
 
     # Create the cert directory if it doesn't exist
-    cert_dir = _cert_directory(repo_id)
-
     if not os.path.exists(cert_dir):
         os.makedirs(cert_dir)
 
@@ -170,7 +179,7 @@ def _write_cert_bundle(file_prefix, repo_id, bundle):
     # to identify the type of bundle it belongs to
     cert_files = {}
     for key, value in bundle.items():
-        filename = os.path.join(cert_dir, '%s-%s.%s' % (file_prefix, repo_id, key))
+        filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
         try:
             LOG.info('Storing repo cert file [%s]' % filename)
             f = open(filename, 'w')
@@ -183,11 +192,25 @@ def _write_cert_bundle(file_prefix, repo_id, bundle):
         
     return cert_files
 
-def _cert_directory(repo_id):
+def _repo_cert_directory(repo_id):
     '''
     Returns the absolute path to the directory in which certificates for the
     given repo are stored.
+
+    @return: absolute path to a directory that may not exist
+    @rtype:  str
     '''
     cert_location = config.config.get('repos', 'cert_location')
     cert_dir = os.path.join(cert_location, repo_id)
     return cert_dir
+
+def _global_cert_directory():
+    '''
+    Returns the absolute path to the directory in which global repo auth
+    credentials are stored.
+
+    @return: absolute path to a directory that may not exist
+    @rtype:  str
+    '''
+    global_cert_location = config.config.get('repos', 'global_cert_location')
+    return global_cert_location
