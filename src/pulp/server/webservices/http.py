@@ -371,3 +371,9 @@ def status_internal_server_error():
     Set the resonse code to internal server error
     """
     _status(httplib.INTERNAL_SERVER_ERROR)
+
+def status_partial():
+    '''
+    Set the response code to partial content
+    '''
+    _status(httplib.PARTIAL_CONTENT)

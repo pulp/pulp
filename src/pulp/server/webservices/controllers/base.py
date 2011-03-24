@@ -216,6 +216,7 @@ class JSONController(object):
         @return: JSON encoded response
         """
         http.status_ok()
+
         return self._output(data)
 
     def created(self, location, data):
@@ -238,6 +239,17 @@ class JSONController(object):
         """
         http.status_no_content()
         return self._output(None)
+
+    def partial_content(self, data):
+        '''
+        Returns a partial content response. Typically, the returned data should
+        include:
+        - a list of successful content updates
+        - a list of failed content updates
+        - an overarching error message if applicable
+        '''
+        http.status_partial()
+        return self._output(data)
 
     def bad_request(self, msg=None):
         """
