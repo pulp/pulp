@@ -66,7 +66,7 @@ class Info(FilterAction):
     
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
-                               help=_("new filter id to create (required)"))
+                               help=_("filter id (required)"))
         
     def run(self):
         id = self.get_required_option('id')
@@ -149,7 +149,7 @@ class AddPackages(FilterAction):
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
-                               help=_("new filter id to create (required)"))
+                               help=_("filter id (required)"))
         self.parser.add_option("-p", "--package", action="append", dest="pnames",
                                help=_("packages to be added to the filter; to specify multiple packages use multiple -p"))
 
@@ -168,7 +168,7 @@ class RemovePackages(FilterAction):
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id",
-                               help=_("new filter id to create (required)"))
+                               help=_("filter id (required)"))
         self.parser.add_option("-p", "--package", action="append", dest="pnames",
                                help=_("packages to be removed from the filter; to specify multiple packages use multiple -p"))
 
