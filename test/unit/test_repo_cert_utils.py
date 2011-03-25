@@ -302,3 +302,37 @@ class TestCertVerify(unittest.TestCase):
         Tests that verifying a cert with an incorrect CA returns false.
         '''
         self.assertTrue(not utils.validate_certificate(CERT, INVALID_CA))
+
+    def test_valid_pem(self):
+        '''
+        Tests that verifying a PEM encoded cert string with its signing CA returns true.
+        '''
+
+        # Setup
+        f = open(VALID_CA)
+        ca = f.read()
+        f.close()
+
+        f = open(CERT)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertTrue(utils.validate_certificate_pem(cert, ca))
+
+    def test_invalid_pem(self):
+        '''
+        Tests that verifying a PEM encoded cert string with an incorrect CA returns false.
+        '''
+
+        # Setup
+        f = open(INVALID_CA)
+        ca = f.read()
+        f.close()
+
+        f = open(CERT)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertTrue(not utils.validate_certificate_pem(cert, ca))

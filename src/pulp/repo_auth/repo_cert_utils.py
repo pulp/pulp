@@ -204,6 +204,23 @@ def validate_certificate(cert_filename, ca_filename):
     cert = X509.load_cert(cert_filename)
     return cert.verify(ca.get_pubkey())
 
+def validate_certificate_pem(cert_pem, ca_pem):
+    '''
+    Validates a certificate against a CA certificate.
+
+    @param cert_pem: PEM encoded certificate
+    @type  cert_pem: str
+
+    @param ca_pem: PEM encoded CA certificate
+    @type  ca_pem: str
+
+    @return: true if the certificate was signed by the given CA; false otherwise
+    @rtype:  boolean
+    '''
+    ca = X509.load_cert_string(ca_pem)
+    cert = X509.load_cert_string(cert_pem)
+    return cert.verify(ca.get_pubkey())
+
 # -- private ----------------------------------------------------------------------------
     
 def _write_cert_bundle(file_prefix, cert_dir, bundle):

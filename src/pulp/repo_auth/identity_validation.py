@@ -29,7 +29,7 @@ import certificate
 IDENTITY_CN = 'pulp-identity'
 
 
-# -- framework------------------------------------------------------------------
+# -- framework -----------------------------------------------------------------
 
 def authenticate(request, log_func):
     '''

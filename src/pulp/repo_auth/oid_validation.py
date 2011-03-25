@@ -31,6 +31,7 @@ The * represents the product ID and is not used as part of this calculation.
 import re
 
 import certificate
+import repo_cert_utils
 
 
 # -- framework -----------------------------------------------------------------
@@ -58,6 +59,31 @@ def _is_valid(dest, cert_pem, log_func):
     @param cert_pem: PEM encoded client certificate sent with the request
     @type  cert_pem: string
     '''
+
+    # Load the global repo auth cert bundle and check that first if
+    # it's present.
+    global_bundle = repo_cert_utils.read_global_cert_bundle('ca')
+    if global_bundle:
+
+        # Make sure the client cert is signed by the correct CA
+        is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
+        if not is_valid:
+            return False
+
+    # Load the repo credentials if they exist
+    # TODO: Do it.
+    repo_bundle = None
+
+    # If there were neither global nor repo auth credentials, auth passes.
+    if not global_bundle and not repo_bundle:
+        return True
+
+    # If the credentials were specified for either case, apply the OID checks.
+    is_valid = _check_extensions(cert_pem, dest, log_func)
+
+    return is_valid
+    
+def _check_extensions(cert_pem, dest, log_func):
 
     cert = certificate.Certificate(content=cert_pem)
     extensions = cert.extensions()
