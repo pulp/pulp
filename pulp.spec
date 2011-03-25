@@ -206,6 +206,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %{python_sitelib}/pulp/server/
 %{python_sitelib}/pulp/repo_auth/
 %config(noreplace) %{_sysconfdir}/pulp/pulp.conf
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(775, apache, apache) %{_sysconfdir}/pulp
@@ -247,6 +248,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 /var/lib/pulp-cds
 /var/log/pulp-cds
