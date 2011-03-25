@@ -30,7 +30,7 @@ sys.path.insert(0, commondir)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
-from pulp.server.tasking.queue.fifo import FIFOTaskQueue
+from pulp.server.tasking.queue import TaskQueue
 
 
 def noop():
@@ -106,10 +106,10 @@ class QueueTester(unittest.TestCase):
             pprint.pprint(task.traceback)
 
 
-class FIFOQueueTester(QueueTester):
+class QueueTester(QueueTester):
 
     def setUp(self):
-        self.queue = FIFOTaskQueue()
+        self.queue = TaskQueue()
 
     def tearDown(self):
         del self.queue
@@ -328,10 +328,10 @@ class FIFOQueueTester(QueueTester):
         self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
 
 
-class InterruptFIFOQueueTester(QueueTester):
+class InterruptQueueTester(QueueTester):
 
     def setUp(self):
-        self.queue = FIFOTaskQueue()
+        self.queue = TaskQueue()
 
     def tearDown(self):
         del self.queue
