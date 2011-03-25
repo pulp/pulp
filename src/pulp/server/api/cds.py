@@ -438,16 +438,17 @@ class CdsApi(BaseApi):
 
         # Attempt to send to all CDS instances. For any that throw an error, log the
         # exception and keep a running track of which failed to display to the caller
+        success_cds_hostnames = []
         error_cds_hostnames = []
         for cds in all_cds:
             try:
                 self.dispatcher.enable_global_repo_auth(cds, cert_bundle)
+                success_cds_hostnames.append(cds['hostname'])
             except Exception:
                 log.exception('Error enabling global repo auth on CDS [%s]' % cds['hostname'])
                 error_cds_hostnames.append(cds['hostname'])
 
-        if len(error_cds_hostnames) > 0:
-            raise PulpException('The following CDS instances could not be updated with the global repo authentication credentials [%s]. More information may be found in the Pulp server log.' % ', '.join(error_cds_hostnames))
+        return success_cds_hostnames, error_cds_hostnames
 
     def disable_global_repo_auth(self):
         '''
@@ -460,13 +461,14 @@ class CdsApi(BaseApi):
 
         # Attempt to send to all CDS instances. For any that throw an error, log the
         # exception and keep a running track of which failed to display to the caller.
+        success_cds_hostnames = []
         error_cds_hostnames = []
         for cds in all_cds:
             try:
                 self.dispatcher.disable_global_repo_auth(cds)
+                success_cds_hostnames.append(cds['hostname'])
             except Exception:
                 log.exception('Error enabling global repo auth on CDS [%s]' % cds['hostname'])
                 error_cds_hostnames.append(cds['hostname'])
 
-        if len(error_cds_hostnames) > 0:
-            raise PulpException('The following CDS instances could not be updated with the global repo authentication credentials [%s]. More information may be found in the Pulp server log.' % ', '.join(error_cds_hostnames))
+        return success_cds_hostnames, error_cds_hostnames

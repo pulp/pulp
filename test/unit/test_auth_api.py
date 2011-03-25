@@ -115,7 +115,7 @@ class TestAuthApi(unittest.TestCase):
         self.cds_api.register('cds2')
 
         # Test
-        self.auth_api.enable_global_repo_auth(bundle)
+        successes, failures = self.auth_api.enable_global_repo_auth(bundle)
 
         # Verify
         read_bundle = repo_cert_utils.read_global_cert_bundle()
@@ -123,10 +123,60 @@ class TestAuthApi(unittest.TestCase):
         self.assertTrue(read_bundle is not None)
         self.assertEqual(read_bundle, bundle)
 
+        self.assertEqual(2, len(successes))
+        self.assertEqual(0, len(failures))
+        
         self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
         self.assertEqual(self.dispatcher.cert_bundle, bundle)
         for entry in self.dispatcher.call_log:
             self.assertTrue(entry.startswith(MockCdsDispatcher.ENABLE_GLOBAL_REPO_AUTH))
+
+    def test_enable_global_repo_auth_no_cds(self):
+        '''
+        Tests the simpler case of having no CDS instances present when enabling
+        repo auth (make sure errors aren't thrown when trying to notify a non-existent
+        list of CDS instances).
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        # Test
+        successes, failures = self.auth_api.enable_global_repo_auth(bundle)
+
+        # Verify
+        read_bundle = repo_cert_utils.read_global_cert_bundle()
+
+        self.assertTrue(read_bundle is not None)
+        self.assertEqual(read_bundle, bundle)
+
+        self.assertEqual(0, len(successes))
+        self.assertEqual(0, len(failures))
+
+    def test_enable_global_repo_auth_failed_cds(self):
+        '''
+        Tests the results of enabling global repo auth when a CDS fails to update.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+
+        self.dispatcher.error_to_throw = Exception()
+
+        # Test
+        successes, failures = self.auth_api.enable_global_repo_auth(bundle)
+
+        # Verify
+        read_bundle = repo_cert_utils.read_global_cert_bundle()
+
+        self.assertTrue(read_bundle is not None)
+        self.assertEqual(read_bundle, bundle)
+
+        self.assertEqual(0, len(successes))
+        self.assertEqual(2, len(failures))
 
     def test_disable_global_repo_auth(self):
         '''
@@ -142,13 +192,60 @@ class TestAuthApi(unittest.TestCase):
         self.cds_api.register('cds2')
 
         # Test
-        self.auth_api.disable_global_repo_auth()
+        successes, failures = self.auth_api.disable_global_repo_auth()
 
         # Verify
         read_bundle = repo_cert_utils.read_global_cert_bundle()
         self.assertTrue(read_bundle is None)
 
+        self.assertEqual(2, len(successes))
+        self.assertEqual(0, len(failures))
+                
         self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
         self.assertEqual(self.dispatcher.cert_bundle, None)
         for entry in self.dispatcher.call_log:
             self.assertTrue(entry.startswith(MockCdsDispatcher.DISABLE_GLOBAL_REPO_AUTH))
+
+    def test_disable_global_repo_auth_no_cds(self):
+        '''
+        Tests the simpler case of having no CDS instances present when disabling global
+        repo auth.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.auth_api.enable_global_repo_auth(bundle)
+
+        # Test
+        successes, failures = self.auth_api.disable_global_repo_auth()
+
+        # Verify
+        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        self.assertTrue(read_bundle is None)
+
+        self.assertEqual(0, len(successes))
+        self.assertEqual(0, len(failures))
+
+    def test_disable_global_repo_auth_failed_cds(self):
+        '''
+        Tests the results of disabling global repo auth when a CDS fails to update.
+        '''
+
+        # Setup
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.auth_api.enable_global_repo_auth(bundle)
+
+        self.cds_api.register('cds1')
+        self.cds_api.register('cds2')
+
+        self.dispatcher.error_to_throw = Exception()
+
+        # Test
+        successes, failures = self.auth_api.disable_global_repo_auth()
+
+        # Verify
+        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        self.assertTrue(read_bundle is None)
+
+        self.assertEqual(0, len(successes))
+        self.assertEqual(2, len(failures))

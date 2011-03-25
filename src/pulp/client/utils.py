@@ -283,9 +283,12 @@ def readFile(filepath):
     
     try:
         f = open(filepath)
-        return f.read()
+        contents = f.read()
+        f.close()
+        return contents
     except:
         return None
+
     
 def parseCSV(filepath):
     in_file  = open(filepath, "rb")

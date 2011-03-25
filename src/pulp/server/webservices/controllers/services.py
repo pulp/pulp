@@ -18,11 +18,11 @@ import logging
 import time
 import web
 
+from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
-from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
 from pulp.server.agent import Agent
@@ -34,6 +34,7 @@ from pulp.server.webservices.controllers.base import JSONController, AsyncContro
 
 # globals ---------------------------------------------------------------------
 
+auth_api = AuthApi()
 cds_api = CdsApi()
 rapi = RepoApi()
 papi = PackageApi()
@@ -299,6 +300,66 @@ class AgentStatus(JSONController):
         log.info("agent status:   GET received")
         return self.ok(Agent.status(filter))
 
+class EnableGlobalRepoAuth(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        '''
+        [[wiki]]
+        title: Enable Global Repository Authentication
+        description: Configures the Pulp server to apply the given credentials to requests against all of its repositories.
+        method: POST
+        path: /enable_global_repo_credentials
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 206 PARTIAL CONTENT
+        return: list of CDS hostnames that were successfully updated and a list of the ones that failed to update
+        '''
+        data = self.params()
+        bundle = data['cert_bundle']
+        log.info('Enabling global repo authentication')
+
+        successes, failures = auth_api.enable_global_repo_auth(bundle)
+
+        result = {'success_cds_hostnames' : successes,
+                  'failure_cds_hostnames' : failures}
+
+        # If there were any CDS failures, indicate only a partial content update
+        if len(failures) > 0:
+            self.partial_content(result)
+        else:
+            self.ok(result)
+
+class DisableGlobalRepoAuth(JSONController):
+
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        '''
+        [[wiki]]
+        title: Disable Global Repository Authentication
+        description: Configures the Pulp server to not authenticate access to repositories on a global level (individual repo access can still be controlled using the repo APIs).
+        method: POST
+        path: /disable_global_repo_credentials
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 206 PARTIAL CONTENT
+        return: list of CDS hostnames that were successfully updated and a list of the ones that failed to update
+        '''
+        log.info('Disabling global repo authentication')
+
+        successes, failures = auth_api.disable_global_repo_auth()
+
+        result = {'success_cds_hostnames' : successes,
+                  'failure_cds_hostnames' : failures}
+
+        # If there were any CDS failures, indicate only a partial content update
+        if len(failures) > 0:
+            self.partial_content(result)
+        else:
+            self.ok(result)
+
 
 # web.py application ----------------------------------------------------------
 
@@ -314,6 +375,9 @@ URLS = (
     '/upload/import/$', 'ImportUpload',
     '/status/$', 'StatusService',
     '/agent/status/$', 'AgentStatus',
+    '/cds_redistribute/$', 'CdsRedistribute',
+    '/enable_global_repo_auth/$', 'EnableGlobalRepoAuth',
+    '/disable_global_repo_auth/$', 'DisableGlobalRepoAuth',
 )
 
 application = web.application(URLS, globals())
