@@ -332,7 +332,7 @@ class CdsApi(BaseApi):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_traceback = exc_traceback
             sync_error_msg = 'Unknown communications error during sync'
-        except CdsAuthsException:
+        except CdsAuthException:
             log.exception('Authorization error during sync to CDS [%s]' % cds_hostname)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_traceback = exc_traceback
