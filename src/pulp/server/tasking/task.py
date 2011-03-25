@@ -199,7 +199,7 @@ class Task(object):
         """
         assert self.state in task_ready_states
         self.state = task_running
-        self.start_time = datetime.datetime.now()
+        self.start_time = datetime.datetime.utcnow()
         try:
             result = self.callable(*self.args, **self.kwargs)
             self.invoked(result)
@@ -236,7 +236,7 @@ class Task(object):
         """
         self.result = result
         self.state = task_finished
-        self.finish_time = datetime.datetime.now()
+        self.finish_time = datetime.datetime.utcnow()
         self._complete()
 
     def failed(self, exception, tb=None):
@@ -253,7 +253,7 @@ class Task(object):
                                                         self.method_name,
                                                         ''.join(self.traceback)))
         self.state = task_error
-        self.finish_time = datetime.datetime.now()
+        self.finish_time = datetime.datetime.utcnow()
         self._complete()
 
     def _complete(self):
@@ -280,7 +280,7 @@ class Task(object):
         if hasattr(self.thread, 'cancel'):
             self.thread.cancel()
         self.state = task_canceled
-        self.finish_time = datetime.datetime.now()
+        self.finish_time = datetime.datetime.utcnow()
         self._complete()
 
 # asynchronous task -----------------------------------------------------------
