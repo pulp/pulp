@@ -43,7 +43,7 @@ def authenticate(request, log_func):
 
     # Check that the client has an entitlement for the requested URI. If not,
     # we can immediately fail the attempt.
-    valid = _is_valid(request.uri, cert_pem)
+    valid = _is_valid(request.uri, cert_pem, log_func)
     return valid
 
 # -- private -------------------------------------------------------------------
