@@ -20,7 +20,7 @@ import time
 import traceback
 import uuid
 
-from pulp.server.tasking.queue.thread import TimeoutException, CancelException
+from pulp.server.tasking.taskqueue.thread import TimeoutException, CancelException
 from pulp.server.tasking.scheduler import ImmediateScheduler
 
 

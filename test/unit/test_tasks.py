@@ -30,7 +30,7 @@ sys.path.insert(0, commondir)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
-from pulp.server.tasking.queue import TaskQueue
+from pulp.server.tasking.taskqueue.queue import TaskQueue
 
 
 def noop():
