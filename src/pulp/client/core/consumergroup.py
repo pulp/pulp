@@ -48,7 +48,7 @@ class List(ConsumerGroupAction):
         for group in groups:
             kvpair = []
             for k, v in group["key_value_pairs"].items():
-                kvpair.append("%s  :  %s," % (str(k), str(v)))
+                kvpair.append("%s  :  %s" % (str(k), str(v)))
             print constants.AVAILABLE_CONSUMER_GROUP_INFO % \
                     (group["id"], group["description"], group["consumerids"],
                      '\n \t\t\t'.join(kvpair[:]))
