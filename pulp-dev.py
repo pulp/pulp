@@ -43,6 +43,7 @@ DIRS = (
 #
 LINKS = (
     'etc/pulp/pulp.conf',
+    'etc/pulp/repo_auth.conf',
     'etc/pulp/client.conf',
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
