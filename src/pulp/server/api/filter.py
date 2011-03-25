@@ -67,7 +67,7 @@ class FilterApi(BaseApi):
             self.remove_association_with_repos(id, associated_repo_ids)
             self.collection.remove({'id' : id}, safe=True)
         else:
-            raise PulpException("Filter [%s] cannot be deleted because of it's association with repos %s"
+            raise PulpException("Filter [%s] cannot be deleted because of it's association with following repos: %s. You can use --force to force deletion of filter by removing it's association with repositories." 
                                 % (id, associated_repo_ids))
 
     def filters(self, spec=None, fields=None):
