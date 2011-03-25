@@ -39,8 +39,7 @@ REQUIRED_PLUGINS = ()
 # The auth_enabled_validation runs first to prevent other plugins from running in
 # case the config indicates repo auth should not be run
 OPTIONAL_PLUGINS = (auth_enabled_validation.authenticate,
-                    oid_validation.authenticate,
-                    identity_validation.authenticate)
+                    oid_validation.authenticate)
 
 # -- modpython --------------------------------------------------------------------
 

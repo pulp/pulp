@@ -34,7 +34,7 @@ def authenticate(request, log_func):
     Framework hook method.
     '''
     config = _config()
-    is_enabled = config.get('main', 'enabled')
+    is_enabled = config.getboolean('main', 'enabled')
 
     # If auth is disabled, return true so the framework assumes a valid user has
     # been found and will short-circuit any other validation checks.
