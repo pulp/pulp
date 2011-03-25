@@ -72,7 +72,7 @@ class Info(FilterAction):
         id = self.get_required_option('id')
         filter = self.filter_api.filter(id)
         if not filter:
-            system_exit(os.EX_DATAERR, _("No filter with give id"))
+            system_exit(os.EX_DATAERR, _("Filter [%s] not found" % id))
         else:
             package_list = []
             for package in filter["package_list"]:
