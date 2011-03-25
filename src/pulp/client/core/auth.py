@@ -18,10 +18,12 @@
 from gettext import gettext as _
 
 from pulp.client.api.user import UserAPI
+from pulp.client.api.service import ServiceAPI
 from pulp.client.credentials import Login as LoginBundle
 from pulp.client.core.base import Action, Command
+from pulp.client import utils
 
-# auth actions ----------------------------------------------------------------
+# login actions ----------------------------------------------------------------
 
 class Login(Action):
 
@@ -62,6 +64,50 @@ class Logout(Action):
         bundle = LoginBundle()
         bundle.delete()
         print _('User credentials removed from [%s]') % bundle.root()
+
+# repo auth actions------------------------------------------------------------
+
+class EnableGlobalRepoAuth(Action):
+
+    description = _('uploads a certificate bundle to be used for global repo authentication')
+
+    def __init__(self):
+        super(EnableGlobalRepoAuth, self).__init__()
+        self.services_api = ServiceAPI()
+
+    def setup_parser(self):
+        self.parser.add_option("--ca", dest="ca",
+                               help=_("absolute path to the CA certificate used to validate consumer certificates"))
+        self.parser.add_option("--cert", dest="cert",
+                               help=_("absolute path to the certificate that will be provided to consumers to grant access to repositories"))
+        self.parser.add_option("--key", dest="key",
+                               help=_("absolute path to the private key for the consumer certificate"))
+
+    def run(self):
+
+        ca_filename = self.get_required_option('ca')
+        cert_filename = self.get_required_option('cert')
+        key_filename = self.get_required_option('key')
+
+        bundle = {'ca'   : utils.readFile(ca_filename),
+                  'cert' : utils.readFile(cert_filename),
+                  'key'  : utils.readFile(key_filename),
+                  }
+
+        self.services_api.enable_global_repo_auth(bundle)
+        print _('Global repository authentication enabled')
+
+class DisableGlobalRepoAuth(Action):
+
+    description = _('disables the global repo authentication checks across all repos')
+
+    def __init__(self):
+        super(DisableGlobalRepoAuth, self).__init__()
+        self.services_api = ServiceAPI()
+
+    def run(self):
+        self.services_api.disable_global_repo_auth()
+        print _('Global repository authentication disabled')
 
 # auth command ----------------------------------------------------------------
 

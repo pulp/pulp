@@ -81,3 +81,12 @@ class ServiceAPI(PulpAPI):
         path = "/services/agent/status/"
         d = dict(filter=filter)
         return self.server.POST(path, d)[1]
+
+    def enable_global_repo_auth(self, cert_bundle):
+        path = '/services/enable_global_repo_auth/'
+        params = {'cert_bundle' : cert_bundle}
+        return self.server.POST(path, params)[1]
+
+    def disable_global_repo_auth(self):
+        path = '/services/disable_global_repo_auth/'
+        return self.server.POST(path)

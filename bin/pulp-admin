@@ -24,6 +24,8 @@ def setup_admin(admin):
     auth_cmd = auth.Auth()
     auth_cmd.add_action('login', auth.Login())
     auth_cmd.add_action('logout', auth.Logout())
+    auth_cmd.add_action('enable_global_repo_auth', auth.EnableGlobalRepoAuth())
+    auth_cmd.add_action('disable_global_repo_auth', auth.DisableGlobalRepoAuth())
     admin.add_command('auth', auth_cmd)
 
     cds_cmd = cds.Cds()

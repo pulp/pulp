@@ -376,8 +376,8 @@ URLS = (
     '/status/$', 'StatusService',
     '/agent/status/$', 'AgentStatus',
     '/cds_redistribute/$', 'CdsRedistribute',
-    '/enable_global_repo_credentials/$', 'EnableGlobalRepoAuth',
-    '/disable_global_repo_credentials/$', 'DisableGlobalRepoAuth',
+    '/enable_global_repo_auth/$', 'EnableGlobalRepoAuth',
+    '/disable_global_repo_auth/$', 'DisableGlobalRepoAuth',
 )
 
 application = web.application(URLS, globals())
