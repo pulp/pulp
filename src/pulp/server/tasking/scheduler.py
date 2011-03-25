@@ -21,6 +21,8 @@ Note: all times in this module use the UTC timezone.
 import datetime
 import types
 
+from pulp.server.util import Singleton
+
 
 class Scheduler(object):
     """
@@ -42,6 +44,9 @@ class ImmediateScheduler(Scheduler):
     """
     Immediate Scheduler that schedules a Task to run immediately and only once.
     """
+
+    __metaclass__ = Singleton
+
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if previous_run is None:
