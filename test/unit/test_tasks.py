@@ -30,6 +30,7 @@ sys.path.insert(0, commondir)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
+from pulp.server.tasking.scheduler import AtScheduler
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 
 
@@ -210,13 +211,13 @@ class QueueTester(QueueTester):
         self.assertTrue(task.state == task_finished)
 
     def test_task_dispatch_with_scheduled_time(self):
-        task = Task(noop)
-        delay_seconds = 10
-        task.scheduled_time = time.time() + delay_seconds
+        delay_seconds = timedelta(seconds=10)
+        schduler = AtScheduler(datetime.utcnow() + delay_seconds)
+        task = Task(noop, scheduler=schduler)
         self.queue.enqueue(task)
-        start_time = time.time()
-        self._wait_for_task(task, timeout=timedelta(seconds=2 * delay_seconds))
-        end_time = time.time()
+        start_time = datetime.utcnow()
+        self._wait_for_task(task, timeout=timedelta(seconds=20))
+        end_time = datetime.utcnow()
         self.assertTrue(task.state == task_finished)
         self.assertTrue(end_time - start_time > delay_seconds)
 
