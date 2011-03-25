@@ -68,17 +68,16 @@ class VolatileStorage(object):
     def complete_tasks(self):
         return self.__complete_tasks[:]
 
+    def _all_tasks(self):
+        return itertools.chain(self.__complete_tasks[:],
+                               self.__running_tasks[:],
+                               sorted(self.__waiting_tasks[:]))
+
     def find(self, criteria):
-
-        def all_tasks():
-            return itertools.chain(self.__complete_tasks[:],
-                                   self.__running_tasks[:],
-                                   sorted(self.__waiting_tasks[:]))
-
         num_criteria = len(criteria)
         tasks = []
         # reverse the order of all the tasks in order to list the newest first
-        for task in reversed(list(all_tasks())):
+        for task in reversed(list(self._all_tasks())):
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
