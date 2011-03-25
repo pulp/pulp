@@ -104,9 +104,13 @@ class TaskQueue(object):
         """
         ready_tasks = []
         num_tasks = self.max_running - self.__running_count
-        for t in self.__storage.waiting_tasks()[:num_tasks]:
-            if t.scheduled_time < time.time():
-                ready_tasks.append(t)
+        now = datetime.utcnow()
+        while len(ready_tasks) < num_tasks:
+            if self.__storage.num_waiting() == 0:
+                break
+            if self.__storage.peek_waiting().scheduled_time > now:
+                break
+            ready_tasks.append(self.__storage.dequeue_waiting())
         return ready_tasks
 
     def _cancel_tasks(self):
@@ -160,7 +164,7 @@ class TaskQueue(object):
         now = datetime.now()
         for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
-                self.__storage.remove_task(task)
+                self.__storage.remove_complete(task)
 
     # public methods: queue operations
 
@@ -178,11 +182,13 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            fields = ('method_name', 'args', 'kwargs')
+            fields = ('class_name', 'method_name', 'args', 'kwargs')
             if unique and self.exists(task, fields, include_finished=False):
                 return False
+            if not task.schedule():
+                return False
             task.complete_callback = self.complete
-            self.__storage.add_waiting_task(task)
+            self.__storage.enqueue_waiting(task)
             self.__condition.notify()
             return True
         finally:
@@ -197,7 +203,7 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             self.__running_count += 1
-            self.__storage.add_running_task(task)
+            self.__storage.store_running(task)
             task.thread = TaskThread(target=task.run)
             task.thread.start()
         finally:
@@ -212,7 +218,8 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             self.__running_count -= 1
-            self.__storage.add_complete_task(task)
+            self.__storage.remove_running(task)
+            self.__storage.store_complete(task)
             task.thread = None
             task.complete_callback = None
         finally:
