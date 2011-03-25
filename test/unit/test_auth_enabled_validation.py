@@ -48,4 +48,4 @@ class TestValidateCertBundle(unittest.TestCase):
         result = auth_enabled_validation.authenticate(None, None)
 
         # Verify
-        self.assertTrue(result)
+        self.assertTrue(not result)

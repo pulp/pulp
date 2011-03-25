@@ -17,6 +17,7 @@ import os
 import random
 from datetime import timedelta
 
+from pulp.repo_auth import repo_cert_utils
 from pulp.server import auditing
 from pulp.server import config
 from pulp.server.db import connection
@@ -47,6 +48,11 @@ def load_test_config():
     start_logging()
     # Re-init the database connection so we can pick up settings for the test database
     initialize()
+
+    # The repo_auth stuff, which runs outside of the server codebase, needs to know
+    # where to look for its config as well
+    repo_cert_utils.CONFIG_FILENAME = override_file
+
     return config.config
 
 

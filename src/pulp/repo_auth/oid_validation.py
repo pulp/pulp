@@ -31,8 +31,24 @@ The * represents the product ID and is not used as part of this calculation.
 import re
 
 import certificate
+import protected_repo_utils
 import repo_cert_utils
 
+
+# -- constants -----------------------------------------------------------------
+
+# This needs to be accessible on both Pulp and the CDS instances, so a
+# separate config file for repo auth purposes is used.
+CONFIG_FILENAME = '/etc/pulp/repo_auth.conf'
+
+# This will run on both Pulp and CDS instances
+PROTECTED_REPOS_FILENAME = '/etc/pki/content/pulp-protected-repos'
+
+# This probably shouldn't be hardcoded. It's a config value in pulp.conf, but
+# we can't read it from there in case this runs on a CDS. I'm also pretty sure
+# Pulp would break in other ways if this was changed, so for now this is
+# hardcoded until we actually get a use case to make it variable.
+RELATIVE_URL = '/pulp/repos/' # the trailing backslash matters
 
 # -- framework -----------------------------------------------------------------
 
@@ -63,26 +79,57 @@ def _is_valid(dest, cert_pem, log_func):
     # Load the global repo auth cert bundle and check that first if
     # it's present.
     global_bundle = repo_cert_utils.read_global_cert_bundle('ca')
-    if global_bundle:
+    if global_bundle is not None:
 
         # Make sure the client cert is signed by the correct CA
         is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
         if not is_valid:
+            log_func('Client certificate did not match the global repo auth CA certificate')
             return False
 
     # Load the repo credentials if they exist
-    # TODO: Do it.
-    repo_bundle = None
+    repo_bundle = _matching_repo_bundle(dest)
+    if repo_bundle is not None:
+
+        # Make sure the client cert is signed by the correct CA
+        is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, repo_bundle['ca'])
+        if not is_valid:
+            log_func('Client certificate did not match the repo consumer CA certificate')
+            return False
 
     # If there were neither global nor repo auth credentials, auth passes.
-    if not global_bundle and not repo_bundle:
+    if global_bundle is not None and repo_bundle is not None:
         return True
 
     # If the credentials were specified for either case, apply the OID checks.
     is_valid = _check_extensions(cert_pem, dest, log_func)
 
     return is_valid
-    
+
+def _matching_repo_bundle(dest):
+
+    # Load the path -> repo ID mappings
+    prot_repos = protected_repo_utils.read_protected_repo_listings(PROTECTED_REPOS_FILENAME)
+
+    # Extract the repo portion of the URL
+    #   Example URL: https://guardian/pulp/repos/my-repo/pulp/fedora-13/i386/repodata/repomd.xml
+    #   Repo Portion: /my-repo/pulp/fedora-13/i386/repodata/repomd.xml
+    repo_url = dest[dest.find(RELATIVE_URL) + len(RELATIVE_URL):]
+
+    # If the repo portion of the URL starts with any of the protected relative URLs,
+    # it is considered to be a request against that protected repo
+    repo_id = None
+    for relative_url in prot_repos.keys():
+        if repo_url.startswith(relative_url):
+            repo_id = prot_repos[relative_url]
+            break
+
+    if not repo_id:
+        return None
+
+    bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id, ['ca'])
+    return bundle
+
 def _check_extensions(cert_pem, dest, log_func):
 
     cert = certificate.Certificate(content=cert_pem)
@@ -93,7 +140,7 @@ def _check_extensions(cert_pem, dest, log_func):
         if _is_download_url_ext(e):
             oid_url = extensions[e]
 
-            if _validate(oid_url, dest):
+            if _validate_url(oid_url, dest):
                 valid = True
                 break
 
@@ -115,7 +162,7 @@ def _is_download_url_ext(ext_oid):
     result = ext_oid.match('1.3.6.1.4.1.2312.9.2.') and ext_oid.match('.1.6')
     return result
 
-def _validate(oid_url, dest):
+def _validate_url(oid_url, dest):
     '''
     Returns whether or not the destination matches the OID download URL.
 
@@ -132,5 +179,4 @@ def _validate(oid_url, dest):
     #   content/dist/rhel/server/.+?/.+?/os
     
     oid_re = re.sub(r'\$.+?/', '.+?/', oid_url)
-
     return re.search(oid_re, dest) is not None
