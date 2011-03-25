@@ -40,18 +40,22 @@ _cfg = Config()
 
 class ConsumerAction(Action):
 
-    def __init__(self):
+    def __init__(self, is_consumer_client=False):
         super(ConsumerAction, self).__init__()
         self.consumer_api = ConsumerAPI()
+        self.is_consumer_client = is_consumer_client
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
         default = None
-        id = self.getconsumerid()
-        if id is not None:
-            help = _("consumer identifier eg: foo.example.com")
+        consumerid = self.getconsumerid()
+        
+        # Do not accept consumerid when running pulp-client consumer commands on existing consumer
+        if consumerid is not None and self.is_consumer_client:
+            default = consumerid
+        else:
             default = id
-        self.parser.add_option("--id", dest="id", default=default, help=help)
+            self.parser.add_option("--id", dest="id", default=default, help=help)
 
 # consumer actions ------------------------------------------------------------
 

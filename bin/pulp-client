@@ -37,11 +37,11 @@ def root_check():
 def setup_client(client):
     consumer_cmd = consumer.Consumer()
     consumer_cmd.add_action('create', consumer.Create())
-    consumer_cmd.add_action('delete', consumer.Delete())
-    consumer_cmd.add_action('bind', consumer.Bind())
-    consumer_cmd.add_action('unbind', consumer.Unbind())
-    consumer_cmd.add_action('history', consumer.History())
-    consumer_cmd.add_action('update', consumer.Update())
+    consumer_cmd.add_action('delete', consumer.Delete(is_consumer_client=True))
+    consumer_cmd.add_action('bind', consumer.Bind(is_consumer_client=True))
+    consumer_cmd.add_action('unbind', consumer.Unbind(is_consumer_client=True))
+    consumer_cmd.add_action('history', consumer.History(is_consumer_client=True))
+    consumer_cmd.add_action('update', consumer.Update(is_consumer_client=True))
     client.add_command('consumer', consumer_cmd)
 
     errata_cmd = errata.Errata()
