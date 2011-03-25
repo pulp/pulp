@@ -297,3 +297,93 @@ def _global_cert_directory():
     '''
     global_cert_location = config.config.get('repos', 'global_cert_location')
     return global_cert_location
+
+# -- classes -----------------------------------------------------------------------
+
+class ProtectedRepoListingFile:
+
+    def __init__(self, filename):
+        '''
+        @param filename: absolute path to the file; the file does not need to
+                         exist at the time of instantiation, the save method will write it
+                         out if it doesn't
+        @type  filename: string; may not be None
+
+        @raise ValueError: if filename is missing
+        '''
+        if filename is None:
+            raise ValueError('Filename must be specified when creating a ProtectedRepoListingFile')
+
+        self.filename = filename
+        self.listings = {} # mapping of relative path to repo ID
+
+    def delete(self):
+        '''
+        If the repo file exists, it will be deleted. If not, this method does nothing.
+
+        @raise Exception: if there is an error during the delete
+        '''
+        if os.path.exists(self.filename):
+            os.unlink(self.filename)
+
+    def load(self, allow_missing=True):
+        '''
+        Loads the repo file.
+
+        @param allow_missing: if True, this call will not throw an error if the file cannot
+                              be found; defaults to True
+        @type  allow_missing: bool
+
+        @raise Exception: if there is an error during the read
+        '''
+        if allow_missing and not os.path.exists(self.filename):
+            return
+
+        f = open(self.filename, 'r')
+        contents = f.read()
+        f.close()
+
+        # Parse into data structure
+        for line in contents.split('\n'):
+            pieces = line.split(',')
+            self.listings[pieces[0]] = pieces[1]
+
+    def save(self):
+        '''
+        Saves the current repositories to the repo file.
+
+        @raise Exception: if there is an error during the write
+        '''
+        f = open(self.filename, 'w')
+
+        for url in self.listings.keys():
+            f.write('%s,%s' % (url, self.listings[url]))
+        
+        f.close()
+
+    # -- contents manipulation ------------------------------------------------------------
+
+    def add_protected_repo_path(self, relative_path_url, repo_id):
+        '''
+        Adds a new listing of a protected repo. If a listing already exists
+        for the given URL, it is overwritten.
+
+        @param relative_path_url: relative path for the repo, used to identify the repo
+                                  from a request URL
+        @type  relative_path_url: str
+
+        @param repo_id: id of the repo, used to look up the repo credentials
+        @type  repo_id: str
+        '''
+        self.listings[relative_path_url] = repo_id
+
+    def remove_protected_repo_path(self, relative_path_url):
+        '''
+        Removes the given repo path from the set of protected repos. If the URL
+        is not present in the listings, this method has no effect.
+
+        @param relative_path_url: relative path for the repo; this should be the same
+                                  as used when the repo path was first added
+        @type  relative_path_url: str
+        '''
+        self.listings.pop(relative_path_url, None) # will not error if key isn't present

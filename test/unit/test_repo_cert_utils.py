@@ -28,6 +28,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import pulp.repo_auth.repo_cert_utils as utils
+from pulp.repo_auth.repo_cert_utils import ProtectedRepoListingFile
 import testutil
 
 # -- constants -----------------------------------------------------------------------
@@ -336,3 +337,85 @@ class TestCertVerify(unittest.TestCase):
 
         # Test
         self.assertTrue(not utils.validate_certificate_pem(cert, ca))
+
+class TestProtectedRepoListingFile(unittest.TestCase):
+
+    TEST_FILE = '/tmp/test-protected-repo-listing'
+
+    def setUp(self):
+        if os.path.exists(TestProtectedRepoListingFile.TEST_FILE):
+            os.remove(TestProtectedRepoListingFile.TEST_FILE)
+
+    def tearDown(self):
+        if os.path.exists(TestProtectedRepoListingFile.TEST_FILE):
+            os.remove(TestProtectedRepoListingFile.TEST_FILE)
+
+    def test_save_load_delete_with_repos(self):
+        '''
+        Tests saving, reloading, and then deleting the listing file.
+        '''
+
+        # Test Save
+        f = ProtectedRepoListingFile(TestProtectedRepoListingFile.TEST_FILE)
+        f.add_protected_repo_path('foo', 'repo1')
+        f.save()
+
+        # Verify Save
+        self.assertTrue(os.path.exists(TestProtectedRepoListingFile.TEST_FILE))
+
+        # Test Load
+        f = ProtectedRepoListingFile(TestProtectedRepoListingFile.TEST_FILE)
+        f.load()
+
+        # Verify Load
+        self.assertEqual(1, len(f.listings))
+        self.assertTrue('foo' in f.listings)
+        self.assertEqual('repo1', f.listings['foo'])
+
+        # Test Delete
+        f.delete()
+
+        # Verify Delete
+        self.assertTrue(not os.path.exists(TestProtectedRepoListingFile.TEST_FILE))
+
+    def test_create_no_filename(self):
+        '''
+        Tests that creating the protected repo file without specifying a name
+        throws the proper exception.
+        '''
+        self.assertRaises(ValueError, ProtectedRepoListingFile, None)
+
+    def test_remove_repo_path(self):
+        '''
+        Tests removing a repo path successfully removes it from the listings.
+        '''
+
+        # Setup
+        f = ProtectedRepoListingFile(TestProtectedRepoListingFile.TEST_FILE)
+        f.add_protected_repo_path('foo', 'repo1')
+
+        self.assertEqual(1, len(f.listings))
+
+        # Test
+        f.remove_protected_repo_path('foo')
+
+        # Verify
+        self.assertEqual(0, len(f.listings))
+
+    def test_remove_non_existent(self):
+        '''
+        Tests removing a path that isn't in the file does not throw an error.
+        '''
+
+        # Setup
+        f = ProtectedRepoListingFile(TestProtectedRepoListingFile.TEST_FILE)
+        f.add_protected_repo_path('foo', 'repo1')
+
+        self.assertEqual(1, len(f.listings))
+
+        # Test
+        f.remove_protected_repo_path('bar') # should not error
+
+        # Verify
+        self.assertEqual(1, len(f.listings))
+        
