@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import heapq
 import itertools
 
 # storage class for in-memory task queues -------------------------------------
@@ -32,10 +33,10 @@ class VolatileStorage(object):
         return len(self.__waiting_tasks)
 
     def enqueue_waiting(self, task):
-        self.__waiting_tasks.append(task)
+        heapq.heappush(self.__waiting_tasks, task)
 
     def dequeue_waiting(self):
-        return self.__waiting_tasks.pop(0)
+        return heapq.heappop(self.__waiting_tasks)
 
     def peek_waiting(self):
         return self.__waiting_tasks[0]
