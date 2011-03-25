@@ -246,7 +246,7 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            return self.__storage.find_tasks(kwargs)
+            return self.__storage.find(kwargs)
         finally:
             self.__lock.release()
 
