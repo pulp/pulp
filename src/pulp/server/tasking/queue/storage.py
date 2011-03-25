@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -27,108 +26,59 @@ class VolatileStorage(object):
         self.__running_tasks = []
         self.__complete_tasks = []
 
-    # iterable methods
+    # wait queue methods
 
-    def all_tasks(self):
-        """
-        Return an iterator over all tasks currently in the queue in descending
-        order by length of time in the queue.
-        @return: iterator
-        """
-        return itertools.chain(self.__complete_tasks[:],
-                               self.__running_tasks[:],
-                               self.__waiting_tasks[:])
+    def num_waiting(self):
+        return len(self.__waiting_tasks)
 
-    def unfinished_tasks(self):
-        """
-        Return an iterator over all unfinished tasks in the queue in descending
-        order by length of time in the queue.
-        @return: iterator
-        """
-        return itertools.chain(self.__running_tasks[:], self.__waiting_tasks[:])
-
-    def waiting_tasks(self):
-        """
-        Return an iterator over all waiting tasks in the queue, in descending
-        order by the length of time in the queue.
-        @return: iterator
-        """
-        return self.__waiting_tasks[:]
-
-    def running_tasks(self):
-        """
-        Return an iterator over all running tasks in the queue, in descending
-        order by the length of time in the queue.
-        @return: iterator
-        """
-        return self.__running_tasks[:]
-
-    def complete_tasks(self):
-        """
-        Return an iterator over all complete tasks in the queue, in descending
-        order by the length of time in the queue.
-        @return: iterator
-        """
-        return self.__complete_tasks[:]
-
-    # add/remove tasks methods
-
-    def add_waiting_task(self, task):
-        """
-        Add a task to the wait queue.
-        @type task: Task instance
-        @param task: task to add
-        """
+    def enqueue_waiting(self, task):
         self.__waiting_tasks.append(task)
-        self.__waiting_tasks.sort(cmp=lambda a, b: cmp(a.scheduled_time, b.scheduled_time))
 
-    def add_running_task(self, task):
-        """
-        Remove a task from the wait queue and add it to the running queue.
-        @type task: Task instance
-        @param task: task to add
-        """
-        self.__waiting_tasks.remove(task)
+    def dequeue_waiting(self):
+        return self.__waiting_tasks.pop(0)
+
+    def peek_waiting(self):
+        return self.__waiting_tasks[0]
+
+    # storage methods
+
+    def store_running(self, task):
+        assert task not in self.__waiting_tasks
         self.__running_tasks.append(task)
 
-    def add_complete_task(self, task):
-        """
-        Remove a task from the running queue and add it to the complete queue.
-        @type task: Task instance
-        @param task: task to add
-        """
+    def remove_running(self, task):
+        assert task in self.__running_tasks
         self.__running_tasks.remove(task)
-        self.__complete_tasks.append(task)
 
-    def remove_task(self, task):
-        """
-        Remove a task from storage.
-        @type task: Task instance
-        @param task: task to remove
-        """
-        if task in self.__waiting_tasks:
-            self.__waiting_tasks.remove(task)
-            return
+    def store_complete(self, task):
+        assert task not in self.__waiting_tasks
         if task in self.__running_tasks:
             self.__running_tasks.remove(task)
-            return
-        if task in self.__complete_tasks:
-            self.__complete_tasks.remove(task)
+        self.__complete_tasks.append(task)
+
+    def remove_complete(self, task):
+        assert task in self.__complete_tasks
+        self.__complete_tasks.remove(task)
 
     # query methods
 
-    def find_tasks(self, criteria):
-        """
-        Find tasks in the storage based on the given criteria.
-        @type criteria: dict
-        @param criteria: dict of task attr -> value to match against
-        @type include_finished: bool
-        @return: list of tasks matching the criteria, empty if none match
-        """
+    def running_tasks(self):
+        return self.__running_tasks[:]
+
+    def complete_tasks(self):
+        return self.__complete_tasks[:]
+
+    def find(self, criteria):
+
+        def all_tasks():
+            return itertools.chain(self.__complete_tasks[:],
+                                   self.__running_tasks[:],
+                                   sorted(self.__waiting_tasks[:]))
+
         num_criteria = len(criteria)
         tasks = []
         # reverse the order of all the tasks in order to list the newest first
-        for task in reversed(list(self.all_tasks())):
+        for task in reversed(list(all_tasks())):
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
