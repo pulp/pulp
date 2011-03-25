@@ -20,7 +20,8 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
-from pulp.server.tasking.queue.thread import  DRLock, TaskThread, ThreadStateError
+from pulp.server.tasking.queue.thread import  (
+    DRLock, TaskThread, ThreadStateError)
 from pulp.server.tasking.queue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states
 
