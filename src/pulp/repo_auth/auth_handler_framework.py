@@ -13,7 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.repo_auth import oid_validation, identity_validation
+from pulp.repo_auth import oid_validation, identity_validation, auth_enabled_validation
 
 try:
     from mod_python import apache
@@ -35,7 +35,12 @@ except:
 # -- constants --------------------------------------------------------------------
 
 REQUIRED_PLUGINS = ()
-OPTIONAL_PLUGINS = (oid_validation.authenticate, identity_validation.authenticate)
+
+# The auth_enabled_validation runs first to prevent other plugins from running in
+# case the config indicates repo auth should not be run
+OPTIONAL_PLUGINS = (auth_enabled_validation.authenticate,
+                    oid_validation.authenticate,
+                    identity_validation.authenticate)
 
 # -- modpython --------------------------------------------------------------------
 
@@ -92,8 +97,8 @@ def _handle(request):
             _log('Authorization failed by plugin [%s]' % f.__module__)
             return apache.HTTP_UNAUTHORIZED
 
-        # If we get this far, the required plugins have passed. Run the optional plugins
-        # and ensure that at least one of them passes.
+    # If we get this far, the required plugins have passed. Run the optional plugins
+    # and ensure that at least one of them passes.
     if len(OPTIONAL_PLUGINS) == 0:
         return apache.OK
 
