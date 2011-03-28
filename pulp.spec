@@ -39,8 +39,6 @@ Requires: acl
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
-Requires: qpid-cpp-server-ssl
-Requires: qpid-cpp-server-store
 %if 0%{?fedora}
 # Fedora
 Requires: mod_python
@@ -102,9 +100,6 @@ Requires:       gofer >= 0.27
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
-Requires:       qpid-cpp-server
-Requires:       qpid-cpp-server-ssl
-Requires:       qpid-cpp-server-store
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
