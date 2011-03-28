@@ -18,6 +18,7 @@ This module contains utilities for manipulating a local store of protected
 repo information.
 '''
 
+import os
 from threading import RLock
 
 # -- constants ----------------------------------------------------------------------
@@ -135,7 +136,8 @@ class ProtectedRepoListingFile:
         # Parse into data structure
         for line in contents.split('\n'):
             pieces = line.split(',')
-            self.listings[pieces[0]] = pieces[1]
+            if len(pieces) == 2:
+                self.listings[pieces[0]] = pieces[1]
 
     def save(self):
         '''
@@ -143,6 +145,11 @@ class ProtectedRepoListingFile:
 
         @raise Exception: if there is an error during the write
         '''
+        # Make the directory in which the listings file lives if it doesn't exist
+        listing_dir = os.path.split(self.filename)[0]
+        if not os.path.exists(listing_dir):
+            os.makedirs(listing_dir)
+
         f = open(self.filename, 'w')
 
         for url in self.listings.keys():

@@ -27,6 +27,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 from pulp.repo_auth import oid_validation, repo_cert_utils
+from pulp.server.api.repo import RepoApi
 import testutil
 
 # -- constants ------------------------------------------------------------------
@@ -42,35 +43,147 @@ def log(message):
 
 class TestOidValidation(unittest.TestCase):
 
+    def clean(self):
+        if os.path.exists(CERT_TEST_DIR):
+            shutil.rmtree(CERT_TEST_DIR)
+
+
+
     def setUp(self):
         override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-repoauth.conf'
         repo_cert_utils.CONFIG_FILENAME = override_file
 
-        if os.path.exists(CERT_TEST_DIR):
-            shutil.rmtree(CERT_TEST_DIR)
+        self.repo_api = RepoApi()
+
+        self.clean()
 
     def tearDown(self):
-        if os.path.exists(CERT_TEST_DIR):
-            shutil.rmtree(CERT_TEST_DIR)
-    
-    def test_global_enabled_passes_global(self):
+        self.clean()
+
+    # See https://fedorahosted.org/pulp/wiki/RepoAuth for more information on scenarios
+
+    def test_scenario_1(self):
+        '''
+        Setup
+        - Global auth disabled
+        - Client cert signed by repo X CA
+        - Client cert has entitlements
+
+        Expected
+        - Permitted for both repos
+        '''
         pass
 
-    def test_global_enabled_fails_global(self):
+    def test_scenario_2(self):
+        '''
+        Setup
+        - Global auth disabled
+        - Client cert signed by different CA than repo X
+        - Client cert has entitlements
+
+        Expected
+        - Denied to repo X, permitted for repo Y
+        '''
         pass
 
-    def test_individual_enabled_passes(self):
+    def test_scenario_3(self):
+        '''
+        Setup
+        - Global auth disabled
+        - Client cert signed by repo X CA
+        - Client cert does not have entitlements for requested URL
+
+        Expected
+        - Denied to repo X, permitted to repo Y
+        '''
         pass
 
-    def test_individual_enabled_fails(self):
+    def test_scenario_4(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth disabled
+        - Client cert signed by global CA
+        - Client cert has entitlements to both repo X and Y
+
+        Expected
+        - Permitted to repo X and Y
+        '''
         pass
-    
+
+    def test_scenario_5(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth disabled
+        - Client cert signed by global CA
+        - Client cert has entitlements to only repo X
+
+        Expected
+        - Permitted to repo X, denied to repo Y
+        '''
+        pass
+
+    def test_scenario_6(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth disabled
+        - Client cert signed by non-global CA
+        - Client cert has entitlements for both repos
+
+        Expected
+        - Denied to both repo X and Y
+        '''
+        pass
+
+    def test_scenario_7(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth enabled on repo X
+        - Both global and individual auth use the same CA
+        - Client cert signed by the specified CA
+        - Client cert has entitlements for both repos
+
+        Expected
+        - Permitted for both repo X and Y
+        '''
+        pass
+
+    def test_scenario_8(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth enabled on repo X
+        - Different CA certificates for global and repo X configurations
+        - Client cert signed by repo X's CA certificate
+        - Client cert has entitlements for both repos
+
+        Expected
+        - Permitted for repo X (don't care about Y)
+        '''
+        pass
+
+    def test_scenario_9(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth enabled for repo X
+        - Different CA certificates for global and repo X configurations
+        - Client cert signed by global CA certificate
+        - Client cert has entitlements for both repos
+
+        Excepted
+        - Denied for repo X (don't care about repo Y)
+        '''
+        pass
 
 # -- test data ---------------------------------------------------------------------
 
 # Entitlements for:
-#  - epos/pulp/pulp/fedora-14/x86_64/
-CLIENT_CERT = '''
+#  - repos/pulp/pulp/fedora-14/x86_64/
+LIMITED_CLIENT_CERT = '''
 -----BEGIN CERTIFICATE-----
 MIIF2jCCA8KgAwIBAgIBCjANBgkqhkiG9w0BAQUFADBlMQswCQYDVQQGEwJVUzEL
 MAkGA1UECAwCTkoxEjAQBgNVBAcMCU1pY2tsZXRvbjEQMA4GA1UECgwHUmVkIEhh
@@ -104,6 +217,49 @@ tEMqhKLhdbwX5jRnUijYfH9UAkx8H/wjlqc6TEHmz+H+2iWanu5gujpu2K8Sneeq
 gxH9VgYm6K7KtVJPyG1SMyGDy0PGbzbtkEwDmUMoeefxBYZBBphM3igq3QAGELHr
 NDrid+nDmr1gUUqOnCvhrVMT+PWNgGsYdTBiSVJarBkM+hmaJKDvuLhMVYLu6kLU
 I9bmz1dqBo2/e4UnBko=
+-----END CERTIFICATE-----
+'''
+
+# Entitlements for:
+#  - repos/pulp/pulp/fedora-13/x86_64/
+#  - repos/pulp/pulp/fedora-14/x86_64/
+FULL_CLIENT_CERT = '''
+-----BEGIN CERTIFICATE-----
+MIIGXTCCBEWgAwIBAgIBAjANBgkqhkiG9w0BAQUFADBlMQswCQYDVQQGEwJVUzEL
+MAkGA1UECAwCTkoxEjAQBgNVBAcMCU1pY2tsZXRvbjEQMA4GA1UECgwHUmVkIEhh
+dDEPMA0GA1UECwwGUHVscCAxMRIwEAYDVQQDDAlwdWxwLWNhLTEwHhcNMTEwMzI4
+MTYwNzAxWhcNMTIwMzI3MTYwNzAxWjBmMQswCQYDVQQGEwJVUzELMAkGA1UECAwC
+TkoxEjAQBgNVBAcMCU1pY2tsZXRvbjEQMA4GA1UECgwHUmVkIEhhdDENMAsGA1UE
+CwwEUHVscDEVMBMGA1UEAwwMY2xpZW50MS1mdWxsMIICIjANBgkqhkiG9w0BAQEF
+AAOCAg8AMIICCgKCAgEAy4kK8GgojbDq2HnFWjSwynrJHLppuiZrMZDzFymaLrUw
+U7svP0Xtwgf3VYwHQGqL70DY/1mcuaBmW9sBVUiRh5p6eSTfMbGqHoXvB+utw9tQ
+VgmATNaj7r+hj/1ITyWJxvIRpD7rh2LlkwhtbMav0ftAfWvXafqbbkMpHGA1uQ9b
+YxJJm1XCNzLI2gKQROm04cAIsJv/zAihVRmjtpm6HFwyY0tj06/pbuKf0J/UvOz6
++2LOuhXiZz2z9c3oQM1KmlyQJstgZuPfydxQCE+tWYVbeW3JkqlqlKc++TK+jy+9
+Ue9nhf6kCQZhWTGNyhCjM9bMSzgtK1L6dveKekEwXYja+c+Vu/IiEP2vKE1H5Bgz
+lsfh4Dyr0bXdVl5YsBIPRcv6ptvJps0Ko2P1cFPsB1vchZD981LvBI6DLFpKWSVS
+b9kpbiWRpX3MGhf2ZObZ+IaYndbw7rAn5fhGKumn3vSNFLhZnvoCP5hrrhYygjoF
+fS83H7lH2jdxJ3nO4iHfbk/BT3EsbLodIcOgR3CQCH5UedIwpXUWqV344b0w2Xh5
+88dnAMHgpu8i9JUP4qy2q1XtZYXqKO/p5VwuE218eY5S4LKpEwn/xHTBAjLgwYkE
+bOa9lCEf8N7vBNMKPyAib1hBb9bc5k0bSzkot45rjVbdELMbhg3uPkrt87SPVIcC
+AwEAAaOCARUwggERMAkGA1UdEwQCMAAwKwYMKwYBBAGSCAkCAAEBBBsMGVB1bHAg
+UHJvZHVjdGlvbiBGZWRvcmEgMTQwHwYMKwYBBAGSCAkCAAECBA8MDXB1bHAtcHJv
+ZC1mMTQwMwYMKwYBBAGSCAkCAAEGBCMMIXJlcG9zL3B1bHAvcHVscC9mZWRvcmEt
+MTQveDg2XzY0LzArBgwrBgEEAZIICQIBAQEEGwwZUHVscCBQcm9kdWN0aW9uIEZl
+ZG9yYSAxMzAfBgwrBgEEAZIICQIBAQIEDwwNcHVscC1wcm9kLWYxMzAzBgwrBgEE
+AZIICQIBAQYEIwwhcmVwb3MvcHVscC9wdWxwL2ZlZG9yYS0xMy94ODZfNjQvMA0G
+CSqGSIb3DQEBBQUAA4ICAQBF2erUvu2v/10QBLuGr2ItMt9D0pWoUEAgJMSMPNRc
+TbfSulsNEIVbVEIoBUxvOD/Y4uxiGPhXAyiDBxWpRyeScKzsLpJoGVi4feBV+SvJ
+ykk5ocx1Ou+57nYalfMg8uRBpFYik7/X8m30Bsb63fnqcweE2XjVjebjG43iG78g
+jyl+uEzcYeGo1WCymhT66OH3WT46aDlDsQOpcCC/VMcqj/jyBNlo2WjlKUvnvCSX
+k93bBCi/cQ7fcdAlyFDgBTI1GIu2F4Zl0WBuQUiYDSo49uvUpwiufWteyONMwXj5
+2qbQuRiyiQ59fkWE2MQgtoOMyT/gPsDfbwnC7UphEAA0qT4iNWmXah+bzRwUA/Ic
+YVlPokRr6FQAH4edffAw1FF2B/Hd0DrFqG3KvBBYssK3tCK2iMquK6m34a7ja059
+khc02MWDvkF6O/WCaL+dOOY0/QMGoJN+o/GrMYJwjsPblUQtEihXJVrE5I2xT8FA
+TlISug1aV2N3kfE89VqnLciKHg3F2Kq95Syaf7NHtKtxLWaFZr0VfvvpCVL89UgU
+edV07LlKUOOtS4yjknwfJvBADP3DVN+s1zw2orkQq2azf0+OhnxjWg+KibKroHi6
+5smAmdaRMexu1zJyn9r4Jreod+znjQtnw1y2vE5BE1fjB66HHY6g0DhuSDOOGj1L
+lQ==
 -----END CERTIFICATE-----
 '''
 
