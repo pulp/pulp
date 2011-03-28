@@ -17,9 +17,11 @@
 import itertools
 import logging
 from datetime import datetime
+from gettext import gettext as _
 
 import web
 
+from pulp.server import async
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
@@ -390,6 +392,8 @@ class ConsumerActions(AsyncController):
         if data.has_key("scheduled_time"):
             scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
             task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Install packages already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -407,6 +411,8 @@ class ConsumerActions(AsyncController):
         if data.has_key("scheduled_time"):
             scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
             task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Package group installation already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -435,6 +441,8 @@ class ConsumerActions(AsyncController):
         if data.has_key("scheduled_time"):
             scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
             task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Package group installation already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -456,6 +464,8 @@ class ConsumerActions(AsyncController):
         if data.has_key("scheduled_time"):
             scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
             task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Errata installation already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)

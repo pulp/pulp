@@ -16,9 +16,11 @@
 
 import logging
 from datetime import datetime
+from gettext import gettext as _
 
 import web
 
+from pulp.server import async
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
@@ -211,6 +213,8 @@ class ConsumerGroupActions(AsyncController):
         if data.has_key("scheduled_time"):
             scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
             task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Package install already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -230,6 +234,8 @@ class ConsumerGroupActions(AsyncController):
         if data.has_key("scheduled_time"):
             scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
             task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Errata install already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
