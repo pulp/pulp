@@ -55,7 +55,7 @@ from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.task import RepoSyncTask
+from pulp.server.tasking.task import Task
 
 
 log = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ class RepoApi(BaseApi):
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
-               feed_cert_data=None, consumer_cert_data=None, groupid=(), 
+               feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256"):
         """
         Create a new Repository object and return it
@@ -170,7 +170,7 @@ class RepoApi(BaseApi):
             r['consumer_ca'] = consumer_cert_files['ca']
             r['consumer_cert'] = consumer_cert_files['cert']
             r['consumer_key'] = consumer_cert_files['key']
-            
+
         if groupid:
             for gid in groupid:
                 r['groupid'].append(gid)
@@ -277,16 +277,16 @@ class RepoApi(BaseApi):
             contents = f.read()
             f.close()
             return contents
-        
+
         if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
             feed_cert_data = {'ca' : read_cert_file(repo['feed_ca']),
                               'cert' : read_cert_file(repo['feed_cert']),
-                              'key'  : read_cert_file(repo['feed_key']),}
+                              'key'  : read_cert_file(repo['feed_key']), }
 
         if repo['consumer_ca'] and repo['consumer_cert'] and repo['consumer_key']:
             consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
                                   'cert' : read_cert_file(repo['consumer_cert']),
-                                  'key' : read_cert_file(repo['consumer_key']),}
+                                  'key' : read_cert_file(repo['consumer_key']), }
 
         log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
         if feed == 'origin':
@@ -1835,7 +1835,7 @@ class RepoApi(BaseApi):
         groupids = repo['groupid']
         if rmgrp in groupids:
             groupids.remove(rmgrp)
-        
+
         repo["groupid"] = groupids
         self.collection.save(repo, safe=True)
         log.info('repository (%s), removed group: %s', id, rmgrp)
@@ -1899,6 +1899,32 @@ class RepoApi(BaseApi):
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
+
+class RepoSyncTask(Task):
+    # Note: We want the "invoked" from Task, so we are not inheriting from
+    # AsyncTask
+    """
+    Repository Synchronization Task
+    This task is responsible for implementing cancel logic for a 
+    repository synchronization 
+    """
+    def __init__(self, callable, args=[], kwargs={}, timeout=None):
+        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
+        self.synchronizer = None
+
+    def set_synchronizer(self, sync_obj):
+        self.synchronizer = sync_obj
+        self.kwargs['synchronizer'] = self.synchronizer
+
+    def cancel(self):
+        log.info("RepoSyncTask cancel invoked")
+        if self.synchronizer:
+            self.synchronizer.cancel()
+            # All synchronization work should be stopped
+            # when this returns.  Will pass through to 
+            # default cancel behavior as a backup in case
+            # something didn't cancel
+        super(RepoSyncTask, self).cancel()
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

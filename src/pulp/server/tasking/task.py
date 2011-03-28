@@ -301,30 +301,3 @@ class AsyncTask(Task):
         by external processing.
         """
         pass
-
-
-# Note: We want the "invoked" from Task, so we are not inheriting from
-# AsyncTask
-class RepoSyncTask(Task):
-    """
-    Repository Synchronization Task
-    This task is responsible for implementing cancel logic for a 
-    repository synchronization 
-    """
-    def __init__(self, callable, args=[], kwargs={}, timeout=None):
-        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
-        self.synchronizer = None
-
-    def set_synchronizer(self, sync_obj):
-        self.synchronizer = sync_obj
-        self.kwargs['synchronizer'] = self.synchronizer
-
-    def cancel(self):
-        _log.info("RepoSyncTask cancel invoked")
-        if self.synchronizer:
-            self.synchronizer.cancel()
-            # All synchronization work should be stopped
-            # when this returns.  Will pass through to 
-            # default cancel behavior as a backup in case
-            # something didn't cancel
-        super(RepoSyncTask, self).cancel()

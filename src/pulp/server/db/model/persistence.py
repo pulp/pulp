@@ -17,9 +17,10 @@ import copy
 import pickle
 from gettext import gettext as _
 
+from pulp.server.api.repo import RepoSyncTask
 from pulp.server.db.model.base import Model
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.task import Task, AsyncTask, RepoSyncTask
+from pulp.server.tasking.task import Task, AsyncTask
 
 # task fields stored in task snapshots ----------------------------------------
 
