@@ -31,7 +31,7 @@ IDENTITY_CN = 'pulp-identity'
 
 # -- framework -----------------------------------------------------------------
 
-def authenticate(request, log_func):
+def authenticate(request):
     '''
     Framework hook method.
     '''

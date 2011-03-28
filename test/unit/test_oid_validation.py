@@ -37,9 +37,6 @@ CERT_TEST_DIR = '/tmp/test_oid_validation/'
 
 # -- mocks ----------------------------------------------------------------------
 
-def mock_log(message):
-    pass
-
 class MockRequest:
 
     def __init__(self, client_cert_pem, uri):
@@ -48,6 +45,9 @@ class MockRequest:
 
     def ssl_var_lookup(self, lookup_var_name):
         return self.client_cert_pem
+
+    def log_error(self, message):
+        pass
 
 # -- test cases -----------------------------------------------------------------
 
@@ -107,8 +107,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(response_x)
@@ -139,8 +139,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(not response_x)
@@ -171,8 +171,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
         
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(response_x)
@@ -203,8 +203,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(response_x)
@@ -235,8 +235,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(response_x)
@@ -267,8 +267,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(not response_x)
@@ -301,8 +301,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(response_x)
@@ -335,8 +335,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(response_x)
@@ -369,8 +369,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
 
         # Verify
         self.assertTrue(not response_x)

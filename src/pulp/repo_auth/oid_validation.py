@@ -52,7 +52,7 @@ RELATIVE_URL = '/pulp/repos' # no trailing backslash since the relative paths wi
 
 # -- framework -----------------------------------------------------------------
 
-def authenticate(request, log_func):
+def authenticate(request):
     '''
     Framework hook method.
     '''
@@ -60,7 +60,7 @@ def authenticate(request, log_func):
 
     # Check that the client has an entitlement for the requested URI. If not,
     # we can immediately fail the attempt.
-    valid = _is_valid(request.uri, cert_pem, log_func)
+    valid = _is_valid(request.uri, cert_pem, request.log_error)
     return valid
 
 # -- private -------------------------------------------------------------------
@@ -101,7 +101,7 @@ def _is_valid(dest, cert_pem, log_func):
                 return False
 
     # If there were neither global nor repo auth credentials, auth passes.
-    if global_bundle is not None and repo_bundle is not None:
+    if global_bundle is None and repo_bundle is None:
         return True
 
     # If the credentials were specified for either case, apply the OID checks.

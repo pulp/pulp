@@ -28,10 +28,6 @@ except:
         OK = 'ok'
         APLOG_INFO = 'info'
 
-        @classmethod
-        def log_error(cls, message, level):
-            pass
-
 # -- constants --------------------------------------------------------------------
 
 REQUIRED_PLUGINS = ()
@@ -90,10 +86,10 @@ def _handle(request):
     # First apply to the required handlers; if any of these fail we are immediately
     # unauthorized
     for f in REQUIRED_PLUGINS:
-        result = f(request, _log)
+        result = f(request)
 
         if not result:
-            _log('Authorization failed by plugin [%s]' % f.__module__)
+            request.log_error('Authorization failed by plugin [%s]' % f.__module__)
             return apache.HTTP_UNAUTHORIZED
 
     # If we get this far, the required plugins have passed. Run the optional plugins
@@ -102,21 +98,9 @@ def _handle(request):
         return apache.OK
 
     for f in OPTIONAL_PLUGINS:
-        result = f(request, _log)
+        result = f(request)
 
         if result:
             return apache.OK
 
     return apache.HTTP_UNAUTHORIZED
-
-def _log(message):
-    '''
-    Wrapper method around accessing the Apache log through mod_python. This method
-    is passed into plugins when they are invoked and is used to hide the specifics
-    of the Apache logger API in case we ever find a way to use another logging
-    mechanism.
-
-    @param message: text to output to the log
-    @type  message: str
-    '''
-    apache.log_error(message, apache.APLOG_INFO)
