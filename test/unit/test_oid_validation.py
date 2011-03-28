@@ -376,7 +376,105 @@ class TestOidValidation(unittest.TestCase):
         self.assertTrue(not response_x)
         self.assertTrue(response_y)
 
-        
+    def test_scenario_10(self):
+        '''
+        Setup
+        - Global auth disabled
+        - Individual repo auth enabled for repo X
+        - No client cert in request
+
+        Expected
+        - Denied for repo X, permitted for repo Y
+        - No exceptions thrown
+        '''
+
+        # Setup
+        self.auth_api.disable_global_repo_auth()
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(response_y)
+
+    def test_scenario_11(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth disabled
+        - No client cert in request
+
+        Expected
+        - Denied to both repo X and Y
+        - No exceptions thrown
+        '''
+
+        # Setup
+        global_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        self.repo_api.create('repo-x', 'Repo X', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(not response_y)
+
+    def test_scenario_12(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth enabled on repo X
+        - Both global and individual auth use the same CA
+        - No client cert in request
+
+        Expected
+        - Denied for both repo X and Y
+        - No exceptions thrown
+        '''
+
+        # Setup
+        global_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x)
+        response_y = oid_validation.authenticate(request_y)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(not response_y)
+
+
 # -- test data ---------------------------------------------------------------------
 
 # Entitlements for:
