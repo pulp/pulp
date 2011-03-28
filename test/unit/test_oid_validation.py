@@ -28,16 +28,26 @@ sys.path.insert(0, commondir)
 
 from pulp.repo_auth import oid_validation, repo_cert_utils
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.auth import AuthApi
 import testutil
 
 # -- constants ------------------------------------------------------------------
 
 CERT_TEST_DIR = '/tmp/test_oid_validation/'
 
-# -- mock functions -------------------------------------------------------------
+# -- mocks ----------------------------------------------------------------------
 
-def log(message):
+def mock_log(message):
     pass
+
+class MockRequest:
+
+    def __init__(self, client_cert_pem, uri):
+        self.client_cert_pem = client_cert_pem
+        self.uri = uri
+
+    def ssl_var_lookup(self, lookup_var_name):
+        return self.client_cert_pem
 
 # -- test cases -----------------------------------------------------------------
 
@@ -47,13 +57,23 @@ class TestOidValidation(unittest.TestCase):
         if os.path.exists(CERT_TEST_DIR):
             shutil.rmtree(CERT_TEST_DIR)
 
+        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
+        if os.path.exists(protected_repo_listings_file):
+            os.remove(protected_repo_listings_file)
 
+        self.repo_api.clean()
 
     def setUp(self):
+
+        # Test configuration setup
         override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-repoauth.conf'
+        self.config = testutil.load_test_config()
+
         repo_cert_utils.CONFIG_FILENAME = override_file
+        oid_validation.PROTECTED_REPOS_FILENAME = self.config.get('repos', 'protected_repo_listing_file')
 
         self.repo_api = RepoApi()
+        self.auth_api = AuthApi()
 
         self.clean()
 
@@ -66,37 +86,97 @@ class TestOidValidation(unittest.TestCase):
         '''
         Setup
         - Global auth disabled
+        - Individual repo auth enabled for repo X
         - Client cert signed by repo X CA
         - Client cert has entitlements
 
         Expected
         - Permitted for both repos
         '''
-        pass
+
+        # Setup
+        self.auth_api.disable_global_repo_auth()
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(response_y)
 
     def test_scenario_2(self):
         '''
         Setup
         - Global auth disabled
+        - Individual repo auth enabled for repo X
         - Client cert signed by different CA than repo X
         - Client cert has entitlements
 
         Expected
         - Denied to repo X, permitted for repo Y
         '''
-        pass
+
+        # Setup
+        self.auth_api.disable_global_repo_auth()
+
+        repo_x_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(response_y)
 
     def test_scenario_3(self):
         '''
         Setup
         - Global auth disabled
-        - Client cert signed by repo X CA
+        - Individual repo auth enabled for repo X
+        - Client cert signed by repo Y CA
         - Client cert does not have entitlements for requested URL
 
         Expected
-        - Denied to repo X, permitted to repo Y
+        - Permitted to repo X, denied from repo Y
         '''
-        pass
+
+        # Setup
+        self.auth_api.disable_global_repo_auth()
+
+        repo_y_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch', consumer_cert_data=repo_y_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+        
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(not response_y)
 
     def test_scenario_4(self):
         '''
@@ -109,7 +189,26 @@ class TestOidValidation(unittest.TestCase):
         Expected
         - Permitted to repo X and Y
         '''
-        pass
+
+        # Setup
+        global_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        self.repo_api.create('repo-x', 'Repo X', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(response_y)
 
     def test_scenario_5(self):
         '''
@@ -122,7 +221,26 @@ class TestOidValidation(unittest.TestCase):
         Expected
         - Permitted to repo X, denied to repo Y
         '''
-        pass
+
+        # Setup
+        global_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        self.repo_api.create('repo-x', 'Repo X', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(not response_y)
 
     def test_scenario_6(self):
         '''
@@ -135,7 +253,26 @@ class TestOidValidation(unittest.TestCase):
         Expected
         - Denied to both repo X and Y
         '''
-        pass
+
+        # Setup
+        global_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        self.repo_api.create('repo-x', 'Repo X', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(not response_y)
 
     def test_scenario_7(self):
         '''
@@ -149,7 +286,27 @@ class TestOidValidation(unittest.TestCase):
         Expected
         - Permitted for both repo X and Y
         '''
-        pass
+
+        # Setup
+        global_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(response_y)
 
     def test_scenario_8(self):
         '''
@@ -161,9 +318,29 @@ class TestOidValidation(unittest.TestCase):
         - Client cert has entitlements for both repos
 
         Expected
-        - Permitted for repo X (don't care about Y)
+        - Permitted for repo X, denied for repo Y
         '''
-        pass
+
+        # Setup
+        global_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(response_x)
+        self.assertTrue(not response_y)
 
     def test_scenario_9(self):
         '''
@@ -175,10 +352,31 @@ class TestOidValidation(unittest.TestCase):
         - Client cert has entitlements for both repos
 
         Excepted
-        - Denied for repo X (don't care about repo Y)
+        - Denied for repo X, passes for repo Y
         '''
-        pass
 
+        # Setup
+        global_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        repo_x_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, mock_log)
+        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(response_y)
+
+        
 # -- test data ---------------------------------------------------------------------
 
 # Entitlements for:
