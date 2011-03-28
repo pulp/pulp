@@ -44,18 +44,17 @@ class ConsumerAction(Action):
         super(ConsumerAction, self).__init__()
         self.consumer_api = ConsumerAPI()
         self.is_consumer_client = is_consumer_client
+        self.consumerid = None
 
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
-        default = None
         consumerid = self.getconsumerid()
         
         # Do not accept consumerid when running pulp-client consumer commands on existing consumer
         if consumerid is not None and self.is_consumer_client:
-            default = consumerid
+            self.consumerid = consumerid
         else:
-            default = id
-            self.parser.add_option("--id", dest="id", default=default, help=help)
+            self.parser.add_option("--id", dest="id", help=help)
 
 # consumer actions ------------------------------------------------------------
 
@@ -190,10 +189,12 @@ class Delete(ConsumerAction):
     description = _('delete the consumer')
 
     def run(self):
-        myid = self.getconsumerid()
-        consumerid = self.get_required_option('id')
+        if not self.consumerid:
+            consumerid = self.get_required_option('id')
+        else:
+            consumerid = self.consumerid
         self.consumer_api.delete(consumerid)
-        if myid and myid == consumerid:
+        if self.consumerid:
             repo_file = RepoFile(_cfg.client.repo_file)
             repo_file.delete()
             
@@ -228,13 +229,15 @@ class Bind(ConsumerAction):
                        help=_("repo identifier (required)"))
 
     def run(self):
-        myid = self.getconsumerid()
-        consumerid = self.get_required_option('id')
+        if not self.consumerid:
+            consumerid = self.get_required_option('id')
+        else:
+            consumerid = self.consumerid
         repoid = self.get_required_option('repoid')
         bind_data = self.consumer_api.bind(consumerid, repoid)
 
         if bind_data:
-            if myid and myid == consumerid:
+            if self.consumerid:
                 mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
                 repolib.bind(_cfg.client.repo_file, mirror_list_filename, _cfg.client.gpg_keys_dir,
                              repoid, bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
@@ -255,11 +258,13 @@ class Unbind(ConsumerAction):
                        help=_("repo identifier (required)"))
 
     def run(self):
-        myid = self.getconsumerid()
-        consumerid = self.get_required_option('id')
+        if not self.consumerid:
+            consumerid = self.get_required_option('id')
+        else:
+            consumerid = self.consumerid
         repoid = self.get_required_option('repoid')
         self.consumer_api.unbind(consumerid, repoid)
-        if myid and myid == consumerid:
+        if self.consumerid:
             mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
             repolib.unbind(_cfg.client.repo_file, mirror_list_filename, _cfg.client.gpg_keys_dir, repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
@@ -356,7 +361,10 @@ class History(ConsumerAction):
                                help=_('only return entries that occur on or before the given date (format: yyyy-mm-dd)'))
 
     def run(self):
-        consumerid = self.get_required_option('id')
+        if not self.consumerid:
+            consumerid = self.get_required_option('id')
+        else:
+            consumerid = self.consumerid
         # Assemble the query parameters
         query_params = {
             'event_type' : self.opts.event_type,
