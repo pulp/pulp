@@ -48,7 +48,7 @@ PROTECTED_REPOS_FILENAME = '/etc/pki/content/pulp-protected-repos'
 # we can't read it from there in case this runs on a CDS. I'm also pretty sure
 # Pulp would break in other ways if this was changed, so for now this is
 # hardcoded until we actually get a use case to make it variable.
-RELATIVE_URL = '/pulp/repos/' # the trailing backslash matters
+RELATIVE_URL = '/pulp/repos' # no trailing backslash since the relative paths will start with a /
 
 # -- framework -----------------------------------------------------------------
 
@@ -76,18 +76,8 @@ def _is_valid(dest, cert_pem, log_func):
     @type  cert_pem: string
     '''
 
-    # Load the global repo auth cert bundle and check that first if
-    # it's present.
-    global_bundle = repo_cert_utils.read_global_cert_bundle('ca')
-    if global_bundle is not None:
-
-        # Make sure the client cert is signed by the correct CA
-        is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
-        if not is_valid:
-            log_func('Client certificate did not match the global repo auth CA certificate')
-            return False
-
     # Load the repo credentials if they exist
+    passes_individual_ca = False
     repo_bundle = _matching_repo_bundle(dest)
     if repo_bundle is not None:
 
@@ -96,6 +86,19 @@ def _is_valid(dest, cert_pem, log_func):
         if not is_valid:
             log_func('Client certificate did not match the repo consumer CA certificate')
             return False
+        else:
+            # Indicate it passed individual check so we don't run the global too
+            passes_individual_ca = True
+        
+    # Load the global repo auth cert bundle and check it's CA against the client cert
+    # if it didn't already pass the individual auth check
+    global_bundle = repo_cert_utils.read_global_cert_bundle(['ca'])
+    if not passes_individual_ca and global_bundle is not None:
+            # Make sure the client cert is signed by the correct CA
+            is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
+            if not is_valid:
+                log_func('Client certificate did not match the global repo auth CA certificate')
+                return False
 
     # If there were neither global nor repo auth credentials, auth passes.
     if global_bundle is not None and repo_bundle is not None:
