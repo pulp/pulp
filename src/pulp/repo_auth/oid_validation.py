@@ -81,6 +81,11 @@ def _is_valid(dest, cert_pem, log_func):
     repo_bundle = _matching_repo_bundle(dest)
     if repo_bundle is not None:
 
+        # If there is an individual bundle but no client certificate has been specified,
+        # they are invalid
+        if cert_pem == '':
+            return False
+
         # Make sure the client cert is signed by the correct CA
         is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, repo_bundle['ca'])
         if not is_valid:
@@ -89,16 +94,22 @@ def _is_valid(dest, cert_pem, log_func):
         else:
             # Indicate it passed individual check so we don't run the global too
             passes_individual_ca = True
-        
+
     # Load the global repo auth cert bundle and check it's CA against the client cert
     # if it didn't already pass the individual auth check
     global_bundle = repo_cert_utils.read_global_cert_bundle(['ca'])
     if not passes_individual_ca and global_bundle is not None:
-            # Make sure the client cert is signed by the correct CA
-            is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
-            if not is_valid:
-                log_func('Client certificate did not match the global repo auth CA certificate')
-                return False
+
+        # If there is a global repo bundle but no client certificate has been specified,
+        # they are invalid
+        if cert_pem == '':
+            return False
+
+        # Make sure the client cert is signed by the correct CA
+        is_valid = repo_cert_utils.validate_certificate_pem(cert_pem, global_bundle['ca'])
+        if not is_valid:
+            log_func('Client certificate did not match the global repo auth CA certificate')
+            return False
 
     # If there were neither global nor repo auth credentials, auth passes.
     if global_bundle is None and repo_bundle is None:
@@ -123,7 +134,14 @@ def _matching_repo_bundle(dest):
     # it is considered to be a request against that protected repo
     repo_id = None
     for relative_url in prot_repos.keys():
-        if repo_url.startswith(relative_url):
+
+        # I haven't found consistency in the relative URL setting on a repo, so make sure
+        # it starts with a / to match what was ripped from the request URI
+        test_pattern = relative_url
+        if not test_pattern.startswith('/'):
+            test_pattern = '/' + relative_url
+
+        if repo_url.startswith(test_pattern):
             repo_id = prot_repos[relative_url]
             break
 
