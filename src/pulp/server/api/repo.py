@@ -36,7 +36,7 @@ from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
-import pulp.repo_auth.repo_cert_utils as repo_cert_utils
+from pulp.repo_auth import repo_cert_utils, protected_repo_utils
 from pulp.server import updateinfo
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
@@ -158,6 +158,20 @@ class RepoApi(BaseApi):
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
 
+        # Relative path calculation
+        if relative_path is None or relative_path == "":
+            if r['source'] is not None :
+                if r['source']['type'] == "local":
+                    r['relative_path'] = r['id']
+                else:
+                    # For none product repos, default to repoid
+                    url_parse = urlparse(str(r['source']["url"]))
+                    r['relative_path'] = url_parse[2] or r['id']
+            else:
+                r['relative_path'] = r['id']
+        else:
+            r['relative_path'] = relative_path
+        
         # Store any certificates and add the full paths to their files in the repo object
         if feed_cert_data:
             feed_cert_files = repo_cert_utils.write_feed_cert_bundle(id, feed_cert_data)
@@ -170,24 +184,13 @@ class RepoApi(BaseApi):
             r['consumer_ca'] = consumer_cert_files['ca']
             r['consumer_cert'] = consumer_cert_files['cert']
             r['consumer_key'] = consumer_cert_files['key']
+            listing_filename = config.config.get('repos', 'protected_repo_listing_file')
+            protected_repo_utils.add_protected_repo(listing_filename, r['relative_path'], id)
             
         if groupid:
             for gid in groupid:
                 r['groupid'].append(gid)
 
-        if relative_path is None or relative_path == "":
-            if r['source'] is not None :
-                if r['source']['type'] == "local":
-                    r['relative_path'] = r['id']
-                else:
-                    # For none product repos, default to repoid
-                    url_parse = urlparse(str(r['source']["url"]))
-                    r['relative_path'] = url_parse[2] or r['id']
-            else:
-                r['relative_path'] = r['id']
-
-        else:
-            r['relative_path'] = relative_path
         # Remove leading "/", they will interfere with symlink
         # operations for publishing a repository
         r['relative_path'] = r['relative_path'].strip('/')
@@ -577,6 +580,8 @@ class RepoApi(BaseApi):
 
         # Delete any certificate bundles for the repo
         repo_cert_utils.delete_for_repo(id)
+        listing_filename = config.config.get('repos', 'protected_repo_listing_file')
+        protected_repo_utils.delete_protected_repo(listing_filename, repo['relative_path'])
 
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
@@ -598,9 +603,11 @@ class RepoApi(BaseApi):
         prevpath = repo.get('relative_path')
         newpath = delta.pop('relative_path', None)
         hascontent = self._hascontent(repo)
-        # Keeps a running track of whether or not the
-        # changes require notifying conusmers
+
+        # Keeps a running track of whether or not the changes require notifying consumers
+        # Also need to know later on if a consumer cert was updated.
         update_consumers = False
+        consumer_cert_updated = False
         for key, value in delta.items():
             # simple changes
             if key in ('name', 'arch',):
@@ -621,6 +628,7 @@ class RepoApi(BaseApi):
                 bundle_key = key[9:]
                 value = repo_cert_utils.write_consumer_cert_bundle(id, {bundle_key:value})
                 repo[key] = value[bundle_key]
+                consumer_cert_updated = True
                 continue
             # feed changed
             if key == 'feed':
@@ -672,6 +680,13 @@ class RepoApi(BaseApi):
             else:
                 raise PulpException(
                     "Repository has content, relative path cannot be changed")
+
+        # If the consumer certs were updated, update the protected repo listings.
+        # This has to be done down here in case the relative path has changed as well.
+        if consumer_cert_updated:
+            listing_filename = config.config.get('repos', 'protected_repo_listing_file')
+            protected_repo_utils.add_protected_repo(listing_filename, repo['relative_path'], id)
+        
         # store changed object
         self.collection.save(repo, safe=True)
         # Update subscribed consumers after the object has been saved

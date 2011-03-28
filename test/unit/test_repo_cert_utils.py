@@ -32,8 +32,8 @@ import testutil
 
 # -- constants -----------------------------------------------------------------------
 
-CERT_DIR = '/tmp/test_repo_cert_utils/repos'
-GLOBAL_CERT_DIR = '/tmp/test_repo_cert_utils/global'
+CERT_DIR = '/tmp/etc/pki/content'
+GLOBAL_CERT_DIR = '/tmp/etc/pki/content'
 
 # Used to sign the test certificate
 VALID_CA = os.path.abspath(os.path.dirname(__file__)) + '/data/test_repo_cert_utils/valid_ca.crt'
@@ -110,8 +110,6 @@ class TestCertStorage(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
-        self.config.set('repos', 'cert_location', CERT_DIR)
-        self.config.set('repos', 'global_cert_location', GLOBAL_CERT_DIR)
 
         self.clean()
 
@@ -302,3 +300,37 @@ class TestCertVerify(unittest.TestCase):
         Tests that verifying a cert with an incorrect CA returns false.
         '''
         self.assertTrue(not utils.validate_certificate(CERT, INVALID_CA))
+
+    def test_valid_pem(self):
+        '''
+        Tests that verifying a PEM encoded cert string with its signing CA returns true.
+        '''
+
+        # Setup
+        f = open(VALID_CA)
+        ca = f.read()
+        f.close()
+
+        f = open(CERT)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertTrue(utils.validate_certificate_pem(cert, ca))
+
+    def test_invalid_pem(self):
+        '''
+        Tests that verifying a PEM encoded cert string with an incorrect CA returns false.
+        '''
+
+        # Setup
+        f = open(INVALID_CA)
+        ca = f.read()
+        f.close()
+
+        f = open(CERT)
+        cert = f.read()
+        f.close()
+
+        # Test
+        self.assertTrue(not utils.validate_certificate_pem(cert, ca))
