@@ -16,8 +16,9 @@ import os
 import logging
 import shutil
 
-# 3rd Party
+# Pulp
 from grinder.RepoFetch import YumRepoGrinder
+from pulp.repo_auth import repo_cert_utils, protected_repo_utils
 
 
 LOGPATH = '/var/log/pulp-cds/gofer.log'
@@ -51,7 +52,7 @@ class CdsLib(object):
         '''
         Init logging.
         @param config: The CDS configuration.
-        @type config: PluginDescriptor
+        @type config: L{INIConfig}
         '''
         self.config = config
         loginit()
@@ -100,6 +101,45 @@ class CdsLib(object):
         except Exception, e:
             log.exception('Error performing sync')
             raise e
+
+    def set_repo_auth(self, repo_id, repo_relative_path, bundle):
+        '''
+        Saves repo authentication credentials for a repo. If the credentials are None,
+        the repo will be removed from the protected repo list.
+
+        In the case that a repo with credentials has its relative path updated, two
+        calls to this will be made by the server. The first will be with the old
+        relative path and empty credentials, meant to remove the old listing from the
+        protected repo list. The second will be a new entry with the credentials
+        set against the new relative path.
+
+        @param repo_id: identifies the repo; this is used for the storage and retrieval
+                        of the credentials
+        @type  repo_id: str
+
+        @param repo_relative_path: used in mapping the request URL to the repo credentials
+        @type  repo_relative_path: str
+
+        @param bundle: the certificate bundle containing the pieces necessary for auth
+        @param bundle: dict {str, str}
+        '''
+
+        # If the items in bundle have None values, the following call will delete the
+        # associated file if one exists.
+        repo_cert_utils.write_consumer_cert_bundle(repo_id, bundle)
+
+        # Determine whether or not to add the repo 
+        protected_repo_utils.add_protected_repo(self.config.repos.protected_repo_listing_file, repo_relative_path, repo_id)
+
+    def set_global_repo_auth(self, bundle):
+        '''
+        Saves the global repo auth credentials which are applied to all repo
+        accesses. If the credentials are None, the global credentials will be removed.
+
+        @param bundle: the certificate bundle containing the pieces necessary for auth
+        @param bundle: dict {str, str}
+        '''
+        pass
 
     def _sync_repos(self, base_url, repos):
         '''

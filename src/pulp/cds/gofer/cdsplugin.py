@@ -71,14 +71,22 @@ def release():
 @remote(secret=getsecret)
 def sync(base_url, repos):
     '''
-    Synchronizes the given repos to this CDS (forwarded to CdsLib).
-    @param base_url: location of the base URL where repos are hosted, the url
-                     should end in a trailing / but is not required to;
-                     example: https://pulp.example.com/
-    @type  base_url: string
-    @param repos: list of repos that should be on the CDS following synchronization
-    @type  repos: list of dict, where each dict describes a repo that should be present
-                  on the CDS
+    See cdslib.CdsLib.sync for details.
     '''
     log.info('Received sync call')
     cdslib.sync(base_url, repos)
+
+def set_repo_auth(repo_id, repo_relative_path, bundle):
+    '''
+    See cdslib.CdsLib.set_repo_auth for details.
+    '''
+    log.info('Setting repo auth credentials for repo [%s]' % repo_id)
+    cdslib.set_repo_auth(repo_id, repo_relative_path, bundle)
+
+def set_global_repo_auth(bundle):
+    '''
+    See cdslib.CdsLib.set_global_repo_auth for details.
+    '''
+    log.info('Setting global repo auth credentials')
+    cdslib.set_global_repo_auth(bundle)
+    
