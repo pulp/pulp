@@ -1118,7 +1118,7 @@ class AddFiles(RepoAction):
 
     def setup_parser(self):
         super(AddFiles, self).setup_parser()
-        self.parser.add_option("-f", "--file", action="append", dest="files",
+        self.parser.add_option("-f", "--filename", action="append", dest="filename",
                 help=_("file to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("Source repository with specified files to perform add (optional)"))
@@ -1132,16 +1132,16 @@ class AddFiles(RepoAction):
         if self.opts.srcrepo:
             self.get_repo(self.opts.srcrepo)
         fids = {}
-        if self.opts.files and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Both --files and --csv cannot be used in the same command."))
+        if self.opts.filename and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Both --filename and --csv cannot be used in the same command."))
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
                 system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             flist = utils.parseCSV(self.opts.csv)
         else:
-            if not self.opts.files:
+            if not self.opts.filename:
                 system_exit(os.EX_USAGE, _("Error: At least one file is required to perform an add."))
-            flist = self.opts.files
+            flist = self.opts.filename
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
                 filename, checksum = f
@@ -1184,7 +1184,7 @@ class RemoveFiles(RepoAction):
 
     def setup_parser(self):
         super(RemoveFiles, self).setup_parser()
-        self.parser.add_option("-f", "--file", action="append", dest="files",
+        self.parser.add_option("-f", "--filename", action="append", dest="filename",
                 help=_("file to remove from this repository"))
         self.parser.add_option("--csv", dest="csv",
                 help=_("A csv file to perform batch operations on. Format:filename,checksum"))
@@ -1194,8 +1194,8 @@ class RemoveFiles(RepoAction):
         id = self.get_required_option('id')
         # check if repos are valid
         self.get_repo(id)
-        if self.opts.files and self.opts.csv:
-            system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
+        if self.opts.filename and self.opts.csv:
+            system_exit(os.EX_USAGE, _("Error: Both --filename and --csv cannot be used in the same command."))
         
         fids = {}
         if self.opts.csv:
@@ -1203,9 +1203,9 @@ class RemoveFiles(RepoAction):
                 system_exit(os.EX_DATAERR, _("CSV file [%s] not found"))
             flist = utils.parseCSV(self.opts.csv)
         else:
-            if not self.opts.files:
+            if not self.opts.filename:
                 system_exit(os.EX_USAGE, _("Error: At least one file is required to perform a remove."))
-            flist = self.opts.files
+            flist = self.opts.filename
         for f in flist:
             if isinstance(f, list) or len(f) == 2:
                 filename, checksum = f
