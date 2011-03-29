@@ -19,11 +19,11 @@
 AVAILABLE_REPOS_LIST = """
 Id                 \t%-25s
 Name               \t%-25s
-FeedURL            \t%-25s
-FeedType           \t%-25s
+Feed URL           \t%-25s
+Feed Type          \t%-25s
 Feed Certs         \t%-25s
 Consumer Certs     \t%-25s
-Arch               \t%-25s
+Architecture       \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s
 Files              \t%-25s
