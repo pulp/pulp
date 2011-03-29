@@ -247,14 +247,14 @@ class TestRepoApi(unittest.TestCase):
         protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
         self.assertTrue(repo_id in protected_repos.values())
 
-    def _repo_update_remove_consumer_certs(self):
+    def test_repo_update_remove_consumer_certs(self):
         '''
         Tests updating a repo by removing its consumer certs.
         '''
 
         # Setup
         repo_id = 'test_consumer_cert'
-        bundle = {'consumer_ca' : 'FOO', 'consumer_cert' : 'BAR', 'consumer_key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
         # Test

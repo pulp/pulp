@@ -685,7 +685,11 @@ class RepoApi(BaseApi):
         # This has to be done down here in case the relative path has changed as well.
         if consumer_cert_updated:
             listing_filename = config.config.get('repos', 'protected_repo_listing_file')
-            protected_repo_utils.add_protected_repo(listing_filename, repo['relative_path'], id)
+
+            if repo['consumer_ca'] is None:
+                protected_repo_utils.delete_protected_repo(listing_filename, repo['relative_path'])
+            else:
+                protected_repo_utils.add_protected_repo(listing_filename, repo['relative_path'], id)
         
         # store changed object
         self.collection.save(repo, safe=True)
