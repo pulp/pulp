@@ -180,9 +180,9 @@ class List(ContentAction):
 
     def setup_parser(self):
         self.parser.add_option("--orphaned", action="store_true", dest="orphaned",
-                               help=_("list of orphaned content"))
+                               help=_("list only orphaned content"))
         self.parser.add_option("--repoid", dest="repoid",
-                               help=_("list content in specified repo"))
+                               help=_("list content from a specific repo"))
 
     def run(self):
         if not self.opts.orphaned and not self.opts.repoid:
