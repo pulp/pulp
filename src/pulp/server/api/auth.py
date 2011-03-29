@@ -12,11 +12,12 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.repo_auth import repo_cert_utils
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.auditing import audit
 from pulp.server.auth import cert_generator, principal
+from pulp.server import config
 
 
 class AuthApi(BaseApi):
@@ -73,6 +74,8 @@ class AuthApi(BaseApi):
                  hostnames that encountered an error attempting to update
         @rtype:  list [str], list [str]
         '''
+        repo_cert_utils = RepoCertUtils(config.config)
+
         repo_cert_utils.validate_cert_bundle(cert_bundle)
         repo_cert_utils.write_global_repo_cert_bundle(cert_bundle)
 
@@ -98,6 +101,8 @@ class AuthApi(BaseApi):
                  hostnames that encountered an error attempting to update
         @rtype:  list [str], list [str]
         '''
+        repo_cert_utils = RepoCertUtils(config.config)
+        
         repo_cert_utils.delete_global_cert_bundle()
 
         # Call out to all CDS instances to inform them of the auth change

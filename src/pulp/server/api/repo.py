@@ -36,7 +36,8 @@ from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
-from pulp.repo_auth import repo_cert_utils, protected_repo_utils
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server import updateinfo
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
@@ -148,12 +149,6 @@ class RepoApi(BaseApi):
 
         self._validate_schedule(sync_schedule)
 
-        if feed_cert_data:
-            repo_cert_utils.validate_cert_bundle(feed_cert_data)
-
-        if consumer_cert_data:
-            repo_cert_utils.validate_cert_bundle(consumer_cert_data)
-
         r = model.Repo(id, name, arch, feed)
         r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
@@ -173,6 +168,9 @@ class RepoApi(BaseApi):
             r['relative_path'] = relative_path
         
         # Store any certificates and add the full paths to their files in the repo object
+        repo_cert_utils = RepoCertUtils(config.config)
+        protected_repo_utils = ProtectedRepoUtils(config.config)
+
         if feed_cert_data:
             feed_cert_files = repo_cert_utils.write_feed_cert_bundle(id, feed_cert_data)
             r['feed_ca'] = feed_cert_files['ca']
@@ -184,8 +182,7 @@ class RepoApi(BaseApi):
             r['consumer_ca'] = consumer_cert_files['ca']
             r['consumer_cert'] = consumer_cert_files['cert']
             r['consumer_key'] = consumer_cert_files['key']
-            listing_filename = config.config.get('repos', 'protected_repo_listing_file')
-            protected_repo_utils.add_protected_repo(listing_filename, r['relative_path'], id)
+            protected_repo_utils.add_protected_repo(r['relative_path'], id)
             
         if groupid:
             for gid in groupid:
@@ -206,8 +203,7 @@ class RepoApi(BaseApi):
         self.collection.insert(r, safe=True)
         if sync_schedule:
             repo_sync.update_schedule(r)
-        default_to_publish = \
-            config.config.getboolean('repos', 'default_to_published')
+        default_to_publish = config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
         # refresh repo object from mongo
         r = self.repository(r["id"])
@@ -579,9 +575,12 @@ class RepoApi(BaseApi):
                     continue
 
         # Delete any certificate bundles for the repo
+        repo_cert_utils = RepoCertUtils(config.config)
         repo_cert_utils.delete_for_repo(id)
-        listing_filename = config.config.get('repos', 'protected_repo_listing_file')
-        protected_repo_utils.delete_protected_repo(listing_filename, repo['relative_path'])
+
+        # Remove this repo from the protected repos list in case that existed
+        protected_repo_utils = ProtectedRepoUtils(config.config)
+        protected_repo_utils.delete_protected_repo(repo['relative_path'])
 
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
@@ -603,6 +602,8 @@ class RepoApi(BaseApi):
         prevpath = repo.get('relative_path')
         newpath = delta.pop('relative_path', None)
         hascontent = self._hascontent(repo)
+        repo_cert_utils = RepoCertUtils(config.config)
+        protected_repo_utils = ProtectedRepoUtils(config.config)
 
         # Keeps a running track of whether or not the changes require notifying consumers
         # Also need to know later on if a consumer cert was updated.
@@ -616,18 +617,16 @@ class RepoApi(BaseApi):
                     update_consumers = True
                 continue
             # Feed certificate bundle changed
-            if key in ('feed_ca', 'feed_cert', 'feed_key',):
-                # The bundle doesn't want the feed_ part, so rip that off
-                bundle_key = key[5:]
-                value = repo_cert_utils.write_feed_cert_bundle(id, {bundle_key:value})
-                repo[key] = value[bundle_key]
+            if key == 'feed_cert_data':
+                written_files = repo_cert_utils.write_feed_cert_bundle(id, value)
+                for item in written_files:
+                    repo['feed_' + item] = written_files[item]
                 continue
             # Consumer certificate bundle changed
-            if key in ('consumer_ca', 'consumer_cert', 'consumer_key',):
-                # The bundle doesn't want the consumer_ part, so rip that off
-                bundle_key = key[9:]
-                value = repo_cert_utils.write_consumer_cert_bundle(id, {bundle_key:value})
-                repo[key] = value[bundle_key]
+            if key == 'consumer_cert_data':
+                written_files = repo_cert_utils.write_consumer_cert_bundle(id, value)
+                for item in written_files:
+                    repo['consumer_' + item] = written_files[item]
                 consumer_cert_updated = True
                 continue
             # feed changed
@@ -684,12 +683,10 @@ class RepoApi(BaseApi):
         # If the consumer certs were updated, update the protected repo listings.
         # This has to be done down here in case the relative path has changed as well.
         if consumer_cert_updated:
-            listing_filename = config.config.get('repos', 'protected_repo_listing_file')
-
             if repo['consumer_ca'] is None:
-                protected_repo_utils.delete_protected_repo(listing_filename, repo['relative_path'])
+                protected_repo_utils.delete_protected_repo(repo['relative_path'])
             else:
-                protected_repo_utils.add_protected_repo(listing_filename, repo['relative_path'], id)
+                protected_repo_utils.add_protected_repo(repo['relative_path'], id)
         
         # store changed object
         self.collection.save(repo, safe=True)

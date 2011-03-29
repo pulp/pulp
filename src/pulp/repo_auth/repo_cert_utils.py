@@ -46,7 +46,6 @@ The validate_cert_bundle method is used to ensure that only these keys are prese
 in a cert bundle dict.
 '''
 
-from ConfigParser import SafeConfigParser
 import logging
 import shutil
 from threading import RLock
@@ -57,11 +56,8 @@ from M2Crypto import X509
 
 # -- constants ----------------------------------------------------------------------------
 
-# This needs to be accessible on both Pulp and the CDS instances, so a
-# separate config file for repo auth purposes is used.
-CONFIG_FILENAME = '/etc/pulp/repo_auth.conf'
-
 VALID_BUNDLE_KEYS = ('ca', 'cert', 'key')
+EMPTY_BUNDLE = dict([(key, None) for key in VALID_BUNDLE_KEYS])
 
 # Single write lock for all repos and global; the usage should be infrequent enough
 # that it's not an issue.
@@ -72,289 +68,283 @@ GLOBAL_BUNDLE_PREFIX = 'pulp-global-repo'
 LOG = logging.getLogger(__name__)
 
 
-# -- delete calls ----------------------------------------------------------------
+class RepoCertUtils:
 
-def delete_for_repo(repo_id):
-    '''
-    Deletes all cert bundles for the given repo. If no cert bundles have been
-    stored for this repo, this method does nothing (will not throw an error).
+    def __init__(self, config):
+        self.config = config
 
-    @param repo_id: identifies the repo
-    @type  repo_id: str
-    '''
-    repo_dir = _repo_cert_directory(repo_id)
+    # -- delete calls ----------------------------------------------------------------
 
-    if os.path.exists(repo_dir):
-        LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
-        shutil.rmtree(repo_dir)
+    def delete_for_repo(self, repo_id):
+        '''
+        Deletes *all* cert bundles (feed and consumer) for the given repo. If no cert
+        bundles have been stored for this repo, this method does nothing (will not
+        throw an error).
 
-def delete_global_cert_bundle():
-    '''
-    Deletes the global repo certificate bundle. If it does not exist, this call
-    has no effect (no error is raised).
-    '''
-    cert_dir = _global_cert_directory()
+        @param repo_id: identifies the repo
+        @type  repo_id: str
+        '''
+        repo_dir = self._repo_cert_directory(repo_id)
 
-    # Currently, _write_cert_bundle appends the suffix of the bundle key to
-    # the file when generating it's filename; this method assumes that logic
-    for suffix in VALID_BUNDLE_KEYS:
-        filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
-        if os.path.exists(filename):
-            LOG.info('Deleting global repo cert bundle file [%s]' % filename)
-            os.remove(filename)
+        if os.path.exists(repo_dir):
+            LOG.info('Deleting certificate bundles at [%s]' % repo_dir)
+            shutil.rmtree(repo_dir)
+
+    def delete_global_cert_bundle(self):
+        '''
+        Deletes the global repo certificate bundle. If it does not exist, this call
+        has no effect (no error is raised). This is meant as syntactic sugar for
+        calling write_global_repo_cert_bundle with an empty bundle.
+        '''
+        self.write_global_repo_cert_bundle(None)
+
+    # -- read calls ----------------------------------------------------------------
+
+    def read_global_cert_bundle(self, pieces=VALID_BUNDLE_KEYS):
+        '''
+        Loads the contents of the global cert bundle. If pieces is specified, only
+        the bundle pieces specified will be loaded (must be a subset of VALID_BUNDLE_KEYS).
+
+        @param pieces: list of pieces of the bundle to load in this call; if unspecified,
+                       all of the bundle components will be loaded
+        @type  pieces: list of str
+
+        @return: mapping of bundle piece to the contents of that bundle item (i.e. the
+                 PEM encoded certificate, not a filename); returns None if the global
+                 cert bundle does not exist
+        @rtype:  dict {str, str} - keys will be taken from the pieces parameter; None
+                 is returned if the global cert bundle does not exist
+        '''
+
+        cert_dir = self._global_cert_directory()
+
+        result = {}
+        for suffix in pieces:
+            filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
+
+            if os.path.exists(filename):
+                f = open(filename, 'r')
+                contents = f.read()
+                f.close()
+                result[suffix] = contents
+
+        if len(result) == 0:
+            return None
+        else:
+            return result
+
+    def read_consumer_cert_bundle(self, repo_id, pieces=VALID_BUNDLE_KEYS):
+        '''
+        Loads the contents of a repo's consumer cert bundle. If pieces is specified, only
+        the bundle pieces specified will be loaded (must be a subset of VALID_BUNDLE_KEYS).
+
+        @param pieces: list of pieces of the bundle to load in this call; if unspecified,
+                       all of the bundle components will be loaded
+        @type  pieces: list of str
+
+        @return: mapping of bundle piece to the contents of that bundle item (i.e. the
+                 PEM encoded certificate, not a filename); returns None if the global
+                 cert bundle does not exist
+        @rtype:  dict {str, str} - keys will be taken from the pieces parameter; None
+                 is returned if the global cert bundle does not exist
+        '''
+
+        cert_dir = self._repo_cert_directory(repo_id)
+
+        result = {}
+        for suffix in pieces:
+            filename = os.path.join(cert_dir, 'consumer-%s.%s' % (repo_id, suffix))
+
+            if os.path.exists(filename):
+                f = open(filename, 'r')
+                contents = f.read()
+                f.close()
+                result[suffix] = contents
+
+        if len(result) == 0:
+            return None
+        else:
+            return result
+
+    # -- write calls ----------------------------------------------------------------
+
+    def write_feed_cert_bundle(self, repo_id, bundle):
+        '''
+        Writes the given feed cert bundle to disk. If bundle is None, any feed cert
+        files that were previously written for this repo will be deleted.
+
+        See _write_cert_bundle for details on params and return.
+        '''
+        cert_dir = self._repo_cert_directory(repo_id)
+        return self._write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle or EMPTY_BUNDLE)
+
+    def write_consumer_cert_bundle(self, repo_id, bundle):
+        '''
+        Writes the given consumer cert bundle to disk. If bundle is None, any consumer cert
+        files that were previously written for this repo will be deleted.
+
+        See _write_cert_bundle for details on params and return.
+        '''
+        cert_dir = self._repo_cert_directory(repo_id)
+        return self._write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle or EMPTY_BUNDLE)
+
+    def write_global_repo_cert_bundle(self, bundle):
+        '''
+        Writes the given bundle to the global repo auth location. If bundle is None,
+        any global repo auth files that were previously written for this repo will be deleted.
+
+        See _write_cert_bundle for details on params and return.
+        '''
+        cert_dir = self._global_cert_directory()
+        return self._write_cert_bundle(GLOBAL_BUNDLE_PREFIX, cert_dir, bundle or EMPTY_BUNDLE)
+
+    # -- validate calls ----------------------------------------------------------------
+
+    def validate_certificate(self, cert_filename, ca_filename):
+        '''
+        Validates a certificate against a CA certificate.
+
+        @param cert_filename: full path to the PEM encoded certificate to validate
+        @type  cert_filename: str
+
+        @param ca_filename: full path to the PEM encoded CA certificate
+        @type  ca_filename: str
+
+        @return: true if the certificate was signed by the given CA; false otherwise
+        @rtype:  boolean
+        '''
+
+        ca = X509.load_cert(ca_filename)
+        cert = X509.load_cert(cert_filename)
+        return cert.verify(ca.get_pubkey())
+
+    def validate_certificate_pem(self, cert_pem, ca_pem):
+        '''
+        Validates a certificate against a CA certificate.
+
+        @param cert_pem: PEM encoded certificate
+        @type  cert_pem: str
+
+        @param ca_pem: PEM encoded CA certificate
+        @type  ca_pem: str
+
+        @return: true if the certificate was signed by the given CA; false otherwise
+        @rtype:  boolean
+        '''
+        ca = X509.load_cert_string(ca_pem)
+        cert = X509.load_cert_string(cert_pem)
+        return cert.verify(ca.get_pubkey())
+
+    def validate_cert_bundle(self, bundle):
+        '''
+        Validates that the given dict contains only the required pieces of a cert bundle.
+        See the module level comments for more information on what contents are being
+        checked. If the validation fails, an exception will be raised. If the bundle
+        is valid, nothing is returned from this call.
+
+        @param bundle: mapping of item to its PEM encoded contents; cannot be None
+        @type  bundle: dict {str, str}
+
+        @raises ValueError if the bundle is not a dict with the required keys
+        '''
+        if bundle is None:
+            raise ValueError('Bundle must be specified')
+
+        if type(bundle) != dict:
+            raise ValueError('Bundle must be a dict; found [%s]' % type(bundle))
+
+        missing_keys = [k for k in VALID_BUNDLE_KEYS if k not in bundle]
+        if len(missing_keys) > 0:
+            raise ValueError('Missing items in cert bundle [%s]' % ', '.join(missing_keys))
+
+        extra_keys = [k for k in bundle.keys() if k not in VALID_BUNDLE_KEYS]
+        if len(extra_keys) > 0:
+            raise ValueError('Unexpected items in cert bundle [%s]' % ', '.join(extra_keys))
 
 
-# -- read calls ----------------------------------------------------------------
+    # -- private ----------------------------------------------------------------------------
 
-def read_global_cert_bundle(pieces=VALID_BUNDLE_KEYS):
-    '''
-    Loads the contents of the global cert bundle. If pieces is specified, only
-    the bundle pieces specified will be loaded (must be a subset of VALID_BUNDLE_KEYS).
+    def _write_cert_bundle(self, file_prefix, cert_dir, bundle):
+        '''
+        Writes the files represented by the cert bundle to a directory on the
+        Pulp server unique to the given repo. If certificates already exist in the
+        repo's certificate directory, they will be overwritten. If the value for
+        any bundle component is None, the associated file will be erased if one
+        exists. The file prefix will be used to differentiate between files that
+        belong to the feed bundle v. those that belong to the consumer bundle.
 
-    @param pieces: list of pieces of the bundle to load in this call; if unspecified,
-                   all of the bundle components will be loaded
-    @type  pieces: list of str
+        @param file_prefix: used in the filename of the bundle item to differentiate it
+                            from other bundles; cannot be None
+        @type  file_prefix: str
 
-    @return: mapping of bundle piece to the contents of that bundle item (i.e. the
-             PEM encoded certificate, not a filename); returns None if the global
-             cert bundle does not exist
-    @rtype:  dict {str, str} - keys will be taken from the pieces parameter; None
-             is returned if the global cert bundle does not exist
-    '''
+        @param cert_dir: absolute path to the location in which the cert bundle should
+                         be written; cannot be None
+        @type  cert_dir: str
 
-    cert_dir = _global_cert_directory()
+        @param bundle: cert bundle (see module docs for more information on format)
+        @type  bundle: dict {str, str}
 
-    result = {}
-    for suffix in pieces:
-        filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
+        @raises ValueError: if bundle is invalid (see validate_cert_bundle)
 
-        if os.path.exists(filename):
-            f = open(filename, 'r')
-            contents = f.read()
-            f.close()
-            result[suffix] = contents
+        @return: mapping of cert bundle item (see module docs) to the absolute path
+                 to where it is stored on disk
+        '''
 
-    if len(result) == 0:
-        return None
-    else:
-        return result
+        WRITE_LOCK.acquire()
 
-def read_consumer_cert_bundle(repo_id, pieces=VALID_BUNDLE_KEYS):
-    '''
-    Loads the contents of a repo's consumer cert bundle. If pieces is specified, only
-    the bundle pieces specified will be loaded (must be a subset of VALID_BUNDLE_KEYS).
+        try:
+            # Create the cert directory if it doesn't exist
+            if not os.path.exists(cert_dir):
+                os.makedirs(cert_dir)
 
-    @param pieces: list of pieces of the bundle to load in this call; if unspecified,
-                   all of the bundle components will be loaded
-    @type  pieces: list of str
+            # For each item in the cert bundle, save it to disk using the given prefix
+            # to identify the type of bundle it belongs to. If the value is None, the
+            # item is being deleted.
+            cert_files = {}
+            for key, value in bundle.items():
+                filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
 
-    @return: mapping of bundle piece to the contents of that bundle item (i.e. the
-             PEM encoded certificate, not a filename); returns None if the global
-             cert bundle does not exist
-    @rtype:  dict {str, str} - keys will be taken from the pieces parameter; None
-             is returned if the global cert bundle does not exist
-    '''
+                try:
 
-    cert_dir = _repo_cert_directory(repo_id)
+                    if value is None:
+                        if os.path.exists(filename):
+                            LOG.info('Removing repo cert file [%s]' % filename)
+                            os.remove(filename)
+                        cert_files[key] = None
+                    else:
+                        LOG.info('Storing repo cert file [%s]' % filename)
+                        f = open(filename, 'w')
+                        f.write(value)
+                        f.close()
+                        cert_files[key] = str(filename)
+                except:
+                    LOG.exception('Error storing certificate file [%s]' % filename)
+                    raise Exception('Error storing certificate file [%s]' % filename)
 
-    result = {}
-    for suffix in pieces:
-        filename = os.path.join(cert_dir, 'consumer-%s.%s' % (repo_id, suffix))
+            return cert_files
 
-        if os.path.exists(filename):
-            f = open(filename, 'r')
-            contents = f.read()
-            f.close()
-            result[suffix] = contents
+        finally:
+            WRITE_LOCK.release()
 
-    if len(result) == 0:
-        return None
-    else:
-        return result
+    def _repo_cert_directory(self, repo_id):
+        '''
+        Returns the absolute path to the directory in which certificates for the
+        given repo are stored.
 
+        @return: absolute path to a directory that may not exist
+        @rtype:  str
+        '''
+        cert_location = self.config.get('repos', 'cert_location')
+        cert_dir = os.path.join(cert_location, repo_id)
+        return cert_dir
 
-# -- write calls ----------------------------------------------------------------
+    def _global_cert_directory(self):
+        '''
+        Returns the absolute path to the directory in which global repo auth
+        credentials are stored.
 
-def write_feed_cert_bundle(repo_id, bundle):
-    '''
-    Writes the given feed cert bundle to disk.
-
-    See _write_cert_bundle for details on params and return.
-    '''
-    cert_dir = _repo_cert_directory(repo_id)
-    return _write_cert_bundle('feed-%s' % repo_id, cert_dir, bundle)
-
-def write_consumer_cert_bundle(repo_id, bundle):
-    '''
-    Writes the given consumer cert bundle to disk.
-
-    See _write_cert_bundle for details on params and return.
-    '''
-    cert_dir = _repo_cert_directory(repo_id)
-    return _write_cert_bundle('consumer-%s' % repo_id, cert_dir, bundle)
-
-def write_global_repo_cert_bundle(bundle):
-    '''
-    Writes the given bundle to the global repo auth location.
-
-    See _write_cert_bundle for details on params and return.
-    '''
-    cert_dir = _global_cert_directory()
-    return _write_cert_bundle(GLOBAL_BUNDLE_PREFIX, cert_dir, bundle)
-
-# -- validate calls ----------------------------------------------------------------
-
-def validate_certificate(cert_filename, ca_filename):
-    '''
-    Validates a certificate against a CA certificate.
-
-    @param cert_filename: full path to the PEM encoded certificate to validate
-    @type  cert_filename: str
-
-    @param ca_filename: full path to the PEM encoded CA certificate
-    @type  ca_filename: str
-
-    @return: true if the certificate was signed by the given CA; false otherwise
-    @rtype:  boolean
-    '''
-
-    ca = X509.load_cert(ca_filename)
-    cert = X509.load_cert(cert_filename)
-    return cert.verify(ca.get_pubkey())
-
-def validate_certificate_pem(cert_pem, ca_pem):
-    '''
-    Validates a certificate against a CA certificate.
-
-    @param cert_pem: PEM encoded certificate
-    @type  cert_pem: str
-
-    @param ca_pem: PEM encoded CA certificate
-    @type  ca_pem: str
-
-    @return: true if the certificate was signed by the given CA; false otherwise
-    @rtype:  boolean
-    '''
-    ca = X509.load_cert_string(ca_pem)
-    cert = X509.load_cert_string(cert_pem)
-    return cert.verify(ca.get_pubkey())
-
-def validate_cert_bundle(bundle):
-    '''
-    Validates that the given dict contains only the required pieces of a cert bundle.
-    See the module level comments for more information on what contents are being
-    checked. If the validation fails, an exception will be raised. If the bundle
-    is valid, nothing is returned from this call.
-
-    @param bundle: mapping of item to its PEM encoded contents; cannot be None
-    @type  bundle: dict {str, str}
-
-    @raises ValueError if the bundle is not a dict with the required keys
-    '''
-    if bundle is None:
-        raise ValueError('Bundle must be specified')
-
-    if type(bundle) != dict:
-        raise ValueError('Bundle must be a dict; found [%s]' % type(bundle))
-
-    missing_keys = [k for k in VALID_BUNDLE_KEYS if k not in bundle]
-    if len(missing_keys) > 0:
-        raise ValueError('Missing items in cert bundle [%s]' % ', '.join(missing_keys))
-
-    extra_keys = [k for k in bundle.keys() if k not in VALID_BUNDLE_KEYS]
-    if len(extra_keys) > 0:
-        raise ValueError('Unexpected items in cert bundle [%s]' % ', '.join(extra_keys))
-
-
-# -- private ----------------------------------------------------------------------------
-    
-def _write_cert_bundle(file_prefix, cert_dir, bundle):
-    '''
-    Writes the files represented by the cert bundle to a directory on the
-    Pulp server unique to the given repo. If certificates already exist in the
-    repo's certificate directory, they will be overwritten. The file prefix
-    will be used to differentiate between files that belong to the feed
-    bundle v. those that belong to the consumer bundle.
-
-    @param file_prefix: used in the filename of the bundle item to differentiate it
-                        from other bundles; cannot be None
-    @type  file_prefix: str
-
-    @param cert_dir: absolute path to the location in which the cert bundle should
-                     be written; cannot be None
-    @type  cert_dir: str
-
-    @param bundle: cert bundle (see module docs for more information on format)
-    @type  bundle: dict {str, str}
-
-    @raises ValueError: if bundle is invalid (see validate_cert_bundle)
-
-    @return: mapping of cert bundle item (see module docs) to the absolute path
-             to where it is stored on disk
-    '''
-
-    WRITE_LOCK.acquire()
-
-    try:
-        # Create the cert directory if it doesn't exist
-        if not os.path.exists(cert_dir):
-            os.makedirs(cert_dir)
-
-        # For each item in the cert bundle, save it to disk using the given prefix
-        # to identify the type of bundle it belongs to. If the value is None, the
-        # item is being deleted.
-        cert_files = {}
-        for key, value in bundle.items():
-            filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
-
-            try:
-
-                if value is None:
-                    if os.path.exists(filename):
-                        LOG.info('Removing repo cert file [%s]' % filename)
-                        os.remove(filename)
-                    cert_files[key] = None
-                else:
-                    LOG.info('Storing repo cert file [%s]' % filename)
-                    f = open(filename, 'w')
-                    f.write(value)
-                    f.close()
-                    cert_files[key] = str(filename)
-            except:
-                LOG.exception('Error storing certificate file [%s]' % filename)
-                raise Exception('Error storing certificate file [%s]' % filename)
-
-        return cert_files
-    
-    finally:
-        WRITE_LOCK.release()
-
-def _repo_cert_directory(repo_id):
-    '''
-    Returns the absolute path to the directory in which certificates for the
-    given repo are stored.
-
-    @return: absolute path to a directory that may not exist
-    @rtype:  str
-    '''
-    config = _config()
-    cert_location = config.get('repos', 'cert_location')
-    cert_dir = os.path.join(cert_location, repo_id)
-    return cert_dir
-
-def _global_cert_directory():
-    '''
-    Returns the absolute path to the directory in which global repo auth
-    credentials are stored.
-
-    @return: absolute path to a directory that may not exist
-    @rtype:  str
-    '''
-    config = _config()
-    global_cert_location = config.get('repos', 'global_cert_location')
-    return global_cert_location
-
-def _config():
-    config = SafeConfigParser()
-    config.read(CONFIG_FILENAME)
-    return config
+        @return: absolute path to a directory that may not exist
+        @rtype:  str
+        '''
+        global_cert_location = self.config.get('repos', 'global_cert_location')
+        return global_cert_location

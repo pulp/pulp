@@ -26,7 +26,8 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.repo_auth import oid_validation, repo_cert_utils
+import pulp.repo_auth.oid_validation as oid_validation
+from pulp.repo_auth.oid_validation import OidValidator
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.auth import AuthApi
 import testutil
@@ -37,9 +38,6 @@ CERT_TEST_DIR = '/tmp/test_oid_validation/'
 
 # -- mocks ----------------------------------------------------------------------
 
-def mock_log(message):
-    pass
-
 class MockRequest:
 
     def __init__(self, client_cert_pem, uri):
@@ -48,6 +46,9 @@ class MockRequest:
 
     def ssl_var_lookup(self, lookup_var_name):
         return self.client_cert_pem
+
+    def log_error(self, message):
+        pass
 
 # -- test cases -----------------------------------------------------------------
 
@@ -61,16 +62,13 @@ class TestOidValidation(unittest.TestCase):
         if os.path.exists(protected_repo_listings_file):
             os.remove(protected_repo_listings_file)
 
+
         self.repo_api.clean()
 
     def setUp(self):
-
-        # Test configuration setup
-        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-repoauth.conf'
         self.config = testutil.load_test_config()
 
-        repo_cert_utils.CONFIG_FILENAME = override_file
-        oid_validation.PROTECTED_REPOS_FILENAME = self.config.get('repos', 'protected_repo_listing_file')
+        self.validator = OidValidator(self.config)
 
         self.repo_api = RepoApi()
         self.auth_api = AuthApi()
@@ -107,8 +105,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -139,8 +137,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -170,9 +168,9 @@ class TestOidValidation(unittest.TestCase):
         # Test
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
-        
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -203,8 +201,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -235,8 +233,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -267,8 +265,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -301,8 +299,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -335,8 +333,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -369,14 +367,112 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x, mock_log)
-        response_y = oid_validation.authenticate(request_y, mock_log)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
         self.assertTrue(response_y)
 
-        
+    def test_scenario_10(self):
+        '''
+        Setup
+        - Global auth disabled
+        - Individual repo auth enabled for repo X
+        - No client cert in request
+
+        Expected
+        - Denied for repo X, permitted for repo Y
+        - No exceptions thrown
+        '''
+
+        # Setup
+        self.auth_api.disable_global_repo_auth()
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(response_y)
+
+    def test_scenario_11(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth disabled
+        - No client cert in request
+
+        Expected
+        - Denied to both repo X and Y
+        - No exceptions thrown
+        '''
+
+        # Setup
+        global_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        self.repo_api.create('repo-x', 'Repo X', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(not response_y)
+
+    def test_scenario_12(self):
+        '''
+        Setup
+        - Global auth enabled
+        - Individual auth enabled on repo X
+        - Both global and individual auth use the same CA
+        - No client cert in request
+
+        Expected
+        - Denied for both repo X and Y
+        - No exceptions thrown
+        '''
+
+        # Setup
+        global_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.auth_api.enable_global_repo_auth(global_bundle)
+
+        repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
+        self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+        self.repo_api.create('repo-y', 'Repo Y', 'noarch',
+                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+
+        # Test
+        request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
+        request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
+
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
+
+        # Verify
+        self.assertTrue(not response_x)
+        self.assertTrue(not response_y)
+
+
 # -- test data ---------------------------------------------------------------------
 
 # Entitlements for:

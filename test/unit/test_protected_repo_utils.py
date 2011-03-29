@@ -27,7 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.repo_auth.protected_repo_utils import ProtectedRepoListingFile
+from pulp.repo_auth.protected_repo_utils import ProtectedRepoListingFile, ProtectedRepoUtils
 import testutil
 
 # -- constants -----------------------------------------------------------------------
@@ -36,17 +36,56 @@ TEST_FILE = '/tmp/test-protected-repo-listing'
 
 # -- test cases ----------------------------------------------------------------------
 
-class TestModuleMethods(unittest.TestCase):
+class TestProtectedRepoUtils(unittest.TestCase):
 
     def setUp(self):
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
 
+        self.config = testutil.load_test_config()
+        self.utils = ProtectedRepoUtils(self.config)
+
     def tearDown(self):
         if os.path.exists(TEST_FILE):
             os.remove(TEST_FILE)
-    
 
+    def test_add_protected_repo(self):
+        '''
+        Tests adding a protected repo.
+        '''
+
+        # Setup
+        repo_id = 'prot-repo-1'
+        relative_path = 'path-1'
+
+        # Test
+        self.utils.add_protected_repo(relative_path, repo_id)
+
+        # Verify
+        listings = self.utils.read_protected_repo_listings()
+
+        self.assertEqual(1, len(listings))
+        self.assertTrue(relative_path in listings)
+        self.assertEqual(listings[relative_path], repo_id)
+
+    def test_delete_protected_repo(self):
+        '''
+        Tests deleting an existing protected repo.
+        '''
+
+        # Setup
+        repo_id = 'prot-repo-1'
+        relative_path = 'path-1'
+        self.utils.add_protected_repo(relative_path, repo_id)
+
+        # Test
+        self.utils.delete_protected_repo(relative_path)
+
+        # Verify
+        listings = self.utils.read_protected_repo_listings()
+
+        self.assertEqual(0, len(listings))
+        
 class TestProtectedRepoListingFile(unittest.TestCase):
 
     def setUp(self):
