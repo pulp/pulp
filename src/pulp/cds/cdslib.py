@@ -36,6 +36,9 @@ def loginit(path=LOGPATH):
     '''
     global log
     if log is None:
+        logdir = os.path.dirname(path)
+        if not os.path.exists(logdir):
+            os.makedirs(logdir)
         log = logging.getLogger(__name__)
         log.addHandler(logging.FileHandler(path))
         log.setLevel(logging.DEBUG)
