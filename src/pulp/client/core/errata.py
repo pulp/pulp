@@ -181,8 +181,8 @@ class Install(ErrataAction):
                 task = self.consumer_api.installerrata(consumerid, errataids, assumeyes=assumeyes)
             elif self.opts.consumergroupid:
                 task = self.consumer_group_api.installerrata(consumergroupid, errataids, assumeyes=assumeyes)
-        except:
-            system_exit(os.EX_DATAERR, _("Unable to schedule an errata install task."))
+        except Exception,e:
+            system_exit(os.EX_DATAERR, _("Error:%s" % e[1] ))
         if not task:
             system_exit(os.EX_DATAERR,
                 _("The requested errataids %s are not applicable for your system" % errataids))
