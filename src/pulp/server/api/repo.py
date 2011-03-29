@@ -676,6 +676,11 @@ class RepoApi(BaseApi):
                 path = os.path.join(rootdir, newpath)
                 if not os.path.exists(path):
                     os.makedirs(path)
+
+                # In case the old path had repo protection in place, try to
+                # remove it (this call won't fail if it wasn't in place)
+                protected_repo_utils.delete_protected_repo(prevpath)
+                
             else:
                 raise PulpException(
                     "Repository has content, relative path cannot be changed")
