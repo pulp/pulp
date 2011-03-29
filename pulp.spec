@@ -96,6 +96,7 @@ A collection of resources that are common between the pulp server and client.
 Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
+Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.27
 Requires:       grinder
 Requires:       httpd
@@ -235,6 +236,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %files cds
 %defattr(-,root,root,-)
 %doc
+%{python_sitelib}/pulp/cds/
 %{_sysconfdir}/gofer/plugins/cdsplugin.conf
 %{_exec_prefix}/lib/gofer/plugins/cdsplugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
