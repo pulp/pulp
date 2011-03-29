@@ -471,7 +471,7 @@ class ExportComps(PackageGroupAction):
             comps_xml = self.repository_api.export_comps(repoid)
         except Exception, e:
             _log.error(e)
-            system_exit(os.EX_DATAERR, _("Unable to export comps file for repo [%s]") % repoid)
+            system_exit(os.EX_DATAERR, _("Error:%s") % e[1])
         else:
             if self.opts.out:
                 try:
