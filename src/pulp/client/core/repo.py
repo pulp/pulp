@@ -581,12 +581,16 @@ class Update(RepoAction):
                                help=_("path location to the feed's entitlement certificate"))
         self.parser.add_option("--feed_key", dest="feed_key",
                                help=_("path location to the feed's entitlement certificate key"))
+        self.parser.add_option("--remove_feed_cert", dest="remove_feed_cert", action="store_true",
+                               help=_("if specified, the feed certificate information will be removed from this repo"))
         self.parser.add_option("--consumer_ca", dest="consumer_ca",
                                help=_("path location to the ca certificate used to verify consumer requests"))
         self.parser.add_option("--consumer_cert", dest="consumer_cert",
                                help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
         self.parser.add_option("--consumer_key", dest="consumer_key",
                                help=_("path location to the consumer entitlement certificate key"))
+        self.parser.add_option("--remove_consumer_cert", dest="remove_consumer_cert", action="store_true",
+                               help=_("if specified, the consumer certificate information will be removed from this repo"))
         self.parser.add_option("--schedule", dest="sync_schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
@@ -606,8 +610,14 @@ class Update(RepoAction):
         id = self.get_required_option('id')
         delta = {}
         optdict = vars(self.opts)
+
+        feed_cert_updated = False
+        consumer_cert_updated = False
+
         for k, v in optdict.items():
             if not v:
+                continue
+            if k in ('remove_consumer_cert', 'remove_feed_cert'):
                 continue
             if k == 'addgroup':
                 self.repository_api.add_group(id, v)
@@ -624,11 +634,36 @@ class Update(RepoAction):
                 keylist = v.split(',')
                 self.repository_api.rmkeys(id, keylist)
                 continue
-            if k in ('feed_ca', 'feed_cert', 'feed_key', 'consumer_ca', 'consumer_cert', 'consumer_key'):
+            if k in ('feed_ca', 'feed_cert', 'feed_key'):
                 f = open(v)
                 v = f.read()
                 f.close()
+                feed_cert_updated = True
+            if k in ('consumer_ca', 'consumer_cert', 'consumer_key'):
+                f = open(v)
+                v = f.read()
+                f.close()
+                consumer_cert_updated = True
             delta[k] = v
+
+        if optdict['remove_feed_cert'] and feed_cert_updated:
+            print _('remove_feed_cert cannot be specified while updating feed certificate items')
+            return
+
+        if optdict['remove_consumer_cert'] and consumer_cert_updated:
+            print _('remove_consumer_cert cannot be specified while updating consumer certificate items')
+            return
+
+        if 'remove_feed_cert' in optdict and optdict['remove_feed_cert']:
+            delta['feed_ca'] = None
+            delta['feed_cert'] = None
+            delta['feed_key'] = None
+
+        if 'remove_consumer_cert' in optdict and optdict['remove_consumer_cert']:
+            delta['consumer_ca'] = None
+            delta['consumer_cert'] = None
+            delta['consumer_key'] = None
+
         self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
 
