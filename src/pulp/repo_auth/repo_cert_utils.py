@@ -118,7 +118,7 @@ class RepoCertUtils:
 
         cert_dir = self._global_cert_directory()
 
-        result = {}
+        result = None
         for suffix in pieces:
             filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
 
@@ -126,12 +126,10 @@ class RepoCertUtils:
                 f = open(filename, 'r')
                 contents = f.read()
                 f.close()
+                result = result or {}
                 result[suffix] = contents
 
-        if len(result) == 0:
-            return None
-        else:
-            return result
+        return result
 
     def read_consumer_cert_bundle(self, repo_id, pieces=VALID_BUNDLE_KEYS):
         '''
@@ -151,7 +149,7 @@ class RepoCertUtils:
 
         cert_dir = self._repo_cert_directory(repo_id)
 
-        result = {}
+        result = None
         for suffix in pieces:
             filename = os.path.join(cert_dir, 'consumer-%s.%s' % (repo_id, suffix))
 
@@ -159,12 +157,10 @@ class RepoCertUtils:
                 f = open(filename, 'r')
                 contents = f.read()
                 f.close()
+                result = result or {}
                 result[suffix] = contents
 
-        if len(result) == 0:
-            return None
-        else:
-            return result
+        return result
 
     # -- write calls ----------------------------------------------------------------
 
