@@ -534,6 +534,7 @@ class RepositoryActions(AsyncController):
         parameters:
          * timeout?, str, timeout in <units>:<value> format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks
          * skip?, object, yum skip dict
+         * limit?, int, value in KB/sec to limit download bandwidth.  Only applicable for yum synchronization
         """
         repo = api.repository(id, fields=['source'])
         if repo['source'] is None:
@@ -547,9 +548,14 @@ class RepositoryActions(AsyncController):
             timeout = self.timeout(repo_params)
             if not timeout: 
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
-      
+        limit = repo_params.get('limit', None)
+        if limit:
+            try:
+                limit = int(limit)
+            except:
+                return self.bad_request('Unable to convert "limit" with value [%s] to an int' % (limit))
         skip = repo_params.get('skip', {})
-        task = api.sync(id, timeout, skip)
+        task = api.sync(id, timeout, skip, max_speed=limit)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)

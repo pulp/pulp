@@ -91,19 +91,28 @@ def get_synchronizer(source_type):
     return synchronizer
 
 
-def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None):
+def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None, 
+        max_speed=None):
     '''
     Synchronizes content for the given RepoSource.
 
     @param repo: repo to synchronize; may not be None
     @type  repo: L{pulp.model.Repo}
-
     @param repo_source: indicates the source from which the repo data will be syncced; may not be None
     @type  repo_source: L{pulp.model.RepoSource}
+    @param skip_dict: Will skip synching this type of data
+    @type skip_dict: dictionary with possible values of: packages, errata, distribution
+    @param progress_callback: call back to display progress of sync operation
+    @type progress_callback: 
+    @param synchronizer: instace of a synchronizer to use for synching
+    @type synchronizer: L{pulp.server.api.repo_sync.BaseSynchronizer}
+    @param max_speed: Limit download speed in KB/sec, not applicable to Local Syncs
+    @type max_speed: int
     '''
     if not synchronizer:
         synchronizer = get_synchronizer(repo_source['type'])
-    repo_dir = synchronizer.sync(repo, repo_source, skip_dict, progress_callback)
+    repo_dir = synchronizer.sync(repo, repo_source, skip_dict, 
+            progress_callback, max_speed)
     if progress_callback is not None:
         synchronizer.progress['step'] = "Importing data into pulp"
         progress_callback(synchronizer.progress)
@@ -429,7 +438,8 @@ class YumSynchronizer(BaseSynchronizer):
         super(YumSynchronizer, self).__init__()
         self.yum_repo_grinder = None
 
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
+            max_speed=None):
         cacert = clicert = clikey = None
         if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
             cacert = repo['feed_ca'].encode('utf8')
@@ -445,12 +455,17 @@ class YumSynchronizer(BaseSynchronizer):
             if (config.config.has_option('yum', proxy_cfg)):
                 vars()[proxy_cfg] = config.config.get('yum', proxy_cfg)
 
+        limit_in_KB = max_speed
+        if not limit_in_KB and config.config.has_option('yum', 'limit_in_KB'):
+            limit_in_KB = config.config.getint('yum', 'limit_in_KB')
+            log.info("Limiting download speed to %s KB/sec" % (limit_in_KB))
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert, clikey=clikey,
                                 packages_location=pulp.server.util.top_package_location(),
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
                                 proxy_url=proxy_url, proxy_port=proxy_port,
-                                proxy_user=proxy_user, proxy_pass=proxy_pass)
+                                proxy_user=proxy_user, proxy_pass=proxy_pass,
+                                max_speed=limit_in_KB)
         relative_path = repo['relative_path']
         if relative_path:
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), relative_path)
@@ -700,7 +715,8 @@ class LocalSynchronizer(BaseSynchronizer):
                 progress_callback(self.progress)
                 
     
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
+            max_speed=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict) 
@@ -872,7 +888,8 @@ class LocalSynchronizer(BaseSynchronizer):
 
 class RHNSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
+            max_speed=None):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
         pieces = repo_source['url'].split('/')

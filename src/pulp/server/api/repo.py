@@ -1447,7 +1447,7 @@ class RepoApi(BaseApi):
     def get_synchronizer(self, source_type):
         return repo_sync.get_synchronizer(source_type)
 
-    def _sync(self, id, skip_dict={}, progress_callback=None, synchronizer=None):
+    def _sync(self, id, skip_dict={}, progress_callback=None, synchronizer=None, max_speed=None):
         """
         Sync a repo from the URL contained in the feed
         """
@@ -1466,7 +1466,8 @@ class RepoApi(BaseApi):
                     repo_source,
                     skip_dict,
                     progress_callback,
-                    synchronizer)
+                    synchronizer,
+                    max_speed)
         end_sync_items = time.time()
         log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
             len(sync_errataids), (end_sync_items - start_sync_items)))
@@ -1510,14 +1511,14 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
 
     @audit()
-    def sync(self, id, timeout=None, skip=None):
+    def sync(self, id, timeout=None, skip=None, max_speed=None):
         """
         Run a repo sync asynchronously.
         """
         repo = self.repository(id)
         task = run_async(self._sync,
                          [id, skip],
-                         {},
+                         {'max_speed':max_speed},
                          timeout=timeout,
                          task_type=RepoSyncTask)
         if repo['source'] is not None:
