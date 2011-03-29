@@ -187,7 +187,7 @@ class GoferDispatcher(object):
         '''
         secret = cds.get('secret')
         agent = Agent(self._cds_uuid(cds))
-        stub = agent.CdsGoferReceiver(secret=secret)
+        stub = agent.cdsplugin(secret=secret)
         return stub
 
     def _cds_uuid(self, cds):
