@@ -37,7 +37,7 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util
 
-from pulp.repo_auth import repo_cert_utils
+from pulp.repo_auth import repo_cert_utils, protected_repo_utils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi, PackageHasReferences
@@ -76,7 +76,11 @@ class TestRepoApi(unittest.TestCase):
 
         if os.path.exists(CERTS_DIR):
             shutil.rmtree(CERTS_DIR)
-        
+
+        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
+        if os.path.exists(protected_repo_listings_file):
+            os.remove(protected_repo_listings_file)
+                    
         testutil.common_cleanup()
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
 
@@ -159,6 +163,11 @@ class TestRepoApi(unittest.TestCase):
         self.assertEqual(3, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('consumer')]))
 
+        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
+        self.assertTrue(os.path.exists(protected_repo_listings_file))
+        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        self.assertTrue(repo_id in protected_repos.values())
+
     def test_repo_create_with_both_certs(self):
         '''
         Tests that creating a repo specifying both consumer and feed bundles correctly
@@ -186,6 +195,113 @@ class TestRepoApi(unittest.TestCase):
         self.assertEqual(3, len([fn for fn in repo_certs if fn.startswith('feed')]))
         self.assertEqual(3, len([fn for fn in repo_certs if fn.startswith('consumer')]))
 
+        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
+        self.assertTrue(os.path.exists(protected_repo_listings_file))
+        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        self.assertTrue(repo_id in protected_repos.values())
+
+    def test_repo_update_with_feed_certs(self):
+        '''
+        Tests that updating a repo by adding feed certs properly stores the certs.
+        '''
+
+        # Setup
+        repo_id = 'test_feed_cert'
+        self.rapi.create(repo_id, 'Test Feed Cert', 'noarch')
+
+        # Test
+        bundle = {'feed_ca' : 'FOO', 'feed_cert' : 'BAR', 'feed_key' : 'BAZ'}
+        self.rapi.update(repo_id, bundle)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        repo_certs = os.listdir(repo_cert_dir)
+        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
+
+    def test_repo_update_with_consumer_certs(self):
+        '''
+        Tests that updating a repo by adding consumer certs properly stores the certs.
+        '''
+
+        # Setup
+        repo_id = 'test_consumer_cert'
+        self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch')
+
+        # Test
+        bundle = {'consumer_ca' : 'FOO', 'consumer_cert' : 'BAR', 'consumer_key' : 'BAZ'}
+        self.rapi.update(repo_id, bundle)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        repo_certs = os.listdir(repo_cert_dir)
+        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('consumer')]))
+
+        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
+        self.assertTrue(os.path.exists(protected_repo_listings_file))
+        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        self.assertTrue(repo_id in protected_repos.values())
+
+    def test_repo_delete_with_feed_certs(self):
+        '''
+        Tests that deleting a repo with feed certs assigned properly removes the certs.
+        '''
+
+        # Setup
+        repo_id = 'test_feed_cert'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=bundle)
+
+        # Test
+        self.rapi.delete(repo_id)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        self.assertTrue(not os.path.exists(repo_cert_dir))
+
+        repo_certs = os.listdir(repo_cert_dir)
+        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
+
+    def test_repo_delete_with_consumer_certs(self):
+        '''
+        Tests that deleting a repo with consumer certs properly cleans them up from the
+        protected repo listing.
+        '''
+
+        # Setup
+        repo_id = 'test_consumer_cert'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
+
+        # Test
+        self.rapi.delete(repo_id)
+
+        # Verify
+
+        #   repo_cert_utils will verify the contents are correct, just make sure
+        #   the certs are present on disk
+        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        self.assertTrue(not os.path.exists(repo_cert_dir))
+
+        protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
+        self.assertTrue(os.path.exists(protected_repo_listings_file))
+        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        self.assertTrue(repo_id not in protected_repos.values())
 
     def test_repo_duplicate(self):
         id = 'some-id'
