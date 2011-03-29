@@ -147,16 +147,12 @@ mkdir -p %{buildroot}/var/lib/pulp/published
 mkdir -p %{buildroot}/var/www
 ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 
-# Client Gofer Plugin
+# Client and CDS Gofer Plugins
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
 cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
-
-# CDS Gofer Plugin
-mkdir -p %{buildroot}/etc/gofer/cds-plugins
-cp etc/gofer/cds-plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp src/pulp/cds/gofer/gofer_cds_plugin.py %{buildroot}/usr/lib/gofer/plugins
+cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
@@ -239,8 +235,8 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %files cds
 %defattr(-,root,root,-)
 %doc
-%{_sysconfdir}/gofer/plugins/gofer_cds_plugin.conf
-%{_exec_prefix}/lib/gofer/plugins/gofer_cds_plugin.*
+%{_sysconfdir}/gofer/plugins/cdsplugin.conf
+%{_exec_prefix}/lib/gofer/plugins/cdsplugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
