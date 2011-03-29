@@ -611,8 +611,8 @@ class Update(RepoAction):
         delta = {}
         optdict = vars(self.opts)
 
-        feed_cert_updated = False
-        consumer_cert_updated = False
+        feed_cert_bundle = None
+        consumer_cert_bundle = None
 
         for k, v in optdict.items():
             if not v:
@@ -638,32 +638,40 @@ class Update(RepoAction):
                 f = open(v)
                 v = f.read()
                 f.close()
-                feed_cert_updated = True
+                feed_cert_bundle = feed_cert_bundle or {}
+                feed_cert_bundle[k[5:]] = v
+                continue
             if k in ('consumer_ca', 'consumer_cert', 'consumer_key'):
                 f = open(v)
                 v = f.read()
                 f.close()
-                consumer_cert_updated = True
+                consumer_cert_bundle = consumer_cert_bundle or {}
+                consumer_cert_bundle[k[9:]] = v
+                continue
             delta[k] = v
 
-        if optdict['remove_feed_cert'] and feed_cert_updated:
+        # Certificate argument sanity check
+        if optdict['remove_feed_cert'] and feed_cert_bundle:
             print _('remove_feed_cert cannot be specified while updating feed certificate items')
             return
 
-        if optdict['remove_consumer_cert'] and consumer_cert_updated:
+        if optdict['remove_consumer_cert'] and consumer_cert_bundle:
             print _('remove_consumer_cert cannot be specified while updating consumer certificate items')
             return
 
-        if 'remove_feed_cert' in optdict and optdict['remove_feed_cert']:
-            delta['feed_ca'] = None
-            delta['feed_cert'] = None
-            delta['feed_key'] = None
+        # If removing the cert bundle, set it to None in the delta. If updating any element
+        # of the bundle, add it to the delta. Otherwise, no mention in the delta will
+        # have no change to the cert bundles.
+        if optdict['remove_feed_cert']:
+            delta['feed_cert_data'] = None
+        elif feed_cert_bundle:
+            delta['feed_cert_data'] = feed_cert_bundle
 
-        if 'remove_consumer_cert' in optdict and optdict['remove_consumer_cert']:
-            delta['consumer_ca'] = None
-            delta['consumer_cert'] = None
-            delta['consumer_key'] = None
-
+        if optdict['remove_consumer_cert']:
+            delta['consumer_cert_data'] = None
+        elif consumer_cert_bundle:
+            delta['consumer_cert_data'] = consumer_cert_bundle
+            
         self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
 
