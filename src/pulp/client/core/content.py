@@ -72,10 +72,10 @@ class Upload(ContentAction):
             system_exit(os.EX_USAGE,
                         _("Error: Need to provide at least one file to perform upload"))
         if not self.opts.verbose:
-            print _("* Starting Package Upload operation. See /var/log/pulp/client.log for more verbose output\n")
+            print _("* Starting Content Upload operation. See /var/log/pulp/client.log for more verbose output\n")
         else:
-            print _("* Starting Package Upload\n")
-        print _('* Performing Package Uploads to Pulp server')
+            print _("* Starting Content Upload\n")
+        print _('* Performing Content Uploads to Pulp server')
         pids = {}
         fids = {}
         exit_code = 0
@@ -119,7 +119,7 @@ class Upload(ContentAction):
 
             if metadata['checksum'] in existing_pkg_checksums.keys():
                 pobj = existing_pkg_checksums[metadata['checksum']]
-                msg = _("Package [%s] already exists on the server with checksum [%s]") % \
+                msg = _("Content [%s] already exists on the server with checksum [%s]") % \
                             (pobj['filename'], pobj['checksum']['sha256'])
                 log.info(msg)
                 if self.opts.verbose:
@@ -166,7 +166,7 @@ class Upload(ContentAction):
 
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
-            msg = _('Package association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
+            msg = _('Content association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \
                     (rid, '\n'.join(pids.keys()) or None, '\n'.join(fids.keys()) or None))
             log.info(msg)
             if self.opts.verbose:
