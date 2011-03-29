@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.157
+Version:        0.0.158
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -259,6 +259,43 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Mon Mar 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.158-1
+- Added protected repo listings file and hooks in repo create/update/delete to
+  keep it updated. (jason.dobies@redhat.com)
+- 691415 - Fixed schizophrenic behavior of pulp-client where it was neither
+  accepting not letting the action finish without consumer id
+  (skarmark@redhat.com)
+- Clean up QPID dependancies. (jortel@redhat.com)
+- Requires gofer 0.27.
+- 690903 - fix typo. (jortel@redhat.com)
+- 690903 - fix typo. (jortel@redhat.com)
+- Minor fix for removing comma at the end of key-value pairs for consumergroup
+  (skarmark@redhat.com)
+- Minor fix for removing comma at the end of key-value pairs for consumergroup
+  (skarmark@redhat.com)
+- Added protected repo listing file support (jason.dobies@redhat.com)
+- Integrated global CA verification into handler framework
+  (jason.dobies@redhat.com)
+- Added repo auth config file to pulp-dev (jason.dobies@redhat.com)
+- Added repo_auth.conf to CDS and server configuration files
+  (jason.dobies@redhat.com)
+- Added short-circuit plugin to prevent further auth checks if the server has
+  repo auth disabled (jason.dobies@redhat.com)
+- Removed old auth handler and updated httpd configs to point to the new
+  implementation. (jason.dobies@redhat.com)
+- Added CLI options for enabling/disabling global repo auth
+  (jason.dobies@redhat.com)
+- 690633 - fixed minor typo in filter info error message (skarmark@redhat.com)
+- 668483 - Fixed pulp-client consumer commands accepting --id as a parameter
+  (skarmark@redhat.com)
+- 690635 - Error message on filter delete mentions use of --force if associated
+  to repos (skarmark@redhat.com)
+- 690498 - changing wrong help text for filter add_packages and remove_packages
+  (skarmark@redhat.com)
+- Exposed service to enable/disable global repo auth (jason.dobies@redhat.com)
+- Changed API to return the list of success/failed CDS instances.
+  (jason.dobies@redhat.com)
+- Added support for 206 PARTIAL CONTENT responses. (jason.dobies@redhat.com)
 * Thu Mar 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.157-1
 - Add the repo auth package to the server RPM (will clean this up later, just
   need to make sure this isn't breaking the RPM build)
