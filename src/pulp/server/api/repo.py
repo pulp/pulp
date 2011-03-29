@@ -920,7 +920,7 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
         log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
-        #TODO: we also need to account for presto/groups/comps metadata
+        #TODO: Make this an async task; so client wouldnt wait
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         return errors
 
@@ -976,7 +976,7 @@ class RepoApi(BaseApi):
                 pulp.server.util.top_repos_location(), repo['relative_path'])
         if not os.path.exists(repo_path):
             os.makedirs(repo_path)
-        #TODO: we also need to account for presto/groups/comps metadata
+        #TODO: Make this an async task; so client wouldnt wait
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
 
     def find_repos_by_package(self, pkgid):

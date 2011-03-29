@@ -331,10 +331,10 @@ def create_symlinks(source_path, link_path):
         log.debug("Create symlink for [%s] to [%s]" % (source_path, link_path))
         os.symlink(source_path, link_path)
         
-def create_repo(dir, groups=None, checksum_type="sha256"):
-    cmd = "createrepo --checksum %s -g %s --update %s" % (checksum_type, groups, dir)
+def _create_repo(dir, groups=None, checksum_type="sha256"):
+    cmd = "createrepo --checksum %s -g %s --update %s --database" % (checksum_type, groups, dir)
     if not groups:
-        cmd = "createrepo --checksum %s --update %s" % (checksum_type, dir)
+        cmd = "createrepo --checksum %s --update %s --database" % (checksum_type, dir)
         repodata_file = os.path.join(dir, "repodata", "repomd.xml")
         if os.path.isfile(repodata_file):
             log.info("Checking what metadata types are available: %s" % \
@@ -344,7 +344,8 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
                     repodata_file, "group")
                 comps_file = os.path.join(dir, comps_file)
                 if comps_file and os.path.isfile(comps_file):
-                    cmd = "createrepo --checksum %s -g %s --update %s" % (checksum_type, comps_file, dir)
+                    cmd = "createrepo --checksum %s -g %s --update %s --database" % (checksum_type, comps_file, dir)
+    log.info("started repo metadata update")
     status, out = commands.getstatusoutput(cmd)
 
     if status != 0:
@@ -353,6 +354,39 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
     log.info("[%s] on %s finished" % (cmd, dir))
     return status, out
 
+def create_repo(dir, groups=None, checksum_type="sha256"):
+    current_repo_dir = os.path.join(dir, "repodata")
+    backup_repo_dir = None
+    if os.path.exists(current_repo_dir):
+        log.info("metadata found; taking backup.")
+        #take a snapshot of existing metadata
+        backup_repo_dir = os.path.join(dir, "repodata.old")
+        shutil.copytree(current_repo_dir, backup_repo_dir)
+    #generate new metadata
+    _create_repo(dir, groups=groups, checksum_type=checksum_type)
+    if not backup_repo_dir:
+        # Noting further to check; we got our fresh metadata
+        return
+    #check if presto metadata exist in the backup
+    repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
+    ftypes = get_repomd_filetypes(repodata_file)
+    prestodelta_path = ""
+    if "prestodelta" in ftypes:
+        prestodelta_path = get_repomd_filetype_path(
+                    repodata_file, "prestodelta")
+    if os.path.isfile(prestodelta_path):
+        log.debug("Modifying repo for prestodelta metadata")
+        modify_repo(current_repo_dir, prestodelta_path)
+    #check if updateinfo metadata exist in the backup
+    updateinfo_path = ""
+    if "updateinfo" in ftypes:
+        updateinfo_path = get_repomd_filetype_path(
+                    repodata_file, "updateinfo")
+    if os.path.isfile(updateinfo_path):
+        log.debug("Modifying repo for updateinfo metadata")
+        modify_repo(current_repo_dir, updateinfo_path)
+    shutil.rmtree(backup_repo_dir)
+        
 def modify_repo(dir, new_file):
     cmd = "modifyrepo %s %s" % (new_file, dir)
     status, out = commands.getstatusoutput(cmd)
