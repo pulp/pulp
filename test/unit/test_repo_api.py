@@ -37,7 +37,8 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util
 
-from pulp.repo_auth import repo_cert_utils, protected_repo_utils
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi, PackageHasReferences
@@ -98,6 +99,10 @@ class TestRepoApi(unittest.TestCase):
         self.capi = ConsumerApi()
         self.cgapi = ConsumerGroupApi()
         self.eapi = ErrataApi()
+
+        self.repo_cert_utils = RepoCertUtils(self.config)
+        self.protected_repo_utils = ProtectedRepoUtils(self.config)
+
         self.clean()
 
     def tearDown(self):
@@ -129,10 +134,9 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=bundle)
 
         # Verify
-
         #   repo_cert_utils will verify the contents are correct, just make sure
         #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -153,10 +157,7 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
         # Verify
-
-        #   repo_cert_utils will verify the contents are correct, just make sure
-        #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -165,7 +166,7 @@ class TestRepoApi(unittest.TestCase):
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id in protected_repos.values())
 
     def test_repo_create_with_both_certs(self):
@@ -184,10 +185,7 @@ class TestRepoApi(unittest.TestCase):
                          consumer_cert_data=consumer_bundle)
 
         # Verify
-
-        #   repo_cert_utils will verify the contents are correct, just make sure
-        #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -197,7 +195,7 @@ class TestRepoApi(unittest.TestCase):
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id in protected_repos.values())
 
     def test_repo_update_with_feed_certs(self):
@@ -210,11 +208,11 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Feed Cert', 'noarch')
 
         # Test
-        bundle = {'feed_ca' : 'FOO', 'feed_cert' : 'BAR', 'feed_key' : 'BAZ'}
-        self.rapi.update(repo_id, bundle)
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.rapi.update(repo_id, {'feed_cert_data' : bundle})
 
         # Verify
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -231,11 +229,11 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch')
 
         # Test
-        bundle = {'consumer_ca' : 'FOO', 'consumer_cert' : 'BAR', 'consumer_key' : 'BAZ'}
-        self.rapi.update(repo_id, bundle)
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        self.rapi.update(repo_id, {'consumer_cert_data' : bundle})
 
         # Verify
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -244,7 +242,7 @@ class TestRepoApi(unittest.TestCase):
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id in protected_repos.values())
 
     def test_repo_update_remove_consumer_certs(self):
@@ -258,11 +256,10 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
         # Test
-        clean_bundle = {'consumer_ca' : None, 'consumer_cert' : None, 'consumer_key' : None}
-        self.rapi.update(repo_id, clean_bundle)
+        self.rapi.update(repo_id, {'consumer_cert_data' : None})
 
         # Verify
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
@@ -270,7 +267,7 @@ class TestRepoApi(unittest.TestCase):
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(not repo_id in protected_repos.values())
 
     def test_repo_delete_with_feed_certs(self):
@@ -287,7 +284,7 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.delete(repo_id)
 
         # Verify
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(not os.path.exists(repo_cert_dir))
 
     def test_repo_delete_with_consumer_certs(self):
@@ -308,12 +305,12 @@ class TestRepoApi(unittest.TestCase):
 
         #   repo_cert_utils will verify the contents are correct, just make sure
         #   the certs are present on disk
-        repo_cert_dir = repo_cert_utils._repo_cert_directory(repo_id)
+        repo_cert_dir = self.repo_cert_utils._repo_cert_directory(repo_id)
         self.assertTrue(not os.path.exists(repo_cert_dir))
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         self.assertTrue(os.path.exists(protected_repo_listings_file))
-        protected_repos = protected_repo_utils.read_protected_repo_listings(protected_repo_listings_file)
+        protected_repos = self.protected_repo_utils.read_protected_repo_listings()
         self.assertTrue(repo_id not in protected_repos.values())
 
     def test_repo_duplicate(self):

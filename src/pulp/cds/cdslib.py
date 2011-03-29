@@ -18,7 +18,8 @@ import shutil
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
-from pulp.repo_auth import repo_cert_utils, protected_repo_utils
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
+from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 
 
 LOGPATH = '/var/log/pulp-cds/gofer.log'
@@ -55,6 +56,9 @@ class CdsLib(object):
         @type config: L{INIConfig}
         '''
         self.config = config
+        self.repo_cert_utils = RepoCertUtils(self.config)
+        self.protected_repo_utils = ProtectedRepoUtils(self.config)
+        
         loginit()
 
     def initialize(self):
@@ -126,10 +130,10 @@ class CdsLib(object):
 
         # If the items in bundle have None values, the following call will delete the
         # associated file if one exists.
-        repo_cert_utils.write_consumer_cert_bundle(repo_id, bundle)
+        self.repo_cert_utils.write_consumer_cert_bundle(repo_id, bundle)
 
         # Determine whether or not to add the repo 
-        protected_repo_utils.add_protected_repo(self.config.repos.protected_repo_listing_file, repo_relative_path, repo_id)
+        self.protected_repo_utils.add_protected_repo(repo_relative_path, repo_id)
 
     def set_global_repo_auth(self, bundle):
         '''

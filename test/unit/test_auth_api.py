@@ -27,7 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.repo_auth import repo_cert_utils
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.user import UserApi
@@ -66,6 +66,8 @@ class TestAuthApi(unittest.TestCase):
         self.config = testutil.load_test_config()
         self.config.set('repos', 'cert_location', CERT_DIR)
         self.config.set('repos', 'global_cert_location', GLOBAL_CERT_DIR)
+
+        self.repo_cert_utils = RepoCertUtils(self.config)
 
         self.auth_api = AuthApi()
         self.user_api = UserApi()
@@ -118,7 +120,7 @@ class TestAuthApi(unittest.TestCase):
         successes, failures = self.auth_api.enable_global_repo_auth(bundle)
 
         # Verify
-        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        read_bundle = self.repo_cert_utils.read_global_cert_bundle()
 
         self.assertTrue(read_bundle is not None)
         self.assertEqual(read_bundle, bundle)
@@ -145,7 +147,7 @@ class TestAuthApi(unittest.TestCase):
         successes, failures = self.auth_api.enable_global_repo_auth(bundle)
 
         # Verify
-        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        read_bundle = self.repo_cert_utils.read_global_cert_bundle()
 
         self.assertTrue(read_bundle is not None)
         self.assertEqual(read_bundle, bundle)
@@ -170,7 +172,7 @@ class TestAuthApi(unittest.TestCase):
         successes, failures = self.auth_api.enable_global_repo_auth(bundle)
 
         # Verify
-        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        read_bundle = self.repo_cert_utils.read_global_cert_bundle()
 
         self.assertTrue(read_bundle is not None)
         self.assertEqual(read_bundle, bundle)
@@ -195,7 +197,7 @@ class TestAuthApi(unittest.TestCase):
         successes, failures = self.auth_api.disable_global_repo_auth()
 
         # Verify
-        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        read_bundle = self.repo_cert_utils.read_global_cert_bundle()
         self.assertTrue(read_bundle is None)
 
         self.assertEqual(2, len(successes))
@@ -220,7 +222,7 @@ class TestAuthApi(unittest.TestCase):
         successes, failures = self.auth_api.disable_global_repo_auth()
 
         # Verify
-        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        read_bundle = self.repo_cert_utils.read_global_cert_bundle()
         self.assertTrue(read_bundle is None)
 
         self.assertEqual(0, len(successes))
@@ -244,7 +246,7 @@ class TestAuthApi(unittest.TestCase):
         successes, failures = self.auth_api.disable_global_repo_auth()
 
         # Verify
-        read_bundle = repo_cert_utils.read_global_cert_bundle()
+        read_bundle = self.repo_cert_utils.read_global_cert_bundle()
         self.assertTrue(read_bundle is None)
 
         self.assertEqual(0, len(successes))

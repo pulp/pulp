@@ -26,7 +26,8 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.repo_auth import oid_validation, repo_cert_utils
+import pulp.repo_auth.oid_validation as oid_validation
+from pulp.repo_auth.oid_validation import OidValidator
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.auth import AuthApi
 import testutil
@@ -61,16 +62,13 @@ class TestOidValidation(unittest.TestCase):
         if os.path.exists(protected_repo_listings_file):
             os.remove(protected_repo_listings_file)
 
+
         self.repo_api.clean()
 
     def setUp(self):
-
-        # Test configuration setup
-        override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-repoauth.conf'
         self.config = testutil.load_test_config()
 
-        repo_cert_utils.CONFIG_FILENAME = override_file
-        oid_validation.PROTECTED_REPOS_FILENAME = self.config.get('repos', 'protected_repo_listing_file')
+        self.validator = OidValidator(self.config)
 
         self.repo_api = RepoApi()
         self.auth_api = AuthApi()
@@ -107,8 +105,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -139,8 +137,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -171,8 +169,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
         
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -203,8 +201,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -235,8 +233,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -267,8 +265,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -301,8 +299,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -335,8 +333,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(response_x)
@@ -369,8 +367,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -401,8 +399,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -433,8 +431,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
@@ -467,8 +465,8 @@ class TestOidValidation(unittest.TestCase):
         request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
         request_y = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-13/x86_64/')
 
-        response_x = oid_validation.authenticate(request_x)
-        response_y = oid_validation.authenticate(request_y)
+        response_x = oid_validation.authenticate(request_x, config=self.config)
+        response_y = oid_validation.authenticate(request_y, config=self.config)
 
         # Verify
         self.assertTrue(not response_x)
