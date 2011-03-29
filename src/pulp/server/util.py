@@ -332,9 +332,9 @@ def create_symlinks(source_path, link_path):
         os.symlink(source_path, link_path)
         
 def _create_repo(dir, groups=None, checksum_type="sha256"):
-    cmd = "createrepo --checksum %s -g %s --update %s --database" % (checksum_type, groups, dir)
+    cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, groups, dir)
     if not groups:
-        cmd = "createrepo --checksum %s --update %s --database" % (checksum_type, dir)
+        cmd = "createrepo --database --checksum %s --update %s " % (checksum_type, dir)
         repodata_file = os.path.join(dir, "repodata", "repomd.xml")
         if os.path.isfile(repodata_file):
             log.info("Checking what metadata types are available: %s" % \
@@ -344,7 +344,7 @@ def _create_repo(dir, groups=None, checksum_type="sha256"):
                     repodata_file, "group")
                 comps_file = os.path.join(dir, comps_file)
                 if comps_file and os.path.isfile(comps_file):
-                    cmd = "createrepo --checksum %s -g %s --update %s --database" % (checksum_type, comps_file, dir)
+                    cmd = "createrepo --database --checksum %s -g %s --update %s " % (checksum_type, comps_file, dir)
     log.info("started repo metadata update")
     status, out = commands.getstatusoutput(cmd)
 
