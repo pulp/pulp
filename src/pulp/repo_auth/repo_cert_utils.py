@@ -310,8 +310,8 @@ def _write_cert_bundle(file_prefix, cert_dir, bundle):
             try:
 
                 if value is None:
-                    LOG.info('Removing repo cert file [%s]' % filename)
                     if os.path.exists(filename):
+                        LOG.info('Removing repo cert file [%s]' % filename)
                         os.remove(filename)
                     cert_files[key] = None
                 else:
