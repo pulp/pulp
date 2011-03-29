@@ -226,6 +226,59 @@ class TestCertStorage(unittest.TestCase):
         self.assertTrue(not os.path.exists(os.path.join(utils._global_cert_directory(), 'pulp-global-repo.cert')))
         self.assertTrue(not os.path.exists(os.path.join(utils._global_cert_directory(), 'pulp-global-repo.key')))
 
+    def test_remove_bundle_item(self):
+        '''
+        Tests that specifying None as the content of an item in the bundle removes
+        it's file if it exists.
+        '''
+
+        # Setup
+        repo_id = 'test-repo-1'
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        utils.write_feed_cert_bundle(repo_id, bundle)
+
+        # Test
+        clean_bundle = {'ca' : None, 'cert' : 'ZOMBIE'} # remove ca, update cert, leave key alone
+        files = utils.write_feed_cert_bundle(repo_id, clean_bundle)
+
+        # Verify
+        self.assertTrue(files is not None)
+        self.assertEqual(2, len(files)) # no change to key
+
+        self.assertEqual(files['ca'], None)
+
+        repo_cert_dir = utils._repo_cert_directory(repo_id)
+        self.assertTrue(os.path.exists(repo_cert_dir))
+
+        self.assertTrue(not os.path.exists(os.path.join(utils._repo_cert_directory(repo_id), 'feed-%s.ca' % repo_id)))
+        self._verify_repo_file_contents(repo_id, 'feed-%s.cert' % repo_id, clean_bundle['cert'])
+        self._verify_repo_file_contents(repo_id, 'feed-%s.key' % repo_id, bundle['key'])
+
+    def test_write_none_item(self):
+        '''
+        Tests that specifying None as the content of an item that was not previously
+        written does not throw an error or create an empty file.
+        '''
+
+        # Setup
+        repo_id = 'test-repo-5'
+
+        # Test
+        clean_bundle = {'ca' : None, 'cert' : None, 'key' : None}
+        files = utils.write_feed_cert_bundle(repo_id, clean_bundle)
+
+        # Verify
+        self.assertTrue(files is not None)
+        self.assertEqual(3, len(files))
+
+        self.assertEqual(files['ca'], None)
+        self.assertEqual(files['cert'], None)
+        self.assertEqual(files['key'], None)
+
+        self.assertTrue(not os.path.exists(os.path.join(utils._repo_cert_directory(repo_id), 'feed-%s.ca' % repo_id)))
+        self.assertTrue(not os.path.exists(os.path.join(utils._repo_cert_directory(repo_id), 'feed-%s.cert' % repo_id)))
+        self.assertTrue(not os.path.exists(os.path.join(utils._repo_cert_directory(repo_id), 'feed-%s.key' % repo_id)))
+
     def test_read_global_no_bundle(self):
         '''
         Tests that attempting to read the global repo bundle when it doesn't exist

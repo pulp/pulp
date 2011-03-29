@@ -301,16 +301,25 @@ def _write_cert_bundle(file_prefix, cert_dir, bundle):
             os.makedirs(cert_dir)
 
         # For each item in the cert bundle, save it to disk using the given prefix
-        # to identify the type of bundle it belongs to
+        # to identify the type of bundle it belongs to. If the value is None, the
+        # item is being deleted.
         cert_files = {}
         for key, value in bundle.items():
             filename = os.path.join(cert_dir, '%s.%s' % (file_prefix, key))
+
             try:
-                LOG.info('Storing repo cert file [%s]' % filename)
-                f = open(filename, 'w')
-                f.write(value)
-                f.close()
-                cert_files[key] = str(filename)
+
+                if value is None:
+                    LOG.info('Removing repo cert file [%s]' % filename)
+                    if os.path.exists(filename):
+                        os.remove(filename)
+                    cert_files[key] = None
+                else:
+                    LOG.info('Storing repo cert file [%s]' % filename)
+                    f = open(filename, 'w')
+                    f.write(value)
+                    f.close()
+                    cert_files[key] = str(filename)
             except:
                 LOG.exception('Error storing certificate file [%s]' % filename)
                 raise Exception('Error storing certificate file [%s]' % filename)
