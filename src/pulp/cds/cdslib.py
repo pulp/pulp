@@ -129,11 +129,15 @@ class CdsLib(object):
         '''
 
         # If the items in bundle have None values, the following call will delete the
-        # associated file if one exists.
+        # associated file if one exists. If the bundle is None, all related cert bundle
+        # files will be deleted.
         self.repo_cert_utils.write_consumer_cert_bundle(repo_id, bundle)
 
-        # Determine whether or not to add the repo 
-        self.protected_repo_utils.add_protected_repo(repo_relative_path, repo_id)
+        # Determine whether or not to add the repo
+        if bundle is None:
+            self.protected_repo_utils.delete_protected_repo(repo_relative_path)
+        else:
+            self.protected_repo_utils.add_protected_repo(repo_relative_path, repo_id)
 
     def set_global_repo_auth(self, bundle):
         '''
@@ -143,7 +147,11 @@ class CdsLib(object):
         @param bundle: the certificate bundle containing the pieces necessary for auth
         @param bundle: dict {str, str}
         '''
-        pass
+
+        # If the items in bundle have None values, the following call will delete the
+        # associated file if one exists. If the bundle is None, all related cert bundle
+        # files will be deleted.
+        self.repo_cert_utils.write_global_repo_cert_bundle(bundle)
 
     def _sync_repos(self, base_url, repos):
         '''
