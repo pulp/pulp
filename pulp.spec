@@ -188,8 +188,24 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %if 0%{?fedora}
 # Remove the comment flags for the auth handler lines (special format on those is #-)
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
+%endif
+
+%post cds
+setfacl -m u:apache:rwx /etc/pki/content/
+
+# For Fedora, enable the mod_python handler in the httpd config
+%if 0%{?fedora}
+# Remove the comment flags for the auth handler lines (special format on those is #-)
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %endif
+
+%post client
+pushd %{_sysconfdir}/rc.d/init.d
+ln -s goferd pulp-agent
+popd
+
+%postun client
+rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %files
@@ -248,15 +264,6 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 /var/lib/pulp-cds
 /var/log/pulp-cds
-
-
-%post client
-pushd %{_sysconfdir}/rc.d/init.d
-ln -s goferd pulp-agent
-popd
-
-%postun client
-rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
