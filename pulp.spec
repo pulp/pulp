@@ -238,6 +238,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %defattr(-,root,root,-)
 %doc
 %{python_sitelib}/pulp/cds/
+%{python_sitelib}/pulp/repo_auth/
 %{_sysconfdir}/gofer/plugins/cdsplugin.conf
 %{_exec_prefix}/lib/gofer/plugins/cdsplugin.*
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
