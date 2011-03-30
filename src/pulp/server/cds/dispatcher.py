@@ -164,15 +164,56 @@ class GoferDispatcher(object):
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
-    def enable_global_repo_auth(self, cds, cert_bundle):
+    def set_global_repo_auth(self, cds, cert_bundle):
         '''
-        Sends the enable global repo authentication message to a specific CDS.
-        '''
+        Sends the global repo authentication credentials to a specific CDS. If the
+        bundle is None, the effect is that global repo authentication is disabled.
 
-    def disable_global_repo_auth(self, cds):
+        @param cds: CDS to send the message to
+        @type  cds:  L{CDS}
+
+        @param cert_bundle: cert bundle to send to the CDS; may be None
+        @type  cert_bundle:  see pulp.repo_auth.repo_cert_utils
         '''
-        Sends the disable global repo authentication message to a specific CDS.
+        try:
+            self._cds_stub(cds).set_global_repo_auth(cert_bundle)
+        except RequestTimeout, e:
+            raise CdsTimeoutException(e), None, sys.exc_info()[2]
+        except NotAuthorized, e:
+            raise CdsAuthException(e), None, sys.exc_info()[2]
+        except DispatchError, e:
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
+        except Exception, e:
+            raise CdsMethodException(e), None, sys.exc_info()[2]
+
+
+    def set_repo_auth(self, cds, repo_id, repo_relative_path, cert_bundle):
         '''
+        Sends repo authentication credentials to a specific CDS. If the bundle is
+        None, the effect is that repo authentication is disabled for that repo.
+
+        @param cds: CDS to send the message to
+        @type  cds:  L{CDS}
+
+        @param repo_id: identifies the repo being configured
+        @type  repo_id: str
+
+        @param repo_relative_path: used to match a request as being against this repo
+        @type  repo_relative_path: str
+
+        @param cert_bundle: cert bundle to send to the CDS; may be None
+        @type  cert_bundle:  see pulp.repo_auth.repo_cert_utils
+        '''
+        try:
+            self._cds_stub(cds).set_repo_auth(repo_id, repo_relative_path, cert_bundle)
+        except RequestTimeout, e:
+            raise CdsTimeoutException(e), None, sys.exc_info()[2]
+        except NotAuthorized, e:
+            raise CdsAuthException(e), None, sys.exc_info()[2]
+        except DispatchError, e:
+            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
+        except Exception, e:
+            raise CdsMethodException(e), None, sys.exc_info()[2]
 
     def _cds_stub(self, cds):
         '''

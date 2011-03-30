@@ -90,8 +90,8 @@ class MockCdsDispatcher(object):
     INIT = 'init'
     RELEASE = 'release'
     SYNC = 'sync'
-    ENABLE_GLOBAL_REPO_AUTH = 'enable_global_repo_auth'
-    DISABLE_GLOBAL_REPO_AUTH = 'disable_global_repo_auth'
+    SET_GLOBAL_REPO_AUTH = 'set_global_repo_auth'
+    SET_REPO_AUTH = 'set_repo_auth'
 
     def __init__(self, error_to_throw=None):
         '''
@@ -111,6 +111,8 @@ class MockCdsDispatcher(object):
         # Stores the values that were passed into calls
         self.cds = None
         self.repos = None
+        self.repo_id = None
+        self.repo_relative_path = None
 
     def init_cds(self, cds):
         self.call_log.append(self.call_log_message(MockCdsDispatcher.INIT, cds))
@@ -133,20 +135,22 @@ class MockCdsDispatcher(object):
         if self.error_to_throw is not None:
             raise self.error_to_throw
 
-    def enable_global_repo_auth(self, cds, cert_bundle):
-        self.call_log.append(self.call_log_message(MockCdsDispatcher.ENABLE_GLOBAL_REPO_AUTH, cds))
+    def set_global_repo_auth(self, cds, cert_bundle):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.SET_GLOBAL_REPO_AUTH, cds))
         self.cert_bundle = cert_bundle
 
         if self.error_to_throw is not None:
             raise self.error_to_throw
 
-    def disable_global_repo_auth(self, cds):
-        self.call_log.append(self.call_log_message(MockCdsDispatcher.DISABLE_GLOBAL_REPO_AUTH, cds))
-        self.cert_bundle = None
+    def set_repo_auth(self, cds, repo_id, repo_relative_path, cert_bundle):
+        self.call_log.append(self.call_log_message(MockCdsDispatcher.SET_REPO_AUTH, cds))
+        self.repo_id = repo_id
+        self.repo_relative_path = repo_relative_path
+        self.cert_bundle = cert_bundle
 
         if self.error_to_throw is not None:
             raise self.error_to_throw
-
+        
     def call_log_message(self, type, cds):
         '''
         Generates the message that will be logged to call_log when a method is invoked.
