@@ -300,7 +300,7 @@ class CdsApi(BaseApi):
             bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
             if bundle is not None:
                 repo = Repo.get_collection().find_one({'id' : repo_id})
-                self.set_repo_auth(repo_id, repo['relative_path'], None)
+                self.dispatcher.set_repo_auth(cds, repo_id, repo['relative_path'], None)
 
             # Remove it from CDS host assignment consideration
             round_robin.remove_cds_repo_association(cds_hostname, repo_id)
