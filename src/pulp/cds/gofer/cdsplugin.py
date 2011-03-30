@@ -40,8 +40,8 @@ config = tosafe(plugin.cfg())
 cdslib = CdsLib(config)
 producer = None
 
-SECRET_FILE = config.messaging.secret_file
-HEARTBEAT = config.heartbeat.seconds
+SECRET_FILE = config.get('messaging', 'secret_file')
+HEARTBEAT = config.get('heartbeat', 'seconds')
 
 
 def getproducer():
