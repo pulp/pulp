@@ -101,6 +101,7 @@ Requires:       gofer >= 0.28
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
+Requires:       m2crypto
 %if 0%{?fedora}
 # Fedora
 Requires: mod_python
