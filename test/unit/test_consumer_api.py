@@ -32,17 +32,9 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 
-from mocks import MockRepoProxyFactory
+from mocks import MockRepoProxyFactory, MockCdsDispatcher
 import testutil
 
-# -- mocks -------------------------------------------------------------------------------
-
-class MockCdsDispatcher(object):
-    '''
-    Simple mock to allow a CDS creation through the CDS APIs.
-    '''
-    def init_cds(self, cds):
-        pass
 
 # -- test cases ---------------------------------------------------------------------------
 

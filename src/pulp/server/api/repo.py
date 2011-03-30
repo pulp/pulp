@@ -582,6 +582,9 @@ class RepoApi(BaseApi):
         protected_repo_utils = ProtectedRepoUtils(config.config)
         protected_repo_utils.delete_protected_repo(repo['relative_path'])
 
+        # Notify any CDS instances that the repo protection should be deleted
+        self.cdsapi.set_repo_auth(id, repo['relative_path'], None)
+
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
 
@@ -688,10 +691,13 @@ class RepoApi(BaseApi):
         # If the consumer certs were updated, update the protected repo listings.
         # This has to be done down here in case the relative path has changed as well.
         if consumer_cert_updated:
-            if repo['consumer_ca'] is None:
+            bundle = repo_cert_utils.read_consumer_cert_bundle(id)
+            if bundle is None:
                 protected_repo_utils.delete_protected_repo(repo['relative_path'])
+                self.cdsapi.set_repo_auth(id, repo['relative_path'], None)
             else:
                 protected_repo_utils.add_protected_repo(repo['relative_path'], id)
+                self.cdsapi.set_repo_auth(id, repo['relative_path'], bundle)
         
         # store changed object
         self.collection.save(repo, safe=True)

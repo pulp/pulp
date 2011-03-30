@@ -97,7 +97,7 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history))
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
-        self.assertEqual(1, len(self.dispatcher.call_log))
+        self.assertEqual(2, len(self.dispatcher.call_log)) # init + global auth call
         self.assertEqual(self.dispatcher.call_log[0], self.dispatcher.call_log_message(MockCdsDispatcher.INIT, cds))
 
     def test_register_full_attributes(self):
@@ -120,7 +120,7 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history))
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
-        self.assertEqual(1, len(self.dispatcher.call_log))
+        self.assertEqual(2, len(self.dispatcher.call_log)) # init + global auth call
         self.assertEqual(self.dispatcher.call_log[0], self.dispatcher.call_log_message(MockCdsDispatcher.INIT, cds))
 
     def test_register_no_hostname(self):
@@ -152,7 +152,7 @@ class TestCdsApi(unittest.TestCase):
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(1, len(history)) # from the first register call, not the second
 
-        self.assertEqual(1, len(self.dispatcher.call_log)) # only from the original register
+        self.assertEqual(2, len(self.dispatcher.call_log)) # only from the original register
 
     def test_register_init_error(self):
         '''
@@ -258,7 +258,6 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         self.assertEqual(4, len(all_cds))
-
 
     def test_list_no_cds_instances(self):
         '''
