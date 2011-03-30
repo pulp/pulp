@@ -244,6 +244,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+%attr(3775, root, root) %{_sysconfdir}/pki/content
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 /var/lib/pulp-cds
 /var/log/pulp-cds
