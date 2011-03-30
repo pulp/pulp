@@ -171,7 +171,7 @@ class CdsLib(object):
         '''
 
         num_threads = self.config.get('cds', 'sync_threads')
-        packages_location = self.config('cds', 'packages_dir')
+        packages_location = self.config.get('cds', 'packages_dir')
 
         # Keep a running total of all repos that have been successfully synchronized so
         # we can write out the list
