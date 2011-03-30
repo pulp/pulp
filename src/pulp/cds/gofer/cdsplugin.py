@@ -22,16 +22,23 @@ from gofer.agent.plugin import Plugin
 from gofer.decorators import remote, action
 from gofer.messaging import Topic
 from gofer.messaging.producer import Producer
+from StringIO import StringIO
+from iniparse import SafeConfigParser
 
 # Pulp
 from pulp.cds.cdslib import CdsLib, SecretFile
 
+def tosafe(cfg):
+    safe = SafeConfigParser()
+    fp = StringIO(str(cfg))
+    safe.readfp(fp)
+    return safe
+
 log = logging.getLogger(__name__)
 plugin = Plugin.find(__name__)
-config = plugin.cfg()
+config = tosafe(plugin.cfg())
 cdslib = CdsLib(config)
 producer = None
-
 
 SECRET_FILE = config.messaging.secret_file
 HEARTBEAT = config.heartbeat.seconds

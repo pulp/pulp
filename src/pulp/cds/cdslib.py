@@ -52,7 +52,7 @@ class CdsLib(object):
         '''
         Init logging.
         @param config: The CDS configuration.
-        @type config: L{INIConfig}
+        @type config: SafeConfigParser
         '''
         self.config = config
         self.repo_cert_utils = RepoCertUtils(self.config)
@@ -170,8 +170,8 @@ class CdsLib(object):
                       on the CDS
         '''
 
-        num_threads = self.config.cds.sync_threads
-        packages_location = self.config.cds.packages_dir
+        num_threads = self.config.get('cds', 'sync_threads')
+        packages_location = self.config('cds', 'packages_dir')
 
         # Keep a running total of all repos that have been successfully synchronized so
         # we can write out the list
@@ -221,7 +221,7 @@ class CdsLib(object):
                       on the CDS
         '''
 
-        packages_dir = self.config.cds.packages_dir
+        packages_dir = self.config.get('cds', 'packages_dir')
 
         # Load the list of all currently syncced repos. If this can't be loaded, there
         # isn't anything that can be done in terms of deleting old repos, so punch out early.
