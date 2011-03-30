@@ -19,7 +19,9 @@ from uuid import uuid4
 
 # 3rd Party
 from gofer.agent.plugin import Plugin
-from gofer.decorators import remote
+from gofer.decorators import remote, action
+from gofer.messaging import Topic
+from gofer.messaging.producer import Producer
 
 # Pulp
 from pulp.cds.cdslib import CdsLib, SecretFile
@@ -28,19 +30,51 @@ log = logging.getLogger(__name__)
 plugin = Plugin.find(__name__)
 config = plugin.cfg()
 cdslib = CdsLib(config)
+producer = None
 
 
 SECRET_FILE = config.messaging.secret_file
+HEARTBEAT = config.heartbeat.seconds
 
+
+def getproducer():
+    '''
+    Get a gofer message producer
+    @return: A producer.
+    @rtype: L{Producer}
+    '''
+    global producer
+    if not producer:
+        broker = plugin.getbroker()
+        url = str(broker.url)
+        producer = Producer(url=url)
+    return producer
 
 def getsecret():
     '''
-    Function used in gofer decorator to get the shared secret.
+    Used in gofer decorator to get the shared secret.
     @return: The shared secret.
     @rtype: str
     '''
     secret = SecretFile(SECRET_FILE)
     return secret.read()
+
+@action(seconds=HEARTBEAT)
+def heartbeat():
+    '''
+    Send heartbeat.
+    '''
+    topic = Topic('heartbeat')
+    interval = int(HEARTBEAT)
+    secret = SecretFile(SECRET_FILE)
+    if secret.read():
+        p = getproducer()
+        uuid = plugin.getuuid()
+        body = dict(
+            uuid=uuid,
+            next=interval,
+            cds={})
+        p.send(topic, ttl=interval, heartbeat=body)
 
 @remote(secret=getsecret)
 def initialize():
