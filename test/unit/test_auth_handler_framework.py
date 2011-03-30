@@ -24,10 +24,10 @@ import pulp.repo_auth.auth_handler_framework as auth_framework
 
 
 # Functions that simulate plugins so we can influence the outcome
-def fail(request, log_func):
+def fail(request):
     return False
 
-def win(request, log_func):
+def win(request):
     return True
 
 
@@ -97,4 +97,7 @@ class MockFunctionsTests(unittest.TestCase):
 class MockRequest(object):
 
     def add_common_vars(self):
+        pass
+
+    def log_error(self, message):
         pass

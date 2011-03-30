@@ -80,7 +80,7 @@ class AuthApi(BaseApi):
         repo_cert_utils.write_global_repo_cert_bundle(cert_bundle)
 
         # Call out to all CDS instances to inform them of the auth change
-        successes, failures = self.cds_api.enable_global_repo_auth(cert_bundle)
+        successes, failures = self.cds_api.set_global_repo_auth(cert_bundle)
         return successes, failures
 
     def disable_global_repo_auth(self):
@@ -106,5 +106,5 @@ class AuthApi(BaseApi):
         repo_cert_utils.delete_global_cert_bundle()
 
         # Call out to all CDS instances to inform them of the auth change
-        successes, failures = self.cds_api.disable_global_repo_auth()
+        successes, failures = self.cds_api.set_global_repo_auth(None)
         return successes, failures

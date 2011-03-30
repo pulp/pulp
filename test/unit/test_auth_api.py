@@ -131,7 +131,7 @@ class TestAuthApi(unittest.TestCase):
         self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
         self.assertEqual(self.dispatcher.cert_bundle, bundle)
         for entry in self.dispatcher.call_log:
-            self.assertTrue(entry.startswith(MockCdsDispatcher.ENABLE_GLOBAL_REPO_AUTH))
+            self.assertTrue(entry.startswith(MockCdsDispatcher.SET_GLOBAL_REPO_AUTH))
 
     def test_enable_global_repo_auth_no_cds(self):
         '''
@@ -206,7 +206,7 @@ class TestAuthApi(unittest.TestCase):
         self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
         self.assertEqual(self.dispatcher.cert_bundle, None)
         for entry in self.dispatcher.call_log:
-            self.assertTrue(entry.startswith(MockCdsDispatcher.DISABLE_GLOBAL_REPO_AUTH))
+            self.assertTrue(entry.startswith(MockCdsDispatcher.SET_GLOBAL_REPO_AUTH))
 
     def test_disable_global_repo_auth_no_cds(self):
         '''

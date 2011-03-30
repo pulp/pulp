@@ -417,21 +417,20 @@ class CdsApi(BaseApi):
         # Find all CDS instances associated with the given repo
         cds_list = self.cds_with_repo(repo_id)
 
-        # Queue calls to the CDS to unassociate
-
         for cds in cds_list:
             cds['repo_ids'].remove(repo_id)
             self.collection.save(cds, safe=True)
             self.cds_history_api.repo_unassociated(cds['hostname'], repo_id)
 
-    def enable_global_repo_auth(self, cert_bundle):
+    def set_global_repo_auth(self, cert_bundle):
         '''
-        Notifies *all* CDS instances that global repo authentication has been enabled
-        on the Pulp server.
+        Notifies *all* CDS instances that global repo authentication has been changed
+        on the Pulp server. If the bundle is None, the effect is that global repo
+        authentication will be disabled.
 
         @param cert_bundle: contains the bundle contents (PEM encoded certificates and
-                            keys); see repo_cert_utils for more information
-        @type  cert_bundle: dict {str, str}
+                            keys); may be None
+        @type  cert_bundle: dict {str, str} (see repo_cert_utils for more information)
         '''
         collection = CDS.get_collection()
         all_cds = list(collection.find())
@@ -442,7 +441,7 @@ class CdsApi(BaseApi):
         error_cds_hostnames = []
         for cds in all_cds:
             try:
-                self.dispatcher.enable_global_repo_auth(cds, cert_bundle)
+                self.dispatcher.set_global_repo_auth(cds, cert_bundle)
                 success_cds_hostnames.append(cds['hostname'])
             except Exception:
                 log.exception('Error enabling global repo auth on CDS [%s]' % cds['hostname'])
@@ -450,25 +449,26 @@ class CdsApi(BaseApi):
 
         return success_cds_hostnames, error_cds_hostnames
 
-    def disable_global_repo_auth(self):
+    def set_repo_auth(self, repo_id, repo_relative_path, cert_bundle):
         '''
-        Notifies *all* CDS instances that global repo authentication has been
-        disabled on the Pulp server.
+        Notifies all CDS instances associated with the given repo that repo authentication
+        has been changed. If the bundle is None, authentication for this repo will be
+        removed.
         '''
 
-        collection = CDS.get_collection()
-        all_cds = list(collection.find())
+        # Find all CDS instances associated with the given repo
+        cds_list = self.cds_with_repo(repo_id)
 
         # Attempt to send to all CDS instances. For any that throw an error, log the
-        # exception and keep a running track of which failed to display to the caller.
+        # exception and keep a running track of which failed to display to the caller
         success_cds_hostnames = []
         error_cds_hostnames = []
-        for cds in all_cds:
+        for cds in cds_list:
             try:
-                self.dispatcher.disable_global_repo_auth(cds)
+                self.dispatcher.set_repo_auth(cds, repo_id, repo_relative_path, cert_bundle)
                 success_cds_hostnames.append(cds['hostname'])
             except Exception:
-                log.exception('Error enabling global repo auth on CDS [%s]' % cds['hostname'])
+                log.exception('Error enabling repo auth on CDS [%s]' % cds['hostname'])
                 error_cds_hostnames.append(cds['hostname'])
 
         return success_cds_hostnames, error_cds_hostnames
