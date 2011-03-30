@@ -37,9 +37,12 @@ Repo object fields:
  * sync_schedule, str, crontab entry representing recurring sync schedule
  * last_sync, timestamp, date and time of last successful sync
  * use_symlinks, bool, whether or not the repository uses symlinks for its content
- * ca, str, the repository's certificate authority
- * cert, str, the repository's certificate
- * key, str, the repository's private key
+ * feed_ca, str, full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed
+ * feed_cert, str, full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content
+ * feed_key, str, full path on the Pulp server to the private key for the feed certificate
+ * consumer_ca, str, full path on the Pulp server to the certificate authority used to verify consumer entitlement certificates
+ * consumer_cert, str, full path on the Pulp server to the entitlement certificate that will be given to bound consumers to authenticate access to the repository
+ * consumer_key, str, full path on the Pulp server to the private key for the consumer's entitlement certificate
  * errata, object, map of errata names to lists of package ids in each errata [deferred field]
  * groupid, list of str, list of repository group ids this repository belongs to
  * relative_path, str, repository's path relative to the configured root
