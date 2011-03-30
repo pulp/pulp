@@ -188,6 +188,7 @@ setfacl -m u:apache:rwx /etc/pki/content/
 %if 0%{?fedora}
 # Remove the comment flags for the auth handler lines (special format on those is #-)
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
+sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %endif
 
 
