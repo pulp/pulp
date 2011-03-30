@@ -101,6 +101,10 @@ Requires:       gofer >= 0.28
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
+%if 0%{?fedora}
+# Fedora
+Requires: mod_python
+%endif
 
 %description cds
 Tools necessary to interact synchronize content from a pulp server and serve that content
