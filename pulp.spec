@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.158
+Version:        0.0.159
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -272,6 +272,62 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Mar 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.159-1
+- Convert CDS plugin configuration to SafeConfigParser. (jortel@redhat.com)
+- With the addition of repo_auth to CDS, it now needs m2crypto.
+  (jason.dobies@redhat.com)
+- Add mod python to CDS RPM for fedora (jason.dobies@redhat.com)
+- Moved CDS httpd post script to %post cds (jason.dobies@redhat.com)
+- Need to add pki directory to CDS for repo auth (jason.dobies@redhat.com)
+- Wired up repo and CDS apis to send repo auth info to CDS instances.
+  (jason.dobies@redhat.com)
+- Added repo_auth package to CDS RPM (jason.dobies@redhat.com)
+- Add CDS heartbeat. (jortel@redhat.com)
+- Turn on auth handling in the CDS for fedora. (jason.dobies@redhat.com)
+- Wiring up for sending repo auth info to CDS instances
+  (jason.dobies@redhat.com)
+- Added dispatcher (and mock) calls for repo auth (jason.dobies@redhat.com)
+- Added hook to remove old protected repo listings if relative path changes.
+  (jason.dobies@redhat.com)
+- Changed CLI logic to use the new repo update API for cert bundles.
+  (jason.dobies@redhat.com)
+- Changing the order of options passed to createrepo; apaprently rhel5
+  createrepo is not smart enough to know its a option (pkilambi@redhat.com)
+- 683498 -  fixing the help and co options for add/remove files
+  (pkilambi@redhat.com)
+- Massive refactoring of how config properties are handled by repo auth to
+  account for running: on the server, on a CDS, and out of apache.
+  (jason.dobies@redhat.com)
+- 671547 - fixing error message to be explicit when scheduling errata installs
+  (pkilambi@redhat.com)
+- 670204: fixing repo list output (pkilambi@redhat.com)
+- 683112 - fixing the error message to be more explicit (pkilambi@redhat.com)
+- 683511 - fixing help text to be clearer (pkilambi@redhat.com)
+- 689954 - fix the messages to say content instead of packages
+  (pkilambi@redhat.com)
+- Added CDS plugin hooks for setting repo and global auth.
+  (jason.dobies@redhat.com)
+- Added ability to remove consumer certs from a repo (jason.dobies@redhat.com)
+- Enhance createrepo to preserve sqlite files, prestodelta metadata and
+  updateinfo metadata (pkilambi@redhat.com)
+- Added CDS plugin hooks for setting repo and global auth.
+  (jason.dobies@redhat.com)
+- Added ability to remove consumer certs from a repo (jason.dobies@redhat.com)
+- Require grinder 0.91 (jmatthew@redhat.com)
+- Require gofer 0.28 (jortel@redhat.com)
+- Add ability to specify bandwidth limit for yum sync operations
+  (jmatthew@redhat.com)
+- Refactor (gofer) cdsplugin into: plugin & cdslib. (jortel@redhat.com)
+- Fixed issue in repo update where removing consumer certs didn't flag the repo
+  as unprotected. (jason.dobies@redhat.com)
+- Added support for removing items from a cert bundle without deleting the
+  whole directory. (jason.dobies@redhat.com)
+- Added repo update/delete with cert test cases. (jason.dobies@redhat.com)
+- Rename cds (gofer) plugin to 'cdsplugin'. (jortel@redhat.com)
+- Added test cases for the no client cert cases (jason.dobies@redhat.com)
+- Added safety check to repo URL matching and handle the case where the client
+  doesn't provide a certificate. (jason.dobies@redhat.com)
+- Changed lookup to get apache error log hook (jason.dobies@redhat.com)
 * Mon Mar 28 2011 Jeff Ortel <jortel@redhat.com> 0.0.158-1
 - Added protected repo listings file and hooks in repo create/update/delete to
   keep it updated. (jason.dobies@redhat.com)
