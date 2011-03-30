@@ -18,13 +18,16 @@ import os
 import sys
 import shutil
 import unittest
-from iniparse import INIConfig
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
 sys.path.insert(0, srcdir)
 
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
+
 from pulp.cds.cdslib import loginit, CdsLib, SecretFile
+import testutil
 
 # test root dir
 ROOTDIR = '/tmp/pulp-cds'
@@ -39,9 +42,12 @@ class TestCdsPlugin(unittest.TestCase):
         shutil.rmtree(ROOTDIR, True)
 
     def setUp(self):
-        config = INIConfig()
-        config.cds.packages_dir = os.path.join(ROOTDIR, 'packages')
-        config.cds.sync_threads = 3
+        config = testutil.load_test_config()
+
+        if not config.has_section('cds'):
+            config.add_section('cds')
+        config.set('cds', 'packages_dir', os.path.join(ROOTDIR, 'packages'))
+        config.set('cds', 'sync_threads', '3')
         self.cds = CdsLib(config)
 
     def tearDown(self):

@@ -141,10 +141,9 @@ class RepoCertUtils:
         @type  pieces: list of str
 
         @return: mapping of bundle piece to the contents of that bundle item (i.e. the
-                 PEM encoded certificate, not a filename); returns None if the global
-                 cert bundle does not exist
+                 PEM encoded certificate, not a filename)
         @rtype:  dict {str, str} - keys will be taken from the pieces parameter; None
-                 is returned if the global cert bundle does not exist
+                 is returned if the a cert bundle does not exist for the repo
         '''
 
         cert_dir = self._repo_cert_directory(repo_id)

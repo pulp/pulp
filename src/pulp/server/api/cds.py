@@ -19,9 +19,11 @@ import logging
 import sys
 
 # Pulp
+from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 import pulp.server.agent
 import pulp.server.cds.round_robin as round_robin
 import pulp.server.consumer_utils as consumer_utils
+from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auditing import audit
@@ -120,6 +122,11 @@ class CdsApi(BaseApi):
 
         self.cds_history_api.cds_registered(hostname)
 
+        # Send the latest global repo auth credentials out to the CDS
+        repo_cert_utils = RepoCertUtils(config.config)
+        bundle = repo_cert_utils.read_global_cert_bundle()
+        self.dispatcher.set_global_repo_auth(cds, bundle)
+
         return cds
 
     @audit()
@@ -159,6 +166,9 @@ class CdsApi(BaseApi):
         self.collection.remove({'hostname' : hostname}, safe=True)
 
         self.cds_history_api.cds_unregistered(hostname)
+
+        # No need to send anything related to global repo auth; the CDS should
+        # take care of deleting it from release call
 
     def cds(self, hostname):
         '''
@@ -239,6 +249,13 @@ class CdsApi(BaseApi):
             # Add a history entry for the change
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
 
+            # If the repo has auth credentials, send them to the CDS
+            repo_cert_utils = RepoCertUtils(config.config)
+            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
+            if bundle is not None:
+                repo = Repo.get_collection().find({'id' : repo_id})
+                self.dispatcher.set_repo_auth(cds, repo_id, repo['relative_path'], bundle)
+
             # Add it to the CDS host assignment algorithm
             round_robin.add_cds_repo_association(cds_hostname, repo_id)
 
@@ -277,6 +294,14 @@ class CdsApi(BaseApi):
 
             # Add a history entry for the change
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
+
+            # If the repo has auth credentials, tell the CDS to remove it from its
+            # protected repo list
+            repo_cert_utils = RepoCertUtils(config.config)
+            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
+            if bundle is not None:
+                repo = Repo.get_collection().find({'id' : repo_id})
+                self.set_repo_auth(repo_id, repo['relative_path'], None)
 
             # Remove it from CDS host assignment consideration
             round_robin.remove_cds_repo_association(cds_hostname, repo_id)

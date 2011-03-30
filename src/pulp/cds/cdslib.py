@@ -73,10 +73,14 @@ class CdsLib(object):
 
     def release(self):
         '''
-        Release the CDS.
-        Clear the shared secret.
+        Release the CDS. Clear the shared secret and any global repo auth credentials
+        it has.
         '''
         log.info('Received release call')
+
+        self.repo_cert_utils.delete_global_cert_bundle()
+
+        # TODO: this should probably clean up all repos as well
 
     def sync(self, base_url, repos):
         '''
