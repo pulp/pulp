@@ -489,7 +489,7 @@ class Clone(RepoProgressAction):
                                help=_("common repository name for cloned repo"))
         self.parser.add_option("--feed", dest="feed",
                                help=_("feed of cloned_repo: parent/origin/none"))
-        self.parser.add_option("--groupid", dest="groupid",
+        self.parser.add_option("--groupid", action="append", dest="groupid",
                                help=_("a group to which the repository belongs; this is just a string identifier"))
         self.parser.add_option("--timeout", dest="timeout",
                                help=_("repository clone timeout"))
