@@ -276,4 +276,11 @@ class RepositoryAPI(PulpAPI):
         rminfo = {'rmgrp': rmgrp}
         path = "/repositories/%s/remove_group/" % repoid
         return self.server.POST(path, rminfo)[1]
-
+    
+    def metadata(self, repoid):
+        path = "/repositories/%s/metadata/" % repoid
+        return self.server.POST(path)[1]
+        
+    def metadata_status(self, repoid):
+        path = '/repositories/%s/metadata/' % repoid
+        return self.server.GET(path)[1]

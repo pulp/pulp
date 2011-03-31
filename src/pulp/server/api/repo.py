@@ -50,7 +50,7 @@ from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.api.repo_sync import (
     yum_rhn_progress_callback, local_progress_callback)
-from pulp.server.async import run_async
+from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
 from pulp.server.compat import chain
 from pulp.server.db import model
@@ -1546,7 +1546,7 @@ class RepoApi(BaseApi):
         List all the syncs for a given repository.
         """
         return [task
-                for task in self.find_async(method='_sync')
+                for task in find_async(method='_sync')
                 if id in task.args]
 
     @audit(params=['id', 'keylist'])
@@ -1872,8 +1872,6 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         log.info('repository (%s), added filters: %s', id, filter_ids)
 
-
-
     @audit(params=['id', 'filter_ids'])
     def remove_filters(self, id, filter_ids):
         repo = self._get_existing_repo(id)
@@ -1887,7 +1885,6 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         log.info('repository (%s), removed filters: %s', id, filter_ids)
 
-
     @audit(params=['id', 'addgrp'])
     def add_group(self, id, addgrp):
         repo = self._get_existing_repo(id)
@@ -1898,8 +1895,6 @@ class RepoApi(BaseApi):
         repo["groupid"] = groupids
         self.collection.save(repo, safe=True)
         log.info('repository (%s), added group: %s', id, addgrp)
-
-
 
     @audit(params=['id', 'rmgrp'])
     def remove_group(self, id, rmgrp):
@@ -1912,13 +1907,9 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         log.info('repository (%s), removed group: %s', id, rmgrp)
 
-
-
-
     def list_filters(self, id):
         repo = self._get_existing_repo(id)
         return repo['filters']
-
 
     def associate_packages(self, pkg_info):
         """
@@ -1971,6 +1962,39 @@ class RepoApi(BaseApi):
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
+    
+    def metadata(self, id):
+        """
+         spawn repo metadata generation for a specific repo
+         @param id: repository id
+         @return task: 
+        """
+        if self.list_metadata_task(id):
+            # repo generation task already pending; task not created
+            return None
+        task = run_async(self._metadata, [id], {})
+        return task
+    
+    def _metadata(self, id):
+        """
+         spawn repo metadata generation for a specific repo
+         @param id: repository id
+        """
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
+        log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
+        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+        
+    def list_metadata_task(self, id):
+        """
+        List all the metadata tasks for a given repository.
+        """
+        return [task
+                for task in find_async(method='_metadata')
+                if id in task.args]
 
 # The crontab entry will call this module, so the following is used to trigger the
 # repo sync

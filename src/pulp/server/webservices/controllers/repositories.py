@@ -518,7 +518,8 @@ class RepositoryActions(AsyncController):
         'add_filters',
         'remove_filters',
         'add_group',
-        'remove_group'
+        'remove_group',
+        'metadata'
     )
 
     def sync(self, id):
@@ -567,6 +568,30 @@ class RepositoryActions(AsyncController):
 
     # XXX hack to make the web services unit tests work
     _sync = sync
+    
+    def metadata(self, id):
+        """
+        [[wiki]]
+        title: Repository Metadata generation
+        description: spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create
+        method: POST
+        path: /repositories/<id>/metadata/
+        permission: EXECUTE
+        success response: 202 Accepted 
+        failure response: 404 Not Found if the id does not match a repository
+                          406 Not Acceptable if the repository does not have a source
+                          409 Conflict if a metadata is already in progress for the repository
+        return: a Task object
+        """
+        repo = api.repository(id)
+        repo_params = self.params()
+        
+        task = api.metadata(id)
+        if not task:
+            return self.conflict('Metadata generation already in process for repo [%s]' % id)
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+        return self.accepted(task_info)
 
     def clone(self, id):
         """
@@ -1183,6 +1208,7 @@ class RepositoryActions(AsyncController):
         action_methods = {
             'sync': '_sync',
             '_sync': '_sync',
+            'metadata' : '_metadata',
         }
         if action_name not in action_methods:
             return self.not_found('No information for %s on repository %s' %

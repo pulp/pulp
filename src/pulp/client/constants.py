@@ -188,3 +188,10 @@ will not complete until all consumers have processed the request.
 Unavailable Consumers
 ------------------------------
 '''
+
+METADATA_STATUS = """
+Task Id          \t%-25s
+Status           \t%-25s
+Start Time       \t%-25s
+Finish Time      \t%-25s
+"""

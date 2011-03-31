@@ -783,6 +783,34 @@ class CancelSync(RepoAction):
         taskid = task['id']
         self.repository_api.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s canceled") % id
+        
+
+class Metadata(RepoAction):
+    
+    description =  _('Schedule a Metadata generation for a repository')
+    
+    def setup_parser(self):
+        super(Metadata, self).setup_parser()
+        self.parser.add_option("--status", action="store_true", dest="status",
+                help=_("Check metadata status for a repository (optional)."))
+    
+    def run(self):
+        id = self.get_required_option('id')
+        repo = self.get_repo(id)
+        if self.opts.status:
+            task = self.repository_api.metadata_status(id)[0]
+            start_time = None
+            if task['start_time']:
+                start_time = str(parse_date(task['start_time']))
+            finish_time = None
+            if task['finish_time']:
+                finish_time = str(parse_date(task['finish_time']))
+            status = constants.METADATA_STATUS % (task['id'], task['state'], start_time, finish_time)
+            system_exit(os.EX_OK, _(status))
+        else:
+            task = self.repository_api.metadata(id)
+            system_exit(os.EX_OK, _('Metadata generation has been successfully scheduled for repo id [%s]. Use --status to check the status.') % id)
+
 
 class Schedules(RepoAction):
 
