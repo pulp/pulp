@@ -38,6 +38,8 @@ log = getLogger(__name__)
 plugin = Plugin.find(__name__)
 cfg = Config()
 
+HEARTBEAT = cfg.heartbeat.seconds
+
 
 def pulpserver():
     """
@@ -64,10 +66,10 @@ class Heartbeat:
             cls.__producer = Producer(url=url)
         return cls.__producer
 
-    @action(seconds=cfg.client.heartbeat)
+    @action(seconds=HEARTBEAT)
     def heartbeat(self):
         topic = Topic('heartbeat')
-        delay = int(cfg.client.heartbeat)
+        delay = int(HEARTBEAT)
         bundle = ConsumerBundle()
         myid = bundle.getid()
         if myid:
