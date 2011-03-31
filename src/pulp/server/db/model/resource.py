@@ -17,6 +17,7 @@ import datetime
 
 from pulp.server.db.model.base import Model
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.scheduler import IntervalScheduler
 
 # consumer models -------------------------------------------------------------
 
@@ -302,3 +303,35 @@ class RepoSource(Model):
                                 % self.supported_types)
         self.type = parts[0]
         self.url = source.replace((self.type + ":"), "")
+
+
+class RepoSyncSchedule(Model):
+    """
+    Class representing a serialized repository sync schedule.
+    """
+
+    def __init__(self,
+                 interval_days,
+                 interval_hours,
+                 interval_minutes,
+                 start_hour=None,
+                 start_minute=None,
+                 iterations=None):
+
+        self.interval = (interval_days, interval_hours, interval_minutes)
+        self.start_time = None
+        start_time = (start_hour, start_minute)
+        if None not in start_time:
+            self.start_time = start_time
+        self.iterations = iterations
+
+        @staticmethod
+        def to_scheduler(repo_schedule):
+            days, minutes, hours = repo_schedule['interval']
+            interval = datetime.timedelta(days=days, minutes=minutes, hours=hours)
+            start_time = repo_schedule['start_time']
+            if start_time is not None:
+                now = datetime.datetime.utcnow()
+                hour, minute = repo_schedule['start_time']
+                start_time = datetime.datetime(now.year, now.month, now.day, hour, minute)
+            return IntervalScheduler(interval, start_time, repo_schedule['iterations'])
