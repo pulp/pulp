@@ -1297,8 +1297,25 @@ class TestRepoApi(unittest.TestCase):
         found = self.rapi.get_packages_by_nvrea(repo1["id"], [nevra], verify_existing=False)
         self.assertEquals(len(found), 0)
 
+    def test_metadata(self):
+        repo = self.rapi.create('some-id', 'some name', \
+            'i386', 'yum:http://example.com')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm")
+        self.rapi.add_package(repo["id"], [p1['id']])
 
-
+        p2 = testutil.create_package(self.papi, 'test_pkg2_by_name', filename="test02.rpm")
+        self.rapi.add_package(repo["id"], [p2['id']])
+       
+        pkgs = self.rapi.packages(repo['id'])
+        self.assertTrue(len(pkgs) == 2)
+        self.assertTrue(p1["id"] in pkgs)
+        self.assertTrue(p2["id"] in pkgs)
+        success = True
+        try:
+            self.rapi._metadata(repo['id'])
+        except:
+            success = False
+        assert(success)
 
 if __name__ == '__main__':
     unittest.main()
