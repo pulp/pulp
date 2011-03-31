@@ -77,6 +77,7 @@ def _initialize_pulp():
         _stacktrace_dumper = StacktraceDumper()
         _stacktrace_dumper.start()
     # setup recurring tasks
+    auditing.init_culling_task()
     consumer_history.init_culling_task()
 
 

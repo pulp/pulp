@@ -17,7 +17,6 @@
 import datetime
 import inspect
 import logging
-import os
 import sys
 import traceback
 from pprint import pformat
@@ -32,14 +31,15 @@ try:
 except:
     from bson.son import SON
 
+from pulp.server import async
 from pulp.server import config
 from pulp.server.auth.principal import get_principal
 from pulp.server.api.base import BaseApi
-from pulp.server.crontab import CronTab
+from pulp.server.compat import wraps
 from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Event
-from pulp.server.compat import wraps
-import pulp.server.logs
+from pulp.server.tasking.scheduler import IntervalScheduler
+from pulp.server.tasking.task import Task
 
 
 # globals ---------------------------------------------------------------------
@@ -67,9 +67,9 @@ def audit_repr(value):
     @return: string representing the value
     """
     if isinstance(value, str):
-	return value.decode("utf-8").encode("ascii", "replace")
+        return value.decode("utf-8").encode("ascii", "replace")
     if isinstance(value, unicode):
-	return value.encode("ascii", "replace")
+        return value.encode("ascii", "replace")
     if not isinstance(value, (dict, BSON, SON)):
         return repr(value)
     if 'id' in value:
@@ -364,39 +364,7 @@ def cull_events(delta):
     _objdb.remove(spec, safe=False)
     return count
 
-# main ------------------------------------------------------------------------
-
-# this module is also the crontab entry script for culling entries from the
-# database
-
-def _check_crontab():
-    """
-    Check to see that the cull auditing events crontab entry exists, and add it
-    if it doesn't.
-    """
-    tab = CronTab()
-    cmd = 'python %s' % os.path.abspath(__file__)
-    if tab.find_command(cmd):
-        return
-    schedule = '3 1,13 * * *'
-    entry = tab.new(cmd, 'cull auditing events')
-    entry.parse('%s %s' % (schedule, cmd))
-    tab.write()
-    _log.info('Added crontab entry for culling events')
-
-
-def _clear_crontab():
-    """
-    Check to see that the cull auditing events crontab entry exists, and remove
-    it if it does.
-    """
-    tab = CronTab()
-    cmd = 'python %s' % os.path.abspath(__file__)
-    if not tab.find_command(cmd):
-        return
-    tab.remove_all(cmd)
-    tab.write()
-
+# recurring culling of audited events -----------------------------------------
 
 def _get_lifetime():
     """
@@ -407,13 +375,15 @@ def _get_lifetime():
     return datetime.timedelta(days=days)
 
 
-# check to see that a crontab entry exists on import or execution
-_check_crontab()
-# cull old auditing events from the database
-if __name__ == '__main__':
-
-    # Need to start logging since this will be called outside of the WSGI application
-    pulp.server.logs.start_logging()
-
+def cull_audited_events():
     lifetime = _get_lifetime()
     cull_events(lifetime)
+
+
+def init_culling_task():
+    interval = datetime.timedelta(hours=12)
+    now = datetime.datetime.utcnow()
+    start_time = datetime.datetime(now.year, now.month, now.day, 13)
+    scheduler = IntervalScheduler(interval, start_time)
+    task = Task(cull_audited_events, scheduler=scheduler)
+    async.enqueue(task)
