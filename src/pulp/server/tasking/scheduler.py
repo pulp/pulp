@@ -107,10 +107,24 @@ class IntervalScheduler(Scheduler):
         # NOTE to prevent interval "drift" the previous_run value should be the
         # scheduled time for the previous run instead of the actual start time
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
+
+        # guarantee that the next run is scheduled in the future
+        # and count the number of intervals that had to be added to make it in
+        # the future for catching and reporting tasks that take longer than
+        # their scheduled intervals
+        def _next_run(reference_time):
+            now = datetime.datetime.now()
+            reference_time = reference_time or now
+            intervals = 0
+            while reference_time < now:
+                reference_time += self.interval
+                intervals += 1
+            return (intervals, reference_time)
+
         if self.remaining_runs == 0:
             return None
-        if previous_run is None:
-            return self.start_time or datetime.datetime.utcnow()
         if self.remaining_runs:
             self.remaining_runs -= 1
-        return previous_run + self.interval
+        if previous_run is None:
+            return _next_run(self.start_time)[1]
+        return _next_run(previous_run)[1]
