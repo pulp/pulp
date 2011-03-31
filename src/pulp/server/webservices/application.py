@@ -30,6 +30,7 @@ from pulp.server.db import connection
 connection.initialize()
 auditing.initialize()
 
+from pulp.server.api import consumer_history
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.logs import start_logging
@@ -75,6 +76,8 @@ def _initialize_pulp():
             _stacktrace_dumper is None:
         _stacktrace_dumper = StacktraceDumper()
         _stacktrace_dumper.start()
+    # setup recurring tasks
+    consumer_history.init_culling_task()
 
 
 def wsgi_application():
