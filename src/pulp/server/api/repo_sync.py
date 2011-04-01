@@ -30,7 +30,6 @@ from grinder.RepoFetch import YumRepoGrinder
 from grinder.RHNSync import RHNSync
 
 import pulp.server.comps_util
-import pulp.server.crontab
 import pulp.server.util
 from pulp.server import config, constants, updateinfo
 from pulp.server.api.distribution import DistributionApi
@@ -108,64 +107,6 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=N
         synchronizer.progress['step'] = "Importing data into pulp"
         progress_callback(synchronizer.progress)
     return synchronizer.add_packages_from_dir(repo_dir, repo, skip_dict)
-
-
-def update_schedule(repo):
-    '''
-    Updates the repo sync scheduler entry with the schedule for the given repo.
-
-    @param repo: repo containg the id and sync schedule; may not be None
-    @type  repo: L{pulp.model.Repo}
-    '''
-    tab = pulp.server.crontab.CronTab()
-
-    cmd = _cron_command(repo)
-    entries = tab.find_command(cmd)
-
-    if len(entries) == 0:
-        entry = tab.new(command=cmd)
-    else:
-        entry = entries[0]
-
-    entry.parse(repo['sync_schedule'] + ' ' + cmd)
-
-    log.debug('Writing updated cron entry [%s]' % entry.render())
-    tab.write()
-
-
-def delete_schedule(repo):
-    '''
-    Deletes the repo sync schedule file for the given repo.
-
-    @param repo: repo containg the id and sync schedule; may not be None
-    @type  repo: L{pulp.model.Repo}
-    '''
-    tab = pulp.server.crontab.CronTab()
-
-    cmd = _cron_command(repo)
-    entries = tab.find_command(cmd)
-
-    if len(entries) > 0:
-        for entry in entries:
-            log.debug('Removing entry [%s]' % entry.render())
-            tab.remove(entry)
-        tab.write()
-    else:
-        log.debug('No existing cron entry for repo [%s]' % repo['id'])
-
-
-def _cron_command_script():
-    '''
-    Returns the full python command for invoking the repo sync script. This is missing
-    any specific repo information and is provided largely to simplify unit test cleanup
-    (sync cron commands match this script regardless of repo ID)
-    '''
-    script = os.path.join(os.path.dirname(__file__), 'repo.py')
-    return str('python %s' % script)
-
-
-def _cron_command(repo):
-    return str('%s --repoid=%s' % (_cron_command_script(), repo['id']))
 
 # synchronization classes -----------------------------------------------------
 
@@ -547,7 +488,7 @@ class LocalSynchronizer(BaseSynchronizer):
         self.progress['num_error'] += 1
 
     def _process_rpm(self, pkg, dst_repo_dir):
-        pkg_info = pulp.server.util.get_rpm_information(pkg)     
+        pkg_info = pulp.server.util.get_rpm_information(pkg)
         pkg_checksum = pulp.server.util.get_file_checksum(hashtype="sha256", filename=pkg)
         pkg_location = pulp.server.util.get_shared_package_path(pkg_info['name'],
                 pkg_info['version'], pkg_info['release'], pkg_info['arch'],
@@ -557,7 +498,7 @@ class LocalSynchronizer(BaseSynchronizer):
             if not os.path.exists(pkg_dirname):
                 os.makedirs(pkg_dirname)
             shutil.copy(pkg, pkg_location)
-            
+
             self.progress['num_download'] += 1
         repo_pkg_path = os.path.join(dst_repo_dir, os.path.basename(pkg))
         if not os.path.islink(repo_pkg_path):
@@ -570,7 +511,7 @@ class LocalSynchronizer(BaseSynchronizer):
             if filter['type'] == "whitelist":
                 combined_whitelist_packages.extend(filter['package_list'])
         return combined_whitelist_packages
-            
+
     def _find_combined_blacklist_packages(self, repo_filters):
         combined_blacklist_packages = []
         for filter_id in repo_filters:
@@ -578,7 +519,7 @@ class LocalSynchronizer(BaseSynchronizer):
             if filter['type'] == "blacklist":
                 combined_blacklist_packages.extend(filter['package_list'])
         return combined_blacklist_packages
-    
+
     def _find_filtered_package_list(self, unfiltered_pkglist, whitelist_packages, blacklist_packages):
         pkglist = []
 
@@ -591,7 +532,7 @@ class LocalSynchronizer(BaseSynchronizer):
                         exit
         else:
             pkglist = unfiltered_pkglist
-        
+
         if blacklist_packages:
             for pkg in pkglist:
                 for blacklist_package in blacklist_packages:
@@ -599,11 +540,11 @@ class LocalSynchronizer(BaseSynchronizer):
                     if b.match(os.path.basename(pkg)):
                         pkglist.remove(pkg)
                         exit
-         
-        return pkglist               
-                
-    
-    def _sync_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, 
+
+        return pkglist
+
+
+    def _sync_rpms(self, dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
                    progress_callback=None):
         # Compute and import packages
         unfiltered_pkglist = self.list_rpms(src_repo_dir)
@@ -612,7 +553,7 @@ class LocalSynchronizer(BaseSynchronizer):
         if progress_callback is not None:
             self.progress['step'] = ProgressReport.DownloadItems
             progress_callback(self.progress)
-            
+
         for count, pkg in enumerate(pkglist):
             if count % 500 == 0:
                 log.info("Working on %s/%s" % (count, len(pkglist)))
@@ -698,16 +639,16 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['details']["drpm"]["size_left"] -= item_size
             if progress_callback is not None:
                 progress_callback(self.progress)
-                
-    
+
+
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
-        self.init_progress_details(src_repo_dir, skip_dict) 
+        self.init_progress_details(src_repo_dir, skip_dict)
 
         try:
             dst_repo_dir = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
-            
+
             # Process repo filters if any
             if repo['filters']:
                 log.info("Repo filters : %s" % repo['filters'])
@@ -718,7 +659,7 @@ class LocalSynchronizer(BaseSynchronizer):
             else:
                 whitelist_packages = []
                 blacklist_packages = []
-                
+
             if not os.path.exists(src_repo_dir):
                 raise InvalidPathError("Path %s is invalid" % src_repo_dir)
             if repo['use_symlinks']:
@@ -738,7 +679,7 @@ class LocalSynchronizer(BaseSynchronizer):
                     os.makedirs(dst_repo_dir)
                 if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
                     log.debug("Starting _sync_rpms(%s, %s)" % (dst_repo_dir, src_repo_dir))
-                    self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages, 
+                    self._sync_rpms(dst_repo_dir, src_repo_dir, whitelist_packages, blacklist_packages,
                                     progress_callback)
                     log.debug("Completed _sync_rpms(%s,%s)" % (dst_repo_dir, src_repo_dir))
                     log.debug("Starting _sync_drpms(%s, %s)" % (dst_repo_dir, src_repo_dir))

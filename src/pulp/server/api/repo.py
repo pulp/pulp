@@ -22,21 +22,19 @@ import shutil
 import time
 import traceback
 from datetime import datetime
-from optparse import OptionParser
 from StringIO import StringIO
 from urlparse import urlparse
 
 # Pulp
 import pulp.server.agent as agent
+import pulp.repo_auth.repo_cert_utils as repo_cert_utils
 import pulp.server.consumer_utils as consumer_utils
-import pulp.server.logs
 import pulp.server.util
 from pulp.server.api.base import BaseApi
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
 from pulp.server import crontab
-import pulp.repo_auth.repo_cert_utils as repo_cert_utils
 from pulp.server import updateinfo
 from pulp.server.api import repo_sync
 from pulp.server.api.cdn_connect import CDNConnection
@@ -202,7 +200,7 @@ class RepoApi(BaseApi):
             added = ks.add(gpgkeys)
         self.collection.insert(r, safe=True)
         if sync_schedule:
-            repo_sync.update_schedule(r)
+            repo_sync.UPDATE_SCHEDULE(r)
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
@@ -508,7 +506,7 @@ class RepoApi(BaseApi):
             self.collection.save(parent_repo, safe=True)
 
         self._delete_published_link(repo)
-        repo_sync.delete_schedule(repo)
+        repo_sync.DELETE_SCHEDULE(repo)
 
         # delete gpg key links
         path = repo['relative_path']
@@ -636,9 +634,9 @@ class RepoApi(BaseApi):
                 repo[key] = value
                 if value:
                     self._validate_schedule(value)
-                    repo_sync.update_schedule(repo)
+                    repo_sync.UPDATE_SCHEDULE(repo)
                 else:
-                    repo_sync.delete_schedule(repo)
+                    repo_sync.DELETE_SCHEDULE(repo)
                 continue
             if key == 'use_symlinks':
                 if hascontent and (value != repo[key]):
@@ -1925,24 +1923,3 @@ class RepoSyncTask(Task):
             # default cancel behavior as a backup in case
             # something didn't cancel
         super(RepoSyncTask, self).cancel()
-
-# The crontab entry will call this module, so the following is used to trigger the
-# repo sync
-if __name__ == '__main__':
-
-    # Need to start logging since this will be called outside of the WSGI application
-    pulp.server.logs.start_logging()
-
-    # Currently this option parser is configured to automatically assume repo sync. If
-    # further repo-related operations are ever added this will need to be refined, along
-    # with the call in repo_sync.py that creates the cron entry that calls this script.
-    parser = OptionParser()
-    parser.add_option('--repoid', dest='repo_id', action='store')
-
-    options, args = parser.parse_args()
-
-    if options.repo_id:
-        log.info('Running scheduled sync for repo [%s]' % options.repo_id)
-        repo_api = RepoApi()
-        repo_api._sync(options.repo_id)
-
