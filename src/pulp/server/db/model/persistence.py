@@ -81,14 +81,11 @@ class TaskRestorationError(PulpException):
 class TaskPicklingError(PulpException):
     pass
 
-# placeholder function to the task back from the serialization 
-def dummy():
-    pass
-
+# dir is used here as a placeholder function to get the task back from the serialization 
 _task_types = {
-    'Task': Task(dummy),
-    'AsyncTask': AsyncTask(dummy),
-    'RepoSyncTask': RepoSyncTask(dummy),
+    'Task': Task(dir),
+    'AsyncTask': AsyncTask(dir),
+    'RepoSyncTask': RepoSyncTask(dir),
 }
 
 
