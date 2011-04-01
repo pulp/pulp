@@ -310,28 +310,24 @@ class RepoSyncSchedule(Model):
     Class representing a serialized repository sync schedule.
     """
 
-    def __init__(self,
-                 interval_days,
-                 interval_hours,
-                 interval_minutes,
-                 start_hour=None,
-                 start_minute=None,
-                 iterations=None):
-
-        self.interval = (interval_days, interval_hours, interval_minutes)
-        self.start_time = None
-        start_time = (start_hour, start_minute)
-        if None not in start_time:
-            self.start_time = start_time
-        self.iterations = iterations
+    def __init__(self, interval, start_time=None, runs=None):
+        self.interval = interval
+        self.start_time = start_time
+        self.runs = runs
 
         @staticmethod
         def to_scheduler(repo_schedule):
-            days, minutes, hours = repo_schedule['interval']
-            interval = datetime.timedelta(days=days, minutes=minutes, hours=hours)
+            interval = datetime.timedelta(weeks=repo_schedule['interval'].get('weeks', 0),
+                                          days=repo_schedule['interval'].get('days', 0),
+                                          hours=repo_schedule['interval'].get('hours', 0),
+                                          minutes=repo_schedule['interval'].get('minutes', 0))
             start_time = repo_schedule['start_time']
             if start_time is not None:
                 now = datetime.datetime.utcnow()
-                hour, minute = repo_schedule['start_time']
-                start_time = datetime.datetime(now.year, now.month, now.day, hour, minute)
-            return IntervalScheduler(interval, start_time, repo_schedule['iterations'])
+                year = max(now.year, repo_schedule['start_time'].get('year', 0))
+                month = max(now.month, repo_schedule['start_time'].get('month', 0))
+                day = max(now.day, repo_schedule['start_time'].get('day', 0))
+                hour = repo_schedule['start_time'].get('hour', now.hour)
+                minute = repo_schedule['start_time'].get('minute', now.minute)
+                start_time = datetime.datetime(year, month, day, hour, minute)
+            return IntervalScheduler(interval, start_time, repo_schedule['runs'])
