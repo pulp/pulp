@@ -30,13 +30,12 @@ import pulp.server.agent as agent
 import pulp.repo_auth.repo_cert_utils as repo_cert_utils
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
-from pulp.server.api.base import BaseApi
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
-from pulp.server import crontab
 from pulp.server import updateinfo
 from pulp.server.api import repo_sync
+from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi
@@ -45,8 +44,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
-from pulp.server.api.repo_sync import (
-    yum_rhn_progress_callback, local_progress_callback)
+from pulp.server.api.scheduled_sync import update_schedule, delete_schedule
 from pulp.server.async import run_async
 from pulp.server.auditing import audit
 from pulp.server.compat import chain
@@ -78,16 +76,6 @@ class RepoApi(BaseApi):
 
     def _getcollection(self):
         return model.Repo.get_collection()
-
-    def _validate_schedule(self, sync_schedule):
-        '''
-        Verifies the sync schedule is in the correct cron syntax, throwing an exception if
-        it is not.
-        '''
-        if sync_schedule:
-            item = crontab.CronItem(sync_schedule + ' null') # CronItem expects a command
-            if not item.is_valid():
-                raise PulpException('Invalid sync schedule specified [%s]' % sync_schedule)
 
     def _get_existing_repo(self, id, fields=None):
         """
@@ -143,8 +131,6 @@ class RepoApi(BaseApi):
         if not model.Repo.is_supported_checksum(checksum_type):
             raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
 
-        self._validate_schedule(sync_schedule)
-
         if feed_cert_data:
             repo_cert_utils.validate_cert_bundle(feed_cert_data)
 
@@ -152,7 +138,6 @@ class RepoApi(BaseApi):
             repo_cert_utils.validate_cert_bundle(consumer_cert_data)
 
         r = model.Repo(id, name, arch, feed)
-        r['sync_schedule'] = sync_schedule
         r['use_symlinks'] = symlinks
 
         # Store any certificates and add the full paths to their files in the repo object
@@ -199,7 +184,7 @@ class RepoApi(BaseApi):
             added = ks.add(gpgkeys)
         self.collection.insert(r, safe=True)
         if sync_schedule:
-            repo_sync.UPDATE_SCHEDULE(r)
+            update_schedule(r, sync_schedule)
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
@@ -345,9 +330,9 @@ class RepoApi(BaseApi):
                          {},
                          timeout=timeout)
         if feed in ('feedless', 'parent'):
-            task.set_progress('progress_callback', local_progress_callback)
+            task.set_progress('progress_callback', repo_sync.local_progress_callback)
         else:
-            task.set_progress('progress_callback', yum_rhn_progress_callback)
+            task.set_progress('progress_callback', repo_sync.yum_rhn_progress_callback)
         return task
 
     @audit(params=['groupid', 'content_set'])
@@ -505,7 +490,7 @@ class RepoApi(BaseApi):
             self.collection.save(parent_repo, safe=True)
 
         self._delete_published_link(repo)
-        repo_sync.DELETE_SCHEDULE(repo)
+        delete_schedule(repo)
 
         # delete gpg key links
         path = repo['relative_path']
@@ -630,12 +615,10 @@ class RepoApi(BaseApi):
                 continue
             # sync_schedule changed
             if key == 'sync_schedule':
-                repo[key] = value
                 if value:
-                    self._validate_schedule(value)
-                    repo_sync.UPDATE_SCHEDULE(repo)
+                    update_schedule(repo, value)
                 else:
-                    repo_sync.DELETE_SCHEDULE(repo)
+                    delete_schedule(repo)
                 continue
             if key == 'use_symlinks':
                 if hascontent and (value != repo[key]):
@@ -1502,10 +1485,10 @@ class RepoApi(BaseApi):
             source_type = repo['source']['type']
             if source_type in ('yum', 'rhn'):
                 task.set_progress('progress_callback',
-                                  yum_rhn_progress_callback)
+                                  repo_sync.yum_rhn_progress_callback)
             elif source_type in ('local'):
                 task.set_progress('progress_callback',
-                                  local_progress_callback)
+                                  repo_sync.local_progress_callback)
             synchronizer = self.get_synchronizer(source_type)
             task.set_synchronizer(synchronizer)
         return task
