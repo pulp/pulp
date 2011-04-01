@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.159
+Version:        0.0.160
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -272,6 +272,21 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Fri Apr 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.160-1
+- Bump to grinder 0.92 to fix minor issue displaying download progress for
+  first item in repo sync (jmatthews@redhat.com)
+- Adding ability to limit threads on a per repo sync operation & unit tests for
+  bandwidth limiting (jmatthews@redhat.com)
+- Persistence model from my-tasking branch added to master
+  (skarmark@redhat.com)
+- 674103 - fixing the GET request query for repo list by groups
+  (pkilambi@redhat.com)
+- 692669 -  groupid options need to be stacked into a list instead of a string
+  (pkilambi@redhat.com)
+- Support for scheduling metadata generation for a repository and check its
+  status (pkilambi@redhat.com)
+- Better QPID/SSL configuration. (jortel@redhat.com)
+
 * Wed Mar 30 2011 Jeff Ortel <jortel@redhat.com> 0.0.159-1
 - Convert CDS plugin configuration to SafeConfigParser. (jortel@redhat.com)
 - With the addition of repo_auth to CDS, it now needs m2crypto.
