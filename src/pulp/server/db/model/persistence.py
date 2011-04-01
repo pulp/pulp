@@ -81,10 +81,14 @@ class TaskRestorationError(PulpException):
 class TaskPicklingError(PulpException):
     pass
 
+# placeholder function to the task back from the serialization 
+def dummy():
+    pass
+
 _task_types = {
-    'Task': Task(lambda x: x),
-    'AsyncTask': AsyncTask(lambda x: x),
-    'RepoSyncTask': RepoSyncTask(lambda x: x),
+    'Task': Task(dummy),
+    'AsyncTask': AsyncTask(dummy),
+    'RepoSyncTask': RepoSyncTask(dummy),
 }
 
 
@@ -102,8 +106,6 @@ def restore_from_snapshot(snapshot):
     except KeyError:
         msg = _('Task restoration from snapshot of %s not currently supported')
         raise TaskRestorationError(msg % task_type)
-    except:
-        task = copy.copy(_task_types[task_type])
 
     for attr in _copied_fields:
         setattr(task, attr, snapshot.get(attr, None))
