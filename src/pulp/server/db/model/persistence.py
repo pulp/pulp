@@ -56,7 +56,7 @@ class TaskSnapshot(Model):
     task information or to restore tasks from the the serialized state.
     """
 
-    _collection_name = None
+    _collection_name = "task_snapshots"
 
     def __init__(self, task):
         """
@@ -66,9 +66,9 @@ class TaskSnapshot(Model):
         super(TaskSnapshot, self).__init__()
         self.task_type = task.__class__.__name__
         for attr in _copied_fields:
-            setattr(self, getattr(task, attr, None))
+            setattr(self, attr, getattr(task, attr, None))
         for attr in _pickled_fields:
-            setattr(self, pickle.dumps(getattr(task, attr, None))) # ascii pickle
+            setattr(self, attr, pickle.dumps(getattr(task, attr, None))) # ascii pickle
 
 # task restoration api --------------------------------------------------------
 
@@ -98,7 +98,7 @@ def restore_from_snapshot(snapshot):
         msg = _('Task restoration from snapshot of %s not currently supported')
         raise TaskRestorationError(msg % task_type)
     for attr in _copied_fields:
-        setattr(task, snapshot.get(attr, None))
+        setattr(task, attr, snapshot.get(attr, None))
     for attr in _pickled_fields:
-        setattr(task, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
+        setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
     return task
