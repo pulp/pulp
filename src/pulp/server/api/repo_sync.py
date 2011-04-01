@@ -36,11 +36,40 @@ from pulp.server.api.distribution import DistributionApi
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.filter import FilterApi
-from pulp.server.pexceptions import PulpException
 from pulp.server.db.model import Delta, DuplicateKeyError
+from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.task import Task
 
 
 log = logging.getLogger(__name__)
+
+# repo sync task --------------------------------------------------------------
+
+class RepoSyncTask(Task):
+    # Note: We want the "invoked" from Task, so we are not inheriting from
+    # AsyncTask
+    """
+    Repository Synchronization Task
+    This task is responsible for implementing cancel logic for a 
+    repository synchronization 
+    """
+    def __init__(self, callable, args=[], kwargs={}, timeout=None):
+        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
+        self.synchronizer = None
+
+    def set_synchronizer(self, sync_obj):
+        self.synchronizer = sync_obj
+        self.kwargs['synchronizer'] = self.synchronizer
+
+    def cancel(self):
+        log.info("RepoSyncTask cancel invoked")
+        if self.synchronizer:
+            self.synchronizer.cancel()
+            # All synchronization work should be stopped
+            # when this returns.  Will pass through to 
+            # default cancel behavior as a backup in case
+            # something didn't cancel
+        super(RepoSyncTask, self).cancel()
 
 # sync api --------------------------------------------------------------------
 

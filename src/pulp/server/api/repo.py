@@ -53,7 +53,6 @@ from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.task import Task
 
 
 log = logging.getLogger(__name__)
@@ -1498,7 +1497,7 @@ class RepoApi(BaseApi):
                          [id, skip],
                          {},
                          timeout=timeout,
-                         task_type=RepoSyncTask)
+                         task_type=repo_sync.RepoSyncTask)
         if repo['source'] is not None:
             source_type = repo['source']['type']
             if source_type in ('yum', 'rhn'):
@@ -1897,29 +1896,3 @@ class RepoApi(BaseApi):
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
-
-class RepoSyncTask(Task):
-    # Note: We want the "invoked" from Task, so we are not inheriting from
-    # AsyncTask
-    """
-    Repository Synchronization Task
-    This task is responsible for implementing cancel logic for a 
-    repository synchronization 
-    """
-    def __init__(self, callable, args=[], kwargs={}, timeout=None):
-        super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
-        self.synchronizer = None
-
-    def set_synchronizer(self, sync_obj):
-        self.synchronizer = sync_obj
-        self.kwargs['synchronizer'] = self.synchronizer
-
-    def cancel(self):
-        log.info("RepoSyncTask cancel invoked")
-        if self.synchronizer:
-            self.synchronizer.cancel()
-            # All synchronization work should be stopped
-            # when this returns.  Will pass through to 
-            # default cancel behavior as a backup in case
-            # something didn't cancel
-        super(RepoSyncTask, self).cancel()
