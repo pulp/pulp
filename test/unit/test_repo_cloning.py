@@ -36,14 +36,18 @@ constants.LOCAL_STORAGE="/tmp/pulp/"
 
 class TestRepoSyncSchedule(unittest.TestCase):
 
+    def clean(self):
+        self.rapi.clean()
+        testutil.common_cleanup()
+
     def setUp(self):
         self.config = testutil.load_test_config()
         self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         self.rapi = pulp.server.api.repo.RepoApi()
+        self.clean()
 
     def tearDown(self):
-        self.rapi.clean()
-        testutil.common_cleanup()
+        self.clean()
         
     def test_clone(self):
 
