@@ -548,6 +548,8 @@ class RepositoryActions(AsyncController):
         parameters:
          * timeout?, str, timeout in <units>:<value> format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks
          * skip?, object, yum skip dict
+         * limit?, int, value in KB/sec to limit download bandwidth per thread.  Only applicable for yum synchronization
+         * threads?, int, number of threads to use for synchronization.  Only applicable for yum synchronization
         """
         repo = api.repository(id, fields=['source'])
         if repo['source'] is None:
@@ -561,9 +563,24 @@ class RepositoryActions(AsyncController):
             timeout = self.timeout(repo_params)
             if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
-
+        limit = repo_params.get('limit', None)
+        if limit:
+            try:
+                limit = int(limit)
+                if limit < 0:
+                    return self.bad_request('Invalid value [%s].  "limit" must be non-negative"' % (limit))
+            except:
+                return self.bad_request('Unable to convert "limit" with value [%s] to an int' % (limit))
+        threads = repo_params.get('threads', None)
+        if threads:
+            try:
+                threads = int(threads)
+                if threads < 1:
+                    return self.bad_request('Invalid value [%s].  "threads" must be at least 1"' % (limit))
+            except:
+                return self.bad_request('Unable to convert "threads" with value [%s] to an int' % (threads))
         skip = repo_params.get('skip', {})
-        task = api.sync(id, timeout, skip)
+        task = api.sync(id, timeout, skip, max_speed=limit, threads=threads)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)

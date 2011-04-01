@@ -704,6 +704,12 @@ class Sync(RepoProgressAction):
         self.parser.add_option('-F', '--foreground', dest='foreground',
                                action='store_true', default=False,
                                help=_('synchronize repository in the foreground'))
+        self.parser.add_option("--limit", dest="limit",
+                               help=_("limit download bandwidth per thread to value in KB/sec"),
+                               default=None)
+        self.parser.add_option("--threads", dest="threads",
+                               help=_("number of threads to use for downloading content"),
+                               default=None)
 
     def print_sync_finish(self, state, progress):
         self.print_progress(progress)
@@ -760,7 +766,9 @@ class Sync(RepoProgressAction):
         if self.opts.nodistro:
             skip['distribution'] = 1
         timeout = self.opts.timeout
-        task = self.repository_api.sync(id, skip, timeout)
+        limit = self.opts.limit
+        threads = self.opts.threads
+        task = self.repository_api.sync(id, skip, timeout, limit=limit, threads=threads)
         print _('Sync for repository %s started') % id
         return task
 

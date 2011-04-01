@@ -1439,9 +1439,21 @@ class RepoApi(BaseApi):
     def get_synchronizer(self, source_type):
         return repo_sync.get_synchronizer(source_type)
 
-    def _sync(self, id, skip_dict={}, progress_callback=None, synchronizer=None):
+    def _sync(self, id, skip_dict={}, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
         """
         Sync a repo from the URL contained in the feed
+        @param id repository id
+        @type id string
+        @param skip_dict dictionary of item types to skip from synchronization
+        @type skip_dict dict
+        @param progress_callback callback to display progress of synchronization
+        @type progress_callback method
+        @param synchronizer instance of a specific synchronizer class
+        @type synchronizer instance of a L{pulp.server.api.repo_sync.BaseSynchronizer}
+        @param max_speed maximum download bandwidth in KB/sec per thread for yum downloads
+        @type max_speed int
+        @param threads maximum number of threads to use for yum downloading
+        @type threads int
         """
         repo = self._get_existing_repo(id)
         repo_source = repo['source']
@@ -1458,7 +1470,9 @@ class RepoApi(BaseApi):
                     repo_source,
                     skip_dict,
                     progress_callback,
-                    synchronizer)
+                    synchronizer,
+                    max_speed,
+                    threads)
         end_sync_items = time.time()
         log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
             len(sync_errataids), (end_sync_items - start_sync_items)))
@@ -1502,14 +1516,14 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
 
     @audit()
-    def sync(self, id, timeout=None, skip=None):
+    def sync(self, id, timeout=None, skip=None, max_speed=None, threads=None):
         """
         Run a repo sync asynchronously.
         """
         repo = self.repository(id)
         task = run_async(self._sync,
                          [id, skip],
-                         {},
+                         {'max_speed':max_speed, 'threads':threads},
                          timeout=timeout,
                          task_type=repo_sync.RepoSyncTask)
         if repo['source'] is not None:
