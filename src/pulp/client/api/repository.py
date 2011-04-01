@@ -86,9 +86,9 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/"
         return self.server.DELETE(path)[1]
 
-    def sync(self, repoid, skip={}, timeout=None, limit=None):
+    def sync(self, repoid, skip={}, timeout=None, limit=None, threads=None):
         path = "/repositories/%s/sync/" % repoid
-        return self.server.POST(path, {"timeout":timeout, "skip" : skip, "limit":limit})[1]
+        return self.server.POST(path, {"timeout":timeout, "skip" : skip, "limit":limit, "threads":threads})[1]
 
     def sync_list(self, repoid):
         path = '/repositories/%s/sync/' % repoid

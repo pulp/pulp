@@ -77,6 +77,7 @@ _default_values = {
     },
     'yum': {
         'threads': '5',
+        'limit_in_KB': '0',
     },
 }
 

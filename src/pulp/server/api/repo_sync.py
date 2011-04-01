@@ -92,7 +92,7 @@ def get_synchronizer(source_type):
 
 
 def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None, 
-        max_speed=None):
+        max_speed=None, threads=None):
     '''
     Synchronizes content for the given RepoSource.
 
@@ -108,11 +108,13 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=N
     @type synchronizer: L{pulp.server.api.repo_sync.BaseSynchronizer}
     @param max_speed: Limit download speed in KB/sec, not applicable to Local Syncs
     @type max_speed: int
+    @param threads: number of threads to use for content downloads
+    @type threads: int
     '''
     if not synchronizer:
         synchronizer = get_synchronizer(repo_source['type'])
     repo_dir = synchronizer.sync(repo, repo_source, skip_dict, 
-            progress_callback, max_speed)
+            progress_callback, max_speed, threads)
     if progress_callback is not None:
         synchronizer.progress['step'] = "Importing data into pulp"
         progress_callback(synchronizer.progress)
@@ -439,14 +441,13 @@ class YumSynchronizer(BaseSynchronizer):
         self.yum_repo_grinder = None
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
-            max_speed=None):
+            max_speed=None, threads=None):
         cacert = clicert = clikey = None
         if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
             cacert = repo['feed_ca'].encode('utf8')
             clicert = repo['feed_cert'].encode('utf8')
             clikey = repo['feed_key'].encode('utf8')
 
-        num_threads = config.config.getint('yum', 'threads')
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
         num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
         # check for proxy settings
@@ -455,10 +456,19 @@ class YumSynchronizer(BaseSynchronizer):
             if (config.config.has_option('yum', proxy_cfg)):
                 vars()[proxy_cfg] = config.config.get('yum', proxy_cfg)
 
+        num_threads = threads
+        if threads is None and config.config.getint('yum', 'threads'):
+            num_threads = config.config.getint('yum', 'threads')
+        if num_threads < 1:
+            log.error("Invalid number of threads specified [%s].  Will default to 1" % (num_threads))
+            num_threads = 1
         limit_in_KB = max_speed
-        if not limit_in_KB and config.config.has_option('yum', 'limit_in_KB'):
+        # limit_in_KB can be 0, that is a valid value representing unlimited bandwidth
+        if limit_in_KB is None and config.config.has_option('yum', 'limit_in_KB'):
             limit_in_KB = config.config.getint('yum', 'limit_in_KB')
-            log.info("Limiting download speed to %s KB/sec" % (limit_in_KB))
+        if not limit_in_KB:
+            log.info("Limiting download speed to %s KB/sec per thread. [%s] threads will be used" % \
+                    (limit_in_KB, num_threads))
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert, clikey=clikey,
                                 packages_location=pulp.server.util.top_package_location(),
@@ -716,7 +726,7 @@ class LocalSynchronizer(BaseSynchronizer):
                 
     
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
-            max_speed=None):
+            max_speed=None, threads=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
         self.init_progress_details(src_repo_dir, skip_dict) 
@@ -889,7 +899,7 @@ class LocalSynchronizer(BaseSynchronizer):
 class RHNSynchronizer(BaseSynchronizer):
 
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
-            max_speed=None):
+            max_speed=None, threads=None):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
         pieces = repo_source['url'].split('/')
