@@ -69,12 +69,17 @@ class TaskSnapshot(Model):
             setattr(self, attr, getattr(task, attr, None))
         for attr in _pickled_fields:
             setattr(self, attr, pickle.dumps(getattr(task, attr, None))) # ascii pickle
+            #except:
+            #   msg = _("Error pickling attribute %s:%s")
+            #  raise TaskPicklingError(msg % (attr, getattr(task, attr, None)))
 
 # task restoration api --------------------------------------------------------
 
 class TaskRestorationError(PulpException):
     pass
 
+class TaskPicklingError(PulpException):
+    pass
 
 _task_types = {
     'Task': Task(lambda x: x),
@@ -97,6 +102,9 @@ def restore_from_snapshot(snapshot):
     except KeyError:
         msg = _('Task restoration from snapshot of %s not currently supported')
         raise TaskRestorationError(msg % task_type)
+    except:
+        task = copy.copy(_task_types[task_type])
+
     for attr in _copied_fields:
         setattr(task, attr, snapshot.get(attr, None))
     for attr in _pickled_fields:
