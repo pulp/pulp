@@ -244,11 +244,8 @@ class TaskThread(TrackedThread):
                     _raise_exception_in_thread(_tid(thread), exc_type)
                     wait(self.__default_timeout)
                 except _ThreadInterruptionError, e:
-                    # _TaskInterruptionError gets thrown for the following reasons:
-                    # 1. the threading module or the interpreter has lost track of the thread
-                    # 2. the thread id is invalid
-                    # 3. if the thread is already dead
-                    # 4. if the exception was delivered to more than 1 thread at a time
+                    # _TaskInterruptionError gets thrown if the exception was
+                    # delivered to more than 1 thread at a time
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
                                (exc_type.__name__, str(_tid(thread)), e.message))
                     return
