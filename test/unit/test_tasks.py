@@ -338,17 +338,30 @@ class InterruptQueueTester(QueueTester):
         del self.queue
 
     def disable_task_timeout(self):
+    #def test_task_timeout(self):
         task = Task(interrupt_me, timeout=timedelta(seconds=2))
         self.queue.enqueue(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_timed_out)
 
     def disable_task_cancel(self):
+    #def test_task_cancel(self):
         task = Task(interrupt_me)
         self.queue.enqueue(task)
         self.queue.cancel(task)
         self._wait_for_task(task)
         self.assertTrue(task.state == task_canceled)
+
+    def disable_multiple_task_cancel(self):
+    #def test_multiple_task_cancel(self):
+        task1 = Task(interrupt_me)
+        task2 = Task(interrupt_me)
+        self.queue.enqueue(task1)
+        self.queue.enqueue(task2)
+        self.queue.cancel(task1)
+        self.queue.cancel(task2)
+        self._wait_for_task(task2)
+        self.assertTrue(task2.state == task_canceled)
 
 # run the unit tests ----------------------------------------------------------
 
