@@ -414,6 +414,21 @@ class ScheduledTaskTester(QueueTester):
     def tearDown(self):
         del self.queue
 
+    def test_immediate(self):
+        pass
+
+    def test_at(self):
+        pass
+
+    def test_interval(self):
+        pass
+
+    def test_multi_interval(self):
+        pass
+
+    def test_interval_removal(self):
+        pass
+
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
