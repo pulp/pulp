@@ -138,11 +138,10 @@ class Task(object):
         """
         Reset this task to run again.
         """
-        assert self.state in task_complete_states
         self.state = task_waiting
-        self.progress = None
         self.start_time = None
         self.finish_time = None
+        self.progress = None
         self.result = None
         self.exception = None
         self.traceback = None
@@ -154,7 +153,10 @@ class Task(object):
         @return: True if the task is scheduled to run again, False if it's not
         """
         self.scheduled_time = self.scheduler.schedule(self.scheduled_time)
-        return self.scheduled_time is not None
+        if self.scheduled_time is None:
+            return False
+        self.reset()
+        return True
 
     # -------------------------------------------------------------------------
 
