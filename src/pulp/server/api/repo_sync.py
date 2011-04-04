@@ -437,6 +437,9 @@ class YumSynchronizer(BaseSynchronizer):
         # limit_in_KB can be 0, that is a valid value representing unlimited bandwidth
         if limit_in_KB is None and config.config.has_option('yum', 'limit_in_KB'):
             limit_in_KB = config.config.getint('yum', 'limit_in_KB')
+        if limit_in_KB < 0:
+            log.error("Invalid value [%s] for bandwidth limit in KB.  Negative values not allowed." % (limit_in_KB))
+            limit_in_KB = 0
         if not limit_in_KB:
             log.info("Limiting download speed to %s KB/sec per thread. [%s] threads will be used" % \
                     (limit_in_KB, num_threads))
