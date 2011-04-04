@@ -21,7 +21,7 @@ from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.resource import Repo, RepoSyncSchedule
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.tasking.task import task_running
+from pulp.server.tasking.task import task_running, task_complete_states
 
 # schedule validation ---------------------------------------------------------
 
@@ -91,7 +91,11 @@ def _add_repo_scheduled_sync_task(repo):
 
 
 def _update_repo_scheduled_sync_task(repo, task):
-    pass
+    task.scheduler = RepoSyncSchedule.to_scheduler(repo['sync_schedule'])
+    if task.state not in task_complete_states:
+        return
+    async.remove_async(task)
+    async.enqueue(task)
 
 
 def _remove_repo_scheduled_sync_task(repo):
