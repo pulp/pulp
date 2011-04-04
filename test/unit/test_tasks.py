@@ -30,8 +30,10 @@ sys.path.insert(0, commondir)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
-from pulp.server.tasking.scheduler import AtScheduler
+from pulp.server.tasking.scheduler import (
+    ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
+from pulp.server.tasking.taskqueue.storage import VolatileStorage
 
 
 def noop():
@@ -107,7 +109,7 @@ class QueueTester(unittest.TestCase):
             pprint.pprint(task.traceback)
 
 
-class QueueTester(QueueTester):
+class TaskQueueTester(QueueTester):
 
     def setUp(self):
         self.queue = TaskQueue()
@@ -362,6 +364,55 @@ class InterruptQueueTester(QueueTester):
         self.queue.cancel(task2)
         self._wait_for_task(task2)
         self.assertTrue(task2.state == task_canceled)
+
+
+class PriorityQueueTester(unittest.TestCase):
+
+    def setUp(self):
+        self.storage = VolatileStorage()
+
+    def tearDown(self):
+        del self.storage
+
+    def _enqueue_three_tasks(self):
+        task1 = Task(noop)
+        task1.scheduled_time = 3
+        task2 = Task(noop)
+        task2.scheduled_time = 2
+        task3 = Task(noop)
+        task3.scheduled_time = 1
+        for t in (task1, task2, task3):
+            self.storage.enqueue_waiting(t)
+
+    def test_task_order(self):
+        self._enqueue_three_tasks()
+        ordered = []
+        while self.storage.num_waiting() > 0:
+            ordered.append(self.storage.dequeue_waiting())
+        for i, t1 in enumerate(ordered[:-1]):
+            t2 = ordered[i + 1]
+            self.assertTrue(t1.scheduled_time <= t2.scheduled_time)
+
+    def test_task_peed(self):
+        self._enqueue_three_tasks()
+        t = self.storage.peek_waiting()
+        self.assertTrue(t.scheduled_time == 1)
+
+    def test_task_removal(self):
+        t = Task(noop)
+        self.storage.enqueue_waiting(t)
+        self.assertTrue(self.storage.num_waiting() == 1)
+        self.storage.remove_waiting(t)
+        self.assertTrue(self.storage.num_waiting() == 0)
+
+
+class ScheduledTaskTester(QueueTester):
+
+    def setUp(self):
+        self.queue = TaskQueue()
+
+    def tearDown(self):
+        del self.queue
 
 # run the unit tests ----------------------------------------------------------
 
