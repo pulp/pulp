@@ -16,8 +16,6 @@
 import heapq
 import itertools
 
-from pulp.server.db.model import persistence
-
 # storage class for in-memory task queues -------------------------------------
 
 class VolatileStorage(object):
@@ -96,14 +94,3 @@ class VolatileStorage(object):
             if matches == num_criteria:
                 tasks.append(task)
         return tasks
-
-# storage class for persistent task queues ------------------------------------
-
-class PersistentStorage(VolatileStorage):
-
-    def __init__(self):
-        super(PersistentStorage, self).__init__()
-        self.__load_from_db()
-
-    def __load_from_db(self):
-        pass
