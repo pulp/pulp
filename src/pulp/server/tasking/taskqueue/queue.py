@@ -19,10 +19,11 @@ import threading
 import traceback
 from datetime import datetime, timedelta
 
+from pulp.server.tasking.scheduler import ImmediateScheduler
 from pulp.server.tasking.taskqueue.thread import  (
     DRLock, TaskThread, ThreadStateError)
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
-from pulp.server.tasking.task import task_complete_states
+from pulp.server.tasking.task import task_complete_states, task_running
 
 # log file --------------------------------------------------------------------
 
@@ -193,6 +194,17 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
+    def remove(self, task):
+        self.__lock.acquire()
+        try:
+            task.scheduler = ImmediateScheduler()
+            if task.state is task_running:
+                return
+            if task.state not in task_complete_states:
+                self.__storage.remove_waiting(task)
+        finally:
+            self.__lock.release()
+
     def run(self, task):
         """
         Run a task from this task queue
@@ -221,6 +233,9 @@ class TaskQueue(object):
             self.__storage.store_complete(task)
             task.thread = None
             task.complete_callback = None
+            # try to re-enqueue to handle recurring tasks
+            if self.enqueue(task):
+                self.__storage.remove_complete(task)
         finally:
             self.__lock.release()
 

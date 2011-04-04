@@ -45,6 +45,11 @@ class VolatileStorage(object):
 
     # storage methods
 
+    def remove_waiting(self, task):
+        assert task in self.__waiting_tasks
+        self.__waiting_tasks.remove(task)
+        heapq.heapify(self.__waiting_tasks)
+
     def store_running(self, task):
         assert task not in self.__waiting_tasks
         self.__running_tasks.append(task)

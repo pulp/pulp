@@ -71,6 +71,10 @@ def find_async(**kwargs):
     return _queue.find(**kwargs)
 
 
+def remove_async(task):
+    return _queue.remove(task)
+
+
 def cancel_async(task):
     return _queue.cancel(task)
 
