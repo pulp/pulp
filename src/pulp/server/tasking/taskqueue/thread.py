@@ -211,18 +211,18 @@ class TaskThread(TrackedThread):
     def __init__(self, *args, **kwargs):
         super(TaskThread, self).__init__(*args, **kwargs)
         self.__default_timeout = 0.05
-        #self.__exception_event = threading.Event()
+        self.__exception_event = threading.Event()
 
     # interrupt-able thread methods
 
-    #def exception_delivered(self):
-    #    """
-    #    Flag that an exception has been delivered to the thread and handled.
-    #    This needs to be called by the task thread and will unblock the thread
-    #    trying to deliver the exception.
-    #    """
-    #    _log.debug('Exception event deliverd to thread[%s]' % str(_tid(self)))
-    #    self.__exception_event.set()
+    def exception_delivered(self):
+        """
+        Flag that an exception has been delivered to the thread and handled.
+        This needs to be called by the task thread and will unblock the thread
+        trying to deliver the exception.
+        """
+        _log.debug('Exception event deliverd to thread[%s]' % str(_tid(self)))
+        self.__exception_event.set()
 
     def raise_exception(self, exc_type):
         """
@@ -233,8 +233,8 @@ class TaskThread(TrackedThread):
         exits.
         """
         # embedded methods to reduce code duplication
-        #def test_exception_event():
-        #    return self.isAlive() and not self.__exception_event.isSet()
+        def test_exception_event():
+            return self.isAlive() and not self.__exception_event.isSet()
 
         def deliver_exception(thread, test, wait):
             _log.debug('Trying to deliver exception %s to thread[%s]' %
@@ -256,8 +256,8 @@ class TaskThread(TrackedThread):
         for thread in get_descendants(self):
             deliver_exception(thread, thread.isAlive, time.sleep)
         # then kill and wait for the task thread
-        deliver_exception(self, thread.isAlive, time.sleep)
-        #deliver_exception(self, test_exception_event, self.__exception_event.wait)
+        #deliver_exception(self, self.isAlive, time.sleep)
+        deliver_exception(self, test_exception_event, self.__exception_event.wait)
 
     def timeout(self):
         """
