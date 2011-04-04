@@ -113,7 +113,7 @@ class IntervalScheduler(Scheduler):
         # the future for catching and reporting tasks that take longer than
         # their scheduled intervals
         def _next_run(reference_time):
-            now = datetime.datetime.now()
+            now = datetime.datetime.utcnow()
             reference_time = reference_time or now
             intervals = 0
             while reference_time < now:
