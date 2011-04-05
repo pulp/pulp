@@ -113,7 +113,7 @@ def update_repo(id, **kwargs):
 
 
 def delete_repo(id):
-    return DELETE('/repositories/%s' % id)
+    return DELETE('/repositories/%s/' % id)
 
 # -----------------------------------------------------------------------------
 
