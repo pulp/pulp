@@ -62,6 +62,8 @@ def _validate_schedule(schedule):
                 raise InvalidScheduleError(_('Field %s is required for start_time') % key)
             if not isinstance(start_time[key], int):
                 raise InvalidScheduleError(_('Value for %s must be an integer') % key)
+        if len(start_time) != len(start_time_keys):
+            raise InvalidScheduleError(_('Only fields: year, month, day, hour, and minute allowed'))
     runs = schedule.get('runs', None)
     if not isinstance(runs, (NoneType, int)):
         raise InvalidScheduleError(_('Value for runs must be an integer'))
