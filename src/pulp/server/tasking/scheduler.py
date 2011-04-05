@@ -97,8 +97,11 @@ class IntervalScheduler(Scheduler):
         assert isinstance(start_time, (types.NoneType, datetime.datetime))
         assert isinstance(runs, (types.NoneType, int))
         if start_time is not None and start_time < datetime.datetime.utcnow():
-            raise ValueError('IntervalScheduler: start time in the past: %s' %
-                             str(start_time))
+            #raise ValueError('IntervalScheduler: start time in the past: %s' %
+            #                 str(start_time))
+            # XXX don't raise an error, but make sure to log the fact, if the 
+            # time difference is greater than some configurable threshold
+            pass
         self.interval = interval
         self.start_time = start_time
         self.remaining_runs = runs
