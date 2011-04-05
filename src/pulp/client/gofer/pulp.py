@@ -50,6 +50,17 @@ def pulpserver():
     pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
     set_active_server(pulp)
 
+def ybcleanup(yb):
+    try:
+        # close rpm db
+        yb.closeRpmDB()
+        # hack!  prevent file descriptor leak
+        yl = getLogger('yum.filelogging')
+        for h in yl.handlers:
+            yl.removeHandler(h)
+    except Exception, e:
+        log.exception(e)
+
 
 class Heartbeat:
     """
@@ -241,7 +252,7 @@ class Packages:
             yb.resolveDeps()
             yb.processTransaction()
         finally:
-            yb.closeRpmDB()
+            ybcleanup(yb)
         if reboot_suggested:
             cfg_assumeyes = cfg.client.assumeyes
             if cfg_assumeyes in ["True", "False"]:
@@ -283,7 +294,7 @@ class PackageGroups:
             yb.resolveDeps()
             yb.processTransaction()
         finally:
-            yb.closeRpmDB()
+            ybcleanup(yb)
         return packagegroupids
 
 
