@@ -91,6 +91,10 @@ def DELETE(path):
 
 # repo management -------------------------------------------------------------
 
+def list_repos():
+    return GET('/repositories/')
+
+
 def get_repo(id):
     return GET('/repositories/%s/' % id)
 
