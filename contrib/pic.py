@@ -102,7 +102,7 @@ def get_repo(id):
 def create_repo(id, name=None, arch='noarch', **kwargs):
     """
     Acceptable keyword arguments are any arguments for a new Repo model.
-    Common ones are: source and sync_schedule
+    Common ones are: feed and sync_schedule
     """
     kwargs.update({'id': id, 'name': name or id, 'arch': arch})
     return POST('/repositories/', kwargs)
@@ -111,7 +111,7 @@ def create_repo(id, name=None, arch='noarch', **kwargs):
 def update_repo(id, **kwargs):
     """
     Acceptable keyword arguments are any arguments for a new Repo model.
-    Common ones are: source and sync_schedule
+    Common ones are: feed and sync_schedule
     """
     return PUT('/repositories/%s/' % id, kwargs)
 
