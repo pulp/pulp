@@ -16,12 +16,16 @@
 from gettext import gettext as _
 from types import NoneType
 
+try:
+    from bson import BSON
+except ImportError:
+    from pymongo.bson import BSON
+
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.resource import Repo, RepoSyncSchedule
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.tasking.task import task_running, task_complete_states
+from pulp.server.tasking.task import task_complete_states
 
 # schedule validation ---------------------------------------------------------
 
@@ -45,6 +49,8 @@ class InvalidScheduleError(PulpException):
 
 
 def _validate_schedule(schedule):
+    if not isinstance(schedule, (dict, BSON)):
+        raise InvalidScheduleError(_('Schedule must be an object'))
     interval = schedule.get('interval', None)
     if not interval:
         raise InvalidScheduleError(_('No interval present in schedule'))
