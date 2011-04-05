@@ -31,6 +31,7 @@ connection.initialize()
 auditing.initialize()
 
 from pulp.server.api import consumer_history
+from pulp.server.api import scheduled_sync
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.logs import start_logging
@@ -79,6 +80,7 @@ def _initialize_pulp():
     # setup recurring tasks
     auditing.init_culling_task()
     consumer_history.init_culling_task()
+    scheduled_sync.init_scheduled_syncs()
 
 
 def wsgi_application():
