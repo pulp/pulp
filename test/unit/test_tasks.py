@@ -31,7 +31,7 @@ from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
 from pulp.server.tasking.scheduler import (
-    ImmediateScheduler, AtScheduler, IntervalScheduler)
+    Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
 
@@ -54,6 +54,9 @@ def error():
 def interrupt_me():
     while True:
         time.sleep(0.5)
+
+def wait(seconds=5):
+    time.sleep(seconds)
 
 
 class TaskTester(unittest.TestCase):
@@ -344,7 +347,7 @@ class InterruptQueueTester(QueueTester):
         task = Task(interrupt_me, timeout=timedelta(seconds=2))
         self.queue.enqueue(task)
         self._wait_for_task(task)
-        self.assertTrue(task.state == task_timed_out)
+        self.assertTrue(task.state == task_timed_out, 'state is %s' % task.state)
 
     def disable_task_cancel(self):
     #def test_task_cancel(self):
@@ -352,7 +355,7 @@ class InterruptQueueTester(QueueTester):
         self.queue.enqueue(task)
         self.queue.cancel(task)
         self._wait_for_task(task)
-        self.assertTrue(task.state == task_canceled)
+        self.assertTrue(task.state == task_canceled, 'state is %s' % task.state)
 
     def disable_multiple_task_cancel(self):
     #def test_multiple_task_cancel(self):
@@ -363,7 +366,7 @@ class InterruptQueueTester(QueueTester):
         self.queue.cancel(task1)
         self.queue.cancel(task2)
         self._wait_for_task(task2)
-        self.assertTrue(task2.state == task_canceled)
+        self.assertTrue(task2.state == task_canceled, 'state is %s' % task.state)
 
 
 class PriorityQueueTester(unittest.TestCase):
@@ -415,19 +418,84 @@ class ScheduledTaskTester(QueueTester):
         del self.queue
 
     def test_immediate(self):
-        pass
+        task = Task(noop, scheduler=ImmediateScheduler())
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_at(self):
-        pass
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        at = AtScheduler(now + then)
+        task = Task(noop, scheduler=at)
+        self.queue.enqueue(task)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        self._wait_for_task(task, timedelta(seconds=11))
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+
+    def test_at_time(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        at = AtScheduler(now + then)
+        task = Task(noop, scheduler=at)
+        self.queue.enqueue(task)
+        time.sleep(8)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        time.sleep(3)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_interval(self):
-        pass
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        interval = IntervalScheduler(then, now + then, 1)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        self._wait_for_task(task, timedelta(seconds=11))
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
-    def test_multi_interval(self):
-        pass
+    def test_interval_schedule(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        interval = IntervalScheduler(then, now + then, 1)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        self._wait_for_task(task, timedelta(seconds=11))
+        self.assertTrue(task.scheduled_time is None)
+
+    def test_interval_no_start_time(self):
+        then = timedelta(seconds=10)
+        interval = IntervalScheduler(then, None, 1)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        now = datetime.utcnow()
+        self.assertTrue(task.scheduled_time <= now + then)
+        self._wait_for_task(task)
+
+    def test_multi_run_interval(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=5)
+        interval = IntervalScheduler(then, now + then, 2)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        time.sleep(3)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        time.sleep(4)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        time.sleep(4)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_interval_removal(self):
-        pass
+        then = timedelta(seconds=5)
+        interval = IntervalScheduler(then, None, 1)
+        task = Task(wait, scheduler=interval)
+        self.queue.enqueue(task)
+        time.sleep(1)
+        self.assertTrue(isinstance(task.scheduler, IntervalScheduler))
+        self.queue.remove(task)
+        self.assertTrue(isinstance(task.scheduler, ImmediateScheduler))
+        self._wait_for_task(task)
+        self.assertTrue(task.scheduled_time is None)
 
 # run the unit tests ----------------------------------------------------------
 
