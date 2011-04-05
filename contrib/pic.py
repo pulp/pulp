@@ -91,6 +91,10 @@ def DELETE(path):
 
 # repo management -------------------------------------------------------------
 
+def get_repo(id):
+    return GET('/repositories/%s/' % id)
+
+
 def create_repo(id, name=None, arch='noarch', **kwargs):
     """
     Acceptable keyword arguments are any arguments for a new Repo model.
@@ -106,6 +110,10 @@ def update_repo(id, **kwargs):
     Common ones are: source and sync_schedule
     """
     return PUT('/repositories/%s/' % id, kwargs)
+
+
+def delete_repo(id):
+    return DELETE('/repositories/%s' % id)
 
 # -----------------------------------------------------------------------------
 
