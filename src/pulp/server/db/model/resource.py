@@ -321,7 +321,7 @@ def schedule_to_scheduler(repo_schedule):
                                   days=repo_schedule['interval'].get('days', 0),
                                   hours=repo_schedule['interval'].get('hours', 0),
                                   minutes=repo_schedule['interval'].get('minutes', 0))
-    start_time = repo_schedule['start_time']
+    start_time = repo_schedule.get('start_time', None)
     if start_time is not None:
         now = datetime.datetime.utcnow()
         year = max(now.year, repo_schedule['start_time'].get('year', 0))
@@ -330,4 +330,4 @@ def schedule_to_scheduler(repo_schedule):
         hour = repo_schedule['start_time'].get('hour', now.hour)
         minute = repo_schedule['start_time'].get('minute', now.minute)
         start_time = datetime.datetime(year, month, day, hour, minute)
-    return IntervalScheduler(interval, start_time, repo_schedule['runs'])
+    return IntervalScheduler(interval, start_time, repo_schedule.get('runs', None))
