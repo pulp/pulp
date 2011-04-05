@@ -119,6 +119,13 @@ def update_repo(id, **kwargs):
 def delete_repo(id):
     return DELETE('/repositories/%s/' % id)
 
+
+def schedules():
+    """
+    List the sync schedules for all the repositories.
+    """
+    return GET('/repositories/schedules/')
+
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
