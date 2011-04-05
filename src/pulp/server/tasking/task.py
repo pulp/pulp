@@ -155,7 +155,6 @@ class Task(object):
         self.scheduled_time = self.scheduler.schedule(self.scheduled_time)
         if self.scheduled_time is None:
             return False
-        self.reset()
         return True
 
     # -------------------------------------------------------------------------
@@ -199,7 +198,7 @@ class Task(object):
         """
         Run this task and record the result or exception.
         """
-        assert self.state in task_ready_states
+        self.reset()
         self.state = task_running
         self.start_time = datetime.datetime.utcnow()
         try:
