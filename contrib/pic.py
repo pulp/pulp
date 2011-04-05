@@ -68,7 +68,7 @@ def _request(method, path, body=None):
         response_body = json.loads(response_body)
     except:
         pass
-    if response.staus > 299:
+    if response.status > 299:
         raise RequestError('Server response: %d\n%s' % 
                            (response.status, response_body))
     return (response.status, response_body)
