@@ -23,7 +23,7 @@ except ImportError:
 
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
-from pulp.server.db.model.resource import Repo, RepoSyncSchedule
+from pulp.server.db.model.resource import Repo, schedule_to_scheduler
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.task import task_complete_states
 
@@ -92,14 +92,14 @@ def _add_repo_scheduled_sync_task(repo):
     from pulp.server.api.repo import RepoApi
     api = RepoApi()
     task = RepoSyncTask(api._sync, [repo['id']])
-    task.scheduler = RepoSyncSchedule.to_scheduler(repo['sync_schedule'])
+    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     synchronizer = api.get_synchronizer(repo['source']['type'])
     task.set_synchronizer(synchronizer)
     async.enqueue(task)
 
 
 def _update_repo_scheduled_sync_task(repo, task):
-    task.scheduler = RepoSyncSchedule.to_scheduler(repo['sync_schedule'])
+    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     if task.state not in task_complete_states:
         return
     async.remove_async(task)
