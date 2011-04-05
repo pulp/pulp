@@ -272,7 +272,7 @@ class Repository(JSONController):
         permission: UPDATE
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
-        return: true
+        return: a Repo object
         parameters: any field of a Repo object except id
         """
         delta = self.params()
@@ -284,8 +284,8 @@ class Repository(JSONController):
                                      RepositoryDeferredFields.exposed_fields):
             if field in delta and isinstance(delta[field], basestring):
                 delta.pop(field, None)
-        api.update(id, delta)
-        return self.ok(True)
+        repo = api.update(id, delta)
+        return self.ok(repo)
 
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)
@@ -541,13 +541,13 @@ class RepositoryActions(AsyncController):
         repo_params = self.params()
         timeout = repo_params.get('timeout', None)
         _log.info("sync timeout passed : %s" % timeout)
-        
+
         # Check for valid timeout values
         if timeout:
             timeout = self.timeout(repo_params)
-            if not timeout: 
+            if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
-      
+
         skip = repo_params.get('skip', {})
         task = api.sync(id, timeout, skip)
         if not task:
