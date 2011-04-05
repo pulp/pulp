@@ -21,10 +21,13 @@ import os
 import re
 import time
 import fcntl
-from threading import RLock as Mutex
+from threading import RLock
 
 
 class LockFailed(Exception):
+    pass
+
+class NotLocked(Exception):
     pass
 
 
@@ -33,10 +36,8 @@ class LockFile:
     File based locking.
     @ivar path: The absolute path to the lock file.
     @type path: str
-    @ivar pid: current process id.
-    @type pid: int
-    @ivar fp: The I{file pointer} to the lock file.
-    @ivar fp: I{file-like} pointer.
+    @ivar __fp: The I{file pointer} to the lock file.
+    @ivar __fp: I{file-like} pointer.
     """
 
     def __init__(self, path):
@@ -45,33 +46,54 @@ class LockFile:
         @type path: str
         """
         self.path = path
-        self.pid = None
-        self.fp = None
+        self.__fp = None
+        self.__mkdir(path)
 
-    def open(self):
+    def acquire(self, blocking=True):
         """
-        Open the lock file.
-        Created in not exists.  Opened with file locking.
-        """
-        if self.notcreated():
-            self.fp = open(self.path, 'w')
-            self.setpid()
-            self.close()
-        self.fp = open(self.path, 'r+')
-        fd = self.fp.fileno()
-        fcntl.flock(fd, fcntl.LOCK_EX)
+        Acquire the lockfile.
+        @param blocking: Wait for the lock.
+        @type blocking: bool
+        @return: self
+        @rtype: L{LockFile}
+        """ 
+        fp = open(self.path, 'w')
+        if not blocking:
+            try:
+                fcntl.flock(fp.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
+            except IOError:
+                fp.close()
+                raise LockFailed(self.path)
+        else:
+            fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+        self.__fp = fp
+        self.setpid()
+        return self
 
+    def release(self):
+        """
+        Release the lockfile.
+        """
+        try:
+            if self.__fp.closed:
+                return
+            fd = self.__fp.fileno()
+            self.__fp.close()
+        except:
+            pass
+    
     def getpid(self):
         """
         Get the process id.
         @return: The pid in the lock file, else the current pid.
         @rtype: int
         """
-        if self.pid is None:
-            content = self.fp.read().strip()
-            if content:
-                self.pid = int(content)
-        return self.pid
+        pid = 0
+        fp = open(self.path)
+        content = fp.read()
+        if content:
+            pid = int(content)
+        return pid
 
     def setpid(self, pid=os.getpid()):
         """
@@ -79,186 +101,96 @@ class LockFile:
         @param pid: The process ID.
         @type pid: int
         """
-        self.fp.seek(0)
-        content = str(pid)
-        self.fp.write(content)
-        self.fp.flush()
-
-    def mypid(self):
-        """
-        Get the current process id.
-        @return: This process id.
-        @rtype: int
-        """
-        return ( os.getpid() == self.getpid() )
-
-    def valid(self):
-        """
-        Get whether the pid in the file is valid.
-        @return: True if valid.
-        @rtype: bool
-        """
-        status = False
-        try:
-            os.kill(self.getpid(), 0)
-            status = True
-        except Exception, e:
-            pass
-        return status
-
-    def delete(self):
-        """
-        Delete the lock file.
-        """
-        if self.mypid() or not self.valid():
-            self.close()
-            os.unlink(self.path)
-
-    def close(self):
-        """
-        Close the file and release the file lock.
-        Reset pid & fp to (None).
-        """
-        try:
-            fd = self.fp.fileno()
-            fcntl.flock(fd, fcntl.LOCK_UN)
-            self.fp.close()
-        except:
-            pass
-        self.pid = None
-        self.fp = None
-
-    def notcreated(self):
-        """
-        Get if file not created.
-        @return: True if file not created.
-        @rtype: bool
-        """
-        return ( not os.path.exists(self.path) )
-
-    def __del__(self):
-        """ cleanup """
-        self.close()
+        self.__fp.seek(0)
+        self.__fp.write(str(pid))
+        self.__fp.flush()
+        
+    def __mkdir(self, path):
+        dir = os.path.dirname(path)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
 
 
 class Lock:
     """
     File backed Reentrant lock.
-    @cvar mutex: A thread mutex.
-    @type mutex: L{Mutex}
     """
 
-    mutex = Mutex()
-
     def __init__(self, path):
-        self.depth = 0
-        self.path = path
-        dir, fn = os.path.split(self.path)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        self.__depth = 0
+        self.__mutex = RLock()
+        self.__lockf = LockFile(path)
 
-    def acquire(self, wait=True):
+    def acquire(self, blocking=1):
         """
         Acquire the lock.
-        @param wait: Indicates call will block and wait for the lock.
-        @type wait: boolean
+        Acquire the mutex; acquire the lockfile.
+        @param blocking: Wait for the lock.
+        @type blocking: bool
+        @return: self
+        @rtype: L{Lock}
         """
-        f = LockFile(self.path)
-        try:
-            while True:
-                f.open()
-                pid = f.getpid()
-                if f.mypid():
-                    self.P()
-                    return
-                if f.valid():
-                    f.close()
-                    if wait:
-                        time.sleep(0.5)
-                    else:
-                        raise LockFailed()
-                else:
-                    break
-            self.P()
-            f.setpid()
-        finally:
-            f.close()
-            
-    def update(self, pid):
-        """
-        Update the process ID.
-        @param pid: The process ID.
-        @type pid: int
-        """
-        if not self.acquired():
-            raise Exception, 'not acquired'
-        f = LockFile(self.path)
-        try:
-            f.open()
-            f.setpid(pid)
-        finally:
-            f.close()
+        self.__lock(blocking)
+        if self.__push() == 1:
+            try:
+                self.__lockf.acquire(blocking)
+            except:
+                self.__pop()
+                raise
+        return self
 
     def release(self):
         """
         Release the lock.
+        Release the lockfile; release the mutex.
         """
-        if not self.acquired():
-            return
-        self.V()
-        if self.acquired():
-            return
-        f = LockFile(self.path)
-        try:
-            f.open()
-            f.delete()
-        finally:
-            f.close()
-
-    def acquired(self):
-        """
-        Test to see if acquired.
-        @return: True if acquired.
-        @rtype: bool
-        """
-        mutex = self.mutex
-        mutex.acquire()
-        try:
-            return ( self.depth > 0 )
-        finally:
-            mutex.release()
-
-    def P(self):
-        """
-        Do semiphore (P) operation.
-        @return: self
-        @rtype: L{Lock}
-        """
-        mutex = self.mutex
-        mutex.acquire()
-        try:
-            self.depth += 1
-        finally:
-            mutex.release()
+        if self.__pop() == 0:
+            self.__lockf.release()
+        self.__unlock()
         return self
 
-    def V(self):
+    def setpid(self, pid):
         """
-        Do semiphore (V) operation.
-        @return: self
-        @rtype: L{Lock}
+        Write our procecss id and flush.
+        @param pid: The process ID.
+        @type pid: int
         """
-        mutex = self.mutex
-        mutex.acquire()
+        self.__lock()
         try:
-            if self.acquired():
-                self.depth -= 1
+            self.__lockf.setpid(pid)
         finally:
-            mutex.release()
-        return self
+            self.__unlock()
 
-    def __del__(self):
+    def __push(self):
+        """
+        Increment the lock depth.
+        @return: The incremented depth
+        @rtype: int
+        """
+        self.__lock()
         try:
-            self.release()
-        except:
-            pass
+            self.__depth += 1
+            return self.__depth
+        finally:
+            self.__unlock()
+            
+    def __pop(self):
+        """
+        Decrement the lock depth.
+        @return: The decremented depth
+        @rtype: int
+        """
+        self.__lock()
+        try:
+            if self.__depth > 0:
+                self.__depth -= 1
+            return self.__depth
+        finally:
+            self.__unlock()
+            
+    def __lock(self, blocking=1):
+        if not self.__mutex.acquire(blocking):
+            raise LockFailed()
+        
+    def __unlock(self):
+        self.__mutex.release()

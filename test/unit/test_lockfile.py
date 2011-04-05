@@ -18,9 +18,9 @@ import os
 import sys
 import shutil
 import unittest
-from subprocess import call
 from time import sleep
-from threading import Thread, RLock
+from random import random
+from threading import Thread
 
 # Pulp
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src/"
@@ -33,60 +33,40 @@ from pulp.client.lock import Lock
 
 # test root dir
 ROOTDIR = '/tmp/client/locking'
-FILE = 'test.lock'
-PATH = os.path.join(ROOTDIR,FILE)
-
-PROG = """
-import os
-from time import sleep
-from pulp.client.lock import Lock
-lock = Lock('%s')
-lock.acquire()
-#sleep(1)
-lock.release()
-print str(os.getpid())
-""" % PATH
-
-EXECV = [
-    'python',
-    '-c',
-    PROG,
-]
+LOCKFILE = 'test.lock'
+PATH = os.path.join(ROOTDIR,LOCKFILE)
 
 lock = Lock(PATH)
-mutex = RLock()
-failed = []
 
-def raised(ex):
-    mutex.acquire()
-    try:
-        failed.append(ex)
-    finally:
-        mutex.release()
+pids = []
 
-def hasfailed():
-    mutex.acquire()
-    try:
-        return len(failed)
-    finally:
-        mutex.release()
+def child(pid):
+    print '%d START' % pid
+    for i in range(0,5):
+      lock.acquire()
+      print '\n%d ACQUIRED' % pid
+      sleep(random())
+      lock.release()
+      print '%d RELEASED' % pid
+    print '%d END' % pid
+
 
 class TestThread(Thread):
+    
+    def __init__(self, name):
+        Thread.__init__(self, name=name)
+        self.setDaemon(True)
 
     def run(self):
-        if hasfailed():
-            return
-        try:
-            lock.acquire()
-            sleep(1)
-            lock.release()
-            if call(EXECV) != 0:
-                msg = 'failed: %d, %s' % (os.getpid(), self.getName())
-                raise Exception(msg)
-        except Exception, e:
-            raised(e)
+        lock.acquire()
+        print '\n(%d/%s) ACQUIRED' % \
+            (os.getpid(), self.getName())
+        sleep(random())
+        lock.release()
+        print '(%d/%s) RELEASED' % \
+            (os.getpid(), self.getName())
 
-class TestLockFile(unittest.TestCase):
+class TestLock(unittest.TestCase):
 
     def clean(self):
         shutil.rmtree(ROOTDIR, True)
@@ -96,18 +76,31 @@ class TestLockFile(unittest.TestCase):
 
     def tearDown(self):
         pass
-
-    def test_acquire(self):
-        for x in range(0,100):
-            print '\n==== RUN #%d ====' % x
-            if hasfailed():
-                break
-            lock.acquire()
-            lock.release()
-            for i in range(0,60):
-                t = TestThread(name='Test-%d'%i)
-                t.setDaemon(True)
-                t.start()
-            t.join()
-        print failed
-        self.assertFalse(len(failed))
+    
+    def spawn(self):
+        pid = os.fork()
+        if pid == 0:
+            child(os.getpid())
+            sys.exit(0)
+        else:
+            pids.append(pid)
+    
+    def test_basic(self):
+        for x in range(0,5):
+            pid = self.spawn()
+        lock.acquire()
+        print '\n[TEST] ACQUIRED'
+        sleep(random())
+        lock.release()
+        print '[TEST] RELEASED'
+        for i in range(0,5):
+            t = TestThread(name='Test-%d'%i)
+            t.setDaemon(True)
+            t.start()
+        t.join()
+        print 'Waiting on children'
+        for pid in pids:
+            status = os.waitpid(pid, 0)
+            print 'pid=%d, status=%d' % status
+            if status[1] != 0:
+                raise Exception('child failed')
