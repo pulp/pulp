@@ -19,7 +19,9 @@ Note: all times in this module use the UTC timezone.
 """
 
 import datetime
+import logging
 import types
+from gettext import gettext as _
 
 from pulp.server.util import Singleton
 
@@ -96,12 +98,11 @@ class IntervalScheduler(Scheduler):
         assert isinstance(interval, datetime.timedelta)
         assert isinstance(start_time, (types.NoneType, datetime.datetime))
         assert isinstance(runs, (types.NoneType, int))
-        if start_time is not None and start_time < datetime.datetime.utcnow():
-            #raise ValueError('IntervalScheduler: start time in the past: %s' %
-            #                 str(start_time))
-            # XXX don't raise an error, but make sure to log the fact, if the 
-            # time difference is greater than some configurable threshold
-            pass
+        if start_time is not None and \
+                start_time < datetime.datetime.utcnow() - interval:
+            log = logging.getLogger('pulp')
+            log.warn(_('IntervalScheduler created with start time more than one interval in the past: %s, %s') %
+                     str(start_time), str(interval))
         self.interval = interval
         self.start_time = start_time
         self.remaining_runs = runs
