@@ -227,18 +227,21 @@ class Packages:
         """
         pulpserver()
         installed = []
-        yb = YumBase()
-        log.info('installing packages: %s', packageinfo)
-        for info in packageinfo:
-            if isinstance(info, list):
-                pkgs = yb.pkgSack.returnNewestByNameArch(tuple(info))
-            else:
-                pkgs = yb.pkgSack.returnNewestByName(info)
-            for p in pkgs:
-                installed.append(str(p))
-                yb.tsInfo.addInstall(p)
-        yb.resolveDeps()
-        yb.processTransaction()
+        try:
+            yb = YumBase()
+            log.info('installing packages: %s', packageinfo)
+            for info in packageinfo:
+                if isinstance(info, list):
+                    pkgs = yb.pkgSack.returnNewestByNameArch(tuple(info))
+                else:
+                    pkgs = yb.pkgSack.returnNewestByName(info)
+                for p in pkgs:
+                    installed.append(str(p))
+                    yb.tsInfo.addInstall(p)
+            yb.resolveDeps()
+            yb.processTransaction()
+        finally:
+            yb.closeRpmDB()
         if reboot_suggested:
             cfg_assumeyes = cfg.client.assumeyes
             if cfg_assumeyes in ["True", "False"]:
@@ -273,11 +276,14 @@ class PackageGroups:
         pulpserver()
         log.info('installing packagegroups: %s', packagegroupids)
         yb = YumBase()
-        for grp_id in packagegroupids:
-            txmbrs = yb.selectGroup(grp_id)
-            log.info("Added '%s' group to transaction, packages: %s", grp_id, txmbrs)
-        yb.resolveDeps()
-        yb.processTransaction()
+        try:
+            for grp_id in packagegroupids:
+                txmbrs = yb.selectGroup(grp_id)
+                log.info("Added '%s' group to transaction, packages: %s", grp_id, txmbrs)
+            yb.resolveDeps()
+            yb.processTransaction()
+        finally:
+            yb.closeRpmDB()
         return packagegroupids
 
 
