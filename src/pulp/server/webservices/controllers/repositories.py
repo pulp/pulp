@@ -34,7 +34,7 @@ Repo object fields:
  * repomd_xml_path, str, path to the repository's repomd xml file
  * group_xml_path, str, path to the repository's group xml file
  * group_gz_xml_path, str, path to the repository's compressed group xml file
- * sync_schedule, str, crontab entry representing recurring sync schedule
+ * sync_schedule, RepoSyncSchedule object, representing recurring sync schedule
  * last_sync, timestamp, date and time of last successful sync
  * use_symlinks, bool, whether or not the repository uses symlinks for its content
  * ca, str, the repository's certificate authority
@@ -53,6 +53,10 @@ Repo object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
  * url, str, repository source url
+RepoSyncSchedule object fields:
+ * interval, object, fields of units with integer values (weeks, days, hours, minutes)
+ * start_time?, object, fields of units with integer values (year, month, day, hour, minute)
+ * runs?, int, number of runs to execute, omitted mean ad infinitum
 Task object fields:
  * id, str, unique id (usually a uuid) for the task
  * method_name, str, name of the pulp library method that was called
@@ -178,7 +182,7 @@ class Repositories(JSONController):
          * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
-         * sync_schedule?, str, crontab entry format
+         * sync_schedule?, RepoSyncSchedule object, schedule to regularly sync the repository on
          * feed_cert_data?, str, certificate information to use when connecting to the feed
          * consumer_cert_data?, str, certificate information to use when validating consumers of this repo
          * cert_data?, str, repository certificate information
