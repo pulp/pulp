@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import datetime
 from gettext import gettext as _
 from types import NoneType
 
@@ -23,8 +24,9 @@ except ImportError:
 
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
-from pulp.server.db.model.resource import Repo, schedule_to_scheduler
+from pulp.server.db.model.resource import Repo
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states
 
 # schedule validation ---------------------------------------------------------
@@ -76,6 +78,22 @@ def _validate_schedule(schedule):
 
 # repo sync task management ---------------------------------------------------
 
+def repo_schedule_to_scheduler(repo_schedule):
+    interval = datetime.timedelta(weeks=repo_schedule['interval'].get('weeks', 0),
+                                  days=repo_schedule['interval'].get('days', 0),
+                                  hours=repo_schedule['interval'].get('hours', 0),
+                                  minutes=repo_schedule['interval'].get('minutes', 0))
+    start_time = repo_schedule.get('start_time', None)
+    if start_time is not None:
+        now = datetime.datetime.utcnow()
+        year = max(now.year, repo_schedule['start_time'].get('year', 0))
+        month = max(now.month, repo_schedule['start_time'].get('month', 0))
+        day = max(now.day, repo_schedule['start_time'].get('day', 0))
+        hour = repo_schedule['start_time'].get('hour', now.hour)
+        minute = repo_schedule['start_time'].get('minute', now.minute)
+        start_time = datetime.datetime(year, month, day, hour, minute)
+    return IntervalScheduler(interval, start_time, repo_schedule.get('runs', None))
+
 def _find_repo_scheduled_task(repo):
     # NOTE this is very inefficient in the worst case: DO NOT CALL OFTEN!!
     # the number of sync tasks * (mean # arguments + mean # keyword arguments)
@@ -92,14 +110,14 @@ def _add_repo_scheduled_sync_task(repo):
     from pulp.server.api.repo import RepoApi
     api = RepoApi()
     task = RepoSyncTask(api._sync, [repo['id']])
-    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
+    task.scheduler = repo_schedule_to_scheduler(repo['sync_schedule'])
     synchronizer = api.get_synchronizer(repo['source']['type'])
     task.set_synchronizer(synchronizer)
     async.enqueue(task)
 
 
 def _update_repo_scheduled_sync_task(repo, task):
-    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
+    task.scheduler = repo_schedule_to_scheduler(repo['sync_schedule'])
     if task.state not in task_complete_states:
         return
     async.remove_async(task)
