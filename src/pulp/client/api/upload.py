@@ -26,29 +26,29 @@ from pulp.client.server import Bytes
 log = getLogger(__name__)
 
 
-class Momento:
+class Memento:
     """
-    Upload momento contains an upload uuid.
+    Upload memento contains an upload uuid.
     """
 
     ROOT = '~/.pulp/upload'
 
     def __init__(self, path, checksum):
         """
-        @param path: The momento absolute path.
+        @param path: The memento absolute path.
         @type path: str
         @param checksum: The file checksum
         @type checksum: str
         """
         fn = os.path.basename(path)
         root = os.path.expanduser(self.ROOT)
-        path = path = os.path.join(root, str(checksum))
+        path = os.path.join(root, str(checksum))
         self.path = os.path.join(path, fn)
 
     def write(self, uuid):
         """
-        Write the momento.
-        @param uuid: The momento content.
+        Write the memento.
+        @param uuid: The memento content.
         @type uuid: str
         """
         self.__mkdir()
@@ -58,8 +58,8 @@ class Momento:
 
     def read(self, delete=True):
         """
-        Read the uuid from the momento.
-        @param delete: Delete the momento after reading.
+        Read the uuid from the memento.
+        @param delete: Delete the memento after reading.
         @type delete: bool
         @return: The stored upload uuid.
         """
@@ -70,17 +70,19 @@ class Momento:
             if delete:
                 self.delete()
             return uuid
-        except:
+        except IOError:
+            # normal, may not exist
             pass
 
     def delete(self):
         """
-        Delete (clean up) the momento.
+        Delete (clean up) the memento.
         """
         try:
             os.unlink(self.path)
             os.rmdir(os.path.dirname(self.path))
-        except:
+        except OSError:
+            # normal, may not exist
             pass
 
     def __mkdir(self):
@@ -114,8 +116,8 @@ class UploadAPI(PulpAPI):
             checksum = self.__checksum(path)
         else:
             checksum = str(checksum)
-        momento = Momento(path, checksum)
-        uuid = momento.read()
+        memento = Memento(path, checksum)
+        uuid = memento.read()
         try:
             uuid, offset = self.__start(path, checksum, uuid)
             if offset < 0:
@@ -123,7 +125,7 @@ class UploadAPI(PulpAPI):
                 return uuid
             self.__upload(path, offset, uuid, chunksize)
         except KeyboardInterrupt, ke:
-            momento.write(uuid)
+            memento.write(uuid)
             raise ke
         return uuid
 
