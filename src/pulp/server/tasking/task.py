@@ -152,6 +152,8 @@ class Task(object):
         @rtype: bool
         @return: True if the task is scheduled to run again, False if it's not
         """
+        # XXX calculate the number of times the scheduler was "applied" and
+        # log if necessary.
         self.scheduled_time = self.scheduler.schedule(self.scheduled_time)
         if self.scheduled_time is None:
             return False
@@ -189,6 +191,9 @@ class Task(object):
     def _exception_delivered(self):
         """
         Let the contextual thread know that an exception has been received.
+        NOTE: this is a protected callback used for deliberate exception
+        delivery, as in the case of a task cancellation or timeout
+        it is not for error conditions, as they will not block the thread
         """
         if not hasattr(self.thread, 'exception_delivered'):
             return
@@ -198,8 +203,11 @@ class Task(object):
         """
         Run this task and record the result or exception.
         """
+        # check for a previous run before calling reset
         self.reset()
         self.state = task_running
+        # check the difference between the scheduled time and the start time
+        # log if it's over some threshold
         self.start_time = datetime.datetime.utcnow()
         try:
             result = self.callable(*self.args, **self.kwargs)
