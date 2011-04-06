@@ -137,7 +137,7 @@ def repo_schedule_to_scheduler(repo_schedule):
     return IntervalScheduler(interval, start_time, runs)
 
 
-def _find_repo_scheduled_task(repo):
+def find_repo_scheduled_task(repo):
     """
     Look up a repo schedule task in the task sub-system for a given repo
     @type repo: L{pulp.server.db.model.resource.Repo}
@@ -192,7 +192,7 @@ def _remove_repo_scheduled_sync_task(repo):
     @type repo: L{pulp.server.db.model.resource.Repo}
     @param repo: repo to remove task for
     """
-    task = _find_repo_scheduled_task(repo)
+    task = find_repo_scheduled_task(repo)
     if task is None:
         return
     async.remove_async(task)
@@ -211,7 +211,7 @@ def update_schedule(repo, new_schedule):
     repo['sync_schedule'] = new_schedule
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
-    task = _find_repo_scheduled_task(repo)
+    task = find_repo_scheduled_task(repo)
     if task is None:
         _add_repo_scheduled_sync_task(repo)
     else:
