@@ -31,7 +31,7 @@ from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
 from pulp.server.tasking.queue.fifo import FIFOTaskQueue
-from pulp.server.db.model.persistence import TaskSnapshot, restore_from_snapshot
+from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.api.repo import RepoApi
 from pulp.server import async
 
@@ -70,32 +70,31 @@ class TaskTester(unittest.TestCase):
     def test_task_create(self):
         task = Task(noop)
         self.assertTrue(task.state == task_waiting)
-        snapshot = TaskSnapshot(task)
-        restored_task = restore_from_snapshot(snapshot)
+        snapshot = task.snapshot()
+        restored_task = Task.from_snapshot(snapshot)
         self.assertTrue(restored_task.state == task_waiting)
 
     def test_task_noop(self):
         task = Task(noop)
         task.run()
-        snapshot = TaskSnapshot(task)
+        snapshot = task.snapshot()
+        restored_task = Task.from_snapshot(snapshot)
         self.assertTrue(task.state == task_finished)
-        restored_task = restore_from_snapshot(snapshot)
         self.assertTrue(restored_task.state == task_finished)
         
     def test_task_args(self):
         task = Task(args, args=[1, 2, 'foo'])
         task.run()
-        snapshot = TaskSnapshot(task)
-        restored_task = restore_from_snapshot(snapshot)
+        snapshot = task.snapshot()
+        restored_task = Task.from_snapshot(snapshot)
         self.assertTrue(restored_task.state == task_finished)
         self.assertTrue(task.state == task_finished)
 
     def test_task_kwargs(self):
         task = Task(kwargs, kwargs={'arg1':1, 'arg2':2, 'argfoo':'foo'})
-        snapshot = TaskSnapshot(task)
         task.run()
-        snapshot = TaskSnapshot(task)
-        restored_task = restore_from_snapshot(snapshot)
+        snapshot = task.snapshot()
+        restored_task = Task.from_snapshot(snapshot)
         self.assertTrue(restored_task.state == task_finished)
         self.assertTrue(task.state == task_finished)
 
@@ -108,8 +107,8 @@ class TaskTester(unittest.TestCase):
     def test_task_error(self):
         task = Task(error)
         task.run()
-        snapshot = TaskSnapshot(task)
-        restored_task = restore_from_snapshot(snapshot)
+        snapshot = task.snapshot()
+        restored_task = Task.from_snapshot(snapshot)
         self.assertTrue(task.state == task_error)
         self.assertTrue(task.traceback is not None)
         self.assertTrue(restored_task.state == task_error)
@@ -121,8 +120,8 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(repo is not None)
         
         task = self.rapi.sync(repo['id'])
-        snapshot = TaskSnapshot(task)
-        restored_task = restore_from_snapshot(snapshot)
+        snapshot = task.snapshot()
+        restored_task = Task.from_snapshot(snapshot)
         print restored_task.state
 
 class QueueTester(unittest.TestCase):

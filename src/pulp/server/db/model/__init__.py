@@ -20,6 +20,7 @@ from pulp.server.db.model.auth import *
 from pulp.server.db.model.cds import *
 from pulp.server.db.model.status import *
 from pulp.server.db.model.resource import *
+from pulp.server.db.model.persistence import *
 
 
 class Delta(dict):

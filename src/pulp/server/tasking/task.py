@@ -20,11 +20,16 @@ import sys
 import time
 import traceback
 import uuid
+import copy
+import pickle
+from gettext import gettext as _
 
 from pulp.server.tasking.queue.thread import TimeoutException, CancelException
-
+from pulp.server.db import model 
 
 _log = logging.getLogger(__name__)
+
+
 
 # task states -----------------------------------------------------------------
 
@@ -58,6 +63,32 @@ task_complete_states = (
     task_error,
     task_timed_out,
     task_canceled,
+)
+
+
+# task fields stored in task snapshots ----------------------------------------
+
+_copied_fields = (
+    'id',
+    'class_name',
+    'method_name',
+    'timeout',
+    'cancel_attempts',
+    'state',
+    'scheduled_time',
+    'start_time',
+    'finish_time',
+    'exception',
+    'traceback',
+)
+
+_pickled_fields = (
+    'callable',
+    'args',
+    'kwargs',
+    'scheduler',
+    'result',
+    'synchronizer',
 )
 
 # task ------------------------------------------------------------------------
@@ -100,7 +131,37 @@ class Task(object):
         self.exception = None
         self.traceback = None
         self.scheduled_time = 0
-
+        
+    def _get_task_snapshots_collection(self):
+        return model.TaskSnapshot.get_collection()
+        
+    def snapshot(self):
+        """
+        Serialize the task into snapshot and store it in db
+        """
+        snapshot = {}
+        snapshot['task_type'] = self.__class__.__name__
+        for attr in _copied_fields:
+            snapshot[attr] = getattr(self, attr, None)
+        for attr in _pickled_fields:
+            snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
+        s = model.TaskSnapshot(snapshot)
+        self._get_task_snapshots_collection().insert(s, safe=True)
+        return s
+        
+    @staticmethod
+    def from_snapshot(snapshot):
+        """
+        Retrieve task from a snapshot
+        """
+        task = copy.deepcopy(Task(dir))
+        for attr in _copied_fields:
+            setattr(task, attr, snapshot.get(attr, None))
+        for attr in _pickled_fields:
+            setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
+        return task
+        
+       
     def _exception_delivered(self):
         """
         Let the contextual thread know that an exception has been received.
