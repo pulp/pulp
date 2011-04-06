@@ -41,6 +41,14 @@ class Scheduler(object):
         @type previous_run: None or datetime.datetime instance
         @param previous_run: the previous run time of the Task,
                              None if not previously run
+        @rtype: tuple of (None or int, None or datetime.datetime instance)
+        @return: a tuple of (adjustments, schedule time) where adjustments is
+                 the number of adjustments needed to make the schedule time
+                 valid and schedule time, a datetime.datetime instance
+                 representing the date and time to schedule a task run
+                 a adjustments value of None means that no algorithm was
+                 employed to schedule the run and a schedule value of None
+                 means not to schedule the task to run
         """
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         raise NotImplementedError('Base class Scheduler.schedule() called')
@@ -122,7 +130,7 @@ class IntervalScheduler(Scheduler):
 
         def _start_time():
             if self.start_time is None:
-                return 'immdediately'
+                return 'immediately'
             return 'at %s' % self.start_time.strftime('%Y-%m-%d %H:%M')
 
         def _num_runs():
@@ -157,7 +165,7 @@ class IntervalScheduler(Scheduler):
         # scheduled time for the previous run instead of the actual start time
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if self.remaining_runs == 0:
-            return None
+            return (None, None)
         if self.remaining_runs:
             self.remaining_runs -= 1
         if previous_run is None:
