@@ -84,8 +84,10 @@ class TaskQueue(object):
         self.__lock.acquire()
         try:
             try:
-                while not self.__exit:
+                while True:
                     self.__condition.wait(self.__dispatcher_timeout)
+                    if self.__exit: # exit immediately after waking up
+                        return
                     for task in self._get_tasks():
                         self.run(task)
                     self._cancel_tasks()
