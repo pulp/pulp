@@ -18,9 +18,10 @@ from gettext import gettext as _
 from types import NoneType
 
 try:
-    from bson import BSON
+    from bson import BSON, SON
 except ImportError:
     from pymongo.bson import BSON
+    from pymongo.son import SON
 
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
@@ -82,7 +83,7 @@ def _validate_schedule(schedule):
     @param schedule: dictionary representing an interval schedule
     @raise InvalidScheduleError: if the schedule fails validation
     """
-    if not isinstance(schedule, (dict, BSON)):
+    if not isinstance(schedule, (dict, BSON, SON)):
         raise InvalidScheduleError(_('Schedule must be an object'))
     interval = schedule.get('interval', None)
     if not interval:
