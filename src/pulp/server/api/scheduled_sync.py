@@ -45,12 +45,26 @@ year, month, day, hour, minute
 ''')
 
 class InvalidScheduleError(PulpException):
+    """
+    Error raised on improperly formated schedules.
+    Supplies an extensive explanation.
+    """
     def __init__(self, msg, *args):
         msg += _explaination
         super(InvalidScheduleError, self).__init__(msg, *args)
 
 
 def _validate_schedule(schedule):
+    """
+    Validate a passed in interval schedule.
+    The schedule consists of a dictionary with and interval value, also a
+    dictionary, and optional start_time and run fields. The start_time field
+    is also a dictionary and runs is an integer. There's no return value, but
+    an exception is raised if the schedule fails validation.
+    @type schedule: dict
+    @param schedule: dictionary representing an interval schedule
+    @raise InvalidScheduleError: if the schedule fails validation
+    """
     if not isinstance(schedule, (dict, BSON)):
         raise InvalidScheduleError(_('Schedule must be an object'))
     interval = schedule.get('interval', None)
@@ -79,22 +93,40 @@ def _validate_schedule(schedule):
 # repo sync task management ---------------------------------------------------
 
 def repo_schedule_to_scheduler(repo_schedule):
-    interval = datetime.timedelta(weeks=repo_schedule['interval'].get('weeks', 0),
-                                  days=repo_schedule['interval'].get('days', 0),
-                                  hours=repo_schedule['interval'].get('hours', 0),
-                                  minutes=repo_schedule['interval'].get('minutes', 0))
+    """
+    Convenience function to turn a serialized task schedule into an interval
+    scheduler appropriate for scheduling a repo sync task.
+    @type repo_schedule: L{pulp.server.db.model.resource.RepoSyncSchedule}
+    @param repo_schedule: repo sync schedule to turn into interval scheduler
+    @rtype: L{IntervalScheduler}
+    @return: interval scheduler for the tasking sub-system
+    """
+    interval = repo_schedule['interval']
+    interval = datetime.timedelta(weeks=interval.get('weeks', 0),
+                                  days=interval.get('days', 0),
+                                  hours=interval.get('hours', 0),
+                                  minutes=interval.get('minutes', 0))
     start_time = repo_schedule.get('start_time', None)
     if start_time is not None:
         now = datetime.datetime.utcnow()
-        year = max(now.year, repo_schedule['start_time'].get('year', 0))
-        month = max(now.month, repo_schedule['start_time'].get('month', 0))
-        day = max(now.day, repo_schedule['start_time'].get('day', 0))
-        hour = repo_schedule['start_time'].get('hour', now.hour)
-        minute = repo_schedule['start_time'].get('minute', now.minute)
+        year = max(now.year, start_time.get('year', 0))
+        month = max(now.month, start_time.get('month', 0))
+        day = max(now.day, start_time.get('day', 0))
+        hour = start_time.get('hour', now.hour)
+        minute = start_time.get('minute', now.minute)
         start_time = datetime.datetime(year, month, day, hour, minute)
-    return IntervalScheduler(interval, start_time, repo_schedule.get('runs', None))
+    runs = repo_schedule.get('runs', None)
+    return IntervalScheduler(interval, start_time, runs)
+
 
 def _find_repo_scheduled_task(repo):
+    """
+    Look up a repo schedule task in the task sub-system for a given repo
+    @type repo: L{pulp.server.db.model.resource.Repo}
+    @param repo: repo to look up sync task for
+    @rtype: None or L{pulp.server.tasking.task.Task}
+    @return: the repo sync task associated the repo, None if no task is found
+    """
     # NOTE this is very inefficient in the worst case: DO NOT CALL OFTEN!!
     # the number of sync tasks * (mean # arguments + mean # keyword arguments)
     id = repo['id']
@@ -106,6 +138,11 @@ def _find_repo_scheduled_task(repo):
 
 
 def _add_repo_scheduled_sync_task(repo):
+    """
+    Add a new repo sync task for the given repo
+    @type repo: L{pulp.server.db.model.resource.Repo}
+    @param repo: repo to add sync task for
+    """
     # hack to avoid circular import
     from pulp.server.api.repo import RepoApi
     api = RepoApi()
@@ -117,6 +154,13 @@ def _add_repo_scheduled_sync_task(repo):
 
 
 def _update_repo_scheduled_sync_task(repo, task):
+    """
+    Update and existing repo sync task's schedule
+    @type repo: L{pulp.server.db.model.resource.Repo}
+    @param repo: repo to update sync task for
+    @type task: L{pulp.server.tasking.task.Task}
+    @param task: task to update
+    """
     task.scheduler = repo_schedule_to_scheduler(repo['sync_schedule'])
     if task.state not in task_complete_states:
         return
@@ -125,6 +169,11 @@ def _update_repo_scheduled_sync_task(repo, task):
 
 
 def _remove_repo_scheduled_sync_task(repo):
+    """
+    Remove the repo sync task from the tasking sub-system for the given repo
+    @type repo: L{pulp.server.db.model.resource.Repo}
+    @param repo: repo to remove task for
+    """
     task = _find_repo_scheduled_task(repo)
     if task is None:
         return
@@ -133,6 +182,13 @@ def _remove_repo_scheduled_sync_task(repo):
 # existing api ----------------------------------------------------------------
 
 def update_schedule(repo, new_schedule):
+    """
+    Change a repo's sync schedule.
+    @type repo: L{pulp.server.db.model.resource.Repo}
+    @param repo: repo to change
+    @type new_schedule: dict
+    @param new_schedule: dictionary representing new schedule
+    """
     _validate_schedule(new_schedule)
     repo['sync_schedule'] = new_schedule
     collection = Repo.get_collection()
@@ -145,6 +201,11 @@ def update_schedule(repo, new_schedule):
 
 
 def delete_schedule(repo):
+    """
+    Remove a repo's sync schedule
+    @type repo: L{pulp.server.db.model.resource.Repo}
+    @param repo: repo to change
+    """
     if repo['sync_schedule'] is None:
         return
     repo['sync_schedule'] = None
@@ -155,6 +216,10 @@ def delete_schedule(repo):
 # startup initialization ------------------------------------------------------
 
 def init_scheduled_syncs():
+    """
+    Iterate through all of the repos in the database and start sync tasks for
+    those that have sync schedules associated with them.
+    """
     collection = Repo.get_collection()
     for repo in collection.find({}):
         if repo['sync_schedule'] is None:
