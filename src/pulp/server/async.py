@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+from datetime import timedelta
 from logging import getLogger
 
 from gofer.messaging import Queue
@@ -80,12 +81,31 @@ def cancel_async(task):
 
 # async system initialization/finalization ------------------------------------
 
+def _configured_schedule_threshold():
+
+    def _parse_time_delta(value):
+        # TODO designed to be split out into a convenience method
+        error_msg = _('time interval specified by integer units * (e.g. 4 minutes 20 seconds')
+        parts = value.split()
+        assert len(parts) % 2 == 0, error_msg
+        # CHALLENGE! a beer for the first person who can tell me what this is
+        # doing without executing it
+        # Jason L Connor <jconnor@redhat.com> 2011-04-06
+        kwargs = dict([(u, int(i)) for i, u in zip(parts[::2], parts[1::2])])
+        return timedelta(**kwargs)
+
+    value = config.config.get('tasking', 'schedule_threshold')
+    return _parse_time_delta(value)
+
+
 def initialize():
     """
     Explicitly start-up the asynchronous sub-system
     """
     global _queue
     max_concurrent = config.config.getint('tasking', 'max_concurrent')
+    failure_threshold = config.config.getint('tasking', 'failure_threshold')
+    schedule_threshold = _configured_schedule_threshold()
     _queue = TaskQueue(max_concurrent)
 
 

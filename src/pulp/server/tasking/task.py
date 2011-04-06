@@ -19,6 +19,7 @@ import sys
 import time
 import traceback
 import uuid
+from gettext import gettext as _
 
 from pulp.server.tasking.taskqueue.thread import TimeoutException, CancelException
 from pulp.server.tasking.scheduler import ImmediateScheduler
@@ -111,6 +112,8 @@ class Task(object):
 
         # resources managed by the task queue to deliver events
         self.complete_callback = None
+        self.failure_threshold = None
+        self.schedule_threshold = None
         self.thread = None
 
         # resources for a task run
@@ -124,6 +127,7 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
+        self.consecutive_failures = 0
 
     def __cmp__(self, other):
         """
@@ -133,6 +137,21 @@ class Task(object):
             raise ValueError('No comparison defined between task and %s' %
                              type(other))
         return cmp(self.scheduled_time, other.scheduled_time)
+
+    def __str__(self):
+
+        def _name():
+            if self.class_name is None:
+                return self.method_name
+            return '.'.join((self.class_name, self.method_name))
+
+        def _args():
+            return ', '.join([str(a) for a in self.args])
+
+        def _kwargs():
+            return ', '.join(['='.join((k, v)) for k, v in self.kwargs])
+
+        return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
     def reset(self):
         """
@@ -152,11 +171,18 @@ class Task(object):
         @rtype: bool
         @return: True if the task is scheduled to run again, False if it's not
         """
-        # XXX calculate the number of times the scheduler was "applied" and
-        # log if necessary.
-        self.scheduled_time = self.scheduler.schedule(self.scheduled_time)
-        if self.scheduled_time is None:
+        if self.failure_threshold is not None:
+            if self.consecutive_failures == self.failure_threshold:
+                _log.warn(_('%s has had %d failures and will not be scheduled again') %
+                          (str(self), self.consecutive_failures))
+                return False
+        adjustments, scheduled_time = self.scheduler.schedule(self.scheduled_time)
+        if scheduled_time is None:
+            self.scheduled_time = None
             return False
+        if adjustments:
+            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments))
+        self.scheduled_time = scheduled_time
         return True
 
     # -------------------------------------------------------------------------
@@ -199,16 +225,28 @@ class Task(object):
             return
         self.thread.exception_delivered()
 
+    def _check_threshold(self):
+        """
+        Log when a task starts later than some timedelta threshold after it was
+        scheduled to run.
+        """
+        if None in (self.start_time, self.schedule_threshold):
+            return
+        difference = self.start_time = self.scheduled_time
+        if difference <= self.schedule_threshold:
+            return
+        _log.warn(_('%s\nstarted %s after its scheduled start time') %
+                  (str(self), str(difference)))
+
     def run(self):
         """
         Run this task and record the result or exception.
         """
-        # check for a previous run before calling reset
-        self.reset()
+        if self.state is not task_waiting:
+            self.reset()
         self.state = task_running
-        # check the difference between the scheduled time and the start time
-        # log if it's over some threshold
         self.start_time = datetime.datetime.utcnow()
+        self._check_threshold()
         try:
             result = self.callable(*self.args, **self.kwargs)
             self.invoked(result)
@@ -243,6 +281,7 @@ class Task(object):
         @param result: The object returned by the I{method}.
         @type result: object.
         """
+        self.consecutive_failures = 0
         self.result = result
         self.state = task_finished
         self.finish_time = datetime.datetime.utcnow()
@@ -256,6 +295,7 @@ class Task(object):
         @param tb: The formatted traceback.
         @type tb: str
         """
+        self.consecutinve_failures += 1
         self.exception = repr(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
         _log.error('Task id:%s, method_name:%s:\n%s' % (self.id,

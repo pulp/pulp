@@ -39,17 +39,30 @@ class TaskQueue(object):
     """
     def __init__(self,
                  max_running=4,
-                 finished_lifetime=timedelta(seconds=3600)):
+                 finished_lifetime=timedelta(seconds=3600),
+                 failure_threshold=None,
+                 schedule_threshold=None):
         """
         @type max_running: int
         @param max_running: maximum number of tasks to run simultaneously
                         None means indefinitely
         @type finished_lifetime: datetime.timedelta instance
         @param finished_lifetime: length of time to keep finished tasks
+        @type failures_threhold: int
+        @param failure_threshold: number of consecutive failures a task can
+                                  have before it will no longer be scheduled
+                                  to run
+        @type schedule_threshold: None or datetime.timedelta instance
+        @param schedule_threshold: a time length that if exceeded by the
+                                   difference between a task's scheduled time
+                                   and the task's start time, constitutes a
+                                   warning
         @return: TaskQueue instance
         """
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
+        self.failure_threshold = failure_threshold
+        self.schedule_threshold = schedule_threshold
 
         self.__lock = threading.RLock()
         #self.__lock = DRLock()
@@ -190,6 +203,11 @@ class TaskQueue(object):
             if not task.schedule():
                 return False
             task.complete_callback = self.complete
+            # setup error condition parameters, if not overridden by the task
+            if task.failure_threshold is None:
+                task.failure_threshold = self.failure_threshold
+            if task.schedule_threshold is None:
+                task.schedule_threshold = self.schedule_threshold
             self.__storage.enqueue_waiting(task)
             self.__condition.notify()
             return True
