@@ -81,19 +81,18 @@ def cancel_async(task):
 
 # async system initialization/finalization ------------------------------------
 
+def _parse_time_delta(value):
+    error_msg = _('time interval specified by [integer units]+ (e.g. 4 minutes 20 seconds')
+    parts = value.split()
+    assert len(parts) % 2 == 0, error_msg
+    # CHALLENGE! a beer for the first person who can tell me what this is
+    # doing without executing it. To accept the challenge, comment this
+    # function correctly and shoot me an email when you're done.
+    # Jason L Connor <jconnor@redhat.com> 2011-04-06
+    return timedelta(**dict([(u, int(i)) for i, u in zip(parts[::2], parts[1::2])]))
+
+
 def _configured_schedule_threshold():
-
-    def _parse_time_delta(value):
-        # TODO designed to be split out into a convenience method
-        error_msg = _('time interval specified by integer units * (e.g. 4 minutes 20 seconds')
-        parts = value.split()
-        assert len(parts) % 2 == 0, error_msg
-        # CHALLENGE! a beer for the first person who can tell me what this is
-        # doing without executing it
-        # Jason L Connor <jconnor@redhat.com> 2011-04-06
-        kwargs = dict([(u, int(i)) for i, u in zip(parts[::2], parts[1::2])])
-        return timedelta(**kwargs)
-
     value = config.config.get('tasking', 'schedule_threshold')
     return _parse_time_delta(value)
 
@@ -106,7 +105,9 @@ def initialize():
     max_concurrent = config.config.getint('tasking', 'max_concurrent')
     failure_threshold = config.config.getint('tasking', 'failure_threshold')
     schedule_threshold = _configured_schedule_threshold()
-    _queue = TaskQueue(max_concurrent)
+    _queue = TaskQueue(max_running=max_concurrent,
+                       failure_threshold=failure_threshold,
+                       schedule_threshold=schedule_threshold)
 
 
 def finalize():
