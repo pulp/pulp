@@ -30,6 +30,10 @@ class Scheduler(object):
     """
     Base Scheduler class defining the scheduler interface.
     """
+
+    def __str__(self):
+        return _('Base class scheduler with no schedule implementation')
+
     def schedule(self, previous_run):
         """
         Schedule the next run time of a L{Task} based upon the previous run
@@ -48,6 +52,9 @@ class ImmediateScheduler(Scheduler):
     """
 
     __metaclass__ = Singleton
+
+    def __str__(self):
+        return _('scheduled to run immediately')
 
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
@@ -72,6 +79,10 @@ class AtScheduler(Scheduler):
             raise ValueError('AtScheduler: scheduled time in the past: %s' %
                              str(scheduled_time))
         self.scheduled_time = scheduled_time
+
+    def __str__(self):
+        return _('scheduled to run at %s') % \
+                self.scheduled_time.strftime('%Y-%m-%d %H:%M')
 
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
@@ -107,28 +118,48 @@ class IntervalScheduler(Scheduler):
         self.start_time = start_time
         self.remaining_runs = runs
 
-    def schedule(self, previous_run):
-        # NOTE to prevent interval "drift" the previous_run value should be the
-        # scheduled time for the previous run instead of the actual start time
-        assert isinstance(previous_run, (types.NoneType, datetime.datetime))
+    def __str__(self):
 
+        def _start_time():
+            if self.start_time is None:
+                return 'immdediately'
+            return 'at %s' % self.start_time.strftime('%Y-%m-%d %H:%M')
+
+        def _num_runs():
+            if self.remaining_runs is None:
+                return 'indefinitely'
+            return 'for %d more runs' % self.remaining_runs
+
+        def _next_run():
+            if self.remaining_runs == 0:
+                return 'not scheduled'
+            next = self._next_run(self.start_time)[1]
+            return 'scheduled to run at %s' % next.strftime('%Y-%m-%d %H:%M')
+
+        return _('scheduled to run starting %s at intervals %s long %s\nnext run %s') % \
+                (_start_time(), str(self.interval), _num_runs(), _next_run())
+
+    def _next_run(self, reference_time):
         # guarantee that the next run is scheduled in the future
         # and count the number of intervals that had to be added to make it in
         # the future for catching and reporting tasks that take longer than
         # their scheduled intervals
-        def _next_run(reference_time):
-            now = datetime.datetime.utcnow()
-            reference_time = reference_time or now
-            intervals = 0
-            while reference_time < now:
-                reference_time += self.interval
-                intervals += 1
-            return (intervals, reference_time)
+        now = datetime.datetime.utcnow()
+        reference_time = reference_time or now
+        intervals = 0
+        while reference_time < now:
+            reference_time += self.interval
+            intervals += 1
+        return (intervals, reference_time)
 
+    def schedule(self, previous_run):
+        # NOTE to prevent interval "drift" the previous_run value should be the
+        # scheduled time for the previous run instead of the actual start time
+        assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if self.remaining_runs == 0:
             return None
         if self.remaining_runs:
             self.remaining_runs -= 1
         if previous_run is None:
-            return _next_run(self.start_time)[1]
-        return _next_run(previous_run)[1]
+            return self._next_run(self.start_time)[1]
+        return self._next_run(previous_run)[1]
