@@ -29,6 +29,23 @@ from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states
 
+# convenience methods for schedule reporting ----------------------------------
+
+def task_scheduled_time_to_dict(task):
+    """
+    Convert a task's scheduled time field into a dictionary for easy reporting.
+    @type task: L{pulp.server.tasking.task.Task}
+    @param task: task to convert scheduled time of
+    @rtype: None or dict
+    @return: a dictionary representing the task's scheduled time,
+             None if the task is not scheduled
+    """
+    if task.scheduled_time is None:
+        return None
+    return dict([(k, getattr(task.scheduled_time, k))
+                  for k in ('year', 'month', 'day', 'hour', 'minute')
+                  if getattr(task.scheduled_time, k)])
+
 # schedule validation ---------------------------------------------------------
 
 _explaination = _('''
