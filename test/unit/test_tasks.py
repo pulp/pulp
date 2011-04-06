@@ -481,7 +481,7 @@ class ScheduledTaskTester(QueueTester):
         time.sleep(3)
         self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
         time.sleep(4)
-        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
         time.sleep(4)
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
