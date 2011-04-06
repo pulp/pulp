@@ -295,7 +295,7 @@ class Task(object):
         @param tb: The formatted traceback.
         @type tb: str
         """
-        self.consecutinve_failures += 1
+        self.consecutive_failures += 1
         self.exception = repr(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
         _log.error('Task id:%s, method_name:%s:\n%s' % (self.id,
