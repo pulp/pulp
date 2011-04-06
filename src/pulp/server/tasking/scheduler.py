@@ -59,8 +59,8 @@ class ImmediateScheduler(Scheduler):
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if previous_run is None:
-            return datetime.datetime.utcnow()
-        return None
+            return (None, datetime.datetime.utcnow())
+        return (None, None)
 
 
 class AtScheduler(Scheduler):
@@ -87,8 +87,8 @@ class AtScheduler(Scheduler):
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if previous_run is None:
-            return self.scheduled_time
-        return None
+            return (None, self.scheduled_time)
+        return (None, None)
 
 
 class IntervalScheduler(Scheduler):
@@ -161,5 +161,5 @@ class IntervalScheduler(Scheduler):
         if self.remaining_runs:
             self.remaining_runs -= 1
         if previous_run is None:
-            return self._next_run(self.start_time)[1]
-        return self._next_run(previous_run)[1]
+            return self._next_run(self.start_time)
+        return self._next_run(previous_run)
