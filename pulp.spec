@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.160
+Version:        0.0.161
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -272,6 +272,15 @@ rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %changelog
+* Wed Apr 06 2011 Jeff Ortel <jortel@redhat.com> 0.0.161-1
+- Moving pickling and unpickling logic to Task.py; Also changed unit tests
+  accordingly (skarmark@redhat.com)
+- 692888 - cleanup yum logging FileHandler(s).  Major hack until yum fixes.
+  (jortel@redhat.com)
+- 692876 - Fixes leaked file descriptors to: /var/lib/rpm/*.
+  (jortel@redhat.com)
+- Fix lockfile race condition. (jortel@redhat.com)
+
 * Fri Apr 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.160-1
 - Bump to grinder 0.92 to fix minor issue displaying download progress for
   first item in repo sync (jmatthews@redhat.com)
