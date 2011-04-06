@@ -80,6 +80,7 @@ import logging
 
 import web
 
+from pulp.server.api import scheduled_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
@@ -258,6 +259,9 @@ class Repository(JSONController):
         # XXX this was a serious problem with packages
         # why would files be any different
         repo['files_count'] = len(repo['files'])
+        # see if the repo is scheduled for sync in the future
+        task = scheduled_sync.find_repo_scheduled_task(repo)
+        repo['next_scheduled_sync'] = task and scheduled_sync.task_scheduled_time_to_dict(task)
         return self.ok(repo)
 
     @JSONController.error_handler
