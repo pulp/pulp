@@ -48,6 +48,7 @@ class CdsInstances(JSONController):
     @JSONController.auth_required(READ)
     def GET(self):
         cds_instances = cds_api.list()
+        # inject heartbeat info
         for cds in cds_instances:
             uuid = CDS.uuid(cds)
             heartbeat = Agent.status([uuid,])
@@ -92,6 +93,7 @@ class CdsInstance(JSONController):
         cds = cds_api.cds(id)
         if cds is None:
             return self.not_found('Could not find CDS with hostname [%s]' % id)
+        # inject heartbeat info
         uuid = CDS.uuid(cds)
         heartbeat = Agent.status([uuid,])
         cds['heartbeat'] = heartbeat.values()[0]

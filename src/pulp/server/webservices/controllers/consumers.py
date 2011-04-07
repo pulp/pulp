@@ -35,6 +35,7 @@ from pulp.server.tasking.scheduler import AtScheduler
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.agent import Agent
 
 # globals ---------------------------------------------------------------------
 
@@ -67,6 +68,11 @@ class Consumers(JSONController):
         else:
             spec = mongo.filters_to_re_spec(filters)
             consumers = consumer_api.consumers(spec, default_fields)
+        # inject heartbeat info
+        for c in consumers:
+            uuid = c['id']
+            heartbeat = Agent.status([uuid,])
+            c['heartbeat'] = heartbeat.values()[0]
         # add the uri ref and deferred fields
         for c in consumers:
             c['uri_ref'] = http.extend_uri_path(c['id'])
@@ -142,6 +148,9 @@ class Consumer(JSONController):
         consumer['uri_ref'] = http.uri_path()
         for field in ConsumerDeferredFields.exposed_fields:
             consumer[field] = http.extend_uri_path(field)
+        # inject heartbeat info
+        heartbeat = Agent.status([id,])
+        consumer['heartbeat'] = heartbeat.values()[0]
         return self.ok(consumer)
 
     @JSONController.error_handler
@@ -191,7 +200,7 @@ class ConsumerDeferredFields(JSONController):
         'certificate',
         'keyvalues',
         'package_updates',
-        'errata_package_updates'
+        'errata_package_updates',
     )
 
     def package_profile(self, id):

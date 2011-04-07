@@ -73,9 +73,6 @@ class List(ConsumerAction):
         for con in cons:
             con['package_profile'] = urlparse.urljoin(baseurl,
                                                       con['package_profile'])
-        sapi = ServiceAPI()
-        status = sapi.agentstatus()
-
         if key is None:
             print_header(_("Consumer Information"))
             for con in cons:
@@ -83,17 +80,21 @@ class List(ConsumerAction):
                 key_value_pairs = self.consumer_api.get_keyvalues(con["id"])
                 for k, v in key_value_pairs.items():
                     kvpair.append("%s  :  %s," % (str(k), str(v)))
-                stat = status.get(con['id'], (False, None))
+                stat = con['heartbeat']
                 if stat[0]:
                     responding = _('Yes')
                 else:
                     responding = _('No')
+                if stat[1]:
+                    last_heartbeat = json_utils.parse_iso_date(stat[1])
+                else:
+                    last_heartbeat = stat[1]
                 print constants.AVAILABLE_CONSUMER_INFO % \
                         (con["id"],
                          con["description"], \
                          con["repoids"].keys(),
                          responding,
-                         stat[1],
+                         last_heartbeat,
                          '\n \t\t\t'.join(kvpair[:]))
             system_exit(os.EX_OK)
 
@@ -130,21 +131,22 @@ class Info(ConsumerAction):
         key_value_pairs = self.consumer_api.get_keyvalues(cons["id"])
         for k, v in key_value_pairs.items():
             kvpair.append("%s  :  %s," % (str(k), str(v)))
-
-        sapi = ServiceAPI()
-        status = sapi.agentstatus([id,])
-        status = status[id]
-        if status[0]:
+        stat = cons['heartbeat']
+        if stat[0]:
             responding = _('Yes')
         else:
             responding = _('No')
+        if stat[1]:
+            last_heartbeat = json_utils.parse_iso_date(stat[1])
+        else:
+            last_heartbeat = stat[1]
         print_header(_("Consumer Information"))
         print constants.AVAILABLE_CONSUMER_INFO % \
                 (cons["id"],
                  cons["description"],
                  cons["repoids"].keys(),
                  responding,
-                 status[1],
+                 last_heartbeat,
                  '\n \t\t\t'.join(kvpair[:]))
         if not self.opts.show_profile:
             system_exit(os.EX_OK)
