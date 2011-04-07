@@ -240,7 +240,14 @@ class Packages:
         installed = []
         try:
             yb = YumBase()
-            log.info('installing packages: %s', packageinfo)
+            yum_assumeyes = False
+            cfg_import_gpgkeys = cfg.client.import_gpg_keys
+            if cfg_import_gpgkeys in ["True", "False"]:
+                yum_assumeyes = eval(cfg_import_gpgkeys)
+            else:
+                log.info("unknown config values provided; using defaults")
+            yb.conf.assumeyes = yum_assumeyes
+            log.info('installing packages: %s %s' % (packageinfo, yum_assumeyes))
             for info in packageinfo:
                 if isinstance(info, list):
                     pkgs = yb.pkgSack.returnNewestByNameArch(tuple(info))
