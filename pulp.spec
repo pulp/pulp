@@ -190,7 +190,7 @@ rm -rf %{buildroot}
 setfacl -m u:apache:rwx /etc/pki/content/
 
 # For Fedora, enable the mod_python handler in the httpd config
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 5
 # Remove the comment flags for the auth handler lines (special format on those is #-)
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %endif
@@ -199,7 +199,7 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 setfacl -m u:apache:rwx /etc/pki/content/
 
 # For Fedora, enable the mod_python handler in the httpd config
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 5
 # Remove the comment flags for the auth handler lines (special format on those is #-)
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %endif
