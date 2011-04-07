@@ -235,7 +235,7 @@ class Repo(Model):
     collection_name = 'repos'
     other_indicies = ('packages', 'packagegroups', 'packagegroupcategories')
 
-    def __init__(self, id, name, arch, source=None):
+    def __init__(self, id, name, arch, source=None, notes=None):
         self._id = id
         self.id = id
         if source:
@@ -270,6 +270,9 @@ class Repo(Model):
         self.distributionid = []
         self.checksum_type = u"sha256"
         self.filters = []
+        if not notes:
+            self.notes = {}
+        self.notes = notes
 #        self.size = None
 
     def get_repo_source(self):

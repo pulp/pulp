@@ -124,6 +124,7 @@ default_fields = [
     'package_count',
     'feed_cert',
     'consumer_cert',
+    'notes',
 ]
 
 # restful controllers ---------------------------------------------------------
@@ -193,6 +194,7 @@ class Repositories(JSONController):
          * groupid?, list of str, list of repository group ids this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
          * checksum_type?, str, name of the algorithm to use for content checksums, defaults to sha256
+         * notes?, dict, additional information in the form of key-value pairs
         """
         repo_data = self.params()
 
@@ -211,7 +213,8 @@ class Repositories(JSONController):
                           relative_path=repo_data.get('relative_path', None),
                           groupid=repo_data.get('groupid', None),
                           gpgkeys=repo_data.get('gpgkeys', None),
-                          checksum_type=repo_data.get('checksum_type', 'sha256'))
+                          checksum_type=repo_data.get('checksum_type', 'sha256'),
+                          notes=repo_data.get('notes', None))
 
         path = http.extend_uri_path(repo["id"])
         repo['uri_ref'] = path

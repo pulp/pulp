@@ -299,7 +299,7 @@ class List(RepoAction):
                     repo["id"], repo["name"], feedUrl, feedType, feed_cert, consumer_cert,
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
-                    repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters)
+                    repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
 
 
 class Status(RepoAction):
@@ -437,7 +437,8 @@ class Create(RepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
-
+        self.parser.add_option("--notes", dest="notes",
+                               help=_("Additional information about repo in a dictionary form inside a string"))
     def run(self):
         id = self.get_required_option('id')
         name = self.opts.name or id
@@ -446,6 +447,10 @@ class Create(RepoAction):
         symlinks = self.opts.symlinks or False
         #schedule = self.opts.schedule
         relative_path = self.opts.relativepath
+        if self.opts.notes:
+            notes = eval(self.opts.notes)
+        else:
+            notes = {}            
 
         # Feed cert bundle
         feed_cert_data = None
@@ -476,7 +481,8 @@ class Create(RepoAction):
                                  consumer_cert_data=consumer_cert_data,
                                  relative_path=relative_path,
                                  groupid=groupid,
-                                 gpgkeys=keylist, checksum_type=self.opts.checksum_type)
+                                 gpgkeys=keylist, checksum_type=self.opts.checksum_type,
+                                 notes=notes)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 class Clone(RepoProgressAction):
