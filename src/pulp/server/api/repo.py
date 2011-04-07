@@ -143,7 +143,7 @@ class RepoApi(BaseApi):
     @audit(params=['id', 'name', 'arch', 'feed'])
     def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
-               relative_path=None, gpgkeys=(), checksum_type="sha256"):
+               relative_path=None, gpgkeys=(), checksum_type="sha256", notes={}):
         """
         Create a new Repository object and return it
         """
@@ -158,7 +158,7 @@ class RepoApi(BaseApi):
             raise PulpException('Checksum Type must be one of [%s]' % ', '.join(model.Repo.SUPPORTED_CHECKSUMS))
 
 
-        r = model.Repo(id, name, arch, feed)
+        r = model.Repo(id, name, arch, feed, notes)
         r['use_symlinks'] = symlinks
 
         # Relative path calculation

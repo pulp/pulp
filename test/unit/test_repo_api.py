@@ -113,7 +113,15 @@ class TestRepoApi(unittest.TestCase):
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com')
         assert(repo is not None)
-
+        
+    def test_repo_create_with_notes(self):
+        notes = {'key':'value','k':'v'}
+        repo = self.rapi.create('some-id', 'some name',
+            'i386', 'yum:http://example.com', notes=notes)
+        assert(repo is not None)
+        assert(repo['notes'] == notes)
+       
+        
     def test_repo_create_feedless(self):
         repo = self.rapi.create('some-id-no-feed', 'some name', 'i386')
         assert(repo is not None)
