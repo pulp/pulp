@@ -206,11 +206,15 @@ sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 
 %post client
 pushd %{_sysconfdir}/rc.d/init.d
-ln -s goferd pulp-agent
+if [ "$1" = "1" ]; then
+  ln -s goferd pulp-agent
+fi
 popd
 
 %postun client
-rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
+if [ "$1" = "0" ]; then
+  rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
+fi
 
 
 %files
