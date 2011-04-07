@@ -28,7 +28,6 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.agent as agent
 import pulp.server.consumer_utils as consumer_utils
-import pulp.server.logs
 import pulp.server.util
 from pulp.server import constants
 from pulp.server import comps_util
@@ -47,7 +46,7 @@ from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.api.scheduled_sync import update_schedule, delete_schedule
-from pulp.server.async import run_async
+from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
 from pulp.server.compat import chain
 from pulp.server.db import model
@@ -150,7 +149,7 @@ class RepoApi(BaseApi):
                 r['relative_path'] = r['id']
         else:
             r['relative_path'] = relative_path
-        
+
         # Store any certificates and add the full paths to their files in the repo object
         repo_cert_utils = RepoCertUtils(config.config)
         protected_repo_utils = ProtectedRepoUtils(config.config)
@@ -167,7 +166,7 @@ class RepoApi(BaseApi):
             r['consumer_cert'] = consumer_cert_files['cert']
             r['consumer_key'] = consumer_cert_files['key']
             protected_repo_utils.add_protected_repo(r['relative_path'], id)
-            
+
         if groupid:
             for gid in groupid:
                 r['groupid'].append(gid)
@@ -354,6 +353,7 @@ class RepoApi(BaseApi):
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
+        repo_cert_utils = RepoCertUtils(config.config)
         cert_files = repo_cert_utils.write_feed_cert_bundle(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
@@ -394,6 +394,7 @@ class RepoApi(BaseApi):
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
+        repo_cert_utils = RepoCertUtils(config.config)
         cert_files = repo_cert_utils.write_feed_cert_bundle(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
@@ -666,7 +667,7 @@ class RepoApi(BaseApi):
                 # In case the old path had repo protection in place, try to
                 # remove it (this call won't fail if it wasn't in place)
                 protected_repo_utils.delete_protected_repo(prevpath)
-                
+
             else:
                 raise PulpException(
                     "Repository has content, relative path cannot be changed")
@@ -681,7 +682,7 @@ class RepoApi(BaseApi):
             else:
                 protected_repo_utils.add_protected_repo(repo['relative_path'], id)
                 self.cdsapi.set_repo_auth(id, repo['relative_path'], bundle)
-        
+
         # store changed object
         self.collection.save(repo, safe=True)
         # Update subscribed consumers after the object has been saved
@@ -1735,7 +1736,7 @@ class RepoApi(BaseApi):
             if fid not in repo['files']:
                 repo['files'].append(fid)
                 changed = True
-                shared_file = "%s/%s/%s" % (pulp.server.util.top_file_location(), 
+                shared_file = "%s/%s/%s" % (pulp.server.util.top_file_location(),
                                             fileobj['checksum']['sha256'][:3], fileobj['filename'])
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
                                                repo['relative_path'], fileobj["filename"])
@@ -1774,10 +1775,10 @@ class RepoApi(BaseApi):
                     log.debug("Delete file %s at %s" % (fileobj["filename"], file_repo_path))
                     os.remove(file_repo_path)
         self.collection.save(repo, safe=True)
-        if changed: 
+        if changed:
             self._generate_file_manifest(repo)
         log.info("Successfully removed file %s from repo %s" % (fileids, repoid))
-            
+
     def _generate_file_manifest(self, repo):
         """
          generate a file manifest for all files in a repo
@@ -1800,7 +1801,7 @@ class RepoApi(BaseApi):
             f.close()
         except:
             log.error("Error creating manifest for repo [%s]" % repo['id'])
-            
+
     def list_files(self, repoid):
         '''
          List files in a given repo
@@ -1958,7 +1959,7 @@ class RepoApi(BaseApi):
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
-    
+
     def metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
@@ -1970,7 +1971,7 @@ class RepoApi(BaseApi):
             return None
         task = run_async(self._metadata, [id], {})
         return task
-    
+
     def _metadata(self, id):
         """
          spawn repo metadata generation for a specific repo
@@ -1983,7 +1984,7 @@ class RepoApi(BaseApi):
             os.makedirs(repo_path)
         log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
-        
+
     def list_metadata_task(self, id):
         """
         List all the metadata tasks for a given repository.
