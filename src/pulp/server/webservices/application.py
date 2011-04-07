@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -30,6 +29,8 @@ from pulp.server.db import connection
 connection.initialize()
 auditing.initialize()
 
+from pulp.server.api import consumer_history
+from pulp.server.api import scheduled_sync
 from pulp.server.db.version import check_version
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.logs import start_logging
@@ -75,6 +76,10 @@ def _initialize_pulp():
             _stacktrace_dumper is None:
         _stacktrace_dumper = StacktraceDumper()
         _stacktrace_dumper.start()
+    # setup recurring tasks
+    auditing.init_culling_task()
+    consumer_history.init_culling_task()
+    scheduled_sync.init_scheduled_syncs()
 
 
 def wsgi_application():

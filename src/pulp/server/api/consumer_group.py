@@ -397,7 +397,7 @@ class InstallPackages(AgentTask):
         self.__succeeded = []
         self.__failed = []
         AgentTask.__init__(self, self.install)
-        self.enqueue()
+        self._enqueue()
 
     def install(self):
         """

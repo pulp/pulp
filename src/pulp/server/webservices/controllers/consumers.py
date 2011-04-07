@@ -14,12 +14,14 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import datetime
 import itertools
 import logging
+from datetime import datetime
+from gettext import gettext as _
 
 import web
 
+from pulp.server import async
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
 from pulp.server.api.repo import RepoApi
@@ -29,6 +31,7 @@ from pulp.server.auth.authorization import (
     grant_automatic_permissions_for_created_resource,
     grant_automatic_permissions_to_consumer_user,
     CREATE, READ, UPDATE, DELETE, EXECUTE)
+from pulp.server.tasking.scheduler import AtScheduler
 from pulp.server.webservices import http
 from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -387,7 +390,10 @@ class ConsumerActions(AsyncController):
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
         if data.has_key("scheduled_time"):
-            task.scheduled_time = data["scheduled_time"]
+            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Install packages already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -403,7 +409,10 @@ class ConsumerActions(AsyncController):
         ids = data.get('packageids', [])
         task = consumer_api.installpackagegroups(id, ids)
         if data.has_key("scheduled_time"):
-            task.scheduled_time = data["scheduled_time"]
+            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Package group installation already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -430,7 +439,10 @@ class ConsumerActions(AsyncController):
             return self.conflict('Given category ids [%s] contain no groups to install' % categoryids)
         task = consumer_api.installpackagegroups(id, group_ids)
         if data.has_key("scheduled_time"):
-            task.scheduled_time = data["scheduled_time"]
+            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Package group installation already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -450,7 +462,10 @@ class ConsumerActions(AsyncController):
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
         if data.has_key("scheduled_time"):
-            task.scheduled_time = data["scheduled_time"]
+            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Errata installation already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -489,10 +504,10 @@ class ConsumerActions(AsyncController):
         # step isn't taken (see BZ 638715).
 
         if start_date:
-            start_date = datetime.datetime.strptime(start_date + '-00-00-00', '%Y-%m-%d-%H-%M-%S')
+            start_date = datetime.strptime(start_date + '-00-00-00', '%Y-%m-%d-%H-%M-%S')
 
         if end_date:
-            end_date = datetime.datetime.strptime(end_date + '-23-59-59', '%Y-%m-%d-%H-%M-%S')
+            end_date = datetime.strptime(end_date + '-23-59-59', '%Y-%m-%d-%H-%M-%S')
 
         results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
                                     sort=sort, start_date=start_date, end_date=end_date)

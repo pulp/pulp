@@ -589,7 +589,6 @@ class InstallPackages(AgentTask):
         self.reboot_suggested = reboot_suggested
         self.assumeyes = assumeyes
         AgentTask.__init__(self, self.install)
-        self.enqueue()
 
     def install(self):
         """
@@ -638,7 +637,6 @@ class InstallPackageGroups(AgentTask):
         self.consumerid = consumerid
         self.groups = groups
         AgentTask.__init__(self, self.install)
-        self.enqueue()
 
     def install(self):
         """

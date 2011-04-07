@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -13,16 +13,20 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-from pulp.server.agent import Agent
-from pulp.server.tasking.queue.fifo import FIFOTaskQueue
-from pulp.server.tasking.task import Task, AsyncTask
-from pulp.server.config import config
-from gofer.messaging import Queue
-from gofer.messaging.async import ReplyConsumer, Listener
+from datetime import timedelta
+from gettext import gettext as _
 from logging import getLogger
 
-log = getLogger(__name__)
+from gofer.messaging import Queue
+from gofer.messaging.async import ReplyConsumer, Listener
 
+from pulp.server import config
+from pulp.server.agent import Agent
+from pulp.server.tasking.taskqueue.queue import TaskQueue
+from pulp.server.tasking.task import Task, AsyncTask
+
+
+log = getLogger(__name__)
 
 # async execution queue -------------------------------------------------------
 
@@ -69,17 +73,42 @@ def find_async(**kwargs):
     return _queue.find(**kwargs)
 
 
+def remove_async(task):
+    return _queue.remove(task)
+
+
 def cancel_async(task):
     return _queue.cancel(task)
 
 # async system initialization/finalization ------------------------------------
+
+def _parse_time_delta(value):
+    error_msg = _('time interval specified by [integer units]+ (e.g. 4 minutes 20 seconds')
+    parts = value.split()
+    assert len(parts) % 2 == 0, error_msg
+    # CHALLENGE! a beer for the first person who can tell me what this is
+    # doing without executing it. To accept the challenge, comment this
+    # function correctly and shoot me an email when you're done.
+    # Jason L Connor <jconnor@redhat.com> 2011-04-06
+    return timedelta(**dict([(u, int(i)) for i, u in zip(parts[::2], parts[1::2])]))
+
+
+def _configured_schedule_threshold():
+    value = config.config.get('tasking', 'schedule_threshold')
+    return _parse_time_delta(value)
+
 
 def initialize():
     """
     Explicitly start-up the asynchronous sub-system
     """
     global _queue
-    _queue = FIFOTaskQueue()
+    max_concurrent = config.config.getint('tasking', 'max_concurrent')
+    failure_threshold = config.config.getint('tasking', 'failure_threshold')
+    schedule_threshold = _configured_schedule_threshold()
+    _queue = TaskQueue(max_running=max_concurrent,
+                       failure_threshold=failure_threshold,
+                       schedule_threshold=schedule_threshold)
 
 
 def finalize():
@@ -99,7 +128,6 @@ class AsyncAgent:
     @ivar __id: The agent (consumer) id.  Or, list of IDs.
     @type __id: (str|[str,..])
     """
-
     def __init__(self, id):
         """
         @param id: The agent ID.  Or, list of IDs.
@@ -130,7 +158,6 @@ class RemoteClass:
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
     """
-
     def __init__(self, id, name):
         """
         @param id: The agent (consumer) id.
@@ -211,7 +238,7 @@ class RemoteMethod:
         @return: Whatever is returned by the async RMI.
         @rtype: object
         """
-        url = config.get('messaging', 'url')
+        url = config.config.get('messaging', 'url')
         agent = Agent(
             self.id,
             url=url,
@@ -228,10 +255,9 @@ class ReplyHandler(Listener):
     @ivar consumer: The reply consumer.
     @type consumer: L{ReplyConsumer}
     """
-
     def __init__(self):
         ctag = RemoteMethod.CTAG
-        url = config.get('messaging', 'url')
+        url = config.config.get('messaging', 'url')
         queue = Queue(ctag)
         self.consumer = ReplyConsumer(queue, url=url)
 
@@ -266,12 +292,10 @@ class ReplyHandler(Listener):
         pass
 
 
-
 class AgentTask(AsyncTask):
     """
     Task represents an async task involving an RMI to the agent.
     """
-
     def succeeded(self, sn, result):
         """
         The RMI succeeded.
@@ -301,3 +325,4 @@ class AgentTask(AsyncTask):
         """
         if _queue.enqueue(self, unique):
             return self
+

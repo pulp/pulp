@@ -30,10 +30,13 @@ sys.path.insert(0, commondir)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states)
-from pulp.server.tasking.queue.fifo import FIFOTaskQueue
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.api.repo import RepoApi
 from pulp.server import async
+from pulp.server.tasking.scheduler import (
+    Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
+from pulp.server.tasking.taskqueue.queue import TaskQueue
+from pulp.server.tasking.taskqueue.storage import VolatileStorage
 
 import testutil
 
@@ -55,6 +58,9 @@ def error():
 def interrupt_me():
     while True:
         time.sleep(0.5)
+
+def wait(seconds=5):
+    time.sleep(seconds)
 
 
 class TaskTester(unittest.TestCase):
@@ -137,10 +143,10 @@ class QueueTester(unittest.TestCase):
             pprint.pprint(task.traceback)
 
 
-class FIFOQueueTester(QueueTester):
+class TaskQueueTester(QueueTester):
 
     def setUp(self):
-        self.queue = FIFOTaskQueue()
+        self.queue = TaskQueue()
 
     def tearDown(self):
         del self.queue
@@ -155,84 +161,84 @@ class FIFOQueueTester(QueueTester):
         task1 = Task(noop)
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
         # Test
         task2 = Task(noop)
         self.queue.enqueue(task2, unique=False)
 
         # Verify
-        self.assertEqual(2, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(2, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
     def test_enqueue_duplicate_no_args(self):
         # Setup
         task1 = Task(noop)
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
         # Test
         task2 = Task(noop)
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
     def test_enqueue_duplicate_with_same_kw_args(self):
         # Setup
         task1 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
         # Test
         task2 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
     def test_enqueue_duplicate_with_different_kw_args(self):
         # Setup
         task1 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
         # Test
         task2 = Task(kwargs, kwargs={'foo':2, 'bar':3})
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(2, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(2, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
     def test_enqueue_duplicate_with_same_args(self):
         # Setup
         task1 = Task(args, args=[1, 2])
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
         # Test
         task2 = Task(args, args=[1, 2])
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
     def test_enqueue_duplicate_with_different_args(self):
         # Setup
         task1 = Task(args, args=[1, 2])
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
         # Test
         task2 = Task(args, args=[2, 3])
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(2, len(list(self.queue._FIFOTaskQueue__storage.all_tasks())))
+        self.assertEqual(2, len(list(self.queue._TaskQueue__storage._all_tasks())))
 
     def test_task_dispatch(self):
         task = Task(noop)
@@ -241,13 +247,13 @@ class FIFOQueueTester(QueueTester):
         self.assertTrue(task.state == task_finished)
 
     def test_task_dispatch_with_scheduled_time(self):
-        task = Task(noop)
-        delay_seconds = 10
-        task.scheduled_time = time.time() + delay_seconds
+        delay_seconds = timedelta(seconds=10)
+        schduler = AtScheduler(datetime.utcnow() + delay_seconds)
+        task = Task(noop, scheduler=schduler)
         self.queue.enqueue(task)
-        start_time = time.time()
-        self._wait_for_task(task, timeout=timedelta(seconds=2 * delay_seconds))
-        end_time = time.time()
+        start_time = datetime.utcnow()
+        self._wait_for_task(task, timeout=timedelta(seconds=20))
+        end_time = datetime.utcnow()
         self.assertTrue(task.state == task_finished)
         self.assertTrue(end_time - start_time > delay_seconds)
 
@@ -359,26 +365,168 @@ class FIFOQueueTester(QueueTester):
         self.assertRaises(ValueError, self.queue.exists, look_for, ['foo'])
 
 
-class InterruptFIFOQueueTester(QueueTester):
+class InterruptQueueTester(QueueTester):
 
     def setUp(self):
-        self.queue = FIFOTaskQueue()
+        self.queue = TaskQueue()
 
     def tearDown(self):
         del self.queue
 
     def disable_task_timeout(self):
+    #def test_task_timeout(self):
         task = Task(interrupt_me, timeout=timedelta(seconds=2))
         self.queue.enqueue(task)
         self._wait_for_task(task)
-        self.assertTrue(task.state == task_timed_out)
+        self.assertTrue(task.state == task_timed_out, 'state is %s' % task.state)
 
     def disable_task_cancel(self):
+    #def test_task_cancel(self):
         task = Task(interrupt_me)
         self.queue.enqueue(task)
         self.queue.cancel(task)
         self._wait_for_task(task)
-        self.assertTrue(task.state == task_canceled)
+        self.assertTrue(task.state == task_canceled, 'state is %s' % task.state)
+
+    def disable_multiple_task_cancel(self):
+    #def test_multiple_task_cancel(self):
+        task1 = Task(interrupt_me)
+        task2 = Task(interrupt_me)
+        self.queue.enqueue(task1)
+        self.queue.enqueue(task2)
+        self.queue.cancel(task1)
+        self.queue.cancel(task2)
+        self._wait_for_task(task2)
+        self.assertTrue(task2.state == task_canceled, 'state is %s' % task.state)
+
+
+class PriorityQueueTester(unittest.TestCase):
+
+    def setUp(self):
+        self.storage = VolatileStorage()
+
+    def tearDown(self):
+        del self.storage
+
+    def _enqueue_three_tasks(self):
+        task1 = Task(noop)
+        task1.scheduled_time = 3
+        task2 = Task(noop)
+        task2.scheduled_time = 2
+        task3 = Task(noop)
+        task3.scheduled_time = 1
+        for t in (task1, task2, task3):
+            self.storage.enqueue_waiting(t)
+
+    def test_task_order(self):
+        self._enqueue_three_tasks()
+        ordered = []
+        while self.storage.num_waiting() > 0:
+            ordered.append(self.storage.dequeue_waiting())
+        for i, t1 in enumerate(ordered[:-1]):
+            t2 = ordered[i + 1]
+            self.assertTrue(t1.scheduled_time <= t2.scheduled_time)
+
+    def test_task_peed(self):
+        self._enqueue_three_tasks()
+        t = self.storage.peek_waiting()
+        self.assertTrue(t.scheduled_time == 1)
+
+    def test_task_removal(self):
+        t = Task(noop)
+        self.storage.enqueue_waiting(t)
+        self.assertTrue(self.storage.num_waiting() == 1)
+        self.storage.remove_waiting(t)
+        self.assertTrue(self.storage.num_waiting() == 0)
+
+
+class ScheduledTaskTester(QueueTester):
+
+    def setUp(self):
+        self.queue = TaskQueue()
+
+    def tearDown(self):
+        del self.queue
+
+    def test_immediate(self):
+        task = Task(noop, scheduler=ImmediateScheduler())
+        self.queue.enqueue(task)
+        self._wait_for_task(task)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+
+    def test_at(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        at = AtScheduler(now + then)
+        task = Task(noop, scheduler=at)
+        self.queue.enqueue(task)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        self._wait_for_task(task, timedelta(seconds=11))
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+
+    def test_at_time(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        at = AtScheduler(now + then)
+        task = Task(noop, scheduler=at)
+        self.queue.enqueue(task)
+        time.sleep(8)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        time.sleep(3)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+
+    def test_interval(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        interval = IntervalScheduler(then, now + then, 1)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        self._wait_for_task(task, timedelta(seconds=11))
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+
+    def test_interval_schedule(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=10)
+        interval = IntervalScheduler(then, now + then, 1)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        self._wait_for_task(task, timedelta(seconds=11))
+        self.assertTrue(task.scheduled_time is None)
+
+    def test_interval_no_start_time(self):
+        then = timedelta(seconds=10)
+        interval = IntervalScheduler(then, None, 1)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        now = datetime.utcnow()
+        self.assertTrue(task.scheduled_time <= now + then)
+        self._wait_for_task(task)
+
+    def test_multi_run_interval(self):
+        now = datetime.utcnow()
+        then = timedelta(seconds=5)
+        interval = IntervalScheduler(then, now + then, 2)
+        task = Task(noop, scheduler=interval)
+        self.queue.enqueue(task)
+        time.sleep(3)
+        self.assertTrue(task.state is task_waiting, 'state is %s' % task.state)
+        time.sleep(4)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+        time.sleep(4)
+        self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
+
+    def test_interval_removal(self):
+        then = timedelta(seconds=5)
+        interval = IntervalScheduler(then, None, 1)
+        task = Task(wait, scheduler=interval)
+        self.queue.enqueue(task)
+        time.sleep(1)
+        self.assertTrue(isinstance(task.scheduler, IntervalScheduler))
+        self.queue.remove(task)
+        self.assertTrue(isinstance(task.scheduler, ImmediateScheduler))
+        self._wait_for_task(task)
+        self.assertTrue(task.scheduled_time is None)
 
 # run the unit tests ----------------------------------------------------------
 
