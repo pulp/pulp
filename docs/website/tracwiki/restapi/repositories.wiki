@@ -17,12 +17,15 @@
  * '''repomd_xml_path''' <str> ''path to the repository's repomd xml file''
  * '''group_xml_path''' <str> ''path to the repository's group xml file''
  * '''group_gz_xml_path''' <str> ''path to the repository's compressed group xml file''
- * '''sync_schedule''' <str> ''crontab entry representing recurring sync schedule''
+ * '''sync_schedule''' <RepoSyncSchedule object> ''representing recurring sync schedule''
  * '''last_sync''' <timestamp> ''date and time of last successful sync''
  * '''use_symlinks''' <bool> ''whether or not the repository uses symlinks for its content''
- * '''ca''' <str> ''the repository's certificate authority''
- * '''cert''' <str> ''the repository's certificate''
- * '''key''' <str> ''the repository's private key''
+ * '''feed_ca''' <str> ''full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed''
+ * '''feed_cert''' <str> ''full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content''
+ * '''feed_key''' <str> ''full path on the Pulp server to the private key for the feed certificate''
+ * '''consumer_ca''' <str> ''full path on the Pulp server to the certificate authority used to verify consumer entitlement certificates''
+ * '''consumer_cert''' <str> ''full path on the Pulp server to the entitlement certificate that will be given to bound consumers to authenticate access to the repository''
+ * '''consumer_key''' <str> ''full path on the Pulp server to the private key for the consumer's entitlement certificate''
  * '''errata''' <object> ''map of errata names to lists of package ids in each errata [deferred field]''
  * '''groupid''' <list of str> ''list of repository group ids this repository belongs to''
  * '''relative_path''' <str> ''repository's path relative to the configured root''
@@ -36,6 +39,10 @@
  * '''supported_types''' <list of str> ''list of supported types of repositories''
  * '''type''' <str> ''repository source type''
  * '''url''' <str> ''repository source url''
+'''RepoSyncSchedule object fields''': 
+ * '''interval''' <object> ''fields of units with integer values (weeks, days, hours, minutes)''
+ * '''start_time''' ''(optional)'' <object> ''fields of units with integer values (year, month, day, hour, minute)''
+ * '''runs''' ''(optional)'' <int> ''number of runs to execute, omitted mean ad infinitum''
 '''Task object fields''': 
  * '''id''' <str> ''unique id (usually a uuid) for the task''
  * '''method_name''' <str> ''name of the pulp library method that was called''
@@ -119,7 +126,9 @@
  * '''arch''' <str> ''the main architecture of packages contained in the repository''
  * '''feed''' <str> ''repository feed in the form of <type>:<url>''
  * '''use_symlinks''' ''(optional)'' <bool> ''defaults to false''
- * '''sync_schedule''' ''(optional)'' <str> ''crontab entry format''
+ * '''sync_schedule''' ''(optional)'' <RepoSyncSchedule object> ''schedule to regularly sync the repository on''
+ * '''feed_cert_data''' ''(optional)'' <str> ''certificate information to use when connecting to the feed''
+ * '''consumer_cert_data''' ''(optional)'' <str> ''certificate information to use when validating consumers of this repo''
  * '''cert_data''' ''(optional)'' <str> ''repository certificate information''
  * '''relative_path''' ''(optional)'' <str> ''repository on disk path''
  * '''groupid''' ''(optional)'' <list of str> ''list of repository group ids this repository belongs to''
@@ -174,7 +183,7 @@
 [[BR]]
 '''failure response''': 400 Bad Request when trying to change the id [[BR]]
 [[BR]]
-'''return''': true [[BR]]
+'''return''': a Repo object [[BR]]
 [[BR]]
 '''parameters''': any field of a Repo object except id [[BR]]
 [[BR]]
@@ -254,8 +263,10 @@
 '''return''': a Task object [[BR]]
 [[BR]]
 '''parameters''': 
- * '''timeout''' ''(optional)'' <str> ''timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks''
+ * '''timeout''' ''(optional)'' <str> ''timeout in <units>:<value> format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks''
  * '''skip''' ''(optional)'' <object> ''yum skip dict''
+ * '''limit''' ''(optional)'' <int> ''value in KB/sec to limit download bandwidth per thread.  Only applicable for yum synchronization''
+ * '''threads''' ''(optional)'' <int> ''number of threads to use for synchronization.  Only applicable for yum synchronization''
 [[BR]]
 
 == Add Errata ==
@@ -668,6 +679,25 @@
  * xml comps file body
 [[BR]]
 
+== Repository Metadata generation ==
+''spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /repositories/<id>/metadata/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 202 Accepted [[BR]]
+[[BR]]
+'''failure response''': 
+ 404 Not Found if the id does not match a repository [[BR]]
+ 406 Not Acceptable if the repository does not have a source [[BR]]
+ 409 Conflict if a metadata is already in progress for the repository [[BR]]
+[[BR]]
+'''return''': a Task object [[BR]]
+[[BR]]
+
 == Remove File ==
 ''Remove files from the repository.'' [[BR]]
 [[BR]]
@@ -763,8 +793,10 @@
 '''return''': a Task object [[BR]]
 [[BR]]
 '''parameters''': 
- * '''timeout''' ''(optional)'' <str> ''timeout in <value>:<units> format (e.g. 2:hours) valid units: seconds, minutes, hours, days, weeks''
+ * '''timeout''' ''(optional)'' <str> ''timeout in <units>:<value> format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks''
  * '''skip''' ''(optional)'' <object> ''yum skip dict''
+ * '''limit''' ''(optional)'' <int> ''value in KB/sec to limit download bandwidth per thread.  Only applicable for yum synchronization''
+ * '''threads''' ''(optional)'' <int> ''number of threads to use for synchronization.  Only applicable for yum synchronization''
 [[BR]]
 
 == Update Publish ==
