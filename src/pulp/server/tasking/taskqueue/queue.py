@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -17,14 +16,14 @@
 import logging
 import sys
 import threading
-import time
 import traceback
 from datetime import datetime, timedelta
 
-from pulp.server.tasking.queue.base import TaskQueue
-from pulp.server.tasking.queue.thread import  DRLock, TaskThread, ThreadStateError
-from pulp.server.tasking.queue.storage import VolatileStorage
-from pulp.server.tasking.task import task_complete_states
+from pulp.server.tasking.scheduler import ImmediateScheduler
+from pulp.server.tasking.taskqueue.thread import  (
+    DRLock, TaskThread, ThreadStateError)
+from pulp.server.tasking.taskqueue.storage import VolatileStorage
+from pulp.server.tasking.task import task_complete_states, task_running
 
 # log file --------------------------------------------------------------------
 
@@ -32,7 +31,7 @@ _log = logging.getLogger('pulp')
 
 # fifo task queue -------------------------------------------------------------
 
-class FIFOTaskQueue(TaskQueue):
+class TaskQueue(object):
     """
     Task queue with threaded dispatcher that fires off tasks in the order in
     which they were enqueued and stores the finished tasks for a specified
@@ -40,17 +39,30 @@ class FIFOTaskQueue(TaskQueue):
     """
     def __init__(self,
                  max_running=4,
-                 finished_lifetime=timedelta(seconds=3600)):
+                 finished_lifetime=timedelta(seconds=3600),
+                 failure_threshold=None,
+                 schedule_threshold=None):
         """
         @type max_running: int
         @param max_running: maximum number of tasks to run simultaneously
                         None means indefinitely
         @type finished_lifetime: datetime.timedelta instance
         @param finished_lifetime: length of time to keep finished tasks
-        @return: FIFOTaskQueue instance
+        @type failures_threhold: int
+        @param failure_threshold: number of consecutive failures a task can
+                                  have before it will no longer be scheduled
+                                  to run
+        @type schedule_threshold: None or datetime.timedelta instance
+        @param schedule_threshold: a time length that if exceeded by the
+                                   difference between a task's scheduled time
+                                   and the task's start time, constitutes a
+                                   warning
+        @return: TaskQueue instance
         """
         self.max_running = max_running
         self.finished_lifetime = finished_lifetime
+        self.failure_threshold = failure_threshold
+        self.schedule_threshold = schedule_threshold
 
         self.__lock = threading.RLock()
         #self.__lock = DRLock()
@@ -85,8 +97,10 @@ class FIFOTaskQueue(TaskQueue):
         self.__lock.acquire()
         try:
             try:
-                while not self.__exit:
+                while True:
                     self.__condition.wait(self.__dispatcher_timeout)
+                    if self.__exit: # exit immediately after waking up
+                        return
                     for task in self._get_tasks():
                         self.run(task)
                     self._cancel_tasks()
@@ -105,9 +119,13 @@ class FIFOTaskQueue(TaskQueue):
         """
         ready_tasks = []
         num_tasks = self.max_running - self.__running_count
-        for t in self.__storage.waiting_tasks()[:num_tasks]:
-            if t.scheduled_time < time.time():
-                ready_tasks.append(t)
+        now = datetime.utcnow()
+        while len(ready_tasks) < num_tasks:
+            if self.__storage.num_waiting() == 0:
+                break
+            if self.__storage.peek_waiting().scheduled_time > now:
+                break
+            ready_tasks.append(self.__storage.dequeue_waiting())
         return ready_tasks
 
     def _cancel_tasks(self):
@@ -125,7 +143,7 @@ class FIFOTaskQueue(TaskQueue):
             # leave it on the queue so we attempt to cancel it again the next time the
             # dispatcher runs a cancel.
             try:
-                task.stop()
+                task.cancel()
                 self.__canceled_tasks.remove(task)
             except ThreadStateError:
                 task.cancel_attempts += 1
@@ -161,44 +179,92 @@ class FIFOTaskQueue(TaskQueue):
         now = datetime.now()
         for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
-                self.__storage.remove_task(task)
+                self.__storage.remove_complete(task)
 
     # public methods: queue operations
 
     def enqueue(self, task, unique=False):
+        """
+        Add a task to the task queue
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        @type unique: bool
+        @param unique: If True, the task will only be added if there are no
+                       non-finished tasks with the same method_name, args,
+                       and kwargs; otherwise the task will always be added
+        @return: True if a new task was created; False if it was rejected (due to
+                 the unique flag
+        """
         self.__lock.acquire()
         try:
-            fields = ('method_name', 'args', 'kwargs')
+            fields = ('class_name', 'method_name', 'args', 'kwargs')
             if unique and self.exists(task, fields, include_finished=False):
                 return False
+            if not task.schedule():
+                return False
             task.complete_callback = self.complete
-            self.__storage.add_waiting_task(task)
+            # setup error condition parameters, if not overridden by the task
+            if task.failure_threshold is None:
+                task.failure_threshold = self.failure_threshold
+            if task.schedule_threshold is None:
+                task.schedule_threshold = self.schedule_threshold
+            self.__storage.enqueue_waiting(task)
             self.__condition.notify()
             return True
         finally:
             self.__lock.release()
 
+    def remove(self, task):
+        self.__lock.acquire()
+        try:
+            task.scheduler = ImmediateScheduler()
+            if task.state is task_running:
+                return
+            if task.state not in task_complete_states:
+                self.__storage.remove_waiting(task)
+        finally:
+            self.__lock.release()
+
     def run(self, task):
+        """
+        Run a task from this task queue
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
         self.__lock.acquire()
         try:
             self.__running_count += 1
-            self.__storage.add_running_task(task)
+            self.__storage.store_running(task)
             task.thread = TaskThread(target=task.run)
             task.thread.start()
         finally:
             self.__lock.release()
 
     def complete(self, task):
+        """
+        Mark a task run as completed
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
         self.__lock.acquire()
         try:
             self.__running_count -= 1
-            self.__storage.add_complete_task(task)
+            self.__storage.remove_running(task)
+            self.__storage.store_complete(task)
             task.thread = None
             task.complete_callback = None
+            # try to re-enqueue to handle recurring tasks
+            if self.enqueue(task):
+                self.__storage.remove_complete(task)
         finally:
             self.__lock.release()
 
     def cancel(self, task):
+        """
+        Cancel a running task.
+        @type task: pulp.tasking.task.Task
+        @param task: Task instance
+        """
         self.__lock.acquire()
         try:
             self.__canceled_tasks.append(task)
@@ -206,8 +272,56 @@ class FIFOTaskQueue(TaskQueue):
             self.__lock.release()
 
     def find(self, **kwargs):
+        """
+        Find tasks in this task queue.
+        @type kwargs: dict
+        @param kwargs: task attributes and values as search criteria
+        @type include_finished: bool
+        @return: list of L{Task} instances, empty if no tasks match
+        """
         self.__lock.acquire()
         try:
-            return self.__storage.find_tasks(kwargs)
+            return self.__storage.find(kwargs)
         finally:
             self.__lock.release()
+
+    def exists(self, task, criteria, include_finished=True):
+        """
+        Returns whether or not the given task exists in this queue. The list
+        of which attributes that will be checked on the task for equality is
+        determined by the entries in the criteria list.
+
+        @type  task: Task instance
+        @param task: Values in this task will be used to test for this task's
+                     existence in the queue
+
+        @type  criteria: List; cannot be None
+        @param criteria: List of attribute names in the Task class; a task is
+                         considered equal to the given task if the values for
+                         all attributes listed in here are equal in an existing
+                         task in the queue
+
+        @type  include_finished: bool
+        @param include_finished: If True, finished tasks will be included in the search;
+                                 otherwise only running and waiting tasks are searched
+                                 (defaults to True)
+        """
+
+        # Convert the list of attributes to check into a criteria dict used
+        # by the storage API, using the task to test as the values
+        find_criteria = {}
+        for attr_name in criteria:
+            if not hasattr(task, attr_name):
+                raise ValueError('Task has no attribute named [%s]' % attr_name)
+            find_criteria[attr_name] = getattr(task, attr_name)
+
+        # Use the find functionality to determine if a task matches
+        tasks = self.find(**find_criteria)
+        if not tasks:
+            return False
+        if include_finished:
+            return True
+        for t in tasks:
+            if t.state not in task_complete_states:
+                return True
+        return False

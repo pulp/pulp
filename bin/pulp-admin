@@ -109,7 +109,7 @@ def setup_admin(admin):
     repo_cmd.add_action('update', repo.Update())
     repo_cmd.add_action('sync', repo.Sync())
     repo_cmd.add_action('cancel_sync', repo.CancelSync())
-    repo_cmd.add_action('schedules', repo.Schedules())
+    #repo_cmd.add_action('schedules', repo.Schedules())
     repo_cmd.add_action('listkeys', repo.ListKeys())
     repo_cmd.add_action('publish', repo.Publish())
     repo_cmd.add_action('add_package', repo.AddPackages())
@@ -119,7 +119,7 @@ def setup_admin(admin):
     repo_cmd.add_action('add_file', repo.AddFiles())
     repo_cmd.add_action('remove_file', repo.RemoveFiles())
     repo_cmd.add_action('add_filters', repo.AddFilters())
-    repo_cmd.add_action('remove_filters', repo.RemoveFilters())   
+    repo_cmd.add_action('remove_filters', repo.RemoveFilters())
     admin.add_command('repo', repo_cmd)
 
     filter_cmd = filter.Filter()
@@ -157,13 +157,13 @@ def setup_admin(admin):
     role_cmd.add_action('add', role.Add())
     role_cmd.add_action('remove', role.Remove())
     admin.add_command('role', role_cmd)
-    
+
     content_cmd = content.Content()
     content_cmd.add_action('upload', content.Upload())
     content_cmd.add_action('list', content.List())
     content_cmd.add_action('delete', content.Delete())
     admin.add_command('content', content_cmd)
-    
+
 
 
 if __name__ == "__main__":

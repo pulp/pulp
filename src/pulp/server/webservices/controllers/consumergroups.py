@@ -15,15 +15,19 @@
 # in this software or its documentation.
 
 import logging
+from datetime import datetime
+from gettext import gettext as _
 
 import web
 
+from pulp.server import async
 from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
     EXECUTE, grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
 from pulp.server.webservices.http import extend_uri_path, resource_path
+from pulp.server.tasking.scheduler import AtScheduler
 
 # consumers api ---------------------------------------------------------------
 
@@ -207,7 +211,10 @@ class ConsumerGroupActions(AsyncController):
         names = data.get('packagenames', [])
         task = api.installpackages(id, names)
         if data.has_key("scheduled_time"):
-            task.scheduled_time = data["scheduled_time"]
+            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Package install already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)
@@ -225,7 +232,10 @@ class ConsumerGroupActions(AsyncController):
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
         if data.has_key("scheduled_time"):
-            task.scheduled_time = data["scheduled_time"]
+            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            task.scheduler = AtScheduler(scheduled_time)
+        if async.enqueue(task) is None:
+            return self.conflict(_('Errata install already scheduled'))
         taskdict = self._task_to_dict(task)
         taskdict['status_path'] = self._status_path(task.id)
         return self.accepted(taskdict)

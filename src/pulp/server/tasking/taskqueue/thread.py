@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -128,12 +127,14 @@ class _ThreadInterruptionError(Exception):
     """
     pass
 
+
 class ThreadStateError(Exception):
     '''
     Exception class used to indicate one or more child threads is in a state that cannot
     currently be canceled.
     '''
     pass
+
 
 def _tid(thread):
     """
@@ -158,22 +159,21 @@ def _tid(thread):
 
     raise ThreadStateError()
 
+
 def _raise_exception_in_thread(tid, exc_type):
     """
     Raises an exception in the threads with id tid.
     """
     assert inspect.isclass(exc_type)
     # NOTE this returns the number of threads that it modified, which should
-    # only be 1 or 0 (if the thread id wasn't found)
+    # only be 1 or 0 (if the thread has already exited)
     long_tid = ctypes.c_long(tid)
     exc_ptr = ctypes.py_object(exc_type)
     num = ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, exc_ptr)
-    if num == 1:
+    # if num == 0, it's not an error condition as the net effect is the same,
+    # the thread has ended
+    if num in (0, 1):
         return
-
-    # We used to have a check in here to throw an error if num == 0. This doesn't represent
-    # an error condition; the net effect is still that the thread is ended.
-
     # NOTE if it returns a number greater than one, we're in trouble, and
     # should call it again with exc=NULL to revert the effect
     null_ptr = ctypes.py_object()
@@ -244,11 +244,8 @@ class TaskThread(TrackedThread):
                     _raise_exception_in_thread(_tid(thread), exc_type)
                     wait(self.__default_timeout)
                 except _ThreadInterruptionError, e:
-                    # _TaskInterruptionError gets thrown for the following reasons:
-                    # 1. the threading module or the interpreter has lost track of the thread
-                    # 2. the thread id is invalid
-                    # 3. if the thread is already dead
-                    # 4. if the exception was delivered to more than 1 thread at a time
+                    # _TaskInterruptionError gets thrown if the exception was
+                    # delivered to more than 1 thread at a time
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %
                                (exc_type.__name__, str(_tid(thread)), e.message))
                     return
@@ -259,6 +256,7 @@ class TaskThread(TrackedThread):
         for thread in get_descendants(self):
             deliver_exception(thread, thread.isAlive, time.sleep)
         # then kill and wait for the task thread
+        #deliver_exception(self, self.isAlive, time.sleep)
         deliver_exception(self, test_exception_event, self.__exception_event.wait)
 
     def timeout(self):

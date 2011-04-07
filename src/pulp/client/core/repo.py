@@ -283,7 +283,7 @@ class List(RepoAction):
             if repo['source']:
                 feedUrl = repo['source']['url']
                 feedType = repo['source']['type']
-            filters = []    
+            filters = []
             for filter in repo['filters']:
                 filters.append(str(filter))
 
@@ -398,7 +398,7 @@ class Content(RepoAction):
         else:
             for f in files:
                 print ' ' + f['filename']
-            
+
 
 
 class Create(RepoAction):
@@ -425,8 +425,8 @@ class Create(RepoAction):
                                help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
         self.parser.add_option("--consumer_key", dest="consumer_key",
                                help=_("path location to the consumer entitlement certificate key"))
-        self.parser.add_option("--schedule", dest="schedule",
-                               help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
+        #self.parser.add_option("--schedule", dest="schedule",
+        #                       help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs"))
         self.parser.add_option("--relativepath", dest="relativepath",
@@ -444,7 +444,7 @@ class Create(RepoAction):
         arch = self.opts.arch or 'noarch'
         feed = self.opts.feed
         symlinks = self.opts.symlinks or False
-        schedule = self.opts.schedule
+        #schedule = self.opts.schedule
         relative_path = self.opts.relativepath
 
         # Feed cert bundle
@@ -471,7 +471,7 @@ class Create(RepoAction):
         if keylist:
             reader = KeyReader()
             keylist = reader.expand(keylist)
-        repo = self.repository_api.create(id, name, arch, feed, symlinks, schedule,
+        repo = self.repository_api.create(id, name, arch, feed, symlinks,
                                  feed_cert_data=feed_cert_data,
                                  consumer_cert_data=consumer_cert_data,
                                  relative_path=relative_path,
@@ -595,6 +595,8 @@ class Update(RepoAction):
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
         self.parser.add_option("--schedule", dest="sync_schedule",
                                help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
+        #self.parser.add_option("--schedule", dest="sync_schedule",
+        #                       help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
         self.parser.add_option("--relativepath", dest="relative_path",
@@ -1026,7 +1028,7 @@ class AddErrata(RepoAction):
 
         if not effected_pkgs:
             system_exit(os.EX_DATAERR)
-            
+
         pkgs = {}
         for pkg in effected_pkgs:
             if self.opts.srcrepo:
@@ -1162,7 +1164,7 @@ class AddFiles(RepoAction):
                 print _("File [%s] could not be found on server; Skipping add" % filename)
                 continue
             if len(fobj) > 1:
-                if not self.opts.csv: 
+                if not self.opts.csv:
                     print fobj
                     print _("There is more than one file with filename [%s]. Please use csv option to include checksum.; Skipping add" % filename)
                     continue
@@ -1202,7 +1204,7 @@ class RemoveFiles(RepoAction):
         self.get_repo(id)
         if self.opts.files and self.opts.csv:
             system_exit(os.EX_USAGE, _("Error: Both --files and --csv cannot be used in the same command."))
-        
+
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):
@@ -1243,8 +1245,8 @@ class RemoveFiles(RepoAction):
                 raise
                 system_exit(os.EX_DATAERR, _("Unable to remove file [%s] from repo [%s]" % (fname, id)))
             print _("Successfully removed file [%s] from repo [%s]." % (fname, id))
-            
-            
+
+
 class AddFilters(RepoAction):
 
     description = _('add filters to a repository')

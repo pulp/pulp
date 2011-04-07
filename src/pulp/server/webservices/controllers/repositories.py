@@ -34,7 +34,7 @@ Repo object fields:
  * repomd_xml_path, str, path to the repository's repomd xml file
  * group_xml_path, str, path to the repository's group xml file
  * group_gz_xml_path, str, path to the repository's compressed group xml file
- * sync_schedule, str, crontab entry representing recurring sync schedule
+ * sync_schedule, RepoSyncSchedule object, representing recurring sync schedule
  * last_sync, timestamp, date and time of last successful sync
  * use_symlinks, bool, whether or not the repository uses symlinks for its content
  * feed_ca, str, full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed
@@ -56,6 +56,10 @@ Repo object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
  * url, str, repository source url
+RepoSyncSchedule object fields:
+ * interval, object, fields of units with integer values (weeks, days, hours, minutes)
+ * start_time?, object, fields of units with integer values (year, month, day, hour, minute)
+ * runs?, int, number of runs to execute, omitted mean ad infinitum
 Task object fields:
  * id, str, unique id (usually a uuid) for the task
  * method_name, str, name of the pulp library method that was called
@@ -83,6 +87,7 @@ import logging
 
 import web
 
+from pulp.server.api import scheduled_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
@@ -180,7 +185,7 @@ class Repositories(JSONController):
          * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
-         * sync_schedule?, str, crontab entry format
+         * sync_schedule?, RepoSyncSchedule object, schedule to regularly sync the repository on
          * feed_cert_data?, str, certificate information to use when connecting to the feed
          * consumer_cert_data?, str, certificate information to use when validating consumers of this repo
          * cert_data?, str, repository certificate information
@@ -261,6 +266,9 @@ class Repository(JSONController):
         # XXX this was a serious problem with packages
         # why would files be any different
         repo['files_count'] = len(repo['files'])
+        # see if the repo is scheduled for sync in the future
+        task = scheduled_sync.find_repo_scheduled_task(repo)
+        repo['next_scheduled_sync'] = task and scheduled_sync.task_scheduled_time_to_dict(task)
         return self.ok(repo)
 
     @JSONController.error_handler
@@ -275,7 +283,7 @@ class Repository(JSONController):
         permission: UPDATE
         success response: 200 OK
         failure response: 400 Bad Request when trying to change the id
-        return: true
+        return: a Repo object
         parameters: any field of a Repo object except id
         """
         delta = self.params()
@@ -287,8 +295,8 @@ class Repository(JSONController):
                                      RepositoryDeferredFields.exposed_fields):
             if field in delta and isinstance(delta[field], basestring):
                 delta.pop(field, None)
-        api.update(id, delta)
-        return self.ok(True)
+        repo = api.update(id, delta)
+        return self.ok(repo)
 
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)
@@ -544,13 +552,13 @@ class RepositoryActions(AsyncController):
         repo_params = self.params()
         timeout = repo_params.get('timeout', None)
         _log.info("sync timeout passed : %s" % timeout)
-        
+
         # Check for valid timeout values
         if timeout:
             timeout = self.timeout(repo_params)
-            if not timeout: 
+            if not timeout:
                 raise PulpException("Invalid timeout value: %s, see --help" % repo_params['timeout'])
-      
+
         skip = repo_params.get('skip', {})
         task = api.sync(id, timeout, skip)
         if not task:

@@ -28,7 +28,7 @@ from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server import constants
 
 SerialNumber.PATH = '/tmp/sn.dat'
-constants.LOCAL_STORAGE="/tmp/pulp/"
+constants.LOCAL_STORAGE = "/tmp/pulp/"
 
 def initialize():
     connection.initialize()
@@ -57,13 +57,12 @@ def load_test_config():
 
 
 def common_cleanup():
-    auditing._clear_crontab()
     auditing.cull_events(timedelta())
 
 
 def create_package(api, name, version="1.2.3", release="1.el5", epoch="1",
         arch="x86_64", description="test description text",
-        checksum_type = "sha256", 
+        checksum_type="sha256",
         checksum="9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e",
         filename="test-filename-1.2.3-1.el5.x86_64.rpm"):
     """
