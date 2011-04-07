@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 from datetime import timedelta
+from gettext import gettext as _
 from logging import getLogger
 
 from gofer.messaging import Queue
