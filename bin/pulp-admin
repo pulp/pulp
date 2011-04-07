@@ -37,6 +37,7 @@ def setup_admin(admin):
     cds_cmd.add_action('history', cds.History())
     cds_cmd.add_action('sync', cds.Sync())
     cds_cmd.add_action('status', cds.Status())
+    cds_cmd.add_action('info', cds.Info())
     admin.add_command('cds', cds_cmd)
 
     consumer_cmd = consumer.Consumer()

@@ -25,6 +25,10 @@ class CDS(Model):
 
     collection_name = 'cds'
     unique_indicies = ('hostname',)
+    
+    @classmethod
+    def uuid(cls, cds):
+        return 'cds-%s' % cds['hostname']
 
     def __init__(self, hostname, name=None, description=None):
         Model.__init__(self)
