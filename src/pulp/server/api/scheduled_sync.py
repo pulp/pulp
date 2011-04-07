@@ -67,9 +67,11 @@ class InvalidScheduleError(PulpException):
     Error raised on improperly formated schedules.
     Supplies an extensive explanation.
     """
-    def __init__(self, msg, *args):
-        msg += _explaination
-        super(InvalidScheduleError, self).__init__(msg, *args)
+    # XXX python 2.4 super() call is failing...
+    pass
+    #def __init__(self, msg, *args):
+    #    msg += _explaination
+    #    super(InvalidScheduleError, self).__init__(msg, *args)
 
 
 def _validate_schedule(schedule):
