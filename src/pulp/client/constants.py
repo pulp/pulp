@@ -156,6 +156,9 @@ Hostname            \t%-25s
 Description         \t%-25s
 Repos               \t%-25s
 Last Sync           \t%-25s
+Status:
+   Responding       \t%-25s
+   Last Heartbeat   \t%-25s
 '''
 
 CDS_HISTORY_ENTRY = '''

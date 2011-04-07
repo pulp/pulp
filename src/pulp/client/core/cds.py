@@ -36,7 +36,24 @@ def _print_cds(cds):
         formatted_date = _('Never')
     else:
         formatted_date = json_utils.parse_date(cds['last_sync'])
-    print(constants.CDS_INFO % (cds['hostname'], cds['name'], cds['description'], repo_list, formatted_date))
+
+    stat = cds['heartbeat']
+    if stat[0]:
+        responding = _('Yes')
+    else:
+        responding = _('No')
+    if stat[1]:
+        last_heartbeat = json_utils.parse_iso_date(stat[1])
+    else:
+        last_heartbeat = stat[1]
+    print(constants.CDS_INFO % \
+        (cds['hostname'],
+         cds['name'], 
+         cds['description'],
+         repo_list,
+         formatted_date,
+         responding,
+         last_heartbeat,))
 
 # -- commands ----------------------------------------------------------------------
 
@@ -102,6 +119,21 @@ class List(CDSAction):
 
         for cds in all_cds:
             _print_cds(cds)
+            
+class Info(CDSAction):
+
+    description = _('lists all CDS instances associated with the pulp server')
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('CDS hostname (required)'))
+
+    def run(self):
+        print_header(_('CDS'))
+        hostname = self.get_required_option('hostname')
+        cds = self.cds_api.cds(hostname)
+        _print_cds(cds)
+
 
 class History(CDSAction):
 

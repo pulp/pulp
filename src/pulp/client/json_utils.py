@@ -19,6 +19,8 @@ Utilities for parsing and formatting of JSON values.
 
 from datetime import datetime
 
+ISOFORMAT = '%Y-%m-%dT%H:%M:%S'
+
 def parse_date(date_string):
     '''
     Parses a unix timestamp string. Valid dates generated on the server should
@@ -33,3 +35,14 @@ def parse_date(date_string):
     @rtype:  L{datetime.datetime} instance
     '''
     return datetime.utcfromtimestamp(float(date_string))
+
+
+def parse_iso_date(iso_str):
+    """
+    Parse an ISO-8601 formatted date string.
+    @param iso_str: An ISO-8601 date string.
+    @type iso_str: str
+    @return: python object representing the date
+    @rtype:  L{datetime.datetime} instance 
+    """
+    return datetime.strptime(iso_str[:19], ISOFORMAT)

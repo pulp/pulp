@@ -30,6 +30,8 @@ from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
+from pulp.server.agent import Agent
+from pulp.server.db.model.cds import CDS
 
 
 # globals ---------------------------------------------------------------------
@@ -46,6 +48,10 @@ class CdsInstances(JSONController):
     @JSONController.auth_required(READ)
     def GET(self):
         cds_instances = cds_api.list()
+        for cds in cds_instances:
+            uuid = CDS.uuid(cds)
+            heartbeat = Agent.status([uuid,])
+            cds['heartbeat'] = heartbeat.values()[0]
         return self.ok(cds_instances)
 
     @JSONController.error_handler
@@ -86,8 +92,10 @@ class CdsInstance(JSONController):
         cds = cds_api.cds(id)
         if cds is None:
             return self.not_found('Could not find CDS with hostname [%s]' % id)
-        else:
-            return self.ok(cds)
+        uuid = CDS.uuid(cds)
+        heartbeat = Agent.status([uuid,])
+        cds['heartbeat'] = heartbeat.values()[0]
+        return self.ok(cds)
 
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)

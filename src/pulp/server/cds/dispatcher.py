@@ -28,6 +28,7 @@ from gofer.messaging.policy import RequestTimeout, NotAuthorized
 # Pulp
 from pulp.server import config, constants
 from pulp.server.agent import Agent
+from pulp.server.db.model.cds import CDS
 
 
 log = logging.getLogger(__name__)
@@ -227,20 +228,6 @@ class GoferDispatcher(object):
         @rtype:  object with the same methods as the CDS plugin
         '''
         secret = cds.get('secret')
-        agent = Agent(self._cds_uuid(cds))
+        agent = Agent(CDS.uuid(cds))
         stub = agent.cdsplugin(secret=secret)
         return stub
-
-    def _cds_uuid(self, cds):
-        '''
-        Generates the UUID for the message queue that the CDS will be listening on. The
-        algorithm used by this method should match what it used on the CDS so that it
-        will be listening on the correct queue.
-
-        @param cds: domain entity for the CDS; may not be None
-        @type  cds: L{CDS} instance
-
-        @return: uuid suitable to pass to the message bus when sending messages to this CDS
-        @rtype:  string
-        '''
-        return 'cds-%s' % cds['hostname']
