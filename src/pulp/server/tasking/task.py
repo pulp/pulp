@@ -307,7 +307,7 @@ class Task(object):
         if self.state is not task_waiting:
             self.reset()
         self.state = task_running
-        self.start_time = datetime.datetime.utcnow()
+        self.start_time = datetime.datetime.now()
         self._check_threshold()
         try:
             result = self.callable(*self.args, **self.kwargs)
@@ -346,7 +346,7 @@ class Task(object):
         self.consecutive_failures = 0
         self.result = result
         self.state = task_finished
-        self.finish_time = datetime.datetime.utcnow()
+        self.finish_time = datetime.datetime.now()
         self._complete()
 
     def failed(self, exception, tb=None):
@@ -364,7 +364,7 @@ class Task(object):
                                                         self.method_name,
                                                         ''.join(self.traceback)))
         self.state = task_error
-        self.finish_time = datetime.datetime.utcnow()
+        self.finish_time = datetime.datetime.now()
         self._complete()
 
     def _complete(self):
@@ -391,7 +391,7 @@ class Task(object):
         if hasattr(self.thread, 'cancel'):
             self.thread.cancel()
         self.state = task_canceled
-        self.finish_time = datetime.datetime.utcnow()
+        self.finish_time = datetime.datetime.now()
         self._complete()
 
 # asynchronous task -----------------------------------------------------------
