@@ -273,6 +273,7 @@ class Repo(Model):
         if not notes:
             self.notes = {}
         self.notes = notes
+        self.sync_in_progress = False
 #        self.size = None
 
     def get_repo_source(self):

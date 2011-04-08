@@ -51,6 +51,7 @@ from pulp.server.db.model import PackageGroup
 from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import RepoSource
+from pulp.server.tasking.taskqueue.thread import ConflictingOperationException
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
@@ -1307,6 +1308,17 @@ class TestRepoApi(unittest.TestCase):
 
 
 
+
+    def test_duplicate_syncs(self):
+        repo = self.rapi.create('some-id', 'some name',
+            'i386', 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
+        self.assertTrue(self.rapi.set_sync_in_progress(repo["id"], True))
+        caught = False
+        try:
+            self.rapi._sync(repo["id"])
+        except ConflictingOperationException, e:
+            caught = True
+        self.assertTrue(caught)
 
 if __name__ == '__main__':
     unittest.main()

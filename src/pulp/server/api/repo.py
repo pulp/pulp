@@ -20,6 +20,7 @@ import logging
 import os
 import shutil
 import time
+import threading
 import traceback
 from datetime import datetime
 from StringIO import StringIO
@@ -52,11 +53,25 @@ from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
-
+from pulp.server.tasking.taskqueue.thread import ConflictingOperationException
 
 log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
+
+def clear_all_sync_in_progress():
+    """
+    Clears 'sync_in_progress' for all repositories
+    Runs as part of initialization of wsgi application.
+
+    If pulp server is shutdown in the middle of a sync it could leave
+    some repositories 'locked'.  This will clear all locks on startup
+    """
+    collection = model.Repo.get_collection()
+    repos = collection.find(fields={"id":1, "sync_in_progress":1})
+    for r in repos:
+        log.error("r = %s" % (r))
+        collection.update({"id":r["id"]}, {"$set": {"sync_in_progress":False}})
 
 
 class RepoApi(BaseApi):
@@ -74,6 +89,7 @@ class RepoApi(BaseApi):
         self.localStoragePath = constants.LOCAL_STORAGE
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
+        self.__sync_lock = threading.RLock()
 
     def _getcollection(self):
         return model.Repo.get_collection()
@@ -1455,16 +1471,22 @@ class RepoApi(BaseApi):
         @param threads maximum number of threads to use for yum downloading
         @type threads int
         """
-        repo = self._get_existing_repo(id)
-        repo_source = repo['source']
-        if not repo_source:
-            raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-        if not synchronizer:
-            synchronizer = repo_sync.get_synchronizer(repo_source["type"])
-        synchronizer.set_callback(progress_callback)
-        log.info("Sync of %s starting, skip_dict = %s" % (id, skip_dict))
-        start_sync_items = time.time()
-        sync_packages, sync_errataids = \
+
+        if not self.set_sync_in_progress(id, True):
+            log.error("We saw sync was in progress for [%s]" % (id))
+            raise ConflictingOperationException()
+        
+        try:
+            repo = self._get_existing_repo(id)
+            repo_source = repo['source']
+            if not repo_source:
+                raise PulpException("This repo is not setup for sync. Please add packages using upload.")
+            if not synchronizer:
+                synchronizer = repo_sync.get_synchronizer(repo_source["type"])
+            synchronizer.set_callback(progress_callback)
+            log.info("Sync of %s starting, skip_dict = %s" % (id, skip_dict))
+            start_sync_items = time.time()
+            sync_packages, sync_errataids = \
                 repo_sync.sync(
                     repo,
                     repo_source,
@@ -1473,63 +1495,75 @@ class RepoApi(BaseApi):
                     synchronizer,
                     max_speed,
                     threads)
-        end_sync_items = time.time()
-        log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
-            len(sync_errataids), (end_sync_items - start_sync_items)))
-        # We need to update the repo object in Mongo to account for
-        # package_group info added in sync call
-        self.collection.save(repo, safe=True)
-        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-            old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
-            old_pkgs = map(self.packageapi.package, old_pkgs)
-            old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
-            new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"])))
-            new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
-            log.info("%s old packages to process, %s new packages to process" % \
-                (len(old_pkgs), len(new_pkgs)))
-            synchronizer.progress_callback(step="Removing %s packages" % (len(old_pkgs)))
-            # Remove packages that are no longer in source repo
-            self.remove_packages(repo["id"], old_pkgs)
-            # Refresh repo object since we may have deleted some packages
-            repo = self._get_existing_repo(id)
-            synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
-            for pkg in new_pkgs:
-                self._add_package(repo, pkg)
-            # Update repo for package additions
+            end_sync_items = time.time()
+            log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
+                len(sync_errataids), (end_sync_items - start_sync_items)))
+            # We need to update the repo object in Mongo to account for
+            # package_group info added in sync call
             self.collection.save(repo, safe=True)
-        if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
-            # Determine removed errata
-            synchronizer.progress_callback(step="Processing Errata")
-            log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
-            repo_errata = self.errata(id)
-            old_errata = list(set(repo_errata).difference(set(sync_errataids)))
-            new_errata = list(set(sync_errataids).difference(set(repo_errata)))
-            log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
-            self.delete_errata(id, old_errata)
-            # Refresh repo object 
-            repo = self._get_existing_repo(id) #repo object must be refreshed
-            log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
-            for eid in new_errata:
-                self._add_erratum(repo, eid)
-        repo['last_sync'] = datetime.now().strftime("%s")
-        synchronizer.progress_callback(step="Finished")
-        self.collection.save(repo, safe=True)
+            if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
+                old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
+                old_pkgs = map(self.packageapi.package, old_pkgs)
+                old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
+                new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"])))
+                new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
+                log.info("%s old packages to process, %s new packages to process" % \
+                    (len(old_pkgs), len(new_pkgs)))
+                synchronizer.progress_callback(step="Removing %s packages" % (len(old_pkgs)))
+                # Remove packages that are no longer in source repo
+                self.remove_packages(repo["id"], old_pkgs)
+                # Refresh repo object since we may have deleted some packages
+                repo = self._get_existing_repo(id)
+                synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
+                for pkg in new_pkgs:
+                    self._add_package(repo, pkg)
+                # Update repo for package additions
+                self.collection.save(repo, safe=True)
+            if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
+                # Determine removed errata
+                synchronizer.progress_callback(step="Processing Errata")
+                log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
+                repo_errata = self.errata(id)
+                old_errata = list(set(repo_errata).difference(set(sync_errataids)))
+                new_errata = list(set(sync_errataids).difference(set(repo_errata)))
+                log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
+                self.delete_errata(id, old_errata)
+                # Refresh repo object
+                repo = self._get_existing_repo(id) #repo object must be refreshed
+                log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
+                for eid in new_errata:
+                    self._add_erratum(repo, eid)
+            repo['last_sync'] = datetime.now().strftime("%s")
+            synchronizer.progress_callback(step="Finished")
+            self.collection.save(repo, safe=True)
+            return True
+        finally:
+            self.set_sync_in_progress(id, False)
 
     @audit()
     def sync(self, id, timeout=None, skip=None, max_speed=None, threads=None):
         """
         Run a repo sync asynchronously.
+        @rtype pulp.server.tasking.task or None
+        @return on success a task object is returned
+                on failure None is returned
+        @return
         """
         repo = self.repository(id)
         task = run_async(self._sync,
-                         [id, skip],
-                         {'max_speed':max_speed, 'threads':threads},
-                         timeout=timeout,
-                         task_type=repo_sync.RepoSyncTask)
+                         [id],
+                         {'skip_dict':skip,
+                          'max_speed':max_speed,
+                          'threads':threads},
+                          timeout=timeout,
+                          task_type=repo_sync.RepoSyncTask)
+        if not task:
+            log.error("Unable to create repo._sync task for [%s]" % (id))
+            return task
         if repo['source'] is not None:
             source_type = repo['source']['type']
             if source_type in ('yum', 'rhn'):
-                task.set_progress('progress_callback',
+                    task.set_progress('progress_callback',
                                   repo_sync.yum_rhn_progress_callback)
             elif source_type in ('local'):
                 task.set_progress('progress_callback',
@@ -1924,3 +1958,64 @@ class RepoApi(BaseApi):
             end_time = time.time()
             log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
+
+    def metadata(self, id):
+        """
+         spawn repo metadata generation for a specific repo
+         @param id: repository id
+         @return task: 
+        """
+        if self.list_metadata_task(id):
+            # repo generation task already pending; task not created
+            return None
+        task = run_async(self._metadata, [id], {})
+        return task
+
+    def _metadata(self, id):
+        """
+         spawn repo metadata generation for a specific repo
+         @param id: repository id
+        """
+        repo = self._get_existing_repo(id)
+        repo_path = os.path.join(
+                pulp.server.util.top_repos_location(), repo['relative_path'])
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
+        log.info("Spawning repo metadata generation for repo [%s] with path [%s]" % (repo['id'], repo_path))
+        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+
+    def list_metadata_task(self, id):
+        """
+        List all the metadata tasks for a given repository.
+        """
+        return [task
+                for task in find_async(method='_metadata')
+                if id in task.args]
+
+    def set_sync_in_progress(self, id, state):
+        """
+        @type id: string
+        @param id: repository id
+        @type state: bool
+        @param state:   boolean state requested.
+                        True means we want to set sync in progress
+                        False means we want to clear sync in progress
+        @rtype: bool
+        @return:    True - requested state was set
+                    False - requested state was _not_ set
+        """
+        self.__sync_lock.acquire()
+        try:
+            repo = self.collection.find_one({"id":id}, {"sync_in_progress":1})
+            if repo.has_key("sync_in_progress") and repo["sync_in_progress"]:
+                # This repository is currently being synchronized
+                if state:
+                    return False
+                self.collection.update({"id":id}, {"$set": {"sync_in_progress":False}})
+                return True
+            # This repository is _not_ currently being synchronized
+            self.collection.update({"id":id}, {"$set": {"sync_in_progress":state}})
+            return True
+        finally:
+            self.__sync_lock.release()
+
