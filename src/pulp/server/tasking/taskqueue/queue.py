@@ -197,7 +197,8 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            fields = ('class_name', 'method_name', 'args', 'kwargs')
+            # uniqueness fields
+            fields = ('class_name', 'method_name', 'args', 'scheduler')
             if unique and self.exists(task, fields, include_finished=False):
                 return False
             if not task.schedule():
