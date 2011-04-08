@@ -71,7 +71,7 @@ class Consumers(JSONController):
         # inject heartbeat info
         for c in consumers:
             uuid = c['id']
-            heartbeat = Agent.status([uuid,])
+            heartbeat = Agent.status([uuid, ])
             c['heartbeat'] = heartbeat.values()[0]
         # add the uri ref and deferred fields
         for c in consumers:
@@ -149,7 +149,7 @@ class Consumer(JSONController):
         for field in ConsumerDeferredFields.exposed_fields:
             consumer[field] = http.extend_uri_path(field)
         # inject heartbeat info
-        heartbeat = Agent.status([id,])
+        heartbeat = Agent.status([id, ])
         consumer['heartbeat'] = heartbeat.values()[0]
         return self.ok(consumer)
 
@@ -399,7 +399,7 @@ class ConsumerActions(AsyncController):
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            scheduled_time = datetime.utcfromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Install packages already scheduled'))
