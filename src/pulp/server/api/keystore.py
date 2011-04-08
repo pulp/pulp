@@ -77,7 +77,7 @@ class KeyStore:
     def list(self):
         """
         List the relative paths of all linked keys.
-        @return: [relative-path,..]
+        @return: [path,..]
         @rtype: list
         """
         keylist = []
@@ -115,7 +115,7 @@ class KeyStore:
         if all:
             self.unlink(dir)
 
-    def keyfiles(self):
+    def keyfiles(self, path=None):
         """
         Get a list of GPG key files at the specified I{path}.
         @param path: An absolute path to a file containing a GPG key.
@@ -125,7 +125,8 @@ class KeyStore:
         """
         keys = []
         pattern = '----BEGIN PGP PUBLIC KEY BLOCK-----'
-        path = os.path.join(keydir(), self.path)
+        if not path:
+            path = os.path.join(keydir(), self.path)
         for fn in os.listdir(path):
             for ext in ('.rpm', '.gz', '.xml'):
                 if fn.endswith(ext):
@@ -144,19 +145,20 @@ class KeyStore:
         return keys
 
     def keys_and_contents(self):
-        '''
+        """
         Returns a mapping of key name to its contents.
-
         @return: mapping of key name (not a full path) to its contents
-        @rtype:  dict {string : string}
-        '''
-
-        key_contents = {}
-
-        for path, contents in self.keyfiles():
-            key_contents[os.path.basename(path)] = contents
-
-        return key_contents
+        @rtype: dict {keyname:keycontent}
+        """
+        keylist = {}
+        for path in self.list():
+            name = os.path.basename(path)
+            path = os.path.join(lnkdir(), path)
+            fp = open(path)
+            content = fp.read()
+            fp.close()
+            keylist[name] = content
+        return keylist
 
     def link(self, src, dst):
         """
