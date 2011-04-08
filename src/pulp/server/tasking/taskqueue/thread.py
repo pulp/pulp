@@ -202,6 +202,13 @@ class CancelException(TaskThreadException):
     """
     pass
 
+class ConflictingOperationException(TaskThreadException):
+    """
+    Exception to signify a task couldn't run do to a conflict,
+    possibly a previous operation was still in progress
+    """
+    pass
+
 # task thread -----------------------------------------------------------------
 
 class TaskThread(TrackedThread):
