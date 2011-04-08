@@ -23,7 +23,7 @@ import traceback
 import uuid
 from gettext import gettext as _
 
-from pulp.server.db import model 
+from pulp.server.db import model
 from pulp.server.tasking.taskqueue.thread import TimeoutException, CancelException
 from pulp.server.tasking.scheduler import ImmediateScheduler
 
@@ -182,10 +182,10 @@ class Task(object):
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
     # -------------------------------------------------------------------------
-        
+
     def _get_task_snapshots_collection(self):
         return model.TaskSnapshot.get_collection()
-        
+
     def snapshot(self):
         """
         Serialize the task into snapshot and store it in db
@@ -199,7 +199,7 @@ class Task(object):
         s = model.TaskSnapshot(snapshot)
         self._get_task_snapshots_collection().insert(s, safe=True)
         return s
-        
+
     @staticmethod
     def from_snapshot(snapshot):
         """
@@ -211,9 +211,9 @@ class Task(object):
         for attr in _pickled_fields:
             setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
         return task
-        
+
     # -------------------------------------------------------------------------
- 
+
     def reset(self):
         """
         Reset this task to run again.
@@ -225,7 +225,7 @@ class Task(object):
         self.result = None
         self.exception = None
         self.traceback = None
-      
+
 
     def schedule(self):
         """
@@ -294,7 +294,7 @@ class Task(object):
         """
         if None in (self.start_time, self.schedule_threshold):
             return
-        difference = self.start_time = self.scheduled_time
+        difference = self.start_time - self.scheduled_time
         if difference <= self.schedule_threshold:
             return
         _log.warn(_('%s\nstarted %s after its scheduled start time') %
