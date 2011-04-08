@@ -82,7 +82,7 @@ class TestKeyStore(unittest.TestCase):
         ks = KeyStore(REPO)
         ks.add(KEYS)
         i = 0
-        for path in ks.list():
+        for path in sorted(ks.list()):
             self.assertEqual(os.path.dirname(path), REPO)
             self.assertEqual(os.path.basename(path), KEYS[i][0])
             path = os.path.join(keydir(), path)
