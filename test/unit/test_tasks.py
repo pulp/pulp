@@ -87,7 +87,7 @@ class TaskTester(unittest.TestCase):
         restored_task = Task.from_snapshot(snapshot)
         self.assertTrue(task.state == task_finished)
         self.assertTrue(restored_task.state == task_finished)
-        
+
     def test_task_args(self):
         task = Task(args, args=[1, 2, 'foo'])
         task.run()
@@ -119,12 +119,12 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(task.traceback is not None)
         self.assertTrue(restored_task.state == task_error)
         self.assertTrue(restored_task.traceback is not None)
-        
+
     def __test_sync_task(self):
-        repo = self.rapi.create('some-id', 'some name', 'i386', 
+        repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
-        
+
         task = self.rapi.sync(repo['id'])
         snapshot = task.snapshot()
         restored_task = Task.from_snapshot(snapshot)
@@ -248,12 +248,12 @@ class TaskQueueTester(QueueTester):
 
     def test_task_dispatch_with_scheduled_time(self):
         delay_seconds = timedelta(seconds=10)
-        schduler = AtScheduler(datetime.utcnow() + delay_seconds)
+        schduler = AtScheduler(datetime.now() + delay_seconds)
         task = Task(noop, scheduler=schduler)
         self.queue.enqueue(task)
-        start_time = datetime.utcnow()
+        start_time = datetime.now()
         self._wait_for_task(task, timeout=timedelta(seconds=20))
-        end_time = datetime.utcnow()
+        end_time = datetime.now()
         self.assertTrue(task.state == task_finished)
         self.assertTrue(end_time - start_time > delay_seconds)
 
@@ -455,7 +455,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_at(self):
-        now = datetime.utcnow()
+        now = datetime.now()
         then = timedelta(seconds=10)
         at = AtScheduler(now + then)
         task = Task(noop, scheduler=at)
@@ -465,7 +465,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_at_time(self):
-        now = datetime.utcnow()
+        now = datetime.now()
         then = timedelta(seconds=10)
         at = AtScheduler(now + then)
         task = Task(noop, scheduler=at)
@@ -476,7 +476,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_interval(self):
-        now = datetime.utcnow()
+        now = datetime.now()
         then = timedelta(seconds=10)
         interval = IntervalScheduler(then, now + then, 1)
         task = Task(noop, scheduler=interval)
@@ -486,7 +486,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_interval_schedule(self):
-        now = datetime.utcnow()
+        now = datetime.now()
         then = timedelta(seconds=10)
         interval = IntervalScheduler(then, now + then, 1)
         task = Task(noop, scheduler=interval)
@@ -499,12 +499,12 @@ class ScheduledTaskTester(QueueTester):
         interval = IntervalScheduler(then, None, 1)
         task = Task(noop, scheduler=interval)
         self.queue.enqueue(task)
-        now = datetime.utcnow()
+        now = datetime.now()
         self.assertTrue(task.scheduled_time <= now + then)
         self._wait_for_task(task)
 
     def test_multi_run_interval(self):
-        now = datetime.utcnow()
+        now = datetime.now()
         then = timedelta(seconds=5)
         interval = IntervalScheduler(then, now + then, 2)
         task = Task(noop, scheduler=interval)
