@@ -71,7 +71,7 @@ class Consumers(JSONController):
         # inject heartbeat info
         for c in consumers:
             uuid = c['id']
-            heartbeat = Agent.status([uuid,])
+            heartbeat = Agent.status([uuid, ])
             c['heartbeat'] = heartbeat.values()[0]
         # add the uri ref and deferred fields
         for c in consumers:
@@ -149,7 +149,7 @@ class Consumer(JSONController):
         for field in ConsumerDeferredFields.exposed_fields:
             consumer[field] = http.extend_uri_path(field)
         # inject heartbeat info
-        heartbeat = Agent.status([id,])
+        heartbeat = Agent.status([id, ])
         consumer['heartbeat'] = heartbeat.values()[0]
         return self.ok(consumer)
 
@@ -398,8 +398,9 @@ class ConsumerActions(AsyncController):
         data = self.params()
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
-        if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+        scheduled_time = data.get('scheduled_time')
+        if scheduled_time is not None:
+            scheduled_time = datetime.fromtimestamp(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Install packages already scheduled'))
@@ -417,8 +418,9 @@ class ConsumerActions(AsyncController):
         data = self.params()
         ids = data.get('packageids', [])
         task = consumer_api.installpackagegroups(id, ids)
-        if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+        scheduled_time = data.get('scheduled_time')
+        if scheduled_time is not None:
+            scheduled_time = datetime.fromtimestamp(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package group installation already scheduled'))
@@ -447,8 +449,9 @@ class ConsumerActions(AsyncController):
         if not group_ids:
             return self.conflict('Given category ids [%s] contain no groups to install' % categoryids)
         task = consumer_api.installpackagegroups(id, group_ids)
-        if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+        scheduled_time = data.get('scheduled_time')
+        if scheduled_time is not None:
+            scheduled_time = datetime.fromtimestamp(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package group installation already scheduled'))
@@ -470,8 +473,9 @@ class ConsumerActions(AsyncController):
         task = consumer_api.installerrata(id, eids, types, assumeyes)
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
-        if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+        scheduled_time = data.get('scheduled_time')
+        if scheduled_time is not None:
+            scheduled_time = datetime.fromtimestamp(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Errata installation already scheduled'))
