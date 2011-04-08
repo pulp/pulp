@@ -64,7 +64,7 @@ class RepoSyncTask(Task):
     def cancel(self):
         log.info("RepoSyncTask cancel invoked")
         if self.synchronizer:
-            self.synchronizer.cancel()
+            self.synchronizer.stop()
             # All synchronization work should be stopped
             # when this returns.  Will pass through to 
             # default cancel behavior as a backup in case
