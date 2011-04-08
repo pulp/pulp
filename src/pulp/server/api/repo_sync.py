@@ -64,7 +64,7 @@ class RepoSyncTask(Task):
     def cancel(self):
         log.info("RepoSyncTask cancel invoked")
         if self.synchronizer:
-            self.synchronizer.cancel()
+            self.synchronizer.stop()
             # All synchronization work should be stopped
             # when this returns.  Will pass through to 
             # default cancel behavior as a backup in case
@@ -119,7 +119,7 @@ def get_synchronizer(source_type):
     return synchronizer
 
 
-def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None, 
+def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=None,
         max_speed=None, threads=None):
     '''
     Synchronizes content for the given RepoSource.
@@ -141,7 +141,7 @@ def sync(repo, repo_source, skip_dict={}, progress_callback=None, synchronizer=N
     '''
     if not synchronizer:
         synchronizer = get_synchronizer(repo_source['type'])
-    repo_dir = synchronizer.sync(repo, repo_source, skip_dict, 
+    repo_dir = synchronizer.sync(repo, repo_source, skip_dict,
             progress_callback, max_speed, threads)
     if progress_callback is not None:
         synchronizer.progress['step'] = "Importing data into pulp"
@@ -410,7 +410,7 @@ class YumSynchronizer(BaseSynchronizer):
         super(YumSynchronizer, self).__init__()
         self.yum_repo_grinder = None
 
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         cacert = clicert = clikey = None
         if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
@@ -693,9 +693,9 @@ class LocalSynchronizer(BaseSynchronizer):
             self.progress['details']["drpm"]["size_left"] -= item_size
             if progress_callback is not None:
                 progress_callback(self.progress)
-                
-    
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
+
+
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         src_repo_dir = urlparse(repo_source['url'])[2].encode('ascii', 'ignore')
         log.info("sync of %s for repo %s" % (src_repo_dir, repo['id']))
@@ -868,7 +868,7 @@ class LocalSynchronizer(BaseSynchronizer):
 
 class RHNSynchronizer(BaseSynchronizer):
 
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None, 
+    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         # Parse the repo source for necessary pieces
         # Expected format:   <server>/<channel>
