@@ -149,7 +149,7 @@ class RepoApi(BaseApi):
                 r['relative_path'] = r['id']
         else:
             r['relative_path'] = relative_path
-        
+
         # Store any certificates and add the full paths to their files in the repo object
         repo_cert_utils = RepoCertUtils(config.config)
         protected_repo_utils = ProtectedRepoUtils(config.config)
@@ -166,7 +166,7 @@ class RepoApi(BaseApi):
             r['consumer_cert'] = consumer_cert_files['cert']
             r['consumer_key'] = consumer_cert_files['key']
             protected_repo_utils.add_protected_repo(r['relative_path'], id)
-            
+
         if groupid:
             for gid in groupid:
                 r['groupid'].append(gid)
@@ -353,6 +353,7 @@ class RepoApi(BaseApi):
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
+        repo_cert_utils = RepoCertUtils(config.config)
         cert_files = repo_cert_utils.write_feed_cert_bundle(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
@@ -393,6 +394,7 @@ class RepoApi(BaseApi):
         if not cert_data or not content_set:
             # Nothing further can be done, exit
             return
+        repo_cert_utils = RepoCertUtils(config.config)
         cert_files = repo_cert_utils.write_feed_cert_bundle(groupid, cert_data)
         CDN_URL = config.config.get("repos", "content_url")
         CDN_HOST = urlparse(CDN_URL).hostname
@@ -665,7 +667,7 @@ class RepoApi(BaseApi):
                 # In case the old path had repo protection in place, try to
                 # remove it (this call won't fail if it wasn't in place)
                 protected_repo_utils.delete_protected_repo(prevpath)
-                
+
             else:
                 raise PulpException(
                     "Repository has content, relative path cannot be changed")
@@ -680,7 +682,7 @@ class RepoApi(BaseApi):
             else:
                 protected_repo_utils.add_protected_repo(repo['relative_path'], id)
                 self.cdsapi.set_repo_auth(id, repo['relative_path'], bundle)
-        
+
         # store changed object
         self.collection.save(repo, safe=True)
         # Update subscribed consumers after the object has been saved
