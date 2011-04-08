@@ -211,7 +211,7 @@ class ConsumerGroupActions(AsyncController):
         names = data.get('packagenames', [])
         task = api.installpackages(id, names)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            scheduled_time = datetime.fromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package install already scheduled'))
@@ -232,7 +232,7 @@ class ConsumerGroupActions(AsyncController):
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            scheduled_time = datetime.fromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Errata install already scheduled'))

@@ -399,7 +399,7 @@ class ConsumerActions(AsyncController):
         names = data.get('packagenames', [])
         task = consumer_api.installpackages(id, names)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(float(data["scheduled_time"]))
+            scheduled_time = datetime.fromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Install packages already scheduled'))
@@ -418,7 +418,7 @@ class ConsumerActions(AsyncController):
         ids = data.get('packageids', [])
         task = consumer_api.installpackagegroups(id, ids)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            scheduled_time = datetime.fromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package group installation already scheduled'))
@@ -448,7 +448,7 @@ class ConsumerActions(AsyncController):
             return self.conflict('Given category ids [%s] contain no groups to install' % categoryids)
         task = consumer_api.installpackagegroups(id, group_ids)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            scheduled_time = datetime.fromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package group installation already scheduled'))
@@ -471,7 +471,7 @@ class ConsumerActions(AsyncController):
         if not task:
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
         if data.has_key("scheduled_time"):
-            scheduled_time = datetime.utcfromtimestamp(data["scheduled_time"])
+            scheduled_time = datetime.fromtimestamp(float(data["scheduled_time"]))
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Errata installation already scheduled'))
