@@ -332,7 +332,7 @@ def cull_history():
 
 def init_culling_task():
     interval = datetime.timedelta(days=1)
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now()
     start_time = datetime.datetime(now.year, now.month, now.day, 1)
     scheduler = IntervalScheduler(interval, start_time)
     task = Task(cull_history, scheduler=scheduler)

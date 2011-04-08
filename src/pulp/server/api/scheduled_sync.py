@@ -126,7 +126,7 @@ def repo_schedule_to_scheduler(repo_schedule):
                                   minutes=interval.get('minutes', 0))
     start_time = repo_schedule.get('start_time', None)
     if start_time is not None:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now()
         year = max(now.year, start_time.get('year', 0))
         month = max(now.month, start_time.get('month', 0))
         day = max(now.day, start_time.get('day', 0))
