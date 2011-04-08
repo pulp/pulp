@@ -232,7 +232,7 @@ class Task(object):
         """
         if None in (self.start_time, self.schedule_threshold):
             return
-        difference = self.start_time = self.scheduled_time
+        difference = self.start_time - self.scheduled_time
         if difference <= self.schedule_threshold:
             return
         _log.warn(_('%s\nstarted %s after its scheduled start time') %
