@@ -78,6 +78,7 @@ class RepoApi(BaseApi):
     """
     API for create/delete/syncing of Repo objects
     """
+    __sync_lock = threading.RLock()
 
     def __init__(self):
         self.packageapi = PackageApi()
