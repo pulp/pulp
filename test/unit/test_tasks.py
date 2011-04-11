@@ -140,7 +140,7 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(restored_task.state == task_error)
         self.assertTrue(restored_task.traceback is not None)
 
-    def __test_sync_task(self):
+    def test_sync_task(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)

@@ -203,11 +203,10 @@ class Task(object):
         for attr in _pickled_fields:
             try:
                 if attr == "kwargs":
-                    foo = getattr(self, attr, None)
-                    for key, value in foo.items():
-                        if key == "progress_callback":
-                            del foo[key]
-                    snapshot[attr] = pickle.dumps(foo) # ascii pickle
+                    kwargs = getattr(self, attr, None)
+                    if "progress_callback" in kwargs.keys():
+                        del kwargs["progress_callback"]
+                    snapshot[attr] = pickle.dumps(kwargs) # ascii pickle
                 else:
                     snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
                 
