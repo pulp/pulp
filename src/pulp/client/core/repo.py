@@ -663,12 +663,12 @@ class Update(RepoAction):
         # of the bundle, add it to the delta. Otherwise, no mention in the delta will
         # have no change to the cert bundles.
         if optdict['remove_feed_cert']:
-            delta['feed_cert_data'] = None
+            delta['feed_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif feed_cert_bundle:
             delta['feed_cert_data'] = feed_cert_bundle
 
         if optdict['remove_consumer_cert']:
-            delta['consumer_cert_data'] = None
+            delta['consumer_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif consumer_cert_bundle:
             delta['consumer_cert_data'] = consumer_cert_bundle
             
