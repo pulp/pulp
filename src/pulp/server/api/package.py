@@ -242,6 +242,7 @@ class PackageApi(BaseApi):
             if not epkg:
                 continue
             pkgs.append(epkg)
+        dsolve.cleanup()
         log.info("deps packages suggested %s" % deps)
         return {'dependency_list' : dsolve.printable_result(results),
                 'available_packages' :pkgs}

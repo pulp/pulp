@@ -60,7 +60,8 @@ class DepSolver:
          clean up the repo metadata cache from /var/lib/pulp/cache/
         """
         for repo in self._repostore.repos:
-            shutil.rmtree(repo.cachedir)
+            cachedir = "%s/%s" % (CACHE_DIR, repo)
+            shutil.rmtree(cachedir)
 
     def getDependencylist(self):
         """

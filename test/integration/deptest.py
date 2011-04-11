@@ -22,6 +22,7 @@ def recursive_deps(pnames, repos):
     print_deps(solved)
 
 def print_deps(deps):
+    print "# of deps: %s\n" % len(deps)
     for dep in deps:
         print make_nvrea(dep['name'], dep['version'], dep['release'], dep['arch'])
 
