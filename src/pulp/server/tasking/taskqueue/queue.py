@@ -251,12 +251,12 @@ class TaskQueue(object):
         try:
             self.__running_count -= 1
             self.__storage.remove_running(task)
-            self.__storage.store_complete(task)
             task.thread = None
             task.complete_callback = None
-            # try to re-enqueue to handle recurring tasks
-            if self.enqueue(task):
-                self.__storage.remove_complete(task)
+            # try to re-enqueue to handle recurring tasks,
+            # otherwise store the completed task
+            if not self.enqueue(task):
+                self.__storage.store_complete(task)
         finally:
             self.__lock.release()
 
