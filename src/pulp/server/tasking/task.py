@@ -26,7 +26,7 @@ from gettext import gettext as _
 from pulp.server.db import model
 from pulp.server.tasking.taskqueue.thread import TimeoutException, CancelException
 from pulp.server.tasking.scheduler import ImmediateScheduler
-
+from pulp.server.pexceptions import PulpException
 
 _log = logging.getLogger(__name__)
 
@@ -80,6 +80,7 @@ _copied_fields = (
     'finish_time',
     'exception',
     'traceback',
+    'consecutive_failures',
 )
 
 _pickled_fields = (
@@ -87,9 +88,14 @@ _pickled_fields = (
     'args',
     'kwargs',
     'scheduler',
+    'progress',
     'result',
     'synchronizer',
 )
+
+
+class TaskPicklingError(PulpException):
+    pass
 
 # task ------------------------------------------------------------------------
 
@@ -195,7 +201,19 @@ class Task(object):
         for attr in _copied_fields:
             snapshot[attr] = getattr(self, attr, None)
         for attr in _pickled_fields:
-            snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
+            try:
+                if attr == "kwargs":
+                    foo = getattr(self, attr, None)
+                    for key, value in foo.items():
+                        if key == "progress_callback":
+                            del foo[key]
+                    snapshot[attr] = pickle.dumps(foo) # ascii pickle
+                else:
+                    snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
+                
+            except:
+                msg = _("Error pickling attribute %s")
+                raise TaskPicklingError(msg % attr)
         s = model.TaskSnapshot(snapshot)
         self._get_task_snapshots_collection().insert(s, safe=True)
         return s

@@ -90,6 +90,14 @@ class RepoApi(BaseApi):
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
         self.__sync_lock = threading.RLock()
+    
+    def __getstate__(self):
+        odict = self.__dict__.copy() 
+        try:
+            del odict['_RepoApi__sync_lock']              
+        except:
+            raise PulpException("%s" % odict)        
+        return odict
 
     def _getcollection(self):
         return model.Repo.get_collection()
