@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.161
+Version:        0.0.162
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -276,6 +276,59 @@ fi
 
 
 %changelog
+* Mon Apr 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.162-1
+- Prevent multiple syncs on the same repo from occuring at the same time.
+  (jmatthews@redhat.com)
+- Add a check for a neg. bandwidth limit in repo_sync (jmatthews@redhat.com)
+- 687353 - moved to use KeyStore.list(); added unit test. (jortel@redhat.com)
+- changed task queue uniqueness to ignore kwargs and instead take into account
+  the scheduler (jconnor@redhat.com)
+- added check for None in scheduled time (jconnor@redhat.com)
+- 694846 fixed the rest of them (jconnor@redhat.com)
+- 694846 fixed cast to float of timestamp bug (jconnor@redhat.com)
+- fixing utc time error in timeouts and task culling (jconnor@redhat.com)
+- Move [heartbeat] to cds.conf. (jortel@redhat.com)
+- 680427 - %postun needs to be enclosed in if[ = 0] for updates.  is the count
+  of packages with the same name in the transaction. (jortel@redhat.com)
+- enable auth handler and mod python hooks for el6 (pkilambi@redhat.com)
+- 672326 - adding ability to auto import gpg keys whle performing remote
+  installs (pkilambi@redhat.com)
+- Inject heartbeat info at (consumer) WS layer. (jortel@redhat.com)
+- Add heartbeat information & 'cds info' command. (jortel@redhat.com)
+- Add Task Scheduling feature. (jconnor@redhat.com)
+- added next_scheduled_sync to repo data (jconnor@redhat.com)
+- fixed bug in Task str method that was not stringifying the keyword arguments
+  (jconnor@redhat.com)
+- changed the dispatcher thread to exit immediately instead of executing one
+  last time after the exit flag is set (jconnor@redhat.com)
+- added string representations for scheduler objects (jconnor@redhat.com)
+- moved schedule to scheduler logic to scheduled_sync module
+  (jconnor@redhat.com)
+- adding init of scheduled sync on startup (jconnor@redhat.com)
+- added schedules listing (jconnor@redhat.com)
+- added check for type in schedule validation (jconnor@redhat.com)
+- added get and delete methods for repos (jconnor@redhat.com)
+- fixed a bug in error handling (jconnor@redhat.com)
+- adding contrib directory for various tools (jconnor@redhat.com)
+- moved enqueue out of package, package group, and errata install tasks and
+  into the web services layer (jconnor@redhat.com)
+- converted task queue to priority queue based on task scheduled_time
+  (jconnor@redhat.com)
+- made the ImmediateScheduler a single to keep memory and constructor time down
+  (jconnor@redhat.com)
+- modified Task to allow tasks to self-schedule (jconnor@redhat.com)
+- first pass at scheduling module and base, immediate, at, and interval
+  scheduler classes (jconnor@redhat.com)
+- made the max concurrent tasks running configurable (jconnor@redhat.com)
+- changed config import so that we don't have a race condition between the
+  async import and parsing the config file (jconnor@redhat.com)
+- changed task cancelation to not block on the thread.cancel() call this keeps
+  the queue from remaining locked while a task cancels, potentiall blocking all
+  the main wsgi threads (jconnor@redhat.com)
+- changed cancel to not cancel if task is alreadly completed/
+  (jconnor@redhat.com)
+- renamed task.stop to task.cancel, because that's what we're doing
+  (jconnor@redhat.com)
 * Wed Apr 06 2011 Jeff Ortel <jortel@redhat.com> 0.0.161-1
 - Moving pickling and unpickling logic to Task.py; Also changed unit tests
   accordingly (skarmark@redhat.com)
