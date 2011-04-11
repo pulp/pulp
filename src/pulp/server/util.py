@@ -365,25 +365,25 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
     #generate new metadata
     _create_repo(dir, groups=groups, checksum_type=checksum_type)
     if not backup_repo_dir:
-        # Noting further to check; we got our fresh metadata
+        log.info("Noting further to check; we got our fresh metadata")
         return
     #check if presto metadata exist in the backup
     repodata_file = os.path.join(backup_repo_dir, "repomd.xml")
     ftypes = get_repomd_filetypes(repodata_file)
     prestodelta_path = ""
     if "prestodelta" in ftypes:
-        prestodelta_path = get_repomd_filetype_path(
-                    repodata_file, "prestodelta")
+        prestodelta_file = get_repomd_filetype_path(repodata_file, "prestodelta")
+        prestodelta_path = os.path.join(backup_repo_dir, os.path.basename(prestodelta_file))
     if os.path.isfile(prestodelta_path):
-        log.debug("Modifying repo for prestodelta metadata")
+        log.info("Modifying repo for prestodelta metadata")
         modify_repo(current_repo_dir, prestodelta_path)
     #check if updateinfo metadata exist in the backup
     updateinfo_path = ""
     if "updateinfo" in ftypes:
-        updateinfo_path = get_repomd_filetype_path(
-                    repodata_file, "updateinfo")
-    if os.path.isfile(updateinfo_path):
-        log.debug("Modifying repo for updateinfo metadata")
+        updateinfo_file = get_repomd_filetype_path(repodata_file, "updateinfo")
+        updateinfo_path = os.path.join(backup_repo_dir, os.path.basename(updateinfo_file))
+    if os.path.exists(updateinfo_path):
+        log.info("Modifying repo for updateinfo metadata")
         modify_repo(current_repo_dir, updateinfo_path)
     shutil.rmtree(backup_repo_dir)
         

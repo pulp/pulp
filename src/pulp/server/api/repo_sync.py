@@ -456,6 +456,22 @@ class YumSynchronizer(BaseSynchronizer):
             store_path = "%s/%s" % (pulp.server.util.top_repos_location(), repo['id'])
         report = self.yum_repo_grinder.fetchYumRepo(store_path, callback=progress_callback)
         self.progress = yum_rhn_progress_callback(report.last_progress)
+        if progress_callback is not None:
+            self.progress["step"] = "Running Createrepo"
+            progress_callback(self.progress)
+        log.info("Running createrepo, this may take a few minutes to complete.")
+        start = time.time()
+        groups_xml_path = None
+        repomd_xml = os.path.join(store_path, "repodata/repomd.xml")
+        if os.path.isfile(repomd_xml):
+            ftypes = pulp.server.util.get_repomd_filetypes(repomd_xml)
+            log.debug("repodata has filetypes of %s" % (ftypes))
+            if "group" in ftypes:
+                g = pulp.server.util.get_repomd_filetype_path(repomd_xml, "group")
+                groups_xml_path = os.path.join(store_path, g)
+        pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
+        end = time.time()
+        log.info("Createrepo finished in %s seconds" % (end - start))
         log.info("YumSynchronizer reported %s successes, %s downloads, %s errors" \
                 % (report.successes, report.downloads, report.errors))
         return store_path
