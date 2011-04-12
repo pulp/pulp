@@ -52,9 +52,6 @@ class Storage(object):
     def dequeue_waiting(self):
         raise NotImplementedError(_('Base Storage class method called'))
 
-    def peek_waiting(self):
-        raise NotImplementedError(_('Base Storage class method called'))
-
     # task storage
 
     def remove_waiting(self, task):
@@ -125,9 +122,6 @@ class VolatileStorage(Storage):
 
     def dequeue_waiting(self):
         return heapq.heappop(self.__waiting_tasks)
-
-    def peek_waiting(self):
-        return self.__waiting_tasks[0]
 
     # storage methods
 

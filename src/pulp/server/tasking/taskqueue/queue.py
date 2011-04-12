@@ -123,9 +123,11 @@ class TaskQueue(object):
         while len(ready_tasks) < num_tasks:
             if self.__storage.num_waiting() == 0:
                 break
-            if self.__storage.peek_waiting().scheduled_time > now:
+            task = self.__storage.dequeue_waiting()
+            if task.scheduled_time > now:
+                self.__storage.enqueue_waiting(task)
                 break
-            ready_tasks.append(self.__storage.dequeue_waiting())
+            ready_tasks.append(task)
         return ready_tasks
 
     def _cancel_tasks(self):
