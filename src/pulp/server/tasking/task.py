@@ -88,6 +88,7 @@ _pickled_fields = (
     'args',
     'kwargs',
     'scheduler',
+    '_progress_callback',
     'progress',
     'result',
     'synchronizer',
@@ -217,14 +218,14 @@ class Task(object):
                     snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
 
             except:
-                msg = _("Error pickling attribute %s")
-                raise TaskPicklingError(msg % attr)
+                msg = _("Error pickling attribute %s: %s")
+                raise TaskPicklingError(msg % (attr, getattr(self, attr, None)))
         s = model.TaskSnapshot(snapshot)
         self._get_task_snapshots_collection().insert(s, safe=True)
         return s
 
-    @staticmethod
-    def from_snapshot(snapshot):
+    @classmethod
+    def from_snapshot(cls, snapshot):
         """
         Retrieve task from a snapshot
         """

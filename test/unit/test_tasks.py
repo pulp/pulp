@@ -150,6 +150,8 @@ class TaskTester(unittest.TestCase):
         restored_task = Task.from_snapshot(snapshot)
         print "restored sync task: %s" % restored_task.__dict__
         self.assertTrue(restored_task.state == 'waiting')
+        while task.state == 'waiting':
+            time.sleep(3)
 
 class QueueTester(unittest.TestCase):
 
