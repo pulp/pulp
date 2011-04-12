@@ -303,13 +303,3 @@ class AgentTask(AsyncTask):
         @type tb: list
         """
         AsyncTask.failed(self, exception, tb=tb)
-
-    def enqueue(self, unique=False):
-        """
-        Enqueue the task.
-        @param unique: The unique flag.
-        @type unique: bool
-        """
-        if _queue.enqueue(self, unique):
-            return self
-
