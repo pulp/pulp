@@ -183,84 +183,84 @@ class TaskQueueTester(QueueTester):
         task1 = Task(noop)
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
         # Test
         task2 = Task(noop)
         self.queue.enqueue(task2, unique=False)
 
         # Verify
-        self.assertEqual(2, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(2, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
     def test_enqueue_duplicate_no_args(self):
         # Setup
         task1 = Task(noop)
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
         # Test
         task2 = Task(noop)
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
     def test_enqueue_duplicate_with_same_kw_args(self):
         # Setup
         task1 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
         # Test
         task2 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
     def test_enqueue_duplicate_with_different_kw_args(self):
         # Setup
         task1 = Task(kwargs, kwargs={'foo':1, 'bar':2})
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
         # Test
         task2 = Task(kwargs, kwargs={'foo':2, 'bar':3})
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
     def test_enqueue_duplicate_with_same_args(self):
         # Setup
         task1 = Task(args, args=[1, 2])
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
         # Test
         task2 = Task(args, args=[1, 2])
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
     def test_enqueue_duplicate_with_different_args(self):
         # Setup
         task1 = Task(args, args=[1, 2])
         self.queue.enqueue(task1)
 
-        self.assertEqual(1, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
         # Test
         task2 = Task(args, args=[2, 3])
         self.queue.enqueue(task2, unique=True)
 
         # Verify
-        self.assertEqual(2, len(list(self.queue._TaskQueue__storage._all_tasks())))
+        self.assertEqual(2, len(list(self.queue._TaskQueue__storage.all_tasks())))
 
     def test_enqueue_duplicate_with_immediate_scheduler(self):
         task1 = Task(noop)
