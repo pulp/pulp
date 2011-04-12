@@ -33,3 +33,6 @@ class TaskSnapshot(Model):
         super(TaskSnapshot, self).__init__()
         for key, value in serialized_task.items():
             setattr(self, key, value)
+
+    def to_task(self):
+        pass
