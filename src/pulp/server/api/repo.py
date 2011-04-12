@@ -2051,6 +2051,9 @@ class RepoApi(BaseApi):
         self.__sync_lock.acquire()
         try:
             repo = self.collection.find_one({"id":id}, {"sync_in_progress":1})
+            if not repo:
+                log.error("no repo exists for [%s]" % (id))
+                return False
             if repo.has_key("sync_in_progress") and repo["sync_in_progress"]:
                 # This repository is currently being synchronized
                 if state:
