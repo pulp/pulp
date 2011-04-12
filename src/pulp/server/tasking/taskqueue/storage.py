@@ -15,10 +15,66 @@
 
 import heapq
 import itertools
+from gettext import gettext as _
+
+from pulp.server.db.model.persistence import TaskSnapshot
+from pulp.server.tasking import task
+
+# base storage class ----------------------------------------------------------
+
+class Storage(object):
+
+    # query methods
+
+    def waiting_tasks(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def running_tasks(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def complete_tasks(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def all_tasks(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def find(self, criteria):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    # wait queue methods
+
+    def num_waiting(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def enqueue_waiting(self, task):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def dequeue_waiting(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def peek_waiting(self):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    # task storage
+
+    def remove_waiting(self, task):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def store_running(self, task):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def remove_running(self, task):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def store_complete(self, task):
+        raise NotImplementedError(_('Base Storage class method called'))
+
+    def remove_complete(self, task):
+        raise NotImplementedError(_('Base Storage class method called'))
 
 # storage class for in-memory task queues -------------------------------------
 
-class VolatileStorage(object):
+class VolatileStorage(Storage):
     """
     In memory queue storage class.
     """
@@ -26,6 +82,38 @@ class VolatileStorage(object):
         self.__waiting_tasks = []
         self.__running_tasks = []
         self.__complete_tasks = []
+
+    # query methods
+
+    def waiting_tasks(self):
+        return self.__waiting_tasks[:]
+
+    def running_tasks(self):
+        return self.__running_tasks[:]
+
+    def complete_tasks(self):
+        return self.__complete_tasks[:]
+
+    def all_tasks(self):
+        return itertools.chain(self.waiting_tasks(),
+                               self.running_tasks(),
+                               self.complete_tasks())
+
+    def find(self, criteria):
+        num_criteria = len(criteria)
+        tasks = []
+        # reverse the order of all the tasks in order to list the newest first
+        for task in reversed(list(self.all_tasks())):
+            matches = 0
+            for attr, value in criteria.items():
+                if not hasattr(task, attr):
+                    break;
+                if getattr(task, attr) != value:
+                    break;
+                matches += 1
+            if matches == num_criteria:
+                tasks.append(task)
+        return tasks
 
     # wait queue methods
 
@@ -66,31 +154,55 @@ class VolatileStorage(object):
         assert task in self.__complete_tasks
         self.__complete_tasks.remove(task)
 
+# storage class for database-stored tasks -------------------------------------
+
+class PersistentStorage(Storage):
+
+    @property
+    def collection(self):
+        return self.__dict__.setdefault('_collection', TaskSnapshot.get_collection())
+
     # query methods
 
+    def __tasks_with_states(self, states):
+        pass
+
     def running_tasks(self):
-        return self.__running_tasks[:]
+        pass
 
     def complete_tasks(self):
-        return self.__complete_tasks[:]
+        pass
 
-    def _all_tasks(self):
-        return itertools.chain(self.__complete_tasks[:],
-                               self.__running_tasks[:],
-                               sorted(self.__waiting_tasks[:]))
+    def all_tasks(self):
+        pass
 
-    def find(self, criteria):
-        num_criteria = len(criteria)
-        tasks = []
-        # reverse the order of all the tasks in order to list the newest first
-        for task in reversed(list(self._all_tasks())):
-            matches = 0
-            for attr, value in criteria.items():
-                if not hasattr(task, attr):
-                    break;
-                if getattr(task, attr) != value:
-                    break;
-                matches += 1
-            if matches == num_criteria:
-                tasks.append(task)
-        return tasks
+    def find(self):
+        pass
+
+    # wait queue methods
+
+    def num_waiting(self):
+        pass
+
+    def enqueue_waiting(self):
+        pass
+
+    def dequeue_waiting(self):
+        pass
+
+    # storage methods
+
+    def remove_waiting(self):
+        pass
+
+    def store_running(self):
+        pass
+
+    def remove_running(self):
+        pass
+
+    def store_complete(self):
+        pass
+
+    def remove_complete(self):
+        pass
