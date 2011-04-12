@@ -102,7 +102,7 @@ Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
 Requires:       m2crypto
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 5
 # Fedora
 Requires: mod_python
 %endif
