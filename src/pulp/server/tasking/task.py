@@ -139,7 +139,7 @@ class Task(object):
         if self.scheduled_time is None and other.scheduled_time is None:
             return 0
         if self.scheduled_time is None:
-            return - 1
+            return -1
         if other.scheduled_time is None:
             return 1
         return cmp(self.scheduled_time, other.scheduled_time)
