@@ -78,8 +78,7 @@ class CdsLib(object):
         log.info('Received release call')
 
         self.repo_cert_utils.delete_global_cert_bundle()
-
-        # TODO: this should probably clean up all repos as well
+        self._delete_all_repos()
 
     def sync(self, base_url, repos):
         '''
@@ -245,6 +244,26 @@ class CdsLib(object):
             log.info('Removing old repo [%s]' % doomed)
             shutil.rmtree(doomed)
 
+    def _delete_all_repos(self):
+        '''
+        Cleanup function used when a CDS is unregistered to remove all of its repositories.
+        '''
+
+        # Load the list of all currently syncced repos. If this can't be loaded, there
+        # isn't anything that can be done in terms of deleting old repos, so punch out early.        
+        packages_dir = self.config.get('cds', 'packages_dir')
+        repo_list_filename = os.path.join(packages_dir, REPO_LIST_FILENAME)
+        if not os.path.exists(repo_list_filename):
+            return
+
+        repo_list_file = open(repo_list_filename, 'r')
+        repo_paths = repo_list_file.read().split()
+
+        # Delete the local paths for those urls
+        for path in repo_paths:
+            doomed = os.path.join(packages_dir, path)
+            log.info('Removing old repo [%s]' % doomed)
+            shutil.rmtree(doomed)
 
 class SecretFile:
     '''
