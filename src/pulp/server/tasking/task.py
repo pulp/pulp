@@ -228,7 +228,7 @@ class Task(object):
         """
         Retrieve task from a snapshot
         """
-        task = copy.deepcopy(Task(dir))
+        task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
         for attr in _copied_fields:
             setattr(task, attr, snapshot.get(attr, None))
         for attr in _pickled_fields:
