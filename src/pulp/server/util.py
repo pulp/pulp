@@ -22,6 +22,7 @@ import random
 import shutil
 import string
 import tempfile
+import threading
 import time
 import commands
 import rpm
@@ -30,9 +31,17 @@ import yum
 from pulp.server import config, constants
 from pulp.server.pexceptions import PulpException
 from grinder import GrinderUtils
+from grinder import RepoFetch
 
 log = logging.getLogger(__name__)
 
+# We are seeing segmentation faults when multiple threads
+# access yum/urlgrabber functionality concurrently.
+# This lock is intended to serialize the requests
+# We want to synchronize threads from grinder AND pulp
+# so that only one thread at a time is using yum's urlgrabber fetching
+# See bz:695743 - Multiple concurrent calls to util.get_repo_packages() results in Segmentation fault
+__yum_lock = RepoFetch.GRINDER_YUM_LOCK
 
 class CreateRepoError(PulpException):
     def __init__(self, output):
@@ -207,6 +216,12 @@ def get_repo_packages(path):
     @return: List of available packages objects in the repo.  
     """
     temp_path = tempfile.mkdtemp(prefix="temp_pulp_repo")
+    # We want to limit yum operations to 1 per process.
+    # When running with 5 threads calling this function we are seeing a Segmentation Fault
+    # from yum/urlgrabber/libcurl.  Seen on Fedora 14.  yum 3.2.28, libcurl 7.21
+    # https://bugzilla.redhat.com/show_bug.cgi?id=695743
+    # Bug 695743 - Multiple concurrent calls to util.get_repo_packages() results in Segmentation fault
+    __yum_lock.acquire()
     try:
         r = _get_yum_repomd(path, temp_path=temp_path)
         if not r:
@@ -214,6 +229,7 @@ def get_repo_packages(path):
         r.sack.populate(r, 'metadata', None, 0)
         return r.getPackageSack().returnPackages()
     finally:
+        __yum_lock.release()
         try:
             shutil.rmtree(temp_path)
         except Exception, e:

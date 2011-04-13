@@ -17,21 +17,46 @@
 import logging
 import os
 import sys
+import time
+import traceback
 import unittest
+from threading import Thread
 
 srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
+commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
+sys.path.insert(0, commondir)
+
+from pulp.server import async
+from pulp.server.api.repo import RepoApi
 from pulp.server.util import chunks
 from pulp.server.util import get_rpm_information
 from pulp.server.util import get_repo_packages
 from pulp.server.util import get_repo_package
 from pulp.server.util import get_relative_path
+import testutil
 
+logging.root.setLevel(logging.INFO)
+qpid = logging.getLogger('qpid.messaging')
+qpid.setLevel(logging.ERROR)
 
-logging.root.setLevel(logging.ERROR)
-
+CERTS_DIR = '/tmp/test_repo_api/repos'
 class TestUtil(unittest.TestCase):
+
+    def setUp(self):
+        self.config = testutil.load_test_config()
+        self.config.set('repos', 'cert_location', CERTS_DIR)
+
+        self.data_path = \
+            os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
+        self.rapi = RepoApi()
+        async.initialize()
+        self.clean()
+
+    def clean(self):
+        self.rapi.clean()
+        testutil.common_cleanup()
 
     def test_getrpminfo(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
@@ -99,6 +124,66 @@ class TestUtil(unittest.TestCase):
         rel = get_relative_path(src, dst)
         expected_rel = "../../../../../../packages/ruby-gofer/0.20/1.fc14/noarch/804/ruby-gofer-0.20-1.fc14.noarch.rpm"
         self.assertEquals(rel, expected_rel)
+
+    def test_get_repo_packages_multi_repo(self):
+        # We are testing 2 issues with this test
+        # 1) Trying to re-create "pycurl.error"
+        # 2) Causing a Segmentation fault from libcurl 'Curl_done'
+        #
+        # We want to recreate a scenario to force the below pycurl.error
+        #  File "/home/hudson/workspace/pulp-dev/test/unit/../../src/pulp/server/util.py", line 214, in get_repo_packages
+        #    r.sack.populate(r, 'metadata', None, 0)
+        #  ......
+        #  File "/usr/lib/python2.7/site-packages/yum/yumRepo.py", line 1405, in _getRepoXML
+        #    self._loadRepoXML(text=self)
+        #  ......
+        #  File "/usr/lib/python2.7/site-packages/urlgrabber/grabber.py", line 1161, in _set_opts
+        #    self.curl_obj.setopt(pycurl.NOPROGRESS, False)
+        #error: cannot invoke setopt() - perform() is currently running
+        class TestMultiGetRepoPkgsThreads(Thread):
+            def __init__ (self, data_dir):
+                Thread.__init__(self)
+                self.stopped = False
+                self.caught = False
+                self.caught_exception = None
+                self.data_dir = data_dir
+            def run(self):
+                while not self.stopped:
+                    try:
+                        get_repo_packages(data_dir)
+                    except Exception, e:
+                        self.caught = True
+                        self.caught_exception = e
+                        tb_info = traceback.format_exc()
+                        print "Traceback: %s" % (tb_info)
+
+        repo_a = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_A',
+                                'pulp_f14_background_sync', 'x86_64',
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+        self.assertTrue(repo_a is not None)
+        background_sync_task_a = self.rapi.sync(repo_a['id'])
+
+        repo_b = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_B',
+                                'pulp_f14_background_sync', 'i386',
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386/')
+        self.assertTrue(repo_b is not None)
+        background_sync_task_b = self.rapi.sync(repo_b['id'])
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        data_dir = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"
+        test_threads = [TestMultiGetRepoPkgsThreads(data_dir) for x in range(0,5)]
+        for t in test_threads:
+            t.start()
+        time.sleep(2)
+        caught = False
+        for t in test_threads:
+            t.stopped = True
+            t.join()
+            if t.caught:
+                caught = True
+                print "t.caught_exception = %s" % (t.caught_exception)
+        self.assertFalse(caught)
+
+
 
 
 
