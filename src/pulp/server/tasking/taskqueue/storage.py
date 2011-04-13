@@ -13,14 +13,17 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import copy_reg
 import heapq
 import itertools
+import types
 from gettext import gettext as _
 
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
+from pulp.server.util import Singleton
 
 # base storage class ----------------------------------------------------------
 
@@ -154,7 +157,31 @@ class VolatileStorage(Storage):
 
 # storage class for database-stored tasks -------------------------------------
 
+def _pickle_method(method):
+    func_name = method.im_func.__name__
+    obj = method.im_self
+    cls = method.im_class
+    return _unpickle_method, (func_name, obj, cls)
+
+
+def _unpickle_method(func_name, obj, cls):
+    for cls in cls.mro():
+        try:
+            func = cls.__dict__[func_name]
+        except KeyError:
+            pass
+        else:
+            break
+    return func.__get__(obj, cls)
+
+
 class PersistentStorage(Storage):
+
+    __metaclass__ = Singleton
+
+    def __init__(self):
+        super(PersistentStorage, self).__init__()
+        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
 
     # database methods
 
