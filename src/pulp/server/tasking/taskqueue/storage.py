@@ -41,10 +41,25 @@ class Storage(object):
         raise NotImplementedError(_('Base Storage class method called'))
 
     def all_tasks(self):
-        raise NotImplementedError(_('Base Storage class method called'))
+        return itertools.chain(self.waiting_tasks(),
+                               self.running_tasks(),
+                               self.complete_tasks())
 
     def find(self, criteria):
-        raise NotImplementedError(_('Base Storage class method called'))
+        num_criteria = len(criteria)
+        tasks = []
+        # reverse the order of all the tasks in order to list the newest first
+        for task in reversed(list(self.all_tasks())):
+            matches = 0
+            for attr, value in criteria.items():
+                if not hasattr(task, attr):
+                    break;
+                if getattr(task, attr) != value:
+                    break;
+                matches += 1
+            if matches == num_criteria:
+                tasks.append(task)
+        return tasks
 
     # wait queue methods
 
@@ -95,27 +110,6 @@ class VolatileStorage(Storage):
 
     def complete_tasks(self):
         return self.__complete_tasks[:]
-
-    def all_tasks(self):
-        return itertools.chain(self.waiting_tasks(),
-                               self.running_tasks(),
-                               self.complete_tasks())
-
-    def find(self, criteria):
-        num_criteria = len(criteria)
-        tasks = []
-        # reverse the order of all the tasks in order to list the newest first
-        for task in reversed(list(self.all_tasks())):
-            matches = 0
-            for attr, value in criteria.items():
-                if not hasattr(task, attr):
-                    break;
-                if getattr(task, attr) != value:
-                    break;
-                matches += 1
-            if matches == num_criteria:
-                tasks.append(task)
-        return tasks
 
     # wait queue methods
 
