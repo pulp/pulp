@@ -18,7 +18,9 @@ import itertools
 from gettext import gettext as _
 
 from pulp.server.db.model.persistence import TaskSnapshot
-from pulp.server.tasking import task
+from pulp.server.tasking.task import (
+    task_running, task_ready_states, task_complete_states, task_waiting,
+    task_states)
 
 # base storage class ----------------------------------------------------------
 
@@ -121,6 +123,8 @@ class VolatileStorage(Storage):
         heapq.heappush(self.__waiting_tasks, task)
 
     def dequeue_waiting(self):
+        if not self.__waiting_tasks:
+            return None
         return heapq.heappop(self.__waiting_tasks)
 
     # storage methods
@@ -132,6 +136,7 @@ class VolatileStorage(Storage):
 
     def store_running(self, task):
         assert task not in self.__waiting_tasks
+        assert task not in self.__complete_tasks
         self.__running_tasks.append(task)
 
     def remove_running(self, task):
@@ -140,8 +145,7 @@ class VolatileStorage(Storage):
 
     def store_complete(self, task):
         assert task not in self.__waiting_tasks
-        if task in self.__running_tasks:
-            self.__running_tasks.remove(task)
+        assert task not in self.__running_tasks
         self.__complete_tasks.append(task)
 
     def remove_complete(self, task):
@@ -152,51 +156,80 @@ class VolatileStorage(Storage):
 
 class PersistentStorage(Storage):
 
+    # database methods
+
     @property
     def collection(self):
         return self.__dict__.setdefault('_collection', TaskSnapshot.get_collection())
 
-    # query methods
+    def __store_task(self, task):
+        self.collection.save(task.snapshot(), safe=True)
 
     def __tasks_with_states(self, states):
-        pass
+        return self.collection.find({'state': {'$in': list(states)}},
+                                    as_class=TaskSnapshot)
+
+    def __cursor_to_tasks(self, cursor):
+        return [s.to_task() for s in cursor]
+
+    def __running_tasks(self):
+        return self.__tasks_with_states((task_running))
+
+    def __complete_tasks(self):
+        return self.__tasks_with_states(task_complete_states)
+
+    def __all_tasks(self):
+        return self.__tasks_with_states(task_states)
+
+    # query methods
 
     def running_tasks(self):
-        pass
+        return self.__cursor_to_tasks(self.__running_tasks())
 
     def complete_tasks(self):
-        pass
+        return self.__cursor_to_tasks(self.__complete_tasks())
 
     def all_tasks(self):
-        pass
+        return self.__cursor_to_tasks(self.__all_tasks())
 
-    def find(self):
-        pass
+    def find(self, criteria):
+        # provided here in case we want to override this
+        super(PersistentStorage, self).find(criteria)
 
     # wait queue methods
 
     def num_waiting(self):
-        pass
+        return self.__tasks_with_states(task_ready_states).count()
 
-    def enqueue_waiting(self):
-        pass
+    def enqueue_waiting(self, task):
+        assert task.state is task_waiting
+        assert task.scheduled_time is not None
+        self.__store_task(task)
 
     def dequeue_waiting(self):
-        pass
+        snapshots = self.running_tasks().sort('scheduled_time').limit(1)
+        if snapshots.count() == 0:
+            return None
+        return snapshots[0].to_task()
 
     # storage methods
 
-    def remove_waiting(self):
-        pass
+    def remove_waiting(self, task):
+        self.collection.delete({'id': task['id'], 'state': task_waiting})
 
-    def store_running(self):
-        pass
+    def store_running(self, task):
+        assert task.state is task_running
+        self.__store_task(task)
 
-    def remove_running(self):
-        pass
+    def remove_running(self, task):
+        self.collection.delete({'id': task['id'], 'state': task_running})
 
-    def store_complete(self):
-        pass
+    def store_complete(self, task):
+        assert task.state in task_complete_states
+        self.__store_task(task)
 
-    def remove_complete(self):
+    def remove_complete(self, task):
+        # as we're storing multiple copies of each task in the complete state,
+        # this method is now a noop because there's not enough information
+        # provided to decided on which copy to delete
         pass
