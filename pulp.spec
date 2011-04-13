@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.162
+Version:        0.0.163
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -278,6 +278,35 @@ fi
 
 
 %changelog
+* Wed Apr 13 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.163-1
+- Retrieve the auth bundle if the repo is protected and pass that when
+  connecting to Pulp (jason.dobies@redhat.com)
+- 653503 - Adding status option to pulp-server init script
+  (pkilambi@redhat.com)
+- Add hook to delete all repos when the CDS is unregistered.
+  (jason.dobies@redhat.com)
+- 695610 - Adding pulp-agent as a ghost to pulp spec (pkilambi@redhat.com)
+- Bump to grinder 0.94 (needed for shared grinder/pulp lock on yum/urlgrabber
+  multi-thread issue) (jmatthews@redhat.com)
+- 695743 - Multiple concurrent calls to util.get_repo_packages() results in
+  Segmentation fault (jmatthews@redhat.com)
+- Ensure that 'skip' is an empty dictionary, even if None is passed into method
+  (jmatthews@redhat.com)
+- Fix for converting a task to a string, problem with kwargs
+  (jmatthews@redhat.com)
+- 695702 - Error from deleting a repo while sync is in progress
+  (jmatthews@redhat.com)
+- Adding mod_python as a dependency for pulp on el6 (pkilambi@redhat.com)
+- 695483 - Need to pass in an empty bundle to trigger the files getting deleted
+  on the server. (jason.dobies@redhat.com)
+- allow comparisons of tasks with a scheduled time of None (jconnor@redhat.com)
+- short-circuit in logic that prevents a task from ending up in completed tasks
+  and waiting tasks, if just for a little bit (jconnor@redhat.com)
+- Yum syncs should now generate repo metadata after the pkg download completes.
+  It still fetches the remote metadata but use that for only download and
+  purging orphaned packages. create and modify repo is run at the end of
+  grinder sync in pulp. (pkilambi@redhat.com)
+
 * Mon Apr 11 2011 Jeff Ortel <jortel@redhat.com> 0.0.162-1
 - Prevent multiple syncs on the same repo from occuring at the same time.
   (jmatthews@redhat.com)
