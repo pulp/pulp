@@ -99,6 +99,7 @@ class PackageApi(BaseApi):
                 log.debug("Delete package %s at %s" % (pkg["filename"], pkg_packages_path))
                 os.remove(pkg_packages_path)
                 self.__pkgdeleted(id, pkg_packages_path)
+                pulp.server.util.delete_empty_directories(os.path.dirname(pkg_packages_path))
         self.collection.remove({'_id':id})
 
     def package(self, id):

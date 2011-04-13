@@ -584,7 +584,7 @@ class RepoApi(BaseApi):
                     #file removal failed
                     log.error("Unable to cleanup file %s " % fpath)
                     continue
-
+        pulp.server.util.delete_empty_directories(fpath)
         # Delete any certificate bundles for the repo
         repo_cert_utils = RepoCertUtils(config.config)
         repo_cert_utils.delete_for_repo(id)

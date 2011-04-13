@@ -92,6 +92,7 @@ class FileApi(BaseApi):
             log.info("file path to be remove %s" % file_path)
             if os.path.exists(file_path):
                 os.remove(file_path)
+                pulp.server.util.delete_empty_directories(os.path.dirname(file_path))
                 self.__filedeleted(id, file_path)
 
     def file(self, id):

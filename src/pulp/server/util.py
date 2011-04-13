@@ -396,6 +396,26 @@ def modify_repo(dir, new_file):
     log.info("modifyrepo with %s on %s finished" % (new_file, dir))
     return status, out
 
+def delete_empty_directories(dirname):
+    if not os.path.isdir(dirname):
+        log.error("%s is not a directory" % dirname)
+        return
+    empty = True
+    try:
+        top_level_dirs = [top_repos_location(), top_package_location(), top_file_location()]
+        while empty:
+            if dirname not in top_level_dirs and os.listdir(dirname) == []:
+                os.rmdir(dirname)
+                log.debug("Successfully cleaned up %s" % dirname)
+                dirname = os.path.dirname(dirname)
+                log.debug("Processing %s" % dirname)
+            else:
+                log.debug("Not an empty dir %s" % dirname)
+                empty = False
+    except Exception,e:
+        # we can hit multiple conditions during remove
+        log.error("Unable to delete empty directories due to the following error: %s" % e)
+
 class Singleton(type):
     """
     Singleton metaclass. To make a class instance a singleton, use this class

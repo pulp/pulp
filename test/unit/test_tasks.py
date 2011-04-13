@@ -140,8 +140,7 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(restored_task.state == task_error)
         self.assertTrue(restored_task.traceback is not None)
 
-    def disable_sync_task(self):
-    #def test_sync_task(self):
+    def test_sync_task(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
@@ -151,6 +150,9 @@ class TaskTester(unittest.TestCase):
         restored_task = Task.from_snapshot(snapshot)
         print "restored sync task: %s" % restored_task.__dict__
         self.assertTrue(restored_task.state == 'waiting')
+        while task.state not in ('finished', 'error', 'timed out', 'canceled'):
+            time.sleep(3)
+
 
 class QueueTester(unittest.TestCase):
 
