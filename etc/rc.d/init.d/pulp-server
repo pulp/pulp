@@ -14,7 +14,6 @@
 RETVAL=0
 init_file=/var/lib/pulp/init.flag
 
-
 init() {
     MONGODIR=/var/lib/mongodb
     if [ ! -d $MONGODIR ]; then
@@ -48,12 +47,22 @@ stop() {
     return $RETVAL
 }
 
+status() {
+    /etc/rc.d/init.d/mongod status || RETVAL=$?
+    [ $RETVAL = 0 ] && /etc/rc.d/init.d/httpd status || RETVAL=$?
+    [ $RETVAL = 0 ] && /etc/rc.d/init.d/qpidd status || RETVAL=$?
+    return $RETVAL
+}
+
 case "$1" in
     init)
         init
         ;;
     start)
         start
+        ;;
+    status)
+        status
         ;;
     stop)
         stop
@@ -63,7 +72,7 @@ case "$1" in
         start
         ;;
     *)
-        echo $"Usage: pulp-server {init|start|stop|restart}"
+        echo $"Usage: pulp-server {init|start|stop|status|restart}"
         RETVAL=3
 esac
 
