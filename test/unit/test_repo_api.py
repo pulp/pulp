@@ -794,7 +794,22 @@ class TestRepoApi(unittest.TestCase):
         parsed = json.loads(jsonrepo)
         assert(parsed is not None)
         print parsed
-
+        
+    def cancel_task(self):
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+        self.assertTrue(repo is not None)
+        task = self.rapi.sync(repo['id'])
+        task.cancel()
+        
+    def test_sync_with_wrong_source(self):
+        try:
+            repo = self.rapi.create('some-id', 'some name', 'i386',
+                                    'foo:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+            self.assertTrue(repo is not None)
+        except PulpException: 
+            pass
+        
     def test_sync_two_repos_same_nevra_different_checksum(self):
         """
         Sync 2 repos that have a package with same NEVRA 
