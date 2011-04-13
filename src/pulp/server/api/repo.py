@@ -1464,7 +1464,7 @@ class RepoApi(BaseApi):
     def get_synchronizer(self, source_type):
         return repo_sync.get_synchronizer(source_type)
 
-    def _sync(self, id, skip_dict={}, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
+    def _sync(self, id, skip_dict=None, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
         """
         Sync a repo from the URL contained in the feed
         @param id repository id
@@ -1486,6 +1486,8 @@ class RepoApi(BaseApi):
             raise ConflictingOperationException()
         
         try:
+            if not skip_dict:
+                skip_dict = {}
             repo = self._get_existing_repo(id)
             repo_source = repo['source']
             if not repo_source:
