@@ -13,6 +13,8 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import pickle
+
 from pulp.server.db.model.base import Model
 
 # task snapshot model ---------------------------------------------------------
@@ -34,4 +36,13 @@ class TaskSnapshot(Model):
         self.update(serialized_task)
 
     def to_task(self):
-        pass
+        """
+        De-serialize this snapshot into a task using the serialized task class.
+        @rtype: L{pulp.server.tasking.task.Task} instance
+        @return: de-serialized task represented by this snapshot
+        """
+        task_class = self.get('task_class', None)
+        if task_class is None:
+            raise Exception()
+        cls = pickle.loads(task_class)
+        return cls.from_snapshot(self)
