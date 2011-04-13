@@ -204,7 +204,7 @@ class Task(object):
         Serialize the task into snapshot and store it in db
         """
         snapshot = {}
-        snapshot['task_type'] = self.__class__.__name__
+        snapshot['task_class'] = pickle.dumps(self.__class__)
         for attr in _copied_fields:
             snapshot[attr] = getattr(self, attr, None)
         for attr in _pickled_fields:
@@ -221,7 +221,6 @@ class Task(object):
                 msg = _("Error pickling attribute %s: %s")
                 raise TaskPicklingError(msg % (attr, getattr(self, attr, None)))
         s = model.TaskSnapshot(snapshot)
-        self._get_task_snapshots_collection().insert(s, safe=True)
         return s
 
     @classmethod
