@@ -31,8 +31,7 @@ class TaskSnapshot(Model):
         @param task: task to serialize into a snapshot
         """
         super(TaskSnapshot, self).__init__()
-        for key, value in serialized_task.items():
-            setattr(self, key, value)
+        self.update(serialized_task)
 
     def to_task(self):
         pass
