@@ -474,9 +474,9 @@ class PriorityQueueTester(unittest.TestCase):
             t2 = ordered[i + 1]
             self.assertTrue(t1.scheduled_time <= t2.scheduled_time)
 
-    def test_task_peed(self):
+    def test_task_peek(self):
         self._enqueue_three_tasks()
-        t = self.storage.peek_waiting()
+        t = self.storage.dequeue_waiting()
         self.assertTrue(t.scheduled_time == 1)
 
     def test_task_removal(self):
