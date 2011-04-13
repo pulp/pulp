@@ -189,7 +189,16 @@ class CdsLib(object):
 
                 log.debug('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
 
-                fetch = YumRepoGrinder('', url, num_threads, sslverify=0)
+                # If the repo is protected, add in the credentials
+                feed_ca = feed_cert = feed_key = None
+                bundle = self.repo_cert_utils.read_consumer_cert_bundle(repo['id'])
+                if bundle is not None:
+                    log.debug('Configuring repository for authentication')
+                    feed_ca = bundle['ca'].encode('utf8')
+                    feed_cert = bundle['cert'].encode('utf8')
+                    feed_key = bundle['key'].encode('utf8')
+
+                fetch = YumRepoGrinder('', url, num_threads, sslverify=0, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
                 fetch.fetchYumRepo(repo_path)
 
                 successfully_syncced_repos.append(repo)
