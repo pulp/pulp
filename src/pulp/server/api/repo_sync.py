@@ -193,7 +193,9 @@ class BaseSynchronizer(object):
             self.progress[key] = kwargs[key]
         self.callback(self.progress)
 
-    def add_packages_from_dir(self, dir, repo, skip={}):
+    def add_packages_from_dir(self, dir, repo, skip=None):
+        if not skip:
+            skip = {}
         added_packages = {}
         added_errataids = []
         if not skip.has_key('packages') or skip['packages'] != 1:
