@@ -50,7 +50,7 @@ import testutil
 logging.root.setLevel(logging.ERROR)
 CERTS_DIR = '/tmp/test_repo_api/repos'
 
-class TestRepoApi(unittest.TestCase):
+class TestRepoSync(unittest.TestCase):
 
     def clean(self):
         self.rapi.clean()
