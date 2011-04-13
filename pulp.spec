@@ -163,6 +163,7 @@ cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
 cp etc/rc.d/init.d/* %{buildroot}/etc/rc.d/init.d/
+ln -s etc/rc.d/init.d/goferd %{buildroot}/etc/rc.d/init.d/pulp-agent
 
 # Remove egg info
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
@@ -257,6 +258,7 @@ fi
 %{_sysconfdir}/gofer/plugins/pulp.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
+%ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
 
 
 %files cds
