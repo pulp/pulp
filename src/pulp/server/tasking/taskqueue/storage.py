@@ -187,11 +187,10 @@ class PersistentStorage(Storage):
         self.collection.save(task.snapshot(), safe=True)
 
     def __tasks_with_states(self, states):
-        return self.collection.find({'state': {'$in': list(states)}},
-                                    as_class=TaskSnapshot)
+        return self.collection.find({'state': {'$in': list(states)}})
 
     def __cursor_to_tasks(self, cursor):
-        return [s.to_task() for s in cursor]
+        return [TaskSnapshot(s).to_task() for s in cursor]
 
     def __running_tasks(self):
         return self.__tasks_with_states((task_running))
