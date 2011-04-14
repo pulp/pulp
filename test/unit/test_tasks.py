@@ -637,13 +637,11 @@ class PersistentTaskTester(unittest.TestCase):
         count = collection.find().count()
         self.assertTrue(count == 1, 'count is %d' % count)
 
-    def __test_db_retrieval(self):
+    def test_db_retrieval(self):
         task1 = RepoSyncTask(Class().method)
         snapshot1 = task1.snapshot()
         collection = TaskSnapshot.get_collection()
         collection.insert(snapshot1, safe=True)
-        #snapshot2 = collection.find_one({'_id': snapshot1['_id']},
-        #                                as_class=TaskSnapshot)
         snapshot2 = TaskSnapshot(collection.find_one({'_id': snapshot1['_id']}))
         task2 = snapshot2.to_task()
         self.assertTrue(isinstance(task2, RepoSyncTask))
