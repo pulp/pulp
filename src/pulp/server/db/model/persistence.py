@@ -26,6 +26,8 @@ class TaskSnapshot(Model):
     """
 
     collection_name = "task_snapshots"
+    unique_indicies = ()
+    other_indicies = ('id', 'state')
 
     def __init__(self, serialized_task):
         """
