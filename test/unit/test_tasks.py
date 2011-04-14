@@ -32,6 +32,8 @@ sys.path.insert(0, commondir)
 
 import testutil
 
+testutil.load_test_config()
+
 from pulp.server import async
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import RepoSyncTask
@@ -573,9 +575,11 @@ class PersistentTaskTester(unittest.TestCase):
 
     def setUp(self):
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+        TaskSnapshot.get_collection().remove()
+        self.same_type_fields = ('scheduler',)
 
     def tearDown(self):
-        pass
+        TaskSnapshot.get_collection().remove()
 
     def test_task_serialization(self):
         task = Task(noop)
@@ -589,14 +593,13 @@ class PersistentTaskTester(unittest.TestCase):
         self.assertTrue(isinstance(task2, Task))
 
     def test_task_equality(self):
-        _same_type_fields = ('scheduler',)
         task1 = Task(noop)
         snapshot = task1.snapshot()
         task2 = snapshot.to_task()
         for field in itertools.chain(_copied_fields, _pickled_fields):
             f1 = getattr(task1, field)
             f2 = getattr(task2, field)
-            if field in _same_type_fields:
+            if field in self.same_type_fields:
                 self.assertTrue(type(f1) is type(f2),
                                 '%s is not the same type' % field)
             else:
@@ -627,10 +630,23 @@ class PersistentTaskTester(unittest.TestCase):
         self.assertTrue(isinstance(task2, RepoSyncTask))
 
     def test_db_storage(self):
-        pass
+        task = Task(noop)
+        snapshot = task.snapshot()
+        collection = TaskSnapshot.get_collection()
+        collection.insert(snapshot, safe=True)
+        count = collection.find().count()
+        self.assertTrue(count == 1, 'count is %d' % count)
 
-    def test_db_retrieval(self):
-        pass
+    def __test_db_retrieval(self):
+        task1 = RepoSyncTask(Class().method)
+        snapshot1 = task1.snapshot()
+        collection = TaskSnapshot.get_collection()
+        collection.insert(snapshot1, safe=True)
+        #snapshot2 = collection.find_one({'_id': snapshot1['_id']},
+        #                                as_class=TaskSnapshot)
+        snapshot2 = TaskSnapshot(collection.find_one({'_id': snapshot1['_id']}))
+        task2 = snapshot2.to_task()
+        self.assertTrue(isinstance(task2, RepoSyncTask))
 
 # run the unit tests ----------------------------------------------------------
 
