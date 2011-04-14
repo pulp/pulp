@@ -39,8 +39,8 @@ Requires: acl
 Requires: mongodb
 Requires: mongodb-server
 Requires: qpid-cpp-server
-%if 0%{?fedora}
-# Fedora
+%if 0%{?fedora} || 0%{?rhel} > 5
+# Fedora or RHEL-6 and beyond
 Requires: mod_python
 %endif
 %if 0%{?el5}
