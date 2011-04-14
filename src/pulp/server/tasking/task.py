@@ -91,7 +91,6 @@ _pickled_fields = (
     '_progress_callback',
     'progress',
     'result',
-    'synchronizer',
 )
 
 
