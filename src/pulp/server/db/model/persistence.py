@@ -29,11 +29,14 @@ class TaskSnapshot(Model):
     unique_indicies = ()
     other_indicies = ('id', 'state')
 
-    def __init__(self, serialized_task):
+    def __init__(self, serialized_task=None):
         """
         @type task: L{Task} instance
         @param task: task to serialize into a snapshot
         """
+        # XXX allow detect SON serialized task and properly handle the
+        # necessary string conversions
+        serialized_task = serialized_task or {}
         super(TaskSnapshot, self).__init__()
         self.update(serialized_task)
 
