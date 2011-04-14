@@ -14,10 +14,13 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import copy_reg
+import itertools
 import os
 import pprint
 import sys
 import time
+import types
 import unittest
 from datetime import datetime, timedelta
 
@@ -27,20 +30,22 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.server.tasking.task import (
-    Task, task_waiting, task_finished, task_error, task_timed_out,
-    task_canceled, task_complete_states)
-from pulp.server.db.model.persistence import TaskSnapshot
-from pulp.server.api.repo import RepoApi
+import testutil
+
 from pulp.server import async
+from pulp.server.api.repo import RepoApi
+from pulp.server.api.repo_sync import RepoSyncTask
+from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
+from pulp.server.tasking.task import (
+    Task, task_waiting, task_finished, task_error, task_timed_out,
+    task_canceled, task_complete_states, _copied_fields, _pickled_fields)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
-from pulp.server.tasking.taskqueue.storage import VolatileStorage
+from pulp.server.tasking.taskqueue.storage import (
+    VolatileStorage, PersistentStorage, _pickle_method, _unpickle_method)
 
-import testutil
-import copy_reg
-import types
+# task test functions ---------------------------------------------------------
 
 def noop():
     pass
@@ -64,29 +69,17 @@ def interrupt_me():
 def wait(seconds=5):
     time.sleep(seconds)
 
-def _pickle_method(method):
-    func_name = method.im_func.__name__
-    obj = method.im_self
-    cls = method.im_class
-    return _unpickle_method, (func_name, obj, cls)
+class Class(object):
+    def method(self):
+        pass
 
-
-def _unpickle_method(func_name, obj, cls):
-    for cls in cls.mro():
-        try:
-            func = cls.__dict__[func_name]
-        except KeyError:
-            pass
-        else:
-            break
-    return func.__get__(obj, cls)
-
+# unittest classes ------------------------------------------------------------
 
 class TaskTester(unittest.TestCase):
 
     def setUp(self):
         self.rapi = RepoApi()
-        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+        #copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         async.initialize()
 
     def tearDown(self):
@@ -140,7 +133,7 @@ class TaskTester(unittest.TestCase):
         self.assertTrue(restored_task.state == task_error)
         self.assertTrue(restored_task.traceback is not None)
 
-    def test_sync_task(self):
+    def __test_sync_task(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
@@ -151,7 +144,7 @@ class TaskTester(unittest.TestCase):
         print "restored sync task: %s" % restored_task.__dict__
         self.assertTrue(restored_task.state == 'waiting')
         task.cancel()
-        restored_task.cancel()    
+        restored_task.cancel()
 
 
 class QueueTester(unittest.TestCase):
@@ -574,6 +567,70 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(isinstance(task.scheduler, ImmediateScheduler))
         self._wait_for_task(task)
         self.assertTrue(task.scheduled_time is None)
+
+
+class PersistentTaskTester(unittest.TestCase):
+
+    def setUp(self):
+        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+
+    def tearDown(self):
+        pass
+
+    def test_task_serialization(self):
+        task = Task(noop)
+        snapshot = task.snapshot()
+        self.assertTrue(isinstance(snapshot, TaskSnapshot))
+
+    def test_task_deserialization(self):
+        task1 = Task(noop)
+        snapshot = task1.snapshot()
+        task2 = snapshot.to_task()
+        self.assertTrue(isinstance(task2, Task))
+
+    def test_task_equality(self):
+        _same_type_fields = ('scheduler',)
+        task1 = Task(noop)
+        snapshot = task1.snapshot()
+        task2 = snapshot.to_task()
+        for field in itertools.chain(_copied_fields, _pickled_fields):
+            f1 = getattr(task1, field)
+            f2 = getattr(task2, field)
+            if field in _same_type_fields:
+                self.assertTrue(type(f1) is type(f2),
+                                '%s is not the same type' % field)
+            else:
+                self.assertTrue(f1 == f2, '%s is not equal' % field)
+
+    def test_method_serialization(self):
+        obj = Class()
+        task = Task(obj.method)
+        snapshot = task.snapshot()
+        self.assertTrue(isinstance(snapshot, TaskSnapshot))
+
+    def test_method_deserialization(self):
+        obj = Class()
+        task = Task(obj.method)
+        snapshot = task.snapshot()
+        task2 = snapshot.to_task()
+        self.assertTrue(isinstance(task2.callable, types.MethodType))
+
+    def test_sync_task_serialization(self):
+        task = RepoSyncTask(Class().method)
+        snapshot = task.snapshot()
+        self.assertTrue(isinstance(snapshot, TaskSnapshot))
+
+    def test_sync_task_deserialization(self):
+        task1 = RepoSyncTask(Class().method)
+        snapshot = task1.snapshot()
+        task2 = snapshot.to_task()
+        self.assertTrue(isinstance(task2, RepoSyncTask))
+
+    def test_db_storage(self):
+        pass
+
+    def test_db_retrieval(self):
+        pass
 
 # run the unit tests ----------------------------------------------------------
 
