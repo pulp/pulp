@@ -38,7 +38,18 @@ class TaskSnapshot(Model):
         # necessary string conversions
         serialized_task = serialized_task or {}
         super(TaskSnapshot, self).__init__()
-        self.update(serialized_task)
+        self.update(self._process_serialized_task(serialized_task))
+
+    def _process_serialized_task(self, serialized_task):
+        # we're using ascii pickling, but the mongodb converts all string to
+        # unicode, so we need to convert them back in order to properly load
+        # snapshots from the database
+        def _process_value(value):
+            if not isinstance(value, basestring):
+                return value
+            return unicode(value).encode('ascii').strip()
+
+        return dict([(k, _process_value(v)) for k, v in serialized_task.items()])
 
     def to_task(self):
         """
