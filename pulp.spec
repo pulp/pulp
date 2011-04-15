@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.165
+Version:        0.0.166
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -278,6 +278,12 @@ fi
 
 
 %changelog
+* Fri Apr 15 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.166-1
+- Hooked CDS sync scheduling into the API and WS layers
+  (jason.dobies@redhat.com)
+- Reworked repo sync scheduling to be either reusable or repo-specific,
+  depending on the case. (jason.dobies@redhat.com)
+
 * Fri Apr 15 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.165-1
 - RHUI test build
 * Mon Mar 21 2011 John Matthews <jmatthews@redhat.com> 0.0.156-1
