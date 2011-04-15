@@ -24,12 +24,13 @@ class CDSAPI(PulpAPI):
         path = '/cds/%s/' % hostname
         return self.server.GET(path)[1]
 
-    def register(self, hostname, name=None, description=None):
+    def register(self, hostname, name=None, description=None, sync_schedule=None):
         data = {'hostname': hostname,
                 'name': name,
-                'description': description}
+                'description': description,
+                'sync_schedule' : sync_schedule,}
         path = '/cds/'
-        return self.server.PUT(path, data)[1]
+        return self.server.POST(path, data)[1]
 
     def unregister(self, hostname):
         path = '/cds/%s/' % hostname

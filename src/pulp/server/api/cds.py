@@ -26,6 +26,7 @@ import pulp.server.consumer_utils as consumer_utils
 from pulp.server import config
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
+from pulp.server.api.scheduled_sync import update_cds_schedule, delete_cds_schedule
 from pulp.server.auditing import audit
 from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
@@ -66,7 +67,7 @@ class CdsApi(BaseApi):
 # -- public api ---------------------------------------------------------------------
 
     @audit()
-    def register(self, hostname, name=None, description=None):
+    def register(self, hostname, name=None, description=None, sync_schedule=None):
         '''
         Registers the instance identified by hostname as a CDS in use by this pulp server.
         Before adding the CDS information to the pulp database, the CDS will be initialized.
@@ -79,10 +80,13 @@ class CdsApi(BaseApi):
 
         @param name: user-friendly name that briefly describes the CDS; if None, the hostname
                      will be used to populate this field
-        @type  name: string or None
+        @type  name: str or None
 
         @param description: description of the CDS; may be None
-        @type  description: string or None
+        @type  description: str or None
+
+        @param sync_schedule: contains information on when recurring syncs should execute
+        @type  sync_schedule: str
 
         @raise PulpException: if the CDS already exists, the hostname is unspecified, or
                               the CDS initialization fails
@@ -96,6 +100,7 @@ class CdsApi(BaseApi):
             raise PulpException('CDS already exists with hostname [%s]' % hostname)
 
         cds = CDS(hostname, name, description)
+        cds.sync_schedule = sync_schedule
 
         # Add call here to fire off initialize call to the CDS
         # and pdate the shared secret
@@ -126,6 +131,10 @@ class CdsApi(BaseApi):
         repo_cert_utils = RepoCertUtils(config.config)
         bundle = repo_cert_utils.read_global_cert_bundle()
         self.dispatcher.set_global_repo_auth(cds, bundle)
+
+        # If the CDS should sync regularly, update that now
+        if sync_schedule is not None:
+            update_cds_schedule(cds, sync_schedule)
 
         return cds
 
@@ -169,6 +178,9 @@ class CdsApi(BaseApi):
 
         # No need to send anything related to global repo auth; the CDS should
         # take care of deleting it from release call
+
+        # If the CDS is scheduled to sync, remove that now
+        delete_cds_schedule(doomed)
 
     def cds(self, hostname):
         '''
