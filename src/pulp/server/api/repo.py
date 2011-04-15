@@ -46,7 +46,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
-from pulp.server.api.scheduled_sync import update_schedule, delete_schedule
+from pulp.server.api.scheduled_sync import update_repo_schedule, delete_repo_schedule
 from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
 from pulp.server.compat import chain
@@ -210,7 +210,7 @@ class RepoApi(BaseApi):
             added = ks.add(gpgkeys)
         self.collection.insert(r, safe=True)
         if sync_schedule:
-            update_schedule(r, sync_schedule)
+            update_repo_schedule(r, sync_schedule)
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
@@ -518,7 +518,7 @@ class RepoApi(BaseApi):
             self.collection.save(parent_repo, safe=True)
 
         self._delete_published_link(repo)
-        delete_schedule(repo)
+        delete_repo_schedule(repo)
 
         # delete gpg key links
         path = repo['relative_path']
@@ -655,9 +655,9 @@ class RepoApi(BaseApi):
             # sync_schedule changed
             if key == 'sync_schedule':
                 if value:
-                    update_schedule(repo, value)
+                    update_repo_schedule(repo, value)
                 else:
-                    delete_schedule(repo)
+                    delete_repo_schedule(repo)
                 continue
             if key == 'use_symlinks':
                 if hascontent and (value != repo[key]):
