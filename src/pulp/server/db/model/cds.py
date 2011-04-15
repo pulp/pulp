@@ -42,6 +42,7 @@ class CDS(Model):
         self.repo_ids = []
         self.last_sync = None
         self.secret = None
+        self.sync_schedule = None
 
     def __str__(self):
         return self.hostname
@@ -94,4 +95,12 @@ class CDSRepoRoundRobin(Model):
 
     def __str__(self):
         return 'Repo [%s], next permutation [%s]' % (self.repo_id, ','.join(self.next_permutation))
-    
+
+class CDSSyncSchedule(Model):
+    """
+    Class representing a serialized CDS sync schedule.
+    """
+    def __init__(self, interval, start_time=None, runs=None):
+        self.interval = interval
+        self.start_time = start_time
+        self.runs = runs
