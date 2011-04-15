@@ -67,6 +67,7 @@ class CdsInstances(JSONController):
 
         name = None
         description = None
+        sync_schedule = None
 
         if 'name' in repo_data:
             name = repo_data['name']
@@ -74,7 +75,10 @@ class CdsInstances(JSONController):
         if 'description' in repo_data:
             description = repo_data['description']
 
-        cds = cds_api.register(hostname, name, description)
+        if 'sync_schedule' in repo_data:
+            sync_schedule = repo_data['sync_schedule']
+
+        cds = cds_api.register(hostname, name, description, sync_schedule=sync_schedule)
 
         path = http.extend_uri_path(hostname)
         grant_automatic_permissions_for_created_resource(http.resource_path(path))
