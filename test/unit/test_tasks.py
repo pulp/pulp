@@ -41,7 +41,7 @@ from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
-    Task, task_waiting, task_finished, task_error, task_timed_out,
+    Task, task_waiting, task_running, task_finished, task_error, task_timed_out,
     task_canceled, task_complete_states, _copied_fields, _pickled_fields)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import (
@@ -647,15 +647,48 @@ class PersistentTaskTester(unittest.TestCase):
         self.assertTrue(isinstance(task2, RepoSyncTask))
 
 
-    class PersistentStorageTester(unittest.TestCase):
+class PersistentStorageTester(unittest.TestCase):
 
-        def setUp(self):
-            TaskSnapshot.get_collection().remove()
-            self.storage = PersistentStorage()
+    def setUp(self):
+        TaskSnapshot.get_collection().remove()
+        self.storage = PersistentStorage()
 
-        def tearDown(self):
-            TaskSnapshot.get_collection().remove()
+    def tearDown(self):
+        TaskSnapshot.get_collection().remove()
 
+    def test_waiting(self):
+        task = Task(noop)
+        task.schedule()
+        self.assertTrue(self.storage.num_waiting() == 0)
+        self.storage.enqueue_waiting(task)
+        self.assertTrue(self.storage.num_waiting() == 1)
+        task = self.storage.dequeue_waiting()
+        self.assertTrue(self.storage.num_waiting() == 0)
+
+    def test_running(self):
+        task = Task(noop)
+        task.state = task_running
+        self.assertTrue(self.storage.collection.find().count() == 0)
+        self.storage.store_running(task)
+        self.assertTrue(self.storage.collection.find().count() == 1)
+        self.storage.remove_running(task)
+        self.assertTrue(self.storage.collection.find().count() == 0)
+
+    def test_complete(self):
+        task = Task(noop)
+        task.run()
+        self.assertTrue(self.storage.collection.find().count() == 0)
+        self.storage.store_complete(task)
+        self.assertTrue(self.storage.collection.find().count() == 1)
+        self.storage.remove_complete(task) # currently a noop
+        self.assertTrue(self.storage.collection.find().count() == 1)
+
+    def test_find(self):
+        task = Task(noop)
+        task.schedule()
+        self.storage.enqueue_waiting(task)
+        tasks = self.storage.find({'id': task.id})
+        self.assertTrue(len(tasks) == 1)
 
 # run the unit tests ----------------------------------------------------------
 
