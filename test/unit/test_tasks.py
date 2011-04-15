@@ -646,6 +646,17 @@ class PersistentTaskTester(unittest.TestCase):
         task2 = snapshot2.to_task()
         self.assertTrue(isinstance(task2, RepoSyncTask))
 
+
+    class PersistentStorageTester(unittest.TestCase):
+
+        def setUp(self):
+            TaskSnapshot.get_collection().remove()
+            self.storage = PersistentStorage()
+
+        def tearDown(self):
+            TaskSnapshot.get_collection().remove()
+
+
 # run the unit tests ----------------------------------------------------------
 
 if __name__ == '__main__':
