@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+#
 # Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
@@ -13,38 +13,24 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-
-# This is an example migration module.
-# Each migration module must implement the following members:
-# 1. version - integer representing the version the module migrates to
-# 2. migrate() - function with no arguments that performs the migration
-
 import logging
-from gettext import gettext as _
-
-from pulp.server.db.model import Repo
-
+from pulp.server.db.model.resource import Repo
 
 _log = logging.getLogger('pulp')
 
-
-def _migrate_repos():
-    collection = Repo.get_collection()
-    for repo in collection.find({}):
-        if repo.has_key('sync_in_progress') and type(repo['sync_in_progress']) == type(True):
-            continue
-        _log.info(_('Set sync_in_progress to False for  %s') % repo['name'])
-        repo['sync_in_progress'] = False
-        collection.save(repo, safe=True)
-
+# migration module conventions ------------------------------------------------
 
 version = 9
 
+def _migrate_repo_model():
+    collection = Repo.get_collection()
+    for repo in collection.find():
+        if 'notes' not in repo:
+            repo['notes'] = {}
+            collection.save(repo, safe=True)
+
+
 def migrate():
-    # There's a bit of the chicken and the egg problem here, since versioning
-    # wasn't built into pulp from the beginning, we just have to bite the
-    # bullet and call some initial state of the data model 'version 1'.
-    # So this function is essentially a no-op.
-    _log.info('migration to data model version %d started' % version)
-    _migrate_repos()
-    _log.info('migration to data model version %d complete' % version)
+    _log.info('migration to data model version 9 started')
+    _migrate_repo_model()
+    _log.info('migration to data model version 9 complete')
