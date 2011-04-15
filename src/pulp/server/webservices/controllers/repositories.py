@@ -270,7 +270,7 @@ class Repository(JSONController):
         # why would files be any different
         repo['files_count'] = len(repo['files'])
         # see if the repo is scheduled for sync in the future
-        task = scheduled_sync.find_repo_scheduled_task(repo)
+        task = scheduled_sync.find_scheduled_task(repo['id'], '_sync')
         repo['next_scheduled_sync'] = task and scheduled_sync.task_scheduled_time_to_dict(task)
         return self.ok(repo)
 

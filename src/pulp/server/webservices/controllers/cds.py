@@ -22,6 +22,7 @@ import logging
 import web
 
 # Pulp
+from pulp.server.api import scheduled_sync
 from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
@@ -97,10 +98,16 @@ class CdsInstance(JSONController):
         cds = cds_api.cds(id)
         if cds is None:
             return self.not_found('Could not find CDS with hostname [%s]' % id)
-        # inject heartbeat info
+
+        # Inject heartbeat info
         uuid = CDS.uuid(cds)
         heartbeat = Agent.status([uuid,])
         cds['heartbeat'] = heartbeat.values()[0]
+
+        # Inject task info
+        task = scheduled_sync.find_scheduled_task(id, 'cds_sync')
+        cds['next_scheduled_sync'] = task and scheduled_sync.task_scheduled_time_to_dict(task)
+
         return self.ok(cds)
 
     @JSONController.error_handler
