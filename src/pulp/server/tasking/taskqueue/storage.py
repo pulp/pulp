@@ -192,6 +192,9 @@ class PersistentStorage(Storage):
     def __cursor_to_tasks(self, cursor):
         return [TaskSnapshot(s).to_task() for s in cursor]
 
+    def __waiting_tasks(self):
+        return self.__tasks_with_states(task_ready_states)
+
     def __running_tasks(self):
         return self.__tasks_with_states((task_running))
 
@@ -202,6 +205,9 @@ class PersistentStorage(Storage):
         return self.__tasks_with_states(task_states)
 
     # query methods
+
+    def waiting_tasks(self):
+        return self.__cursor_to_tasks(self.__waiting_tasks())
 
     def running_tasks(self):
         return self.__cursor_to_tasks(self.__running_tasks())
@@ -214,12 +220,12 @@ class PersistentStorage(Storage):
 
     def find(self, criteria):
         # provided here in case we want to override this
-        super(PersistentStorage, self).find(criteria)
+        return super(PersistentStorage, self).find(criteria)
 
     # wait queue methods
 
     def num_waiting(self):
-        return self.__tasks_with_states(task_ready_states).count()
+        return self.__waiting_tasks().count()
 
     def enqueue_waiting(self, task):
         assert task.state is task_waiting
@@ -227,22 +233,25 @@ class PersistentStorage(Storage):
         self.__store_task(task)
 
     def dequeue_waiting(self):
-        snapshots = self.running_tasks().sort('scheduled_time').limit(1)
+        snapshots = self.__waiting_tasks().sort('scheduled_time').limit(1)
         if snapshots.count() == 0:
             return None
-        return snapshots[0].to_task()
+        snapshot = snapshots[0]
+        task = TaskSnapshot(snapshot).to_task()
+        self.remove_waiting(task)
+        return task
 
     # storage methods
 
     def remove_waiting(self, task):
-        self.collection.delete({'id': task['id'], 'state': task_waiting})
+        self.collection.remove({'id': task.id, 'state': task_waiting})
 
     def store_running(self, task):
         assert task.state is task_running
         self.__store_task(task)
 
     def remove_running(self, task):
-        self.collection.delete({'id': task['id'], 'state': task_running})
+        self.collection.remove({'id': task.id, 'state': task_running})
 
     def store_complete(self, task):
         assert task.state in task_complete_states
