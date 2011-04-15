@@ -41,7 +41,8 @@ class TaskQueue(object):
                  max_running=4,
                  finished_lifetime=timedelta(seconds=3600),
                  failure_threshold=None,
-                 schedule_threshold=None):
+                 schedule_threshold=None,
+                 storage=None):
         """
         @type max_running: int
         @param max_running: maximum number of tasks to run simultaneously
@@ -57,6 +58,9 @@ class TaskQueue(object):
                                    difference between a task's scheduled time
                                    and the task's start time, constitutes a
                                    warning
+        @type storage: L{pulp.server.tasking.taskqueue.storage.Storage}
+        @param storage: the task storage backend to use,
+                        defaults to VolatileStorage
         @return: TaskQueue instance
         """
         self.max_running = max_running
@@ -69,7 +73,7 @@ class TaskQueue(object):
         self.__condition = threading.Condition(self.__lock)
 
         self.__running_count = 0
-        self.__storage = VolatileStorage()
+        self.__storage = storage or VolatileStorage()
         self.__canceled_tasks = []
         self.__exit = False
 
