@@ -192,12 +192,14 @@ class CdsLib(object):
 
                 # If the repo is protected, add in the credentials
                 feed_ca = feed_cert = feed_key = None
+                ssl_verify = 0
                 bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
                 if bundle is not None:
                     log.debug('Configuring repository for authentication')
                     feed_ca = bundle['ca'].encode('utf8')
                     feed_cert = bundle['cert'].encode('utf8')
                     feed_key = bundle['key'].encode('utf8')
+                    ssl_verify = 1
 
                 # If the repo itself wasn't protected but there is global repo auth, use that
                 if bundle is None:
@@ -207,8 +209,9 @@ class CdsLib(object):
                         feed_ca = bundle['ca'].encode('utf8')
                         feed_cert = bundle['cert'].encode('utf8')
                         feed_key = bundle['key'].encode('utf8')
+                        ssl_verify = 1
 
-                fetch = YumRepoGrinder('', url, num_threads, sslverify=1, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
+                fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
                 fetch.fetchYumRepo(repo_path)
 
                 successfully_syncced_repos.append(repo)
