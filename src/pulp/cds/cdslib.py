@@ -191,17 +191,28 @@ class CdsLib(object):
 
                 # If the repo is protected, add in the credentials
                 feed_ca = feed_cert = feed_key = None
-                bundle = self.repo_cert_utils.read_consumer_cert_bundle(repo['id'])
+                bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
                 if bundle is not None:
                     log.debug('Configuring repository for authentication')
                     feed_ca = bundle['ca'].encode('utf8')
                     feed_cert = bundle['cert'].encode('utf8')
                     feed_key = bundle['key'].encode('utf8')
 
-                fetch = YumRepoGrinder('', url, num_threads, sslverify=0, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
+                # If the repo itself wasn't protected but there is global repo auth, use that
+                if bundle is None:
+                    bundle = self.repo_cert_utils.global_cert_bundle_filenames()
+                    if bundle is not None:
+                        log.debug('Configuring global repository authentication credentials for repo')
+                        feed_ca = bundle['ca'].encode('utf8')
+                        feed_cert = bundle['cert'].encode('utf8')
+                        feed_key = bundle['key'].encode('utf8')
+
+                fetch = YumRepoGrinder('', url, num_threads, sslverify=1, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
                 fetch.fetchYumRepo(repo_path)
 
                 successfully_syncced_repos.append(repo)
+
+                log.debug('Successfully finished synccing [%s]' % url)
             finally:
                 # Write it out after each repo so that even if a single repo throws an error
                 # on sync, the written file will still be accurate.

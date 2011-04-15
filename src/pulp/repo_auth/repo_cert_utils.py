@@ -131,6 +131,27 @@ class RepoCertUtils:
 
         return result
 
+    def global_cert_bundle_filenames(self, pieces=VALID_BUNDLE_KEYS):
+        '''
+        Returns the global cert bundle, but instead of the PEM encoded contents,
+        a mapping of piece to its filename on disk is returned.
+
+        @return: mapping of bundle piece to the filename where its contents can be found;
+                 None if the repo is not configured for auth
+        @rtype:  dict {str, str}
+        '''
+
+        cert_dir = self._global_cert_directory()
+
+        result = None
+        for suffix in pieces:
+            filename = os.path.join(cert_dir, '%s.%s' % (GLOBAL_BUNDLE_PREFIX, suffix))
+            if os.path.exists(filename):
+                result = result or {}
+                result[suffix] = filename
+
+        return result
+
     def read_consumer_cert_bundle(self, repo_id, pieces=VALID_BUNDLE_KEYS):
         '''
         Loads the contents of a repo's consumer cert bundle. If pieces is specified, only
@@ -158,6 +179,26 @@ class RepoCertUtils:
                 f.close()
                 result = result or {}
                 result[suffix] = contents
+
+        return result
+
+    def consumer_cert_bundle_filenames(self, repo_id, pieces=VALID_BUNDLE_KEYS):
+        '''
+        Returns a consumer cert bundle, but instead of the PEM encoded contents
+        a mapping of piece to its filename on disk is returned.
+
+        @return: mapping of bundle piece to the filename where its contents can be found;
+                 None if the repo is not configured for auth
+        @rtype:  dict {str, str}
+        '''
+        cert_dir = self._repo_cert_directory(repo_id)
+
+        result = None
+        for suffix in pieces:
+            filename = os.path.join(cert_dir, 'consumer-%s.%s' % (repo_id, suffix))
+            if os.path.exists(filename):
+                result = result or {}
+                result[suffix] = filename
 
         return result
 
