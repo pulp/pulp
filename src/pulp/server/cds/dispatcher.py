@@ -155,7 +155,10 @@ class GoferDispatcher(object):
             server_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name')
             repo_relative_url = config.config.get('server', 'relative_url')
             repo_base_url = '%s/%s' % (server_url, repo_relative_url)
-            self._cds_stub(cds).sync(repo_base_url, repos)
+            timeout = self.__timeout('sync_timeout')
+            log.info('sync using timeout=%s', timeout)
+            stub = self._cds_stub(cds, timeout)
+            stub.sync(repo_base_url, repos)
         except RequestTimeout, e:
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
         except NotAuthorized, e:
@@ -216,7 +219,7 @@ class GoferDispatcher(object):
         except Exception, e:
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
-    def _cds_stub(self, cds):
+    def _cds_stub(self, cds, timeout=None):
         '''
         Instantiates a stub to the CDS. Invocations on the CDS may be done through
         the stub.
@@ -224,10 +227,34 @@ class GoferDispatcher(object):
         @param cds: domain entity for the CDS; may not be None
         @type  cds: L{CDS} instance
 
+        @param timeout: The messaging timeout (initial, duration)
+        @type timeout: tuple
+
         @return: gofer stub
         @rtype:  object with the same methods as the CDS plugin
         '''
         secret = cds.get('secret')
         agent = Agent(CDS.uuid(cds))
-        stub = agent.cdsplugin(secret=secret)
+        stub = agent.cdsplugin(secret=secret, timeout=timeout)
         return stub
+
+    def __timeout(self, property):
+        '''
+        Get a messaging timeout property.
+        Property value can be single integer or two integers separated
+        by a comma(,).  When a single integer is specified, it is applied
+        to the duration and the initial is defaulted to (10).
+        @param property: A messaging I{timeout} property name.
+        @type property: str
+        @return: A gofer timout tuple (initial, duration)
+        @rtype: tuple
+        '''
+        pval = config.config.get('cds', property)
+        if pval:
+            parts = pval.split(':', 1)
+            if len(parts) > 1:
+                return (int(parts[0]), int(parts[1]))
+            else:
+                return (10, int(parts[0]))
+        else:
+            return None
