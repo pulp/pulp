@@ -158,7 +158,7 @@ class ProtectedRepoListingFile:
         f = open(self.filename, 'w')
 
         for url in self.listings.keys():
-            f.write('%s,%s' % (url, self.listings[url]))
+            f.write('%s,%s\n' % (url, self.listings[url]))
 
         f.close()
 
