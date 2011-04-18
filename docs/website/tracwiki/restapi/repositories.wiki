@@ -134,6 +134,7 @@
  * '''groupid''' ''(optional)'' <list of str> ''list of repository group ids this repository belongs to''
  * '''gpgkeys''' ''(optional)'' <list of str> ''list of gpg keys used for signing content''
  * '''checksum_type''' ''(optional)'' <str> ''name of the algorithm to use for content checksums, defaults to sha256''
+ * '''notes''' ''(optional)'' <dict> ''additional information in the form of key-value pairs''
 [[BR]]
 
 ----
