@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.166
+Version:        0.0.167
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -278,6 +278,27 @@ fi
 
 
 %changelog
+* Mon Apr 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.167-1
+- Avoid name collision with CDS content. (jortel@redhat.com)
+- support configurable cds sync messaging timout. (jortel@redhat.com)
+- DB upgrade script for 'notes' (skarmark@redhat.com)
+- Hooked CDS sync scheduling into the API and WS layers
+  (jason.dobies@redhat.com)
+- Api and cli ddition for repo 'notes' - additional information about a repo in
+  dictionary form (skarmark@redhat.com)
+- 680362 - rmtree already removes the leading dir causing the empty dir cleanup
+  to exit (pkilambi@redhat.com)
+- Set ssl_verify to 1 when connecting to protected repos
+  (jason.dobies@redhat.com)
+- 695707 - added suggestion to to use repo cancel_sync (skarmark@redhat.com)
+- 695707 - repo delete throws an error when there is ongoing sync on the repo
+  instead of deleting it (skarmark@redhat.com)
+- adding mod_python dep for server package on el6 (pkilambi@redhat.com)
+- 696216 - Use the repo auth information when synccing repos from the pulp
+  server. (jason.dobies@redhat.com)
+- 679443 - adding checks to lookup authetication and sending the right error
+  message when user is logged out (pkilambi@redhat.com)
+
 * Wed Apr 13 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.163-1
 - Retrieve the auth bundle if the repo is protected and pass that when
   connecting to Pulp (jason.dobies@redhat.com)
