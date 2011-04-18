@@ -172,8 +172,6 @@ class CdsApi(BaseApi):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             raise PulpException('CDS error encountered while attempting to release CDS [%s]; check the server log for more information' % hostname), None, exc_traceback
 
-        self.collection.remove({'hostname' : hostname}, safe=True)
-
         self.cds_history_api.cds_unregistered(hostname)
 
         # No need to send anything related to global repo auth; the CDS should
@@ -182,6 +180,10 @@ class CdsApi(BaseApi):
         # If the CDS is scheduled to sync, remove that now
         delete_cds_schedule(doomed)
 
+        # The above schedule delete call will update the DB, so this remove has to
+        # occur after that
+        self.collection.remove({'hostname' : hostname}, safe=True)
+        
     def cds(self, hostname):
         '''
         Returns the CDS instance that has the given hostname if one exists.
