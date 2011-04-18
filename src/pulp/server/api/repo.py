@@ -483,15 +483,8 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
 
-        # Ensure the repo is not currently associated with a CDS. If it is, the user
-        # will have to explicitly remove that association first. This is to prevent the
-        # case where a user needs the repo to be immediately removed from being served,
-        # but may forget it's currently on a CDS.
-        associated_cds_instances = self.cdsapi.cds_with_repo(id)
-        if len(associated_cds_instances) != 0:
-            hostnames = [c['hostname'] for c in associated_cds_instances]
-            log.error('Attempted to delete repo [%s] but it is associated with CDS instances [%s]' % (id, ', '.join(hostnames)))
-            raise PulpException('Repo [%s] cannot be deleted until it is unassociated from the CDS instances [%s]' % (id, ', '.join(hostnames)))
+        # unassociate with CDS(s)
+        cds_unassociate_results = self.cdsapi.unassociate_all_from_repo(id, True)
 
         #update feed of clones of this repo to None unless they point to origin feed
         for clone_id in repo['clone_ids']:
@@ -585,11 +578,11 @@ class RepoApi(BaseApi):
         protected_repo_utils = ProtectedRepoUtils(config.config)
         protected_repo_utils.delete_protected_repo(repo['relative_path'])
 
-        # Notify any CDS instances that the repo protection should be deleted
-        self.cdsapi.set_repo_auth(id, repo['relative_path'], None)
-
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
+
+        return cds_unassociate_results
+
 
     @event(subject='repo.updated')
     @audit()

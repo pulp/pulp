@@ -276,7 +276,7 @@ class CdsApi(BaseApi):
             self.redistribute(repo_id)
 
     @audit()
-    def unassociate_repo(self, cds_hostname, repo_id):
+    def unassociate_repo(self, cds_hostname, repo_id, deleted=False):
         '''
         Removes an existing association between a CDS and a repo. This call will not cause
         the repo data to be deleted from the CDS; that must be explicitly done through
@@ -289,6 +289,9 @@ class CdsApi(BaseApi):
 
         @param repo_id: identifies the repo to unassociate from the CDS
         @type  repo_id: string; may not be None
+
+        @param deleted: Indicates the repo has been deleted.
+        @type deleted: bool
 
         @raise PulpException: if the CDS does not exist
         '''
@@ -305,6 +308,9 @@ class CdsApi(BaseApi):
             cds['repo_ids'].remove(repo_id)
             self.collection.save(cds, safe=True)
 
+            # Remove it from CDS host assignment consideration
+            round_robin.remove_cds_repo_association(cds_hostname, repo_id)
+
             # Add a history entry for the change
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
 
@@ -316,11 +322,9 @@ class CdsApi(BaseApi):
                 repo = Repo.get_collection().find_one({'id' : repo_id})
                 self.dispatcher.set_repo_auth(cds, repo_id, repo['relative_path'], None)
 
-            # Remove it from CDS host assignment consideration
-            round_robin.remove_cds_repo_association(cds_hostname, repo_id)
-
-            # Automatically redistribute consumers to pick up these changes
-            self.redistribute(repo_id)
+            if not deleted:
+                # Automatically redistribute consumers to pick up these changes
+                self.redistribute(repo_id)
 
     def cds_sync(self, cds_hostname):
         '''
@@ -440,9 +444,7 @@ class CdsApi(BaseApi):
             # Send the update message to the consumer
             agent_repolib.update(repo_id, bind_data)
 
-# -- internal only api ---------------------------------------------------------------------
-
-    def unassociate_all_from_repo(self, repo_id):
+    def unassociate_all_from_repo(self, repo_id, deleted=False):
         '''
         Unassociates all CDS instances that are associated with the given repo. This is
         meant to be called in response to a repo being deleted. Unlike the unassociate call
@@ -450,15 +452,28 @@ class CdsApi(BaseApi):
         CDS to remove the repo. The rationale is that if a repo is deleted, we want it to
         be deleted everywhere as soon as possible without having to make the user explicitly
         trigger syncs on all CDS instances that may have the repo.
+        @param repo_id: The ID of repo to unassociate with.
+        @type repo_id: str
+        @param deleted: Indicates the repo has been deleted.
+        @type deleted: bool.
+        @return: The list of hostnames successfully unassocated and a list of
+            hostnames that failed to be unassociated.
+        @rtype: tuple
         '''
-
         # Find all CDS instances associated with the given repo
-        cds_list = self.cds_with_repo(repo_id)
+        succeeded = []
+        failed = []
+        for cds in self.cds_with_repo(repo_id):
+            hostname = cds['hostname']
+            try:
+                self.unassociate_repo(hostname, repo_id, deleted)
+                succeeded.append(hostname)
+            except Exception:
+                failed.append(hostname)
+                log.error('unassociate %s, failed', hostname, exc_info=True)
+        return (succeeded, failed)
 
-        for cds in cds_list:
-            cds['repo_ids'].remove(repo_id)
-            self.collection.save(cds, safe=True)
-            self.cds_history_api.repo_unassociated(cds['hostname'], repo_id)
+# -- internal only api ---------------------------------------------------------------------
 
     def set_global_repo_auth(self, cert_bundle):
         '''
