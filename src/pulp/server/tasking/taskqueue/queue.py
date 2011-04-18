@@ -178,6 +178,9 @@ class TaskQueue(object):
             return
         now = datetime.now()
         for task in complete_tasks:
+            # XXX this is hack for a situation that shouldn't be possible
+            if task.finish_time is None:
+                continue
             if now - task.finish_time > self.finished_lifetime:
                 self.__storage.remove_complete(task)
 
