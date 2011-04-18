@@ -42,7 +42,8 @@ class TaskQueue(object):
                  finished_lifetime=timedelta(seconds=3600),
                  failure_threshold=None,
                  schedule_threshold=None,
-                 storage=None):
+                 storage=None,
+                 dispatch_interval=0.5):
         """
         @type max_running: int
         @param max_running: maximum number of tasks to run simultaneously
@@ -61,6 +62,9 @@ class TaskQueue(object):
         @type storage: L{pulp.server.tasking.taskqueue.storage.Storage}
         @param storage: the task storage backend to use,
                         defaults to VolatileStorage
+        @type dispatch_interval: float
+        @param dispatch_interval: time interval, in seconds, between runs of
+                                  the task dispatcher
         @return: TaskQueue instance
         """
         self.max_running = max_running
@@ -77,7 +81,7 @@ class TaskQueue(object):
         self.__canceled_tasks = []
         self.__exit = False
 
-        self.__dispatcher_timeout = 0.5
+        self.__dispatcher_timeout = dispatch_interval
         self.__dispatcher = threading.Thread(target=self._dispatch)
         self.__dispatcher.setDaemon(True)
         self.__dispatcher.start()
