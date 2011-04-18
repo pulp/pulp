@@ -313,10 +313,12 @@ class Repository(JSONController):
         permission: DELETE
         success response: 200 OK
         failure response: None
-        return: true
+        return: Two lists:
+            A list of CDS hostnames unassociated with the deleted repo.
+            A list of CDS hostnames that failed during unassociation.
         """
-        api.delete(id=id)
-        return self.ok(True)
+        cds_unassociate_results = api.delete(id=id)
+        return self.ok(cds_unassociate_results)
 
 
 class RepositoryDeferredFields(JSONController):
