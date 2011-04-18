@@ -1476,7 +1476,7 @@ class RepoApi(BaseApi):
         if not self.set_sync_in_progress(id, True):
             log.error("We saw sync was in progress for [%s]" % (id))
             raise ConflictingOperationException()
-        
+
         try:
             if not skip_dict:
                 skip_dict = {}
@@ -1992,7 +1992,7 @@ class RepoApi(BaseApi):
         List all the metadata tasks for a given repository.
         """
         return [task
-                for task in find_async(method='_metadata')
+                for task in self.find_async(method='_metadata')
                 if id in task.args]
 
     def set_sync_in_progress(self, id, state):
