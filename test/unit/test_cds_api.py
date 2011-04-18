@@ -642,13 +642,18 @@ class TestCdsApi(unittest.TestCase):
         '''
 
         # Setup
-        repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
-        self.cds_api.register('cds1.example.com')
+        repoid = 'cds-test-repo'
+        hostname = 'cds1.example.com'
+        repo = self.repo_api.create(repoid, 'CDS Test Repo', 'x86_64')
+        self.cds_api.register(hostname)
+        self.cds_api.associate_repo(hostname, repoid)
+        # Delete
+        succeeded, failed = self.repo_api.delete(repoid)
+        # Verify
+        self.assertTrue(hostname in succeeded)
+        cds = self.cds_api.cds(hostname)
+        self.assertEqual(0, len(cds['repo_ids']))
 
-        self.cds_api.associate_repo('cds1.example.com', repo['id'])
-
-        # Test
-        self.assertRaises(PulpException, self.repo_api.delete, repo['id'])
 
     def test_redistribute(self):
         '''
