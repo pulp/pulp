@@ -22,8 +22,9 @@ from gofer.messaging.async import ReplyConsumer, Listener
 
 from pulp.server import config
 from pulp.server.agent import Agent
-from pulp.server.tasking.taskqueue.queue import TaskQueue
+from pulp.server.tasking.exception import NonUniqueTaskException
 from pulp.server.tasking.task import Task, AsyncTask
+from pulp.server.tasking.taskqueue.queue import TaskQueue
 
 
 log = getLogger(__name__)
@@ -42,9 +43,11 @@ def enqueue(task, unique=True):
     @param unique: whether or not to make sure the task isn't already being run
     @type unique: bool
     """
-    if _queue.enqueue(task, unique):
-        return task
-    return None
+    try:
+        _queue.enqueue(task, unique)
+    except NonUniqueTaskException:
+        return None
+    return task
 
 
 def run_async(method, args, kwargs, timeout=None, unique=True, task_type=None):

@@ -141,7 +141,7 @@ class Task(object):
         if self.scheduled_time is None and other.scheduled_time is None:
             return 0
         if self.scheduled_time is None:
-            return -1
+            return - 1
         if other.scheduled_time is None:
             return 1
         return cmp(self.scheduled_time, other.scheduled_time)
@@ -176,8 +176,8 @@ class Task(object):
     def schedule(self):
         """
         Schedule the task's next run time.
-        @rtype: bool
-        @return: True if the task is scheduled to run again, False if it's not
+        @raise UnscheduledTaskException: if the task scheduler does not return
+                                         a next scheduled_time
         """
         if self.failure_threshold is not None:
             if self.consecutive_failures == self.failure_threshold:
@@ -187,11 +187,10 @@ class Task(object):
         adjustments, scheduled_time = self.scheduler.schedule(self.scheduled_time)
         if scheduled_time is None:
             self.scheduled_time = None
-            return False
+            raise UnscheduledTaskException()
         if adjustments:
             _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments))
         self.scheduled_time = scheduled_time
-        return True
 
     # -------------------------------------------------------------------------
 
