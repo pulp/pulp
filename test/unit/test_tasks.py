@@ -38,6 +38,7 @@ from pulp.server import async
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
+from pulp.server.tasking.exception import NonUniqueTaskException
 from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
@@ -198,7 +199,10 @@ class TaskQueueTester(QueueTester):
 
         # Test
         task2 = Task(noop)
-        self.queue.enqueue(task2, unique=True)
+        try:
+            self.queue.enqueue(task2, unique=True)
+        except NonUniqueTaskException:
+            pass
 
         # Verify
         self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
@@ -212,7 +216,10 @@ class TaskQueueTester(QueueTester):
 
         # Test
         task2 = Task(kwargs, kwargs={'foo':1, 'bar':2})
-        self.queue.enqueue(task2, unique=True)
+        try:
+            self.queue.enqueue(task2, unique=True)
+        except NonUniqueTaskException:
+            pass
 
         # Verify
         self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
@@ -226,7 +233,10 @@ class TaskQueueTester(QueueTester):
 
         # Test
         task2 = Task(kwargs, kwargs={'foo':2, 'bar':3})
-        self.queue.enqueue(task2, unique=True)
+        try:
+            self.queue.enqueue(task2, unique=True)
+        except NonUniqueTaskException:
+            pass
 
         # Verify
         self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
@@ -240,7 +250,10 @@ class TaskQueueTester(QueueTester):
 
         # Test
         task2 = Task(args, args=[1, 2])
-        self.queue.enqueue(task2, unique=True)
+        try:
+            self.queue.enqueue(task2, unique=True)
+        except NonUniqueTaskException:
+            pass
 
         # Verify
         self.assertEqual(1, len(list(self.queue._TaskQueue__storage.all_tasks())))
@@ -263,16 +276,14 @@ class TaskQueueTester(QueueTester):
         task1 = Task(noop)
         task2 = Task(noop)
         self.queue.enqueue(task1, True)
-        enqueued_2 = self.queue.enqueue(task2, True)
-        self.assertFalse(enqueued_2)
+        self.assertRaises(NonUniqueTaskException, self.queue.enqueue, task2, True)
 
     def test_enqueue_duplicate_with_same_scheduler(self):
         at = AtScheduler(datetime.now() + timedelta(minutes=10))
         task1 = Task(noop, scheduler=at)
         task2 = Task(noop, scheduler=at)
         self.queue.enqueue(task1, True)
-        enqueued_2 = self.queue.enqueue(task2, True)
-        self.assertFalse(enqueued_2)
+        self.assertRaises(NonUniqueTaskException, self.queue.enqueue, task2, True)
 
     def test_enqueue_duplicate_with_different_schedulers(self):
         at = AtScheduler(datetime.now() + timedelta(minutes=10))
@@ -280,7 +291,7 @@ class TaskQueueTester(QueueTester):
         task2 = Task(noop, scheduler=ImmediateScheduler())
         self.queue.enqueue(task1, True)
         enqueued_2 = self.queue.enqueue(task2, True)
-        self.assertTrue(enqueued_2)
+        self.assertTrue(enqueued_2 is None)
 
     def test_task_dispatch(self):
         task = Task(noop)
