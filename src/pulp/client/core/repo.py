@@ -569,7 +569,7 @@ class Delete(RepoAction):
         
         # Check for latest sync task status to see if there is repo sync running for this repo
         tasks = self.repository_api.sync_list(id)
-        if tasks and tasks[len(tasks) - 1]['state'] in ('waiting', 'running'):
+        if tasks and tasks[0]['state'] in ('waiting', 'running'):
             system_exit(os.EX_OK, _("Repo [ %s ] cannot be deleted because of sync in progress. You can cancel ongoing sync using 'repo cancel_sync' command.") % id)
 
         cds_unassociate_succeeded, cds_unassociate_failed = \
@@ -803,7 +803,7 @@ class CancelSync(RepoAction):
         syncs = self.repository_api.sync_list(id)
         if not syncs:
             system_exit(os.EX_OK, _('No sync to cancel'))
-        task = syncs[len(syncs) - 1]
+        task = syncs[0]
         if task['state'] not in ('waiting', 'running'):
             system_exit(os.EX_OK, _('Sync has completed'))
         taskid = task['id']
