@@ -21,7 +21,9 @@ import traceback
 import uuid
 from gettext import gettext as _
 
-from pulp.server.tasking.taskqueue.thread import TimeoutException, CancelException
+from pulp.server.db import model
+from pulp.server.tasking.exception import TimeoutException, CancelException, \
+    UnscheduledTaskException
 from pulp.server.tasking.scheduler import ImmediateScheduler
 
 
@@ -155,8 +157,7 @@ class Task(object):
             return ', '.join([str(a) for a in self.args])
 
         def _kwargs():
-            return ', '.join(['='.join((str(k), str(v)))
-                              for k, v in self.kwargs.items()])
+            return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])
 
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 

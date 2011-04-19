@@ -20,6 +20,10 @@ import threading
 import time
 import weakref
 
+from pulp.server.tasking.exception import (
+    TimeoutException, CancelException, TaskThreadStateError,
+    TaskThreadInterruptionError)
+
 # globals ---------------------------------------------------------------------
 
 # threading classes, tracked here for monkey-patching
@@ -121,21 +125,6 @@ def get_descendants(thread):
 # based on an answer from stack overflow:
 # http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
 
-class _ThreadInterruptionError(Exception):
-    """
-    Exception class used to flag and catch exceptions thrown by this api.
-    """
-    pass
-
-
-class ThreadStateError(Exception):
-    '''
-    Exception class used to indicate one or more child threads is in a state that cannot
-    currently be canceled.
-    '''
-    pass
-
-
 def _tid(thread):
     """
     Checks if the given thread is available to be cancelled. There are three possible outcomes
@@ -157,7 +146,7 @@ def _tid(thread):
             thread._thread_id = tid
             return tid
 
-    raise ThreadStateError()
+    raise TaskThreadStateError()
 
 
 def _raise_exception_in_thread(tid, exc_type):
@@ -178,36 +167,7 @@ def _raise_exception_in_thread(tid, exc_type):
     # should call it again with exc=NULL to revert the effect
     null_ptr = ctypes.py_object()
     ctypes.pythonapi.PyThreadState_SetAsyncExc(long_tid, null_ptr)
-    raise _ThreadInterruptionError('PyThreadState_SetAsyncExc failed')
-
-# task exceptions -------------------------------------------------------------
-
-class TaskThreadException(Exception):
-    """
-    Base class for task-specific exceptions to be raised in a task thread.
-    """
-    pass
-
-
-class TimeoutException(TaskThreadException):
-    """
-    Exception to interrupt a task with a time out.
-    """
-    pass
-
-
-class CancelException(TaskThreadException):
-    """
-    Exception to interrupt a task with a cancellation.
-    """
-    pass
-
-class ConflictingOperationException(TaskThreadException):
-    """
-    Exception to signify a task couldn't run do to a conflict,
-    possibly a previous operation was still in progress
-    """
-    pass
+    raise TaskThreadInterruptionError('PyThreadState_SetAsyncExc failed')
 
 # task thread -----------------------------------------------------------------
 
@@ -250,7 +210,7 @@ class TaskThread(TrackedThread):
                 try:
                     _raise_exception_in_thread(_tid(thread), exc_type)
                     wait(self.__default_timeout)
-                except _ThreadInterruptionError, e:
+                except TaskThreadInterruptionError, e:
                     # _TaskInterruptionError gets thrown if the exception was
                     # delivered to more than 1 thread at a time
                     _log.error('Failed to deliver exception %s to thread[%s]: %s' %

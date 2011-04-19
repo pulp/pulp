@@ -19,9 +19,10 @@ import threading
 import traceback
 from datetime import datetime, timedelta
 
+from pulp.server.tasking.exception import (
+    TaskThreadStateError, UnscheduledTaskException, NonUniqueTaskException)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.tasking.taskqueue.thread import  (
-    DRLock, TaskThread, ThreadStateError)
+from pulp.server.tasking.taskqueue.thread import DRLock, TaskThread
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states, task_running
 
@@ -145,7 +146,7 @@ class TaskQueue(object):
             try:
                 task.cancel()
                 self.__canceled_tasks.remove(task)
-            except ThreadStateError:
+            except TaskThreadStateError:
                 task.cancel_attempts += 1
                 _log.warn('Attempt to cancel task for method [%s] was unable to complete at this time. ' % task.method_name +
                           'This is the [%s] attempt to cancel the task. The task will be resubmitted ' % task.cancel_attempts +

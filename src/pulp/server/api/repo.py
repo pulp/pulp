@@ -53,7 +53,7 @@ from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.taskqueue.thread import ConflictingOperationException
+from pulp.server.tasking.exception import ConflictingOperationException
 
 log = logging.getLogger(__name__)
 
