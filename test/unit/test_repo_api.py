@@ -51,7 +51,7 @@ from pulp.server.db.model import PackageGroup
 from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import RepoSource
-from pulp.server.tasking.taskqueue.thread import ConflictingOperationException
+from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
 from pulp.client.utils import generatePakageProfile
@@ -82,7 +82,7 @@ class TestRepoApi(unittest.TestCase):
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         if os.path.exists(protected_repo_listings_file):
             os.remove(protected_repo_listings_file)
-                    
+
         testutil.common_cleanup()
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
 
@@ -113,15 +113,15 @@ class TestRepoApi(unittest.TestCase):
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com')
         assert(repo is not None)
-        
+
     def test_repo_create_with_notes(self):
         notes = {'key':'value','k':'v'}
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com', notes=notes)
         assert(repo is not None)
         assert(repo['notes'] == notes)
-       
-        
+
+
     def test_repo_create_feedless(self):
         repo = self.rapi.create('some-id-no-feed', 'some name', 'i386')
         assert(repo is not None)
@@ -355,7 +355,7 @@ class TestRepoApi(unittest.TestCase):
             'i386', 'yum:http://example.com')
         assert(repo is not None)
         assert(repo['source']['type'] == 'yum')
-        
+
     def test_clean(self):
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com')
@@ -468,7 +468,7 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.remove_package('some-id', package)
         count = self.rapi.package_count('some-id')
         self.assertTrue(count == (num_packages - 1))
-        
+
 
     def test_repo_erratum(self):
         repo = self.rapi.create('some-id', 'some name', \
@@ -720,7 +720,7 @@ class TestRepoApi(unittest.TestCase):
 
         # Verify
         self.assertTrue(self.capi.consumer(id) is None)
-        
+
     def test_consumer_certificate(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         (pk, pem) = self.capi.certificate(c['id'])
@@ -805,7 +805,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_sync_two_repos_same_nevra_different_checksum(self):
         """
-        Sync 2 repos that have a package with same NEVRA 
+        Sync 2 repos that have a package with same NEVRA
         but different checksum
         """
         test_pkg_name = "pulp-test-package-same-nevra"
@@ -900,7 +900,7 @@ class TestRepoApi(unittest.TestCase):
         packagea = self.papi.package(found_a_pid)
         packageb = self.papi.package(found_b_pid)
 
-        # Ensure that the 2 Package instances actually point 
+        # Ensure that the 2 Package instances actually point
         # to the same single instance
         assert(repo_a['_id'] != repo_b['_id'])
         assert(packagea['_id'] == packageb['_id'])
@@ -1028,7 +1028,7 @@ class TestRepoApi(unittest.TestCase):
         bad_tree_mode = stat.S_IMODE(os.stat(bad_tree_path).st_mode)
         # We will disable read access to 2 items to simulate an IOError
         os.chmod(bad_rpm_path, 0)
-        os.chmod(bad_tree_path, 0) 
+        os.chmod(bad_tree_path, 0)
         try:
             self.assertFalse(os.access(bad_rpm_path, os.R_OK))
             self.assertFalse(os.access(bad_tree_path, os.R_OK))
@@ -1053,8 +1053,8 @@ class TestRepoApi(unittest.TestCase):
             self.assertTrue("Permission denied" in report["error_details"][1][1]["error"])
         finally:
             os.chmod(bad_rpm_path, bad_rpm_mode)
-            os.chmod(bad_tree_path, bad_tree_mode) 
-    
+            os.chmod(bad_tree_path, bad_tree_mode)
+
     def test_local_sync_callback(self):
         # We need report to be accesible for writing by the callback
         global report
@@ -1114,13 +1114,13 @@ class TestRepoApi(unittest.TestCase):
         found = self.rapi.find_repos_by_package(pkgid2)
         self.assertTrue(len(found) == 1)
         self.assertTrue(r2["id"] in found)
-    
+
     def test_repo_package_by_name(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
         p = testutil.create_package(self.papi, 'test_pkg_by_name', version="1", filename="test01.rpm")
         self.rapi.add_package(repo["id"], [p['id']])
-        
+
         p2 = testutil.create_package(self.papi, 'test_pkg_by_name', version="2", filename="test02.rpm")
         self.rapi.add_package(repo["id"], [p2['id']])
 
@@ -1128,7 +1128,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(len(pkgs) == 2)
         self.assertTrue(p["id"] in pkgs)
         self.assertTrue(p2["id"] in pkgs)
-        
+
         pkgs = self.rapi.get_packages_by_name(repo['id'], "bad_name")
         self.assertTrue(len(pkgs) == 0)
 
@@ -1165,7 +1165,7 @@ class TestRepoApi(unittest.TestCase):
 
         p2 = testutil.create_package(self.papi, 'test_pkg2_by_name', filename="test02.rpm")
         self.rapi.add_package(repo2["id"], [p2['id']])
-        
+
         pkgs = self.rapi.get_packages_by_filename(repo['id'], [p1['filename']])
         self.assertTrue(len(pkgs) == 1)
         self.assertTrue(p1["id"] in pkgs)
@@ -1173,16 +1173,16 @@ class TestRepoApi(unittest.TestCase):
         pkgs = self.rapi.get_packages_by_filename(repo2['id'], [p2['filename']])
         self.assertTrue(len(pkgs) == 1)
         self.assertTrue(p2["id"] in pkgs)
-        
+
         pkgs = self.rapi.get_packages_by_filename(repo2['id'], [p1['filename']])
         self.assertTrue(len(pkgs) == 0)
 
         pkgs = self.rapi.get_packages_by_id(repo2['id'], [])
         self.assertTrue(len(pkgs) == 0)
-        
+
         pkgs = self.rapi.get_packages_by_id(repo2['id'], ["bad_name"])
         self.assertTrue(len(pkgs) == 0)
-        
+
     def test_packages(self):
         repo = self.rapi.create('some-id', 'some name', \
             'i386', 'yum:http://example.com')
@@ -1191,28 +1191,28 @@ class TestRepoApi(unittest.TestCase):
 
         p2 = testutil.create_package(self.papi, 'test_pkg2_by_name', filename="test02.rpm")
         self.rapi.add_package(repo["id"], [p2['id']])
-       
+
         #Create a similar package but dont add to repo
         p3 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test03.rpm")
-        
+
         pkgs = self.rapi.packages(repo['id'])
         self.assertTrue(len(pkgs) == 2)
         self.assertTrue(p1["id"] in pkgs)
         self.assertTrue(p2["id"] in pkgs)
-        
+
         pkgs = self.rapi.packages(repo['id'], name=p1['name'])
         self.assertTrue(len(pkgs) == 1)
         self.assertTrue(p1["id"] in pkgs)
-        
+
         pkgs = self.rapi.packages(repo['id'], filename=p2['filename'])
         self.assertTrue(len(pkgs) == 1)
         self.assertTrue(p2["id"] in pkgs)
-        
+
         pkgs = self.rapi.packages(repo['id'], version=p1['version'])
         self.assertTrue(len(pkgs) == 2)
         self.assertTrue(p1["id"] in pkgs)
         self.assertTrue(p2["id"] in pkgs)
-        
+
         pkgs = self.rapi.packages(repo['id'], name="bad_name")
         self.assertTrue(len(pkgs) == 0)
 
@@ -1225,7 +1225,7 @@ class TestRepoApi(unittest.TestCase):
 
         # test delete orphaned package
         self.papi.delete(p3['id'])
-   
+
     def test_add_2_pkg_same_nevra_same_repo(self):
         repo = self.rapi.create('some-id1', 'some name', \
             'i386', 'yum:http://example.com')
@@ -1252,7 +1252,7 @@ class TestRepoApi(unittest.TestCase):
         p5b = testutil.create_package(self.papi, 'test_pkg_by_name5b', filename="test05.rpm", checksum="blah5b")
         # Adding 2 pkg of same NEVRA only 1 should be added (first one).
         # Adding 2 pkg with same filename, only 1 should be added
-        # Adding a bogus package, it should not be added since it wasn't created on server 
+        # Adding a bogus package, it should not be added since it wasn't created on server
         bad_filename = "bad_filename_doesntexist"
         bad_checksum = "bogus_checksum"
         errors = self.rapi.associate_packages([((p1["filename"],p1["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
@@ -1270,7 +1270,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(p4["id"] not in found['packages'])
         self.assertTrue(p5a["id"] in found['packages'])
         self.assertTrue(p5b["id"] not in found['packages'])
-        
+
         self.assertTrue(bad_filename in errors)
         for e in errors:
             #Error format shoudl be key is the filename
@@ -1281,11 +1281,11 @@ class TestRepoApi(unittest.TestCase):
     def test_get_packages_by_nvera(self):
         repo1 = self.rapi.create('some-id1', 'some name', \
             'i386', 'yum:http://example.com')
-        p1 = testutil.create_package(self.papi, 'test_pkg_by_name1', 
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name1',
                 filename="test01.rpm", checksum="blah1")
-        p2 = testutil.create_package(self.papi, 'test_pkg_by_name2', 
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name2',
                 filename="test02.rpm", checksum="blah2")
-        p3 = testutil.create_package(self.papi, 'test_pkg_by_name3', 
+        p3 = testutil.create_package(self.papi, 'test_pkg_by_name3',
                 filename="test03.rpm", checksum="blah3")
         self.rapi.add_package(repo1["id"], [p1["id"], p2["id"]])
         nevra = {}
@@ -1297,7 +1297,7 @@ class TestRepoApi(unittest.TestCase):
         found = self.rapi.get_packages_by_nvrea(repo1["id"], [nevra], verify_existing=False)
         self.assertTrue(p1["filename"] in found)
         self.assertEquals(found[p1["filename"]]["id"], p1["id"])
-        
+
         nevra["name"] = p3["name"]
         nevra["epoch"] = p3["epoch"]
         nevra["version"] = p3["version"]
