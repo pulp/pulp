@@ -82,7 +82,7 @@ class VolatileStorage(object):
     def find(self, criteria):
         num_criteria = len(criteria)
         tasks = []
-        # reverse the order of all the tasks in order to list the newest first
+
         for task in reversed(list(self._all_tasks())):
             matches = 0
             for attr, value in criteria.items():

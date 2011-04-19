@@ -308,7 +308,7 @@ class TaskQueueTester(QueueTester):
         found = self.queue.find(state=task_waiting)
 
         # Verify
-        self.assertTrue(found[0] is task2)
+        self.assertTrue(task2 in found)
 
     def test_task_status(self):
         task = Task(noop)
