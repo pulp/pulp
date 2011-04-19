@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.167
+Version:        0.0.168
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -278,6 +278,14 @@ fi
 
 
 %changelog
+* Tue Apr 19 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.168-1
+- Fix unit test. (jortel@redhat.com)
+- 697527 - Deleting the sync schedule was re-adding the deleted CDS
+  (jason.dobies@redhat.com)
+- 665457,695414 - Repos unassociated w/ CDS(s) when deleted.
+  (jortel@redhat.com)
+- Fixed issue when proctecting multiple repos at once (jason.dobies@redhat.com)
+
 * Mon Apr 18 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.167-1
 - Avoid name collision with CDS content. (jortel@redhat.com)
 - support configurable cds sync messaging timout. (jortel@redhat.com)
