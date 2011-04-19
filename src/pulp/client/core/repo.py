@@ -803,7 +803,7 @@ class CancelSync(RepoAction):
         syncs = self.repository_api.sync_list(id)
         if not syncs:
             system_exit(os.EX_OK, _('No sync to cancel'))
-        task = syncs[0]
+        task = syncs[len(syncs) - 1]
         if task['state'] not in ('waiting', 'running'):
             system_exit(os.EX_OK, _('Sync has completed'))
         taskid = task['id']
