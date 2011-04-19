@@ -24,7 +24,8 @@ import uuid
 from gettext import gettext as _
 
 from pulp.server.db import model
-from pulp.server.tasking.taskqueue.thread import TimeoutException, CancelException
+from pulp.server.tasking.exception import TimeoutException, CancelException, \
+    UnscheduledTaskException
 from pulp.server.tasking.scheduler import ImmediateScheduler
 from pulp.server.pexceptions import PulpException
 

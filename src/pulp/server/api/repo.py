@@ -53,7 +53,7 @@ from pulp.server.compat import chain
 from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.taskqueue.thread import ConflictingOperationException
+from pulp.server.tasking.exception import ConflictingOperationException
 
 log = logging.getLogger(__name__)
 
@@ -91,13 +91,13 @@ class RepoApi(BaseApi):
         self.published_path = os.path.join(self.localStoragePath, "published", "repos")
         self.distro_path = os.path.join(self.localStoragePath, "published", "ks")
         self.__sync_lock = threading.RLock()
-    
+
     def __getstate__(self):
-        odict = self.__dict__.copy() 
+        odict = self.__dict__.copy()
         try:
-            del odict['_RepoApi__sync_lock']              
+            del odict['_RepoApi__sync_lock']
         except:
-            raise PulpException("%s" % odict)        
+            raise PulpException("%s" % odict)
         return odict
 
     def _getcollection(self):
@@ -1477,7 +1477,7 @@ class RepoApi(BaseApi):
         if not self.set_sync_in_progress(id, True):
             log.error("We saw sync was in progress for [%s]" % (id))
             raise ConflictingOperationException()
-        
+
         try:
             if not skip_dict:
                 skip_dict = {}
