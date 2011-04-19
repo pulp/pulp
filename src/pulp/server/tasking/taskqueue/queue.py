@@ -18,6 +18,7 @@ import sys
 import threading
 import traceback
 from datetime import datetime, timedelta
+from gettext import gettext as _
 
 from pulp.server.tasking.exception import (
     TaskThreadStateError, UnscheduledTaskException, NonUniqueTaskException)
@@ -203,17 +204,21 @@ class TaskQueue(object):
         @param unique: If True, the task will only be added if there are no
                        non-finished tasks with the same method_name, args,
                        and kwargs; otherwise the task will always be added
-        @return: True if a new task was created; False if it was rejected (due to
-                 the unique flag
+        @raise NonUniqueTaskException: if the unique flag is True and the task
+                                       is not unique
+        @raise UnscheduledTaskException: if the enqueued task cannot be scheduled
         """
         self.__lock.acquire()
         try:
             # uniqueness fields
             fields = ('class_name', 'method_name', 'args', 'scheduler')
             if unique and self.exists(task, fields, include_finished=False):
-                return False
-            if not task.schedule():
-                return False
+                msg = _('Task %s.%s(%s) with %s scheduler is not unique in the task queue')
+                raise NonUniqueTaskException(msg %
+                                             (task.class_name, task.method_name,
+                                              ', '.join([str(a) for a in task.args]),
+                                              str(type(task.scheduler))))
+            task.schedule()
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
             if task.failure_threshold is None:
@@ -222,7 +227,6 @@ class TaskQueue(object):
                 task.schedule_threshold = self.schedule_threshold
             self.__storage.enqueue_waiting(task)
             self.__condition.notify()
-            return True
         finally:
             self.__lock.release()
 
@@ -266,7 +270,9 @@ class TaskQueue(object):
             task.complete_callback = None
             # try to re-enqueue to handle recurring tasks,
             # otherwise store the completed task
-            if not self.enqueue(task):
+            try:
+                self.enqueue(task)
+            except UnscheduledTaskException:
                 self.__storage.store_complete(task)
         finally:
             self.__lock.release()
