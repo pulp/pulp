@@ -37,1456 +37,1266 @@
   
    
    <div class="wikipage">
-    <div id="searchable"><h1 id="Repositories">Repositories</h1>
-<p>
+    <div id="searchable"><p>
 <div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Repositories.html#List">List</a></li><li class="active">
-<a href="UGREST-Repositories.html#Delete">Delete</a></li><li class="active">
-<a href="UGREST-Repositories.html#Create">Create</a></li><li class="active">
-<a href="UGREST-Repositories.html#Information">Information</a></li><li class="active">
-<a href="UGREST-Repositories.html#Update">Update</a></li><li class="active">
-<a href="UGREST-Repositories.html#Delete1">Delete</a></li><li class="active">
-<a href="UGREST-Repositories.html#PackageList">Package List</a></li><li class="active">
-<a href="UGREST-Repositories.html#ListPackageGroups">List Package Groups</a></li><li class="active">
-<a href="UGREST-Repositories.html#ListAllPackageGroupCategories">List All Package Group Categories</a></li><li class="active">
-<a href="UGREST-Repositories.html#Errata">Errata</a></li><li class="active">
-<a href="UGREST-Repositories.html#Synchronization">Synchronization</a></li><li class="active">
-<a href="UGREST-Repositories.html#ViewSyncHistory">View Sync History</a></li><li class="active">
-<a href="UGREST-Repositories.html#ViewSyncStatus">View Sync Status</a></li><li class="active">
-<a href="UGREST-Repositories.html#CancelSync">Cancel Sync</a></li><li class="active">
-<a href="UGREST-Repositories.html#CloneaRepository">Clone a Repository</a></li><li class="active">
-<a href="UGREST-Repositories.html#AddPackage">Add Package</a></li><li class="active">
-<a href="UGREST-Repositories.html#AddPackagestoaPackageGroup">Add Packages to a Package Group</a></li><li class="active">
-<a href="UGREST-Repositories.html#RemovePackagefromaPackageGroup">Remove Package from a Package Group</a></li><li class="active">
-<a href="UGREST-Repositories.html#CreateaPackageGroup">Create a Package Group</a></li><li class="active">
-<a href="UGREST-Repositories.html#DeleteaPackageGroup">Delete a Package Group</a></li><li class="active">
+<h4>Table of Contents</h4>
+<ol><li class="active"><a href="UGREST-Repositories.html#DeleteAllRepositories">Delete All Repositories</a></li><li class="active">
+<a href="UGREST-Repositories.html#ListAvailableRepositories">List Available Repositories</a></li><li class="active">
+<a href="UGREST-Repositories.html#CreateaRepository">Create a Repository</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeleteARepository">Delete A Repository</a></li><li class="active">
+<a href="UGREST-Repositories.html#GetARepository">Get A Repository</a></li><li class="active">
+<a href="UGREST-Repositories.html#UpdateARepository">Update A Repository</a></li><li class="active">
+<a href="UGREST-Repositories.html#CancelATask">Cancel A Task</a></li><li class="active">
+<a href="UGREST-Repositories.html#ActionStatus">Action Status</a></li><li class="active">
+<a href="UGREST-Repositories.html#ListActions">List Actions</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositorySychronization">Repository Sychronization</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddErrata">Add Errata</a></li><li class="active">
-<a href="UGREST-Repositories.html#DeleteErrata">Delete Errata</a></li><li class="active">
-<a href="UGREST-Repositories.html#AddKeys">Add Keys</a></li><li class="active">
-<a href="UGREST-Repositories.html#RemoveGPGKeys">Remove GPG Keys</a></li><li class="active">
-<a href="UGREST-Repositories.html#ListGPGKeys">List GPG Keys</a></li><li class="active">
-<a href="UGREST-Repositories.html#GetPackagebyNVREA">Get Package by NVREA</a></li><li class="active">
-<a href="UGREST-Repositories.html#PublishaRepository">Publish a Repository</a></li><li class="active">
-<a href="UGREST-Repositories.html#ViewSyncSchedulesforAllRepositories">View Sync Schedules for All Repositories</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddFile">Add File</a></li><li class="active">
 <a href="UGREST-Repositories.html#AddFilters">Add Filters</a></li><li class="active">
-<a href="UGREST-Repositories.html#Removefilters">Remove filters</a></li></ol></li></ol></div>
+<a href="UGREST-Repositories.html#AddGroup">Add Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddAPackage">Add A Package</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddPackageGroupToCategory">Add Package Group To Category</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddPackagesToPackageGroup">Add Packages To Package Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#AddKeys">Add Keys</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryClone">Repository Clone</a></li><li class="active">
+<a href="UGREST-Repositories.html#CreateAPackageGroup">Create A Package Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#CreatePackageGroupCategory">Create Package Group Category</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeleteErrata">Delete Errata</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeleteAPackage">Delete A Package</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeleteAPackageFromAPackageGroup">Delete A Package From A Package Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeleteAPackageGroup">Delete A Package Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeletePackageGroupFromCategory">Delete Package Group From Category</a></li><li class="active">
+<a href="UGREST-Repositories.html#DeletePackageGroupCategory">Delete Package Group Category</a></li><li class="active">
+<a href="UGREST-Repositories.html#GetPackageByFileName">Get Package By File Name</a></li><li class="active">
+<a href="UGREST-Repositories.html#GetPackageByNVREA">Get Package By NVREA</a></li><li class="active">
+<a href="UGREST-Repositories.html#ImportComps">Import Comps</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryMetadatageneration">Repository Metadata generation</a></li><li class="active">
+<a href="UGREST-Repositories.html#RemoveFile">Remove File</a></li><li class="active">
+<a href="UGREST-Repositories.html#RemoveFilters">Remove Filters</a></li><li class="active">
+<a href="UGREST-Repositories.html#RemoveGroup">Remove Group</a></li><li class="active">
+<a href="UGREST-Repositories.html#RemoveKeys">Remove Keys</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositorySychronization1">Repository Sychronization</a></li><li class="active">
+<a href="UGREST-Repositories.html#UpdatePublish">Update Publish</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryUpload">Repository Upload</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryCompsXML">Repository Comps XML</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryDistribution">Repository Distribution</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryErrata">Repository Errata</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryFiles">Repository Files</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryGPGKeys">Repository GPG Keys</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryPackageGroupCategories">Repository Package Group Categories</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryPackageGroups">Repository Package Groups</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositoryPackages">Repository Packages</a></li><li class="active">
+<a href="UGREST-Repositories.html#RepositorySynchronizationSchedules">Repository Synchronization Schedules</a></li></ol></li></ol></div>
 
 </p>
+<h1 id="top">Repositories RESTful Interface</h1>
 <p>
-The first way to interact with the system is to create a repository. Repositories will hold the packages you add to the system.  
+<i>RESTful interface for the creation, querying, and management of repositories managed by Pulp.</i> <br />
+<i>Repositories are represented as Repo objects.</i> <br />
+<i>Some operations on repositories happen asynchronously, as such, these operations return Task objects.</i> <br />
+<br />
+<strong>Repo object fields</strong>: 
 </p>
-<p>
-Base URL Path: <strong>/repositories/</strong>
-</p>
-<hr />
-<h2 id="List">List</h2>
-<p>
-List repositories. With no filters, this will return a list of all repositories on the system. The list is empty if no repositories are found.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: (multiple filters can be supplied)
-</p>
-<ul><li>'id'
-</li><li>'name'
-</li><li>'arch'
-</li><li>'groupid'
-</li><li>'relative_path'
+<ul><li><strong>id</strong> &lt;str&gt; <i>repository identifier</i>
+</li><li><strong>source</strong> &lt;RepoSource object&gt; <i>upstream content source</i>
+</li><li><strong>name</strong> &lt;str&gt; <i>human-friendly name</i>
+</li><li><strong>arch</strong> &lt;str&gt; <i>hardware architecture that repository is for</i>
+</li><li><strong>release</strong> &lt;str&gt; <i>release number</i>
+</li><li><strong>packages</strong> &lt;list of str&gt; <i>list of package ids in the repository [deferred field]</i>
+</li><li><strong>package_count</strong> &lt;int&gt; <i>number of packages in the repository</i>
+</li><li><strong>packagegroups</strong> &lt;object&gt; <i>map of package group names to list of package ids in the group [deferred field]</i>
+</li><li><strong>packagegroupcategories</strong> &lt;object&gt; <i>map of categories to lists of package group names [deferred field]</i>
+</li><li><strong>repomd_xml_path</strong> &lt;str&gt; <i>path to the repository's repomd xml file</i>
+</li><li><strong>group_xml_path</strong> &lt;str&gt; <i>path to the repository's group xml file</i>
+</li><li><strong>group_gz_xml_path</strong> &lt;str&gt; <i>path to the repository's compressed group xml file</i>
+</li><li><strong>sync_schedule</strong> &lt;<a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncSchedule" rel="nofollow">RepoSyncSchedule?</a> object&gt; <i>representing recurring sync schedule</i>
+</li><li><strong>last_sync</strong> &lt;timestamp&gt; <i>date and time of last successful sync</i>
+</li><li><strong>use_symlinks</strong> &lt;bool&gt; <i>whether or not the repository uses symlinks for its content</i>
+</li><li><strong>feed_ca</strong> &lt;str&gt; <i>full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed</i>
+</li><li><strong>feed_cert</strong> &lt;str&gt; <i>full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content</i>
+</li><li><strong>feed_key</strong> &lt;str&gt; <i>full path on the Pulp server to the private key for the feed certificate</i>
+</li><li><strong>consumer_ca</strong> &lt;str&gt; <i>full path on the Pulp server to the certificate authority used to verify consumer entitlement certificates</i>
+</li><li><strong>consumer_cert</strong> &lt;str&gt; <i>full path on the Pulp server to the entitlement certificate that will be given to bound consumers to authenticate access to the repository</i>
+</li><li><strong>consumer_key</strong> &lt;str&gt; <i>full path on the Pulp server to the private key for the consumer's entitlement certificate</i>
+</li><li><strong>errata</strong> &lt;object&gt; <i>map of errata names to lists of package ids in each errata [deferred field]</i>
+</li><li><strong>groupid</strong> &lt;list of str&gt; <i>list of repository group ids this repository belongs to</i>
+</li><li><strong>relative_path</strong> &lt;str&gt; <i>repository's path relative to the configured root</i>
+</li><li><strong>files</strong> &lt;list of str&gt; <i>list of ids of the non-package files in the repository [deferred field]</i>
+</li><li><strong>publish</strong> &lt;bool&gt; <i>whether or not the repository is available</i>
+</li><li><strong>clone_ids</strong> &lt;list of str&gt; <i>list of repository ids that are clones of this repository</i>
+</li><li><strong>distributionid</strong> &lt;list of str&gt; <i>list of distribution ids this repository belongs to [deferred fields]</i>
+</li><li><strong>checksum_type</strong> &lt;str&gt; <i>name of the algorithm used for checksums of the repository's content</i>
+</li><li><strong>filters</strong> &lt;list of str&gt; <i>list of filter ids associated with the repository</i>
 </li></ul><p>
-Response: <strong>200 OK</strong>
+<strong>RepoSource object fields</strong>: 
 </p>
-<div class="code"><pre>[{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'x86_64'</span></b>,
-  <B><span class="code-string">'feed'</span></b>: <B><span class="code-string">'http://feed.me/'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'my-repo'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my-repo'</span></b>},
- {<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'x86_64'</span></b>,
-  <B><span class="code-string">'feed'</span></b>: <B><span class="code-string">'http://feed.me.too/'</span></b>,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'my-repo2'</span></b>,
-  <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'my-repo2'</span></b>}]
-</pre></div><p>
-Error: None
-</p>
-<hr />
-<h2 id="Delete">Delete</h2>
-<p>
-Remove all repositories under pulp
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>True
-</pre></div><p>
-Error: None
-</p>
-<hr />
-<h2 id="Create">Create</h2>
-<p>
-Create a new repository given the passed in metadata.
-</p>
-<p>
-Status: <strong>partial</strong> - location header not currently supplied
-</p>
-<p>
-Path: <strong>/repositories/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>id: unique identifier
-</li><li>name: human-readable name
-</li><li>arch: architecture
-</li><li>feed: sync source.  Requires a format of the following:
-<ul><li>Yum repository:   yum:http://mirror.example.edu/fedora/linux/releases/12/Fedora/i386/os/
-</li><li>Local repository: yum:file://mnt/repositories/F-11/i386
-</li><li>Local directory:  local:file://mnt/packages/
-</li><li>Red Hat Network:  rhn:https://satellite.rhn.redhat.com/rhel-i386-server-vt-5
-</li></ul></li><li>sync_schedule: crontab schedule for sync
-</li><li>cert_data: {"ca"  : cacert, "cert": cert, "key" : key}
-</li><li>groupid: Group a repo belongs to eg: dev, qa, production
+<ul><li><strong>supported_types</strong> &lt;list of str&gt; <i>list of supported types of repositories</i>
+</li><li><strong>type</strong> &lt;str&gt; <i>repository source type</i>
+</li><li><strong>url</strong> &lt;str&gt; <i>repository source url</i>
 </li></ul><p>
-Take note of the 2 parts of the feed URL <i>&lt;type&gt;</i><strong>:</strong><i>&lt;path&gt;</i>.  Supported types are:
+<strong><a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncSchedule" rel="nofollow">RepoSyncSchedule?</a> object fields</strong>: 
 </p>
-<ul><li>yum : yum repository with existing metadata
-</li><li>local : locally mounted directory with packages
-</li><li>rhn : Connect to the Red Hat Network to get packages
+<ul><li><strong>interval</strong> &lt;object&gt; <i>fields of units with integer values (weeks, days, hours, minutes)</i>
+</li><li><strong>start_time</strong> <i>(optional)</i> &lt;object&gt; <i>fields of units with integer values (year, month, day, hour, minute)</i>
+</li><li><strong>runs</strong> <i>(optional)</i> &lt;int&gt; <i>number of runs to execute, omitted mean ad infinitum</i>
 </li></ul><p>
-Authentication:
+<strong>Task object fields</strong>: 
 </p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>201 Created</strong>
-</p>
-<p>
-Headers:
-</p>
-<ul><li>location: '/repositories/&lt;repository id&gt;/'
-</li></ul><div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'x86_64'</span></b>,
- <B><span class="code-string">'comps_xml_path'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'new-repo'</span></b>,
- <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'New Repository'</span></b>,
- <B><span class="code-string">'packagegroupcategories'</span></b>: {},
- <B><span class="code-string">'packagegroups'</span></b>: {},
- <B><span class="code-string">'packages'</span></b>: {},
- <B><span class="code-string">'source'</span></b>: {<B><span class="code-string">'supported_types'</span></b>: [<B><span class="code-string">'yum'</span></b>, <B><span class="code-string">'local'</span></b>, <B><span class="code-string">'rhn'</span></b>],
-             <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'yum'</span></b>,
-             <B><span class="code-string">'url'</span></b>: <B><span class="code-string">'http://feed.me/'</span></b>},
- <B><span class="code-string">'sync_schedule'</span></b>: None}
-</pre></div><p>
-Error: <strong>409 Conflict</strong> if there is an existing repository with the same id
-</p>
-<hr />
-<h2 id="Information">Information</h2>
-<p>
-Get the information on a single repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'x86_64'</span></b>,
- <B><span class="code-string">'comps_xml_path'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'new-repo'</span></b>,
- <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'New Repository'</span></b>,
- <B><span class="code-string">'packagegroupcategories'</span></b>: {},
- <B><span class="code-string">'packagegroups'</span></b>: {},
- <B><span class="code-string">'packages'</span></b>: {},
- <B><span class="code-string">'source'</span></b>: {<B><span class="code-string">'supported_types'</span></b>: [<B><span class="code-string">'yum'</span></b>, <B><span class="code-string">'local'</span></b>, <B><span class="code-string">'rhn'</span></b>],
-             <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'yum'</span></b>,
-             <B><span class="code-string">'url'</span></b>: <B><span class="code-string">'http://feed.me/'</span></b>},
- <B><span class="code-string">'sync_schedule'</span></b>: None}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
-</p>
-<hr />
-<h2 id="Update">Update</h2>
-<p>
-Change a repository
-</p>
-<p>
-Status: <strong>partial</strong> - invalid update of fields not checked
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/</strong>
-</p>
-<p>
-Method: <strong>PUT</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>repository - complete repository object with updated fields (see previous response)
+<ul><li><strong>id</strong> &lt;str&gt; <i>unique id (usually a uuid) for the task</i>
+</li><li><strong>method_name</strong> &lt;str&gt; <i>name of the pulp library method that was called</i>
+</li><li><strong>state</strong> &lt;str&gt; <i>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</i>
+</li><li><strong>start_time</strong> &lt;timestamp or nil&gt; <i>time the task started running, nil if the task has not yet started</i>
+</li><li><strong>finish_time</strong> &lt;timestamp or nil&gt; <i>time the task finished running, nil if the task has not yet finished</i>
+</li><li><strong>result</strong> &lt;object or nil&gt; <i>the result of the pulp library method upon return, usually nil</i>
+</li><li><strong>exception</strong> &lt;str or nil&gt; <i>a string representation of an error in the pulp librry call, if any</i>
+</li><li><strong>traceback</strong> &lt;str or nil&gt; <i>a string print out of the trace back for the exception, if any</i>
+</li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
+</li><li><strong>scheduled_time</strong> &lt;timestamp or nil&gt; <i>time the task is scheduled to run, applicable only for scheduled tasks</i>
+</li><li><strong>status_path</strong> &lt;str&gt; <i>complete uri path to poll for the task's progress using http GET</i>
 </li></ul><p>
-Authentication:
+<strong>Progress object fields</strong>: 
 </p>
-<blockquote>
-<p>
-username/pass 
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>True
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository<br />
-Error: <strong>400 Bad Request</strong> if there is an update to the id
-</p>
-<hr />
-<h2 id="Delete1">Delete</h2>
-<p>
-Delete a single repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>True
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
-</p>
-<hr />
-<h2 id="PackageList">Package List</h2>
-<p>
-Get a list of all available packages in a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/packages/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<ul><li>'name': name of the package
-</li><li>'arch': architecture of the package
+<ul><li><strong>step</strong> &lt;str&gt; <i>name of the step the pulp library call is on</i>
+</li><li><strong>items_total</strong> &lt;int&gt; <i>the total number of items to be processed by the call</i>
+</li><li><strong>items_left</strong> &lt;int&gt; <i>the remaining number of items to be processed by the call</i>
+</li><li><strong>details</strong> &lt;object&gt; <i>object providing further details on the progress</i>
 </li></ul><p>
-Response: <strong>200 OK</strong>
+<strong>Details object fields</strong>: 
 </p>
-<div class="code"><pre>{<B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>: {<B><span class="code-string">'arch'</span></b>: <B><span class="code-string">'x86_64'</span></b>,
-                                          <B><span class="code-string">'checksum'</span></b>: {<B><span class="code-string">'sha256'</span></b>: <B><span class="code-string">'6bce3f26e1fc0fc52ac996f39c0d0e14fc26fb8077081d5b4dbfb6431b08aa9f'</span></b>},
-                                          <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'Test package.  Nothing to see here.'</span></b>,
-                                          <B><span class="code-string">'epoch'</span></b>: None,
-                                          <B><span class="code-string">'filename'</span></b>: <B><span class="code-string">'pulp-test-package-0.3.1-1.fc11.x86_64.rpm'</span></b>,
-                                          <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'f8ab5088-688e-4ce4-ade3-700aa4cbb070'</span></b>,
-                                          <B><span class="code-string">'name'</span></b>: <B><span class="code-string">'pulp-test-package'</span></b>,
-                                          <B><span class="code-string">'provides'</span></b>: [<B><span class="code-string">'config(pulp-test-package)'</span></b>,
-                                                       <B><span class="code-string">'pulp-test-package'</span></b>,
-                                                       <B><span class="code-string">'pulp-test-package(x86-64)'</span></b>],
-                                          <B><span class="code-string">'release'</span></b>: <B><span class="code-string">'1.fc11'</span></b>,
-                                          <B><span class="code-string">'requires'</span></b>: [<B><span class="code-string">'config(pulp-test-package)'</span></b>,
-                                                       <B><span class="code-string">'rpmlib(CompressedFileNames)'</span></b>,
-                                                       <B><span class="code-string">'rpmlib(PayloadFilesHavePrefix)'</span></b>],
-                                          <B><span class="code-string">'version'</span></b>: <B><span class="code-string">'0.3.1'</span></b>}}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
-</p>
-<hr />
-<h2 id="ListPackageGroups">List Package Groups</h2>
+<ul><li><strong>num_success</strong> &lt;int&gt; <i>the number of items successfully processed</i>
+</li><li><strong>total_count</strong> &lt;int&gt; <i>the number of items that were attempted to be processed</i>
+</li></ul><hr />
+<h2 id="DeleteAllRepositories">Delete All Repositories</h2>
 <p>
-List all package groups in a repository
+<i>Delete all repositories managed by Pulp.</i> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /repositories/ <br />
+<br />
+<strong>permission</strong>: DELETE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: True <br />
+<br />
 </p>
+<h2 id="ListAvailableRepositories">List Available Repositories</h2>
 <p>
-Status: <strong>complete</strong>
+<i>Get a list of all repositories managed by Pulp.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of Repo objects, possibly empty <br />
+<br />
+<strong>filters</strong>: 
 </p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/packagegroups/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{u<B><span class="code-string">'testgroup'</span></b>: {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'testgroup'</span></b>,
-                u<B><span class="code-string">'conditional_package_names'</span></b>: {},
-                u<B><span class="code-string">'default'</span></b>: True,
-                u<B><span class="code-string">'default_package_names'</span></b>: [],
-                u<B><span class="code-string">'description'</span></b>: u<B><span class="code-string">'Test Package Group'</span></b>,
-                u<B><span class="code-string">'display_order'</span></b>: 1024,
-                u<B><span class="code-string">'id'</span></b>: u<B><span class="code-string">'testgroup'</span></b>,
-                u<B><span class="code-string">'immutable'</span></b>: False,
-                u<B><span class="code-string">'langonly'</span></b>: None,
-                u<B><span class="code-string">'mandatory_package_names'</span></b>: [],
-                u<B><span class="code-string">'name'</span></b>: u<B><span class="code-string">'Test Group'</span></b>,
-                u<B><span class="code-string">'optional_package_names'</span></b>: [],
-                u<B><span class="code-string">'repo_defined'</span></b>: False,
-                u<B><span class="code-string">'translated_description'</span></b>: {},
-                u<B><span class="code-string">'translated_name'</span></b>: {},
-                u<B><span class="code-string">'user_visible'</span></b>: True}}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="ListAllPackageGroupCategories">List All Package Group Categories</h2>
-<p>
-List all the package group categories in a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/packagegroupcategories/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="Errata">Errata</h2>
-<p>
-List the errata in a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/errata/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<ul><li>'type': the type of errata
+<ul><li><strong>id</strong> &lt;str&gt; <i>repository id</i>
+</li><li><strong>name</strong> &lt;str&gt; <i>repository name</i>
+</li><li><strong>arch</strong> &lt;str&gt; <i>repository contect architecture</i>
+</li><li><strong>groupid</strong> &lt;str&gt; <i>repository group id</i>
+</li><li><strong>relative_path</strong> &lt;str&gt; <i>repository's on disk path</i>
 </li></ul><p>
-Response: <strong>200 OK</strong>
+<br />
 </p>
+<h2 id="CreateaRepository">Create a Repository</h2>
 <p>
-Error: <strong>404 Not Found</strong> if no such resource exists
+<i>Create a new repository based on the passed information</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/ <br />
+<br />
+<strong>permission</strong>: CREATE <br />
+<br />
+<strong>success response</strong>: 201 Created <br />
+<br />
+<strong>failure response</strong>: 409 Conflict if the parameters matches an existing repository <br />
+<br />
+<strong>return</strong>: new Repo object <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<hr />
-<h2 id="Synchronization">Synchronization</h2>
-<p>
-Sync the packages in a repository from it feed. This is an asynchronous call that will return a status path that the client must poll to get the sync status.
-</p>
-<p>
-Status: <strong>partial</strong> - conflicts are not currently checked for
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/sync/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
- 
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
- 
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>202 Accepted</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">'exception'</span></b>: None,
- <B><span class="code-string">'finish_time'</span></b>: None,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
- <B><span class="code-string">'method_name'</span></b>: <B><span class="code-string">'sync'</span></b>,
- <B><span class="code-string">'next_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149102},
- <B><span class="code-string">'result'</span></b>: None,
- <B><span class="code-string">'start_time'</span></b>: None,
- <B><span class="code-string">'state'</span></b>: <B><span class="code-string">'waiting'</span></b>,
- <B><span class="code-string">'status_path'</span></b>: <B><span class="code-string">'/repositories/test_two_repos_share_common_pkg_repo_B/sync/09f55d5e-7e11-11df-bcee-002564c957fe/'</span></b>,
- <B><span class="code-string">'traceback'</span></b>: None}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository<br />
-Error: <strong>409 Conflict</strong> if another sync is already in progress on this repository
-</p>
-<hr />
-<h2 id="ViewSyncHistory">View Sync History</h2>
-<p>
-Get a list of recent syncs from the server, including any on-going sync, for a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/sync/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>[{<B><span class="code-string">'exception'</span></b>: None,
-  <B><span class="code-string">'finish_time'</span></b>: None,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
-  <B><span class="code-string">'method_name'</span></b>: <B><span class="code-string">'sync'</span></b>,
-  <B><span class="code-string">'next_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149102},
-  <B><span class="code-string">'result'</span></b>: None,
-  ...},
- {<B><span class="code-string">'exception'</span></b>: None,
-  <B><span class="code-string">'finish_time'</span></b>: None,
-  <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
-  <B><span class="code-string">'method_name'</span></b>: <B><span class="code-string">'sync'</span></b>,
-  <B><span class="code-string">'next_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149102},
-  <B><span class="code-string">'result'</span></b>: None,
-  ...,},
- ...]
-</pre></div><hr />
-<h2 id="ViewSyncStatus">View Sync Status</h2>
-<p>
-Check the status of a repository sync
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/sync/&lt;sync task id&gt;/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
- 
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or client certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">&quot;scheduled_time&quot;</span></b>: 0, 
-<B><span class="code-string">&quot;exception&quot;</span></b>: null, 
-<B><span class="code-string">&quot;status_path&quot;</span></b>: <B><span class="code-string">&quot;/pulp/api/repositories/repo500/sync/346aa491-3a01-11e0-a0cd-0022157359f6/&quot;</span></b>, 
-<B><span class="code-string">&quot;finish_time&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1297865775645}, 
-<B><span class="code-string">&quot;start_time&quot;</span></b>: {<B><span class="code-string">&quot;$date&quot;</span></b>: 1297865766991}, 
-<B><span class="code-string">&quot;traceback&quot;</span></b>: null, 
-<B><span class="code-string">&quot;method_name&quot;</span></b>: <B><span class="code-string">&quot;_sync&quot;</span></b>, 
-<B><span class="code-string">&quot;state&quot;</span></b>: <B><span class="code-string">&quot;finished&quot;</span></b>, 
-<B><span class="code-string">&quot;result&quot;</span></b>: null, 
-<B><span class="code-string">&quot;progress&quot;</span></b>: 
-  {<B><span class="code-string">&quot;status&quot;</span></b>: <B><span class="code-string">&quot;FINISHED&quot;</span></b>, 
-   <B><span class="code-string">&quot;num_success&quot;</span></b>: 500, 
-   <B><span class="code-string">&quot;size_total&quot;</span></b>: 8821483, 
-   <B><span class="code-string">&quot;num_download&quot;</span></b>: 0, 
-   <B><span class="code-string">&quot;item_name&quot;</span></b>: null, 
-   <B><span class="code-string">&quot;items_left&quot;</span></b>: 500, 
-   <B><span class="code-string">&quot;items_total&quot;</span></b>: 500, 
-   <B><span class="code-string">&quot;step&quot;</span></b>: <B><span class="code-string">&quot;Finished&quot;</span></b>, 
-   <B><span class="code-string">&quot;size_left&quot;</span></b>: 0, 
-   <B><span class="code-string">&quot;details&quot;</span></b>: {
-     <B><span class="code-string">&quot;rpm&quot;</span></b>: {<B><span class="code-string">&quot;total_count&quot;</span></b>: 500, <B><span class="code-string">&quot;total_size_bytes&quot;</span></b>: 8821483, <B><span class="code-string">&quot;num_success&quot;</span></b>: 500, <B><span class="code-string">&quot;size_left&quot;</span></b>: 19328, <B><span class="code-string">&quot;items_left&quot;</span></b>: 0}}, 
-   <B><span class="code-string">&quot;error_details&quot;</span></b>: [], 
-   <B><span class="code-string">&quot;num_error&quot;</span></b>: 0}, <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;346aa491-3a01-11e0-a0cd-0022157359f6&quot;</span></b>}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository or sync task
-</p>
-<hr />
-<h2 id="CancelSync">Cancel Sync</h2>
-<p>
-Cancel repository synchronization
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/sync/&lt;sync task id&gt;/</strong>
-</p>
-<p>
-Method: <strong>DELETE</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or client certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>202 Accepted</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'fifo_tasks'</span></b>,
- <B><span class="code-string">'exception'</span></b>: None,
- <B><span class="code-string">'finish_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149604},
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'09f55d5e-7e11-11df-bcee-002564c957fe'</span></b>,
- <B><span class="code-string">'method_name'</span></b>: <B><span class="code-string">'sync'</span></b>,
- <B><span class="code-string">'next_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149102},
- <B><span class="code-string">'result'</span></b>: None,
- <B><span class="code-string">'start_time'</span></b>: {<B><span class="code-string">'$date'</span></b>: 1277198149573},
- <B><span class="code-string">'state'</span></b>: <B><span class="code-string">'finished'</span></b>,
- <B><span class="code-string">'status_path'</span></b>: <B><span class="code-string">'/repositories/test_two_repos_share_common_pkg_repo_B/sync/09f55d5e-7e11-11df-bcee-002564c957fe/'</span></b>,
- <B><span class="code-string">'traceback'</span></b>: None}
-</pre></div><p>
-Response: <strong>204 No Content</strong> if the sync has already completed
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="CloneaRepository">Clone a Repository</h2>
-<p>
-Clone a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;id&gt;/clone/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>clone_id - id of cloned repo
-</li><li>clone_name 
-</li><li>feed - Feed type (parent(default), origin or none)
+<ul><li><strong>id</strong> &lt;str&gt; <i>the repository's unique id</i>
+</li><li><strong>name</strong> &lt;str&gt; <i>a human-friendly name for the repsitory</i>
+</li><li><strong>arch</strong> &lt;str&gt; <i>the main architecture of packages contained in the repository</i>
+</li><li><strong>feed</strong> &lt;str&gt; <i>repository feed in the form of &lt;type&gt;:&lt;url&gt;</i>
+</li><li><strong>use_symlinks</strong> <i>(optional)</i> &lt;bool&gt; <i>defaults to false</i>
+</li><li><strong>sync_schedule</strong> <i>(optional)</i> &lt;<a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncSchedule" rel="nofollow">RepoSyncSchedule?</a> object&gt; <i>schedule to regularly sync the repository on</i>
+</li><li><strong>feed_cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>certificate information to use when connecting to the feed</i>
+</li><li><strong>consumer_cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>certificate information to use when validating consumers of this repo</i>
+</li><li><strong>cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>repository certificate information</i>
+</li><li><strong>relative_path</strong> <i>(optional)</i> &lt;str&gt; <i>repository on disk path</i>
+</li><li><strong>groupid</strong> <i>(optional)</i> &lt;list of str&gt; <i>list of repository group ids this repository belongs to</i>
+</li><li><strong>gpgkeys</strong> <i>(optional)</i> &lt;list of str&gt; <i>list of gpg keys used for signing content</i>
+</li><li><strong>checksum_type</strong> <i>(optional)</i> &lt;str&gt; <i>name of the algorithm to use for content checksums, defaults to sha256</i>
+</li><li><strong>notes</strong> <i>(optional)</i> &lt;dict&gt; <i>additional information in the form of key-value pairs</i>
 </li></ul><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>True
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if no such resource exists
+<br />
 </p>
 <hr />
-<h2 id="AddPackage">Add Package</h2>
+<h2 id="DeleteARepository">Delete A Repository</h2>
 <p>
-Add an existing package to a repository
+<i>Delete a single repository</i> <br />
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: DELETE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
 </p>
+<h2 id="GetARepository">Get A Repository</h2>
 <p>
-Status: <strong>complete</strong>
+<i>Get a Repo object for a specific repository</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: a Repo object <br />
+<br />
 </p>
+<h2 id="UpdateARepository">Update A Repository</h2>
 <p>
-Path: <strong>/repositories/&lt;repository id&gt;/add_package/</strong>
+<i>Change an exisiting repository.</i> <br />
+<br />
+<strong>method</strong>: PUT <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/ <br />
+<br />
+<strong>permission</strong>: UPDATE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 400 Bad Request when trying to change the id <br />
+<br />
+<strong>return</strong>: a Repo object <br />
+<br />
+<strong>parameters</strong>: any field of a Repo object except id <br />
+<br />
 </p>
+<hr />
+<h2 id="CancelATask">Cancel A Task</h2>
 <p>
-Method: <strong>POST</strong>
+<br />
+<strong>method</strong>: DELETE <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/&lt;action name&gt;/&lt;task id&gt;/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 
 </p>
+<blockquote>
 <p>
-Parameters:
+202 Accepted <br />
+204 No Content if the task has already finished <br />
 </p>
-<ul><li>packageid: package id
+</blockquote>
+<p>
+<br />
+<strong>failure response</strong>: 404 Not Found if the task id does nat match a task for the repository <br />
+<br />
+<strong>return</strong>: Task object on 202 <br />
+<br />
+</p>
+<h2 id="ActionStatus">Action Status</h2>
+<p>
+<i>Check the status of a previously returned task.</i> <br />
+<i>This url path should match the status_uri of a Task object.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/&lt;action name&gt;/&lt;task id&gt;/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the task id does not match a task for the repository <br />
+<br />
+<strong>return</strong>: Task object <br />
+<br />
+</p>
+<hr />
+<h2 id="ListActions">List Actions</h2>
+<p>
+<i>Get a list of actions that were executed asynchronously on a repository.</i> <br />
+<i>This method only works for actions that returned a 202 Accepted response.</i> <br />
+<i>e.g. /repositories/my-repo/sync/</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/&lt;action name&gt;/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of Task objects <br />
+<br />
+</p>
+<h2 id="RepositorySychronization">Repository Sychronization</h2>
+<p>
+<i>Synchronize the repository's content from its source.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/sync/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository <br />
+406 Not Acceptable if the repository does not have a source <br />
+409 Conflict if a sync is already in progress for the repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: a Task object <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>timeout</strong> <i>(optional)</i> &lt;str&gt; <i>timeout in &lt;units&gt;:&lt;value&gt; format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks</i>
+</li><li><strong>skip</strong> <i>(optional)</i> &lt;object&gt; <i>yum skip dict</i>
+</li><li><strong>limit</strong> <i>(optional)</i> &lt;int&gt; <i>value in KB/sec to limit download bandwidth per thread.  Only applicable for yum synchronization</i>
+</li><li><strong>threads</strong> <i>(optional)</i> &lt;int&gt; <i>number of threads to use for synchronization.  Only applicable for yum synchronization</i>
 </li></ul><p>
- 
-Authentication:
+<br />
 </p>
-<blockquote>
-<p>
-username/password or client certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>[] - on successful add of all package ids
-[[package_id, (name, epoch, version, release, arch), filename, sha256checksum]] - on an error, only those packages which were <B><span class="code-lang">not</span></b> added are returned <B><span class="code-lang">in</span></b> this list
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if there is no such repository
-</p>
-<hr />
-<h2 id="AddPackagestoaPackageGroup">Add Packages to a Package Group</h2>
-<p>
-Add packages to a package group in the repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/add_packages_to_group/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="RemovePackagefromaPackageGroup">Remove Package from a Package Group</h2>
-<p>
-Remove a package from a package group in the repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/delete_package_from_group/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="CreateaPackageGroup">Create a Package Group</h2>
-<p>
-Create a package group in this repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/create_packagegroup/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{<B><span class="code-string">'groupid'</span></b>: &lt;group id&gt;,
- <B><span class="code-string">'groupname'</span></b>: &lt;group name&gt;,
- <B><span class="code-string">'description'</span></b>: &lt;group description&gt;}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'testgroup'</span></b>,
- <B><span class="code-string">'conditional_package_names'</span></b>: {},
- <B><span class="code-string">'default'</span></b>: True,
- <B><span class="code-string">'default_package_names'</span></b>: [],
- <B><span class="code-string">'description'</span></b>: u<B><span class="code-string">'Test Package Group'</span></b>,
- <B><span class="code-string">'display_order'</span></b>: 1024,
- <B><span class="code-string">'id'</span></b>: u<B><span class="code-string">'testgroup'</span></b>,
- <B><span class="code-string">'immutable'</span></b>: False,
- <B><span class="code-string">'langonly'</span></b>: None,
- <B><span class="code-string">'mandatory_package_names'</span></b>: [],
- <B><span class="code-string">'name'</span></b>: u<B><span class="code-string">'Test Group'</span></b>,
- <B><span class="code-string">'optional_package_names'</span></b>: [],
- <B><span class="code-string">'repo_defined'</span></b>: False,
- <B><span class="code-string">'translated_description'</span></b>: {},
- <B><span class="code-string">'translated_name'</span></b>: {},
- <B><span class="code-string">'user_visible'</span></b>: True}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="DeleteaPackageGroup">Delete a Package Group</h2>
-<p>
-Delete a repository group in this repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/delete_packagegroup/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
 <h2 id="AddErrata">Add Errata</h2>
 <p>
-Add errata to the repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/add_errata/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="DeleteErrata">Delete Errata</h2>
-<p>
-Delete errata from the repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/delete_errata/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="AddKeys">Add Keys</h2>
-<p>
-Add keys to this repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/addkeys/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="RemoveGPGKeys">Remove GPG Keys</h2>
-<p>
-Remove keys from a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/rmkeys/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<pre class="wiki">#!
-{
-}
-</pre><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="ListGPGKeys">List GPG Keys</h2>
-<p>
-List the keys in the repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/listkeys/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="GetPackagebyNVREA">Get Package by NVREA</h2>
-<p>
-Get a package from the repository by its name, version, release, epoch, and architecture
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/get_package_by_nvrea/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<div class="code"><pre>{
-}
-</pre></div><p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="PublishaRepository">Publish a Repository</h2>
-<p>
-Change the publish state of the repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/update_publish/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<ul><li>state: string "True" or "False".  True = publish, False = unpublish
+<i>Add errata to the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_errata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>errataid</strong> &lt;str&gt; <i>errata id</i>
 </li></ul><p>
-Authentication:
+<br />
 </p>
-<blockquote>
+<h2 id="AddFile">Add File</h2>
 <p>
-username/password or consumer certificate
+<i>Add files to the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_file/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-</blockquote>
-<p>
-Filters:
+<ul><li><strong>fileids</strong> &lt;list of str&gt; <i>list of file ids</i>
+</li></ul><p>
+<br />
 </p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<p>
-Error: <strong>404 Not Found</strong> if no such resource exists
-</p>
-<hr />
-<h2 id="ViewSyncSchedulesforAllRepositories">View Sync Schedules for All Repositories</h2>
-<p>
-Get the sync schedules for all the repositories
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/schedules/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/password or consumer certificate
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<hr />
 <h2 id="AddFilters">Add Filters</h2>
 <p>
-Add filters to this repository
+<i>Add filters to the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_filters/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<p>
-Status: <strong>complete</strong>
+<ul><li><strong>filters</strong> &lt;list of str&gt; <i>list of filter ids</i>
+</li></ul><p>
+<br />
 </p>
+<h2 id="AddGroup">Add Group</h2>
 <p>
-Path: <strong>/repositories/&lt;repository id&gt;/add_filters/</strong>
+<i>Add a group to the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_group/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<p>
-Method: <strong>POST</strong>
+<ul><li><strong>addgrp</strong> &lt;str&gt; <i>group id</i>
+</li></ul><p>
+<br />
 </p>
+<h2 id="AddAPackage">Add A Package</h2>
 <p>
-Parameters:
+<i>Add a new package to the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_package/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: list of errors <br />
+<br />
+<strong>parameters</strong>: 
 </p>
+<ul><li><strong>packageid</strong> &lt;str&gt; <i>id of package to add</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="AddPackageGroupToCategory">Add Package Group To Category</h2>
 <p>
-Authentication:
+<i>Add a package group to one of the repository's package group categories.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_packagegroup_to_category/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
 </p>
 <blockquote>
 <p>
-username/password or consumer certificate
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
 </p>
 </blockquote>
 <p>
-Response: <strong>200 OK</strong>
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
 </p>
-<div class="code"><pre>{<B><span class="code-string">'filters'</span></b>: [<B><span class="code-string">'filter1'</span></b>, <B><span class="code-string">'filter2'</span></b>]}
-</pre></div><p>
-Error: <strong>404 Not Found</strong> if no such resource exists
+<ul><li><strong>categoryid</strong> &lt;str&gt; <i>package group category id</i>
+</li><li><strong>groupid</strong> &lt;str&gt; <i>package group id</i>
+</li></ul><p>
+<br />
 </p>
-<hr />
-<h2 id="Removefilters">Remove filters</h2>
+<h2 id="AddPackagesToPackageGroup">Add Packages To Package Group</h2>
 <p>
-Remove filters from a repository
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;repository id&gt;/remove_filters/</strong>
-</p>
-<p>
-Method: <strong>POST</strong>
-</p>
-<p>
-Parameters:
-</p>
-<pre class="wiki">#!
-{'filters': ['filter1', 'filter2']}
-</pre><p>
-Authentication:
+<i>Add packages to a package group that is in the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/add_packages_to_group/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
 </p>
 <blockquote>
 <p>
-username/password or consumer certificate
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
 </p>
 </blockquote>
 <p>
-Response: <strong>200 OK</strong>
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
 </p>
+<ul><li><strong>groupid</strong> &lt;str&gt; <i>package group id</i>
+</li><li><strong>packagenames</strong> &lt;list of str&gt; <i>list of packages to add to the package group</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="AddKeys">Add Keys</h2>
 <p>
-Error: <strong>404 Not Found</strong> if no such resource exists
+<i>Add gpg keys to the repsository</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/addkeys/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>keylist</strong> &lt;list of str binary lists&gt; <i>list of (key name, content) tuples</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryClone">Repository Clone</h2>
+<p>
+<i>Create a new repository by cloning an existing one.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/clone/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository <br />
+409 Conflict if the parameters match an existing repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: a Task object <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>clone_id</strong> &lt;str&gt; <i>the id of the clone repository</i>
+</li><li><strong>clone_name</strong> &lt;str&gt; <i>the namd of clone repository</i>
+</li><li><strong>feed</strong> &lt;str&gt; <i>feed of the clone repository in &lt;type&gt;:&lt;url&gt; format</i>
+</li><li><strong>relative_path</strong> <i>(optional)</i> &lt;str&gt; <i>clone repository on disk path</i>
+</li><li><strong>groupid</strong> <i>(optional)</i> &lt;str&gt; <i>repository groups that clone belongs to</i>
+</li><li><strong>filters</strong> <i>(optional)</i> &lt;list of objects&gt; <i>synchronization filters to apply to the clone</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="CreateAPackageGroup">Create A Package Group</h2>
+<p>
+<i>Create a new package group in the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/create_packagegroup/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: <br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>groupid</strong> &lt;str&gt; <i>id of the package group</i>
+</li><li><strong>groupname</strong> &lt;str&gt; <i>name of the package group</i>
+</li><li><strong>description</strong> &lt;str&gt; <i>package group description</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="CreatePackageGroupCategory">Create Package Group Category</h2>
+<p>
+<i>Create a new package group category in the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/create_packagegroupcategory/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: PackageGroupCategory object <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>categoryid</strong> &lt;str&gt; <i>package group category id</i>
+</li><li><strong>categoryname</strong> &lt;str&gt; <i>package group category name</i>
+</li><li><strong>description</strong> &lt;str&gt; <i>description of the package group category</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="DeleteErrata">Delete Errata</h2>
+<p>
+<i>Delete errata from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/delete_errata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>errataid</strong> &lt;str&gt; <i>errata id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="DeleteAPackage">Delete A Package</h2>
+<p>
+<i>Delete a package from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/delete_package/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>package</strong> &lt;Package object&gt; <i>package to delete</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="DeleteAPackageFromAPackageGroup">Delete A Package From A Package Group</h2>
+<p>
+<i>Delete a package from a package group in the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/delete_package_from_group/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>groupid</strong> &lt;str&gt; <i>package group id</i>
+</li><li><strong>name</strong> &lt;str&gt; <i>package name to remove</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="DeleteAPackageGroup">Delete A Package Group</h2>
+<p>
+<i>Delete a package group from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/delete_packagegroup/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>groupid</strong> &lt;str&gt; <i>id of the package group</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="DeletePackageGroupFromCategory">Delete Package Group From Category</h2>
+<p>
+<i>Delete a package group from one of the repository's package group categories.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/delete_pacakgegroup_from_category/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>categoryid</strong> &lt;str&gt; <i>package group category id</i>
+</li><li><strong>groupid</strong> &lt;str&gt; <i>package group id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="DeletePackageGroupCategory">Delete Package Group Category</h2>
+<p>
+<i>Delete a package group category from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/delete_packagegroupcategory/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+400 Bad Request if the required parameters are not present <br />
+404 Not Found if the id does not match a repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: nil <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>categoryid</strong> &lt;str&gt; <i>package group category id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="GetPackageByFileName">Get Package By File Name</h2>
+<p>
+<i>Get packages from the repository by specifying the file names.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/get_package_by_filename/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: list of Package Objects <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>filename</strong> &lt;list of str&gt; <i>list of file names</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="GetPackageByNVREA">Get Package By NVREA</h2>
+<p>
+<i>Get packages from the repository by specifying package name, version, release, epoc, and architecture</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/get_package_by_nvrea/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: object of package file names to Package objects <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>nvrea</strong> &lt;list of str&gt; <i>list of name, version, release, epoch, architecture specifications</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="ImportComps">Import Comps</h2>
+<p>
+<i>Create packagegroups and categories from a comps.xml file.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/import_comps/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: True on success, False on failure <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li>xml comps file body
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryMetadatageneration">Repository Metadata generation</h2>
+<p>
+<i>spawn a repository's metadata generation. If metadata already exists, its a update otherwise a create</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/metadata/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository <br />
+406 Not Acceptable if the repository does not have a source <br />
+409 Conflict if a metadata is already in progress for the repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: a Task object <br />
+<br />
+</p>
+<h2 id="RemoveFile">Remove File</h2>
+<p>
+<i>Remove files from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/remove_file/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>fileids</strong> &lt;list of str&gt; <i>list of file ids</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RemoveFilters">Remove Filters</h2>
+<p>
+<i>Remove filters from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/remove_filters/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>filters</strong> &lt;list of str&gt; <i>list of filter ids</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RemoveGroup">Remove Group</h2>
+<p>
+<i>Remove a group from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/remove_group/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>rmgrp</strong> &lt;str&gt; <i>group id</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RemoveKeys">Remove Keys</h2>
+<p>
+<i>Remove gpg keys from the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/rmkeys/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>keys list</strong> &lt;list of str&gt; <i>list of key names to remove</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositorySychronization1">Repository Sychronization</h2>
+<p>
+<i>Synchronize the repository's content from its source.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/sync/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 202 Accepted <br />
+<br />
+<strong>failure response</strong>: 
+</p>
+<blockquote>
+<p>
+404 Not Found if the id does not match a repository <br />
+406 Not Acceptable if the repository does not have a source <br />
+409 Conflict if a sync is already in progress for the repository <br />
+</p>
+</blockquote>
+<p>
+<br />
+<strong>return</strong>: a Task object <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>timeout</strong> <i>(optional)</i> &lt;str&gt; <i>timeout in &lt;units&gt;:&lt;value&gt; format (e.g. hours:2) valid units: seconds, minutes, hours, days, weeks</i>
+</li><li><strong>skip</strong> <i>(optional)</i> &lt;object&gt; <i>yum skip dict</i>
+</li><li><strong>limit</strong> <i>(optional)</i> &lt;int&gt; <i>value in KB/sec to limit download bandwidth per thread.  Only applicable for yum synchronization</i>
+</li><li><strong>threads</strong> <i>(optional)</i> &lt;int&gt; <i>number of threads to use for synchronization.  Only applicable for yum synchronization</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="UpdatePublish">Update Publish</h2>
+<p>
+<i>Update a repository's 'publish' state.</i> <br />
+<i>True means the repository is exposed through Apache.</i> <br />
+<i>False means to stop exposing from Apache.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/update_publish/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: True on successful update, False otherwise <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>state</strong> &lt;bool&gt; <i>puplish state</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryUpload">Repository Upload</h2>
+<p>
+<i>Upload a package to the repository.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/upload/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: true <br />
+<br />
+<strong>parameters</strong>: 
+</p>
+<ul><li><strong>pkginfo</strong> &lt;str&gt; <i>package information</i>
+</li><li><strong>pkgstream</strong> &lt;binary&gt; <i>package data</i>
+</li></ul><p>
+<br />
 </p>
 <hr />
+<h2 id="RepositoryCompsXML">Repository Comps XML</h2>
+<p>
+<i>Get the xml content of the repository comps file</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/comps/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: Unspecified <br />
+<br />
+<strong>return</strong>: xml comps file <br />
+<br />
+</p>
+<h2 id="RepositoryDistribution">Repository Distribution</h2>
+<p>
+<i>List the distributions the repository is part of.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/distribution/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: Unspecified <br />
+<br />
+<strong>return</strong>: list of Distribution objects <br />
+<br />
+</p>
+<h2 id="RepositoryErrata">Repository Errata</h2>
+<p>
+<i>List the applicable errata for the repository.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/errata/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: list of Errata objects <br />
+<br />
+<strong>filters</strong>: 
+</p>
+<ul><li><strong>type</strong> &lt;str&gt; <i>type of errata</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryFiles">Repository Files</h2>
+<p>
+<i>List the non-package files in the repository.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/files/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: Unspecified <br />
+<br />
+<strong>return</strong>: list of File objects <br />
+<br />
+</p>
+<h2 id="RepositoryGPGKeys">Repository GPG Keys</h2>
+<p>
+<i>List the gpg keys used by the repository.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/keys/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: Unspecified <br />
+<br />
+<strong>return</strong>: list of gpg keys <br />
+<br />
+</p>
+<h2 id="RepositoryPackageGroupCategories">Repository Package Group Categories</h2>
+<p>
+<i>Get the package group categories in the repository.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/packagegroupcategories/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: list of package group catagory names <br />
+<br />
+<strong>filters</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <i>package group category id</i>
+</li><li><strong>packagegroupcategories</strong> &lt;str&gt; <i>package group category name</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryPackageGroups">Repository Package Groups</h2>
+<p>
+<i>Get the package groups in the repositories.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/packagegroups/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: list of package group names <br />
+<br />
+<strong>filters</strong>: 
+</p>
+<ul><li><strong>id</strong> &lt;str&gt; <i>package groupd id</i>
+</li><li><strong>packagegroups</strong> &lt;str&gt; <i>package group name</i>
+</li></ul><p>
+<br />
+</p>
+<h2 id="RepositoryPackages">Repository Packages</h2>
+<p>
+<i>Get the packages in a repository</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/&lt;id&gt;/packages/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found if the id does not match a repository <br />
+<br />
+<strong>return</strong>: list of Package objects <br />
+<br />
+<strong>filters</strong>: 
+</p>
+<ul><li><strong>name</strong> &lt;str&gt; <i>package name</i>
+</li><li><strong>version</strong> &lt;str&gt; <i>package version</i>
+</li><li><strong>release</strong> &lt;str&gt; <i>package release</i>
+</li><li><strong>epoch</strong> &lt;int&gt; <i>package epoch</i>
+</li><li><strong>arch</strong> &lt;str&gt; <i>package architecture</i>
+</li><li><strong>filename</strong> &lt;str&gt; <i>name of package file</i>
+</li><li><strong>field</strong> &lt;str&gt; <i>field to include in Package objects</i>
+</li></ul><p>
+<br />
+</p>
+<hr />
+<h2 id="RepositorySynchronizationSchedules">Repository Synchronization Schedules</h2>
+<p>
+<i>List all repository synchronization schedules.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /repositories/schedules/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of object that are mappings of repository id to synchronization schedule <br />
+<br />
+</p>
 </div>
    </div>
    

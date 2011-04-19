@@ -45,8 +45,8 @@
 <a href="UGREST-Services.html#StartFileUpload">Start File Upload</a></li><li class="active">
 <a href="UGREST-Services.html#AppendFileContent">Append File Content</a></li><li class="active">
 <a href="UGREST-Services.html#ImportFile">Import File</a></li><li class="active">
-<a href="UGREST-Services.html#LookuppackageChecksums">Lookup package Checksums</a></li><li class="active">
-<a href="UGREST-Services.html#LookupfileChecksums">Lookup file Checksums</a></li><li class="active">
+<a href="UGREST-Services.html#LookupPackageChecksums">Lookup Package Checksums</a></li><li class="active">
+<a href="UGREST-Services.html#LookupFileChecksums">Lookup File Checksums</a></li><li class="active">
 <a href="UGREST-Services.html#AssociatePackages">Associate Packages</a></li></ol></li></ol></div>
 
 </p>
@@ -167,6 +167,7 @@ Response: <strong>200 OK</strong>
 </pre></div><p>
 Error: None
 </p>
+<hr />
 <h2 id="StartFileUpload">Start File Upload</h2>
 <p>
 Begin (initialize) a file upload.  Returns the unique upload ID and file offset for the next <i>chunk</i> to be uploaded.
@@ -213,7 +214,8 @@ None
 Response: <strong>200 OK</strong>
 </p>
 <div class="code"><pre>{ <B><span class="code-string">&quot;id&quot;</span></b> : <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, <B><span class="code-string">&quot;offset&quot;</span></b> : <B><span class="code-string">&quot;0&quot;</span></b> }
-</pre></div><h2 id="AppendFileContent">Append File Content</h2>
+</pre></div><hr />
+<h2 id="AppendFileContent">Append File Content</h2>
 <p>
 Upload file content (bits) in <i>chunks</i> using the ID of a previously <a href="UGREST-Services.html#BeginFileUpload">started</a> upload.
 </p>
@@ -250,16 +252,12 @@ None
 Response: <strong>200 OK</strong>
 </p>
 <div class="code"><pre>True
-</pre></div><h2 id="ImportFile">Import File</h2>
+</pre></div><hr />
+<h2 id="ImportFile">Import File</h2>
 <p>
-Import a previously uploaded file.  The file header is used to determine the <i>type</i> of file uploaded.
+Import a previously uploaded file.  The metadata used as a param to this call should have the type of content to be imported. Currently we support 'file' or 'rpm'.
 </p>
 <p>
-Extensions:
-</p>
-<ul><li>.rpm - imported into <i>package</i>
-</li><li>other  - imported into <i>file</i>
-</li></ul><p>
 Status: <strong>complete</strong>
 </p>
 <p>
@@ -271,8 +269,15 @@ Method: <strong>PUT</strong>
 <p>
 Parameters:
 </p>
-<ul><li>metadata: uploaded file metadata eg: {'nvrea': 'only for rpm','pkgname': <i>, 'description': </i>, 'hashtype': 'sha256','checksum': <i>, 'type': 'file/rpm', 'size': </i>}
-</li><li>uploadid: the ID of an uploaded file
+<ul><li>metadata: uploaded file metadata
+<ul><li>nvrea   : tuple(name, version, release, epoch, arch) NVREA info for the uploaded rpm,
+</li><li>pkgname : file name of the file or rpm uploaded
+</li><li>description : file description
+</li><li>hashtype    : for pulp this is always 'sha256'
+</li><li>checksum    : checksum value 
+</li><li>type        : 'file' or 'rpm'
+</li><li>size        : size of the file in bytes
+</li></ul></li><li>uploadid: the ID of an uploaded file
 </li></ul><p>
 Authentication:
 </p>
@@ -290,19 +295,22 @@ None
 </p>
 </blockquote>
 <p>
+Request:
+</p>
+<div class="code"><pre>{<B><span class="code-string">'uploadid'</span></b>: u<B><span class="code-string">'3b90a8f6-66dc-4be4-82f1-6b39a2e3d288'</span></b>, 
+<B><span class="code-string">'metadata'</span></b>: {<B><span class="code-string">'nvrea'</span></b>: (<B><span class="code-string">'ruby-gofer'</span></b>, <B><span class="code-string">'0.23'</span></b>, <B><span class="code-string">'1.fc14'</span></b>, <B><span class="code-string">'0'</span></b>, <B><span class="code-string">'noarch'</span></b>), 
+             <B><span class="code-string">'pkgname'</span></b>: <B><span class="code-string">'ruby-gofer-0.23-1.fc14.noarch.rpm'</span></b>, 
+             <B><span class="code-string">'description'</span></b>: <B><span class="code-string">'Contains gofer ruby lib modules.'</span></b>, 
+             <B><span class="code-string">'hashtype'</span></b>: <B><span class="code-string">'sha256'</span></b>, 
+             <B><span class="code-string">'checksum'</span></b>: <B><span class="code-string">'271a3764e6ed7b1f0be3c8804a4958df2abbafe00f3d2d8ed9078ece34a10817'</span></b>, 
+             <B><span class="code-string">'type'</span></b>: <B><span class="code-string">'rpm'</span></b>, 
+             <B><span class="code-string">'size'</span></b>: 14585}
+}
+</pre></div><p>
 Response: <strong>200 OK</strong>
 </p>
-<div class="code"><pre>{<B><span class="code-string">&quot;name&quot;</span></b>: <B><span class="code-string">&quot;skytux-repo&quot;</span></b>, 
-   <B><span class="code-string">&quot;filename&quot;</span></b>: <B><span class="code-string">&quot;skytux-repo-1.0-4.noarch.rpm&quot;</span></b>, 
-   <B><span class="code-string">&quot;epoch&quot;</span></b>: <B><span class="code-string">&quot;0&quot;</span></b>, 
-   <B><span class="code-string">&quot;version&quot;</span></b>: <B><span class="code-string">&quot;1.0&quot;</span></b>, 
-   <B><span class="code-string">&quot;release&quot;</span></b>: <B><span class="code-string">&quot;4&quot;</span></b>, 
-   <B><span class="code-string">&quot;_id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
-   <B><span class="code-string">&quot;arch&quot;</span></b>: <B><span class="code-string">&quot;noarch&quot;</span></b>, 
-   <B><span class="code-string">&quot;id&quot;</span></b>: <B><span class="code-string">&quot;aa61c815-6545-41b2-891b-5eec4b502222&quot;</span></b>, 
-   ..
-}
-</pre></div><h2 id="LookuppackageChecksums">Lookup package Checksums</h2>
+<hr />
+<h2 id="LookupPackageChecksums">Lookup Package Checksums</h2>
 <p>
 Lookup checksums for a batch of packages.
 </p>
@@ -341,7 +349,8 @@ Response: <strong>200 OK</strong>
 <div class="code"><pre>{<B><span class="code-string">&quot;rpmname1&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
  <B><span class="code-string">&quot;rpmname2&quot;</span></b>: [&lt;checksums1&gt;,&lt;checksum2&gt;,..],
  ...}
-</pre></div><h2 id="LookupfileChecksums">Lookup file Checksums</h2>
+</pre></div><hr />
+<h2 id="LookupFileChecksums">Lookup File Checksums</h2>
 <p>
 Lookup checksums for a batch of files.
 </p>

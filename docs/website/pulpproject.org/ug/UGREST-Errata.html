@@ -119,64 +119,7 @@ Error: None
 <hr />
 <h2 id="ListErratabyRepository">List Errata by Repository</h2>
 <p>
-List available errata for a given repo. This will return a list of all errata on associated to that specific repoid. The list is empty if no repositories are found.
-</p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/repositories/&lt;id&gt;/list_errata</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters: 
-</p>
-<blockquote>
-<p>
-repoid : repo id for which errata is queried
-types  : optional ['bugzilla', 'enhancement', 'security']
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass or Consumer Certificate
-</p>
-</blockquote>
-<p>
-Filters: None
-</p>
-<p>
-Response: <strong>200 OK</strong>
-</p>
-<div class="code"><pre>{<B><span class="code-string">'_id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'_ns'</span></b>: <B><span class="code-string">'errata'</span></b>,
- <B><span class="code-string">'description'</span></b>: None,
- <B><span class="code-string">'from_str'</span></b>: <B><span class="code-string">'updates@fedoraproject.org'</span></b>,
- <B><span class="code-string">'id'</span></b>: <B><span class="code-string">'FEDORA-2010-12094'</span></b>,
- <B><span class="code-string">'immutable'</span></b>: True,
- <B><span class="code-string">'issued'</span></b>: <B><span class="code-string">'2010-08-05 23:03:01'</span></b>,
- <B><span class="code-string">'pkglist'</span></b>: [],
- <B><span class="code-string">'pushcount'</span></b>: <B><span class="code-string">''</span></b>,
- <B><span class="code-string">'reboot_suggested'</span></b>: False,
- <B><span class="code-string">'references'</span></b>: [{<B><span class="code-string">'href'</span></b> : <B><span class="code-string">'https://bugzilla.redhat.com/show_bug.cgi?id=551949'</span></b>), 
-                <B><span class="code-string">'type'</span></b> : <B><span class="code-string">'bugzilla'</span></b>,
-                <B><span class="code-string">'id'</span></b>   : <B><span class="code-string">'551949'</span></b>,
-                <B><span class="code-string">'title'</span></b>: <B><span class="code-string">'Add emacs terminal mode to desktop menu'</span></b>)}],
- <B><span class="code-string">'release'</span></b>: u<B><span class="code-string">'Fedora 13'</span></b>,
- <B><span class="code-string">'repo_defined'</span></b>: True,
- <B><span class="code-string">'status'</span></b>: u<B><span class="code-string">'stable'</span></b>,
- <B><span class="code-string">'title'</span></b>: u<B><span class="code-string">'emacs-23.2-4.fc13'</span></b>,
- <B><span class="code-string">'type'</span></b>: u<B><span class="code-string">'bugfix'</span></b>,
- <B><span class="code-string">'updated'</span></b>: u<B><span class="code-string">''</span></b>,
- <B><span class="code-string">'version'</span></b>: u<B><span class="code-string">'1.4'</span></b>}
-
-</pre></div><p>
-Error: None
+See <a href="UGREST-Repositories.html#Errata">List Errata by Repository</a>
 </p>
 <hr />
 <h2 id="ListErratabyConsumer">List Errata by Consumer</h2>

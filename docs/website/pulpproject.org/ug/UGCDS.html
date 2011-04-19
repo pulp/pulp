@@ -37,7 +37,15 @@
   
    
    <div class="wikipage">
-    <div id="searchable"><h1 id="ContentDeliveryServer">Content Delivery Server</h1>
+    <div id="searchable"><p>
+<div class='wiki-toc'>
+<h4>Table of Contents</h4>
+<ol><li class="active"><a href="UGCDS.html#display">Display and History</a><ol><li class="active"><a href="UGCDS.html#Display">Display</a></li><li class="active">
+<a href="UGCDS.html#History">History</a></li></ol><li class="active"><a href="UGCDS.html#reg">Registration and Unregistration</a><ol><li class="active"><ol><li class="active"><a href="UGCDS.html#Example">Example</a></li></ol><li class="active"></li></ol><li class="active"><a href="UGCDS.html#repoassociation">Repo Association</a><ol><li class="active"><a href="UGCDS.html#Association">Association</a></li><li class="active">
+<a href="UGCDS.html#Unassociation">Unassociation</a></li></ol><li class="active"><a href="UGCDS.html#sync">Synchronization</a></li></ol></li></ol></div>
+
+</p>
+<h1 id="ContentDeliveryServer">Content Delivery Server</h1>
 <p>
 A Content Delivery Server (CDS) is a way to offload content serving from the Pulp server to a separate machine. A CDS is configured to host one or more repositories and consumers accessing those repositories are evenly distributed across CDS instances that serve them. The Pulp server is still used to manage and synchronize content into repositories; the CDS instances synchronize repositories from the Pulp server itself and make them available to consumers.
 </p>
@@ -46,6 +54,10 @@ Having CDS instances present in a Pulp server influences the way consumer bindin
 </p>
 <p>
 Furthermore, consumers will be configured with the remaining CDS instances and the Pulp server itself as backups. This functionality works together to facilitate both load balancing and fail over scenarios to provide higher availability for hosted repositories.
+</p>
+<p>
+Each CDS instance sends a heartbeat on a regular interval over the message bus.  This is used to determine the status of the CDS as it pertains to connectivity and availability.
+The interval is specified in the /etc/cds.conf and can be different for each CDS.  The heartbeat statistics are included in the <i>list</i> and <i>info</i> CDS commands.
 </p>
 <hr />
 <h2 id="display">Display and History</h2>
@@ -63,13 +75,18 @@ Hostname            	cds1.example.org
 Description         	None                     
 Repos               	repo1                     
 Last Sync           	Never                    
-
+Status:
+   Responding       	Yes                      
+   Last Heartbeat   	2011-04-07 18:55:55 
 
 Name                	US West CDS       
 Hostname            	cds2.example.org       
 Description         	None                     
 Repos               	repo1, repo2              
-Last Sync           	Never                    
+Last Sync           	Never       
+Status:
+   Responding       	No                      
+   Last Heartbeat   	2011-02-01 18:55:55              
 </pre><p>
 The following fields are displayed for each CDS instance:
 </p>
@@ -80,6 +97,45 @@ The following fields are displayed for each CDS instance:
 </td></tr><tr><td> Description </td><td> Provides extra display information about the CDS. 
 </td></tr><tr><td> Repos </td><td> List of repositories that are currently associated with the CDS. This does not necessarily mean they have all been synchronized, but rather the Pulp server has been configured with the association. At the next synchronization, the CDS will take the necessary steps to serve only the repos in this list. 
 </td></tr><tr><td> Last Sync </td><td> Indicates the last time a synchronize operation was run on the CDS. 
+</td></tr><tr><td> Status </td><td> Indicates the status of the CDS as determined by heartbeat 
+</td></tr><tr><td> (status) Responding </td><td> Indicates CDS heartbeat is not overdue [Yes|No]. 
+</td></tr><tr><td> (status) Last Heartbeat </td><td> Date &amp; Time of last received heartbeat. 
+</td></tr></table>
+<p>
+The details of a CDS instance that is currently registered can be viewed with the <tt>cds info</tt> command.
+</p>
+<p>
+The <i>info</i> command takes the following arguments (all arguments are optional unless otherwise specified):
+</p>
+<table class="wiki">
+<tr><td> Hostname </td><td> <tt>--hostname</tt> </td><td> Required. Fully qualified domain name of the CDS. The CDS will use its hostname when determining its ID on the message bus, so this argument must be the same value the CDS will resolve. 
+</td></tr></table>
+<pre class="wiki">$ pulp-admin cds info --hostname cds1.example.org
++------------------------------------------+
+                   CDS
++------------------------------------------+
+
+Name                	US East CDS
+Hostname            	cds1.example.org
+Description         	None                     
+Repos               	repo1                     
+Last Sync           	Never                    
+Status:
+   Responding       	Yes                      
+   Last Heartbeat   	2011-04-07 18:55:55        
+</pre><p>
+The following fields are displayed for the CDS instance:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Name </td><td> Display name of the CDS, provided at registration time. 
+</td></tr><tr><td> Hostname </td><td> Serves as a unique identification for the CDS. 
+</td></tr><tr><td> Description </td><td> Provides extra display information about the CDS. 
+</td></tr><tr><td> Repos </td><td> List of repositories that are currently associated with the CDS. This does not necessarily mean they have all been synchronized, but rather the Pulp server has been configured with the association. At the next synchronization, the CDS will take the necessary steps to serve only the repos in this list. 
+</td></tr><tr><td> Last Sync </td><td> Indicates the last time a synchronize operation was run on the CDS. 
+</td></tr><tr><td> Status </td><td> Indicates the status of the CDS as determined by heartbeat 
+</td></tr><tr><td> (status) Responding </td><td> Indicates CDS heartbeat is not overdue [Yes|No]. 
+</td></tr><tr><td> (status) Last Heartbeat </td><td> Date &amp; Time of last received heartbeat. 
 </td></tr></table>
 <h3 id="History">History</h3>
 <p>

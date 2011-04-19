@@ -48,7 +48,8 @@
 <a href="UGFAQ.html#Igetatracebackusingadmincertswithpulp-adminonfedora-14">I get a traceback using admin certs with pulp-admin on fedora-14</a></li><li class="active">
 <a href="UGFAQ.html#Whyismongotellingmemongoddeadbutsubsyslocked">Why is mongo telling me "mongod dead but subsys locked"?</a></li><li class="active">
 <a href="UGFAQ.html#MongodwontstartwheninstalledfromEL5">Mongod wont start when installed from EL5</a></li><li class="active">
-<a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a></li></ol></li></ol></div>
+<a href="UGFAQ.html#HowdoIbuildtheQPIDrpmsforCentOS5">How do I build the QPID rpms for CentOS 5?</a></li><li class="active">
+<a href="UGFAQ.html#PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</a></li></ol></li></ol></div>
 
 </p>
 <h1 id="FrequentlyAskedQuestions">Frequently Asked Questions</h1>
@@ -61,25 +62,20 @@ A common error new users run into when running the client is an error similar to
 </pre><p>
 The issue revolves around the default SSL certificates that the Apache installation generates. The CN of this certificate must match the hostname being requested against the server; if not, M2Crypto will throw an error. The hostname expected by the certificate can be found by running:
 </p>
-<pre class="wiki">sudo openssl x509 -text -in /etc/pki/tls/certs/localhost.crt | less
+<pre class="wiki">$ openssl x509 -subject -nameopt sname -noout -in `grep -e "^SSLCertificateFile" /etc/httpd/conf.d/ssl.conf | awk '{print $2}'` | awk -F "/" '{print $7}'
+CN=guardian
 </pre><p>
-Look for the line that starts with "Subject:". The CN in that field will indicate the hostname of the server. For example:
+The result shows the hostname the certificate expected requests to be made against. In this case, that hostname is "guardian".
 </p>
-<pre class="wiki">Subject: C=--, ST=SomeState, L=SomeCity, O=SomeOrganization, OU=SomeOrganizationalUnit, CN=guardian/emailAddress=root@guardian
-</pre><p>
-In that example, "guardian" is the name of the pulp server:
-</p>
-<pre class="wiki">-&gt; hostname
-guardian
-</pre><p>
-The pulp client must be configured to use that hostname when making connections to the server. This is done in /etc/pulp/client.conf:
+<p>
+The pulp client must be configured to use that hostname when making connections to the server. This is done in <tt>/etc/pulp/client.conf</tt>:
 </p>
 <pre class="wiki">[server]
 host = guardian
 </pre><p>
 Also keep in mind that your client machine must be able to resolve that hostname, so make sure there is an entry in /etc/hosts:
 </p>
-<pre class="wiki"> -&gt; cat /etc/hosts
+<pre class="wiki">$ cat /etc/hosts
 # hostname guardian added to /etc/hosts by anaconda
 127.0.0.1   localhost guardian
 </pre><hr />
@@ -247,7 +243,25 @@ $ chgrp mongodb /var/lib/mongodb
 <p>
 To build the QPID rpms, follow the instructions <a class="wiki" href="UGInstallCentOS.html">here</a>.
 </p>
-</div>
+<h2 id="PulponFedora13mongoneedstobeupgraded">Pulp on Fedora 13 mongo needs to be upgraded</h2>
+<p>
+Some queries in pulp require mongo 1.5 or greater, yet Fedora 13 is at mongo 1.4.x.  
+The solution is to manually install 1.6.  Below are the recommended steps.  (For reference mongodb provides instructions <a class="ext-link" href="http://www.mongodb.org/display/DOCS/Quickstart+Unix"><span class="icon">here</span></a>
+</p>
+<pre class="wiki"> 1. Download mongo
+ For 32-bit
+  curl http://downloads.mongodb.org/linux/mongodb-linux-i686-1.6.5.tgz &gt; mongo.tgz
+ For 64-bit
+  curl http://downloads.mongodb.org/linux/mongodb-linux-x86_64-1.6.5.tgz &gt; mongo.tgz
+ Below assumes 64-bit, change filename if using 32-bit
+ 2. cp mongodb-linux-x86_64-1.6.5.tgz /opt
+ 3. cd /opt
+ 4. sudo tar xvfz mongodb-linux-x86_64-1.6.5.tgz
+ 5. sudo mv /usr/bin/mongod /usr/bin/mongod.old
+ 6. sudo ln -s /opt/mongodb-linux-x86_64-1.6.5/bin/mongod /usr/bin/mongod
+ Restart mongo
+ 7. sudo /etc/init.d/mongod restart
+</pre></div>
    </div>
    
   

@@ -64,10 +64,13 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Display name used to better describe the content and purpose of the repo. 
 </td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Indicates the architecture of packages that will be found in the repo. 
 </td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Indicates where packages should be synchronized from when populating the repo. See the section below on feeds for more information. 
-</td></tr><tr><td> Schedule </td><td> <tt>--schedule</tt> </td><td> Cron syntax describing the interval at which the repository should be automatically synchronized. 
-</td></tr><tr><td> CA Certificate </td><td> <tt>--cacert</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
-</td></tr><tr><td> Entitlement Certificate </td><td> <tt>--cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
-</td></tr><tr><td> Entitlement Private Key </td><td> <tt>--key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
+</td></tr><tr><td> <del>Schedule</del> </td><td> <del><tt>--schedule</tt></del> </td><td> <del>Cron syntax describing the interval at which the repository should be automatically synchronized.</del> 
+</td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
+</td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
 </td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> If specified, the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
@@ -99,10 +102,15 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Change the display name which is used to better describe the content and purpose of the repo. 
 </td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Change the architecture of packages that will be found in the repo. 
 </td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Change where packages should be synchronized from when populating the repo. 
-</td></tr><tr><td> Schedule </td><td> <tt>--schedule</tt> </td><td> Change the cron syntax describing the interval at which the repository should be automatically synchronized. 
-</td></tr><tr><td> CA Certificate </td><td> <tt>--cacert</tt> </td><td> Change the CA certificate used to verify the server's SSL certificate when the feed specifies an HTTPS connection. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
-</td></tr><tr><td> Entitlement Certificate </td><td> <tt>--cert</tt> </td><td> Change the x.509 entitlement certificate used for authentication. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
-</td></tr><tr><td> Entitlement Private Key </td><td> <tt>--key</tt> </td><td> Change the x.509 entitlement certificate's associated private key.  The key will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> <del>Schedule</del> </td><td> <del><tt>--schedule</tt></del> </td><td> <del>Change the cron syntax describing the interval at which the repository should be automatically synchronized.</del> 
+</td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
+</td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
+</td></tr><tr><td> Remove Feed Entitlement Certificate </td><td> <tt>--remove_feed_cert</tt> </td><td> Removes any feed HTTPS data, including the CA certificate, entitlement certificate and its private key. This cannot be specified at the same time as any of the <tt>--feed_*</tt> attributes. 
+</td></tr><tr><td> Consumer CA Certificate </td><td> <tt>--consumer_ca</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer Entitlement Certificate </td><td> <tt>--consumer_cert</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Consumer Entitlement Private Key </td><td> <tt>--consumer_key</tt> </td><td> See <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a> 
+</td></tr><tr><td> Remove Consumer Entitlement Certificate </td><td> <tt>--remove_consumer_cert</tt> </td><td> Disabled repository authentication from the repository. For more information, see <a class="wiki" href="UGRepoAuth.html">Repository Authentication</a>. 
 </td></tr><tr><td> Symlinks Flag </td><td> <tt>--symlinks</tt> </td><td> Change whether the repository contents will be symlinked from their original location instead of copied (only applicable for local feeds). 
 </td></tr><tr><td> Relative Path </td><td> <tt>--relativepath</tt> </td><td> Change the relative path at which the repository will be served. If this is not specified, the repo will default to being served at the same path as found in the feed. 
 </td></tr><tr><td> Group ID </td><td> <tt>--groupid</tt> </td><td> Tags the repository as part of a repo group. The group does not need to be explicitly created ahead of time; simply putting a repository in a group using this attribute is the only step necessary. 
@@ -155,7 +163,7 @@ The following fields are displayed for each repository:
 </td></tr><tr><td> Distributions </td><td> Displays the name of all distributions that are present in the repository. 
 </td></tr><tr><td> Publish </td><td> Indicates if the repository is being served by Pulp. If this is "False", the repository content exists in the Pulp server but is not accessible to consumers. 
 </td></tr><tr><td> Clones </td><td> List of repository IDs of repos cloned from the repo being displayed. 
-</td></tr><tr><td> Groups </td><td> List of group IDs to which the repository belongs. 
+</td></tr><tr><td> Groups </td><td> A list of groups to which the repository belongs. 
 </td></tr></table>
 <h4 id="Status">Status</h4>
 <p>
@@ -232,13 +240,17 @@ Alternatively, the sync can be run in the foreground by passing the <tt>-F</tt> 
 </p>
 <pre class="wiki">$ pulp-admin repo sync --id pulp-f14-64 -F
 Sync for repository pulp-f14-64 started
-You can safely CTRL+C this current command and it will continue
-[=================                        ] 50% (5 of 10 pkgs)
+Step: Downloading Items or Verifying
+[===                      ] 14%
+Rpms: 4/15
+Total: 4/15 items
 </pre><p>
 In addition to the <tt>-F</tt> flag, the following options are available to the <tt>repo sync</tt> call. These are only available when running a manual sync using <tt>pulp-admin repo sync</tt> and are not supported for scheduled sync jobs.
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Limit Bandwidth Per Thread </td><td> <tt>--limit</tt> </td><td> If specified, will limit the bandwidth each thread uses when synchronizing yum content.  Value is expected to be in KB/sec. 
+</td></tr><tr><td> Threads </td><td> <tt>--threads</tt> </td><td> If specified, will allow this many threads to be used for synchronization. 
 </td></tr><tr><td> Timeout </td><td> <tt>--timeout</tt> </td><td> Time for the sync to run before being timed out. The format follows the <a class="wiki" href="UGGeneral.html#timeunits">Time Units</a> guidelines.
 </td></tr><tr><td> Skip Packages </td><td> <tt>--no-packages</tt> </td><td> If specified, packages found in the feed that are not part of an errata will not be synchronized. If errata are still downloaded as part of the sync, their associated packages will still be downloaded. 
 </td></tr><tr><td> Skip Errata </td><td> <tt>--no-errata</tt> </td><td> If specified, errata found in the feed will not be synchronized. 
@@ -265,12 +277,12 @@ The <tt>repo add_package</tt> command takes following arguments:
 <pre class="wiki"> $ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 
 </pre><h4 id="Example:Addapackagefromsourcetotargetrepositoryrecursive">Example: Add a package from source to target repository (recursive)</h4>
 <pre class="wiki">pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 -r
-</pre><h3 id="DeletePackage">Delete Package</h3>
+</pre><h3 id="RemovePackage">Remove Package</h3>
 <p>
-The <tt>repo delete_package</tt> command is used to indicate a package to remove from a Pulp repository. During this process, a dependency lookup happens for the requested package and the call provides a suggestive option to choose to any dependencies required by this call.
+The <tt>repo remove_package</tt> command is used to indicate a package to remove from a Pulp repository. During this process, a dependency lookup happens for the requested package and the call provides a suggestive option to choose to any dependencies required by this call.
 </p>
 <p>
-The <tt>repo delete_package</tt> command takes following arguments:
+The <tt>repo remove_package</tt> command takes following arguments:
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
@@ -280,14 +292,14 @@ The <tt>repo delete_package</tt> command takes following arguments:
 </td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
 </td></tr></table>
 <h4 id="Example:Removeapackagefromrepositorytopleveldependencyresolution">Example: Remove a package from repository (top level dependency resolution)</h4>
-<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64
+<pre class="wiki"> $ pulp-admin repo remove_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64
 </pre><h4 id="Example:Removeapackagefromrepositoryrecursive">Example: Remove a package from repository (recursive)</h4>
-<pre class="wiki"> $ pulp-admin repo delete_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64 -r
+<pre class="wiki"> $ pulp-admin repo remove_package --id=test17 -p lxc-libs-0.7.2-1.fc13.x86_64 -r
 </pre><hr />
 <h2 id="files">Files</h2>
 <h3 id="AddFile">Add File</h3>
 <p>
-Files can be associated with a repository using the <tt>pulp-admin</tt> script. When add_file is invoked, a file is selected from a source repository (if specified) or from the Pulp server in general and added to the destination repository.
+Files can be associated with a repository using the <tt>pulp-admin</tt> script. When add_file is invoked, a file is selected from a source repository (if specified) or from the Pulp server in general and added to the destination repository. Files can be specified with multiple -f or via --csv. Both options cannot be used in the same command.
 </p>
 <p>
 The <tt>repo add_file</tt> command takes following arguments:
@@ -295,7 +307,7 @@ The <tt>repo add_file</tt> command takes following arguments:
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the target repository to add files to. 
-</td></tr><tr><td> Files </td><td> <tt>-f</tt> or <tt>--files</tt> </td><td> File(s) to add to this repository. 
+</td></tr><tr><td> Files </td><td> <tt>-f</tt> or <tt>--filename</tt> </td><td> File to add to this repository. 
 </td></tr><tr><td> Source ID </td><td> <tt>--source</tt> </td><td> Source repository with specified file to perform add (optional). 
 </td></tr><tr><td> CSV File </td><td> <tt>--csv</tt> </td><td> A csv file to perform batch operations on. Format: filename,checksum 
 </td></tr></table>
@@ -307,12 +319,12 @@ The <tt>repo add_file</tt> command takes following arguments:
 <pre class="wiki">$ pulp-admin repo add_file --id testrepo --csv test.csv
 </pre><h3 id="DeleteFile">Delete File</h3>
 <p>
-The <tt>repo remove_file</tt> command is used to remove files from a repository. It takes the following arguments: 
+The <tt>repo remove_file</tt> command is used to remove files from a repository. Files can be specified with multiple -f or via --csv. Both options cannot be used in the same command. It takes the following arguments: 
 </p>
 <table class="wiki">
 <tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
 </td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the target repository to remove files from. 
-</td></tr><tr><td> Files </td><td> <tt>-f</tt> or <tt>--files</tt> </td><td> File(s) to remove to this repository. 
+</td></tr><tr><td> Files </td><td> <tt>-f</tt> or <tt>--filename</tt> </td><td> File to remove from this repository. 
 </td></tr><tr><td> CSV File </td><td> <tt>--csv</tt> </td><td> A CSV file to perform batch operations on. Format: filename,checksum 
 </td></tr></table>
 <h4 id="Example:removefilefromtargetrepository">Example: remove file from target repository</h4>
@@ -424,12 +436,10 @@ A filter can be deleted using "filter delete". If a filter is associated with an
 Successfully deleted Filter [ test-filter ]
 </pre><h3 id="AssociationwithRepositories">Association with Repositories</h3>
 <p>
-There are two ways in which you can associate filters with repositories -
+There are two ways in which you can associate filters with repositories:
 </p>
-<p>
-* Filters applied during cloning a repository: You can specify one or more filters while cloning a repo. As a result of this, cloned respository is associated with these filters and they are applied during cloning operation. 
-</p>
-<pre class="wiki">$ pulp-admin repo clone --id=test-repo --clone_id=clone-test-repo -f filter1 -f filter2
+<ul><li>Filters applied during cloning a repository: You can specify one or more filters while cloning a repo. As a result of this, cloned respository is associated with these filters and they are applied during cloning operation. 
+</li></ul><pre class="wiki">$ pulp-admin repo clone --id=test-repo --clone_id=clone-test-repo -f filter1 -f filter2
 </pre><p>
 Multiple filters can be specified using multiple -f options. You can verify packages synced using "repo content" to make sure filters were applied successfully. Note that this will not work with repo clone with "origin" feed as filters work only with repositories with "local" feed. 
 </p>
@@ -438,11 +448,39 @@ Successive syncs with continue to apply filters associated with repository unles
 </p>
 <pre class="wiki">$ pulp-admin repo remove_filters --id=clone-test-repo -f filter1
 Successfully removed filters ['filter1'] from repository [clone-test-repo]
-</pre><p>
-* Filters added manually to a repository using "repo add_filters" command. 
-</p>
-<pre class="wiki">$ pulp-admin repo add_filters --id=clone-test-repo -f filter1 -f filter2
+</pre><ul><li>Filters added manually to a repository using "repo add_filters" command. 
+</li></ul><pre class="wiki">$ pulp-admin repo add_filters --id=clone-test-repo -f filter1 -f filter2
 Successfully added filters ['filter1','filter2'] to repository [clone-test-repo]
+</pre><hr />
+<h2 id="publish">Publish</h2>
+<p>
+The ability to control if a repository is accessible from HTTPS requests may be set through the <tt>repo publish</tt> command.
+</p>
+<ul><li>Pulp's default behavior for repository publishing is set in <tt>pulp.conf</tt>
+<pre class="wiki">[repos]
+default_to_published: true
+</pre><ul><li>If <tt>default_to_published</tt> is true, all repositories will be published and accessible through HTTPS.  It is still possible to restrict a specific repository, through use of the 'repo publish --disable' command.
+</li><li>If <tt>default_to_published</tt> is false, all repositories will be hidden from HTTPS and not published.  A user would need to run 'repo publish --enable' to allow HTTPS access for a specific repository.
+</li></ul></li></ul><ul><li>Example to publish the repository, making it accessible from the Pulp server and CDS instances
+<pre class="wiki">$ pulp-admin repo publish --id test-repo --enable
+</pre></li></ul><ul><li>Example to disable publishing a repository
+<pre class="wiki">$ pulp-admin repo publish --id test-repo --disable
+</pre></li></ul><h3 id="Metadata">Metadata</h3>
+<p>
+Schedules metadata generation for a specific repository. This creates an async task and queues it. The status for this task can be checked with a status flag.
+</p>
+<p>
+The <tt>repo metadata</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> Identifies the repository to generate metadata. 
+</td></tr><tr><td> Status </td><td> <tt>--status</tt> </td><td> Metadata generation status for this repository. </td><td>|
+</td></tr></table>
+<h4 id="Example:scheduleametadatagenerationforarepository">Example: schedule a metadata generation for a repository</h4>
+<pre class="wiki">$ pulp-admin repo metadata --id testrepo
+</pre><h4 id="Example:checkthemetadataschedulestatusforarepository">Example: check the metadata schedule status for a repository</h4>
+<pre class="wiki">$ pulp-admin repo metadata --id testrepo --status
 </pre></div>
    </div>
    

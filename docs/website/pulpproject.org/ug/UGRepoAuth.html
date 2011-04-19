@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <link rel="stylesheet" type="text/css" href="../css/pulp-ug.css" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <title>Pulp User Guide</title>
+  <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-20330081-1']);
+      _gaq.push(['_trackPageview']);
+
+  (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script> 
+</head>
+<body>
+
+<div id="header">
+<a href="/">
+<div id="logo">
+<h1 class="invisible">Pulp</h1>
+</div>
+</a>
+</div>
+<!-- END HEADER -->
+
+
+<div id="content" class="wiki">
+
+ 
+  
+  
+   
+   <div class="wikipage">
+    <div id="searchable"><h1 id="RepositoryAuthentication">Repository Authentication</h1>
+<p>
+Repository authentication allows the creation of <i>protected</i> repositories in the Pulp server. Consumer attempting to use protected repositories require some sort of authentication in order to be granted access.
+</p>
+<p>
+<i>Note: The intent is that this authentication information is that is communicated to consumers during repository bind. However, this feature is not provided in the first phase of repository authentication.</i>
+</p>
+<h2 id="Globalv.Individual">Global v. Individual</h2>
+<p>
+Repository authentication may be configured globally for all repositories in the Pulp server or individually on a per repo basis. In the event that both are specified, only the individual repository authentication check will take place.
+</p>
+<p>
+Global repository authentication is enabled and disabled using the <tt>auth</tt> commands in <tt>pulp-admin</tt>. Individual repository authentication is configured through the <tt>repo create</tt> and <tt>repo update</tt> commands, the latter providing a specific flag for the removal of the repository's authentication settings.
+</p>
+<hr />
+<h1 id="AuthenticationSchemes">Authentication Schemes</h1>
+<p>
+Ultimately, multiple mechanisms of authenticating a user accessing a repository will be supported, allowing the choice to be made when authentication is enabled. Currently, the following schemes are supported.
+</p>
+<h2 id="OIDValidation">OID Validation</h2>
+<p>
+The default (and currently only) form of authentication uses the Red Hat OID entitlement schema introduced in RHEL 6. This form of authentication uses client-side x.509 certificates to convey entitlement information. For more information on using the OID schema, please contact the Pulp team through <a class="ext-link" href="https://www.redhat.com/mailman/listinfo/pulp-list"><span class="icon">the Pulp Users mailing list</span></a>.
+</p>
+<p>
+Enabling OID validation, either globally or on individual repositories, requires one argument to the appropriate commands as described above:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description </strong> 
+</td></tr><tr><td> CA Certificate </td><td> <tt>--ca</tt> or <tt>--consumer_ca</tt> </td><td> Used to verify the client-provided entitlement certificate should be trusted. This prevents malicious users from self-signing their own entitlement certificates with the correct OID entitlement information. 
+</td></tr></table>
+<p>
+Additionally, a valid entitlement certificate (and its private key) may be specified when enabling repository authentication. This certificate will be sent to consumers on repository bind, automatically configuring them with credentials that will pass the authentication checks. <i>See note above about this feature not yet being implemented.</i>
+</p>
+</div>
+   </div>
+   
+  
+  <script type="text/javascript">
+   addHeadingLinks(document.getElementById("searchable"), "Link to this section");
+  </script>
+ 
+ 
+</div>
+
+
+<!-- BEGIN FOOTER -->
+</body>
+</html>
+

@@ -37,73 +37,57 @@
   
    
    <div class="wikipage">
-    <div id="searchable"><h1 id="AuditingEvents">Auditing Events</h1>
-<p>
+    <div id="searchable"><p>
 <div class='wiki-toc'>
-<ol><li class="active"><a href="UGREST-Audit.html#EventList">Event List</a></li></ol></li></ol></div>
+<h4>Table of Contents</h4>
+<ol><li class="active"><a href="UGREST-Audit.html#ListAuditedEvents">List Audited Events</a></li></ol></li></ol></div>
 
 </p>
+<h1 id="top">Auditing RESTful Interface</h1>
 <p>
-Pulp supports security auditing on a number of its API calls by recording the associated events in its database. This webservices API allows read-only access to those events.
+<i>RESTful interface for querying events audited by the system.</i> <br />
+<i>Events are returned as Event objects.</i> <br />
+<br />
+<strong>Event object fields</strong>: 
 </p>
-<hr />
-<h2 id="EventList">Event List</h2>
+<ul><li><strong>timestamp</strong> &lt;int&gt; <i>time the event occurred</i>
+</li><li><strong>principal_type</strong> &lt;str&gt; <i>type of the principal</i>
+</li><li><strong>principal</strong> &lt;str&gt; <i>principal that triggered the event</i>
+</li><li><strong>action</strong> &lt;str&gt; <i>name of the audited action</i>
+</li><li><strong>method</strong> &lt;str&gt; <i>name of the method called</i>
+</li><li><strong>params</strong> &lt;list of str&gt; <i>parameter passed to the method</i>
+</li><li><strong>result</strong> &lt;str&gt; <i>result of the method call or null if not recorded</i>
+</li><li><strong>exception</strong> &lt;str&gt; <i>name of the error that occurred, if any</i>
+</li><li><strong>traceback</strong> &lt;str&gt; <i>code traceback for the error, if any</i>
+</li></ul><hr />
+<h2 id="ListAuditedEvents">List Audited Events</h2>
 <p>
-List all events
+<i>List all available audited events.</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /events/ <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: None <br />
+<br />
+<strong>return</strong>: list of event objects <br />
+<br />
+<strong>filters</strong>: 
 </p>
-<p>
-Status: <strong>complete</strong>
-</p>
-<p>
-Path: <strong>/events/</strong>
-</p>
-<p>
-Method: <strong>GET</strong>
-</p>
-<p>
-Parameters:
-</p>
-<blockquote>
-<p>
-None
-</p>
-</blockquote>
-<p>
-Authentication:
-</p>
-<blockquote>
-<p>
-username/pass
-</p>
-</blockquote>
-<p>
-Filters:
-</p>
-<ul><li>principal (str) - the caller of an api method
-</li><li>api (str) - the api name
-</li><li>method (str) - the method name
-</li><li>field (str) - which fields are returned for each event
-</li><li>limit (int) - limit the number of events returned
-</li><li>show=errors_only - only show events that have a traceback associated with them
+<ul><li><strong>api</strong> &lt;str&gt; <i>the api name</i>
+</li><li><strong>method</strong> &lt;str&gt; <i>the method name</i>
+</li><li><strong>principal</strong> &lt;str&gt; <i>the caller of an api method</i>
+</li><li><strong>field</strong> &lt;str&gt; <i>which fields are returned for each event</i>
+</li><li><strong>limit</strong> &lt;int&gt; <i>limit the number of events returned</i>
+</li><li><strong>errors_only</strong> &lt;bool&gt; <i>only show events that have a traceback associated with them</i>
 </li></ul><p>
-Response: <strong>200 OK</strong><br />
-/events/?limit=20&amp;field=timestamp&amp;field=api&amp;field=method
+<br />
 </p>
-<div class="code"><pre>[{u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'adc059bb-85f9-43f5-bb1e-e7c1b6c3e558'</span></b>,
-  u<B><span class="code-string">'api'</span></b>: u<B><span class="code-string">'RepoApi'</span></b>,
-  u<B><span class="code-string">'method'</span></b>: u<B><span class="code-string">'update'</span></b>,
-  u<B><span class="code-string">'timestamp'</span></b>: {u<B><span class="code-string">'$date'</span></b>: 1280403834329}},
- {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'0c2154b0-2667-4b0b-b5fc-b2df4a14edd6'</span></b>,
-  u<B><span class="code-string">'api'</span></b>: u<B><span class="code-string">'RepoApi'</span></b>,
-  u<B><span class="code-string">'method'</span></b>: u<B><span class="code-string">'sync'</span></b>,
-  u<B><span class="code-string">'timestamp'</span></b>: {u<B><span class="code-string">'$date'</span></b>: 1280403833483}},
- {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'91da9877-d825-433c-bf39-9d23cca5cfec'</span></b>,
-  u<B><span class="code-string">'api'</span></b>: u<B><span class="code-string">'RepoApi'</span></b>,
-  u<B><span class="code-string">'method'</span></b>: u<B><span class="code-string">'update'</span></b>,
-  u<B><span class="code-string">'timestamp'</span></b>: {u<B><span class="code-string">'$date'</span></b>: 1280403833471}},
- {u<B><span class="code-string">'_id'</span></b>: u<B><span class="code-string">'b9a67f60-6ec7-4664-80ed-edf8554cf8f0'</span></b>,
- ...
-</pre></div></div>
+</div>
    </div>
    
   

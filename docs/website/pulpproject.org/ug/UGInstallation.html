@@ -40,11 +40,11 @@
     <div id="searchable"><h1 id="Installation">Installation</h1>
 <h2 id="latest">Latest Release</h2>
 <p>
-<strong>Community Release 8</strong>
+<strong>Community Release 9</strong>
 </p>
 <table class="wiki">
-<tr><td> <strong>Pulp Build</strong> </td><td> 0.139 
-</td></tr><tr><td> <strong>Released</strong> </td><td> February 16th, 2011 
+<tr><td> <strong>Pulp Build</strong> </td><td> 0.151 
+</td></tr><tr><td> <strong>Released</strong> </td><td> March 15th, 2011 
 </td></tr><tr><td> <strong>Builds</strong> </td><td> Fedora 13 (i386, x86_64), Fedora 14 (i386, x86_64), Red Hat Enterprise Linux 5 (i386, x86_64) 
 </td></tr></table>
 <p>
@@ -84,7 +84,7 @@ $ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/
 </p>
 <div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #bb0000">
-Red Hat Enterprise Linux
+Red Hat Enterprise Linux 5
 </span>
 <br /><br />
 Pulp Repository
@@ -104,6 +104,24 @@ Subscribe the Pulp server to the RHN channels:
 </ul>
 </div>
 <p>
+<br />
+</p>
+<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<span style="color: #bb0000">
+Red Hat Enterprise Linux 6
+</span>
+<br /><br />
+Pulp Repository
+<pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
+$ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
+</pre>
+
+Install <a href="http://fedoraproject.org/wiki/EPEL/FAQ#howtouse">EPEL</a> for RHEL 6
+<pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
+$ rpm -Uvh http://download.fedora.redhat.com/pub/epel/6/i386/epel-release-6-5.noarch.rpm
+</pre>
+</div>
+<p>
 2. Install Pulp and its dependencies:
 </p>
 <div style="margin-left: 30px; margin-right: 30px; border: 1px solid #00bb00; background: #ddffdd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
@@ -115,11 +133,18 @@ QPID RPMs are not available in the default CentOS repositories. Instructions on 
 </div>
 <pre class="wiki">$ yum install pulp
 </pre><p>
-3. Update <tt>/etc/pulp/pulp.conf</tt> to change the <tt>base_url</tt> attribute to reflect the hostname of the Pulp server.
+3. Update '/etc/pulp/pulp.conf' to reflect the hostname of the Pulp server.
 </p>
-<div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
+<ul><li>Change 'localhost' in the below to the hostname of the Pulp server. 
+<pre class="wiki">[server]
+server_name: localhost
+...
+...
+[messaging]
+url:        tcp://localhost:5672
+</pre></li></ul><div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #bb0000">
-Red Hat Enterprise Linux
+Red Hat Enterprise Linux 5
 </span>
 <br /><br />
 The RHEL WSGI installation does not automatically enable the Apache module. This must be explicitly done by editing the <tt>/etc/httpd/conf.d/wsgi.conf</tt> file and uncommenting the <tt>LoadModule</tt> line. If Apache is already running when this change is made, it will need to be restarted. If it is not running, the <tt>pulp-server start</tt> script will start it automatically.
@@ -219,7 +244,7 @@ $ wget -O /etc/yum.repos.d/fedora-pulp.repo http://repos.fedorapeople.org/repos/
 </p>
 <div style="margin-left: 30px; margin-right: 30px; border: 1px solid #bb0000; background: #ffdddd; padding: 6px; border-radius: 10px; -moz-border-radius: 10px">
 <span style="color: #bb0000">
-Red Hat Enterprise Linux
+Red Hat Enterprise Linux 5 and 6
 </span>
 <pre class="wiki" style="background: #eecccc; border: 1px solid #bb0000; border-radius: 10px; -moz-border-radius: 10px">
 $ wget -O /etc/yum.repos.d/rhel-pulp.repo http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
