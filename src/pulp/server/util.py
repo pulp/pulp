@@ -377,6 +377,9 @@ def create_repo(dir, groups=None, checksum_type="sha256"):
         log.info("metadata found; taking backup.")
         #take a snapshot of existing metadata
         backup_repo_dir = os.path.join(dir, "repodata.old")
+        if os.path.exists(backup_repo_dir):
+            log.debug("clean up any stale dirs")
+            shutil.rmtree(backup_repo_dir)
         shutil.copytree(current_repo_dir, backup_repo_dir)
     #generate new metadata
     _create_repo(dir, groups=groups, checksum_type=checksum_type)
