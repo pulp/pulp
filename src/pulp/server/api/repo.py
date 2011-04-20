@@ -211,6 +211,12 @@ class RepoApi(BaseApi):
         self.collection.insert(r, safe=True)
         if sync_schedule:
             update_repo_schedule(r, sync_schedule)
+        # create an empty repodata
+        repo_path = os.path.join(\
+            pulp.server.util.top_repos_location(), r['relative_path'])
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
+        pulp.server.util.create_repo(repo_path)
         default_to_publish = \
             config.config.getboolean('repos', 'default_to_published')
         self.publish(r["id"], default_to_publish)
