@@ -121,7 +121,7 @@ class IntervalScheduler(Scheduler):
                 start_time < datetime.datetime.now() - interval:
             log = logging.getLogger('pulp')
             log.warn(_('IntervalScheduler created with start time more than one interval in the past: %s, %s') %
-                     str(start_time), str(interval))
+                     (str(start_time), str(interval)))
         self.interval = interval
         self.start_time = start_time
         self.remaining_runs = runs
