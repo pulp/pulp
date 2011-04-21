@@ -243,13 +243,11 @@ class RepoProgressAction(RepoAction):
         if not progress.has_key("error_details"):
             return ret_val
         error_entry = {}
-        for errors in progress["error_details"]:
-            item_info = errors[0]
-            error_info = errors[1]
-            if not error_entry.has_key(item_info["item_type"]):
-                error_entry[item_info["item_type"]] = []
-            if error_info and error_info.has_key("error"):
-                error_entry[item_info["item_type"]].append(error_info["error"])
+        for error in progress["error_details"]:
+            if not error_entry.has_key(error["item_type"]):
+                error_entry[error["item_type"]] = []
+            if error.has_key("error"):
+                error_entry[error["item_type"]].append(error["error"])
         for item_type in error_entry:
             ret_val += _("%s %s Error(s):\n") % (len(error_entry[item_type]), item_type.title())
             for index, errors in enumerate(error_entry[item_type]):
