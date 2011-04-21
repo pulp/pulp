@@ -566,11 +566,6 @@ class Delete(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-        
-        # Check for latest sync task status to see if there is repo sync running for this repo
-        tasks = self.repository_api.sync_list(id)
-        if tasks and tasks[0]['state'] in ('waiting', 'running'):
-            system_exit(os.EX_OK, _("Repo [ %s ] cannot be deleted because of sync in progress. You can cancel ongoing sync using 'repo cancel_sync' command.") % id)
 
         cds_unassociate_succeeded, cds_unassociate_failed = \
             self.repository_api.delete(id=id)
