@@ -49,7 +49,6 @@ class VolatileStorage(object):
         heapq.heapify(self.__waiting_tasks)
 
     def store_running(self, task):
-        assert task not in self.__waiting_tasks
         self.__running_tasks.append(task)
 
     def remove_running(self, task):
@@ -57,9 +56,6 @@ class VolatileStorage(object):
         self.__running_tasks.remove(task)
 
     def store_complete(self, task):
-        assert task not in self.__waiting_tasks
-        if task in self.__running_tasks:
-            self.__running_tasks.remove(task)
         self.__complete_tasks.append(task)
 
     def remove_complete(self, task):
