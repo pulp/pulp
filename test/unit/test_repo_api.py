@@ -523,10 +523,6 @@ class TestRepoApi(unittest.TestCase):
         repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
         d = dict(feed='yum:http://xyz.com')
         repo = self.rapi.update(id, d)
-        d = dict(use_symlinks=True)
-        repo = self.rapi.update(id, d)
-        d = dict(relative_path='/bla/bla')
-        repo = self.rapi.update(id, d)
         root = top_repos_location()
         # add some phony content and try again
         path = os.path.join(root, repo['relative_path'])
