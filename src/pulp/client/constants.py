@@ -121,6 +121,27 @@ Files                 \t%-25s
 relativepath          \t%-25s
 """
 
+PACKAGE_INFO = """
+Id                    \t%-25s
+Name                  \t%-25s
+Description           \t%-25s
+Arch                  \t%-25s
+Version               \t%-25s
+Release               \t%-25s
+Epoch                 \t%-25s
+Checksum              \t%-25s
+Filename              \t%-25s
+Size                  \t%-25s
+Repo_defined          \t%-25s
+Download_url          \t%-25s
+Buildhost             \t%-25s
+Group                 \t%-25s
+License               \t%-25s
+Vendor                \t%-25s
+Provides              \t%-25s
+Requires              \t%-25s
+"""
+
 # The quotes are intentionally placed odd on the consumer history constants to
 # allow additional details to be concatenated on to the base information. It looks
 # ugly in code but makes the actual CLI output much cleaner. So be careful when

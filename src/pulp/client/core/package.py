@@ -26,7 +26,7 @@ import time
 from gettext import gettext as _
 from optparse import OptionGroup
 
-from pulp.client.constants import UNAVAILABLE
+from pulp.client.constants import UNAVAILABLE, PACKAGE_INFO
 from pulp.client import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.consumergroup import ConsumerGroupAPI
@@ -76,9 +76,12 @@ class Info(PackageAction):
                         (name, repoid))
         print_header(_("Package Information"))
         for p in pkg:
-            for key, value in p.items():
-                print """%s:                \t%-25s""" % (key, value)
-
+            print PACKAGE_INFO % (p['id'], p['name'], p['description'], p['arch'],
+                                  p['version'], p['release'], p['epoch'], p['checksum'],
+                                  p['filename'], p['size'], p['repo_defined'], p['download_url'],
+                                  p['buildhost'], p['group'], p['license'], p['vendor'],
+                                  p['provides'], p['requires'])
+            print "\n"
 
 class Install(PackageAction):
 
