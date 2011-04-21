@@ -75,10 +75,9 @@ class Info(PackageAction):
                         _("Package [%s] not found in repo [%s]") %
                         (name, repoid))
         print_header(_("Package Information"))
-        #for key, value in pkg.items():
-        #    print """%s:                \t%-25s""" % (key, value)
         for p in pkg:
-            print """%s:                \t%-25s""" % (p['id'], p)
+            for key, value in p.items():
+                print """%s:                \t%-25s""" % (key, value)
 
 
 class Install(PackageAction):
