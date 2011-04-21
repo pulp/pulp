@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.169
+Version:        0.0.170
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -278,6 +278,11 @@ fi
 
 
 %changelog
+* Thu Apr 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.170-1
+- Update test; repodata/ created when repo is created.  So, after a repo is
+  created, the symlinks and relative path may no longer be changed.
+  (jortel@redhat.com)
+
 * Thu Apr 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.169-1
 - Reverting fix for bug 695707 to move it from client side to server side
   (skarmark@redhat.com)
