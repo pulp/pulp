@@ -317,8 +317,13 @@ class BaseSynchronizer(object):
                 newpkg.requires.append(dep[0])
             for prov in package.provides:
                 newpkg.provides.append(prov[0])
+            newpkg.buildhost = package.buildhost
+            newpkg.size = package.size
+            newpkg.group = package.group
+            newpkg.license = package.license
             # update filter
-            filter = ['requires', 'provides']
+            filter = ['requires', 'provides', 'buildhost',
+                      'size' , 'group', 'license']
             # set the download URL
             if repo:
                 filter.append('download_url')

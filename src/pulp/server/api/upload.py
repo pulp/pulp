@@ -302,7 +302,9 @@ class ImportUploadContent:
         packageInfo = PackageInfo(name, version, release, epoch, arch, \
                                   self.metadata['description'],
                                   self.metadata['checksum'], self.metadata['pkgname'],
-                                  self.metadata['requires'], self.metadata['provides'])
+                                  self.metadata['requires'], self.metadata['provides'],
+                                  self.metadata['size'], self.metadata['buildhost'],
+                                  self.metadata['license'], self.metadata['group'])
         bsync = BaseSynchronizer()
         pkg = bsync.import_package(packageInfo, repo=None)
         self.__package_imported(pkg['id'], pkg_path)
@@ -359,7 +361,7 @@ class ImportUploadContent:
 class PackageInfo:
     def __init__(self, name, version, release, epoch, arch, \
                  description, checksum, relativepath,
-                 requires, provides):
+                 requires, provides, size, buildhost, license, group):
         self.name = name
         self.version = version
         self.release = release
@@ -370,3 +372,8 @@ class PackageInfo:
         self.description = description
         self.requires = requires
         self.provides = provides
+        self.size = size
+        self.buildhost = buildhost
+        self.license = license
+        self.group = group
+

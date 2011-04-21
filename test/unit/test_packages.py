@@ -133,6 +133,45 @@ class TestApi(unittest.TestCase):
         self.rapi.remove_package(repo['id'], p)
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(p['id'] not in repo["packages"])
+
+    def test_package_fields(self):
+        repo = self.rapi.create('some-id', 'some name',
+            'i386', 'yum:http://example.com')
+        repo = self.rapi.repository(repo["id"])
+        test_pkg_name = "test_package_versions_name"
+        test_epoch = "1"
+        test_version = "1.2.3"
+        test_release = "1.el5"
+        test_arch = "x86_64"
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        test_group = "Application"
+        test_license = "GPL"
+        test_buildhost = "test.example.com"
+        test_size = 22456
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+                release=test_release, arch=test_arch, description=test_description,
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        p.size = test_size
+        p.group = test_group
+        p.buildhost = test_buildhost
+        p.license = test_license
+        self.assertTrue(p)
+        self.assertTrue(p['name'] == test_pkg_name)
+        self.assertTrue(p['epoch'] == test_epoch)
+        self.assertTrue(p['version'] == test_version)
+        self.assertTrue(p['release'] == test_release)
+        self.assertTrue(p['arch'] == test_arch)
+        self.assertTrue(p['description'] == test_description)
+        self.assertTrue(p['checksum'].has_key(test_checksum_type))
+        self.assertTrue(p['checksum'][test_checksum_type] == test_checksum)
+        self.assertTrue(p['filename'] == test_filename)
+        self.assertTrue(p['size'] == test_size)
+        self.assertTrue(p['group'] == test_group)
+        self.assertTrue(p['license'] == test_license)
+        self.assertTrue(p['buildhost'] == test_buildhost)
         
     def test_package_delete_repo(self):
         repo = self.rapi.create('some-id', 'some name',

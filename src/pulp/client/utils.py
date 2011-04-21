@@ -215,6 +215,11 @@ def processFile(filename, relativeDir=None):
     #
     hash['requires'] = [(r,) for r in h['requires']]
     hash['provides'] = [(p,) for p in h['provides']]
+
+    hash['size'] = h['size']
+    hash['buildhost'] = h['buildhost']
+    hash['license'] = h['license']
+    hash['group'] = h['group']
     return hash
 
 def getChecksumType(header):
