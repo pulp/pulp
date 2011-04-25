@@ -94,7 +94,8 @@ def request_url():
     scheme = request_info('wsgi.url_scheme') or 'https'
     host = request_info('HTTP_HOST') or 'localhost'
     uri = request_info('REQUEST_URI') or ''
-    return '%s://%s%s' % (scheme, host, uri)
+    path = uri.split('&')[0]
+    return '%s://%s%s' % (scheme, host, path)
 
 
 def query_parameters(valid):
