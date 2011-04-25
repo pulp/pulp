@@ -76,7 +76,11 @@ class PackageApi(BaseApi):
             if key in ('description',
                        'requires',
                        'provides',
-                       'download_url',):
+                       'download_url',
+                       'buildhost',
+                       'size',
+                       'group',
+                       'license'):
                 pkg[key] = value
                 continue
             raise Exception, \

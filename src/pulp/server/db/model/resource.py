@@ -130,7 +130,8 @@ class Package(Model):
                       'release', 'arch', 'description')
 
     def __init__(self, name, epoch, version, release, arch, description,
-            checksum_type, checksum, filename, vendor=None, repo_defined=False):
+            checksum_type, checksum, filename, vendor=None, size=None,
+            buildhost=u"", license=u"", group=u"", repo_defined=False):
         Model.__init__(self)
         # ID is initialized in Model.__init__()
         self.name = name
@@ -147,6 +148,10 @@ class Package(Model):
         # Add gpg keys
         self.requires = []
         self.provides = []
+        self.size = size # payload size
+        self.buildhost = buildhost
+        self.license = license
+        self.group = group
 
 
 class PackageGroup(Model):
