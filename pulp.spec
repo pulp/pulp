@@ -26,6 +26,8 @@ Requires: python-webpy
 Requires: python-simplejson >= 2.0.9
 Requires: python-oauth2
 Requires: python-httplib2
+Requires: python-dateutil
+Requires: python-isodate >= 0.4.4
 Requires: grinder >= 0.0.94
 Requires: httpd
 Requires: mod_wsgi
@@ -244,6 +246,7 @@ fi
 %defattr(-,root,root,-)
 %doc
 %{python_sitelib}/pulp/__init__.*
+%{python_sitelib}/pulp/common/
 
 
 %files client
