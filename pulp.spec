@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.170
+Version:        0.0.171
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -278,6 +278,42 @@ fi
 
 
 %changelog
+* Tue Apr 26 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.171-1
+- 698577 - fixed lack of parens around variable for string formatting
+  (jconnor@redhat.com)
+- Update test; repodata/ created when repo is created.  So, after a repo is
+  created, the symlinks and relative path may no longer be changed.
+  (jortel@redhat.com)
+- 698226 - removed superfluous manipluation of running task storage on storing
+  a completed task (jconnor@redhat.com)
+- 695707, 697971 - as task queue sequence is fixed in lower layer, we can look
+  at the first task in sync_list again (skarmark@redhat.com)
+- 697971 - fixed subsequent cnacel_sync issue; sync_list is returning a list in
+  an order such that latest sync is last in the list, so we should be looking
+  at the status of last one instead of first (skarmark@redhat.com)
+- 695707 - seems like sync_list does not return latest task first, so updating
+  bug fix (skarmark@redhat.com)
+- 695707 - using task_status to check whether repo sync is running
+  (skarmark@redhat.com)
+- changed unit tests to account for exceptions in queue.enqueue
+  (jconnor@redhat.com)
+- changed enqueue to throw exceptions instead of returning a booling
+  (jconnor@redhat.com)
+- moved all the exceptions for tasking into pulp.server.tasking.exception
+  (jconnor@redhat.com)
+- 694591 - Creating a repo without a feed should have blank metadata so it
+  still acts like a repo (pkilambi@redhat.com)
+- Fix unit test. (jortel@redhat.com)
+- 665457,695414 - Repos unassociated w/ CDS(s) when deleted.
+  (jortel@redhat.com)
+- 697527 - Deleting the sync schedule was re-adding the deleted CDS
+  (jason.dobies@redhat.com)
+- fixed missing self reference (jconnor@redhat.com)
+- adding crappy hack to make sure the demo runs smoothly (jconnor@redhat.com)
+- Fixed issue when proctecting multiple repos at once (jason.dobies@redhat.com)
+- Avoid name collision with CDS content. (jortel@redhat.com)
+- support configurable cds sync messaging timout. (jortel@redhat.com)
+
 * Fri Apr 15 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.166-1
 - Hooked CDS sync scheduling into the API and WS layers
   (jason.dobies@redhat.com)
