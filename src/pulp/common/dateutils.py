@@ -21,7 +21,7 @@ import datetime
 import re
 import time
 
-import dateutil.tz
+#import dateutil.tz
 import isodate
 
 # common globals ---------------------------------------------------------------
@@ -34,11 +34,23 @@ _iso8601_recurrences = re.compile(r'R(?P<num>\d+)')
 # timezone functions -----------------------------------------------------------
 
 def local_tz():
-    return dateutil.tz.gettz()
+    """
+    Get the local timezone.
+    @rtype: datetime.tzinfo instance
+    @return: a tzinfo instance representing the local timezone
+    """
+    return isodate.LOCAL
+    #return dateutil.tz.gettz()
 
 
 def utc_tz():
-    return dateutil.tz.tzutc()
+    """
+    Get the UTC timezone.
+    @rtype: datetime.tzinfo instance
+    @return: a tzinfo instance representing the utc timezone
+    """
+    return isodate.UTC
+    #return dateutil.tz.tzutc()
 
 
 def is_local_dst():
