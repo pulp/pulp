@@ -60,8 +60,7 @@ def local_utcoffset_delta():
 
 def to_local_datetime(dt):
     if dt.tzinfo is None:
-        dt.replace(tzinfo=local_tz())
-        return dt
+        return dt.replace(tzinfo=local_tz())
     return dt.astimezone(local_tz())
 
 
