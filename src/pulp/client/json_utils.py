@@ -17,6 +17,7 @@
 Utilities for parsing and formatting of JSON values.
 '''
 
+import time
 from datetime import datetime
 
 ISOFORMAT = '%Y-%m-%dT%H:%M:%S'
@@ -45,4 +46,4 @@ def parse_iso_date(iso_str):
     @return: python object representing the date
     @rtype:  L{datetime.datetime} instance 
     """
-    return datetime.strptime(iso_str[:19], ISOFORMAT)
+    return datetime(*(time.strptime(iso_str[:19], ISOFORMAT)[0:6]))
