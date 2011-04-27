@@ -21,7 +21,6 @@ import datetime
 import re
 import time
 
-#import dateutil.tz
 import isodate
 
 # common globals ---------------------------------------------------------------
@@ -40,7 +39,6 @@ def local_tz():
     @return: a tzinfo instance representing the local timezone
     """
     return isodate.LOCAL
-    #return dateutil.tz.gettz()
 
 
 def utc_tz():
@@ -50,7 +48,6 @@ def utc_tz():
     @return: a tzinfo instance representing the utc timezone
     """
     return isodate.UTC
-    #return dateutil.tz.tzutc()
 
 
 def is_local_dst():
@@ -119,7 +116,7 @@ def to_utc_datetime(dt):
         dt = to_local_datetime(dt)
     return dt.astimezone(utc_tz())
 
-# is8601 functions -------------------------------------------------------------
+# iso8601 functions ------------------------------------------------------------
 
 def parse_iso8601_datetime(datetime_str):
     """
