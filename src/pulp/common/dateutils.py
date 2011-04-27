@@ -29,7 +29,7 @@ import isodate
 _one_hour = datetime.timedelta(hour=1)
 
 _iso8601_delim = re.compile(r'(--|/)')
-_iso8601_recurrences = re.compile(r'R(?P<num>\d+)')
+_iso8601_recurrences = re.compile(r'^R(?P<num>\d+)$')
 
 # timezone functions -----------------------------------------------------------
 
