@@ -34,7 +34,6 @@ import testutil
 
 testutil.load_test_config()
 
-from pulp.server import async
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
@@ -83,7 +82,6 @@ class TaskTester(unittest.TestCase):
     def setUp(self):
         self.rapi = RepoApi()
         #copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        async.initialize()
 
     def tearDown(self):
         self.rapi.clean()

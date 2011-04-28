@@ -17,6 +17,7 @@ import os
 import random
 from datetime import timedelta
 
+from pulp.server import async
 from pulp.repo_auth import repo_cert_utils
 from pulp.server import auditing
 from pulp.server import config
@@ -33,6 +34,7 @@ constants.LOCAL_STORAGE = "/tmp/pulp/"
 def initialize():
     connection.initialize()
     auditing.initialize()
+    async.initialize()
 
 def load_test_config():
 
