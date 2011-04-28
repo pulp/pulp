@@ -1020,51 +1020,7 @@ class TestRepoApi(unittest.TestCase):
         # versions = p['versions']
 
 
-    def test_local_sync_with_exception(self):
-        #This test will only run correctly as a non-root user
-        if os.getuid() == 0:
-            return
 
-        # We need report to be accesible for writing by the callback
-        global report
-        report = None
-        def callback(r):
-            global report
-            report = r
-        my_dir = os.path.abspath(os.path.dirname(__file__))
-        datadir = my_dir + "/data/repo_with_bad_read_perms/"
-        bad_rpm_path = os.path.join(datadir, "pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
-        bad_tree_path = os.path.join(datadir, "images/file3.img")
-        bad_rpm_mode = stat.S_IMODE(os.stat(bad_rpm_path).st_mode)
-        bad_tree_mode = stat.S_IMODE(os.stat(bad_tree_path).st_mode)
-        # We will disable read access to 2 items to simulate an IOError
-        os.chmod(bad_rpm_path, 0)
-        os.chmod(bad_tree_path, 0)
-        try:
-            self.assertFalse(os.access(bad_rpm_path, os.R_OK))
-            self.assertFalse(os.access(bad_tree_path, os.R_OK))
-            repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'local:file://%s' % datadir)
-            self.rapi._sync(repo['id'], progress_callback=callback)
-            found = self.rapi.repository(repo['id'])
-            packages = found['packages']
-            self.assertTrue(packages is not None)
-            self.assertTrue(len(packages) == 2)
-            self.assertTrue(report["items_total"] - report["num_success"] == 2)
-            self.assertTrue(report["num_error"] == 2)
-            self.assertTrue(report["error_details"] is not None)
-            self.assertTrue(len(report["error_details"]) == 2)
-            #error_details is a list of tuples
-            #Packages are processed first, so [0] will be the package error and [1] with be the tree error
-            #tuple[0] is the item info dictionary
-            #tuple[1] is the error info dictionary
-            self.assertTrue("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" in report["error_details"][0][0]["fileName"])
-            self.assertTrue("Permission denied" in report["error_details"][0][1]["error"])
-            self.assertTrue("file3.img" in report["error_details"][1][0]["fileName"])
-            self.assertTrue("Permission denied" in report["error_details"][1][1]["error"])
-        finally:
-            os.chmod(bad_rpm_path, bad_rpm_mode)
-            os.chmod(bad_tree_path, bad_tree_mode)
 
     def test_local_sync_callback(self):
         # We need report to be accesible for writing by the callback

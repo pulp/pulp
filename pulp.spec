@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.171
+Version:        0.0.172
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -26,9 +26,8 @@ Requires: python-webpy
 Requires: python-simplejson >= 2.0.9
 Requires: python-oauth2
 Requires: python-httplib2
-Requires: python-dateutil
 Requires: python-isodate >= 0.4.4
-Requires: grinder >= 0.0.94
+Requires: grinder >= 0.0.96
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_ssl
@@ -281,6 +280,23 @@ fi
 
 
 %changelog
+* Wed Apr 27 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.172-1
+- 700122 - Fixed ISO date formatting for python 2.4 compatibility.
+  (jason.dobies@redhat.com)
+- Require grinder 0.96 (jmatthews@redhat.com)
+- 697833, 698344 - update sync status error details (jmatthews@redhat.com)
+- 697971 - Changed error message to non-confusing sync in progress message
+  instead of 'sync completed' or 'no sync to cancel' (skarmark@redhat.com)
+- 699543 - fixed fix, splitting on the wrong character (jconnor@redhat.com)
+- 699543 - we were leaving the GET parameters in the request url, which was
+  screwing up the oath credentials (jconnor@redhat.com)
+- 698577 - fixed lack of parens around variable for string formatting
+  (jconnor@redhat.com)
+- fixing the package info call to display fields correctly
+  (pkilambi@redhat.com)
+- Adding support for additional fields in the package model
+  (pkilambi@redhat.com)
+
 * Thu Apr 21 2011 Jeff Ortel <jortel@redhat.com> 0.0.170-1
 - Update test; repodata/ created when repo is created.  So, after a repo is
   created, the symlinks and relative path may no longer be changed.

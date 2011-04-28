@@ -90,7 +90,6 @@ class TestRepoSync(unittest.TestCase):
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
         for r in repos:
-            print "Created: <%s> repository" % (r["id"])
             self.assertTrue(r)
         sync_tasks = [self.rapi.sync(r["id"]) for r in repos]
         # Poll tasks and wait for sync to finish
@@ -111,3 +110,90 @@ class TestRepoSync(unittest.TestCase):
             synced_repo = self.rapi.repository(r["id"])
             self.assertTrue(synced_repo)
             self.assertTrue(len(synced_repo["packages"]) > 0)
+
+    def test_yum_sync_with_exception(self):
+        # We need report to be accessible for writing by the callback
+        global report
+        report = None
+        def callback(r):
+            global report
+            report = r
+
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'yum:http://jmatthews.fedorapeople.org/repo_with_bad_read_perms/')
+        self.rapi._sync(repo['id'], progress_callback=callback)
+        found = self.rapi.repository(repo['id'])
+        packages = found['packages']
+        self.assertTrue(packages is not None)
+        self.assertEquals(len(packages),0)
+        self.assertEquals(report["items_total"], 3)
+        self.assertEquals(report["num_success"], 0)
+        self.assertEquals(report["num_error"], 3)
+        error_details = report["error_details"]
+        self.assertTrue(error_details is not None)
+        self.assertTrue(len(error_details) == 3)
+        keys = ("checksumtype", "checksum", "downloadurl", "item_type",
+                        "savepath", "pkgpath", "size")
+        for error_entry in error_details:
+            for key in keys:
+                self.assertNotEquals(error_entry[key], "")
+                self.assertTrue(error_entry.has_key("error_type"))
+                self.assertTrue(error_entry.has_key("traceback"))
+        for e in error_details:
+            self.assertTrue(e["fileName"] in ("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm",
+                "pulp-test-package-0.2.1-1.fc11.x86_64.rpm",
+                "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"))
+            self.assertTrue("HTTP status code of 403" in e["error"])
+        
+    def test_local_sync_with_exception(self):
+        #This test will only run correctly as a non-root user
+        if os.getuid() == 0:
+            return
+
+        # We need report to be accessible for writing by the callback
+        global report
+        report = None
+        def callback(r):
+            global report
+            report = r
+        my_dir = os.path.abspath(os.path.dirname(__file__))
+        datadir = my_dir + "/data/repo_with_bad_read_perms/"
+        bad_rpm_path = os.path.join(datadir, "pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm")
+        bad_tree_path = os.path.join(datadir, "images/file3.img")
+        bad_rpm_mode = stat.S_IMODE(os.stat(bad_rpm_path).st_mode)
+        bad_tree_mode = stat.S_IMODE(os.stat(bad_tree_path).st_mode)
+        # We will disable read access to 2 items to simulate an IOError
+        os.chmod(bad_rpm_path, 0)
+        os.chmod(bad_tree_path, 0)
+        try:
+            self.assertFalse(os.access(bad_rpm_path, os.R_OK))
+            self.assertFalse(os.access(bad_tree_path, os.R_OK))
+            repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'local:file://%s' % datadir)
+            self.rapi._sync(repo['id'], progress_callback=callback)
+            found = self.rapi.repository(repo['id'])
+            packages = found['packages']
+            self.assertTrue(packages is not None)
+            self.assertTrue(len(packages) == 2)
+            self.assertTrue(report["items_total"] - report["num_success"] == 2)
+            self.assertTrue(report["num_error"] == 2)
+            error_details = report["error_details"]
+            self.assertTrue(error_details is not None)
+            self.assertTrue(len(error_details) == 2)
+            # We are checking that the local sync error contains the same fields
+            # as what is in a yum sync, these fields are expected to be entry
+            empty_keys = ("checksumtype", "checksum", "downloadurl", "item_type",
+                          "savepath", "pkgpath", "size")
+            for error_entry in error_details:
+                for key in empty_keys:
+                    self.assertEquals(error_entry[key], "")
+                    self.assertTrue(error_entry.has_key("error_type"))
+                    self.assertTrue(error_entry.has_key("traceback"))
+
+            self.assertTrue("pulp-dot-2.0-test-0.1.2-1.fc11.x86_64.rpm" in error_details[0]["fileName"])
+            self.assertTrue("Permission denied" in error_details[0]["error"])
+            self.assertTrue("file3.img" in error_details[1]["fileName"])
+            self.assertTrue("Permission denied" in error_details[1]["error"])
+        finally:
+            os.chmod(bad_rpm_path, bad_rpm_mode)
+            os.chmod(bad_tree_path, bad_tree_mode)

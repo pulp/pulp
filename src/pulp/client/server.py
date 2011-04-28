@@ -179,7 +179,12 @@ class PulpServer(Server):
     def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api'):
         super(PulpServer, self).__init__(host, port, protocol, path_prefix)
 
-        default_locale = locale.getdefaultlocale()[0].lower().replace('_', '-')
+        default_locale = locale.getdefaultlocale()[0]
+        if default_locale:
+            default_locale = default_locale.lower().replace('_', '-')
+        else:
+            default_locale = 'en-us'
+
         headers = {'Accept': 'application/json',
                    'Accept-Language': default_locale,
                    'Content-Type': 'application/json'}

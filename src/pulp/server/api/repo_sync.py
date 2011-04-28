@@ -562,7 +562,14 @@ class LocalSynchronizer(BaseSynchronizer):
             self.__init_progress_details("tree_file", tree_files, src_repo_dir)
 
     def _add_error_details(self, file_name, item_type, error_info):
-        entry = ({"fileName":file_name, "item_type":item_type}, error_info)
+        # We are adding blank fields to the error entry so it will
+        # match the structure returned from yum syncs
+        missing_fields = ("checksumtype", "checksum", "downloadurl", "item_type", "savepath", "pkgpath", "size")
+        entry = {"fileName":file_name, "item_type":item_type}
+        for key in missing_fields:
+            entry[key] = ""
+        for key in error_info:
+            entry[key] = error_info[key]
         self.progress["error_details"].append(entry)
         self.progress['details'][item_type]["num_error"] += 1
         self.progress['num_error'] += 1
