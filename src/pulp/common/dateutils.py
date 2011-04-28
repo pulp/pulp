@@ -25,9 +25,7 @@ import isodate
 
 # common globals ---------------------------------------------------------------
 
-_one_hour = datetime.timedelta(hour=1)
-
-_iso8601_delim = re.compile(r'(--|/)')
+_iso8601_delimiter = re.compile(r'(--|/)')
 _iso8601_recurrences = re.compile(r'^R(?P<num>\d+)$')
 
 # timezone functions -----------------------------------------------------------
@@ -134,27 +132,41 @@ def parse_iso8601_interval(interval_str):
     @type interval_str: str
     @param interval_str: iso8601 time interval string to parse
     @rtype: tuple of (int or None, datetime.datetime or None, datetime.timedelta)
-    @return: a tuple of the number of recurrences of the interval or None if not
-             present, the starting time of the interval or None if not present,
-             and the length of the interval
+    @return: a tuple of the length of the interval, the starting time of the
+             interval or None if not present, and number of recurrences of the
+             interval or None if notpresent
     """
-    parts = _iso8601_delim.split(interval_str)
+    # iso8601 supports a number of different time interval formats, however,
+    # only one is really useful to pulp:
+    # <recurrences>/<start time>/<interval duration>
+    # NOTE that recurrences and start time are both optional
+    # XXX this algorithm will mistakenly parse the format:
+    # <recurrences>/<interval duration>/<end time>
     interval = None
     start_time = None
-    iterations = None
-    for p in parts:
-        match = _iso8601_recurrences.match(p)
+    recurrences = None
+    for part in _iso8601_delimiter.split(interval_str):
+        match = _iso8601_recurrences.match(part)
         if match is not None:
-            iterations = int(match.group('num'))
-        elif p.startswith('P'):
-            interval = isodate.parse_duration(p)
+            if recurrences is not None:
+                raise isodate.ISO8601Error('Multiple recurrences specified')
+            recurrences = int(match.group('num'))
+        elif part.startswith('P'):
+            if interval is not None:
+                raise isodate.ISO8601Error('Multiple interval durartions specified')
+            interval = isodate.parse_duration(part)
         else:
-            start_time = parse_iso8601_datetime(p)
-    if isinstance(iterations, isodate.Duration):
+            if start_time is not None:
+                raise isodate.ISO8601Error('Interval with start and end times is not supported')
+            start_time = parse_iso8601_datetime(part)
+    # isodate will automatically parse durations into its own internal Duration
+    # class if the duration contains years and months, we want to convert it
+    # back to a datetime.timedelta instance if possible
+    if isinstance(interval, isodate.Duration):
         if start_time is None:
-            raise Exception('NO!')
-        iterations = iterations.todatetime(start=start_time)
-    return (interval, start_time, iterations)
+            raise isodate.ISO8601Error('Cannot convert duration to timedelta without a start time')
+        interval = interval.todatetime(start=start_time)
+    return (interval, start_time, recurrences)
 
 
 def format_iso8601_datetime(dt):
