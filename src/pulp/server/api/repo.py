@@ -491,11 +491,28 @@ class RepoApi(BaseApi):
                 log.error("Error deleting repo %s for product %s" % (repo['id'], groupid))
                 continue
 
+    def find_if_running_sync(self, id):
+        """
+        Returns True if sync is running for this repo, else returns False.
+        """
+        tasks = [t for t in find_async(method_name="_sync")
+                 if (t.args and id in t.args) or
+                 (t.kwargs and id in t.kwargs.values())]
+        if tasks and getattr(tasks[0], 'state') in ('waiting', 'running'):
+            log.info("Current running a sync on repo : %s", id)
+            return True
+        return False
+
+
     @event(subject='repo.deleted')
     @audit()
     def delete(self, id, keep_files=False):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
+
+        # find if sync in progress
+        if self.find_if_running_sync(id):
+            raise PulpException("Repo cannot be deleted because of sync in progress. You can cancel ongoing sync using 'repo cancel_sync' command.")
 
         # unassociate with CDS(s)
         cds_unassociate_results = self.cdsapi.unassociate_all_from_repo(id, True)
