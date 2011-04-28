@@ -689,7 +689,7 @@ class RepositoryActions(AsyncController):
         failure response: 404 Not Found if the id does not match a repository
         return: list of errors
         parameters:
-         * packageid, str, id of package to add
+         * packageid, list of str, id of package to add
         """
         data = self.params()
         errors = api.add_package(id, data['packageid'])
