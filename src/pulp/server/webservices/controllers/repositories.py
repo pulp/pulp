@@ -187,9 +187,8 @@ class Repositories(JSONController):
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
          * sync_schedule?, RepoSyncSchedule object, schedule to regularly sync the repository on
-         * feed_cert_data?, str, certificate information to use when connecting to the feed
-         * consumer_cert_data?, str, certificate information to use when validating consumers of this repo
-         * cert_data?, str, repository certificate information
+         * feed_cert_data?, dict, certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename
+         * consumer_cert_data?, str, certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * relative_path?, str, repository on disk path
          * groupid?, list of str, list of repository group ids this repository belongs to
          * gpgkeys?, list of str, list of gpg keys used for signing content
