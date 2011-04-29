@@ -16,8 +16,18 @@ function check_error {
 }
 
 function sync {
+    if [ -z $1 ]
+    then
+        echo "No repo_id passed in"
+        exit 1
+    fi
     SYNC_RETURN=`curl -s -k -u "${USER}:${PASSWORD}" --request POST --data '{}' --header 'accept:application/json' --header 'content-type: application/json' https://${PULP_SERVER}/pulp/api/repositories/$1/sync/`
     echo "SYNC_RETURN is <${SYNC_RETURN}>"
+    if [ "${SYNC_RETURN}" == "None" ]
+    then
+        echo "SYNC_RETURN is empty"
+        exit 1
+    fi
     check_error "${SYNC_RETURN}"
     export TASK_ID=`echo ${SYNC_RETURN} | python -c "import json,sys; data=json.load(sys.stdin); print data['id']"`
 }
@@ -26,15 +36,15 @@ function sync_status {
     STATUS=`curl -s -k -u "${USER}:${PASSWORD}" https://${PULP_SERVER}/pulp/api/repositories/$1/sync/${TASK_ID}/`
     echo "Cancelling TASK_ID: <${TASK_ID}>"
     check_error "${STATUS}"
-    echo "Repo <$1> is syncing.  Status = <${STATUS}>"
+    echo "\tRepo <$1> is syncing.  Status = <${STATUS}>"
 }
 
 function sync_cancel {
+    echo "Calling sync_cancel"
     curl -k -u "${USER}:${PASSWORD}" --request DELETE https://${PULP_SERVER}/pulp/api/repositories/$1/sync/${TASK_ID}/
     STATUS=`curl -s -k -u "${USER}:${PASSWORD}" https://${PULP_SERVER}/pulp/api/repositories/$1/sync/${TASK_ID}/`
-    echo "After Cancel of <${TASK_ID}> STATUS = <${STATUS}>"
     check_error "${STATUS}"
-    echo "Repo <$1> sync has been cancelled.  Status = <${STATUS}>"
+    echo "\tRepo <$1> sync_task <${TASK_ID}> has been cancelled.  Status = <${STATUS}>"
 }
 
 function sync_and_cancel {
@@ -43,6 +53,13 @@ function sync_and_cancel {
     sync_status $1
     sync_cancel $1
 }
+
+
+if [ -z $1 ]
+then
+    echo "Usage:  $0 <repo_id>"
+    exit 1
+fi
 
 while [ 1 ]; 
 do
