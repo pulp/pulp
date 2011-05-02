@@ -27,9 +27,9 @@ from StringIO import StringIO
 from urlparse import urlparse
 
 # Pulp
-import pulp.server.agent as agent
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
+from pulp.server.agent import Agent
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
@@ -1660,7 +1660,8 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            repo_proxy = agent.retrieve_repo_proxy(consumer['id'], async=True)
+            agent = Agent(consumer['id'], async=True)
+            repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
     def update_gpg_keys_on_consumers(self, repo, gpg_keys):
@@ -1687,7 +1688,8 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            repo_proxy = agent.retrieve_repo_proxy(consumer['id'], async=True)
+            agent = Agent(consumer['id'], async=True)
+            repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
     def all_schedules(self):

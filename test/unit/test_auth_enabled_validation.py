@@ -26,6 +26,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.repo_auth import auth_enabled_validation
 import testutil
 
@@ -35,6 +36,7 @@ import testutil
 class TestValidateCertBundle(unittest.TestCase):
 
     def setUp(self):
+        mocks.install()
         override_file = os.path.abspath(os.path.dirname(__file__)) + '/../common/test-override-repoauth.conf'
         auth_enabled_validation.CONFIG_FILENAME = override_file
 

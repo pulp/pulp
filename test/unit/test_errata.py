@@ -28,6 +28,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import pulp
 from pulp.server.db import model
 from pulp.server import updateinfo
@@ -48,6 +49,7 @@ class TestErrata(unittest.TestCase):
         self.capi.clean()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")

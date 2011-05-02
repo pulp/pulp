@@ -29,6 +29,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.auth import principal
 from pulp.server.db.model import CDSHistoryEventType, CDSHistoryEvent, User
@@ -38,6 +39,7 @@ import testutil
 class TestCDSHistoryApi(unittest.TestCase):
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.cds_history_api = CdsHistoryApi()
         self.cds_history_api.clean()

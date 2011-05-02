@@ -35,6 +35,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import pymongo.json_util
 
 from pulp.server.api.repo import RepoApi
@@ -62,6 +63,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")

@@ -31,7 +31,7 @@ from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
-from pulp.server.agent import Agent
+from pulp.server import agent
 from pulp.server.db.model.cds import CDS
 
 
@@ -52,7 +52,7 @@ class CdsInstances(JSONController):
         # inject heartbeat info
         for cds in cds_instances:
             uuid = CDS.uuid(cds)
-            heartbeat = Agent.status([uuid,])
+            heartbeat = agent.status([uuid,])
             cds['heartbeat'] = heartbeat.values()[0]
         return self.ok(cds_instances)
 
@@ -101,7 +101,7 @@ class CdsInstance(JSONController):
 
         # Inject heartbeat info
         uuid = CDS.uuid(cds)
-        heartbeat = Agent.status([uuid,])
+        heartbeat = agent.status([uuid,])
         cds['heartbeat'] = heartbeat.values()[0]
 
         # Inject task info

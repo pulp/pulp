@@ -26,6 +26,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import pulp.server.api.repo
 import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
@@ -41,6 +42,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         testutil.common_cleanup()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.data_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         self.rapi = pulp.server.api.repo.RepoApi()

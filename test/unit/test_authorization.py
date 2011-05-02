@@ -26,6 +26,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import testutil
 
 testutil.load_test_config()
@@ -40,6 +41,7 @@ from pulp.server.auth import authorization
 class TestAuthorization(unittest.TestCase):
 
     def setUp(self):
+        mocks.install()
         authorization.ensure_builtin_roles()
         self.perm_api = PermissionAPI()
         self.role_api = RoleAPI()

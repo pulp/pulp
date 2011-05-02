@@ -27,7 +27,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
 from pulp.server.api.discovery import DiscoveryApi, InvalidDiscoveryInput
-from pulp.server.agent import Agent
+from pulp.server import agent
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
@@ -301,7 +301,7 @@ class AgentStatus(JSONController):
         data = self.params()
         filter = data.get('filter', [])
         log.info("agent status:   GET received")
-        return self.ok(Agent.status(filter))
+        return self.ok(agent.status(filter))
 
 class EnableGlobalRepoAuth(JSONController):
 

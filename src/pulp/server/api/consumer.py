@@ -17,7 +17,6 @@ import hashlib
 import logging
 
 # Pulp
-import pulp.server.agent
 import pulp.server.auth.cert_generator as cert_generator
 import pulp.server.cds.round_robin as round_robin
 import pulp.server.consumer_utils as consumer_utils
@@ -360,7 +359,8 @@ class ConsumerApi(BaseApi):
         bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
         # Send the bind request over to the consumer
-        agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
+        agent = Agent(id, async=True)
+        agent_repolib = agent.Repo()
         agent_repolib.bind(repoid, bind_data)
 
         # Return the bind data to the caller
@@ -395,7 +395,8 @@ class ConsumerApi(BaseApi):
         repoids.remove(repo_id)
         self.collection.save(consumer, safe=True)
 
-        agent_repolib = pulp.server.agent.retrieve_repo_proxy(id, async=True)
+        agent = Agent(id, async=True)
+        agent_repolib = agent.Repo()
         agent_repolib.unbind(repo_id)
 
         self.consumer_history_api.repo_unbound(id, repo_id)

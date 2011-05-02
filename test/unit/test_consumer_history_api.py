@@ -29,6 +29,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi
 import pulp.server.api.consumer_history as consumer_history
@@ -44,6 +45,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self.consumer_api.clean()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.consumer_history_api = ConsumerHistoryApi()
         self.consumer_api = ConsumerApi()

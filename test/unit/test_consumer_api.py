@@ -26,14 +26,14 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
+import testutil
+from pulp.server.agent import Agent
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model.cds import CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
-
-from mocks import MockRepoProxyFactory, MockCdsDispatcher
-import testutil
 
 
 # -- test cases ---------------------------------------------------------------------------
@@ -52,19 +52,14 @@ class TestConsumerApi(unittest.TestCase):
         CDSRepoRoundRobin.get_collection().remove(safe=True)
 
         testutil.common_cleanup()
+        mocks.reset()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
-
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
-
         self.cds_api = CdsApi()
-        self.cds_api.dispatcher = MockCdsDispatcher()
-
-        self.proxy_factory = MockRepoProxyFactory()
-        self.proxy_factory.activate()
-
         self.clean()
 
     def tearDown(self):
@@ -86,12 +81,12 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
 
-        #   Database
+        # Database
         consumer = self.consumer_api.consumer('test-consumer')
         self.assertTrue(consumer is not None)
         self.assertTrue('test-repo' in consumer['repoids'])
 
-        #   Bind data validation
+        # Bind data validation
         def verify_bind_data(bind_data):
             self.assertTrue(bind_data is not None)
 
@@ -112,11 +107,17 @@ class TestConsumerApi(unittest.TestCase):
             self.assertTrue(gpg_keys is not None)
             self.assertEqual(0, len(gpg_keys))
 
-        #   Returned bind data
+        # Returned bind data
         verify_bind_data(returned_bind_data)
 
+        # Verify
         #   Messaging bind data
-        verify_bind_data(self.proxy_factory.proxies['test-consumer'].bind_data)
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.bind.history()
+        lastbind = calls[-1]
+        bindargs = lastbind[0]
+        verify_bind_data(bindargs[1])
 
     def __bind_with_keys(self):
         '''
@@ -150,12 +151,17 @@ class TestConsumerApi(unittest.TestCase):
             self.assertEqual('key-1-content', gpg_keys['key-1'])
             self.assertEqual('key-2-content', gpg_keys['key-2'])
 
-        #   Returned bind data
+        # Returned bind data
         verify_key_bind_data(returned_bind_data)
 
+        # Verify
         #   Messaging bind data
-        verify_key_bind_data(self.proxy_factory.proxies['test-consumer'].bind_data)
-
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.bind.history()
+        lastbind = calls[-1]
+        bindargs = lastbind[0]
+        verify_bind_data(bindargs[1])
 
     def test_bind_invalid_consumer(self):
         '''
@@ -170,7 +176,10 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertEqual(0, len(self.proxy_factory.proxies))
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.bind.history()
+        self.assertEqual(0, len(calls))
 
     def test_bind_invalid_repo(self):
         '''
@@ -185,7 +194,10 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertEqual(0, len(self.proxy_factory.proxies))
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.bind.history()
+        self.assertEqual(0, len(calls))
 
     def test_bind_with_cds(self):
         '''
@@ -208,7 +220,7 @@ class TestConsumerApi(unittest.TestCase):
         host_urls = bind_data['host_urls']
         self.assertEqual(3, len(host_urls)) # 2 CDS + Pulp server itself
 
-        #   The pulp server itself should be the last of the hosts
+        # The pulp server itself should be the last of the hosts
         self.assertTrue('localhost' in host_urls[2])
 
 
@@ -235,7 +247,14 @@ class TestConsumerApi(unittest.TestCase):
         consumer = self.consumer_api.consumer('test-consumer')
         self.assertTrue('test-repo' not in consumer['repoids'])
 
-        self.assertEqual(self.proxy_factory.proxies['test-consumer'].unbind_repo_id, 'test-repo')
+        # Verify
+        #   Messaging unbind data
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.unbind.history()
+        lastunbind = calls[-1]
+        unbindargs = lastunbind[0]
+        self.assertEqual(unbindargs[0], 'test-repo')
 
     def test_unbind_existing_repos(self):
         '''
@@ -263,7 +282,14 @@ class TestConsumerApi(unittest.TestCase):
         self.assertTrue('test-repo-1' not in consumer['repoids'])
         self.assertTrue('test-repo-2' in consumer['repoids'])
 
-        self.assertEqual(self.proxy_factory.proxies['test-consumer'].unbind_repo_id, 'test-repo-1')
+        # Verify
+        #   Messaging unbind data
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.unbind.history()
+        lastunbind = calls[-1]
+        unbindargs = lastunbind[0]
+        self.assertEqual(unbindargs[0], 'test-repo-1')
 
     def test_unbind_repo_not_bound(self):
         '''
@@ -279,7 +305,10 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertEqual(0, len(self.proxy_factory.proxies))
+        agent = Agent('test-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.unbind.history()
+        self.assertEqual(0, len(calls))
 
     def test_unbind_invalid_consumer(self):
         '''
@@ -295,4 +324,7 @@ class TestConsumerApi(unittest.TestCase):
 
         # Verify
         #   Make sure no messages were sent over the bus
-        self.assertEqual(0, len(self.proxy_factory.proxies))
+        agent = Agent('fake-consumer')
+        repoproxy = agent.Repo()
+        calls = repoproxy.unbind.history()
+        self.assertEqual(0, len(calls))

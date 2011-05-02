@@ -34,6 +34,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import pymongo.json_util
 
 from pulp.server.api.package import PackageApi
@@ -54,6 +55,7 @@ class TestApi(unittest.TestCase):
         testutil.common_cleanup()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")

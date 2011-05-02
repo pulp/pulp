@@ -26,6 +26,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.cds.cdslib import loginit, CdsLib, SecretFile
 import testutil
 
@@ -42,6 +43,7 @@ class TestCdsPlugin(unittest.TestCase):
         shutil.rmtree(ROOTDIR, True)
 
     def setUp(self):
+        mocks.install()
         config = testutil.load_test_config()
 
         if not config.has_section('cds'):

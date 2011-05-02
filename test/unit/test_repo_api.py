@@ -35,6 +35,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import pymongo.json_util
 
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
@@ -90,6 +91,7 @@ class TestRepoApi(unittest.TestCase):
         sn.reset()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.config.set('repos', 'cert_location', CERTS_DIR)
 
