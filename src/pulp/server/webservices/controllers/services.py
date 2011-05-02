@@ -17,6 +17,7 @@
 import logging
 import time
 import web
+import urllib
 
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
@@ -25,7 +26,9 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
+from pulp.server.api.discovery import DiscoveryApi, InvalidDiscoveryInput
 from pulp.server.agent import Agent
+from pulp.server.async import find_async
 from pulp.server.auth.authorization import READ, EXECUTE
 from pulp.server.db.model import Status
 from pulp.server.db.version import VERSION
@@ -360,7 +363,64 @@ class DisableGlobalRepoAuth(JSONController):
         else:
             self.ok(result)
 
+class RepoDiscovery(AsyncController):
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        '''
+        [[wiki]]
+        title: Repository Discovery
+        description: Discover repository urls with metadata and create candidate repos.
+        method: POST
+        path: /discovery/repo/
+        permission: EXECUTE
+        success response: 200 OK
+        failure response: 206 PARTIAL CONTENT
+        return: list of candidate repos.
+        '''
+        data = self.params()
+        url = data.get('url', None)
+        dapi = DiscoveryApi()
+        try:
+            dapi.setUrl(url)
+        except InvalidDiscoveryInput:
+            return self.bad_request('Invalid url [%s]' % url)
+        type = data.get('type', None)
+        try:
+            dapi.setType(type)
+        except InvalidDiscoveryInput:
+            return self.bad_request('Invalid content type [%s]' % type)
+        log.info('Discovering compatible repo urls @ [%s]' % data['url'])
+        # Kick off the async task
+        task = self.start_task(dapi.discover)
 
+        # Munge the task information to return to the caller
+        task_info = self._task_to_dict(task)
+        task_info['status_path'] = self._status_path(task.id)
+
+        return self.accepted(task_info)
+
+class DiscoveryStatus(AsyncController):
+
+    def GET(self, id):
+        """
+        [[wiki]]
+        title: Discovery Task status
+        description: Get status of an async task.
+        This method only works for actions that returned a 202 Accepted response.
+        e.g. /services/discovery/repo/<id>
+        method: GET
+        path: /services/discovery/repo/<id>
+        permission: READ
+        success response: 200 OK
+        failure response: None
+        return: list of Task objects
+        """
+        task = self.task_status(id)
+        if task is None:
+            return self.not_found('No task with id %s found' % id)
+        return self.ok(task)
+    
 # web.py application ----------------------------------------------------------
 
 URLS = (
@@ -378,6 +438,8 @@ URLS = (
     '/cds_redistribute/$', 'CdsRedistribute',
     '/enable_global_repo_auth/$', 'EnableGlobalRepoAuth',
     '/disable_global_repo_auth/$', 'DisableGlobalRepoAuth',
+    '/discovery/repo/$', 'RepoDiscovery',
+    '/discovery/repo/([^/]+)/$', 'DiscoveryStatus',
 )
 
 application = web.application(URLS, globals())

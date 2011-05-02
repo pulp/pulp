@@ -18,7 +18,7 @@ import string
 import sys
 import time
 from gettext import gettext as _
-
+import urlparse
 from pulp.client import constants
 from pulp.client import utils
 from pulp.client.api.consumer import ConsumerAPI
@@ -1325,6 +1325,97 @@ class RemoveFilters(RepoAction):
         self.repository_api.remove_filters(repoid=repoid, filters=filters)
         print _("Successfully removed filters %s from repository [%s]") % \
                 (filters, repoid)
+
+class Discovery(RepoProgressAction):
+
+    description = _('Discover and Create repositories')
+
+    def setup_parser(self):
+        super(Discovery, self).setup_parser()
+        self.parser.add_option("-u", "--url", dest="url",
+                               help=_("root url to perform discovery (required)"))
+        self.parser.add_option("-g", "--groupid", action="append", dest="groupid",
+                               help=_("groupids to associate the discovered repos (optional)"))
+        self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
+                            help=_("Assume yes; automatically create candidate repos for discovered urls.(optional)"))
+        self.parser.add_option("-t", "--type", dest="type",
+                               help=_("content type to look for during discovery(required); supported types: ['yum',]"))
+
+    def run(self):
+        success = 0
+        url = self.get_required_option('url')
+        ctype = self.get_required_option('type')
+        print(_("Discovering urls with yum metadata, This could take sometime.."))
+        try:
+            task = self.service_api.repo_discovery(url, type=ctype)
+        except Exception,e:
+            system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
+        print task['progress']
+        while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
+            self.print_progress(task['progress'])
+            time.sleep(0.25)
+            task = self.service_api.task_status(task['status_path'])
+        repourls = task['result'] or []
+
+        if not len(repourls):
+            system_exit(os.EX_OK, "No repos discovered @ url location [%s]" % url)
+        print_header(_("Repository Urls discovered @ [%s]" % url))
+        assumeyes =  self.opts.assumeyes
+        if not assumeyes:
+            proceed = ''
+            num_selects = [str(i+1) for i in range(len(repourls))]
+            select_range_str = constants.SELECTION_QUERY % len(repourls)
+            selected = []
+            while proceed.strip().lower() not in  ['q', 'y']:
+                if not proceed.strip().lower() == 'h':
+                    for index, url in enumerate(repourls):
+                        if url in selected:
+                            print "(+)  [%s] %-5s" % (index+1, url)
+                        else:
+                            print "(-)  [%s] %-5s" % (index+1, url)
+                proceed = raw_input(_("\nSelect urls for which candidate repos should be created (h for help):"))
+                select_val = proceed.strip().lower()
+                if select_val == 'h':
+                    print select_range_str
+                elif select_val == 'a':
+                    selected += repourls
+                elif select_val in num_selects:
+                    selected.append(repourls[int(proceed.strip().lower())-1])
+                elif select_val == 'q':
+                    system_exit(os.EX_OK, _("Operation aborted upon user request."))
+                elif set(select_val.split(":")).issubset(num_selects):
+                    lower, upper = tuple(select_val.split(":"))
+                    selected += repourls[int(lower)-1:int(upper)]
+                elif select_val == 'c':
+                    selected = []
+                elif select_val == 'y':
+                    if not len(selected):
+                        proceed = ''
+                        continue
+                    else:
+                        break
+                else:
+                    continue
+        else:
+            #select all
+            selected = repourls
+        # create repos for selected urls
+        for repourl in selected:
+            try:
+                url_str = urlparse.urlparse(repourl).path.split('/')
+                id = '-'.join([s for s in url_str if len(s)]) or None
+                if not id:
+                    #no valid id formed, continue
+                    continue
+                feed= '%s:%s' % (ctype, repourl)
+                repo = self.repository_api.create(id, id, 'noarch', groupid=self.opts.groupid or [], feed=feed)
+                print("Successfully created repo [%s]" % repo['id'])
+            except Exception, e:
+                success = -1
+                print("Error: %s" % e[1])
+                log.error("Error creating candidate repos %s" % e[1])
+        system_exit(success)
+
 
 # repo command ----------------------------------------------------------------
 
