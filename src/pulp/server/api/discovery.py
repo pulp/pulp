@@ -16,7 +16,7 @@
 
 # Python
 import sys
-import urllib
+import urllib2
 import re
 import urlparse
 import BeautifulSoup
@@ -37,7 +37,9 @@ class DiscoveryApi(object):
         self.type = ""
 
     def setUrl(self, url):
-        if urllib.urlopen(url).code/100 >= 4:
+        try:
+            urllib2.urlopen(url)
+        except:
             raise InvalidDiscoveryInput("Invalid input url %s" % url)
         self.url = url
 
@@ -58,7 +60,7 @@ class DiscoveryApi(object):
         @rtype: list
         """
         try:
-            src = urllib.urlopen(url).read()
+            src = urllib2.urlopen(url).read()
         except Exception, e:
             log.error("An error occurred while reading url [%s] : %s" % (url, e))
             return []
@@ -95,13 +97,13 @@ class DiscoveryApi(object):
             for result in results:
                 if not "href=" in result:
                     urls.append(result)
-                if result.endswith(TYPE_REGEX[self.type]):
-                    if self.type == "yum":
-                        if urllib.urlopen("%s/%s" % (result, "repomd.xml")).code/100 >= 4:
-                            # repomd.xml could not be found, skip
-                            continue
-                        else:
-                            repourls.append(result[:result.rfind(TYPE_REGEX[self.type])])
+                if result.endswith(TYPE_REGEX[self.type]) and self.type == "yum":
+                    try:
+                        urllib2.urlopen("%s/%s" % (result, "repomd.xml"))
+                        repourls.append(result[:result.rfind(TYPE_REGEX[self.type])])
+                    except:
+                        # repomd.xml could not be found, skip
+                        continue
         return repourls
 
 def main():
