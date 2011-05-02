@@ -73,11 +73,12 @@ class DiscoveryApi(object):
         urls = []
         for item in matches:
             link = urlparse.urlparse(item['href'])
-            if not link.path or link.path == '/':
+            proto, netloc, path, params, query, frag = link
+            if not path or path == '/':
                 continue
             rex = re.compile('.')
-            if rex.match(link.path) and link.path.endswith('/'):
-                urls.append(url + "/" + link.path)
+            if rex.match(path) and path.endswith('/'):
+                urls.append(url + "/" + path)
         return urls
 
     def discover(self):
