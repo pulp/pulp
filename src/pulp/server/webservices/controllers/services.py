@@ -26,7 +26,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
-from pulp.server.api.discovery import DiscoveryApi, InvalidDiscoveryInput
+from pulp.server.api.discovery import get_discovery, InvalidDiscoveryInput
 from pulp.server import agent
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import READ, EXECUTE
@@ -380,19 +380,19 @@ class RepoDiscovery(AsyncController):
         '''
         data = self.params()
         url = data.get('url', None)
-        dapi = DiscoveryApi()
-        try:
-            dapi.setUrl(url)
-        except InvalidDiscoveryInput:
-            return self.bad_request('Invalid url [%s]' % url)
         type = data.get('type', None)
         try:
-            dapi.setType(type)
-        except InvalidDiscoveryInput:
+            discovery_obj = get_discovery(type)
+        except:
             return self.bad_request('Invalid content type [%s]' % type)
+        try:
+            discovery_obj.setUrl(url)
+        except InvalidDiscoveryInput:
+            return self.bad_request('Invalid url [%s]' % url)
+
         log.info('Discovering compatible repo urls @ [%s]' % data['url'])
         # Kick off the async task
-        task = self.start_task(dapi.discover)
+        task = self.start_task(discovery_obj.discover)
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
