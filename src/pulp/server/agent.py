@@ -23,10 +23,9 @@ on the agent.
 from threading import RLock
 from datetime import datetime as dt
 from datetime import timedelta
-from gofer.proxy import Agent as Base
+from gofer import proxy
 from gofer.messaging import Topic
 from gofer.messaging.consumer import Consumer
-from gofer.messaging.producer import Producer
 from pulp.server.config import config
 from logging import getLogger
 
@@ -34,51 +33,22 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-def retrieve_agent(uuid, **options):
-    '''
-    Factory method for getting Agent instances. This method can be monkey patched
-    in unit tests to return a mock agent suitable for testing.
-
-    @param uuid: uuid of the consumer
-    @type  uuid: string
-
-    @param options: options to the underlying message bus
-    @type  options: dict
-    '''
-    return Agent(uuid, **options)
-
-def retrieve_repo_proxy(uuid, **options):
-    '''
-    Utility factory method for retrieving the repo proxy to a consumer.
-
-    @param uuid: uuid of the consumer
-    @type  uuid: string
-
-    @param options: options to the underlying message bus
-    @type  options: dict
-    '''
-    agent = retrieve_agent(uuid, **options)
-    return agent.Repo()
-
-
-class Agent(Base):
+def Agent(uuid, **options):
     """
-    A server-side proxy for the pulp agent.
+    Factory method for getting a pulp agent object.
+    @param uuid: The agent UUID.
+    @type uuid: str
+    @return: A proxy object for the remote agent.
     """
+    return proxy.agent(uuid, **options)
 
-    @classmethod
-    def status(self, uuids=[]):
-        return HeartbeatListener.status(uuids)
-
-    def __init__(self, uuid, **options):
-        """
-        @param uuid: The consumer uuid.
-        @type uuid: str|list
-        @param options: Messaging L{gofer.messaging.Options}
-        """
-        url = config.get('messaging', 'url')
-        producer = Producer(url=url)
-        Base.__init__(self, uuid, producer, **options)
+def status(uuids=[]):
+    """
+    Get the agent heartbeat status.
+    @param uuids: An (optional) list of uuids to query.
+    @return: A tuple (status,last-heartbeat)
+    """
+    return HeartbeatListener.status(uuids)
 
 
 class HeartbeatListener(Consumer):

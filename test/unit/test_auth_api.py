@@ -27,6 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.server.api.auth import AuthApi
 from pulp.server.api.cds import CdsApi
@@ -35,8 +36,9 @@ from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
+from pulp.server.db.model import CDS
+from pulp.server.agent import Agent
 
-from mocks import MockCdsDispatcher
 import testutil
 
 SerialNumber.PATH = '/tmp/sn.dat'
@@ -51,33 +53,22 @@ class TestAuthApi(unittest.TestCase):
     def clean(self):
         if os.path.exists(CERT_DIR):
             shutil.rmtree(CERT_DIR)
-
         if os.path.exists(GLOBAL_CERT_DIR):
             shutil.rmtree(GLOBAL_CERT_DIR)
-
         self.user_api.clean()
-
         self.cds_api.clean()
-        self.dispatcher.clear()
-
         testutil.common_cleanup()
+        mocks.reset()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.config.set('repos', 'cert_location', CERT_DIR)
         self.config.set('repos', 'global_cert_location', GLOBAL_CERT_DIR)
-
         self.repo_cert_utils = RepoCertUtils(self.config)
-
         self.auth_api = AuthApi()
         self.user_api = UserApi()
-
         self.cds_api = CdsApi()
-        self.dispatcher = MockCdsDispatcher()
-
-        self.cds_api.dispatcher = MockCdsDispatcher() # different mock; don't care about tracking setup calls
-        self.auth_api.cds_api.dispatcher = self.dispatcher
-
         self.clean()
         sn = SerialNumber()
         sn.reset()
@@ -111,10 +102,16 @@ class TestAuthApi(unittest.TestCase):
         '''
 
         # Setup
+        hostnames = ('cds1', 'cds2')
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
 
-        self.cds_api.register('cds1')
-        self.cds_api.register('cds2')
+        cdslist = []
+        for hostname in hostnames:
+            cds = self.cds_api.register(hostname)
+            cdslist.append(cds)
+
+        # reset call history
+        mocks.reset()
 
         # Test
         successes, failures = self.auth_api.enable_global_repo_auth(bundle)
@@ -128,10 +125,17 @@ class TestAuthApi(unittest.TestCase):
         self.assertEqual(2, len(successes))
         self.assertEqual(0, len(failures))
         
-        self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
-        self.assertEqual(self.dispatcher.cert_bundle, bundle)
-        for entry in self.dispatcher.call_log:
-            self.assertTrue(entry.startswith(MockCdsDispatcher.SET_GLOBAL_REPO_AUTH))
+        # Verify
+        #  Each cds got called with set_global_repo_auth() and
+        #  sent the expected bundle.
+        for cds in cdslist:
+            agent = Agent(CDS.uuid(cds))
+            cdsplugin = agent.cdsplugin()
+            calls = cdsplugin.set_global_repo_auth.history()
+            lastcall = calls[-1]
+            sentbundle = lastcall[0][0]
+            self.assertEqual(1, len(calls)) # one per CDS
+            self.assertEqual(sentbundle, bundle)
 
     def test_enable_global_repo_auth_no_cds(self):
         '''
@@ -161,12 +165,20 @@ class TestAuthApi(unittest.TestCase):
         '''
 
         # Setup
+        hostnames = ('cds1', 'cds2')
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
 
-        self.cds_api.register('cds1')
-        self.cds_api.register('cds2')
+        cdslist = []
+        for hostname in hostnames:
+            cds = self.cds_api.register(hostname)
+            cdslist.append(cds)
 
-        self.dispatcher.error_to_throw = Exception()
+        # configure each cds agent to raise an exception in the
+        # next set_global_repo_auth() call.
+        for cds in cdslist:
+            agent = Agent(CDS.uuid(cds))
+            cdsplugin = agent.cdsplugin()
+            calls = cdsplugin.set_global_repo_auth.push(Exception())
 
         # Test
         successes, failures = self.auth_api.enable_global_repo_auth(bundle)
@@ -187,11 +199,17 @@ class TestAuthApi(unittest.TestCase):
         '''
 
         # Setup
+        hostnames = ('cds1', 'cds2')
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
         self.auth_api.enable_global_repo_auth(bundle)
 
-        self.cds_api.register('cds1')
-        self.cds_api.register('cds2')
+        cdslist = []
+        for hostname in hostnames:
+            cds = self.cds_api.register(hostname)
+            cdslist.append(cds)
+
+        # reset call history
+        mocks.reset()
 
         # Test
         successes, failures = self.auth_api.disable_global_repo_auth()
@@ -203,10 +221,17 @@ class TestAuthApi(unittest.TestCase):
         self.assertEqual(2, len(successes))
         self.assertEqual(0, len(failures))
                 
-        self.assertEqual(2, len(self.dispatcher.call_log)) # one per CDS
-        self.assertEqual(self.dispatcher.cert_bundle, None)
-        for entry in self.dispatcher.call_log:
-            self.assertTrue(entry.startswith(MockCdsDispatcher.SET_GLOBAL_REPO_AUTH))
+        # Verify
+        #  Each cds got called with set_global_repo_auth() and
+        #  sent the expected bundle.
+        for cds in cdslist:
+            agent = Agent(CDS.uuid(cds))
+            cdsplugin = agent.cdsplugin()
+            calls = cdsplugin.set_global_repo_auth.history()
+            lastcall = calls[-1]
+            sentbundle = lastcall[0][0]
+            self.assertEqual(1, len(calls)) # one per CDS
+            self.assertEqual(sentbundle, None)
 
     def test_disable_global_repo_auth_no_cds(self):
         '''
@@ -234,13 +259,21 @@ class TestAuthApi(unittest.TestCase):
         '''
 
         # Setup
+        hostnames = ('cds1', 'cds2')
         bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
         self.auth_api.enable_global_repo_auth(bundle)
 
-        self.cds_api.register('cds1')
-        self.cds_api.register('cds2')
+        cdslist = []
+        for hostname in hostnames:
+            cds = self.cds_api.register(hostname)
+            cdslist.append(cds)
 
-        self.dispatcher.error_to_throw = Exception()
+        # configure each cds agent to raise an exception in the
+        # next set_global_repo_auth() call.
+        for cds in cdslist:
+            agent = Agent(CDS.uuid(cds))
+            cdsplugin = agent.cdsplugin()
+            calls = cdsplugin.set_global_repo_auth.push(Exception())
 
         # Test
         successes, failures = self.auth_api.disable_global_repo_auth()

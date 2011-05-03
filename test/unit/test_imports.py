@@ -23,6 +23,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+
 class TestImporter(unittest.TestCase):
 
     def test_load_all_modules(self):

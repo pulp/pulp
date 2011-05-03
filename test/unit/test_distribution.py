@@ -28,6 +28,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 import pulp
 from pulp.server import updateinfo
 from pulp.server.api.repo import RepoApi
@@ -41,6 +42,7 @@ class TestDistribution(unittest.TestCase):
         self.rapi.clean()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")

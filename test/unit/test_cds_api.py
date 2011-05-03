@@ -27,6 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.consumer import ConsumerApi
@@ -34,10 +35,11 @@ from pulp.server.api.consumer_history import ConsumerHistoryApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.cds.dispatcher import CdsTimeoutException
 import pulp.server.cds.round_robin as round_robin
-from pulp.server.db.model import CDSHistoryEventType, CDSRepoRoundRobin
+from pulp.server.db.model import CDS, CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
+from pulp.server.agent import Agent
 
-from mocks import MockRepoProxyFactory, MockCdsDispatcher
+
 import testutil
 
 
@@ -51,27 +53,18 @@ class TestCdsApi(unittest.TestCase):
         self.repo_api.clean()
         self.consumer_api.clean()
         self.consumer_history_api.clean()
-
         # Flush the assignment algorithm cache
         CDSRepoRoundRobin.get_collection().remove()
-
-        self.dispatcher.clear()
+        mocks.reset()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
-
-        self.dispatcher = MockCdsDispatcher()
         self.cds_api = CdsApi()
-        self.cds_api.dispatcher = self.dispatcher
-
         self.cds_history_api = CdsHistoryApi()
         self.repo_api = RepoApi()
         self.consumer_api = ConsumerApi()
         self.consumer_history_api = ConsumerHistoryApi()
-
-        self.proxy_factory = MockRepoProxyFactory()
-        self.proxy_factory.activate()
-
         self.clean()
 
     def tearDown(self):
@@ -97,8 +90,12 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history))
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
-        self.assertEqual(2, len(self.dispatcher.call_log)) # init + global auth call
-        self.assertEqual(self.dispatcher.call_log[0], self.dispatcher.call_log_message(MockCdsDispatcher.INIT, cds))
+        # Verify
+        # initialize() and set_global_repo_auth() were send to agent.
+        agent = Agent(CDS.uuid(cds))
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(1, len(cdsplugin.initialize.history()))
+        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
     def test_register_full_attributes(self):
         '''
@@ -120,8 +117,12 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history))
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
-        self.assertEqual(2, len(self.dispatcher.call_log)) # init + global auth call
-        self.assertEqual(self.dispatcher.call_log[0], self.dispatcher.call_log_message(MockCdsDispatcher.INIT, cds))
+        # Verify
+        # initialize() and set_global_repo_auth() were send to agent.
+        agent = Agent(CDS.uuid(cds))
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(1, len(cdsplugin.initialize.history()))
+        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
     def test_register_no_hostname(self):
         '''
@@ -135,7 +136,9 @@ class TestCdsApi(unittest.TestCase):
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(0, len(history))
 
-        self.assertEqual(0, len(self.dispatcher.call_log))
+        # Verify
+        # initialize() and set_global_repo_auth() were NOT send to agent.
+        self.assertEqual(0, len(mocks.all()))
 
     def test_register_already_exists(self):
         '''
@@ -143,7 +146,7 @@ class TestCdsApi(unittest.TestCase):
         '''
 
         # Setup
-        self.cds_api.register('cds.example.com')
+        cds = self.cds_api.register('cds.example.com')
 
         # Test
         self.assertRaises(PulpException, self.cds_api.register, 'cds.example.com')
@@ -152,7 +155,12 @@ class TestCdsApi(unittest.TestCase):
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(1, len(history)) # from the first register call, not the second
 
-        self.assertEqual(2, len(self.dispatcher.call_log)) # only from the original register
+        # Verify
+        # initialize() and set_global_repo_auth() were sent once to agent.
+        agent = Agent(CDS.uuid(cds))
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(1, len(cdsplugin.initialize.history()))
+        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
     def test_register_init_error(self):
         '''
@@ -160,7 +168,10 @@ class TestCdsApi(unittest.TestCase):
         '''
 
         # Setup
-        self.dispatcher.error_to_throw = CdsTimeoutException(None)
+        cds = dict(hostname='cds.example.com')
+        agent = Agent(CDS.uuid(cds))
+        cdsplugin = agent.cdsplugin()
+        cdsplugin.initialize.push(CdsTimeoutException(None))
 
         # Test
         self.assertRaises(PulpException, self.cds_api.register, 'cds.example.com')
@@ -178,6 +189,7 @@ class TestCdsApi(unittest.TestCase):
         time.sleep(1) # make sure the timestamps will be different
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds is not None)
+        uuid = CDS.uuid(cds)
 
         # Test
         self.cds_api.unregister('cds.example.com')
@@ -190,6 +202,12 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(2, len(history))
         self.assertEqual(CDSHistoryEventType.UNREGISTERED, history[0]['type_name'])
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[1]['type_name'])
+
+        # Verify
+        # release() was sent to agent.
+        agent = Agent(uuid)
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(1, len(cdsplugin.release.history()))
 
     def test_unregister_no_hostname(self):
         '''
@@ -510,19 +528,21 @@ class TestCdsApi(unittest.TestCase):
         # Setup
         repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
+        cds = self.cds_api.cds('cds.example.com')
         self.cds_api.associate_repo('cds.example.com', repo['id'])
-
-        #   Clear the dispatcher from what was called during register
-        self.dispatcher.clear()
 
         # Test
         self.cds_api.cds_sync('cds.example.com')
 
         # Verify
-        self.assertEqual(1, len(self.dispatcher.call_log)) # the call to sync
-        self.assertEqual('cds.example.com', self.dispatcher.cds['hostname'])
-        self.assertEqual(1, len(self.dispatcher.repos))
-        self.assertEqual('cds-test-repo', self.dispatcher.repos[0]['id'])
+        # sync() was sent to the agent with correct repoid.
+        agent = Agent(CDS.uuid(cds))
+        cdsplugin = agent.cdsplugin()
+        calls = cdsplugin.sync.history()
+        self.assertEqual(1, len(calls))
+        lastsync = calls[-1]
+        syncargs = lastsync[0]
+        self.assertEqual('cds-test-repo', syncargs[1][0]['id'])
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))
@@ -549,22 +569,23 @@ class TestCdsApi(unittest.TestCase):
         # Setup
         repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
+        cds = self.cds_api.cds('cds.example.com')
         self.cds_api.associate_repo('cds.example.com', repo['id'])
 
-        #   Clear the dispatcher from what was called during register
-        self.dispatcher.clear()
-
-        #   Configure the dispatcher to throw an error
-        self.dispatcher.error_to_throw = CdsTimeoutException(None)
+        #   Configure the agent to throw an error
+        agent = Agent(CDS.uuid(cds))
+        cdsplugin = agent.cdsplugin()
+        cdsplugin.sync.push(CdsTimeoutException(None))
 
         # Test
         self.assertRaises(PulpException, self.cds_api.cds_sync, 'cds.example.com')
 
         # Verify
-        self.assertEqual(1, len(self.dispatcher.call_log)) # the call to sync
-        self.assertEqual('cds.example.com', self.dispatcher.cds['hostname'])
-        self.assertEqual(1, len(self.dispatcher.repos))
-        self.assertEqual('cds-test-repo', self.dispatcher.repos[0]['id'])
+        calls = cdsplugin.sync.history()
+        self.assertEqual(1, len(calls))
+        lastsync = calls[-1]
+        syncargs = lastsync[0]
+        self.assertEqual('cds-test-repo', syncargs[1][0]['id'])
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))
@@ -661,41 +682,41 @@ class TestCdsApi(unittest.TestCase):
         hosting it.
         '''
 
+        CDS_HOSTNAMES = ('cds1', 'cds2')
+        CONSUMERIDS = ('consumer1', 'consumer2', 'consumer3')
+        REPOID = 'cds-test-repo'
+
         # Setup
-        self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'noarch')
+        self.repo_api.create(REPOID, 'CDS Test Repo', 'noarch')
 
-        self.cds_api.register('cds1')
-        self.cds_api.register('cds2')
+        # Create the CDS(s) and assocate with repo
+        for hostname in CDS_HOSTNAMES:
+            self.cds_api.register(hostname)
+            self.cds_api.associate_repo(hostname, REPOID)
 
-        self.cds_api.associate_repo('cds1', 'cds-test-repo')
-        self.cds_api.associate_repo('cds2', 'cds-test-repo')
-
-        self.consumer_api.create('consumer1', None)
-        self.consumer_api.create('consumer2', None)
-        self.consumer_api.create('consumer3', None)
-
-        self.consumer_api.bind('consumer1', 'cds-test-repo')
-        self.consumer_api.bind('consumer2', 'cds-test-repo')
-        self.consumer_api.bind('consumer3', 'cds-test-repo')
+        # Create consumers and bind to repo
+        for id in CONSUMERIDS:
+            self.consumer_api.create(id, None)
+            self.consumer_api.bind(id, REPOID)
 
         # Test
-        self.cds_api.redistribute('cds-test-repo')
+        self.cds_api.redistribute(REPOID)
 
         # Verify
-        self.assertEqual(3, len(self.proxy_factory.proxies))
-
-        #   Make sure the correct data is in the update call
-        for proxy in self.proxy_factory.proxies.values():
-            self.assertEqual('cds-test-repo', proxy.update_calls[0][0])
-
-            bind_data = proxy.update_calls[0][1]
-
+        #   bind() were sent to the correct agent with the
+        #   expected bind data
+        for uuid in CONSUMERIDS:
+            agent = Agent(uuid)
+            repoproxy = agent.Repo()
+            updatecalls = repoproxy.update.history()
+            lastupdate = updatecalls[-1]
+            repoid = lastupdate[0][0]
+            bind_data = lastupdate[0][1]
+            self.assertEqual(REPOID, repoid)
             self.assertTrue('repo' in bind_data)
             self.assertTrue('host_urls' in bind_data)
             self.assertTrue('gpg_keys' in bind_data)
-
             self.assertTrue(bind_data['repo'] is None)
-            self.assertEqual(3, len(bind_data['host_urls'])) # 2 CDS + pulp server
             self.assertEqual(None, bind_data['gpg_keys']) # don't send keys on redistribute
 
     def test_redistribute_no_consumers(self):
@@ -711,9 +732,8 @@ class TestCdsApi(unittest.TestCase):
         self.cds_api.redistribute(repo['id'])
 
         # Verify
-
         #   Make sure no attempts to send an update call across the bus were made
-        self.assertEqual(0, len(self.proxy_factory.proxies))
+        self.assertEqual(0, len(mocks.all()))
 
     def test_redistribution_no_cds(self):
         '''
@@ -729,6 +749,9 @@ class TestCdsApi(unittest.TestCase):
 
         self.cds_api.associate_repo('cds1', 'cds-test-repo')
         self.cds_api.associate_repo('cds2', 'cds-test-repo')
+
+        # Clear the call history
+        mocks.reset()
                 
         # Test
         self.cds_api.redistribute(repo['id'])
@@ -736,4 +759,4 @@ class TestCdsApi(unittest.TestCase):
         # Verify
 
         #   Make sure no attempts to send an update call across the bus were made
-        self.assertEqual(0, len(self.proxy_factory.proxies))
+        self.assertEqual(0, len(mocks.all()))

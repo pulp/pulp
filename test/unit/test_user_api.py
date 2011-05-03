@@ -29,6 +29,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.server.api.user import UserApi
 import testutil
 
@@ -39,6 +40,7 @@ class TestUsers(unittest.TestCase):
         self.uapi.clean()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.uapi = UserApi()
         self.clean()

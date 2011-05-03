@@ -27,6 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
+import mocks
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.repo import RepoApi
 
@@ -45,6 +46,7 @@ class TestProductRepo(unittest.TestCase):
         testutil.common_cleanup()
 
     def setUp(self):
+        mocks.install()
         self.config = testutil.load_test_config()
         self.rapi = RepoApi()
         self.clean()
