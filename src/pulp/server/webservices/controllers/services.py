@@ -376,7 +376,7 @@ class RepoDiscovery(AsyncController):
         permission: EXECUTE
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
-        return: list of candidate repos.
+        return: list of matching repourls.
         '''
         data = self.params()
         try:
@@ -406,15 +406,15 @@ class DiscoveryStatus(AsyncController):
         """
         [[wiki]]
         title: Discovery Task status
-        description: Get status of an async task.
+        description: Get status of a discovery async task.
         This method only works for actions that returned a 202 Accepted response.
         e.g. /services/discovery/repo/<id>
         method: GET
         path: /services/discovery/repo/<id>
         permission: READ
         success response: 200 OK
-        failure response: None
-        return: list of Task objects
+        failure response: 404 NOT FOUND
+        return: Task object
         """
         task = self.task_status(id)
         if task is None:
