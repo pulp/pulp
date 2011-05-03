@@ -34,9 +34,7 @@ if yum.__version__ < (3,2,28):
         if not un or not un["update_id"] or un['update_id'] in self._notices:
             return
         self._notices[un['update_id']] = un
-        pkglist = []
-        if un['pkglist']:
-           pkglist =  un['pkglist']
+        pkglist =  un['pkglist'] or []
         for pkg in pkglist:
             for filedata in pkg['packages']:
                 self._cache['%s-%s-%s' % (filedata['name'],
