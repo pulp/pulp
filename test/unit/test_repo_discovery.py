@@ -29,6 +29,7 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.discovery import get_discovery
 from pulp.server.api.repo import RepoApi
+import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
