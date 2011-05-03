@@ -1367,11 +1367,7 @@ class Discovery(RepoProgressAction):
             selected = []
             while proceed.strip().lower() not in  ['q', 'y']:
                 if not proceed.strip().lower() == 'h':
-                    for index, url in enumerate(repourls):
-                        if url in selected:
-                            print "(+)  [%s] %-5s" % (index+1, url)
-                        else:
-                            print "(-)  [%s] %-5s" % (index+1, url)
+                    self.__print_urls(repourls, selected)
                 proceed = raw_input(_("\nSelect urls for which candidate repos should be created (h for help):"))
                 select_val = proceed.strip().lower()
                 if select_val == 'h':
@@ -1398,7 +1394,9 @@ class Discovery(RepoProgressAction):
         else:
             #select all
             selected = repourls
+            self.__print_urls(repourls, selected)
         # create repos for selected urls
+        print _("\nCreating candidate repos for selected urls..")
         for repourl in selected:
             try:
                 url_str = urlparse.urlparse(repourl).path.split('/')
@@ -1414,6 +1412,13 @@ class Discovery(RepoProgressAction):
                 print("Error: %s" % e[1])
                 log.error("Error creating candidate repos %s" % e[1])
         system_exit(success)
+
+    def __print_urls(self, repourls, selected):
+        for index, url in enumerate(repourls):
+            if url in selected:
+                print "(+)  [%s] %-5s" % (index+1, url)
+            else:
+                print "(-)  [%s] %-5s" % (index+1, url)
 
 
 # repo command ----------------------------------------------------------------
