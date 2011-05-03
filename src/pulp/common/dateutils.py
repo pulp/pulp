@@ -146,6 +146,8 @@ def parse_iso8601_interval(interval_str):
     start_time = None
     recurrences = None
     for part in _iso8601_delimiter.split(interval_str):
+        if _iso8601_delimiter.match(part):
+            continue
         match = _iso8601_recurrences.match(part)
         if match is not None:
             if recurrences is not None:
@@ -159,9 +161,12 @@ def parse_iso8601_interval(interval_str):
             if start_time is not None:
                 raise isodate.ISO8601Error('Interval with start and end times is not supported')
             start_time = parse_iso8601_datetime(part)
+    # the interval is the only required part
+    if interval is None:
+        raise isodate.ISO8601Error('No interval specification found')
     # isodate will automatically parse durations into its own internal Duration
     # class if the duration contains years and months, we want to convert it
-    # back to a datetime.timedelta instance if possible
+    # back to a datetime.timedelta instance, if possible
     if isinstance(interval, isodate.Duration):
         if start_time is None:
             raise isodate.ISO8601Error('Cannot convert duration to timedelta without a start time')
@@ -177,7 +182,7 @@ def format_iso8601_datetime(dt):
     @rtype: str
     @return: iso8601 representation of the passed in datetime instance
     """
-    return isodate.strftime(dt, isodate.DATE_BAS_COMPLETE)
+    return isodate.strftime(dt, isodate.DT_BAS_COMPLETE)
 
 
 def format_iso8601_interval(interval, start_time=None, recurrences=None):
@@ -196,6 +201,6 @@ def format_iso8601_interval(interval, start_time=None, recurrences=None):
     if recurrences is not None:
         parts.append('R%d' % recurrences)
     if start_time is not None:
-        parts.append(to_iso8601_datetime(start_time))
+        parts.append(format_iso8601_datetime(start_time))
     parts.append(isodate.strftime(interval, isodate.D_DEFAULT))
     return '/'.join(parts)
