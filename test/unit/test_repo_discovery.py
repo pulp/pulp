@@ -29,7 +29,6 @@ sys.path.insert(0, commondir)
 
 from pulp.server.api.discovery import get_discovery
 from pulp.server.api.repo import RepoApi
-import testutil
 
 logging.root.setLevel(logging.ERROR)
 qpid = logging.getLogger('qpid.messaging')
@@ -48,7 +47,7 @@ class TestRepoDiscoveryApi(unittest.TestCase):
         assert(d is not None)
         failed = False
         try:
-            d = get_discovery("foo")
+            get_discovery("fake")
         except:
             failed = True
         assert(failed)
@@ -61,7 +60,7 @@ class TestRepoDiscoveryApi(unittest.TestCase):
         self.assertTrue(len(repourls) != 0)
 
     def test_invalid_url(self):
-        discover_url = 'http://repos.fedorapeople.org/repos/fakedir/'
+        discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/fakedir/'
         d = get_discovery("yum")
         failed = False
         try:

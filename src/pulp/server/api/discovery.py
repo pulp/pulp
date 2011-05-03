@@ -15,9 +15,9 @@
 
 
 # Python
+import re
 import sys
 import urllib2
-import re
 import urlparse
 import BeautifulSoup
 import logging
@@ -113,7 +113,7 @@ def get_discovery(type):
     Returns an instance of a Discovery object
     @param type: discovery type
     @type type: string
-    Returns an instance of a pulp.server.api.repo_sync.BaseSynchronizer object
+    Returns an instance of a Discovery object
     '''
     if type not in DISCOVERY_MAP:
         raise InvalidDiscoveryInput('Could not find Discovery for type [%s]', type)
@@ -129,7 +129,8 @@ def main():
         print "USAGE:python discovery.py <url>"
         sys.exit(0)
     print("Discovering urls with yum metadata, This could take sometime..")
-    d = get_discovery("yum")
+    type = "yum"
+    d = get_discovery(type)
     d.setUrl(sys.argv[1])
     repourls = d.discover()
     print('========================')
