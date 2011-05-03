@@ -52,6 +52,16 @@ class Errata(JSONController):
         @return: errata that was created
         """
         errata_data = self.params()
+        
+        if not errata_data.has_key('version') or not isinstance(errata_data['version'], str):
+            return self.bad_request('Invalid version [%s]; should be a string' % errata_data['version'])
+
+        if not errata_data.has_key('release') or not isinstance(errata_data['release'], str):
+            return self.bad_request('Invalid release [%s]; should be a string' % errata_data['release'])
+
+        if errata_data.has_key('pushcount') and not isinstance(errata_data['pushcount'], int):
+            return self.bad_request('Invalid pushcount [%s]; should be an integer' % errata_data['pushcount'])
+
         errata = api.create(errata_data['id'],
                           errata_data['title'],
                           errata_data['description'],
@@ -61,7 +71,7 @@ class Errata(JSONController):
                           errata_data.get('status', ""),
                           errata_data.get('updated', ""),
                           errata_data.get('issued', ""),
-                          errata_data.get('pushcount', ""),
+                          errata_data.get('pushcount', 1),
                           errata_data.get('from_str', ""),
                           errata_data.get('reboot_suggested', ""),
                           errata_data.get('references', []),
