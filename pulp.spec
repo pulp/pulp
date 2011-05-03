@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.172
+Version:        0.0.173
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -279,6 +279,24 @@ fi
 
 
 %changelog
+* Tue May 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.173-1
+- Require gofer 0.35. (jortel@redhat.com)
+- 700371 - support for text only errata (pkilambi@redhat.com)
+- 700371 - support for text only errata (pkilambi@redhat.com)
+- Making the discovery module extendable for other discovery types
+  (pkilambi@redhat.com)
+- Fixing url validate to work on el5 (pkilambi@redhat.com)
+- Bump to gofer 0.34 to support mocks change in unit tests. (jortel@redhat.com)
+- Refit to use gofer mocks. (jortel@redhat.com)
+- Support for Repo Discovery (pkilambi@redhat.com)
+- 428819 - check user credentials for pulp-client (pkilambi@redhat.com)
+- Update 'add_package' api doc under 'repositories' (jmatthews@redhat.com)
+- Update api docs for feed_cert/consumer_cert on repository create
+  (jmatthews@redhat.com)
+- 695707 - repo delete should detect ongoing sync before deleting it
+  (skarmark@redhat.com)
+- 629718 - adding sane default language encoding (jconnor@redhat.com)
+
 * Wed Apr 27 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.172-1
 - 700122 - Fixed ISO date formatting for python 2.4 compatibility.
   (jason.dobies@redhat.com)
