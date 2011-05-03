@@ -34,9 +34,8 @@ function sync {
 
 function sync_status {
     STATUS=`curl -s -k -u "${USER}:${PASSWORD}" https://${PULP_SERVER}/pulp/api/repositories/$1/sync/${TASK_ID}/`
-    echo "Cancelling TASK_ID: <${TASK_ID}>"
     check_error "${STATUS}"
-    echo "\tRepo <$1> is syncing.  Status = <${STATUS}>"
+    echo -e "\tStatus of Task <${TASK_ID}> on repo <$1> is \n\t\t<${STATUS}>"
 }
 
 function sync_cancel {
@@ -44,14 +43,15 @@ function sync_cancel {
     curl -k -u "${USER}:${PASSWORD}" --request DELETE https://${PULP_SERVER}/pulp/api/repositories/$1/sync/${TASK_ID}/
     STATUS=`curl -s -k -u "${USER}:${PASSWORD}" https://${PULP_SERVER}/pulp/api/repositories/$1/sync/${TASK_ID}/`
     check_error "${STATUS}"
-    echo "\tRepo <$1> sync_task <${TASK_ID}> has been cancelled.  Status = <${STATUS}>"
+    echo -e "\tRepo <$1> sync_task <${TASK_ID}> has been cancelled.  Status = <${STATUS}>"
 }
 
 function sync_and_cancel {
     echo ""
     sync $1
-    sync_status $1
+    #sync_status $1
     sync_cancel $1
+    #sync_status $1
 }
 
 
