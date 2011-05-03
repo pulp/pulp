@@ -36,7 +36,7 @@ sys.path.insert(0, commondir)
 
 import mocks
 import pymongo.json_util
-
+from pulp.server.pexceptions import PulpException
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.util import random_string
@@ -91,6 +91,94 @@ class TestApi(unittest.TestCase):
         self.assertTrue(len(result) == 1)
         self.assertTrue(result[0]["name"] == "vim-enhanced")
 
+    def test_package_regexes(self):
+                # Create multiple packages
+        pkgs = []
+        pkgs.append(testutil.create_package(self.papi, name="xwindows", version="1.2.3", arch="x86_64"))
+        pkgs.append(testutil.create_package(self.papi, name="emacs", version="1.2.3", epoch='2', arch="x86_64"))
+        pkgs.append(testutil.create_package(self.papi, name="emacs", version="2.3.4", release="1.fc13", arch="i386"))
+        pkgs.append(testutil.create_package(self.papi, name="emacs", version="3.4.5", release="1.fc13", arch="x86_64"))
+
+        # Verify we can search for them with basic terms
+        for pkg in pkgs:
+            self.assertTrue(self.papi.package(pkg["id"]) != None)
+
+        # name
+        result = self.papi.packages(name="^emac", regex=True)
+        self.assertTrue(len(result) == 3)
+
+        # filename
+        result = self.papi.packages(filename="random", regex=True)
+        self.assertTrue(len(result) == 0)
+
+        # version
+        result = self.papi.packages(version="3.4", regex=True)
+        self.assertTrue(len(result) == 2)
+
+        # epoch
+        result = self.papi.packages(epoch="^2", regex=True)
+        self.assertTrue(len(result) == 1)
+
+        # release
+        result = self.papi.packages(release="fc13", regex=True)
+        self.assertTrue(len(result) == 2)
+
+        # arch
+        result = self.papi.packages(arch="^x86", regex=True)
+        self.assertTrue(len(result) == 3)
+
+        # checksum
+        result = self.papi.packages(checksum_type="sha256", checksum="^9d05cc3dbdc94", regex=True)
+        self.assertTrue(len(result) == 4)
+
+
+    def test_package_dependency(self):
+        repo = self.rapi.create('some-id', 'some name',
+                                'i386', 'yum:http://example.com')
+        repo = self.rapi.repository(repo["id"])
+        test_pkg_name = "test_package_versions_name"
+        test_epoch = "1"
+        test_version = "1.2.3"
+        test_release = "1.el5"
+        test_arch = "x86_64"
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+                release=test_release, arch=test_arch, description=test_description,
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        result = self.papi.package_dependency(["test_package_versions_name"], ["some-id"])
+        self.assertTrue(result['dependency_list'] == '')
+        result = self.papi.package_dependency(["test_package_versions_name"], ["some-id"], recursive=1)
+        self.assertTrue(result['dependency_list'] == '')
+
+
+    def test_package_filenames_descriptions(self):
+        testutil.create_package(self.papi, name="xwindows", version="1.2.3", arch="x86_64")
+        testutil.create_package(self.papi, name="emacs", version="1.2.3", epoch='2', arch="x86_64")
+        testutil.create_package(self.papi, name="emacs", version="2.3.4", release="1.fc13", arch="i386")
+        testutil.create_package(self.papi, name="emacs", version="3.4.5", release="1.fc13", arch="x86_64")
+
+        result = self.papi.package_filenames({"name":"emacs", "release":"1.fc13"})
+        self.assertTrue(len(result) == 2)
+
+        result = self.papi.package_descriptions({"name":"emacs", "release":"1.fc13"})
+        self.assertTrue(len(result) == 2)
+
+    def test_package_cheksums(self):
+        testutil.create_package(self.papi, name="xwindows", version="1.2.3", arch="x86_64")
+        testutil.create_package(self.papi, name="emacs", version="1.2.3", epoch='2', arch="x86_64")
+        testutil.create_package(self.papi, name="emacs", version="2.3.4", release="1.fc13", arch="i386", filename="my-filename-1.2.3-1.el5.x86_64.rpm")
+        testutil.create_package(self.papi, name="emacs", version="3.4.5", release="1.fc13", arch="x86_64", filename="my-filename-1.2.3-1.el5.x86_64.rpm")
+
+        result = self.papi.get_package_checksums(filenames=['my-filename-1.2.3-1.el5.x86_64.rpm'])
+        self.assertTrue(len(result) == 1)
+        self.assertTrue(len(result["my-filename-1.2.3-1.el5.x86_64.rpm"]) == 2)
+
+        result = self.papi.package_checksum(filename='my-filename-1.2.3-1.el5.x86_64.rpm')
+        self.assertTrue(len(result) == 2)
+
     def test_packages(self):
         repo = self.rapi.create('some-id', 'some name',
             'i386', 'yum:http://example.com')
@@ -135,6 +223,36 @@ class TestApi(unittest.TestCase):
         self.rapi.remove_package(repo['id'], p)
         repo = self.rapi.repository(repo['id'])
         self.assertTrue(p['id'] not in repo["packages"])
+
+    def test_nonexistent_package_update(self):
+        try:
+            self.papi.update("nonexisting_id", {})
+            assertTrue(False)
+        except PulpException:
+            pass
+
+    def test_wrong_delta_keyvalue(self):
+        test_pkg_name = "test_package_versions_name"
+        test_epoch = "1"
+        test_version = "1.2.3"
+        test_release = "1.el5"
+        test_arch = "x86_64"
+        test_description = "test description text"
+        test_checksum_type = "sha256"
+        test_checksum = "9d05cc3dbdc94150966f66d76488a3ed34811226735e56dc3e7a721de194b42e"
+        test_filename = "test-filename-1.2.3-1.el5.x86_64.rpm"
+        test_group = "Application"
+        test_license = "GPL"
+        test_buildhost = "test.example.com"
+        test_size = 22456
+        p = self.papi.create(name=test_pkg_name, epoch=test_epoch, version=test_version,
+                release=test_release, arch=test_arch, description=test_description,
+                checksum_type="sha256", checksum=test_checksum, filename=test_filename)
+        try:
+            self.papi.update(p['id'], {"random-key":"random-value"})
+            self.assertTrue(False)
+        except:
+            pass
 
     def test_package_fields(self):
         repo = self.rapi.create('some-id', 'some name',

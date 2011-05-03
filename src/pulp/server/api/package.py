@@ -276,7 +276,7 @@ class PackageApi(BaseApi):
         '''
         Fetch the package checksuums
         @param data: ["file_name", ...]
-        @return  {"file_name": [<checksums>],...} 
+        @return  {filename: [<checksums>],...}
         '''
         result = {}
         for i in self.collection.find({"filename":{"$in": filenames}}, ["filename", "checksum"]):
