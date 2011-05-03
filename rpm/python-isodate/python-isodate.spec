@@ -3,7 +3,7 @@
 
 Name:           python-isodate
 Version:        0.4.4
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
@@ -11,6 +11,7 @@ License:        BSD
 
 URL:            http://cheeseshop.python.org/pypi/isodate
 Source0:        isodate-%{version}.tar.gz
+Patch0:         isodate-tzinfo.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  python-setuptools
 BuildArch:      noarch
@@ -37,6 +38,7 @@ for instance nanoseconds it will round it to microseconds.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
+%patch0 -p1
 
 %build
 %{__python} setup.py build

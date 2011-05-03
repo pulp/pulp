@@ -1,0 +1,20 @@
+--- isodate-0.4.4/src/isodate/tzinfo.orig	2011-05-02 22:09:31.569082764 -0600
++++ isodate-0.4.4/src/isodate/tzinfo.py	2011-05-02 22:09:34.239977180 -0600
+@@ -3,7 +3,7 @@
+ 
+ All those classes are taken from the Python documentation.
+ '''
+-from datetime import timedelta, tzinfo
++from datetime import datetime, timedelta, tzinfo
+ import time
+ 
+ ZERO = timedelta(0)
+@@ -126,6 +126,8 @@
+         '''
+         Returns true if DST is active for given datetime object dt.
+         '''
++        if dt is None:
++            dt = datetime.now()
+         tt = (dt.year, dt.month, dt.day,
+               dt.hour, dt.minute, dt.second,
+               dt.weekday(), 0, -1)
