@@ -103,7 +103,8 @@ from pulp.server.webservices.controllers.base import JSONController, AsyncContro
 
 api = RepoApi()
 pkg_api = PackageApi()
-_log = logging.getLogger('pulp')
+#_log = logging.getLogger('pulp')
+_log = logging.getLogger(__name__)
 
 # default fields for repositories being sent to the client
 default_fields = [

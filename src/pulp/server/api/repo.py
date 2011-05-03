@@ -54,6 +54,7 @@ from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
+from pulp.server.tasking.repo_sync_task import RepoSyncTask
 
 log = logging.getLogger(__name__)
 
@@ -1584,7 +1585,7 @@ class RepoApi(BaseApi):
                           'max_speed':max_speed,
                           'threads':threads},
                           timeout=timeout,
-                          task_type=repo_sync.RepoSyncTask)
+                          task_type=RepoSyncTask)
         if not task:
             log.error("Unable to create repo._sync task for [%s]" % (id))
             return task
@@ -1597,7 +1598,7 @@ class RepoApi(BaseApi):
                 task.set_progress('progress_callback',
                                   repo_sync.local_progress_callback)
             synchronizer = self.get_synchronizer(source_type)
-            task.set_synchronizer(synchronizer)
+            task.set_synchronizer(self, repo['id'], synchronizer)
         return task
 
     def list_syncs(self, id):
@@ -2069,8 +2070,8 @@ class RepoApi(BaseApi):
         @return:    True - requested state was set
                     False - requested state was _not_ set
         """
-        self.__sync_lock.acquire()
         try:
+            locked = self.__sync_lock.acquire()
             repo = self.collection.find_one({"id":id}, {"sync_in_progress":1})
             if not repo:
                 log.error("no repo exists for [%s]" % (id))
@@ -2085,5 +2086,22 @@ class RepoApi(BaseApi):
             self.collection.update({"id":id}, {"$set": {"sync_in_progress":state}})
             return True
         finally:
-            self.__sync_lock.release()
+            #bz700508 - fast sync/cancel_sync locks up task subsystem
+            # Tasking system may inject multiple CancelExceptions into this thread
+            # we have seen sometimes the CancelException will be injected while we are
+            # trying to clean up a repo sync.
+            # Intent is to loop over the release of __sync_lock in case we are interrupted while trying to unlock it.
+            # Desired behavior is that we will always ensure __sync_lock is released prior to exiting this function.
+            while locked:
+                try:
+                    self.__sync_lock.release()
+                    locked = False
+                except RuntimeError:
+                    # lock.release() could throw a RuntimeError if we didn't own the lock
+                    # allow this to be raised
+                    raise
+                except Exception, e:
+                    # suppress all other exceptions and retry
+                    log.error("Exception: %s" % (e))
+                    log.error("Traceback: %s" % (traceback.format_exc()))
 

@@ -25,10 +25,10 @@ except ImportError:
 
 from pulp.common import dateutils
 from pulp.server import async
-from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.repo_sync_task import RepoSyncTask
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
 
@@ -76,7 +76,7 @@ def _add_repo_scheduled_sync_task(repo):
     task = RepoSyncTask(api._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     synchronizer = api.get_synchronizer(repo['source']['type'])
-    task.set_synchronizer(synchronizer)
+    task.set_synchronizer(api, repo['id'], synchronizer)
     async.enqueue(task)
 
 
