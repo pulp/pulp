@@ -1331,7 +1331,6 @@ class Discovery(RepoProgressAction):
     description = _('Discover and Create repositories')
 
     def setup_parser(self):
-        super(Discovery, self).setup_parser()
         self.parser.add_option("-u", "--url", dest="url",
                                help=_("root url to perform discovery (required)"))
         self.parser.add_option("-g", "--groupid", action="append", dest="groupid",
