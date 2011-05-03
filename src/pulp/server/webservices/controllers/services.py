@@ -372,20 +372,20 @@ class RepoDiscovery(AsyncController):
         title: Repository Discovery
         description: Discover repository urls with metadata and create candidate repos.
         method: POST
-        path: /discovery/repo/
+        path: /services/discovery/repo/
         permission: EXECUTE
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
         return: list of candidate repos.
         '''
         data = self.params()
-        url = data.get('url', None)
-        type = data.get('type', None)
         try:
+            type = data.get('type', None)
             discovery_obj = get_discovery(type)
-        except:
+        except InvalidDiscoveryInput:
             return self.bad_request('Invalid content type [%s]' % type)
         try:
+            url = data.get('url', None)
             discovery_obj.setUrl(url)
         except InvalidDiscoveryInput:
             return self.bad_request('Invalid url [%s]' % url)

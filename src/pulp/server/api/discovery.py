@@ -35,13 +35,18 @@ class BaseDiscovery(object):
         self.url = ""
 
     def setUrl(self, url):
+        '''
+         sets the root url to be discovered
+         @param url: url link to be parse.
+         @type url: string
+        '''
         try:
             urllib2.urlopen(url)
         except:
             raise InvalidDiscoveryInput("Invalid input url %s" % url)
         self.url = url
 
-    def parse_url(self, url):
+    def parseUrl(self, url):
         """
         Extract and parses a url; looks up <a> tags and
         finds matching sub urls.
@@ -91,10 +96,10 @@ class YumDiscovery(BaseDiscovery):
         @rtype: list
         '''
         repourls = []
-        urls = self.parse_url(self.url)
+        urls = self.parseUrl(self.url)
         while urls:
             uri = urls.pop()
-            results = self.parse_url(uri)
+            results = self.parseUrl(uri)
             for result in results:
                 if not "href=" in result:
                     urls.append(result)
