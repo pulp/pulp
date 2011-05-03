@@ -576,3 +576,4 @@ class TestErrata(unittest.TestCase):
         eid = "BAD-VALUE"
         found = self.rapi.find_repos_by_errataid(eid)
         self.assertTrue(len(found) == 0)
+

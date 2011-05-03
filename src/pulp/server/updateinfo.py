@@ -34,7 +34,10 @@ if yum.__version__ < (3,2,28):
         if not un or not un["update_id"] or un['update_id'] in self._notices:
             return
         self._notices[un['update_id']] = un
-        for pkg in un['pkglist']:
+        pkglist = []
+        if un['pkglist']:
+           pkglist =  un['pkglist']
+        for pkg in pkglist:
             for filedata in pkg['packages']:
                 self._cache['%s-%s-%s' % (filedata['name'],
                                           filedata['version'],
@@ -121,9 +124,7 @@ def generate_updateinfo(repo):
     errataids = list(chain.from_iterable(repo['errata'].values()))
     for eid in errataids:
         e = eapi.erratum(eid)
-        if not e['pkglist']:
-            # for unit tests
-            continue
+
         _md = {
             'from'             : e['from_str'],
             'type'             : e['type'],
