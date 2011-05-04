@@ -48,7 +48,6 @@ class Storage(object):
     def find(self, criteria):
         num_criteria = len(criteria)
         tasks = []
-        
         for task in self.all_tasks():
             matches = 0
             for attr, value in criteria.items():
