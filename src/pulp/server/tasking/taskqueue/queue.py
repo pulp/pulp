@@ -20,6 +20,7 @@ import traceback
 from datetime import datetime, timedelta
 from gettext import gettext as _
 
+from pulp.common import dateutils
 from pulp.server.tasking.exception import (
     TaskThreadStateError, UnscheduledTaskException, NonUniqueTaskException)
 from pulp.server.tasking.scheduler import ImmediateScheduler
@@ -129,7 +130,7 @@ class TaskQueue(object):
         """
         ready_tasks = []
         num_tasks = self.max_running - self.__running_count
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         while len(ready_tasks) < num_tasks:
             if self.__storage.num_waiting() == 0:
                 break
@@ -171,7 +172,7 @@ class TaskQueue(object):
         running_tasks = self.__storage.running_tasks()
         if not running_tasks:
             return
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         for task in running_tasks:
             # the task.start_time can be None if the task has been 'run' by the
             # queue, but the task thread has not had a chance to execute yet
@@ -188,7 +189,7 @@ class TaskQueue(object):
         complete_tasks = self.__storage.complete_tasks()
         if not complete_tasks:
             return
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         for task in complete_tasks:
             if now - task.finish_time > self.finished_lifetime:
                 self.__storage.remove_complete(task)
