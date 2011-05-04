@@ -26,7 +26,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
-from pulp.server.api.discovery import DiscoveryApi, InvalidDiscoveryInput
+from pulp.server.api.discovery import get_discovery, InvalidDiscoveryInput
 from pulp.server import agent
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import READ, EXECUTE
@@ -372,27 +372,27 @@ class RepoDiscovery(AsyncController):
         title: Repository Discovery
         description: Discover repository urls with metadata and create candidate repos.
         method: POST
-        path: /discovery/repo/
+        path: /services/discovery/repo/
         permission: EXECUTE
         success response: 200 OK
         failure response: 206 PARTIAL CONTENT
-        return: list of candidate repos.
+        return: list of matching repourls.
         '''
         data = self.params()
-        url = data.get('url', None)
-        dapi = DiscoveryApi()
         try:
-            dapi.setUrl(url)
-        except InvalidDiscoveryInput:
-            return self.bad_request('Invalid url [%s]' % url)
-        type = data.get('type', None)
-        try:
-            dapi.setType(type)
+            type = data.get('type', None)
+            discovery_obj = get_discovery(type)
         except InvalidDiscoveryInput:
             return self.bad_request('Invalid content type [%s]' % type)
+        try:
+            url = data.get('url', None)
+            discovery_obj.setUrl(url)
+        except InvalidDiscoveryInput:
+            return self.bad_request('Invalid url [%s]' % url)
+
         log.info('Discovering compatible repo urls @ [%s]' % data['url'])
         # Kick off the async task
-        task = self.start_task(dapi.discover)
+        task = self.start_task(discovery_obj.discover)
 
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
@@ -406,15 +406,15 @@ class DiscoveryStatus(AsyncController):
         """
         [[wiki]]
         title: Discovery Task status
-        description: Get status of an async task.
+        description: Get status of a discovery async task.
         This method only works for actions that returned a 202 Accepted response.
         e.g. /services/discovery/repo/<id>
         method: GET
         path: /services/discovery/repo/<id>
         permission: READ
         success response: 200 OK
-        failure response: None
-        return: list of Task objects
+        failure response: 404 NOT FOUND
+        return: Task object
         """
         task = self.task_status(id)
         if task is None:

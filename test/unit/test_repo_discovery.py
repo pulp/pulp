@@ -27,7 +27,7 @@ sys.path.insert(0, srcdir)
 commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
-from pulp.server.api.discovery import DiscoveryApi
+from pulp.server.api.discovery import get_discovery
 from pulp.server.api.repo import RepoApi
 import testutil
 
@@ -43,17 +43,26 @@ class TestRepoDiscoveryApi(unittest.TestCase):
     def tearDown(self):
         self.rapi.clean()
 
+    def test_get_discovery(self):
+        d = get_discovery("yum")
+        assert(d is not None)
+        failed = False
+        try:
+            get_discovery("fake")
+        except:
+            failed = True
+        assert(failed)
+
     def test_discovery(self):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
-        d = DiscoveryApi()
+        d = get_discovery("yum")
         d.setUrl(discover_url)
-        d.setType("yum")
         repourls = d.discover()
         self.assertTrue(len(repourls) != 0)
 
     def test_invalid_url(self):
-        discover_url = 'http://repos.fedorapeople.org/repos/fakedir/'
-        d = DiscoveryApi()
+        discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/fakedir/'
+        d = get_discovery("yum")
         failed = False
         try:
             d.setUrl(discover_url)
@@ -61,21 +70,11 @@ class TestRepoDiscoveryApi(unittest.TestCase):
             failed = True
         assert(failed)
 
-    def test_invalid_type(self):
-        d = DiscoveryApi()
-        failed = False
-        try:
-            d.setType("test")
-        except:
-            failed = True
-        assert(failed)
-
     def test_repo_discovery_group(self):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
         groupid = 'testrepos'
-        d = DiscoveryApi()
+        d = get_discovery("yum")
         d.setUrl(discover_url)
-        d.setType("yum")
         repourls = d.discover()
         self.assertTrue(len(repourls) != 0)
         repourl = repourls[0]

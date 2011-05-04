@@ -238,7 +238,7 @@ class Create(ErrataAction):
                                help=_("from contact string who released the Erratum, eg:updates@fedoraproject.org"))
         self.parser.add_option("--effected-packages", dest="pkgcsv",
                                help=_("a csv file with effected packages; format:name,version,release,epoch,arch,filename,checksum,checksum_type,sourceurl"))
-        self.parser.add_option("--pushcount", dest="pushcount", default="",
+        self.parser.add_option("--pushcount", dest="pushcount", default=1,
                                help=_("pushcount on the erratum"))
         self.parser.add_option("--references", dest="refcsv",
                             help=_("A reference csv file; format:href,type,id,title"))
@@ -263,8 +263,8 @@ class Create(ErrataAction):
         if not self.opts.description:
             self.opts.description = self.opts.title
             
-        errata_version = self.get_required_option('version')
-        errata_release = self.get_required_option('release')
+        errata_version = str(self.get_required_option('version'))
+        errata_release = str(self.get_required_option('release'))
         errata_type = self.get_required_option('type')
 
         found = self.errata_api.erratum(errata_id)
@@ -302,12 +302,17 @@ class Create(ErrataAction):
                          'name'     : errata_release,
                          'short'    : self.opts.short or ""} 
             pkglist = [plistdict]
+        pushcount = None
+        try:
+            pushcount = int(self.opts.pushcount)
+        except:
+            system_exit(os.EX_DATAERR, _("Error: Invalid pushcount [%s]; should be an integer " % self.opts.pushcount))
         #create an erratum
 
         erratum_new = self.errata_api.create(errata_id, errata_title, self.opts.description,
                                errata_version, errata_release, errata_type,
                                status=self.opts.status, updated=self.opts.updated or "", 
-                               issued=self.opts.issued or "", pushcount=self.opts.pushcount or "", 
+                               issued=self.opts.issued or "", pushcount=pushcount,
                                update_id="", from_str=self.opts.fromstr or "", 
                                reboot_suggested=self.opts.reboot_sugg or "", 
                                references=references, pkglist=pkglist, severity=self.opts.severity or "",

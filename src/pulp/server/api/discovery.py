@@ -15,40 +15,38 @@
 
 
 # Python
+import re
 import sys
 import urllib2
-import re
 import urlparse
 import BeautifulSoup
 import logging
 
 log = logging.getLogger(__name__)
 
-TYPE_REGEX = {
-    'yum': "/repodata/"
-}
-
 class InvalidDiscoveryInput(Exception):
     pass
 
-class DiscoveryApi(object):
+class BaseDiscovery(object):
+    """
+    Base discovery class.
+    """
     def __init__(self):
         self.url = ""
-        self.type = ""
 
     def setUrl(self, url):
+        '''
+         sets the root url to be discovered
+         @param url: url link to be parse.
+         @type url: string
+        '''
         try:
             urllib2.urlopen(url)
         except:
             raise InvalidDiscoveryInput("Invalid input url %s" % url)
         self.url = url
 
-    def setType(self, type="yum"):
-        if type not in TYPE_REGEX:
-            raise InvalidDiscoveryInput("Invalid input type %s" % type)
-        self.type = type
-
-    def __parse_url(self, url):
+    def parseUrl(self, url):
         """
         Extract and parses a url; looks up <a> tags and
         finds matching sub urls.
@@ -62,7 +60,7 @@ class DiscoveryApi(object):
         try:
             src = urllib2.urlopen(url).read()
         except Exception, e:
-            log.error("An error occurred while reading url [%s] : %s" % (url, e))
+            log.error("An error occurred while reading url page [%s] : %s" % (url, e))
             return []
         try:
             soup = BeautifulSoup.BeautifulSoup(src)
@@ -81,6 +79,13 @@ class DiscoveryApi(object):
                 urls.append(url + "/" + path)
         return urls
 
+    def discovery(self):
+        pass
+
+class YumDiscovery(BaseDiscovery):
+    '''
+    Yum discovery class to perform 
+    '''
     def discover(self):
         '''
         Takes a root url and traverses the tree to find all the sub urls
@@ -91,30 +96,47 @@ class DiscoveryApi(object):
         @rtype: list
         '''
         repourls = []
-        urls = self.__parse_url(self.url)
+        urls = self.parseUrl(self.url)
         while urls:
             uri = urls.pop()
-            results = self.__parse_url(uri)
+            results = self.parseUrl(uri)
             for result in results:
                 if not "href=" in result:
                     urls.append(result)
-                if result.endswith(TYPE_REGEX[self.type]) and self.type == "yum":
+                if result.endswith('/repodata/'):
                     try:
-                        urllib2.urlopen("%s/%s" % (result, "repomd.xml"))
-                        repourls.append(result[:result.rfind(TYPE_REGEX[self.type])])
+                        urllib2.urlopen("%s/%s" % (result, 'repomd.xml'))
+                        repourls.append(result[:result.rfind('/repodata/')])
                     except:
                         # repomd.xml could not be found, skip
                         continue
         return repourls
+
+
+def get_discovery(type):
+    '''
+    Returns an instance of a Discovery object
+    @param type: discovery type
+    @type type: string
+    Returns an instance of a Discovery object
+    '''
+    if type not in DISCOVERY_MAP:
+        raise InvalidDiscoveryInput('Could not find Discovery for type [%s]', type)
+    discovery = DISCOVERY_MAP[type]()
+    return discovery
+
+DISCOVERY_MAP = {
+    "yum" : YumDiscovery,
+}
 
 def main():
     if not len(sys.argv) == 2:
         print "USAGE:python discovery.py <url>"
         sys.exit(0)
     print("Discovering urls with yum metadata, This could take sometime..")
-    d = DiscoveryApi()
+    type = "yum"
+    d = get_discovery(type)
     d.setUrl(sys.argv[1])
-    d.setType("yum")
     repourls = d.discover()
     print('========================')
     print('Urls with repodata:\n')
