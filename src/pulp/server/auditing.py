@@ -31,6 +31,7 @@ try:
 except:
     from bson.son import SON
 
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server import config
 from pulp.server.auth.principal import get_principal
@@ -164,7 +165,7 @@ def audit(params=None, record_result=False):
     events on pulp's model instances.
     Any call to a decorated method will both record the event in the database
     and log it to a special log file.
-    
+
     @type params: list or tuple of str's or None
     @param params: list of names of parameters to record the values of,
                    None records all parameters
@@ -236,7 +237,7 @@ def events(spec=None, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -264,7 +265,7 @@ def events_on_api(api, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -283,7 +284,7 @@ def events_by_principal(principal, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -303,7 +304,7 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -334,14 +335,14 @@ def events_since_delta(delta, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
     @return: list of events in the given length of time containing fields
     """
     assert isinstance(delta, datetime.timedelta)
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(dateutils.local_tz())
     lower_bound = now - delta
     return events({'timestamp': {'$gt': lower_bound}}, fields, limit, errors_only)
 
@@ -358,7 +359,7 @@ def cull_events(delta):
     """
     spec = None
     if delta is not None:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(dateutils.local_tz())
         spec = {'timestamp': {'$lt': now - delta}}
     count = _objdb.find(spec).count()
     _objdb.remove(spec, safe=False)
@@ -382,8 +383,9 @@ def cull_audited_events():
 
 def init_culling_task():
     interval = datetime.timedelta(hours=12)
-    now = datetime.datetime.now()
-    start_time = datetime.datetime(now.year, now.month, now.day, 13)
+    tz = dateutils.local_tz()
+    now = datetime.datetime.now(tz)
+    start_time = datetime.datetime(now.year, now.month, now.day, 13, tzinfo=tz)
     scheduler = IntervalScheduler(interval, start_time)
     task = Task(cull_audited_events, scheduler=scheduler)
     async.enqueue(task)
