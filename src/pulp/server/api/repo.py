@@ -29,6 +29,7 @@ from urlparse import urlparse
 # Pulp
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
+from pulp.common import dateutils
 from pulp.server.agent import Agent
 from pulp.server import constants
 from pulp.server import comps_util
@@ -524,7 +525,7 @@ class RepoApi(BaseApi):
                 cloned_repo['source'] = None
                 self.collection.save(cloned_repo, safe=True)
 
-        #update clone_ids of its parent repo        
+        #update clone_ids of its parent repo
         parent_repos = self.repositories({'clone_ids' : id})
         if len(parent_repos) == 1:
             parent_repo = parent_repos[0]
@@ -611,7 +612,7 @@ class RepoApi(BaseApi):
 
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
-        
+
         return cds_unassociate_results
 
 
@@ -843,7 +844,7 @@ class RepoApi(BaseApi):
         """
         Adds the passed in package to this repo
         @return:    [] on success
-                    [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error, 
+                    [(package_id,(name,epoch,version,release,arch),filename,checksum)] on error,
                     where each id represents a package id that couldn't be added
         """
         if not packageids:
@@ -1261,12 +1262,12 @@ class RepoApi(BaseApi):
         @param pkg_names: package names
         @param gtype: OPTIONAL type of package group,
             example "mandatory", "default", "optional", "conditional"
-        @param requires: represents the 'requires' field for a 
-            conditonal package group entry only needed when 
+        @param requires: represents the 'requires' field for a
+            conditonal package group entry only needed when
             gtype is 'conditional'
-        We are not restricting package names to packages in the repo.  
+        We are not restricting package names to packages in the repo.
         It is possible and acceptable for a package group to refer to packages which
-        are not known to the repo or pulp.  The package group will be used on 
+        are not known to the repo or pulp.  The package group will be used on
         the client and will have access to all repos the client can see.
         """
         repo = self._get_existing_repo(repoid)
@@ -1451,7 +1452,7 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(repoid)
         try:
             # If the repomd file is not valid, or if we are missingg
-            # a group metadata file, no point in continuing. 
+            # a group metadata file, no point in continuing.
             if not os.path.exists(repo["repomd_xml_path"]):
                 log.warn("Skipping update of groups metadata since missing repomd file: '%s'" %
                           (repo["repomd_xml_path"]))
@@ -1560,7 +1561,8 @@ class RepoApi(BaseApi):
                 log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
                 for eid in new_errata:
                     self._add_erratum(repo, eid)
-            repo['last_sync'] = datetime.now().strftime("%s")
+            now = datetime.now(dateutils.local_tz())
+            repo['last_sync'] = dateutils.format_iso8601_datetime(now)
             synchronizer.progress_callback(step="Finished")
             self.collection.save(repo, safe=True)
             return True
@@ -1695,7 +1697,7 @@ class RepoApi(BaseApi):
     def all_schedules(self):
         '''
         For all repositories, returns a mapping of repository name to sync schedule.
-        
+
         @rtype:  dict
         @return: key - repo name, value - sync schedule
         '''
@@ -1766,7 +1768,7 @@ class RepoApi(BaseApi):
         '''
         Fetch the package checksums and filesizes
         @param data: {"repo_id1": ["file_name", ...], "repo_id2": [], ...}
-        @return  {"repo_id1": {"file_name": {'checksum':...},...}, "repo_id2": {..}} 
+        @return  {"repo_id1": {"file_name": {'checksum':...},...}, "repo_id2": {..}}
         '''
         result = {}
         for repoid, filenames in data.items():
@@ -1977,7 +1979,7 @@ class RepoApi(BaseApi):
         Each package is identified by it's (filename,checksum)
         @param pkg_info: format is [((filename,checksum), [repoids])]
         @return:    [] on success
-                    or {"filename":{"checksum":[repoids]} on error 
+                    or {"filename":{"checksum":[repoids]} on error
         """
         start_translate = time.time()
         p_col = model.Package.get_collection()
@@ -2027,7 +2029,7 @@ class RepoApi(BaseApi):
         """
          spawn repo metadata generation for a specific repo
          @param id: repository id
-         @return task: 
+         @return task:
         """
         if self.list_metadata_task(id):
             # repo generation task already pending; task not created

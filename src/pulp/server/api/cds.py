@@ -19,6 +19,7 @@ import logging
 import sys
 
 # Pulp
+from pulp.common import dateutils
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 import pulp.server.cds.round_robin as round_robin
 import pulp.server.consumer_utils as consumer_utils
@@ -183,7 +184,7 @@ class CdsApi(BaseApi):
         # The above schedule delete call will update the DB, so this remove has to
         # occur after that
         self.collection.remove({'hostname' : hostname}, safe=True)
-        
+
     def cds(self, hostname):
         '''
         Returns the CDS instance that has the given hostname if one exists.
@@ -289,7 +290,7 @@ class CdsApi(BaseApi):
 
         @param repo_id: identifies the repo to unassociate from the CDS
         @type  repo_id: string; may not be None
-        
+
         @param deleted: Indicates the repo has been deleted.
         @type deleted: bool
 
@@ -307,7 +308,7 @@ class CdsApi(BaseApi):
             # Update the CDS in the database
             cds['repo_ids'].remove(repo_id)
             self.collection.save(cds, safe=True)
-            
+
             # Remove it from CDS host assignment consideration
             round_robin.remove_cds_repo_association(cds_hostname, repo_id)
 
@@ -393,7 +394,8 @@ class CdsApi(BaseApi):
         self.cds_history_api.sync_finished(cds_hostname, error=sync_error_msg)
 
         # Update the CDS to indicate the last sync time
-        cds['last_sync'] = datetime.datetime.now().strftime('%s')
+        now = datetime.datetime.now(dateutils.local_tz())
+        cds['last_sync'] = dateutils.format_iso8601_datetime(now)
         self.collection.save(cds, safe=True)
 
         # Make sure the caller gets the error like normal (after the event logging) if
@@ -473,7 +475,7 @@ class CdsApi(BaseApi):
                 failed.append(hostname)
                 log.error('unassociate %s, failed', hostname, exc_info=True)
         return (succeeded, failed)
-            
+
 # -- internal only api ---------------------------------------------------------------------
 
     def set_global_repo_auth(self, cert_bundle):

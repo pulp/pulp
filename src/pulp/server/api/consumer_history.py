@@ -25,6 +25,7 @@ import logging
 import pymongo
 
 # Pulp
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server import config
 from pulp.server.api.base import BaseApi
@@ -115,7 +116,7 @@ class ConsumerHistoryApi(BaseApi):
                  empty list (not None) if no matching entries are found
         @rtype:  list of L{pulp.server.db.model.ConsumerHistoryEvent} instances
 
-        @raise PulpException: if any of the input values are invalid 
+        @raise PulpException: if any of the input values are invalid
         '''
 
         # Verify the consumer ID represents a valid consumer
@@ -306,7 +307,7 @@ class ConsumerHistoryApi(BaseApi):
                          are deleted in this call
         @type  lifetime: L{datetime.timedelta}
         '''
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(dateutils.local_tz())
         limit = (now - lifetime).strftime('%s')
         spec = {'timestamp': {'$lt': limit}}
         self.collection.remove(spec, safe=False)
@@ -332,8 +333,9 @@ def cull_history():
 
 def init_culling_task():
     interval = datetime.timedelta(days=1)
-    now = datetime.datetime.now()
-    start_time = datetime.datetime(now.year, now.month, now.day, 1)
+    tz = dateutils.local_tz()
+    now = datetime.datetime.now(tz)
+    start_time = datetime.datetime(now.year, now.month, now.day, 1, tzinfo=tz)
     scheduler = IntervalScheduler(interval, start_time)
     task = Task(cull_history, scheduler=scheduler)
     async.enqueue(task)

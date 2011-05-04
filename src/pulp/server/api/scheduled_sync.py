@@ -13,7 +13,6 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
-import datetime
 from gettext import gettext as _
 from types import NoneType
 
@@ -23,6 +22,7 @@ except ImportError:
     from pymongo.bson import BSON
     from pymongo.son import SON
 
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.cds import CDS
@@ -123,21 +123,7 @@ def schedule_to_scheduler(schedule):
     @rtype: L{IntervalScheduler}
     @return: interval scheduler for the tasking sub-system
     """
-    interval = schedule['interval']
-    interval = datetime.timedelta(weeks=interval.get('weeks', 0),
-                                  days=interval.get('days', 0),
-                                  hours=interval.get('hours', 0),
-                                  minutes=interval.get('minutes', 0))
-    start_time = schedule.get('start_time', None)
-    if start_time is not None:
-        now = datetime.datetime.now()
-        year = max(now.year, start_time.get('year', 0))
-        month = max(now.month, start_time.get('month', 0))
-        day = max(now.day, start_time.get('day', 0))
-        hour = start_time.get('hour', now.hour)
-        minute = start_time.get('minute', now.minute)
-        start_time = datetime.datetime(year, month, day, hour, minute)
-    runs = schedule.get('runs', None)
+    interval, start_time, runs = dateutils.parse_iso8601_interval(schedule['interval'])
     return IntervalScheduler(interval, start_time, runs)
 
 
