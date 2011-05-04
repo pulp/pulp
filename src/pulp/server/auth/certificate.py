@@ -28,6 +28,8 @@ from datetime import tzinfo, timedelta
 
 from M2Crypto import X509
 
+from pulp.common import dateutils
+
 
 class Certificate(object):
     """
@@ -44,7 +46,7 @@ class Certificate(object):
         @type content: str
         """
         self.update(content)
-        
+
     def update(self, content):
         if content:
             x509 = X509.load_cert_string(content)
@@ -52,7 +54,7 @@ class Certificate(object):
             x509 = X509.X509()
         self.__ext = Extensions(x509)
         self.x509 = x509
-    
+
     def serialNumber(self):
         """
         Get the serial number
@@ -60,7 +62,7 @@ class Certificate(object):
         @rtype: str
         """
         return self.x509.get_serial_number()
-    
+
     def subject(self):
         """
         Get the certificate subject.
@@ -78,7 +80,7 @@ class Certificate(object):
                 d[key] = str(asn1)
                 continue
         return d
-    
+
     def validRange(self):
         """
         Get the I{valid} date range.
@@ -86,7 +88,7 @@ class Certificate(object):
         @rtype: L{DateRange}
         """
         return DateRange(self.x509)
-    
+
     def valid(self):
         """
         Get whether the certificate is valid based on date.
@@ -94,7 +96,7 @@ class Certificate(object):
         @rtype: boolean
         """
         return self.validRange().hasNow()
-    
+
     def bogus(self):
         """
         Get whether the certificate contains bogus
@@ -112,7 +114,7 @@ class Certificate(object):
         @rtype: L{Extensions}
         """
         return self.__ext
-    
+
     def read(self, path):
         """
         Read a certificate file.
@@ -128,7 +130,7 @@ class Certificate(object):
         finally:
             f.close()
         self.path = path
-    
+
     def write(self, path):
         """
         Write the certificate.
@@ -141,7 +143,7 @@ class Certificate(object):
         self.path = path
         f.close()
         return self
-    
+
     def delete(self):
         """
         Delete the file associated with this certificate.
@@ -158,10 +160,10 @@ class Certificate(object):
         @rtype: str
         """
         return self.x509.as_pem()
-            
+
     def __str__(self):
         return self.x509.as_text()
-    
+
     def __repr__(self):
         sn = self.serialNumber()
         path = None
@@ -187,7 +189,7 @@ class Key(object):
     @ivar content: The PEM encoded key.
     @type content: str
     """
-    
+
     @classmethod
     def read(cls, path):
         """
@@ -201,14 +203,14 @@ class Key(object):
         key = Key(content)
         key.path = path
         return key
-    
+
     def __init__(self, content):
         """
         @param content: The PEM encoded key.
         @type content: str
         """
         self.content = content
-        
+
     def write(self, path):
         """
         Write the key.
@@ -221,7 +223,7 @@ class Key(object):
         self.path = path
         f.close()
         return self
-    
+
     def delete(self):
         """
         Delete the file associated with this key.
@@ -230,11 +232,11 @@ class Key(object):
             os.unlink(self.path)
         else:
             raise Exception, 'no path, not deleted'
-        
+
     def __str__(self):
         return self.content
 
-    
+
 class DateRange:
     """
     Date range object converts between ASN1 and python
@@ -242,9 +244,9 @@ class DateRange:
     @ivar x509: A certificate.
     @type x509: X509
     """
-    
+
     ASN1_FORMAT = '%b %d %H:%M:%S %Y %Z'
-    
+
     def __init__(self, x509):
         """
         @param x509: A certificate.
@@ -253,7 +255,7 @@ class DateRange:
         self.range = \
             (str(x509.get_not_before()),
              str(x509.get_not_after()))
-        
+
     def begin(self):
         """
         Get range beginning.
@@ -261,7 +263,7 @@ class DateRange:
         @rtype: L{datetime.datetime}
         """
         return self.__parse(self.range[0])
-    
+
     def end(self):
         """
         Get range end.
@@ -286,31 +288,24 @@ class DateRange:
         except:
             d = dt(year=2000, month=1, day=1)
         return d.replace(tzinfo=GMT())
-    
+
     def __str__(self):
         return '\n\t%s\n\t%s' % self.range
 
 
-class GMT(tzinfo):
-    """GMT"""
-
-    def utcoffset(self, dt):
-        return timedelta(seconds=0)
-
-    def tzname(self, dt):
-        return 'GMT'
-
-    def dst(self, dt):
-        return 0
+# GMT used to be a class, now it's a function returning an instance
+# left in for backwards compatability and general unwilliness to refactor
+# working code
+GMT = dateutils.utc_tz
 
 
 class Extensions(dict):
     """
     Represents x.509 (v3) I{custom} extensions.
     """
-    
+
     pattern = re.compile('([0-9]+\.)+[0-9]+:')
-    
+
     def __init__(self, x509):
         """
         @param x509: A certificate object.
@@ -320,7 +315,7 @@ class Extensions(dict):
             self.update(x509)
         else:
             self.__parse(x509)
-        
+
     def ltrim(self, n):
         """
         Left trim I{n} parts.
@@ -333,7 +328,7 @@ class Extensions(dict):
         for oid,v in self.items():
             d[oid.ltrim(n)] = v
         return Extensions(d)
-                
+
     def get(self, oid, default=None):
         """
         Get the value of an extension by I{oid}.
@@ -348,7 +343,7 @@ class Extensions(dict):
             return ext[0][1]
         else:
             return default
-    
+
     def find(self, oid, limit=0):
         """
         Find all extensions matching the I{oid}.
@@ -372,7 +367,7 @@ class Extensions(dict):
             if limit and len(ext) == limit:
                 break
         return ext
-    
+
     def branch(self, root):
         """
         Find a subtree by matching the oid.
@@ -391,7 +386,7 @@ class Extensions(dict):
             trimmed = oid.ltrim(ln)
             d[trimmed] = v
         return Extensions(d)
-    
+
     def __ext(self, x509):
         # get extensions substring
         text = x509.as_text()
@@ -400,7 +395,7 @@ class Extensions(dict):
         text = text[start:end]
         text = text.replace('.\n', '..')
         return [s.strip() for s in text.split('\n')]
-    
+
     def __parse(self, x509):
         # parse the extensions section
         oid = None
@@ -413,7 +408,7 @@ class Extensions(dict):
             if m is None:
                 continue
             oid = OID(entry[:-1])
-            
+
     def __str__(self):
         s = []
         for item in self.items():
@@ -429,13 +424,13 @@ class OID(object):
     @cvar WILDCARD: The wildcard character.
     @type WILDCARD: str
     """
-    
+
     WILDCARD = '*'
-    
+
     @classmethod
     def join(cls, *oid):
         return '.'.join(oid)
-    
+
     @classmethod
     def split(cls, s):
         """
@@ -446,7 +441,7 @@ class OID(object):
         @rtype: [str,]
         """
         return s.split('.')
-    
+
     def __init__(self, oid):
         """
         @param oid: The OID value.
@@ -456,7 +451,7 @@ class OID(object):
             self.part = self.split(oid)
         else:
             self.part = oid
-        
+
     def parent(self):
         """
         Get the parent OID.
@@ -466,7 +461,7 @@ class OID(object):
         p = self.part[:-1]
         if p:
             return OID(p)
-        
+
     def ltrim(self, n):
         """
         Left trim I{n} parts.
@@ -476,7 +471,7 @@ class OID(object):
         @rtype: L{OID}
         """
         return OID(self.part[n:])
-    
+
     def rtrim(self, n):
         """
         Right trim I{n} parts.
@@ -486,7 +481,7 @@ class OID(object):
         @rtype: L{OID}
         """
         return OID(self.part[:-n])
-    
+
     def append(self, oid):
         """
         Append the specified OID fragment.
@@ -499,7 +494,7 @@ class OID(object):
             oid = OID(oid)
         part = self.part + oid.part
         return OID(part)
-        
+
     def match(self, oid):
         """
         Match the specified OID considering wildcards.
@@ -534,41 +529,41 @@ class OID(object):
         except:
             return False
         return True
-    
+
     def __len__(self):
         return len(self.part)
-    
+
     def __getitem__(self, index):
         return self.part[index]
-    
+
     def __repr__(self):
         return str(self)
-    
+
     def __hash__(self):
         return hash(str(self))
-    
+
     def __eq__(self, other):
         return ( str(self) == str(other) )
-    
+
     def __str__(self):
         return '.'.join(self.part)
-    
-    
+
+
 class RedhatCertificate(Certificate):
     """
     Represents a Red Hat certificate.
     @cvar REDHAT: The Red Hat base OID.
     @type REDHAT: str
     """
-    
+
     REDHAT = '1.3.6.1.4.1.2312.9'
-    
+
     def update(self, content):
         Certificate.update(self, content)
         redhat = OID(self.REDHAT)
         n = len(redhat)
         self.__redhat = self.extensions().ltrim(n)
-        
+
     def redhat(self):
         """
         Get the extension subtree for the B{redhat} namespace.
@@ -588,7 +583,7 @@ class RedhatCertificate(Certificate):
         if not cn:
             bogus.append('Common Name (%s) not-valid' % cn)
         return bogus
-    
+
 
 class ProductCertificate(RedhatCertificate):
     """
@@ -612,7 +607,7 @@ class ProductCertificate(RedhatCertificate):
             hash = oid[1]
             ext = rhns.branch(root)
             return Product(hash, ext)
-    
+
     def getProducts(self):
         """
         Get a list products defined in the certificate.
@@ -628,7 +623,7 @@ class ProductCertificate(RedhatCertificate):
             ext = rhns.branch(root)
             lst.append(Product(hash, ext))
         return lst
-    
+
     def bogus(self):
         bogus = RedhatCertificate.bogus(self)
         if self.getProduct() is None:
@@ -648,7 +643,7 @@ class ProductCertificate(RedhatCertificate):
         for p in self.getProducts():
             s.append(str(p))
         return '\n'.join(s)
-    
+
 
 class EntitlementCertificate(ProductCertificate):
     """
@@ -746,25 +741,25 @@ class Order:
 
     def getQuantity(self):
         return self.ext.get('5')
-    
+
     def getStart(self):
         return self.ext.get('6')
-    
+
     def getEnd(self):
         return self.ext.get('7')
-    
+
     def getSubtype(self):
         return self.ext.get('8')
 
     def getVirtLimit(self):
         return self.ext.get('9')
-    
+
     def getSocketLimit(self):
         return self.ext.get('10')
-    
+
     def getOptionCode(self):
         return self.ext.get('11')
-    
+
     def getContract(self):
         return self.ext.get('12')
 
@@ -792,25 +787,25 @@ class Product:
     def __init__(self, hash, ext):
         self.hash = hash
         self.ext = ext
-        
+
     def getHash(self):
         return self.hash
-        
+
     def getName(self):
         return self.ext.get('1')
-    
+
     def getVariant(self):
         return self.ext.get('2')
-    
+
     def getArch(self):
         return self.ext.get('3')
-    
+
     def getVersion(self):
         return self.ext.get('4')
-    
+
     def __eq__(self, rhs):
         return ( self.getHash() == rhs.getHash() )
-    
+
     def __str__(self):
         s = []
         s.append('Product {')
@@ -833,34 +828,34 @@ class Entitlement:
 
 
 class Content(Entitlement):
-        
+
     def getName(self):
         return self.ext.get('1')
-    
+
     def getLabel(self):
         return self.ext.get('2')
-    
+
     def getQuantity(self):
         return self.ext.get('3')
-    
+
     def getFlexQuantity(self):
         return self.ext.get('4')
-    
+
     def getVendor(self):
         return self.ext.get('5')
-    
+
     def getUrl(self):
         return self.ext.get('6')
-    
+
     def getGpg(self):
         return self.ext.get('7')
-    
+
     def getEnabled(self):
         return self.ext.get('8')
 
     def __eq__(self, rhs):
         return ( self.getLabel() == rhs.getLabel() )
-    
+
     def __str__(self):
         s = []
         s.append('Entitlement (content) {')
