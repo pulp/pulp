@@ -15,6 +15,7 @@
 
 import datetime
 
+from pulp.common import dateutils
 from pulp.server.db.model.base import Model
 
 
@@ -25,7 +26,7 @@ class CDS(Model):
 
     collection_name = 'cds'
     unique_indicies = ('hostname',)
-    
+
     @classmethod
     def uuid(cls, cds):
         return 'cds-%s' % cds['hostname']
@@ -61,7 +62,8 @@ class CDSHistoryEvent(Model):
         self.originator = originator
         self.type_name = type_name
         self.details = details
-        self.timestamp = datetime.datetime.now().strftime('%s')
+        now = datetime.datetime.now(dateutils.local_tz())
+        self.timestamp = dateutils.format_iso8601_datetime(now)
 
 
 class CDSHistoryEventType(object):

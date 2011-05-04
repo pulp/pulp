@@ -15,6 +15,7 @@
 
 import datetime
 
+from pulp.common import dateutils
 from pulp.server.db.model.base import Model
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
@@ -61,7 +62,8 @@ class ConsumerHistoryEvent(Model):
         self.originator = originator
         self.type_name = type_name
         self.details = details
-        self.timestamp = datetime.datetime.now().strftime("%s")
+        now = datetime.datetime.now(dateutils.local_tz())
+        self.timestamp = dateutils.format_iso8601_datetime(now)
 
 # distribution model ----------------------------------------------------------
 

@@ -15,6 +15,7 @@
 
 import datetime
 
+from pulp.common import dateutils
 from pulp.server.db.model.base import Model
 
 
@@ -28,7 +29,7 @@ class Event(Model):
 
     def __init__(self, principal, action, api=None, method=None, params=[]):
         super(Event, self).__init__()
-        self.timestamp = datetime.datetime.now()
+        self.timestamp = datetime.datetime.now(dateutils.local_tz())
         self.principal_type = unicode(str(type(principal)))
         self.principal = unicode(principal)
         self.action = action
