@@ -16,11 +16,12 @@
 
 import itertools
 import logging
-from datetime import datetime
+#from datetime import datetime
 from gettext import gettext as _
 
 import web
 
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.consumer_history import ConsumerHistoryApi, SORT_DESCENDING
@@ -231,7 +232,7 @@ class ConsumerDeferredFields(JSONController):
 
     def certificate(self, id):
         """
-        Get a X509 Certificate for this Consumer.  Useful for uniquely and securely 
+        Get a X509 Certificate for this Consumer.  Useful for uniquely and securely
         identifying this Consumer later.
         @type id: str ID of the Consumer
         @param id: consumer id
@@ -249,7 +250,7 @@ class ConsumerDeferredFields(JSONController):
         inherited from consumergroup.
         @type id: str ID of the Consumer
         @param id: consumer id
-        @return: Key-value attributes  
+        @return: Key-value attributes
         """
         keyvalues = consumer_api.get_keyvalues(id)
         return self.ok(keyvalues)
@@ -338,7 +339,7 @@ class ConsumerActions(AsyncController):
         Add key-value information to consumer.
         @type id: str
         @param id: consumer id
-        
+
         """
         data = self.params()
         consumer = consumer_api.consumer(id)
@@ -353,7 +354,7 @@ class ConsumerActions(AsyncController):
         Delete key-value information from consumer.
         @type id: str
         @param id: consumer id
-        
+
         """
         data = self.params()
         consumer = consumer_api.consumer(id)
@@ -368,7 +369,7 @@ class ConsumerActions(AsyncController):
         Update key-value information of a consumer.
         @type id: str
         @param id: consumer id
-        
+
         """
         data = self.params()
         consumer = consumer_api.consumer(id)
@@ -400,7 +401,8 @@ class ConsumerActions(AsyncController):
         task = consumer_api.installpackages(id, names)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Install packages already scheduled'))
@@ -420,7 +422,8 @@ class ConsumerActions(AsyncController):
         task = consumer_api.installpackagegroups(id, ids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package group installation already scheduled'))
@@ -451,7 +454,8 @@ class ConsumerActions(AsyncController):
         task = consumer_api.installpackagegroups(id, group_ids)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Package group installation already scheduled'))
@@ -475,7 +479,8 @@ class ConsumerActions(AsyncController):
             return self.not_found('Errata %s you requested is not applicable for your system' % id)
         scheduled_time = data.get('scheduled_time', None)
         if scheduled_time is not None:
-            scheduled_time = datetime.fromtimestamp(float(scheduled_time))
+            scheduled_time = dateutils.parse_iso8601_datetime(scheduled_time)
+            scheduled_time = dateutils.to_utc_datetime(scheduled_time)
             task.scheduler = AtScheduler(scheduled_time)
         if async.enqueue(task) is None:
             return self.conflict(_('Errata installation already scheduled'))
@@ -517,10 +522,14 @@ class ConsumerActions(AsyncController):
         # step isn't taken (see BZ 638715).
 
         if start_date:
-            start_date = datetime.strptime(start_date + '-00-00-00', '%Y-%m-%d-%H-%M-%S')
+            start_date = dateutils.to_local_datetime(start_date)
+            start_date = dateutils.format_iso8601_datetime(start_date)
+            #start_date = datetime.strptime(start_date + '-00-00-00', '%Y-%m-%d-%H-%M-%S')
 
         if end_date:
-            end_date = datetime.strptime(end_date + '-23-59-59', '%Y-%m-%d-%H-%M-%S')
+            start_date = dateutils.to_local_datetime(start_date)
+            end_date = dateutils.format_iso8601_datetime(end_date)
+            #end_date = datetime.strptime(end_date + '-23-59-59', '%Y-%m-%d-%H-%M-%S')
 
         results = history_api.query(consumer_id=id, event_type=event_type, limit=limit,
                                     sort=sort, start_date=start_date, end_date=end_date)

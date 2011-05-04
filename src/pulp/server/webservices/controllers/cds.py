@@ -15,13 +15,13 @@
 # in this software or its documentation.
 
 # Python
-import datetime
 import logging
 
 # 3rd Party
 import web
 
 # Pulp
+from pulp.common import dateutils
 from pulp.server.api import scheduled_sync
 from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
@@ -160,7 +160,7 @@ class CdsActions(AsyncController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
-        
+
     def history(self, id):
         data = self.params()
 
@@ -177,10 +177,12 @@ class CdsActions(AsyncController):
             limit = int(limit)
 
         if start_date:
-            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+            start_date = dateutils.to_local_datetime(start_date)
+            start_date = dateutils.format_iso8601_datetime(start_date)
 
         if end_date:
-            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+            end_date = dateutils.to_local_datetime(end_date)
+            end_date = dateutils.format_iso8601_datetime(end_date)
 
         results = cds_history_api.query(cds_hostname=id, event_type=event_type, limit=limit,
                                         sort=sort, start_date=start_date, end_date=end_date)
