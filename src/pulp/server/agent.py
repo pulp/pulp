@@ -109,6 +109,7 @@ class HeartbeatListener(Consumer):
     def __update(self, body):
         self.__lock()
         try:
+            log.debug(body)
             uuid = body.pop('uuid')
             next = body.pop('next')
             last = dt.utcnow()
