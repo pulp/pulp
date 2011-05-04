@@ -1589,7 +1589,7 @@ class RepoApi(BaseApi):
             return task
         if repo['source'] is not None:
             source_type = repo['source']['type']
-            if source_type in ('yum', 'rhn'):
+            if source_type in ('yum'):
                     task.set_progress('progress_callback',
                                   repo_sync.yum_rhn_progress_callback)
             elif source_type in ('local'):

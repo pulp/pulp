@@ -298,7 +298,7 @@ class Repo(Model):
 class RepoSource(Model):
 
     def __init__(self, url):
-        self.supported_types = ['yum', 'local', 'rhn']
+        self.supported_types = ['yum', 'local']
         self.type = None
         self.url = None
         self.parse_feed(url)

@@ -27,7 +27,6 @@ from urlparse import urlparse
 import yum
 from grinder.GrinderCallback import ProgressReport
 from grinder.RepoFetch import YumRepoGrinder
-from grinder.RHNSync import RHNSync
 
 import pulp.server.comps_util
 import pulp.server.util
@@ -898,50 +897,9 @@ class LocalSynchronizer(BaseSynchronizer):
             raise
         return dst_repo_dir
 
-
-class RHNSynchronizer(BaseSynchronizer):
-
-    def sync(self, repo, repo_source, skip_dict={}, progress_callback=None,
-            max_speed=None, threads=None):
-        # Parse the repo source for necessary pieces
-        # Expected format:   <server>/<channel>
-        pieces = repo_source['url'].split('/')
-        if len(pieces) < 2:
-            raise PulpException('Feed format for RHN type must be <server>/<channel>. Feed: %s',
-                                repo_source['url'])
-
-        host = 'http://' + pieces[0]
-        channel = pieces[1]
-
-        log.info('Synchronizing from RHN. Host [%s], Channel [%s]' % (host, channel))
-
-        # Create and configure the grinder hook to RHN
-        s = RHNSync()
-        s.setURL(host)
-        s.setParallel(config.config.getint('rhn', 'threads'))
-        s.setFetchAllPackages(config.config.getboolean('rhn', 'fetch_all_packages'))
-        s.setRemoveOldPackages(config.config.getboolean('rhn', 'remove_old_packages'))
-        s.certFile = config.config.get('rhn', 'cert_file')
-        s.systemidFile = config.config.get('rhn', 'systemid_file')
-
-        # Perform the sync
-        dest_dir = '%s/%s/' % (constants.LOCAL_STORAGE, repo['id'])
-        if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-            s.syncPackages(channel, savePath=dest_dir, callback=progress_callback)
-            s.createRepo(dest_dir)
-        if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
-            updateinfo_path = os.path.join(dest_dir, "updateinfo.xml")
-            if os.path.isfile(updateinfo_path):
-                log.info("updateinfo_path is found, calling updateRepo")
-                s.updateRepo(updateinfo_path, os.path.join(dest_dir, "repodata"))
-
-        return dest_dir
-
-
 # synchronization type map ----------------------------------------------------
 
 type_classes = {
     'yum': YumSynchronizer,
     'local': LocalSynchronizer,
-    'rhn': RHNSynchronizer,
 }
