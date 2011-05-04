@@ -134,7 +134,7 @@ class TaskQueue(object):
             if self.__storage.num_waiting() == 0:
                 break
             task = self.__storage.dequeue_waiting()
-            if task.scheduled_time > now:
+            if task.scheduled_time is not None and task.scheduled_time > now:
                 self.__storage.enqueue_waiting(task)
                 break
             ready_tasks.append(task)
