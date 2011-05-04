@@ -26,6 +26,7 @@ from datetime import timedelta
 from gofer import proxy
 from gofer.messaging import Topic
 from gofer.messaging.consumer import Consumer
+from pulp.common import dateutils
 from pulp.server.config import config
 from logging import getLogger
 
@@ -68,7 +69,7 @@ class HeartbeatListener(Consumer):
         """
         cls.__lock()
         try:
-            now = dt.utcnow()
+            now = dt.now(dateutils.utc_tz())
             if not uuids:
                 uuids = cls.__status.keys()
             d = {}
@@ -111,7 +112,7 @@ class HeartbeatListener(Consumer):
         try:
             uuid = body.pop('uuid')
             next = body.pop('next')
-            last = dt.utcnow()
+            last = dt.now(dateutils.utc_tz())
             next = int(next*1.20)
             next = last+timedelta(seconds=next)
             self.__status[uuid] = (last, next, body)
