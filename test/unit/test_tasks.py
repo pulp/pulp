@@ -278,14 +278,14 @@ class TaskQueueTester(QueueTester):
         self.assertRaises(NonUniqueTaskException, self.queue.enqueue, task2, True)
 
     def test_enqueue_duplicate_with_same_scheduler(self):
-        at = AtScheduler(datetime.now() + timedelta(minutes=10))
+        at = AtScheduler(datetime.now(dateutils.local_tz()) + timedelta(minutes=10))
         task1 = Task(noop, scheduler=at)
         task2 = Task(noop, scheduler=at)
         self.queue.enqueue(task1, True)
         self.assertRaises(NonUniqueTaskException, self.queue.enqueue, task2, True)
 
     def test_enqueue_duplicate_with_different_schedulers(self):
-        at = AtScheduler(datetime.now() + timedelta(minutes=10))
+        at = AtScheduler(datetime.now(dateutils.local_tz()) + timedelta(minutes=10))
         task1 = Task(noop, scheduler=at)
         task2 = Task(noop, scheduler=ImmediateScheduler())
         self.queue.enqueue(task1, True)
@@ -300,7 +300,7 @@ class TaskQueueTester(QueueTester):
 
     def test_task_dispatch_with_scheduled_time(self):
         delay_seconds = timedelta(seconds=10)
-        schduler = AtScheduler(datetime.now() + delay_seconds)
+        schduler = AtScheduler(datetime.now(dateutils.local_tz()) + delay_seconds)
         task = Task(noop, scheduler=schduler)
         self.queue.enqueue(task)
         start_time = datetime.now()
