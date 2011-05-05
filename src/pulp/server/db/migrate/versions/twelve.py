@@ -14,8 +14,12 @@
 # in this software or its documentation.
 
 import logging
+from datetime import datetime
 
 from pulp.common import dateutils
+from pulp.server.db.model.audit import Event
+from pulp.server.db.model.cds import CDSHistoryEvent
+from pulp.server.db.model.resource import ConsumerHistoryEvent
 
 
 _log = logging.getLogger('pulp')
@@ -23,6 +27,37 @@ _log = logging.getLogger('pulp')
 version = 12
 
 
+def _from_utc_timestamp_to_iso8601(timestamp):
+    try:
+        raw = datetime.utcfromtimestamp(float(timestamp))
+        utc = raw.replace(tzinfo=dateutils.utc_tz())
+        return dateutils.format_iso8601_datetime(utc)
+    except:
+        # screw it, they're just timestamps after all...
+        return None
+
+
+def _migrate_timestamps(collection):
+    for item in collection:
+        item['timestamp'] = _from_utc_timestamp_to_iso8601(item['timestamp'])
+        collection.save(item, safe=True)
+
+
+def _migrate_auditing_events():
+    _migrate_timestamps(Event.get_collection())
+
+
+def _migrate_cds_history_events():
+    _migrate_timestamps(CDSHistoryEvent.get_collection())
+
+
+def _migrate_consumer_history_events():
+    _migrate_timestamps(ConsumerHistoryEvent.get_collection())
+
+
 def migrate():
     _log.info('migration to data model version %d started' % version)
+    _migrate_auditing_events()
+    _migrate_cds_history_events()
+    _migrate_consumer_history_events()
     _log.info('migration to data model version %d complete' % version)
