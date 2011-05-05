@@ -41,7 +41,6 @@ import pymongo.json_util
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server.api.consumer import ConsumerApi
-from pulp.server.api.consumer_group import ConsumerGroupApi
 from pulp.server.api.package import PackageApi, PackageHasReferences
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.keystore import KeyStore
@@ -74,7 +73,6 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.clean()
         self.papi.clean()
         self.capi.clean()
-        self.cgapi.clean()
         self.eapi.clean()
 
         if os.path.exists(CERTS_DIR):
@@ -100,7 +98,6 @@ class TestRepoApi(unittest.TestCase):
         self.rapi = RepoApi()
         self.papi = PackageApi()
         self.capi = ConsumerApi()
-        self.cgapi = ConsumerGroupApi()
         self.eapi = ErrataApi()
 
         self.repo_cert_utils = RepoCertUtils(self.config)
@@ -430,17 +427,6 @@ class TestRepoApi(unittest.TestCase):
         assert(found['id'] == 'some-id-default-path')
         assert(found['relative_path'] == "mypath")
 
-    def test_consumer_group(self):
-        print "Consumer group tests:"
-        cg = self.cgapi.create('some-id', 'some description')
-
-        found = self.cgapi.consumergroup('some-id')
-        assert(found is not None)
-        print found['description']
-        assert(found['id'] == 'some-id')
-
-        found = self.cgapi.consumergroup('some-id-that-doesnt-exist')
-        assert(found is None)
 
     def test_repo_packages(self):
         repo = self.rapi.create('some-id', 'some name', \

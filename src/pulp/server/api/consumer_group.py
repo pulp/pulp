@@ -213,7 +213,7 @@ class ConsumerGroupApi(BaseApi):
 
 
     @audit()
-    def add_key_value_pair(self, id, key, value, force):
+    def add_key_value_pair(self, id, key, value, force='false'):
         """
         Add key-value info to a consumer group.
         @param id: A consumer group id.
