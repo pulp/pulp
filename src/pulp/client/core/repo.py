@@ -806,7 +806,7 @@ class CancelSync(RepoAction):
 
 class Metadata(RepoAction):
     
-    description =  _('Schedule a Metadata generation for a repository')
+    description =  _('schedule metadata generation for a repository')
     
     def setup_parser(self):
         super(Metadata, self).setup_parser()
@@ -880,7 +880,7 @@ class Publish(RepoAction):
 
 
 class AddPackages(RepoAction):
-    description = _('Add package to a repository.')
+    description = _('add package to a repository')
 
     def setup_parser(self):
         super(AddPackages, self).setup_parser()
@@ -978,8 +978,10 @@ class AddPackages(RepoAction):
             print _("Errors occurred see /var/log/pulp/pulp.log for more info")
             print _("Note: any packages not listed in error output have been added")
         print _("%s packages added to repo [%s]") % (len(pids) - len(errors), id)
+
+
 class RemovePackages(RepoAction):
-    description = _('Remove package from the repository.')
+    description = _('remove package from the repository')
 
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
@@ -1034,7 +1036,7 @@ class RemovePackages(RepoAction):
 
 
 class AddErrata(RepoAction):
-    description = _('Add errata to a repository')
+    description = _('add errata to a repository')
 
     def setup_parser(self):
         super(AddErrata, self).setup_parser()
@@ -1109,7 +1111,7 @@ class AddErrata(RepoAction):
 
 
 class RemoveErrata(RepoAction):
-    description = _('Remove errata from the repository')
+    description = _('remove errata from the repository')
 
     def setup_parser(self):
         super(RemoveErrata, self).setup_parser()
@@ -1169,7 +1171,7 @@ class RemoveErrata(RepoAction):
 
 
 class AddFiles(RepoAction):
-    description = _('Add file to a repository.')
+    description = _('add file to a repository')
 
     def setup_parser(self):
         super(AddFiles, self).setup_parser()
@@ -1235,7 +1237,7 @@ class AddFiles(RepoAction):
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
 
 class RemoveFiles(RepoAction):
-    description = _('Remove file from a repository.')
+    description = _('remove file from a repository')
 
     def setup_parser(self):
         super(RemoveFiles, self).setup_parser()
@@ -1328,7 +1330,7 @@ class RemoveFilters(RepoAction):
 
 class Discovery(RepoProgressAction):
 
-    description = _('Discover and Create repositories')
+    description = _('discover and create repositories')
 
     def setup_parser(self):
         self.parser.add_option("-u", "--url", dest="url",

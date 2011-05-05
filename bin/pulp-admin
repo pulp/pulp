@@ -111,7 +111,7 @@ def setup_admin(admin):
     repo_cmd.add_action('sync', repo.Sync())
     repo_cmd.add_action('cancel_sync', repo.CancelSync())
     #repo_cmd.add_action('schedules', repo.Schedules())
-    repo_cmd.add_action('listkeys', repo.ListKeys())
+    repo_cmd.add_action('list_keys', repo.ListKeys())
     repo_cmd.add_action('publish', repo.Publish())
     repo_cmd.add_action('add_package', repo.AddPackages())
     repo_cmd.add_action('remove_package', repo.RemovePackages())
