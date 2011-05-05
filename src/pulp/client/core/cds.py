@@ -17,10 +17,11 @@
 from gettext import gettext as _
 
 # Pulp
-from pulp.client import constants, json_utils
+from pulp.client import constants
 from pulp.client.api.cds import CDSAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header
+from pulp.common import dateutils
 
 
 
@@ -35,7 +36,7 @@ def _print_cds(cds):
     if cds['last_sync'] is None:
         formatted_date = _('Never')
     else:
-        formatted_date = json_utils.parse_date(cds['last_sync'])
+        formatted_date = dateutils.parse_iso8601_datetime(cds['last_sync'])
 
     stat = cds['heartbeat']
     if stat[0]:
@@ -43,12 +44,12 @@ def _print_cds(cds):
     else:
         responding = _('No')
     if stat[1]:
-        last_heartbeat = json_utils.parse_iso_date(stat[1])
+        last_heartbeat = dateutils.parse_iso8601_datetime(stat[1])
     else:
         last_heartbeat = stat[1]
     print(constants.CDS_INFO % \
         (cds['hostname'],
-         cds['name'], 
+         cds['name'],
          cds['description'],
          repo_list,
          formatted_date,
@@ -119,7 +120,7 @@ class List(CDSAction):
 
         for cds in all_cds:
             _print_cds(cds)
-            
+
 class Info(CDSAction):
 
     description = _('lists all CDS instances associated with the pulp server')
@@ -169,7 +170,7 @@ class History(CDSAction):
 
             # Common event details
             print constants.CDS_HISTORY_ENTRY % \
-                  (event_type, json_utils.parse_date(entry['timestamp']), entry['originator'])
+                  (event_type, dateutils.parse_iso8601_datetime(entry['timestamp']), entry['originator'])
 
             # Based on the type of event, add on the event specific details. Otherwise,
             # just throw an empty line to account for the blank line that's added
@@ -273,12 +274,12 @@ class Status(CDSAction):
         counter = 0
         while counter < upper_limit:
             if sync_list[counter]['start_time'] is not None:
-                start_time = json_utils.parse_date(sync_list[counter]['start_time'])
+                start_time = dateutils.parse_iso8601_datetime(sync_list[counter]['start_time'])
             else:
                 start_time = _('Not Started')
 
             if sync_list[counter]['finish_time'] is not None:
-                finish_time = json_utils.parse_date(sync_list[counter]['finish_time'])
+                finish_time = dateutils.parse_iso8601_datetime(sync_list[counter]['finish_time'])
             else:
                 finish_time = _('In Progress')
 

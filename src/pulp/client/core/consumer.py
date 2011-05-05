@@ -20,7 +20,6 @@ import urlparse
 from gettext import gettext as _
 
 from pulp.client import constants
-from pulp.client import json_utils
 from pulp.client import utils
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.api.service import ServiceAPI
@@ -31,6 +30,7 @@ from pulp.client.credentials import Consumer as ConsumerBundle
 from pulp.client.package_profile import PackageProfile
 import pulp.client.repolib as repolib
 from pulp.client.repo_file import RepoFile
+from pulp.common import dateutils
 
 
 
@@ -49,7 +49,7 @@ class ConsumerAction(Action):
     def setup_parser(self):
         help = _("consumer identifier eg: foo.example.com (required)")
         consumerid = self.getconsumerid()
-        
+
         # Do not accept consumerid when running pulp-client consumer commands on existing consumer
         if consumerid is not None and self.is_consumer_client:
             self.consumerid = consumerid
@@ -89,7 +89,7 @@ class List(ConsumerAction):
                 else:
                     responding = _('No')
                 if stat[1]:
-                    last_heartbeat = json_utils.parse_iso_date(stat[1])
+                    last_heartbeat = dateutils.parse_iso8601_datetime(stat[1])
                 else:
                     last_heartbeat = stat[1]
                 print constants.AVAILABLE_CONSUMER_INFO % \
@@ -140,7 +140,7 @@ class Info(ConsumerAction):
         else:
             responding = _('No')
         if stat[1]:
-            last_heartbeat = json_utils.parse_iso_date(stat[1])
+            last_heartbeat = dateutils.parse_iso8601_datetime(stat[1])
         else:
             last_heartbeat = stat[1]
         print_header(_("Consumer Information"))
@@ -199,7 +199,7 @@ class Delete(ConsumerAction):
         if self.consumerid:
             repo_file = RepoFile(_cfg.client.repo_file)
             repo_file.delete()
-            
+
             bundle = ConsumerBundle()
             bundle.delete()
         print _("Successfully deleted consumer [%s]") % consumerid
@@ -383,7 +383,7 @@ class History(ConsumerAction):
             event_type = constants.CONSUMER_HISTORY_EVENT_TYPES.get(type_name, type_name)
             # Common event details
             print constants.CONSUMER_HISTORY_ENTRY % \
-                  (event_type, json_utils.parse_date(entry['timestamp']), entry['originator'])
+                  (event_type, dateutils.parse_iso8601_datetime(entry['timestamp']), entry['originator'])
             # Based on the type of event, add on the event specific details. Otherwise,
             # just throw an empty line to account for the blank line that's added
             # by the details rendering.

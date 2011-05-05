@@ -19,7 +19,6 @@ Contains locking classes.
 
 import os
 import re
-import time
 import fcntl
 from threading import RLock
 
@@ -56,7 +55,7 @@ class LockFile:
         @type blocking: bool
         @return: self
         @rtype: L{LockFile}
-        """ 
+        """
         fp = open(self.path, 'w')
         if not blocking:
             try:
@@ -81,7 +80,7 @@ class LockFile:
             self.__fp.close()
         except:
             pass
-    
+
     def getpid(self):
         """
         Get the process id.
@@ -104,7 +103,7 @@ class LockFile:
         self.__fp.seek(0)
         self.__fp.write(str(pid))
         self.__fp.flush()
-        
+
     def __mkdir(self, path):
         dir = os.path.dirname(path)
         if not os.path.exists(dir):
@@ -173,7 +172,7 @@ class Lock:
             return self.__depth
         finally:
             self.__unlock()
-            
+
     def __pop(self):
         """
         Decrement the lock depth.
@@ -187,10 +186,10 @@ class Lock:
             return self.__depth
         finally:
             self.__unlock()
-            
+
     def __lock(self, blocking=1):
         if not self.__mutex.acquire(blocking):
             raise LockFailed()
-        
+
     def __unlock(self):
         self.__mutex.release()

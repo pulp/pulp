@@ -17,8 +17,9 @@ import os
 import string
 import sys
 import time
-from gettext import gettext as _
 import urlparse
+from gettext import gettext as _
+
 from pulp.client import constants
 from pulp.client import utils
 from pulp.client.api.consumer import ConsumerAPI
@@ -29,10 +30,11 @@ from pulp.client.api.file import FileAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
-from pulp.client.json_utils import parse_date
 from pulp.client.logutil import getLogger
+from pulp.common.dateutils import parse_iso8601_datetime
 
 log = getLogger(__name__)
+
 # repo command errors ---------------------------------------------------------
 
 class FileError(Exception):
@@ -147,7 +149,7 @@ class RepoProgressAction(RepoAction):
             width, height = self.terminal_size()
         except:
             # Unable to query terminal for size
-            # so default to 0 and skip this 
+            # so default to 0 and skip this
             # functionality
             return 0
         for line in data.split('\n'):
@@ -174,7 +176,7 @@ class RepoProgressAction(RepoAction):
         sys.stdout.write(current)
         # In order for this to work in various situations
         # We are requiring a new line to be entered at the end of
-        # the current string being printed.  
+        # the current string being printed.
         if current.rstrip(' ')[-1] != '\n':
             sys.stdout.write("\n")
         sys.stdout.flush()
@@ -315,12 +317,12 @@ class Status(RepoAction):
         if last_sync is None:
             last_sync = 'never'
         else:
-            last_sync = str(parse_date(last_sync))
+            last_sync = str(parse_iso8601_datetime(last_sync))
         print _('Last Sync: %s') % last_sync
         if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
             if syncs and syncs[0]['state'] in ('error'):
                 print _("Last Error: %s\n%s") % \
-                        (str(parse_date(syncs[0]['finish_time'])),
+                        (str(parse_iso8601_datetime(syncs[0]['finish_time'])),
                                 syncs[0]['traceback'][-1])
             return
         print _('Currently syncing:'),
@@ -446,7 +448,7 @@ class Create(RepoAction):
         if self.opts.notes:
             notes = eval(self.opts.notes)
         else:
-            notes = {}            
+            notes = {}
 
         # Feed cert bundle
         feed_cert_data = None
@@ -686,7 +688,7 @@ class Update(RepoAction):
             delta['consumer_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif consumer_cert_bundle:
             delta['consumer_cert_data'] = consumer_cert_bundle
-            
+
         self.repository_api.update(id, delta)
         print _("Successfully updated repository [ %s ]") % id
 
@@ -802,17 +804,17 @@ class CancelSync(RepoAction):
         taskid = task['id']
         self.repository_api.cancel_sync(str(id), str(taskid))
         print _("Sync for repository %s canceled") % id
-        
+
 
 class Metadata(RepoAction):
-    
+
     description =  _('Schedule a Metadata generation for a repository')
-    
+
     def setup_parser(self):
         super(Metadata, self).setup_parser()
         self.parser.add_option("--status", action="store_true", dest="status",
                 help=_("Check metadata status for a repository (optional)."))
-    
+
     def run(self):
         id = self.get_required_option('id')
         repo = self.get_repo(id)
@@ -820,10 +822,10 @@ class Metadata(RepoAction):
             task = self.repository_api.metadata_status(id)[0]
             start_time = None
             if task['start_time']:
-                start_time = str(parse_date(task['start_time']))
+                start_time = str(parse_iso8601_datetime(task['start_time']))
             finish_time = None
             if task['finish_time']:
-                finish_time = str(parse_date(task['finish_time']))
+                finish_time = str(parse_iso8601_datetime(task['finish_time']))
             status = constants.METADATA_STATUS % (task['id'], task['state'], start_time, finish_time)
             system_exit(os.EX_OK, _(status))
         else:
@@ -1251,7 +1253,7 @@ class RemoveFiles(RepoAction):
         self.get_repo(id)
         if self.opts.filename and self.opts.csv:
             system_exit(os.EX_USAGE, _("Error: Both --filename and --csv cannot be used in the same command."))
-        
+
         fids = {}
         if self.opts.csv:
             if not os.path.exists(self.opts.csv):

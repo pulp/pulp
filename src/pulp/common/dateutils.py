@@ -182,7 +182,7 @@ def format_iso8601_datetime(dt):
     @rtype: str
     @return: iso8601 representation of the passed in datetime instance
     """
-    return isodate.strftime(dt, isodate.DT_BAS_COMPLETE)
+    return isodate.strftime(dt, isodate.DT_EXT_COMPLETE)
 
 
 def format_iso8601_interval(interval, start_time=None, recurrences=None):
