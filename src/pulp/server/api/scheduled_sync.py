@@ -13,6 +13,7 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import datetime
 from gettext import gettext as _
 from types import NoneType
 
@@ -25,8 +26,8 @@ except ImportError:
 from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
-from pulp.server.db.model.cds import CDS
-from pulp.server.db.model.resource import Repo
+from pulp.server.db.model.cds import CDS, CDSSyncSchedule
+from pulp.server.db.model.resource import Repo, RepoSyncSchedule
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
@@ -50,66 +51,14 @@ def task_scheduled_time_to_dict(task):
 
 # schedule validation ---------------------------------------------------------
 
-_explaination = _('''
-Pulp repo schedules are maps or objects made up of the following three fields:
-interval - map representing the time interval to perform the syncs on
-start_time (optional) - map representing the date and time of the first sync
-runs (optional) - integer representing the number of runs to perform, when omitted, schedule runs ad infinitum
-
-interval allows the following fields, not all are required, but at least one must be present
-weeks, days, hours, minutes
-
-start_time requires the following fields:
-year, month, day, hour, minute
-''')
-
-class InvalidScheduleError(PulpException):
-    """
-    Error raised on improperly formated schedules.
-    Supplies an extensive explanation.
-    """
-    # XXX python 2.4 super() call is failing...
-    pass
-    #def __init__(self, msg, *args):
-    #    msg += _explaination
-    #    super(InvalidScheduleError, self).__init__(msg, *args)
+def _parse_repo_schedule(schedule_str):
+    i, s, r = dateutils.parse_iso8601_interval(schedule_str)
+    return RepoSyncSchedule(i, s, r)
 
 
-def _validate_schedule(schedule):
-    """
-    Validate a passed in interval schedule.
-    The schedule consists of a dictionary with and interval value, also a
-    dictionary, and optional start_time and run fields. The start_time field
-    is also a dictionary and runs is an integer. There's no return value, but
-    an exception is raised if the schedule fails validation.
-    @type schedule: dict
-    @param schedule: dictionary representing an interval schedule
-    @raise InvalidScheduleError: if the schedule fails validation
-    """
-    if not isinstance(schedule, (dict, BSON, SON)):
-        raise InvalidScheduleError(_('Schedule must be an object'))
-    interval = schedule.get('interval', None)
-    if not interval:
-        raise InvalidScheduleError(_('No interval present in schedule'))
-    interval_keys = ('weeks', 'days', 'hours', 'minutes')
-    for key, value in interval.items():
-        if key not in interval_keys:
-            raise InvalidScheduleError(_('Unknown interval field: %s') % key)
-        if not isinstance(value, int):
-            raise InvalidScheduleError(_('Value for %s must be an integer') % key)
-    start_time = schedule.get('start_time', None)
-    if start_time is not None:
-        start_time_keys = ('year', 'month', 'day', 'hour', 'minute')
-        for key in start_time_keys:
-            if key not in start_time:
-                raise InvalidScheduleError(_('Field %s is required for start_time') % key)
-            if not isinstance(start_time[key], int):
-                raise InvalidScheduleError(_('Value for %s must be an integer') % key)
-        if len(start_time) != len(start_time_keys):
-            raise InvalidScheduleError(_('Only fields: year, month, day, hour, and minute allowed'))
-    runs = schedule.get('runs', None)
-    if not isinstance(runs, (NoneType, int)):
-        raise InvalidScheduleError(_('Value for runs must be an integer'))
+def _parse_cds_schedule(schedule_str):
+    i, s, r = dateutils.parse_iso8601_interval(schedule_str)
+    return CDSSyncSchedule(i, s, r)
 
 # sync task management ---------------------------------------------------
 
@@ -123,7 +72,21 @@ def schedule_to_scheduler(schedule):
     @rtype: L{IntervalScheduler}
     @return: interval scheduler for the tasking sub-system
     """
-    interval, start_time, runs = dateutils.parse_iso8601_interval(schedule['interval'])
+    interval = schedule['interval']
+    interval = datetime.timedelta(weeks=interval.get('weeks', 0),
+                                  days=interval.get('days', 0),
+                                  hours=interval.get('hours', 0),
+                                  minutes=interval.get('minutes', 0))
+    start_time = schedule.get('start_time', None)
+    if start_time is not None:
+        now = datetime.datetime.now(dateutils.local_tz())
+        year = max(now.year, start_time.get('year', 0))
+        month = max(now.month, start_time.get('month', 0))
+        day = max(now.day, start_time.get('day', 0))
+        hour = start_time.get('hour', now.hour)
+        minute = start_time.get('minute', now.minute)
+        start_time = datetime.datetime(year, month, day, hour, minute, tzinfo=dateutils.local_tz())
+    runs = schedule.get('runs', None)
     return IntervalScheduler(interval, start_time, runs)
 
 
@@ -219,8 +182,7 @@ def update_repo_schedule(repo, new_schedule):
     @type new_schedule: dict
     @param new_schedule: dictionary representing new schedule
     """
-    _validate_schedule(new_schedule)
-    repo['sync_schedule'] = new_schedule
+    repo['sync_schedule'] = _parse_repo_schedule(new_schedule)
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
@@ -246,8 +208,7 @@ def update_cds_schedule(cds, new_schedule):
     '''
     Change a CDS sync schedule.
     '''
-    _validate_schedule(new_schedule)
-    cds['sync_schedule'] = new_schedule
+    cds['sync_schedule'] = _parse_cds_schedule(new_schedule)
     collection = CDS.get_collection()
     collection.save(cds, safe=True)
     task = find_scheduled_task(cds['hostname'], 'cds_sync')
