@@ -50,7 +50,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
     def tearDown(self):
         self.clean()
-        
+
     def test_clone(self):
 
         repo = self.rapi.create('some-id', 'some name', 'i386',
@@ -59,8 +59,11 @@ class TestRepoSyncSchedule(unittest.TestCase):
         try:
             self.rapi._sync(repo['id'])
         except Exception:
-            self.assertTrue(False)
-        
+            # No need for this, an exception with register as a failure and
+            # be more informative than the failed assertion
+            #self.assertTrue(False)
+            raise
+
         # Try repo cloning default case: feed = parent
         try:
             self.rapi._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')
@@ -99,8 +102,8 @@ class TestRepoSyncSchedule(unittest.TestCase):
         packages = found['packages']
         assert(packages is not None)
         assert(len(packages) > 0)
-        
-        
+
+
     def test_clone_non_existent_repo(self):
         # Negative case where parent repo does not exist
         try:
@@ -108,7 +111,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
-            
+
     def test_clone_repo_with_same_id(self):
         # negative case where repo with clone_id exists
         repo_path = os.path.join(self.data_path, "repo_resync_a")
@@ -116,10 +119,10 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.assertTrue(repo is not None)
         repo1 = self.rapi.create('some-id-1', 'some name', 'x86_64', 'local:file://%s' % (repo_path))
         self.assertTrue(repo1 is not None)
-        
+
         try:
             self.rapi._clone('some-id', 'some-id-1', 'clone-some-id-parent')
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
-            
+
