@@ -57,13 +57,6 @@ _default_values = {
         'use_entitlement_certs': 'false',
         'default_to_published': 'true',
     },
-    'rhn': {
-        'threads': '5',
-        'fetch_all_packages': 'false',
-        'remove_old_packages': 'false',
-        'cert_file': '/etc/sysconfig/rhn/entitlement-cert.xml',
-        'systemid_file': '/etc/sysconfig/rhn/systemid',
-    },
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',

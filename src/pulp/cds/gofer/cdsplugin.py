@@ -82,6 +82,8 @@ def heartbeat():
             next=interval,
             cds={})
         p.send(topic, ttl=interval, heartbeat=body)
+    else:
+        log.debug('Not registered')
 
 @remote(secret=getsecret)
 def initialize():
