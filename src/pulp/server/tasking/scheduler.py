@@ -22,6 +22,7 @@ import logging
 import types
 from gettext import gettext as _
 
+from pulp.common import dateutils
 from pulp.server.util import Singleton
 
 
@@ -66,7 +67,7 @@ class ImmediateScheduler(Scheduler):
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if previous_run is None:
-            return (None, datetime.datetime.now())
+            return (None, datetime.datetime.now(dateutils.local_tz()))
         return (None, None)
 
 
@@ -82,7 +83,7 @@ class AtScheduler(Scheduler):
         @raise ValueError: if scheduled_time is in the past
         """
         assert isinstance(scheduled_time, datetime.datetime)
-        if scheduled_time < datetime.datetime.now():
+        if scheduled_time < datetime.datetime.now(dateutils.local_tz()):
             raise ValueError('AtScheduler: scheduled time in the past: %s' %
                              str(scheduled_time))
         self.scheduled_time = scheduled_time
@@ -117,7 +118,7 @@ class IntervalScheduler(Scheduler):
         assert isinstance(start_time, (types.NoneType, datetime.datetime))
         assert isinstance(runs, (types.NoneType, int))
         if start_time is not None and \
-                start_time < datetime.datetime.now() - interval:
+                start_time < datetime.datetime.now(dateutils.local_tz()) - interval:
             log = logging.getLogger('pulp')
             log.warn(_('IntervalScheduler created with start time more than one interval in the past: %s, %s') %
                      (str(start_time), str(interval)))
@@ -151,7 +152,7 @@ class IntervalScheduler(Scheduler):
         # and count the number of intervals that had to be added to make it in
         # the future for catching and reporting tasks that take longer than
         # their scheduled intervals
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(dateutils.local_tz())
         reference_time = reference_time or now
         intervals = 0
         while reference_time < now:

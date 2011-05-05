@@ -34,6 +34,7 @@ import testutil
 
 testutil.load_test_config()
 
+from pulp.common import dateutils
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.repo_sync import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
@@ -506,7 +507,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_at(self):
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         then = timedelta(seconds=10)
         at = AtScheduler(now + then)
         task = Task(noop, scheduler=at)
@@ -516,7 +517,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_at_time(self):
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         then = timedelta(seconds=10)
         at = AtScheduler(now + then)
         task = Task(noop, scheduler=at)
@@ -527,7 +528,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_interval(self):
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         then = timedelta(seconds=10)
         interval = IntervalScheduler(then, now + then, 1)
         task = Task(noop, scheduler=interval)
@@ -537,7 +538,7 @@ class ScheduledTaskTester(QueueTester):
         self.assertTrue(task.state is task_finished, 'state is %s' % task.state)
 
     def test_interval_schedule(self):
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         then = timedelta(seconds=10)
         interval = IntervalScheduler(then, now + then, 1)
         task = Task(noop, scheduler=interval)
@@ -550,12 +551,12 @@ class ScheduledTaskTester(QueueTester):
         interval = IntervalScheduler(then, None, 1)
         task = Task(noop, scheduler=interval)
         self.queue.enqueue(task)
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         self.assertTrue(task.scheduled_time <= now + then)
         self._wait_for_task(task)
 
     def test_multi_run_interval(self):
-        now = datetime.now()
+        now = datetime.now(dateutils.local_tz())
         then = timedelta(seconds=5)
         interval = IntervalScheduler(then, now + then, 2)
         task = Task(noop, scheduler=interval)

@@ -23,6 +23,7 @@ import traceback
 import uuid
 from gettext import gettext as _
 
+from pulp.common import dateutils
 from pulp.server.db import model
 from pulp.server.tasking.exception import TimeoutException, CancelException, \
     UnscheduledTaskException
@@ -104,7 +105,7 @@ class Task(object):
     """
     Task class
     Callable wrapper that schedules the call to take place at some later time
-    than the immediate future. Provides framework for progress, result, and 
+    than the immediate future. Provides framework for progress, result, and
     error reporting as well as time limits on the call runtime in the form of a
     timeout and the ability to cancel the call.
     """
@@ -329,7 +330,7 @@ class Task(object):
         if self.state is not task_waiting:
             self.reset()
         self.state = task_running
-        self.start_time = datetime.datetime.now()
+        self.start_time = datetime.datetime.now(dateutils.local_tz())
         self._check_threshold()
         try:
             result = self.callable(*self.args, **self.kwargs)
@@ -368,7 +369,7 @@ class Task(object):
         self.consecutive_failures = 0
         self.result = result
         self.state = task_finished
-        self.finish_time = datetime.datetime.now()
+        self.finish_time = datetime.datetime.now(dateutils.local_tz())
         self._complete()
 
     def failed(self, exception, tb=None):
@@ -386,7 +387,7 @@ class Task(object):
                                                         self.method_name,
                                                         ''.join(self.traceback)))
         self.state = task_error
-        self.finish_time = datetime.datetime.now()
+        self.finish_time = datetime.datetime.now(dateutils.local_tz())
         self._complete()
 
     def _complete(self):
@@ -413,7 +414,7 @@ class Task(object):
         if hasattr(self.thread, 'cancel'):
             self.thread.cancel()
         self.state = task_canceled
-        self.finish_time = datetime.datetime.now()
+        self.finish_time = datetime.datetime.now(dateutils.local_tz())
         self._complete()
 
 # asynchronous task -----------------------------------------------------------
