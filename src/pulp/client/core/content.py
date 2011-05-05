@@ -46,7 +46,7 @@ class ContentAction(Action):
 
 class Upload(ContentAction):
 
-    description = _('upload content to pulp server;')
+    description = _('upload content to the Pulp server')
 
     def setup_parser(self):
         self.parser.add_option("--dir", dest="dir",
@@ -176,7 +176,7 @@ class Upload(ContentAction):
 
 class List(ContentAction):
 
-    description = _('list content(packages/files) on pulp server;')
+    description = _('list content(packages/files) on the Pulp server')
 
     def setup_parser(self):
         self.parser.add_option("--orphaned", action="store_true", dest="orphaned",
@@ -212,7 +212,7 @@ class List(ContentAction):
                 
 class Delete(ContentAction):
     
-    description = _("Delete content from the pulp server")
+    description = _("delete content from the Pulp server")
 
     def setup_parser(self):
         self.parser.add_option("-f", "--filename", action="append", dest="files",
