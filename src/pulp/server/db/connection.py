@@ -80,12 +80,10 @@ def _retry_decorator(method):
                 return method(self, *args, **kwargs)
             except AutoReconnect:
                 tries += 1
-                # don't sleep on the last retry, just raise the error
+                _log.warn(_('%s operation failed: tries remaining: %d') %
+                          (method.__name__, self.retries - tries + 1))
                 if tries <= self.retries:
-                    # XXX do I actually need to re-establish the connection?
-                    #initialize()
-                    #self._Connection__database = _database
-                    time.sleep(1)
+                    time.sleep(0.3)
         raise PulpCollectionFailure(
             _('%s operation failed: database connection still down after %d tries') %
             (method.__name__, (self.retries + 1)))
