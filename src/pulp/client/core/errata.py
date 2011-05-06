@@ -67,7 +67,7 @@ class List(ErrataAction):
         self.parser.add_option("--consumerid",
                                dest="consumerid",
                                default=default,
-                               help=_('This option is required if a consumer doesn\'t exist locally.'))
+                               help=_('this option is required if a consumer doesn\'t exist locally'))
         self.parser.add_option("--repoid", dest="repoid",
                                help=_("repository id"))
         self.parser.add_option("--type", dest="type", action="append", default=[],
@@ -134,7 +134,7 @@ class Install(ErrataAction):
 
     def setup_parser(self):
         self.parser.add_option("-e", "--erratum", action="append", dest="id",
-                               help=_("ID of the erratum to be installed; to specify multiple erratum use multiple uses of this flag"))
+                               help=_("id of the erratum to be installed; to specify multiple erratum use multiple uses of this flag"))
         id_group = OptionGroup(self.parser, _('Consumer or Consumer Group id (one is required)'))
         id_group.add_option("--consumerid", dest="consumerid",
                             help=_("consumer id"))
@@ -142,7 +142,7 @@ class Install(ErrataAction):
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; assume that install performs all the suggested actions such as reboot on successful install."))
+                            help=_("assume yes; assume that install performs all the suggested actions such as reboot on successful install"))
 
     def run(self):
         errataids = self.opts.id

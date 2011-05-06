@@ -52,11 +52,11 @@ class Upload(ContentAction):
         self.parser.add_option("--dir", dest="dir",
                                help=_("process content from this directory"))
         self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
-                               help=_("Optional repoid, to associate the uploaded content"))
+                               help=_("repoid to associate the uploaded content"))
         self.parser.add_option("--nosig", action="store_true", dest="nosig",
                                help=_("pushes unsigned content(rpms)"))
         self.parser.add_option("--chunksize", dest="chunk", default=10485760, type=int,
-                               help=_("chunk size to use for uploads. Default:10485760"))
+                               help=_("chunk size to use for uploads; Default:10485760"))
         self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
 
     def run(self):
