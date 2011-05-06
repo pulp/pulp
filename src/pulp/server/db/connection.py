@@ -116,6 +116,6 @@ def get_collection(name):
     """
     global _database
     if _database is None:
-        raise PulpCollectionFailure(_('Cannot get collection from uninitialized database')
+        raise PulpCollectionFailure(_('Cannot get collection from uninitialized database'))
     retries = config.config.getint('database', 'operation_retries')
     return PulpCollection(_database, name, create=True, retries=retries)
