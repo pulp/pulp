@@ -24,12 +24,11 @@ from pulp.server.auth.admin import ensure_admin
 from pulp.server.auth.authorization import ensure_builtin_roles
 from pulp.server.db import connection
 
-# We need to initialize the db connection and auditing prior to any other 
+# We need to initialize the db connection and auditing prior to any other
 # imports, since some of the imports will invoke setup methods
 from pulp.server.webservices.controllers.consumers import repo_api
 
 connection.initialize()
-auditing.initialize()
 
 from pulp.server.api import consumer_history
 from pulp.server.api import scheduled_sync

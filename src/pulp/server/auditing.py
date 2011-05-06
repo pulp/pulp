@@ -36,7 +36,6 @@ from pulp.server import config
 from pulp.server.auth.principal import get_principal
 from pulp.server.api.base import BaseApi
 from pulp.server.compat import wraps
-from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Event
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import Task
@@ -44,18 +43,10 @@ from pulp.server.tasking.task import Task
 
 # globals ---------------------------------------------------------------------
 
-# auditing events database
-_objdb = None
-
 # setup log - do not change this to __name__
 _log = logging.getLogger('auditing')
 
 # auditing helper api and classes ---------------------------------------------
-
-def initialize():
-    global _objdb
-    _objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
-
 
 def audit_repr(value):
     """
@@ -164,7 +155,7 @@ def audit(params=None, record_result=False):
     events on pulp's model instances.
     Any call to a decorated method will both record the event in the database
     and log it to a special log file.
-    
+
     @type params: list or tuple of str's or None
     @param params: list of names of parameters to record the values of,
                    None records all parameters
@@ -180,7 +171,7 @@ def audit(params=None, record_result=False):
 
             # convenience function for recording events
             def _record_event():
-                _objdb.insert(event, safe=False, check_keys=False)
+                Event.get_collection().insert(event, safe=False, check_keys=False)
                 _log.info('[%s] %s called %s.%s on %s' %
                           (event.timestamp,
                            unicode(principal),
@@ -236,7 +227,7 @@ def events(spec=None, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -247,7 +238,7 @@ def events(spec=None, fields=None, limit=None, errors_only=False):
     if errors_only:
         spec = spec or {}
         spec['exception'] = {'$ne': None}
-    events_ = _objdb.find(spec=spec, fields=fields)
+    events_ = Event.get_collection().find(spec=spec, fields=fields)
     if limit is not None:
         events_.limit(limit)
     events_.sort('timestamp', pymongo.DESCENDING)
@@ -264,7 +255,7 @@ def events_on_api(api, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -283,7 +274,7 @@ def events_by_principal(principal, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -303,7 +294,7 @@ def events_in_datetime_range(lower_bound=None, upper_bound=None,
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -334,7 +325,7 @@ def events_since_delta(delta, fields=None, limit=None, errors_only=False):
     @type limit: int or None
     @param limit: limit the number of results, None means no limit
     @type errors_only: bool
-    @param errors_only: if True, only return events that match the spec and have 
+    @param errors_only: if True, only return events that match the spec and have
                         an exception associated with them, otherwise return all
                         events that match spec
     @rtype: list of L{Event} instances
@@ -360,8 +351,8 @@ def cull_events(delta):
     if delta is not None:
         now = datetime.datetime.now()
         spec = {'timestamp': {'$lt': now - delta}}
-    count = _objdb.find(spec).count()
-    _objdb.remove(spec, safe=False)
+    count = Event.get_collection().find(spec).count()
+    Event.get_collection().remove(spec, safe=False)
     return count
 
 # recurring culling of audited events -----------------------------------------
