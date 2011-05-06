@@ -96,6 +96,8 @@ class Bundle:
         @return: hex digest
         @rtype: str
         """
+        if not self.valid():
+            return None
         sha = hashlib.sha256()
         for s in self.read():
             sha.update(s)

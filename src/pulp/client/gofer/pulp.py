@@ -50,6 +50,15 @@ def pulpserver():
     pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
     set_active_server(pulp)
 
+def getsecret():
+    """
+    Get the shared secret used for auth of RMI requests.
+    @return: The sha256 for the certificate & key
+    @rtype: str
+    """
+    bundle = ConsumerBundle()
+    return bundle.digest()
+
 def ybcleanup(yb):
     try:
         # close rpm db
@@ -128,7 +137,7 @@ class ProfileUpdateAction:
     Package Profile Update Action to update installed package info for a
     registered consumer
     """
-    @remote
+    @remote(secret=getsecret)
     @action(minutes=cfg.server.interval)
     def perform(self):
         """
@@ -155,7 +164,7 @@ class Consumer:
     Pulp Consumer.
     """
     
-    @remote
+    @remote(secret=getsecret)
     def deleted(self, digest):
         """
         Notification that the consumer has been deleted.
@@ -181,7 +190,7 @@ class Repo:
     Pulp (pulp.repo) yum repository object.
     """
 
-    @remote
+    @remote(secret=getsecret)
     def bind(self, repo_id, bind_data):
         """
         Binds the repo described in bind_data to this consumer.
@@ -195,7 +204,7 @@ class Repo:
         repolib.bind(repo_file, mirror_list_file, gpg_keys_dir, repo_id,
                      bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
 
-    @remote
+    @remote(secret=getsecret)
     def unbind(self, repo_id):
         """
         Unbinds the given repo from this consumer.
@@ -208,7 +217,7 @@ class Repo:
 
         repolib.unbind(repo_file, mirror_list_file, gpg_keys_dir, repo_id)
 
-    @remote
+    @remote(secret=getsecret)
     def update(self, repo_id, bind_data):
         '''
         Updates a repo that was previously bound to the consumer. Only the changed
@@ -228,7 +237,7 @@ class Packages:
     Package management object.
     """
 
-    @remote
+    @remote(secret=getsecret)
     def install(self, packageinfo, reboot_suggested=False, assumeyes=False):
         """
         Install packages by name.
@@ -284,7 +293,7 @@ class PackageGroups:
     PackageGroup management object
     """
 
-    @remote
+    @remote(secret=getsecret)
     def install(self, packagegroupids):
         """
         Install packagegroups by id.
@@ -307,7 +316,7 @@ class PackageGroups:
 
 class Shell:
 
-    @remote
+    @remote(secret=getsecret)
     def run(self, cmd):
         """
         Run a shell command.

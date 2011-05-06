@@ -317,7 +317,12 @@ class ConsumerGroupApi(BaseApi):
             raise PulpException("No Consumer Group with id: %s found" % id)
         items = []
         for consumerid in consumergroup['consumerids']:
+            consumer = self.consumerApi.consumer(consumerid)
+            if consumer is None:
+                log.error('consumer [%s], not-found', consumerid)
+                continue
             install_data = {"consumerid" : consumerid,
+                            "secret" : self._getsecret(consumer),
                             "packages"   : packagenames,
                             "reboot_suggested" : False,
                             "assumeyes"  : False}
@@ -342,6 +347,9 @@ class ConsumerGroupApi(BaseApi):
         items = []
         for consumerid in consumerids:
             consumer = self.consumerApi.consumer(consumerid)
+            if consumer is None:
+                log.error('consumer [%s], not-found', consumerid)
+                continue
             pkgs = []
             reboot_suggested = False
             if errataids:
@@ -363,6 +371,7 @@ class ConsumerGroupApi(BaseApi):
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
             log.error("Foe consumer id %s Packages to install %s" % (consumerid, pkgs))
             install_data = {"consumerid" : consumerid,
+                            "secret" : self._getsecret(consumer),
                             "packages"   : pkgs,
                             "reboot_suggested" : reboot_suggested,
                             "assumeyes"  : assumeyes}
@@ -374,7 +383,7 @@ class ConsumerGroupApi(BaseApi):
 class InstallPackages(AgentTask):
     """
     Install packages task
-    @ivar items: The list of tuples (consumerid, [package,..]).
+    @ivar items: The list of tuples (consumerid, secret, [package,..]).
     @type items: list]
     @ivar serials: A dict of RMI serial # to consumer ids.
     @type serials: dict.
@@ -403,7 +412,7 @@ class InstallPackages(AgentTask):
         Perform the RMI to the agent to install packages.
         """
         for item in self.items:
-            agent = AsyncAgent(item['consumerid'])
+            agent = AsyncAgent(item['consumerid'], item['secret'])
             packages = agent.Packages(self)
             sn = packages.install(item['packages'], item['reboot_suggested'], item['assumeyes'])
             self.serials[sn] = item['consumerid']

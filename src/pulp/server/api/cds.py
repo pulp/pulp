@@ -24,7 +24,6 @@ import pulp.server.cds.round_robin as round_robin
 import pulp.server.consumer_utils as consumer_utils
 from pulp.server import config
 from pulp.server.api.base import BaseApi
-from pulp.server.agent import Agent
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.scheduled_sync import update_cds_schedule, delete_cds_schedule
 from pulp.server.auditing import audit
@@ -439,7 +438,7 @@ class CdsApi(BaseApi):
             bind_data['gpg_keys'] = None
 
             # Retrieve the repo proxy for the consumer being handled
-            agent = Agent(consumer['id'], async=True)
+            agent = self._getagent(consumer, async=True)
             agent_repolib = agent.Repo()
 
             # Send the update message to the consumer

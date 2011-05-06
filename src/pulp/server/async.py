@@ -115,15 +115,20 @@ def finalize():
 class AsyncAgent:
     """
     Represents the I{remote} agent.
-    @ivar __id: The agent (consumer) id.  Or, list of IDs.
-    @type __id: (str|[str,..])
+    @ivar __id: The agent (consumer) id.
+    @type __id: str
+    @ivar __secret: The shared secret.
+    @type __secret: str
     """
-    def __init__(self, id):
+    def __init__(self, id, secret):
         """
-        @param id: The agent ID.  Or, list of IDs.
-        @type id: (str|[str,..])
+        @param id: The agent ID.
+        @type id: str
+        @param secret: The shared secret.
+        @type secret: str
         """
         self.__id = id
+        self.__secret = secret
 
     def __getattr__(self, name):
         """
@@ -135,7 +140,7 @@ class AsyncAgent:
         if name.startswith('__'):
             return self.__dict__[name]
         else:
-            return RemoteClass(self.__id, name)
+            return RemoteClass(self.__id, self.__secret, name)
 
 
 class RemoteClass:
@@ -143,19 +148,24 @@ class RemoteClass:
     Represents a I{remote} class.
     @ivar __id: The agent (consumer) id.
     @type __id: str
+    @ivar __secret: The shared secret.
+    @type __secret: str
     @ivar __name: The remote class name.
     @type __name: str
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
     """
-    def __init__(self, id, name):
+    def __init__(self, id, secret, name):
         """
         @param id: The agent (consumer) id.
         @type id: str
+        @param secret: The shared secret.
+        @type secret: str
         @param name: The remote class name.
         @type name: str
         """
         self.__id = id
+        self.__secret = secret
         self.__name = name
         self.__taskid = 0
 
@@ -180,7 +190,12 @@ class RemoteClass:
         """
         if name.startswith('__'):
             return self.__dict__[name]
-        return RemoteMethod(self.__id, self.__name, name, self.taskid)
+        return RemoteMethod(
+            self.__id,
+            self.__secret,
+            self.__name,
+            name,
+            self.taskid)
 
 
 class RemoteMethod:
@@ -190,6 +205,8 @@ class RemoteMethod:
     @type CTAG: str
     @ivar id: The consumer id.
     @type id: str
+    @ivar secret: The shared secret.
+    @type secret: str
     @ivar im_class: The remote class.
     @type im_class: classobj
     @ivar name: The method name.
@@ -202,10 +219,12 @@ class RemoteMethod:
 
     CTAG = 'asynctaskreplyqueue'
 
-    def __init__(self, id, classname, name, taskid):
+    def __init__(self, id, secret, classname, name, taskid):
         """
         @param id: The consumer (agent) id.
         @type id: str
+        @param secret: The shared secret.
+        @type secret: str
         @param classname: The remote object class name.
         @type classname: str
         @param name: The remote method name.
@@ -214,6 +233,7 @@ class RemoteMethod:
         @type taskid: str
         """
         self.id = id
+        self.secret = secret
         self.classname = classname
         self.name = name
         self.taskid = taskid
@@ -232,6 +252,7 @@ class RemoteMethod:
         agent = Agent(
             self.id,
             url=url,
+            secret=self.secret,
             any=self.taskid,
             ctag=self.CTAG)
         classobj = getattr(agent, self.classname)

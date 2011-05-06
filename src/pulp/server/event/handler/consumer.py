@@ -17,7 +17,7 @@
 """
 Contains product event handler classes.
 """
-from pulp.server.agent import Agent
+
 from pulp.server.event.dispatcher import *
 from pulp.server.api.consumer import ConsumerApi
 from logging import getLogger
@@ -89,9 +89,9 @@ class ConsumerEvent(EventHandler):
         else:
             description = event['description']
         log.error("Consumer event data %s" % consumerid)
-        self.capi.create(consumerid, description)
+        consumer = self.capi.create(consumerid, description)
         #invoke agent here to get consumer package profile
-        agent = Agent(consumerid, async=True)
+        agent = self.capi._getagent(consumer, async=True)
         update = agent.ProfileUpdateAction()
         update.perform()
 
