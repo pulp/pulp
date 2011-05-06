@@ -71,12 +71,15 @@ def _retry_decorator(method):
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
     """
+    # 'self' is not passed into the method below as the super call in the
+    # constructor has already bound self to the method
+    self = method.im_self
     @wraps(method)
-    def retry(self, *args, **kwargs):
+    def retry(*args, **kwargs):
         tries = 0
         while tries <= self.retries:
             try:
-                return method(self, *args, **kwargs)
+                return method(*args, **kwargs)
             except AutoReconnect:
                 tries += 1
                 _log.warn(_('%s operation failed on %s: tries remaining: %d') %
@@ -117,4 +120,4 @@ def get_collection(name):
     if _database is None:
         raise PulpCollectionFailure(_('Cannot get collection from uninitialized database'))
     retries = config.config.getint('database', 'operation_retries')
-    return PulpCollection(_database, name, create=True, retries=retries)
+    return PulpCollection(_database, name, retries=retries)
