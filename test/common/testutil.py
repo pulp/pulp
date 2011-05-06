@@ -33,7 +33,6 @@ constants.LOCAL_STORAGE = "/tmp/pulp/"
 
 def initialize():
     connection.initialize()
-    auditing.initialize()
     async.initialize()
 
 def load_test_config():
