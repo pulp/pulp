@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2010 Red Hat, Inc.
+# Copyright © 2010-2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public License,
 # version 2 (GPLv2). There is NO WARRANTY for this software, express or
@@ -80,13 +79,13 @@ def _retry_decorator(method):
                 return method(self, *args, **kwargs)
             except AutoReconnect:
                 tries += 1
-                _log.warn(_('%s operation failed: tries remaining: %d') %
-                          (method.__name__, self.retries - tries + 1))
+                _log.warn(_('%s operation failed on %s: tries remaining: %d') %
+                          (method.__name__, self.full_name, self.retries - tries + 1))
                 if tries <= self.retries:
                     time.sleep(0.3)
         raise PulpCollectionFailure(
-            _('%s operation failed: database connection still down after %d tries') %
-            (method.__name__, (self.retries + 1)))
+            _('%s operation failed on %s: database connection still down after %d tries') %
+            (method.__name__, self.full_name, (self.retries + 1)))
     return retry
 
 
