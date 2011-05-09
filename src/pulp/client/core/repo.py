@@ -807,9 +807,9 @@ class CancelSync(RepoAction):
 
 
 class Metadata(RepoAction):
-
-    description =  _('Schedule a Metadata generation for a repository')
-
+    
+    description =  _('schedule metadata generation for a repository')
+    
     def setup_parser(self):
         super(Metadata, self).setup_parser()
         self.parser.add_option("--status", action="store_true", dest="status",
@@ -882,20 +882,20 @@ class Publish(RepoAction):
 
 
 class AddPackages(RepoAction):
-    description = _('Add package to a repository.')
+    description = _('add package to a repository')
 
     def setup_parser(self):
         super(AddPackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
-                help=_("Package filename to add to this repository"))
+                help=_("package filename to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("Source repository with specified packages to perform add (optional)"))
+            help=_("source repository with specified packages to perform add (optional)"))
         self.parser.add_option("--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
+                help=_("csv file to perform batch operations on; Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; automatically process dependencies as part of add operation."))
+                            help=_("assume yes; automatically process dependencies as part of add operation"))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
-                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
+                            help=_("recursively lookup the dependency list; defaults to one level of lookup"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -980,19 +980,21 @@ class AddPackages(RepoAction):
             print _("Errors occurred see /var/log/pulp/pulp.log for more info")
             print _("Note: any packages not listed in error output have been added")
         print _("%s packages added to repo [%s]") % (len(pids) - len(errors), id)
+
+
 class RemovePackages(RepoAction):
-    description = _('Remove package from the repository.')
+    description = _('remove package from the repository')
 
     def setup_parser(self):
         super(RemovePackages, self).setup_parser()
         self.parser.add_option("-p", "--package", action="append", dest="pkgname",
-                help=_("Package filename to remove from this repository"))
+                help=_("package filename to remove from this repository"))
         self.parser.add_option("--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
+                help=_("csv file to perform batch operations on; Format:filename,checksum"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; automatically process dependencies as part of remove operation."))
+                            help=_("assume yes; automatically process dependencies as part of remove operation"))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
-                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
+                            help=_("recursively lookup the dependency list; defaults to one level of lookup"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -1036,18 +1038,18 @@ class RemovePackages(RepoAction):
 
 
 class AddErrata(RepoAction):
-    description = _('Add errata to a repository')
+    description = _('add errata to a repository')
 
     def setup_parser(self):
         super(AddErrata, self).setup_parser()
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
-                help=_("Errata Id to add to this repository"))
+                help=_("errata id to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
             help=_("optional source repository with specified packages to perform selective add"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; automatically process dependencies as part of remove operation."))
+                            help=_("assume yes; automatically process dependencies as part of remove operation"))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
-                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
+                            help=_("recursively lookup the dependency list; defaults to one level of lookup"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -1075,8 +1077,6 @@ class AddErrata(RepoAction):
                          for pkg in erratum['pkglist']
                          for pinfo in pkg['packages']]
 
-        if not effected_pkgs:
-            system_exit(os.EX_DATAERR)
 
         pkgs = {}
         for pkg in effected_pkgs:
@@ -1111,16 +1111,16 @@ class AddErrata(RepoAction):
 
 
 class RemoveErrata(RepoAction):
-    description = _('Remove errata from the repository')
+    description = _('remove errata from the repository')
 
     def setup_parser(self):
         super(RemoveErrata, self).setup_parser()
         self.parser.add_option("-e", "--errata", action="append", dest="errataid",
-                help=_("Errata Id to delete from this repository"))
+                help=_("errata id to delete from this repository"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; automatically process dependencies as part of remove operation."))
+                            help=_("assume yes; automatically process dependencies as part of remove operation"))
         self.parser.add_option("-r", "--recursive", action="store_true", dest="recursive",
-                            help=_("Recursively lookup the dependency list; defaults to one level of lookup."))
+                            help=_("recursively lookup the dependency list; defaults to one level of lookup"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -1143,8 +1143,6 @@ class RemoveErrata(RepoAction):
             effected_pkgs += [str(pinfo['filename'])
                          for pkg in erratum['pkglist']
                          for pinfo in pkg['packages']]
-        if not effected_pkgs:
-            system_exit(os.EX_DATAERR)
         pobj = []
         pnames = []
         for pkg in effected_pkgs:
@@ -1171,16 +1169,16 @@ class RemoveErrata(RepoAction):
 
 
 class AddFiles(RepoAction):
-    description = _('Add file to a repository.')
+    description = _('add file to a repository')
 
     def setup_parser(self):
         super(AddFiles, self).setup_parser()
         self.parser.add_option("-f", "--filename", action="append", dest="filename",
                 help=_("file to add to this repository"))
         self.parser.add_option("--source", dest="srcrepo",
-            help=_("Source repository with specified files to perform add (optional)"))
+            help=_("source repository with specified files to perform add (optional)"))
         self.parser.add_option("--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
+                help=_("csv file to perform batch operations on; Format:filename,checksum"))
 
     def run(self):
         id = self.get_required_option('id')
@@ -1237,14 +1235,14 @@ class AddFiles(RepoAction):
             print _("Successfully added packages %s to repo [%s]." % (fname, id))
 
 class RemoveFiles(RepoAction):
-    description = _('Remove file from a repository.')
+    description = _('remove file from a repository')
 
     def setup_parser(self):
         super(RemoveFiles, self).setup_parser()
         self.parser.add_option("-f", "--filename", action="append", dest="filename",
                 help=_("file to remove from this repository"))
         self.parser.add_option("--csv", dest="csv",
-                help=_("A csv file to perform batch operations on. Format:filename,checksum"))
+                help=_("csv file to perform batch operations on; Format:filename,checksum"))
 
 
     def run(self):
@@ -1330,7 +1328,7 @@ class RemoveFilters(RepoAction):
 
 class Discovery(RepoProgressAction):
 
-    description = _('Discover and Create repositories')
+    description = _('discover and create repositories')
 
     def setup_parser(self):
         self.parser.add_option("-u", "--url", dest="url",
@@ -1338,7 +1336,7 @@ class Discovery(RepoProgressAction):
         self.parser.add_option("-g", "--groupid", action="append", dest="groupid",
                                help=_("groupids to associate the discovered repos (optional)"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
-                            help=_("Assume yes; automatically create candidate repos for discovered urls.(optional)"))
+                            help=_("assume yes; automatically create candidate repos for discovered urls (optional)"))
         self.parser.add_option("-t", "--type", dest="type",
                                help=_("content type to look for during discovery(required); supported types: ['yum',]"))
 

@@ -37,7 +37,6 @@ from pulp.server import config
 from pulp.server.auth.principal import get_principal
 from pulp.server.api.base import BaseApi
 from pulp.server.compat import wraps
-from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import Event
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import Task
@@ -45,18 +44,10 @@ from pulp.server.tasking.task import Task
 
 # globals ---------------------------------------------------------------------
 
-# auditing events database
-_objdb = None
-
 # setup log - do not change this to __name__
 _log = logging.getLogger('auditing')
 
 # auditing helper api and classes ---------------------------------------------
-
-def initialize():
-    global _objdb
-    _objdb = get_object_db('events', ['id'], ['timestamp', 'principal', 'api'])
-
 
 def audit_repr(value):
     """
@@ -181,7 +172,7 @@ def audit(params=None, record_result=False):
 
             # convenience function for recording events
             def _record_event():
-                _objdb.insert(event, safe=False, check_keys=False)
+                Event.get_collection().insert(event, safe=False, check_keys=False)
                 _log.info('[%s] %s called %s.%s on %s' %
                           (event.timestamp,
                            unicode(principal),
@@ -248,7 +239,7 @@ def events(spec=None, fields=None, limit=None, errors_only=False):
     if errors_only:
         spec = spec or {}
         spec['exception'] = {'$ne': None}
-    events_ = _objdb.find(spec=spec, fields=fields)
+    events_ = Event.get_collection().find(spec=spec, fields=fields)
     if limit is not None:
         events_.limit(limit)
     events_.sort('timestamp', pymongo.DESCENDING)
@@ -361,8 +352,8 @@ def cull_events(delta):
     if delta is not None:
         now = datetime.datetime.now(dateutils.local_tz())
         spec = {'timestamp': {'$lt': now - delta}}
-    count = _objdb.find(spec).count()
-    _objdb.remove(spec, safe=False)
+    count = Event.get_collection().find(spec).count()
+    Event.get_collection().remove(spec, safe=False)
     return count
 
 # recurring culling of audited events -----------------------------------------

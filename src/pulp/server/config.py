@@ -37,6 +37,7 @@ _default_values = {
         'auto_migrate': 'true',
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
+        'operation_retries': '2',
     },
     'logs': {
         'qpid_log_level': 'info',
@@ -119,7 +120,7 @@ def add_config_file(file_path):
     """
     Convenience function to add a new file to the list of configuration files,
     then re-load the global config and re-configure logging.
-    
+
     @type file_path: str
     @param file_path: full path to the new file to add
     """
@@ -134,7 +135,7 @@ def remove_config_file(file_path):
     """
     Convenience function to remove a file from the list of configuration files,
     then re-load the global config and re-configure logging.
-    
+
     @type file_path: str
     @param file_path: full path to the file to remove
     """

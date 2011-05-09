@@ -330,17 +330,17 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self._populate_for_queries()
 
         # Test
-        results1 = self.consumer_history_api.query(consumer_id=1)
-        results2 = self.consumer_history_api.query(consumer_id=2)
+        results1 = self.consumer_history_api.query(consumer_id='1')
+        results2 = self.consumer_history_api.query(consumer_id='2')
 
         # Verify
         self.assertEqual(len(results1), 3)
         for entry in results1:
-            self.assertEqual(entry['consumer_id'], 1)
+            self.assertEqual(entry['consumer_id'], '1')
 
         self.assertEqual(len(results2), 4)
         for entry in results2:
-            self.assertEqual(entry['consumer_id'], 2)
+            self.assertEqual(entry['consumer_id'], '2')
 
     def test_query_by_type(self):
         # Setup
@@ -364,7 +364,7 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self._populate_for_queries()
 
         # Test
-        results = self.consumer_history_api.query(consumer_id=1, event_type=consumer_history.TYPE_REPO_BOUND)
+        results = self.consumer_history_api.query(consumer_id='1', event_type=consumer_history.TYPE_REPO_BOUND)
 
         # Verify
         self.assertEqual(len(results), 2)
@@ -384,13 +384,13 @@ class TestConsumerHistoryApi(unittest.TestCase):
         self._populate_for_queries()
 
         # Test
-        results = self.consumer_history_api.query(consumer_id=2, limit=2)
+        results = self.consumer_history_api.query(consumer_id='2', limit=2)
 
         # Verify
         self.assertEqual(len(results), 2)
 
         for entry in results:
-            self.assertEqual(entry['consumer_id'], 2)
+            self.assertEqual(entry['consumer_id'], '2')
 
     def test_query_with_negative_limit(self):
         # Setup
@@ -498,15 +498,15 @@ class TestConsumerHistoryApi(unittest.TestCase):
         '''
 
         # Create consumers
-        self.consumer_api.create(1, 'Test consumer 1')
-        self.consumer_api.create(2, 'Test consumer 1')
+        self.consumer_api.create('1', 'Test consumer 1')
+        self.consumer_api.create('2', 'Test consumer 1')
 
         # Create history entries
-        self.consumer_history_api.repo_bound(1, 0000)
-        self.consumer_history_api.repo_bound(1, 1111)
-        self.consumer_history_api.repo_bound(2, 1111)
-        self.consumer_history_api.repo_bound(2, 2222)
-        self.consumer_history_api.repo_bound(2, 3333)
+        self.consumer_history_api.repo_bound('1', '0000')
+        self.consumer_history_api.repo_bound('1', '1111')
+        self.consumer_history_api.repo_bound('2', '1111')
+        self.consumer_history_api.repo_bound('2', '2222')
+        self.consumer_history_api.repo_bound('2', '3333')
 
     def _populate_for_date_queries(self):
         '''

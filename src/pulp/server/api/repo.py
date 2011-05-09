@@ -30,7 +30,6 @@ from urlparse import urlparse
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
 from pulp.common import dateutils
-from pulp.server.agent import Agent
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
@@ -148,6 +147,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        self.check_id(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)
@@ -1662,7 +1662,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = Agent(consumer['id'], async=True)
+            agent = self._getagent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
@@ -1690,7 +1690,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = Agent(consumer['id'], async=True)
+            agent = self._getagent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 

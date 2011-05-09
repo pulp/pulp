@@ -25,7 +25,6 @@ srcdir = os.path.abspath(os.path.dirname(__file__)) + "/../../src"
 sys.path.insert(0, srcdir)
 
 import pulp.server.api.consumer_history as history
-from pulp.server.db.connection import get_object_db
 from pulp.server.db.model import ConsumerHistoryEvent
 
 # -- events ----------------------------------------
@@ -55,7 +54,7 @@ EVENTS.append(event)
 # -- methods ----------------------------------------
 
 def db():
-    return get_object_db('consumer_history', [], [])
+    return ConsumerHistoryEvent.get_collection()
 
 def clean():
     db().remove(safe=True)
@@ -76,8 +75,8 @@ if __name__ == '__main__':
     if options.clean:
         print('Cleaning consumer history')
         clean()
-    
+
     if options.populate:
         print('Populating consumer history')
         populate()
-    
+

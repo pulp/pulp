@@ -76,7 +76,7 @@ class BaseDiscovery(object):
                 continue
             rex = re.compile('.')
             if rex.match(path) and path.endswith('/'):
-                urls.append(url + "/" + path)
+                urls.append(url + path)
         return urls
 
     def discovery(self):

@@ -13,9 +13,53 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import hashlib
+from pulp.server.agent import Agent
+
+
 # base api class --------------------------------------------------------------
+import re
+from pulp.server.pexceptions import PulpException
+
 
 class BaseApi(object):
+
+    # agent methods --------------------------------------------------------
+
+    def _getagent(self, consumer, **options):
+        """
+        Get the proxy for a consumer agent.
+        @param consumer: A consumer object.
+        @type consumer: dict
+        @param options: Options passed to Agent().
+        @type options: dict
+        @return: An agent proxy
+        @rtype: L{Agent}
+        """
+        uuid = consumer['id']
+        secret = self._getsecret(consumer)
+        opt = dict(secret=secret)
+        opt.update(options)
+        agent = Agent(uuid, **opt)
+        return agent
+
+    def _getsecret(self, consumer):
+        """
+        Get the shared secret associated to a consumer.
+        Used to authenticate RMI with the agent proxy.
+        @param consumer: A consumer object.
+        @type consumer: dict
+        @return: The consumer's shared secret.
+        @rtype: str
+        """
+        secret = None
+        credentials = consumer['credentials']
+        if credentials:
+            hash = hashlib.sha256()
+            for s in credentials:
+                hash.update(s)
+            secret = hash.hexdigest()
+        return secret
 
     # database methods --------------------------------------------------------
 
@@ -56,3 +100,12 @@ class BaseApi(object):
         Delete all the Objects in the database.  WARNING: Destructive
         """
         self.collection.remove(safe=True)
+        
+    def check_id(self, id):
+        """
+        Make sure id is compliant with restrictions defined by following regex
+        """
+        if re.search("[^\w\-.]", id):
+            raise PulpException("Given ID is invalid. ID may contain numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)")
+        
+    

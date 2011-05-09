@@ -19,7 +19,7 @@ from gettext import gettext as _
 from pymongo import DESCENDING
 from pymongo.collection import Collection
 
-from pulp.server.db.connection import get_database
+from pulp.server.db.connection import get_collection
 
 
 class Model(dict):
@@ -27,15 +27,15 @@ class Model(dict):
     Model base class
 
     Derived model classes are the representation of persistent data used by
-    pulp and are abstractions of the documents used by mongodb. These classes 
+    pulp and are abstractions of the documents used by mongodb. These classes
     are used to create new documents to be stored in a document collection.
 
-    The model base class is derived from the builtin dictionary, and should be 
-    used as such by code after instantiation. It provides a mechanism to use 
-    dot notation instead of the usual dictionary key lookup. However, this is 
-    provided for convenience when declaring fields in the constructors, and 
-    should not be used by code. Documents that are retrieved from a document  
-    collection are also derivatives of dictionaries, but are not derivatives 
+    The model base class is derived from the builtin dictionary, and should be
+    used as such by code after instantiation. It provides a mechanism to use
+    dot notation instead of the usual dictionary key lookup. However, this is
+    provided for convenience when declaring fields in the constructors, and
+    should not be used by code. Documents that are retrieved from a document
+    collection are also derivatives of dictionaries, but are not derivatives
     of the Model class. To ensure interchangability, make sure to use python's
     regular dictionary key lookup when using Model instances.
     """
@@ -87,16 +87,12 @@ class Model(dict):
                 if isinstance(index, basestring):
                     index = (index,)
                 # we're using descending ordering for the arbitrary case,
-                # if you need a particular ordering, override the 
+                # if you need a particular ordering, override the
                 # _get_collection_from_db method
                 collection.ensure_index([(i, DESCENDING) for i in index],
                                         unique=unique, background=True)
         # create the collection and ensure the unique and other indicies
-        db = get_database()
-        if db is None:
-            msg = _('Cannot get collection from uninitialized database')
-            raise RuntimeError(msg)
-        collection = Collection(db, cls.collection_name)
+        collection = get_collection(cls.collection_name)
         _ensure_indicies(collection, cls.unique_indicies, True)
         _ensure_indicies(collection, cls.other_indicies, False)
         return collection

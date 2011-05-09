@@ -21,7 +21,7 @@ import unittest
 import logging
 import yum
 import shutil
-import xml.dom
+import xml.dom.minidom
 import time
 import random
 from tempfile import gettempdir
@@ -112,7 +112,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue(repo["group_gz_xml_path"] == "")
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
-        
+
         self.rapi.add_packages_to_group(repo["id"], pkg_group["id"], ["pulp-test-package"])
         # Update repo object so we can test that group_xml_path was set
         repo = self.rapi.repository(repo["id"])
@@ -262,7 +262,7 @@ class TestComps(unittest.TestCase):
         found = self.rapi.packagegroupcategories(repo['id'])
         self.assertTrue(len(found) == len(comps.get_categories()))
 
-        # PackageGroup, look up expected values, 
+        # PackageGroup, look up expected values,
         # good values come from known data in rhel-5 comps.xml
         found = self.rapi.packagegroup(repo['id'], "BAD_VALUE_NOT_IN_GROUP")
         self.assertTrue(found is None)
@@ -330,7 +330,7 @@ class TestComps(unittest.TestCase):
         self.assertTrue("mod_auth_mysql" in foundGroup.optional_packages)
         self.assertTrue("crypto-utils" in foundGroup.default_packages)
         self.assertTrue("distcache" in foundGroup.default_packages)
-        # Clean up file if tests have passed, 
+        # Clean up file if tests have passed,
         # leave file for debugging if tests failed
         os.unlink(f_name)
 
@@ -421,7 +421,7 @@ class TestComps(unittest.TestCase):
         except PulpException, e:
             caught = True
         self.assertTrue(caught)
-        
+
         # Verify if we create a new package group, we can add/delete packages
         pkg_group = self.rapi.create_packagegroup(repo["id"], "test_group",
                 "test_group_name", "test description")
@@ -442,7 +442,7 @@ class TestComps(unittest.TestCase):
 
 
     def comps_resync_with_group_changes(self):
-        #TODO: until we fix group import this needs to be commented out    
+        #TODO: until we fix group import this needs to be commented out
 
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         repo = self.rapi.create('test_comps_resync_with_group_changes',
@@ -463,8 +463,8 @@ class TestComps(unittest.TestCase):
         self.assertTrue(len(found) == 2)
         self.assertTrue(self.rapi.packagegroupcategory(repo["id"], "desktops") is not None)
         self.assertTrue(self.rapi.packagegroupcategory(repo["id"], "apps") is not None)
-        # Simulate a change to comps.xml from repo source 
-        # Changes:  removed the haskell group 
+        # Simulate a change to comps.xml from repo source
+        # Changes:  removed the haskell group
         #           added a package to the dns-server group
         #           added a new category, 'development'
         repo_path = os.path.join(self.data_path, "repo_resync_b")

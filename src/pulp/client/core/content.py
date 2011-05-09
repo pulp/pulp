@@ -46,17 +46,17 @@ class ContentAction(Action):
 
 class Upload(ContentAction):
 
-    description = _('upload content to pulp server;')
+    description = _('upload content to the Pulp server')
 
     def setup_parser(self):
         self.parser.add_option("--dir", dest="dir",
                                help=_("process content from this directory"))
         self.parser.add_option("-r", "--repoid", action="append", dest="repoids",
-                               help=_("Optional repoid, to associate the uploaded content"))
+                               help=_("repoid to associate the uploaded content"))
         self.parser.add_option("--nosig", action="store_true", dest="nosig",
                                help=_("pushes unsigned content(rpms)"))
         self.parser.add_option("--chunksize", dest="chunk", default=10485760, type=int,
-                               help=_("chunk size to use for uploads. Default:10485760"))
+                               help=_("chunk size to use for uploads; Default:10485760"))
         self.parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help=_("verbose output."))
 
     def run(self):
@@ -176,7 +176,7 @@ class Upload(ContentAction):
 
 class List(ContentAction):
 
-    description = _('list content(packages/files) on pulp server;')
+    description = _('list content(packages/files) on the Pulp server')
 
     def setup_parser(self):
         self.parser.add_option("--orphaned", action="store_true", dest="orphaned",
@@ -212,7 +212,7 @@ class List(ContentAction):
                 
 class Delete(ContentAction):
     
-    description = _("Delete content from the pulp server")
+    description = _("delete content from the Pulp server")
 
     def setup_parser(self):
         self.parser.add_option("-f", "--filename", action="append", dest="files",

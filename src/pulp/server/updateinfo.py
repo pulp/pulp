@@ -114,13 +114,13 @@ def generate_updateinfo(repo):
     @type repo:  repository object
     """
     um = UpdateMetadata()
-    un = UpdateNotice()
     eapi = ErrataApi()
     if not repo['errata']:
         #no errata to process, return
         return
     errataids = list(chain.from_iterable(repo['errata'].values()))
     for eid in errataids:
+        un = UpdateNotice()
         e = eapi.erratum(eid)
 
         _md = {

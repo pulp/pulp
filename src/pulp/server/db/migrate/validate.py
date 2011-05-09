@@ -15,6 +15,7 @@
 
 from logging import getLogger
 
+from pulp.server.db.model.audit import Event
 from pulp.server.db.model.auth import User, Role, Permission
 from pulp.server.db.model.base import Model
 from pulp.server.db.model.cds import CDS, CDSHistoryEvent, CDSRepoRoundRobin
@@ -22,7 +23,6 @@ from pulp.server.db.model.resource import (Consumer, ConsumerGroup,
     ConsumerHistoryEvent, Errata, Package, Distribution, File, Repo)
 
 
-from pulp.server.auditing import _objdb as auditing_objectdb
 from pulp.server.db import model
 from pulp.server.db import version
 
@@ -70,7 +70,7 @@ def _validate_model(model_name, objectdb, reference, values={}):
     for model in objectdb.find():
         for field, value in reference.items():
             vtype = type(value)
-            # a default value of None really can't be automatically validated, 
+            # a default value of None really can't be automatically validated,
             # and should be validated in the individual validation method
             if field in model and (value is None or
                                    isinstance(model[field], vtype)):
@@ -160,7 +160,7 @@ def _validate_event():
     @rtype: int
     @return: number of errors found during validation
     """
-    objectdb = auditing_objectdb
+    objectdb = Event.get_collection()
     reference = model.Event(u'', u'')
     _base_id(reference)
     return _validate_model(model.Event.__name__, objectdb, reference)
