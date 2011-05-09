@@ -1075,8 +1075,6 @@ class AddErrata(RepoAction):
                          for pkg in erratum['pkglist']
                          for pinfo in pkg['packages']]
 
-        if not effected_pkgs:
-            system_exit(os.EX_DATAERR)
 
         pkgs = {}
         for pkg in effected_pkgs:
@@ -1143,8 +1141,6 @@ class RemoveErrata(RepoAction):
             effected_pkgs += [str(pinfo['filename'])
                          for pkg in erratum['pkglist']
                          for pinfo in pkg['packages']]
-        if not effected_pkgs:
-            system_exit(os.EX_DATAERR)
         pobj = []
         pnames = []
         for pkg in effected_pkgs:
