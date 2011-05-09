@@ -434,7 +434,6 @@ class ConsumerApi(BaseApi):
         log.debug("Packages to Install: %s" % data)
         secret = self._getsecret(consumer)
         task = InstallPackages(id, secret, data)
-        task.run() ## TODO: REMOVE THIS!!
         return task
 
     @audit()
