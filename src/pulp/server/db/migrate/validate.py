@@ -84,8 +84,8 @@ def _validate_model(model_name, objectdb, reference, values={}):
             if field not in model:
                 _log.error(error_prefix + ' field %s is not present' % field)
             elif not isinstance(model[field], vtype):
-                error_msg = error_prefix + ' field %s is not a %s'
-                _log.error(error_msg % (field, vtype))
+                error_msg = error_prefix + ' field %s is %s not %s'
+                _log.error(error_msg % (field, type(model[field]), vtype))
             else:
                 error_msg = error_prefix + ' field %s value is not: %s'
                 _log.error(error_msg % (field, ','.join(values[field])))
