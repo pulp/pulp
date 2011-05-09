@@ -18,6 +18,9 @@ from pulp.server.agent import Agent
 
 
 # base api class --------------------------------------------------------------
+import re
+from pulp.server.pexceptions import PulpException
+
 
 class BaseApi(object):
 
@@ -97,3 +100,12 @@ class BaseApi(object):
         Delete all the Objects in the database.  WARNING: Destructive
         """
         self.collection.remove(safe=True)
+        
+    def check_id(self, id):
+        """
+        Make sure id is compliant with restrictions defined by following regex
+        """
+        if re.search("[^\w\-.]", id):
+            raise PulpException("Given ID is invalid. ID may contain numbers(0-9), upper and lower case letters(A-Z, a-z), hyphens(-), underscore(_) and periods(.)")
+        
+    

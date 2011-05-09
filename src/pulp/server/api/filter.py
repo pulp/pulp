@@ -41,6 +41,7 @@ class FilterApi(BaseApi):
         """
         Create a new Filter object and return it
         """
+        self.check_id(id)
         filter = self.filter(id)
         if filter is not None:
             raise PulpException("A Filter with id %s already exists" % id)

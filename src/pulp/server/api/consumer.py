@@ -66,6 +66,7 @@ class ConsumerApi(BaseApi):
         """
         Create a new Consumer object and return it
         """
+        self.check_id(id)
         consumer = self.consumer(id)
         if consumer:
             raise PulpException("Consumer [%s] already exists" % id)

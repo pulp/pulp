@@ -146,6 +146,7 @@ class RepoApi(BaseApi):
         """
         Create a new Repository object and return it
         """
+        self.check_id(id)
         repo = self.repository(id)
         if repo is not None:
             raise PulpException("A Repo with id %s already exists" % id)

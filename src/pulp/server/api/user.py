@@ -38,6 +38,7 @@ class UserApi(BaseApi):
         """
         Create a new User object and return it
         """
+        self.check_id(login)
         if id is None:
             id = str(uuid.uuid4())
         hashed_password = None
