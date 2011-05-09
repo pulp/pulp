@@ -17,7 +17,7 @@
 # Python
 import gzip
 import logging
-import xml.dom
+import xml.dom.minidom
 
 # 3rd Party
 import yum.comps
