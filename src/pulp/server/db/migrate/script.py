@@ -27,7 +27,6 @@ from pulp.server.db import connection
 # imports since the imports execute initialization code relying on the
 # db/auditing to be setup
 connection.initialize()
-auditing.initialize()
 
 _log = logging.getLogger('pulp')
 
