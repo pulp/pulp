@@ -28,13 +28,9 @@ version = 12
 
 
 def _from_utc_timestamp_to_iso8601(timestamp):
-    try:
-        raw = datetime.utcfromtimestamp(float(timestamp))
-        utc = raw.replace(tzinfo=dateutils.utc_tz())
-        return dateutils.format_iso8601_datetime(utc)
-    except:
-        # screw it, they're just timestamps after all...
-        return None
+    raw = datetime.utcfromtimestamp(float(timestamp))
+    utc = raw.replace(tzinfo=dateutils.utc_tz())
+    return dateutils.format_iso8601_datetime(utc)
 
 
 def _migrate_timestamps(collection):
@@ -43,8 +39,19 @@ def _migrate_timestamps(collection):
         collection.save(item, safe=True)
 
 
+def _from_datetime_to_iso8601(dt):
+    dt = dt.replace(tzinfo=dateutils.local_tz())
+    return dateutils.format_iso8601_datetime(dt)
+
+
+def _migrate_datetime(collection):
+    for item in collection.find():
+        item['timestamp'] = _from_datetime_to_iso8601(item['timestamp'])
+        collection.save(item, safe=True)
+
+
 def _migrate_auditing_events():
-    _migrate_timestamps(Event.get_collection())
+    _migrate_datetime(Event.get_collection())
 
 
 def _migrate_cds_history_events():
