@@ -18,3 +18,5 @@
 LOCAL_STORAGE="/var/lib/pulp/"
 
 SERVER_SCHEME="https://"
+
+CACHE_DIR = "/var/lib/pulp/cache/"

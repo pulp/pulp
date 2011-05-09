@@ -22,12 +22,12 @@ from yum.misc import prco_tuple_to_string
 from yum.packageSack import ListPackageSack
 from yum.repos import RepoStorage
 
+from pulp.server import constants
 from pulp.server import util
-
 
 log = logging.getLogger(__name__)
 
-CACHE_DIR = "/var/lib/pulp/cache/"
+
 
 
 class DepSolver:
@@ -45,7 +45,7 @@ class DepSolver:
         for repo in self.repos:
             self.yrepo = yum.yumRepo.YumRepository(repo['id'])
             self.yrepo.baseurl = ["file://%s/%s" % (str(util.top_repos_location()), str(repo['relative_path']))]
-            self.yrepo.basecachedir = CACHE_DIR
+            self.yrepo.basecachedir = constants.CACHE_DIR
             self._repostore.add(self.yrepo)
 
     def loadPackages(self):
@@ -60,7 +60,7 @@ class DepSolver:
          clean up the repo metadata cache from /var/lib/pulp/cache/
         """
         for repo in self._repostore.repos:
-            cachedir = "%s/%s" % (CACHE_DIR, repo)
+            cachedir = "%s/%s" % (constants.CACHE_DIR, repo)
             shutil.rmtree(cachedir)
 
     def getDependencylist(self):

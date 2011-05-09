@@ -30,6 +30,7 @@ from pulp.server import constants
 
 SerialNumber.PATH = '/tmp/sn.dat'
 constants.LOCAL_STORAGE = "/tmp/pulp/"
+constants.CACHE_DIR = "/tmp/pulp/cache"
 
 def initialize():
     connection.initialize()
