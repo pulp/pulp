@@ -28,15 +28,13 @@ version = 12
 
 
 def _from_utc_timestamp_to_iso8601(timestamp):
-    raw = datetime.utcfromtimestamp(float(timestamp))
-    utc = raw.replace(tzinfo=dateutils.utc_tz())
-    return dateutils.format_iso8601_datetime(utc)
-
-
-def _migrate_timestamps(collection):
-    for item in collection.find():
-        item['timestamp'] = _from_utc_timestamp_to_iso8601(item['timestamp'])
-        collection.save(item, safe=True)
+    try:
+        raw = datetime.utcfromtimestamp(float(timestamp))
+        utc = raw.replace(tzinfo=dateutils.utc_tz())
+        return dateutils.format_iso8601_datetime(utc)
+    except:
+        # conversion didn't wor, assume it's already in the right form...
+        return timestamp
 
 
 def _from_datetime_to_iso8601(dt):
@@ -44,14 +42,18 @@ def _from_datetime_to_iso8601(dt):
     return dateutils.format_iso8601_datetime(dt)
 
 
-def _migrate_datetime(collection):
+def _migrate_timestamps(collection):
     for item in collection.find():
-        item['timestamp'] = _from_datetime_to_iso8601(item['timestamp'])
+        timestamp = item['timestamp']
+        if isinstance(timestamp, unicode):
+            item['timestamp'] = _from_utc_timestamp_to_iso8601(timestamp)
+        elif isinstance(timestamp, datetime):
+            item['timestamp'] = _from_datetime_to_iso8601(timestamp)
         collection.save(item, safe=True)
 
 
 def _migrate_auditing_events():
-    _migrate_datetime(Event.get_collection())
+    _migrate_timestamps(Event.get_collection())
 
 
 def _migrate_cds_history_events():
