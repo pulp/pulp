@@ -38,7 +38,7 @@ def _from_utc_timestamp_to_iso8601(timestamp):
 
 
 def _migrate_timestamps(collection):
-    for item in collection:
+    for item in collection.find():
         item['timestamp'] = _from_utc_timestamp_to_iso8601(item['timestamp'])
         collection.save(item, safe=True)
 
