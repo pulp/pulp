@@ -177,10 +177,11 @@ class Consumer:
         if found != digest:
             log.warn('Artifacts NOT deleted')
             return
-
-        repo_file = RepoFile(cfg.repo_file)
-        repo_file.delete()
-
+        try:
+            repo_file = RepoFile(cfg.client.repo_file)
+            repo_file.delete()
+        except:
+            log.error('Repo delete, failed', exc_info=1)
         bundle.delete()
         log.info('Artifacts deleted')
 
