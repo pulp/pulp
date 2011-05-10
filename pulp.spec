@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.174
+Version:        0.0.175
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -281,6 +281,23 @@ fi
 
 
 %changelog
+* Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.175-1
+- 703553 - change the skipp urls msg to be on only in debug mode
+  (pkilambi@redhat.com)
+- 700508 - fast sync/cancel_sync locks up task subsystem (jmatthews@redhat.com)
+- Allows test_packages to run as non-root (moved CACHE_DIR to constants.py and
+  override in testutil) (jmatthews@redhat.com)
+- Update import of RepoSyncTask (jmatthews@redhat.com)
+- 700508 - partial fix, fixes fast sync/cancel leaving repo in a
+  ConflictingOperation (jmatthews@redhat.com)
+- Update script to cause httpd lockup from fast sync/cancel_sync
+  (jmatthews@redhat.com)
+- adding more clarity to discovery select statement (pkilambi@redhat.com)
+- globalize the selection list and keep it unique across multiple selection
+  (pkilambi@redhat.com)
+- 701380 - adding vendor info to pkg details. Also adding some input validation
+  (pkilambi@redhat.com)
+- New date format (changelog snipped)
 * Mon May 09 2011 Jeff Ortel <jortel@redhat.com> 0.0.174-1
 - Fix xml.dom.minidom import. (jortel@redhat.com)
 - 701829 - Clear the repo listing file on empty syncs and delete_all calls
