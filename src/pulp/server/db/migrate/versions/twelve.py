@@ -55,6 +55,8 @@ def _migrate_timestamps(collection):
 # schedule migration -----------------------------------------------------------
 
 def _from_object_to_is8601_interval(obj):
+    if obj is None:
+        return None
     interval = timedelta(**obj['interval'])
     start_time = obj.get('start_time')
     if start_time is not None:
