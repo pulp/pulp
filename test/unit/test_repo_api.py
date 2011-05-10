@@ -110,13 +110,13 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_create(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         assert(repo is not None)
 
     def test_repo_create_with_notes(self):
         notes = {'key':'value','k':'v'}
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com', notes=notes)
+            'i386', 'http://example.com', notes=notes)
         assert(repo is not None)
         assert(repo['notes'] == notes)
 
@@ -325,7 +325,7 @@ class TestRepoApi(unittest.TestCase):
         id = 'some-id'
         name = 'some name'
         arch = 'i386'
-        feed = 'yum:http://example.com'
+        feed = 'http://example.com'
         repo = self.rapi.create(id, name, arch, feed)
         try:
             repo = self.rapi.create(id, name, arch, feed)
@@ -337,7 +337,7 @@ class TestRepoApi(unittest.TestCase):
         failed = False
         try:
             repo = self.rapi.create('some-id', 'some name',
-                'i386', 'invalidtype:http://example.com/')
+                'i386', 'foo://example.com/')
         except:
             failed = True
         assert(failed)
@@ -351,20 +351,20 @@ class TestRepoApi(unittest.TestCase):
 
 
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         assert(repo is not None)
-        assert(repo['source']['type'] == 'yum')
+        assert(repo['source']['type'] == 'remote')
 
     def test_clean(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         self.rapi.clean()
         repos = self.rapi.repositories()
         assert(len(repos) == 0)
 
     def test_delete(self):
         id = 'some-id'
-        repo = self.rapi.create(id, 'some name', 'i386', 'yum:http://example.com')
+        repo = self.rapi.create(id, 'some name', 'i386', 'http://example.com')
         repo = self.rapi.repository(id)
         assert(repo is not None)
         self.rapi.delete(id=id)
@@ -382,7 +382,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repositories(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
 
         # list all the repos
         repos = self.rapi.repositories()
@@ -397,7 +397,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repository(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
 
         found = self.rapi.repository('some-id')
         assert(found is not None)
@@ -405,7 +405,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repository_with_groupid(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com/mypath', groupid=["testgroup"])
+            'i386', 'http://example.com/mypath', groupid=["testgroup"])
         found = self.rapi.repository('some-id')
         assert(found is not None)
         assert(found['id'] == 'some-id')
@@ -413,7 +413,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repository_with_relativepath(self):
         repo = self.rapi.create('some-id-mypath', 'some name', \
-            'i386', 'yum:http://example.com/mypath', relative_path="/mypath/")
+            'i386', 'http://example.com/mypath', relative_path="/mypath/")
         found = self.rapi.repository('some-id-mypath')
         assert(found is not None)
         assert(found['id'] == 'some-id-mypath')
@@ -421,7 +421,7 @@ class TestRepoApi(unittest.TestCase):
 
         # default path
         repo = self.rapi.create('some-id-default-path', 'some name', \
-            'i386', 'yum:http://example.com/mypath')
+            'i386', 'http://example.com/mypath')
         found = self.rapi.repository('some-id-default-path')
         assert(found is not None)
         assert(found['id'] == 'some-id-default-path')
@@ -430,7 +430,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_packages(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p = testutil.create_package(self.papi, 'test_repo_packages')
         self.rapi.add_package(repo["id"], [p['id']])
         for i in range(10):
@@ -444,7 +444,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_package_count(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         num_packages = 50
         package = None
         for i in range(num_packages):
@@ -460,7 +460,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_erratum(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
         description = 'test_errata_description_1'
@@ -483,7 +483,7 @@ class TestRepoApi(unittest.TestCase):
     def test_repo_gpgkeys(self):
         id = 'fedora'
         relativepath = 'f11/i386'
-        feed = 'yum:http://abc.com/%s' % relativepath
+        feed = 'http://abc.com/%s' % relativepath
         repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
         keyA = ('keyA', 'MY KEY (A) CONTENT')
         keyB = ('keyB', 'MY KEY (B) CONTENT')
@@ -507,9 +507,9 @@ class TestRepoApi(unittest.TestCase):
     def test_repo_update(self):
         id = 'fedora'
         relativepath = 'f11/i386'
-        feed = 'yum:http://abc.com/%s' % relativepath
+        feed = 'http://abc.com/%s' % relativepath
         repo = self.rapi.create(id, 'Fedora', 'noarch', feed=feed)
-        d = dict(feed='yum:http://xyz.com')
+        d = dict(feed='http://xyz.com')
         repo = self.rapi.update(id, d)
         root = top_repos_location()
         # add some phony content and try again
@@ -519,7 +519,7 @@ class TestRepoApi(unittest.TestCase):
         f = open(os.path.join(path, 'package'), 'w')
         f.close()
         try:
-            d = dict(feed='yum:http://xyz.com/my/new/path')
+            d = dict(feed='http://xyz.com/my/new/path')
             repo = self.rapi.update(id, d)
             self.assertTrue(False, 'should fail')
         except:
@@ -539,7 +539,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_errata(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
         description = 'test_errata_description_1'
@@ -570,7 +570,7 @@ class TestRepoApi(unittest.TestCase):
     def test_consumer_errata(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         repo = self.rapi.create('some-id', 'some name', \
-            'x86_64', 'yum:http://example.com')
+            'x86_64', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
         description = 'test_errata_description_1'
@@ -630,7 +630,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_package_groups(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         pkggroup = self.rapi.create_packagegroup(repo["id"],
                 'test-group-id', 'test-group-name',
                 'test-group-description')
@@ -664,7 +664,7 @@ class TestRepoApi(unittest.TestCase):
             'some-id_pkg_group_categories',
             'some name',
             'i386',
-            'yum:http://example.com')
+            'http://example.com')
         group = self.rapi.create_packagegroup(
             repo['id'],
             'test-group-id',
@@ -744,7 +744,7 @@ class TestRepoApi(unittest.TestCase):
     def test_consumerwithpackage(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
         repo = self.rapi.create('some-id', 'some name',
-                'i386', 'yum:http://example.com')
+                'i386', 'http://example.com')
         my_dir = os.path.abspath(os.path.dirname(__file__))
 
         info1 = get_rpm_information(my_dir + "/data/pulp-test-package-0.2.1-1.fc11.x86_64.rpm")
@@ -780,7 +780,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_json(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         jsonrepo = json.dumps(repo, default=pymongo.json_util.default)
         assert(jsonrepo is not None)
         parsed = json.loads(jsonrepo)
@@ -789,7 +789,7 @@ class TestRepoApi(unittest.TestCase):
 
     def cancel_task(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         task = self.rapi.sync(repo['id'])
         task.cancel()
@@ -816,9 +816,9 @@ class TestRepoApi(unittest.TestCase):
 
         # Create & Sync Repos
         repo_a = self.rapi.create(repo_name_a, 'some name', 'x86_64',
-                                  'local:file://%s' % datadir_a)
+                                  'file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b, 'some name', 'x86_64',
-                                'local:file://%s' % datadir_b)
+                                'file://%s' % datadir_b)
         self.rapi._sync(repo_a["id"])
         self.rapi._sync(repo_b["id"])
 
@@ -873,9 +873,9 @@ class TestRepoApi(unittest.TestCase):
         datadir_b = my_dir + "/data/sameNEVRA_sameChecksums/B/repo/"
         # Create & Sync Repos
         repo_a = self.rapi.create(repo_name_a, 'some name', 'x86_64',
-                                'local:file://%s' % datadir_a)
+                                'file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b, 'some name', 'x86_64',
-                                'local:file://%s' % datadir_b)
+                                'file://%s' % datadir_b)
         self.rapi._sync(repo_a['id'])
         self.rapi._sync(repo_b['id'])
         # Look up each repo from API
@@ -907,7 +907,7 @@ class TestRepoApi(unittest.TestCase):
     def test_sync(self):
         p = os.path.join(self.data_path, "repo_resync_a")
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                'local:%s' % (p))
+                'file://%s' % (p))
         failed = False
         try:
             self.rapi._sync('invalid-id-not-found')
@@ -932,7 +932,7 @@ class TestRepoApi(unittest.TestCase):
         # Re-sync ensure we delete the removed package
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         r = self.rapi.create('test_resync_removes_deleted_package',
-                'test_name', 'x86_64', 'local:file://%s' % (repo_path))
+                'test_name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(r != None)
         self.rapi._sync(r["id"])
         # Refresh object now it's been sync'd
@@ -951,7 +951,7 @@ class TestRepoApi(unittest.TestCase):
         # Simulate a change that a package was deleted
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         r = self.rapi.repository(r["id"])
-        d = dict(feed="local:file://%s" % repo_path)
+        d = dict(feed="file://%s" % repo_path)
         self.rapi.update(r["id"], d)
         self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
@@ -996,7 +996,7 @@ class TestRepoApi(unittest.TestCase):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir = my_dir + "/data/"
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'local:file://%s' % datadir)
+                                'file://%s' % datadir)
 
         self.rapi._sync(repo['id'])
         found = self.rapi.repository(repo['id'])
@@ -1020,7 +1020,7 @@ class TestRepoApi(unittest.TestCase):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir = my_dir + "/data/repo_resync_a/"
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'local:file://%s' % datadir)
+                                'file://%s' % datadir)
         self.rapi._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
@@ -1047,11 +1047,11 @@ class TestRepoApi(unittest.TestCase):
         # Sync 2 repos with same content local feed
         datadir = os.path.join(self.data_path, "sameNEVRA_differentChecksums/A/repo")
         r = self.rapi.create("test_find_repos_by_package", "test_name", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r['id'])
         datadir = os.path.join(self.data_path, "sameNEVRA_differentChecksums/B/repo")
         r2 = self.rapi.create("test_find_repos_by_package_2", "test_name_2", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r2['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
@@ -1072,7 +1072,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_repo_package_by_name(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p = testutil.create_package(self.papi, 'test_pkg_by_name', version="1", filename="test01.rpm")
         self.rapi.add_package(repo["id"], [p['id']])
 
@@ -1090,9 +1090,9 @@ class TestRepoApi(unittest.TestCase):
 
     def test_get_packages_by_id(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo2 = self.rapi.create('some-id-2', 'some name 2', \
-            'i386', 'yum:http://example.com-2')
+            'i386', 'http://example.com-2')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name')
         self.rapi.add_package(repo["id"], [p1['id']])
 
@@ -1112,9 +1112,9 @@ class TestRepoApi(unittest.TestCase):
 
     def test_get_packages_by_filename(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo2 = self.rapi.create('some-id-2', 'some name 2', \
-            'i386', 'yum:http://example.com-2')
+            'i386', 'http://example.com-2')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm")
         self.rapi.add_package(repo["id"], [p1['id']])
 
@@ -1140,7 +1140,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_packages(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm")
         self.rapi.add_package(repo["id"], [p1['id']])
 
@@ -1183,7 +1183,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_add_2_pkg_same_nevra_same_repo(self):
         repo = self.rapi.create('some-id1', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm", checksum="blah2")
         errors = self.rapi.add_package(repo["id"], [p1['id'],p2['id']])
@@ -1196,9 +1196,9 @@ class TestRepoApi(unittest.TestCase):
 
     def test_associate_packages(self):
         repo1 = self.rapi.create('some-id1', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo2 = self.rapi.create('some-id2', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name1', filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.papi, 'test_pkg_by_name2', filename="test02.rpm", checksum="blah2")
         p3 = testutil.create_package(self.papi, 'test_pkg_by_name3', filename="test03a.rpm", checksum="blah3")
@@ -1235,7 +1235,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_get_packages_by_nvera(self):
         repo1 = self.rapi.create('some-id1', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name1',
                 filename="test01.rpm", checksum="blah1")
         p2 = testutil.create_package(self.papi, 'test_pkg_by_name2',
@@ -1263,7 +1263,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_metadata(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         p1 = testutil.create_package(self.papi, 'test_pkg_by_name', filename="test01.rpm")
         self.rapi.add_package(repo["id"], [p1['id']])
 
@@ -1283,7 +1283,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_duplicate_syncs(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
+            'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         self.assertTrue(self.rapi.set_sync_in_progress(repo["id"], True))
         caught = False
         try:

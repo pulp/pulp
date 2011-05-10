@@ -137,7 +137,7 @@ class TaskTester(unittest.TestCase):
 
     def __test_sync_task(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
 
         task = self.rapi.sync(repo['id'])

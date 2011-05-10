@@ -56,7 +56,7 @@ class TestDistribution(unittest.TestCase):
 
     def test_create(self):
         repo = self.rapi.create('test-distro', 'test distro',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         assert(repo is not None)
         id = 'ks-test-sistro-i386'
         description = 'test_distro_description'
@@ -113,7 +113,7 @@ class TestDistribution(unittest.TestCase):
         distro = self.dapi.create(distroid, None, None, [])
         
         repoid = 'test-repodist'
-        self.rapi.create(repoid, 'some name', 'i386', 'yum:http://example.com')
+        self.rapi.create(repoid, 'some name', 'i386', 'http://example.com')
         self.rapi.add_distribution(repoid, distroid)
         repo = self.rapi.repository(repoid)
         assert(distroid in repo['distributionid'])
@@ -129,7 +129,7 @@ class TestDistribution(unittest.TestCase):
         self.assertTrue(found is not None)
         
         repoid = 'test-repodist'
-        self.rapi.create(repoid, 'some name', 'i386', 'yum:http://example.com/test/path')
+        self.rapi.create(repoid, 'some name', 'i386', 'http://example.com/test/path')
         self.rapi.add_distribution(repoid, distroid)
         repo = self.rapi.repository(repoid)
         assert(distroid in repo['distributionid'])

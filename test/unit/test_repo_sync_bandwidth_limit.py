@@ -79,7 +79,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         self.config.set('yum','threads', str(threads))
         self.config.set('yum','limit_in_KB', str(limit))
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
+            'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         repo_size_kb = 200 # Test repo has 2 100kb packages
         # Test repo has 2 packages, so 2 threads is the maximum
         # benefit we can realize
@@ -94,7 +94,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         self.config.set('yum','threads', '20')
         self.config.set('yum','limit_in_KB', '5000')
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo/')
+            'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo/')
         repo_size_kb = 5000 # Test repo has 2 100kb packages
         threads = 2
         limit = 100 # KB/sec
@@ -110,7 +110,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         self.config.set('yum','threads', '1')
         self.config.set('yum','limit_in_KB', '1')
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
+            'i386', 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/test_bandwidth_repo_smaller/')
         repo_size_kb = 200 # Test repo has 2 100kb packages
         # Test repo has 2 packages, so 2 threads is the maximum
         # benefit we can realize

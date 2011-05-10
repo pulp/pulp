@@ -159,13 +159,13 @@ class TestUtil(unittest.TestCase):
 
         repo_a = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_A',
                                 'pulp_f14_background_sync', 'x86_64',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo_a is not None)
         background_sync_task_a = self.rapi.sync(repo_a['id'])
 
         repo_b = self.rapi.create('test_get_repo_packages_multi_repo_pulp_f14_B',
                                 'pulp_f14_background_sync', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386/')
         self.assertTrue(repo_b is not None)
         background_sync_task_b = self.rapi.sync(repo_b['id'])
         my_dir = os.path.abspath(os.path.dirname(__file__))

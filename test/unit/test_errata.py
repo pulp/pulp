@@ -255,7 +255,7 @@ class TestErrata(unittest.TestCase):
 
     def test_repo_erratum(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
         description = 'test_errata_description_1'
@@ -277,7 +277,7 @@ class TestErrata(unittest.TestCase):
 
     def test_repo_errata(self):
         repo = self.rapi.create('some-id', 'some name', \
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
         description = 'test_errata_description_1'
@@ -309,7 +309,7 @@ class TestErrata(unittest.TestCase):
     def test_consumer_errata(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         repo = self.rapi.create('some-id', 'some name', \
-            'x86_64', 'yum:http://example.com')
+            'x86_64', 'http://example.com')
         id = 'test_errata_id_1'
         title = 'test_errata_title_1'
         description = 'test_errata_description_1'
@@ -369,7 +369,7 @@ class TestErrata(unittest.TestCase):
     def test_errata_repo_sync_rhel(self):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_repo_sync", "test_name", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
@@ -410,7 +410,7 @@ class TestErrata(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         r = self.rapi.create('test_errata_repo_resync',
                 'test_errata_repo_resync_name', 'i386',
-                'local:file://%s' % (repo_path))
+                'file://%s' % (repo_path))
         self.assertTrue(r != None)
         self.rapi._sync(r["id"])
         # 'stable_repo' will be synced once and not changed
@@ -418,7 +418,7 @@ class TestErrata(unittest.TestCase):
         # we make sure to not delete one which is referenced by another repo
         stable_repo = self.rapi.create('test_errata_repo_resync_stable_repo',
                 'test_errata_repo_resync_name_stable_repo', 'i386',
-                'local:file://%s' % (repo_path))
+                'file://%s' % (repo_path))
         self.assertTrue(stable_repo != None)
         self.rapi._sync(stable_repo["id"])
         # Refresh repo now it has been sync'd
@@ -429,7 +429,7 @@ class TestErrata(unittest.TestCase):
         # Simulate to change repo 'r'
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         r = self.rapi.repository(r["id"])
-        r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
+        r["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(r, safe=True)
         self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
@@ -451,7 +451,7 @@ class TestErrata(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         r = self.rapi.create('test_errata_repo_resync',
                 'test_errata_repo_resync_name', 'i386',
-                'local:file://%s' % (repo_path))
+                'file://%s' % (repo_path))
         self.assertTrue(r != None)
         self.rapi._sync(r["id"])
         # Refresh repos now they have been sync'd
@@ -500,7 +500,7 @@ class TestErrata(unittest.TestCase):
         #           added a new category, 'development'
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         r = self.rapi.repository(r["id"])
-        r["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
+        r["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(r, safe=True)
         self.rapi._sync(r["id"])
         #Refresh Repo Object and Verify Changes
@@ -532,7 +532,7 @@ class TestErrata(unittest.TestCase):
     def test_errata_query_by_cve(self):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_query_by_cve", "test_name", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
@@ -543,7 +543,7 @@ class TestErrata(unittest.TestCase):
     def test_errata_query_by_bz(self):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_query_bz", "test_name", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
@@ -558,10 +558,10 @@ class TestErrata(unittest.TestCase):
         # Sync 2 repos with same content local feed
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_find_repos_by_errata", "test_name", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r['id'])
         r2 = self.rapi.create("test_find_repos_by_errata_2", "test_name_2", "x86_64",
-                "local:file://%s" % datadir)
+                "file://%s" % datadir)
         self.rapi._sync(r2['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])

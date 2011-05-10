@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import datetime
+import urlparse
 
 from pulp.common import dateutils
 from pulp.server.db.model.base import Model
@@ -300,21 +301,19 @@ class Repo(Model):
 class RepoSource(Model):
 
     def __init__(self, url):
-        self.supported_types = ['yum', 'local']
-        self.type = None
         self.url = None
-        self.parse_feed(url)
+        self.type = None
+        self.set_type(url)
 
-    def parse_feed(self, source):
-        parts = source.split(':')
-        if len(parts) < 2:
-            msg = "Invalid feed url.  Must be <type>:<path> where types are: %s"
-            raise PulpException(msg % self.supported_types)
-        if self.supported_types.count(parts[0]) < 1:
-            raise PulpException("Invalid type.  valid types are %s"
-                                % self.supported_types)
-        self.type = parts[0]
-        self.url = source.replace((self.type + ":"), "")
+    def set_type(self, url):
+        proto, netloc, path, params, query, frag = urlparse.urlparse(url)
+        self.url = url
+        if proto in ['http', 'https', 'ftp']:
+            self.type = u"remote"
+        elif proto in ['file']:
+            self.type = u"local"
+        else:
+            raise PulpException("Invalid url [%s]; please provide a valid url" % url)
 
 
 class RepoSyncSchedule(Model):

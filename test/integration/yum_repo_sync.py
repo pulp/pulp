@@ -83,7 +83,7 @@ class TestYumRepoSync(unittest.TestCase):
             global report
             report = r
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                'yum:http://jmatthews.fedorapeople.org/repo_resync_a')
+                'http://jmatthews.fedorapeople.org/repo_resync_a')
         self.rapi._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']

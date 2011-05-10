@@ -134,7 +134,7 @@ class TestApi(unittest.TestCase):
 
     def test_package_dependency(self):
         repo = self.rapi.create('some-id', 'some name',
-                                'i386', 'yum:http://example.com')
+                                'i386', 'http://example.com')
         repo = self.rapi.repository(repo["id"])
         test_pkg_name = "test_package_versions_name"
         test_epoch = "1"
@@ -181,7 +181,7 @@ class TestApi(unittest.TestCase):
 
     def test_packages(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo = self.rapi.repository(repo["id"])
         test_pkg_name = "test_package_versions_name"
         test_epoch = "1"
@@ -256,7 +256,7 @@ class TestApi(unittest.TestCase):
 
     def test_package_fields(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo = self.rapi.repository(repo["id"])
         test_pkg_name = "test_package_versions_name"
         test_epoch = "1"
@@ -295,7 +295,7 @@ class TestApi(unittest.TestCase):
         
     def test_package_delete_repo(self):
         repo = self.rapi.create('some-id', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo = self.rapi.repository(repo["id"])
         test_pkg_name = "test_package_versions_name"
         test_epoch = "1"
@@ -339,9 +339,9 @@ class TestApi(unittest.TestCase):
 
     def test_find_repos_by_package(self):
         repo_a = self.rapi.create('some-id_a', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo_b = self.rapi.create('some-id_b', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo_a = self.rapi.repository(repo_a["id"])
         repo_b = self.rapi.repository(repo_b["id"])
         pkg1 = testutil.create_random_package(self.papi)
@@ -366,9 +366,9 @@ class TestApi(unittest.TestCase):
 
     def test_find_orphaned_packages(self):
         repo_a = self.rapi.create('some-id_a', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo_b = self.rapi.create('some-id_b', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo_a = self.rapi.repository(repo_a["id"])
         repo_b = self.rapi.repository(repo_b["id"])
         #Create 5 test packages, associte 3 to repos
@@ -391,9 +391,9 @@ class TestApi(unittest.TestCase):
 
     def test_or_query(self):
         repo_a = self.rapi.create('some-id_a', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         repo_b = self.rapi.create('some-id_b', 'some name',
-            'i386', 'yum:http://example.com')
+            'i386', 'http://example.com')
         pkg1 = testutil.create_random_package(self.papi)
         pkg2 = testutil.create_random_package(self.papi)
         pkg3 = testutil.create_random_package(self.papi)

@@ -54,7 +54,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
     def test_clone(self):
 
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         try:
             self.rapi._sync(repo['id'])
@@ -115,9 +115,9 @@ class TestRepoSyncSchedule(unittest.TestCase):
     def test_clone_repo_with_same_id(self):
         # negative case where repo with clone_id exists
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        repo = self.rapi.create('some-id', 'some name', 'x86_64', 'local:file://%s' % (repo_path))
+        repo = self.rapi.create('some-id', 'some name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(repo is not None)
-        repo1 = self.rapi.create('some-id-1', 'some name', 'x86_64', 'local:file://%s' % (repo_path))
+        repo1 = self.rapi.create('some-id-1', 'some name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(repo1 is not None)
 
         try:

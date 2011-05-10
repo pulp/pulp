@@ -265,7 +265,7 @@ def _validate_repo_source():
     num_errors = 0
     objectdb = Repo.get_collection()
     reference = _unicodify_reference(
-                model.RepoSource(u'yum:http://reference.org/reference_repo/'))
+                model.RepoSource(u'http://reference.org/reference_repo/'))
     for r in objectdb.find({'source': {'$ne': None}}):
         source = r['source']
         for field, value in reference.items():

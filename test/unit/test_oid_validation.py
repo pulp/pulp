@@ -97,9 +97,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -129,9 +129,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -161,9 +161,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_y_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch', consumer_cert_data=repo_y_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -193,9 +193,9 @@ class TestOidValidation(unittest.TestCase):
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -225,9 +225,9 @@ class TestOidValidation(unittest.TestCase):
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(LIMITED_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -257,9 +257,9 @@ class TestOidValidation(unittest.TestCase):
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -291,9 +291,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -325,9 +325,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -359,9 +359,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : INVALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest(FULL_CLIENT_CERT, 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -391,9 +391,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -423,9 +423,9 @@ class TestOidValidation(unittest.TestCase):
         self.auth_api.enable_global_repo_auth(global_bundle)
 
         self.repo_api.create('repo-x', 'Repo X', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')
@@ -457,9 +457,9 @@ class TestOidValidation(unittest.TestCase):
 
         repo_x_bundle = {'ca' : VALID_CA, 'cert' : 'foo', 'key' : 'bar'}
         self.repo_api.create('repo-x', 'Repo X', 'noarch', consumer_cert_data=repo_x_bundle,
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64')
         self.repo_api.create('repo-y', 'Repo Y', 'noarch',
-                             feed='yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
+                             feed='http://repos.fedorapeople.org/repos/pulp/pulp/fedora-13/x86_64')
 
         # Test
         request_x = MockRequest('', 'https://localhost/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/')

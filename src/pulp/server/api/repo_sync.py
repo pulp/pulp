@@ -900,6 +900,6 @@ class LocalSynchronizer(BaseSynchronizer):
 # synchronization type map ----------------------------------------------------
 
 type_classes = {
-    'yum': YumSynchronizer,
+    'remote': YumSynchronizer,
     'local': LocalSynchronizer,
 }

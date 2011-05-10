@@ -410,7 +410,7 @@ class Create(RepoAction):
         self.parser.add_option("--arch", dest="arch",
                                help=_("package arch the repository should support"))
         self.parser.add_option("--feed", dest="feed",
-                               help=_("url feed to populate the repository; feed format is type:url, where supported types include yum or local "))
+                               help=_("url feed to populate the repository"))
         self.parser.add_option("--feed_ca", dest="feed_ca",
                                help=_("path location to the feed's ca certificate"))
         self.parser.add_option("--feed_cert", dest="feed_cert",
@@ -1404,8 +1404,8 @@ class Discovery(RepoProgressAction):
                 if not id:
                     #no valid id formed, continue
                     continue
-                feed= '%s:%s' % (ctype, repourl)
-                repo = self.repository_api.create(id, id, 'noarch', groupid=self.opts.groupid or [], feed=feed)
+                #feed= '%s:%s' % (ctype, repourl)
+                repo = self.repository_api.create(id, id, 'noarch', groupid=self.opts.groupid or [], feed=repourl)
                 print("Successfully created repo [%s]" % repo['id'])
             except Exception, e:
                 success = -1

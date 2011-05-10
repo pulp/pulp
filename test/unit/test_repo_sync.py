@@ -82,12 +82,12 @@ class TestRepoSync(unittest.TestCase):
         self.clean()
 
     def test_sync_multiple_repos(self):
-        feeds = {"f14_x86_64": ("yum:http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/x86_64/", "x86_64"),
-            "f14_i386": ("yum:http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/i386/", "i386"),
-            "el5_i386": ("yum:http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/i386/", "i386"),
-            "el5_x86_64": ("yum:http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/x86_64/", "x86_64"),
-            "el6_i386": ("yum:http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/i386/", "i386"),
-            "el6_x86_64": ("yum:http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
+        feeds = {"f14_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/x86_64/", "x86_64"),
+            "f14_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/fedora-14/i386/", "i386"),
+            "el5_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/i386/", "i386"),
+            "el5_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/5Server/x86_64/", "x86_64"),
+            "el6_i386": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/i386/", "i386"),
+            "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
         for r in repos:
@@ -121,7 +121,7 @@ class TestRepoSync(unittest.TestCase):
             report = r
 
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://jmatthews.fedorapeople.org/repo_with_bad_read_perms/')
+                                'http://jmatthews.fedorapeople.org/repo_with_bad_read_perms/')
         self.rapi._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
@@ -170,7 +170,7 @@ class TestRepoSync(unittest.TestCase):
             self.assertFalse(os.access(bad_rpm_path, os.R_OK))
             self.assertFalse(os.access(bad_tree_path, os.R_OK))
             repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'local:file://%s' % datadir)
+                                'file://%s' % datadir)
             self.rapi._sync(repo['id'], progress_callback=callback)
             found = self.rapi.repository(repo['id'])
             packages = found['packages']

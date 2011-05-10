@@ -141,7 +141,7 @@ class RepoApi(BaseApi):
 
     @event(subject='repo.created')
     @audit(params=['id', 'name', 'arch', 'feed'])
-    def create(self, id, name, arch, feed=None, symlinks=False, sync_schedule=None,
+    def create(self, id, name, arch=None, feed=None, symlinks=False, sync_schedule=None,
                feed_cert_data=None, consumer_cert_data=None, groupid=(),
                relative_path=None, gpgkeys=(), checksum_type="sha256", notes={}):
         """
@@ -281,8 +281,7 @@ class RepoApi(BaseApi):
             raise PulpException("A Repo with id %s exists. Choose a different id." % clone_id)
 
         REPOS_LOCATION = pulp.server.util.top_repos_location()
-        parent_relative_path = "local:file://" + REPOS_LOCATION + "/" + repo["relative_path"]
-
+        parent_feed = "file://" + REPOS_LOCATION + "/" + repo["relative_path"]
         feed_cert_data = {}
         consumer_cert_data = {}
 
@@ -305,12 +304,12 @@ class RepoApi(BaseApi):
 
         log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
         if feed == 'origin':
-            origin_feed = repo['source']['type'] + ":" + repo['source']['url']
+            origin_feed = repo['source']['url']
             self.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
                         relative_path=clone_id, feed_cert_data=feed_cert_data,
                         consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
         else:
-            self.create(clone_id, clone_name, repo['arch'], feed=parent_relative_path, groupid=groupid,
+            self.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
                         relative_path=relative_path, feed_cert_data=feed_cert_data,
                         consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
 
@@ -397,7 +396,7 @@ class RepoApi(BaseApi):
         for label, uri in repo_info.items():
             try:
                 repo = self.create(label, label, arch=label.split("-")[-1],
-                                   feed="yum:" + CDN_URL + '/' + uri,
+                                   feed=CDN_URL + '/' + uri,
                                    feed_cert_data=cert_data, groupid=[groupid],
                                    relative_path=uri)
                 repo['release'] = label.split("-")[-2]
@@ -438,7 +437,7 @@ class RepoApi(BaseApi):
         for label, uri in repo_info.items():
             try:
                 repo = self._get_existing_repo(label)
-                repo['feed'] = "yum:" + CDN_URL + '/' + uri
+                repo['feed'] =  CDN_URL + '/' + uri
                 if cert_data:
                     cert_files = repo_cert_utils.write_feed_cert_bundle(label, cert_data)
                     for key, value in cert_files.items():
@@ -1591,7 +1590,7 @@ class RepoApi(BaseApi):
             return task
         if repo['source'] is not None:
             source_type = repo['source']['type']
-            if source_type in ('yum'):
+            if source_type in ('remote'):
                     task.set_progress('progress_callback',
                                   repo_sync.yum_rhn_progress_callback)
             elif source_type in ('local'):

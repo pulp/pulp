@@ -77,7 +77,7 @@ class TestComps(unittest.TestCase):
     def test_sync_groups_data(self):
         repo = self.rapi.create('test_sync_groups_data_id',
                 'test_sync_groups_data_id', 'i386',
-                'yum:http://example.com/')
+                'http://example.com/')
         # Parse existing comps.xml
         compspath = os.path.join(self.data_path, "rhel-i386-server-5/comps.xml")
         compsfile = open(compspath)
@@ -104,7 +104,7 @@ class TestComps(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "no_groups_repo")
         repo = self.rapi.create("test_create_groups_metadata_id",
                 'test_import_groups_data_id', 'i386',
-                'local:file://%s' % (repo_path))
+                'file://%s' % (repo_path))
         self.rapi._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
@@ -128,7 +128,7 @@ class TestComps(unittest.TestCase):
 
     def test_basic_comps(self):
         repo = self.rapi.create('test_comps_id', 'test_comps_name',
-            'i386', 'yum:http://example.com/')
+            'i386', 'http://example.com/')
         grp = pulp.server.db.model.PackageGroup("groupid1", "groupname1",
             "description", "user_visible", "display_order", "default"
             "langonly")
@@ -163,7 +163,7 @@ class TestComps(unittest.TestCase):
     def test_delete_group_category(self):
         repo = self.rapi.create('test_delete_group_category',
                 'test_delete_group_category', 'i386',
-                'yum:http://example.com/')
+                'http://example.com/')
         cat = self.rapi.create_packagegroupcategory(repo["id"],
                 "test_cat", "test_cat_name", "test description")
         grp = self.rapi.create_packagegroup(repo["id"],
@@ -236,7 +236,7 @@ class TestComps(unittest.TestCase):
 
         # Create empty repo, we will populate it with our groups/categories
         repo = self.rapi.create('test_comps_id', 'test_comps_name',
-                'i386', 'yum:http://example.com/')
+                'i386', 'http://example.com/')
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
         found = self.rapi.packagegroupcategories(repo['id'])
@@ -381,7 +381,7 @@ class TestComps(unittest.TestCase):
         # Create repo with 1 group
         repo = self.rapi.create('test_immutable_groups_id',
                 'test_import_groups_data_id', 'i386',
-                'local:file://%s' % (repo_path))
+                'file://%s' % (repo_path))
         self.rapi._sync(repo["id"])
         # Ensure groups/categories were found and they are all immutable
         found = self.rapi.packagegroups(repo['id'])
@@ -447,7 +447,7 @@ class TestComps(unittest.TestCase):
         repo_path = os.path.join(self.data_path, "repo_resync_a")
         repo = self.rapi.create('test_comps_resync_with_group_changes',
                 'test_comps_resync_with_group_changes_name', 'i386',
-                'local:file://%s' % (repo_path))
+                'file://%s' % (repo_path))
         self.rapi._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
         # Verify expected groups/categories
@@ -469,7 +469,7 @@ class TestComps(unittest.TestCase):
         #           added a new category, 'development'
         repo_path = os.path.join(self.data_path, "repo_resync_b")
         repo = self.rapi.repository(repo["id"])
-        repo["source"] = pulp.server.db.model.RepoSource("local:file://%s" % (repo_path))
+        repo["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(repo, safe=True)
         self.rapi._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])

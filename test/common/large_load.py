@@ -70,7 +70,7 @@ class LargeLoad(unittest.TestCase):
         for rdir in self.dirlist:
             id = rdir.replace('/', '.')
             repo = self.rapi.create(id, 'test repo: %s' % rdir, \
-                'i386', 'local:file://%s' % rdir)
+                'i386', 'file://%s' % rdir)
             self.rapi._sync(repo['id'])
             numrepos = numrepos + 1
 

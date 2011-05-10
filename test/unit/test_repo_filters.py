@@ -89,7 +89,7 @@ class TestRepoFilters(unittest.TestCase):
     def test_add_filters_to_repo(self):
         repoid = 'clone-some-id'
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         self.rapi._sync(id='some-id')
         self.rapi._clone('some-id', repoid, repoid)
@@ -112,7 +112,7 @@ class TestRepoFilters(unittest.TestCase):
     def test_remove_filters_from_repo(self):
         repoid = 'clone-some-id'
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         self.rapi._sync(id='some-id')
         self.rapi._clone('some-id', repoid, repoid)
@@ -132,7 +132,7 @@ class TestRepoFilters(unittest.TestCase):
     def test_list_repo_filters(self):
         repoid = 'clone-some-id'
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
         self.rapi._sync(id='some-id')
         self.rapi._clone('some-id', repoid, repoid)
@@ -155,7 +155,7 @@ class TestRepoFilters(unittest.TestCase):
         
     def test_repo_associated_filter_delete(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'local:file://test')
+                                'file://test')
         self.assertTrue(repo is not None)
         self.filter_api.create('filter-test1', type="blacklist")
         self.rapi.add_filters('some-id', ['filter-test1'])
@@ -195,7 +195,7 @@ class TestRepoFilters(unittest.TestCase):
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = ["filter-test1", "filter-test2"]
         yum_repo = self.rapi.create('some-id', 'some name', 'i386',
-                                'yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         try:
             self.rapi.add_filters('some-id', filter_ids)
             self.assertTrue(False)
@@ -203,7 +203,7 @@ class TestRepoFilters(unittest.TestCase):
             pass
         
         local_repo = self.rapi.create('some-id1', 'some name1', 'i386',
-                                      'local:file://test')
+                                      'file://test')
         self.rapi.add_filters('some-id1', filter_ids)
         filters = self.rapi.list_filters('some-id1')
         self.assertTrue(len(filters) == 2)

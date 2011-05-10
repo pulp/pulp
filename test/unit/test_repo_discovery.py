@@ -78,7 +78,7 @@ class TestRepoDiscoveryApi(unittest.TestCase):
         repourls = d.discover()
         self.assertTrue(len(repourls) != 0)
         repourl = repourls[0]
-        repo = self.rapi.create('discover_test_repo', 'discovery_test_repo', 'noarch', feed='yum:%s' % repourl, groupid=[groupid])
+        repo = self.rapi.create('discover_test_repo', 'discovery_test_repo', 'noarch', feed='%s' % repourl, groupid=[groupid])
         r = self.rapi.repository(repo['id'])
         assert(r is not None)
         assert(r['groupid'] == [groupid])
