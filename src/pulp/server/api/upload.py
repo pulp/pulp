@@ -57,6 +57,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.repo_sync import BaseSynchronizer
 from pulp.server.compat import json
 from pulp.server.event.dispatcher import event
+from pulp.server.pexceptions import PulpException
 
 
 log = logging.getLogger(__name__)
@@ -291,20 +292,59 @@ class ImportUploadContent:
         import the rpms into pulp database
         """
         log.info("Importing rpm metadata content into pulp")
-        (name, version, release, epoch, arch) = self.metadata['nvrea']
-        pkg_path = util.get_shared_package_path(name, version, release, arch, \
-                                                self.metadata['pkgname'], self.metadata['checksum'])
-        if util.check_package_exists(pkg_path, self.metadata['checksum'], self.metadata['hashtype']):
-            log.error("Package %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
+
+        # check required options
+        try:
+            (name, version, release, epoch, arch) = self.metadata['nvrea']
+        except KeyError:
+            raise PulpException("metadata is missing [nvrea] info to import an rpm")
+
+        try:
+            checksum = self.metadata['checksum']
+            hashtype = self.metadata['hashtype']
+        except:
+            raise PulpException("metadata is missing rpm checksum or hashtype value")
+        try:
+            pkgname = self.metadata['pkgname']
+        except KeyError:
+            raise PulpException("metadata is missing rpm pkgname value")
+
+        try:
+            size = self.metadata['size']
+        except KeyError:
+            raise PulpException("metadata is missing rpm size value")
+        
+        description = None
+        if self.metadata.has_key('description'):
+            description = self.metadata['description']
+        buildhost = None
+        if self.metadata.has_key('buildhost'):
+            buildhost = self.metadata['buildhost']
+        license = None
+        if self.metadata.has_key('license'):
+            license = self.metadata['license']
+        group = None
+        if self.metadata.has_key('group'):
+            group = self.metadata['group']
+        vendor = None
+        if self.metadata.has_key('vendor'):
+            vendor = self.metadata['vendor']
+        requires = []
+        if self.metadata.has_key('requires'):
+            requires = self.metadata['requires']
+        provides = []
+        if self.metadata.has_key('provides'):
+            requires = self.metadata['provides']
+
+        pkg_path = util.get_shared_package_path(name, version, release, arch, pkgname, checksum)
+        if util.check_package_exists(pkg_path, checksum, hashtype):
+            log.error("Package %s Already Exists on the server skipping upload." % pkgname)
         # copy the content over to the package location
         if not self.__finalize_content(pkg_path):
             return None
-        packageInfo = PackageInfo(name, version, release, epoch, arch, \
-                                  self.metadata['description'],
-                                  self.metadata['checksum'], self.metadata['pkgname'],
-                                  self.metadata['requires'], self.metadata['provides'],
-                                  self.metadata['size'], self.metadata['buildhost'],
-                                  self.metadata['license'], self.metadata['group'])
+
+        packageInfo = PackageInfo(name, version, release, epoch, arch, description, checksum, pkgname,
+                                  requires, provides, size, buildhost, license, group, vendor)
         bsync = BaseSynchronizer()
         pkg = bsync.import_package(packageInfo, repo=None)
         self.__package_imported(pkg['id'], pkg_path)
@@ -361,7 +401,7 @@ class ImportUploadContent:
 class PackageInfo:
     def __init__(self, name, version, release, epoch, arch, \
                  description, checksum, relativepath,
-                 requires, provides, size, buildhost, license, group):
+                 requires, provides, size, buildhost, license, group, vendor):
         self.name = name
         self.version = version
         self.release = release
@@ -376,4 +416,5 @@ class PackageInfo:
         self.buildhost = buildhost
         self.license = license
         self.group = group
+        self.vendor = vendor
 

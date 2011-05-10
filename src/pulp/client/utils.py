@@ -220,6 +220,7 @@ def processFile(filename, relativeDir=None):
     hash['buildhost'] = h['buildhost']
     hash['license'] = h['license']
     hash['group'] = h['group']
+    hash['vendor'] = h['vendor']
     return hash
 
 def getChecksumType(header):

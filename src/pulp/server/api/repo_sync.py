@@ -320,9 +320,10 @@ class BaseSynchronizer(object):
             newpkg.size = package.size
             newpkg.group = package.group
             newpkg.license = package.license
+            newpkg.vendor  = package.vendor
             # update filter
             filter = ['requires', 'provides', 'buildhost',
-                      'size' , 'group', 'license']
+                      'size' , 'group', 'license', 'vendor']
             # set the download URL
             if repo:
                 filter.append('download_url')

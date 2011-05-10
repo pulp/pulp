@@ -80,7 +80,8 @@ class PackageApi(BaseApi):
                        'buildhost',
                        'size',
                        'group',
-                       'license'):
+                       'license',
+                       'vendor',):
                 pkg[key] = value
                 continue
             raise Exception, \

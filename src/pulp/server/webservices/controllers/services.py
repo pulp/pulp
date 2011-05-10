@@ -406,15 +406,15 @@ class DiscoveryStatus(AsyncController):
         """
         [[wiki]]
         title: Discovery Task status
-        description: Get status of a discovery async task.
+        description: Get status of an async task.
         This method only works for actions that returned a 202 Accepted response.
         e.g. /services/discovery/repo/<id>
         method: GET
         path: /services/discovery/repo/<id>
         permission: READ
         success response: 200 OK
-        failure response: 404 NOT FOUND
-        return: Task object
+        failure response: None
+        return: Task objects
         """
         task = self.task_status(id)
         if task is None:
