@@ -105,8 +105,10 @@ class CdsInstance(JSONController):
         cds['heartbeat'] = heartbeat.values()[0]
 
         # Inject task info
+        cds['next_scheduled_sync'] = None
         task = scheduled_sync.find_scheduled_task(id, 'cds_sync')
-        cds['next_scheduled_sync'] = task and scheduled_sync.task_scheduled_time_to_dict(task)
+        if task and task.scheduled_time is not None:
+            cds['next_scheduled_sync'] = dateutils.format_iso8601_datetime(task.scheduled_time)
 
         return self.ok(cds)
 

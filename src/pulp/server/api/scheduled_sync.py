@@ -26,68 +26,25 @@ except ImportError:
 from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.api.repo_sync import RepoSyncTask
-from pulp.server.db.model.cds import CDS, CDSSyncSchedule
-from pulp.server.db.model.resource import Repo, RepoSyncSchedule
+from pulp.server.db.model.cds import CDS
+from pulp.server.db.model.resource import Repo
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
 
-# convenience methods for schedule reporting ----------------------------------
-
-def task_scheduled_time_to_dict(task):
-    """
-    Convert a task's scheduled time field into a dictionary for easy reporting.
-    @type task: L{pulp.server.tasking.task.Task}
-    @param task: task to convert scheduled time of
-    @rtype: None or dict
-    @return: a dictionary representing the task's scheduled time,
-             None if the task is not scheduled
-    """
-    if task.scheduled_time is None:
-        return None
-    return dict([(k, getattr(task.scheduled_time, k))
-                  for k in ('year', 'month', 'day', 'hour', 'minute')
-                  if getattr(task.scheduled_time, k)])
-
-# schedule validation ---------------------------------------------------------
-
-def _parse_repo_schedule(schedule_str):
-    i, s, r = dateutils.parse_iso8601_interval(schedule_str)
-    return RepoSyncSchedule(i, s, r)
-
-
-def _parse_cds_schedule(schedule_str):
-    i, s, r = dateutils.parse_iso8601_interval(schedule_str)
-    return CDSSyncSchedule(i, s, r)
-
-# sync task management ---------------------------------------------------
+## sync task management ---------------------------------------------------
 
 def schedule_to_scheduler(schedule):
     """
     Convenience function to turn a serialized task schedule into an interval
     scheduler appropriate for scheduling a sync task.
-    @type schedule: L{pulp.server.db.model.resource.RepoSyncSchedule} or
-                    L{pulp.server.db.model.cds.CDSSyncSchedule}
-    @param schedule: sync schedule to turn into interval scheduler
+    @type schedule: basestring
+    @param schedule: sync schedule to turn into interval scheduler in iso8601 format
     @rtype: L{IntervalScheduler}
     @return: interval scheduler for the tasking sub-system
     """
-    interval = schedule['interval']
-    interval = datetime.timedelta(weeks=interval.get('weeks', 0),
-                                  days=interval.get('days', 0),
-                                  hours=interval.get('hours', 0),
-                                  minutes=interval.get('minutes', 0))
-    start_time = schedule.get('start_time', None)
-    if start_time is not None:
-        now = datetime.datetime.now(dateutils.local_tz())
-        year = max(now.year, start_time.get('year', 0))
-        month = max(now.month, start_time.get('month', 0))
-        day = max(now.day, start_time.get('day', 0))
-        hour = start_time.get('hour', now.hour)
-        minute = start_time.get('minute', now.minute)
-        start_time = datetime.datetime(year, month, day, hour, minute, tzinfo=dateutils.local_tz())
-    runs = schedule.get('runs', None)
-    return IntervalScheduler(interval, start_time, runs)
+    i, s, r = dateutils.parse_iso8601_interval(schedule)
+    return IntervalScheduler(i, s, r)
 
 
 def find_scheduled_task(id, method_name):
@@ -139,18 +96,20 @@ def _update_repo_scheduled_sync_task(repo, task):
     @type task: L{pulp.server.tasking.task.Task}
     @param task: task to update
     """
-    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     if task.state not in task_complete_states:
+        task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
         return
     async.remove_async(task)
+    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     async.enqueue(task)
 
 
 def _update_cds_scheduled_sync_task(cds, task):
-    task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
     if task.state not in task_complete_states:
+        task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
         return
     async.remove_async(task)
+    task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
     async.enqueue(task)
 
 
@@ -182,7 +141,9 @@ def update_repo_schedule(repo, new_schedule):
     @type new_schedule: dict
     @param new_schedule: dictionary representing new schedule
     """
-    repo['sync_schedule'] = _parse_repo_schedule(new_schedule)
+    # using the parsing function to "validate" the schedule
+    dateutils.parse_iso8601_interval(new_schedule)
+    repo['sync_schedule'] = new_schedule
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
@@ -208,7 +169,9 @@ def update_cds_schedule(cds, new_schedule):
     '''
     Change a CDS sync schedule.
     '''
-    cds['sync_schedule'] = _parse_cds_schedule(new_schedule)
+    # use the parsing function to "validate" the new schedule
+    dateutils.parse_iso8601_interval(new_schedule)
+    cds['sync_schedule'] = new_schedule
     collection = CDS.get_collection()
     collection.save(cds, safe=True)
     task = find_scheduled_task(cds['hostname'], 'cds_sync')

@@ -87,6 +87,7 @@ import logging
 
 import web
 
+from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server.api import scheduled_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -270,7 +271,9 @@ class Repository(JSONController):
         repo['files_count'] = len(repo['files'])
         # see if the repo is scheduled for sync in the future
         task = scheduled_sync.find_scheduled_task(repo['id'], '_sync')
-        repo['next_scheduled_sync'] = task and scheduled_sync.task_scheduled_time_to_dict(task)
+        repo['next_scheduled_time'] = None
+        if task and task.scheduled_time is not None:
+            repo['next_scheduled_sync'] = format_iso8601_datetime(task.scheduled_time)
         return self.ok(repo)
 
     @JSONController.error_handler
@@ -350,7 +353,7 @@ class RepositoryDeferredFields(JSONController):
          * version, str, package version
          * release, str, package release
          * epoch, int, package epoch
-         * arch, str, package architecture 
+         * arch, str, package architecture
          * filename, str, name of package file
          * field, str, field to include in Package objects
         """
@@ -542,7 +545,7 @@ class RepositoryActions(AsyncController):
         method: POST
         path: /repositories/<id>/sync/
         permission: EXECUTE
-        success response: 202 Accepted 
+        success response: 202 Accepted
         failure response: 404 Not Found if the id does not match a repository
                           406 Not Acceptable if the repository does not have a source
                           409 Conflict if a sync is already in progress for the repository
@@ -591,7 +594,7 @@ class RepositoryActions(AsyncController):
 
     # XXX hack to make the web services unit tests work
     _sync = sync
-    
+
     def metadata(self, id):
         """
         [[wiki]]
@@ -600,7 +603,7 @@ class RepositoryActions(AsyncController):
         method: POST
         path: /repositories/<id>/metadata/
         permission: EXECUTE
-        success response: 202 Accepted 
+        success response: 202 Accepted
         failure response: 404 Not Found if the id does not match a repository
                           406 Not Acceptable if the repository does not have a source
                           409 Conflict if a metadata is already in progress for the repository
@@ -608,7 +611,7 @@ class RepositoryActions(AsyncController):
         """
         repo = api.repository(id)
         repo_params = self.params()
-        
+
         task = api.metadata(id)
         if not task:
             return self.conflict('Metadata generation already in process for repo [%s]' % id)
@@ -845,7 +848,7 @@ class RepositoryActions(AsyncController):
 #        """
 #        Removes a packagegroup from a repository
 #        @param id: repository id
-#        @return: 
+#        @return:
 #        """
         p = self.params()
         if "groupid" not in p:
@@ -1112,7 +1115,7 @@ class RepositoryActions(AsyncController):
         failure response: 404 Not Found if the id does not match a repository
         return: true
         parameters:
-         * filters, list of str, list of filter ids 
+         * filters, list of str, list of filter ids
         """
         data = self.params()
         api.add_filters(id=id, filter_ids=data['filters'])
@@ -1130,7 +1133,7 @@ class RepositoryActions(AsyncController):
         failure response: 404 Not Found if the id does not match a repository
         return: true
         parameters:
-         * filters, list of str, list of filter ids 
+         * filters, list of str, list of filter ids
         """
         data = self.params()
         api.remove_filters(id=id, filter_ids=data['filters'])
