@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.173
+Version:        0.0.174
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -281,6 +281,36 @@ fi
 
 
 %changelog
+* Mon May 09 2011 Jeff Ortel <jortel@redhat.com> 0.0.174-1
+- Fix xml.dom.minidom import. (jortel@redhat.com)
+- 701829 - Clear the repo listing file on empty syncs and delete_all calls
+  (jason.dobies@redhat.com)
+- removing audit initialize (pkilambi@redhat.com)
+- fixing auditing event collection reference (jconnor@redhat.com)
+- Fix repo file cleanup when consumer deleted. (jortel@redhat.com)
+- Allow client to add and remove text only errata (pkilambi@redhat.com)
+- 702434 - create a new UpdateNotice instance for each errata
+  (pkilambi@redhat.com)
+- 669397 - Enforcing ID restrictions on repo, consumer, consumergroup etc. and
+  changing unit test to comply with ID regex (skarmark@redhat.com)
+- Secure server/agent RMI with shared secret. (jortel@redhat.com)
+- fixed broken import of xml.dom.minidom (jconnor@redhat.com)
+- fixed retry decorator to account for previous binding of im_self to passed in
+  method (jconnor@redhat.com)
+- removed auditing initialization (jconnor@redhat.com)
+- 692969 new pulp collection wrapper class that allows for AutoReconnect
+  handling (jconnor@redhat.com)
+- getting rid of last users of get_object_db (jconnor@redhat.com)
+- more help usage fixing to match the standard (pkilambi@redhat.com)
+- fixing help usage to match the standard (pkilambi@redhat.com)
+- remove extra / while joining urls (pkilambi@redhat.com)
+- 700917 - cli inconsistencies in content --help fixed (skarmark@redhat.com)
+- 700918 - cli inconsistencies in repo --help fixed (skarmark@redhat.com)
+- Removing legacy RHN support from pulp (pkilambi@redhat.com)
+- CR-11, website index. (jortel@redhat.com)
+- Better heartbeat logging. (jortel@redhat.com)
+- fixed comparison for None scheduled_time (jconnor@redhat.com)
+
 * Tue May 03 2011 Jeff Ortel <jortel@redhat.com> 0.0.173-1
 - Require gofer 0.35. (jortel@redhat.com)
 - 700371 - support for text only errata (pkilambi@redhat.com)

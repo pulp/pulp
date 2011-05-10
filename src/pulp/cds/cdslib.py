@@ -231,10 +231,18 @@ class CdsLib(object):
                     repos_file.write('\n')
                 repos_file.close()
 
+        if len(repos) == 0:
+            # If no repos were specified, make sure the CDS repo list file does not
+            # contain references to any CDS instances
+            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
+            repos_file.write('')
+            repos_file.close()
+
     def _delete_removed_repos(self, repos):
         '''
         Deletes any repos that were synchronized in a previous sync but have since been
-        unassociated from the CDS.
+        unassociated from the CDS. This will *not* affect the local listings file;
+        it's assumed that task will be taken care of elsewhere.
 
         @param repos: list of repos that should be on the CDS following synchronization;
                       any repos that were synchronized previously but are no longer in
@@ -287,6 +295,13 @@ class CdsLib(object):
             doomed = os.path.join(packages_dir, path)
             log.info('Removing old repo [%s]' % doomed)
             shutil.rmtree(doomed)
+
+        # Clear the repos listing
+        packages_location = self.config.get('cds', 'packages_dir')
+        repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
+        repos_file.write('')
+        repos_file.close()
+
 
 class SecretFile:
     '''
