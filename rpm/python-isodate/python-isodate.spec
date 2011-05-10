@@ -2,7 +2,7 @@
 %define pkgname isodate
 
 Name:           python-isodate
-Version:        0.4.6
+Version:        0.4.4
 Release:        1%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
@@ -10,7 +10,7 @@ Group:          Development/Libraries
 License:        BSD
 
 URL:            http://cheeseshop.python.org/pypi/isodate
-Source0:        python-isodate-%{version}.tar.gz
+Source0:        isodate-%{version}.tar.gz
 Patch0:         isodate-tzinfo.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  python-setuptools
