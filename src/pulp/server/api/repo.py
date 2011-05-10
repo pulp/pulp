@@ -1233,14 +1233,46 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         self._update_groups_metadata(repo["id"])
 
-    def packagegroups(self, id):
+    def packagegroups(self, id, filter_missing_packages=False, filter_incomplete_groups=False):
         """
         Return list of PackageGroup objects in this Repo
         @param id: repo id
         @return: packagegroup or None
         """
         repo = self._get_existing_repo(id)
-        return repo['packagegroups']
+        pkggroups = repo['packagegroups']
+        # Filter operations will restrict based on packages in this repo
+        if filter_incomplete_groups or filter_missing_packages:
+            # We are only filtering on the common group type of 'default_package_names'
+            pkggroups = self._filter_package_groups(id, pkggroups, ["default_package_names"],
+                                                    filter_missing_packages, filter_incomplete_groups)
+        return pkggroups
+
+    def _filter_package_groups(self, repo_id, pkggroups, types,
+                               filter_missing_packages, filter_incomplete_groups):
+        """
+        Return package groups filtered so that packages not in repo are removed
+        @param repo_id: repository id
+        @param pkggroups: package group data
+        @param types: package group types to process
+        @param filter_missing_packages: if True will restrict returned groups to only packages in repo
+        @param filter_incomplete_groups: if True will only return groups where every package is in repo
+        """
+        repo_pkgs = self.packages(repo_id)
+        repo_pkg_names = [p["name"] for pid, p in repo_pkgs.items()]
+        for grp_type in types:
+            pkgs = []
+            for grpid in pkggroups:
+                for name in pkggroups[grpid][grp_type]:
+                    pkgs.append((name, grpid))
+            for name, grpid in pkgs:
+                if name not in repo_pkg_names:
+                    if filter_incomplete_groups:
+                        if pkggroups.has_key(grpid):
+                            del pkggroups[grpid]
+                    elif filter_missing_packages:
+                        pkggroups[grpid][grp_type].remove(name)
+        return pkggroups
 
     def packagegroup(self, repoid, groupid):
         """

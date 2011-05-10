@@ -376,19 +376,27 @@ class RepositoryDeferredFields(JSONController):
         title: Repository Package Groups
         description: Get the package groups in the repositories.
         method: GET
-        path: /repositories/<id>/packagegroups/
+        path: /repositories/<repository id>/packagegroups/
         permission: READ
         success response: 200 OK
         failure response: 404 Not Found if the id does not match a repository
         return: list of package group names
         filters:
-         * id, str, package groupd id
-         * packagegroups, str, package group name
+         * filter_missing_packages, bool, True means to filter results to remove missing package names
+         * filter_incomplete_groups, bool, True means to filter results to remove groups with missing packages
         """
         repo = api.repository(id, ['id', 'packagegroups'])
         if repo is None:
             return self.not_found('No repository %s' % id)
-        return self.ok(repo.get('packagegroups'))
+        valid_filters = ('filter_missing_packages', 'filter_incomplete_groups')
+        filters = self.filters(valid_filters)
+        filter_missing_packages = False
+        if filters.has_key("filter_missing_packages") and filters["filter_missing_packages"]:
+            filter_missing_packages = True
+        filter_incomplete_groups = False
+        if filters.has_key("filter_incomplete_groups") and filters["filter_incomplete_groups"]:
+            filter_incomplete_groups = True
+        return self.ok(api.packagegroups(id, filter_missing_packages,filter_incomplete_groups))
 
     def packagegroupcategories(self, id):
         """

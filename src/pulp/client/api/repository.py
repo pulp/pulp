@@ -139,9 +139,14 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/packages/" % repoid
         return self.server.GET(path)[1]
 
-    def packagegroups(self, repoid):
+    def packagegroups(self, repoid, filter_missing_packages=False, filter_incomplete_groups=False):
         path = "/repositories/%s/packagegroups/" % repoid
-        return self.server.GET(path)[1]
+        params = {}
+        if filter_missing_packages:
+            params["filter_missing_packages"] = True
+        if filter_incomplete_groups:
+            params["filter_incomplete_groups"] = True
+        return self.server.GET(path, params)[1]
 
     def packagegroupcategories(self, repoid):
         path = "/repositories/%s/packagegroupcategories/" % repoid

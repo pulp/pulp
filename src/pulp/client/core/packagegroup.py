@@ -54,10 +54,15 @@ class List(PackageGroupAction):
     def setup_parser(self):
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
+        self.parser.add_option("-f", "--filter", action="store_true",
+                        dest="filter_incomplete_groups", default=False,
+                        help=_("drop groups with missing packages from result"))
 
     def run(self):
         repoid = self.get_required_option('repoid')
-        groups = self.repository_api.packagegroups(repoid)
+        filter_incomplete_groups = self.opts.filter_incomplete_groups
+        groups = self.repository_api.packagegroups(repoid,
+                                                   filter_incomplete_groups=filter_incomplete_groups)
         if not groups:
             system_exit(os.EX_DATAERR,
                         _("No package groups found in repo [%s]") % (repoid))
@@ -75,11 +80,14 @@ class Info(PackageGroupAction):
         super(Info, self).setup_parser()
         self.parser.add_option("-r", "--repoid", dest="repoid",
                                help=_("repository label (required)"))
-
+        self.parser.add_option("-f", "--filter", action="store_true",
+                        dest="filter_missing_packages", default=False,
+                        help=_("filter packages not in repo from result"))
     def run(self):
         groupid = self.get_required_option('id')
         repoid = self.get_required_option('repoid')
-        groups = self.repository_api.packagegroups(repoid)
+        filter_missing_packages = self.opts.filter_missing_packages
+        groups = self.repository_api.packagegroups(repoid, filter_missing_packages=filter_missing_packages)
         if not groups or groupid not in groups:
             system_exit(os.EX_DATAERR,
                         _("Package group [%s] not found in repo [%s]") %

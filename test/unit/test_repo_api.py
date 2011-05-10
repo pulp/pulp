@@ -657,8 +657,59 @@ class TestRepoApi(unittest.TestCase):
         found = self.rapi.repository('some-id')
         self.assertTrue(len(found['packagegroups']) == 0)
 
+    def test_repo_package_groups_with_restrict_missing_packages(self):
+        repo = self.rapi.create('test_repo_package_groups_with_restrict_missing_packages',
+                                'some name', 'i386', 'http://example.com')
+        pkggroup = self.rapi.create_packagegroup(repo["id"],
+                'test-group-id1', 'test-group-name',
+                'test-group-description')
+        package = testutil.create_package(self.papi, 'test_repo_package1')
+        self.rapi.add_package(repo["id"], [package["id"]])
+        self.rapi.add_packages_to_group(repo["id"], pkggroup["id"],
+                [package["name"]], gtype="default")
+        # Add a non-existent package
+        missing_pkg_name = "missing_package_name"
+        self.rapi.add_packages_to_group(repo["id"], pkggroup["id"], [missing_pkg_name])
+        grps = self.rapi.packagegroups(id=repo["id"])
+        self.assertTrue(grps.has_key(pkggroup["id"]))
+        grp = grps[pkggroup["id"]]
+        self.assertEquals(2, len(grp["default_package_names"]))
+        grps = self.rapi.packagegroups(id=repo["id"], filter_missing_packages=True)
+        self.assertTrue(grps.has_key(pkggroup["id"]))
+        grp = grps[pkggroup["id"]]
+        self.assertEquals(1, len(grp["default_package_names"]))
+        self.assertNotIn(missing_pkg_name, grp["default_package_names"])
 
-
+    def test_repo_package_groups_with_restrict_incomplete_groups(self):
+        repo = self.rapi.create('test_repo_package_groups_with_restrict_incomplete_groups',
+                                'some name', 'i386', 'http://example.com')
+        pkggroup1 = self.rapi.create_packagegroup(repo["id"],
+                'test-group-id1', 'test-group-name1',
+                'test-group-description1')
+        pkggroup2 = self.rapi.create_packagegroup(repo["id"],
+                'test-group-id2', 'test-group-name2',
+                'test-group-description2')
+        package = testutil.create_package(self.papi, 'test_repo_package1')
+        self.rapi.add_package(repo["id"], [package["id"]])
+        self.rapi.add_packages_to_group(repo["id"], pkggroup1["id"],
+                [package["name"]], gtype="default")
+        self.rapi.add_packages_to_group(repo["id"], pkggroup2["id"],
+                [package["name"]], gtype="default")
+        # Add a non-existent package
+        missing_pkg_name = "missing_package_name"
+        self.rapi.add_packages_to_group(repo["id"], pkggroup2["id"], [missing_pkg_name])
+        # Regular package group lookup
+        grps = self.rapi.packagegroups(id=repo["id"])
+        self.assertEquals(2, len(grps))
+        self.assertTrue(grps.has_key(pkggroup1["id"]))
+        self.assertTrue(grps.has_key(pkggroup2["id"]))
+        grp = grps[pkggroup2["id"]]
+        self.assertEquals(2, len(grp["default_package_names"]))
+        # Filtered package group lookup
+        grps = self.rapi.packagegroups(id=repo["id"], filter_incomplete_groups=True)
+        self.assertTrue(grps.has_key(pkggroup1["id"]))
+        self.assertTrue(not grps.has_key(pkggroup2["id"]))
+    
     def test_repo_package_group_categories(self):
         repo = self.rapi.create(
             'some-id_pkg_group_categories',
