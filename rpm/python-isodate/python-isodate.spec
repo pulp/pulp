@@ -58,6 +58,9 @@ for instance nanoseconds it will round it to microseconds.
 %{python_sitelib}/*
 
 %changelog
+* Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.4.4-1
+- Messed up the version number (jason.dobies@redhat.com)
+
 * Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.4.6-1
 - Fixed source entry for tito compatibility (jason.dobies@redhat.com)
 
