@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.175
+Version:        0.0.176
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -281,6 +281,9 @@ fi
 
 
 %changelog
+* Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.176-1
+- This is needed to be able to build this subproject (jason.dobies@redhat.com)
+
 * Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.175-1
 - 703553 - change the skipp urls msg to be on only in debug mode
   (pkilambi@redhat.com)
