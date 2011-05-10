@@ -366,7 +366,22 @@ class ImportUploadContent:
         if not self.__finalize_content(file_path):
             return None
         f = FileApi()
-
+        try:
+            checksum = self.metadata['checksum']
+            hashtype = self.metadata['hashtype']
+        except:
+            raise PulpException("metadata is missing file checksum or hashtype value")
+        try:
+            pkgname = self.metadata['pkgname']
+        except KeyError:
+            raise PulpException("metadata is missing file pkgname value")
+        try:
+            size = self.metadata['size']
+        except KeyError:
+            raise PulpException("metadata is missing file size value")
+        description = None
+        if self.metadata.has_key('description'):
+            description = self.metadata['description']
         fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'],
                  self.metadata['checksum'], self.metadata['size'], self.metadata['description'])
         self.__file_imported(fobj['id'], file_path)
