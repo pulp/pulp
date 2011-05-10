@@ -1368,7 +1368,7 @@ class Discovery(RepoProgressAction):
             while proceed.strip().lower() not in  ['q', 'y']:
                 if not proceed.strip().lower() == 'h':
                     self.__print_urls(repourls)
-                proceed = raw_input(_("\nSelect urls for which candidate repos should be created (h for help):"))
+                proceed = raw_input(_("\nSelect urls for which candidate repos should be created; use `y` to confirm (h for help):"))
                 select_val = proceed.strip().lower()
                 if select_val == 'h':
                     print select_range_str
@@ -1377,6 +1377,7 @@ class Discovery(RepoProgressAction):
                 elif select_val in num_selects:
                     self.__add_selection([repourls[int(proceed.strip().lower())-1]])
                 elif select_val == 'q':
+                    self.selection = []
                     system_exit(os.EX_OK, _("Operation aborted upon user request."))
                 elif set(select_val.split(":")).issubset(num_selects):
                     lower, upper = tuple(select_val.split(":"))
