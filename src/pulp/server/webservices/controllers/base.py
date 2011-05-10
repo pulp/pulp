@@ -23,6 +23,7 @@ from gettext import gettext as _
 import web
 from pymongo import json_util
 
+from pulp.common import dateutils
 from pulp.server import async
 from pulp.server.auth.authentication import (
     check_username_password, check_user_cert, check_consumer_cert, check_oauth)
@@ -339,20 +340,17 @@ class AsyncController(JSONController):
         @param task: task to convert
         @return dict representing task
         """
-        fields = ('id', 'method_name', 'state', 'start_time', 'finish_time',
-                  'result', 'exception', 'traceback', 'progress',
-                  'scheduled_time')
+        fields = ('id', 'method_name', 'state', 'result', 'exception',
+                  'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
+
         if isinstance(task.exception, Exception):
             d['exception'] = str(task.exception)
 
-        # Convert the date objects to strings; this isn't the cleanest approach,
-        # but we need a more global addressing of dates and JSON encoding
-        if d['start_time']:
-            d['start_time'] = d['start_time'].strftime('%s')
-
-        if d['finish_time']:
-            d['finish_time'] = d['finish_time'].strftime('%s')
+        fields = ('state_time', 'finish_time', 'scheduled_time')
+        for f in fields:
+            t = getattr(task, f, None)
+            d[f] = t and dateutils.format_iso8601_datetime(t)
 
         return d
 
