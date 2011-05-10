@@ -40,13 +40,6 @@ class RepoSyncTask(Task):
         # Tell Grinder to stop syncing
         if self.synchronizer:
             self.synchronizer.stop()
-            # All synchronization work should be stopped
-            # when this returns.  Will pass through to
-            # default cancel behavior as a backup in case
-            # something didn't cancel
-        # Inject the CancelException into the running sync thread
-        super(RepoSyncTask, self).cancel()
-        # Clean up state of sync for this repo_id
         # Related to bz700508 - fast sync/cancel_sync locks up task subsystem
-        if self.repo_id:
-            self.repo_api.set_sync_in_progress(self.repo_id, False)
+        # Removed injecting a CancelException into thread
+        # Allow thread to stop on it's own when it reaches a safe stopping point

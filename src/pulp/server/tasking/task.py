@@ -335,17 +335,22 @@ class Task(object):
         try:
             result = self.callable(*self.args, **self.kwargs)
             self.invoked(result)
-        except TimeoutException:
+        except TimeoutException, e:
+            _log.info('Task id:%s, method_name:%s: TIMED OUT' %
+                       (self.id, self.method_name))
             self.state = task_timed_out
             self._exception_delivered()
-            _log.error('Task id:%s, method_name:%s: TIMED OUT' %
-                       (self.id, self.method_name))
-        except CancelException:
+            self.failed(e)
+        except CancelException, e:
+            _log.info("Task id:%s, method_name:%s CancelException" %
+                      (self.id, self.method_name))
             self.state = task_canceled
             self._exception_delivered()
-            _log.info('Task id:%s, method_name:%s: CANCELLED' %
-                      (self.id, self.method_name))
+            self.failed(e)
         except Exception, e:
+            _log.info("Task id:%s, method_name:%s Exception: %s" %
+                      (self.id, self.method_name, e))
+            self._exception_delivered()
             self.failed(e)
 
     # -------------------------------------------------------------------------
@@ -415,7 +420,8 @@ class Task(object):
             self.thread.cancel()
         self.state = task_canceled
         self.finish_time = datetime.datetime.now(dateutils.local_tz())
-        self._complete()
+        # Intentionally not calling _complete().  This will be handled after
+        # exception has been delivered and the Exception is caught.
 
 # asynchronous task -----------------------------------------------------------
 

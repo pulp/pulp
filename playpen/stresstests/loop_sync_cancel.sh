@@ -11,7 +11,7 @@ function check_error {
     then
         echo "Exception: ${CHECK_ERROR}"
         echo "Full status: $1"
-        exit 1
+        #exit 1
     fi
 }
 

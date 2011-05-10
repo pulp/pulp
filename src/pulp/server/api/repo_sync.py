@@ -37,7 +37,7 @@ from pulp.server.api.package import PackageApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.db.model import Delta, DuplicateKeyError
 from pulp.server.pexceptions import PulpException
-
+from pulp.server.tasking.exception import CancelException
 
 
 log = logging.getLogger(__name__)
@@ -146,9 +146,10 @@ class BaseSynchronizer(object):
             'error_details':[],
             'step': "STARTING",
         }
+        self.stopped = False
 
     def stop(self):
-        pass
+        self.stopped = True
 
     def set_callback(self, callback):
         self.callback = callback
@@ -421,6 +422,8 @@ class YumSynchronizer(BaseSynchronizer):
         if not limit_in_KB:
             log.info("Limiting download speed to %s KB/sec per thread. [%s] threads will be used" % \
                     (limit_in_KB, num_threads))
+        if self.stopped:
+            raise CancelException()
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
                                 num_threads, cacert=cacert, clicert=clicert, clikey=clikey,
                                 packages_location=pulp.server.util.top_package_location(),
@@ -448,6 +451,8 @@ class YumSynchronizer(BaseSynchronizer):
             if "group" in ftypes:
                 g = pulp.server.util.get_repomd_filetype_path(repomd_xml, "group")
                 groups_xml_path = os.path.join(store_path, g)
+        if self.stopped:
+            raise CancelException()
         pulp.server.util.create_repo(store_path, groups=groups_xml_path, checksum_type=repo['checksum_type'])
         end = time.time()
         log.info("Createrepo finished in %s seconds" % (end - start))
@@ -456,6 +461,7 @@ class YumSynchronizer(BaseSynchronizer):
         return store_path
 
     def stop(self):
+        super(YumSynchronizer, self).stop()
         log.debug("YumSynchronizer attempting to stop grinder threads")
         if self.yum_repo_grinder:
             self.yum_repo_grinder.stop()
