@@ -1329,7 +1329,8 @@ class RemoveFilters(RepoAction):
 class Discovery(RepoProgressAction):
 
     description = _('discover and create repositories')
-
+    selected = []
+    
     def setup_parser(self):
         self.parser.add_option("-u", "--url", dest="url",
                                help=_("root url to perform discovery (required)"))
@@ -1364,27 +1365,26 @@ class Discovery(RepoProgressAction):
             proceed = ''
             num_selects = [str(i+1) for i in range(len(repourls))]
             select_range_str = constants.SELECTION_QUERY % len(repourls)
-            selected = []
             while proceed.strip().lower() not in  ['q', 'y']:
                 if not proceed.strip().lower() == 'h':
-                    self.__print_urls(repourls, selected)
+                    self.__print_urls(repourls)
                 proceed = raw_input(_("\nSelect urls for which candidate repos should be created (h for help):"))
                 select_val = proceed.strip().lower()
                 if select_val == 'h':
                     print select_range_str
                 elif select_val == 'a':
-                    selected += repourls
+                    self.__add_selection(repourls)
                 elif select_val in num_selects:
-                    selected.append(repourls[int(proceed.strip().lower())-1])
+                    self.__add_selection([repourls[int(proceed.strip().lower())-1]])
                 elif select_val == 'q':
                     system_exit(os.EX_OK, _("Operation aborted upon user request."))
                 elif set(select_val.split(":")).issubset(num_selects):
                     lower, upper = tuple(select_val.split(":"))
-                    selected += repourls[int(lower)-1:int(upper)]
+                    self.__add_selection(repourls[int(lower)-1:int(upper)])
                 elif select_val == 'c':
-                    selected = []
+                    self.selected = []
                 elif select_val == 'y':
-                    if not len(selected):
+                    if not len(self.selected):
                         proceed = ''
                         continue
                     else:
@@ -1393,18 +1393,17 @@ class Discovery(RepoProgressAction):
                     continue
         else:
             #select all
-            selected = repourls
-            self.__print_urls(repourls, selected)
+            self.__add_selection( repourls)
+            self.__print_urls(repourls)
         # create repos for selected urls
         print _("\nCreating candidate repos for selected urls..")
-        for repourl in selected:
+        for repourl in self.selected:
             try:
                 url_str = urlparse.urlparse(repourl).path.split('/')
                 id = '-'.join([s for s in url_str if len(s)]) or None
                 if not id:
                     #no valid id formed, continue
                     continue
-                #feed= '%s:%s' % (ctype, repourl)
                 repo = self.repository_api.create(id, id, 'noarch', groupid=self.opts.groupid or [], feed=repourl)
                 print("Successfully created repo [%s]" % repo['id'])
             except Exception, e:
@@ -1413,9 +1412,14 @@ class Discovery(RepoProgressAction):
                 log.error("Error creating candidate repos %s" % e[1])
         system_exit(success)
 
-    def __print_urls(self, repourls, selected):
+    def __add_selection(self, urls):
+        for url in urls:
+            if url not in self.selected:
+                self.selected.append(url)
+
+    def __print_urls(self, repourls):
         for index, url in enumerate(repourls):
-            if url in selected:
+            if url in self.selected:
                 print "(+)  [%s] %-5s" % (index+1, url)
             else:
                 print "(-)  [%s] %-5s" % (index+1, url)
