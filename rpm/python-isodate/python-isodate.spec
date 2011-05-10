@@ -2,8 +2,8 @@
 %define pkgname isodate
 
 Name:           python-isodate
-Version:        0.4.4
-Release:        2%{?dist}
+Version:        0.4.5
+Release:        1%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
@@ -58,5 +58,8 @@ for instance nanoseconds it will round it to microseconds.
 %{python_sitelib}/*
 
 %changelog
+* Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.4.5-1
+- new package built with tito
+
 * Tue Apr 26 2011 Jason L Connor <jconnor@redhat.com> 0.4.4-1
 - Initial rpm spin
