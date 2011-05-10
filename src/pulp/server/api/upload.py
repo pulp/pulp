@@ -366,6 +366,7 @@ class ImportUploadContent:
         if not self.__finalize_content(file_path):
             return None
         f = FileApi()
+
         fobj = f.create(self.metadata['pkgname'], self.metadata['hashtype'],
                  self.metadata['checksum'], self.metadata['size'], self.metadata['description'])
         self.__file_imported(fobj['id'], file_path)

@@ -60,7 +60,7 @@ class BaseDiscovery(object):
         try:
             src = urllib2.urlopen(url).read()
         except Exception, e:
-            log.error("An error occurred while reading url page [%s] : %s" % (url, e))
+            log.debug("An error occurred while reading url page [%s] : %s" % (url, e))
             return []
         try:
             soup = BeautifulSoup.BeautifulSoup(src)
