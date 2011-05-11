@@ -68,6 +68,9 @@ def parse_interval_schedule(interval, start, runs):
     except ValueError:
         system_exit(os.EX_USAGE, _('Runs must me an integer'))
     try:
+        interval = dateutils.parse_iso8601_duration(interval)
+        if start is not None:
+            start = dateutils.parse_iso8601_datetime(start)
         schedule = dateutils.format_iso8601_interval(interval, start, runs)
         return schedule
     except isodate.ISO8601Error, e:
