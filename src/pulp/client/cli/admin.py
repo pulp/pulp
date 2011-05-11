@@ -37,5 +37,3 @@ class AdminCLI(PulpCLI):
             self._server.set_ssl_credentials(certfile, keyfile)
         elif None not in (self.opts.username, self.opts.password):
             self._server.set_basic_auth_credentials(self.opts.username, self.opts.password)
-        else:
-            system_exit(os.EX_NOUSER, "Error: No valid credentials; Please run `pulp-admin auth login` or use `--username` and `--password`")
