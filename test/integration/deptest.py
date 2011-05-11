@@ -4,8 +4,8 @@ import sys
 import time
 from pulp.server.db import connection
 connection.initialize()
-from pulp.server import auditing
-auditing.initialize()
+#from pulp.server import auditing
+#auditing.initialize()
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.depsolver import DepSolver
