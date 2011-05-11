@@ -96,6 +96,7 @@ class List(ErrataAction):
             errata = self.consumer_api.errata(consumerid, self.opts.type)
             if errata:
                 print_header(_("Applicable Errata for consumer [%s]" % consumerid))
+        
         if not errata:
             system_exit(os.EX_OK, _("No errata available to list"))
         print(" , ".join(errata))

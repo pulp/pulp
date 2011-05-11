@@ -55,10 +55,20 @@ class DependencyActions(JSONController):
         list of available dependencies required \
         for a specified package per repo.
         expects passed in pkgnames and repoids from POST data
+        pkgnames format includes: name, name.arch, name-ver-rel.arch, name-ver, name-ver-rel,
+         epoch:name-ver-rel.arch, name-epoch:ver-rel.arch
         @return: a dict of printable dependency result and suggested packages
         """
         data = self.params()
-        return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=data['recursive']))
+        # validate required params
+        if not data.has_key('pkgnames') or not len(data['pkgnames']):
+            return self.bad_request('atleast one package required to perform dependency lookup')
+        if not data.has_key('repoids') or not len(data['repoids']):
+            return self.bad_request('atleast one repoid required to perform dependency lookup')
+        recursive = 0
+        if data.has_key("recursive"):
+            recursive = data['recursive']
+        return self.ok(papi.package_dependency(data['pkgnames'], data['repoids'], recursive=recursive))
 
 
 class PackageSearch(JSONController):
