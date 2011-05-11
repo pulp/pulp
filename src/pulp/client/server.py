@@ -214,7 +214,7 @@ class PulpServer(Server):
                                         ssl_context=ssl_context)
 
     def _connect(self):
-        # make an appropriate connection to the pulp server and cache it
+        # make an appropriate connection to the pulp server
         if self.protocol == 'http':
             return self._http_connection()
         else:
