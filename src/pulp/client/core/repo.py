@@ -19,6 +19,7 @@ import sys
 import time
 import urlparse
 from gettext import gettext as _
+from optparse import OptionGroup
 
 from pulp.client import constants
 from pulp.client import utils
@@ -29,7 +30,8 @@ from pulp.client.api.service import ServiceAPI
 from pulp.client.api.file import FileAPI
 from pulp.client.api.repository import RepositoryAPI
 from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.core.utils import (
+    print_header, parse_interval_schedule, system_exit)
 from pulp.client.logutil import getLogger
 from pulp.common.dateutils import parse_iso8601_datetime
 
@@ -436,14 +438,26 @@ class Create(RepoAction):
         self.parser.add_option("--checksum_type", dest="checksum_type", default="sha256",
                                help=_("checksum type to use when yum metadata is generated for this repo; default:sha256"))
         self.parser.add_option("--notes", dest="notes",
-                               help=_("Additional information about repo in a dictionary form inside a string"))
+                               help=_("additional information about repo in a dictionary form inside a string"))
+
+        schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
+        schedule.add_option('--interval', dest='schedule_interval', default=None,
+                            help=_('length of time between each run in iso8601 duration format'))
+        schedule.add_option('--start', dest='schedule_start', default=None,
+                            help=_('date and time of the first run in iso8601 combined date and time format'))
+        schedule.add_option('--runs', dest='schedule_runs', default=None,
+                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        self.parser.add_option_group(schedule)
+
     def run(self):
         id = self.get_required_option('id')
         name = self.opts.name or id
         arch = self.opts.arch or 'noarch'
         feed = self.opts.feed
         symlinks = self.opts.symlinks or False
-        #schedule = self.opts.schedule
+        schedule = parse_interval_schedule(self.opts.schedule_interval,
+                                           self.opts.schedule_start,
+                                           self.opts.schedule_runs)
         relative_path = self.opts.relativepath
         if self.opts.notes:
             notes = eval(self.opts.notes)
@@ -475,12 +489,14 @@ class Create(RepoAction):
             reader = KeyReader()
             keylist = reader.expand(keylist)
         repo = self.repository_api.create(id, name, arch, feed, symlinks,
-                                 feed_cert_data=feed_cert_data,
-                                 consumer_cert_data=consumer_cert_data,
-                                 relative_path=relative_path,
-                                 groupid=groupid,
-                                 gpgkeys=keylist, checksum_type=self.opts.checksum_type,
-                                 notes=notes)
+                                          sync_schedule=schedule,
+                                          feed_cert_data=feed_cert_data,
+                                          consumer_cert_data=consumer_cert_data,
+                                          relative_path=relative_path,
+                                          groupid=groupid,
+                                          gpgkeys=keylist,
+                                          checksum_type=self.opts.checksum_type,
+                                          notes=notes)
         print _("Successfully created repository [ %s ]") % repo['id']
 
 class Clone(RepoProgressAction):
@@ -608,8 +624,6 @@ class Update(RepoAction):
                                help=_("path location to the consumer entitlement certificate key"))
         self.parser.add_option("--remove_consumer_cert", dest="remove_consumer_cert", action="store_true",
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
-        #self.parser.add_option("--schedule", dest="sync_schedule",
-        #                       help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
                                help=_("use symlinks instead of copying bits locally; applicable for local syncs (repository must be empty)"))
         self.parser.add_option("--relativepath", dest="relative_path",
@@ -622,6 +636,17 @@ class Update(RepoAction):
                                help=_("a ',' separated list of directories and/or files containing GPG keys"))
         self.parser.add_option("--rmkeys", dest="rmkeys",
                                help=_("a ',' separated list of GPG key names"))
+
+        schedule = OptionGroup(self.parser, _('Repo Sync Schedule'))
+        schedule.add_option('--interval', dest='schedule_interval', default=None,
+                            help=_('length of time between each run in iso8601 duration format'))
+        schedule.add_option('--start', dest='schedule_start', default=None,
+                            help=_('date and time of the first run in iso8601 combined date and time format'))
+        schedule.add_option('--runs', dest='schedule_runs', default=None,
+                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        schedule.add_option('--delete-schedule', dest='delete_schedule',
+                            action='store_true', default=False, help=_('delete existing schedule'))
+        self.parser.add_option_group(schedule)
 
     def run(self):
         id = self.get_required_option('id')
@@ -665,6 +690,12 @@ class Update(RepoAction):
                 consumer_cert_bundle = consumer_cert_bundle or {}
                 consumer_cert_bundle[k[9:]] = v
                 continue
+            if k == 'schedule_interval':
+                k = 'sync_schedule'
+                v = parse_interval_schedule(v, self.opts.schedule_start, self.opts.schedule_runs)
+            if k == 'delete_schedule':
+                k = 'sync_schedule'
+                v = None
             delta[k] = v
 
         # Certificate argument sanity check
@@ -807,9 +838,9 @@ class CancelSync(RepoAction):
 
 
 class Metadata(RepoAction):
-    
+
     description =  _('schedule metadata generation for a repository')
-    
+
     def setup_parser(self):
         super(Metadata, self).setup_parser()
         self.parser.add_option("--status", action="store_true", dest="status",
