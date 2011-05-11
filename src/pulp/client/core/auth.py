@@ -17,11 +17,12 @@
 
 from gettext import gettext as _
 
+from pulp.client import server
+from pulp.client import utils
 from pulp.client.api.user import UserAPI
 from pulp.client.api.service import ServiceAPI
 from pulp.client.credentials import Login as LoginBundle
 from pulp.client.core.base import Action, Command
-from pulp.client import utils
 
 # login actions ----------------------------------------------------------------
 
@@ -41,9 +42,10 @@ class Login(Action):
 
     def run(self):
         # first take into account the new credentials
-        username = self.get_required_option('username')
-        password = self.get_required_option('password')
-        self.user_api.server.set_basic_auth_credentials(username, password)
+        if not server.active_server.has_credentials_set():
+            username = self.get_required_option('username')
+            password = self.get_required_option('password')
+            server.active_server.set_basic_auth_credentials(username, password)
         # Retrieve the certificate information from the server
         cert_dict = self.user_api.admin_certificate()
         # Write the certificate data
@@ -51,8 +53,7 @@ class Login(Action):
         key = cert_dict['private_key']
         crt = cert_dict['certificate']
         bundle.write(key, crt)
-        print _('User credentials successfully stored at [%s]') % \
-                bundle.root()
+        print _('User credentials successfully stored at [%s]') % bundle.root()
 
 
 class Logout(Action):
