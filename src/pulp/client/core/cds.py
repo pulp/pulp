@@ -20,7 +20,7 @@ from gettext import gettext as _
 from pulp.client import constants
 from pulp.client.api.cds import CDSAPI
 from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header
+from pulp.client.core.utils import print_header, parse_interval_schedule
 from pulp.common import dateutils
 
 
@@ -83,14 +83,25 @@ class Register(CDSAction):
         self.parser.add_option('--description', dest='description',
                                help=_('description of the CDS'))
 
+        schedule = OptionGroup(self.parser, _('CDS Sync Schedule'))
+        schedule.add_option('--interval', dest='schedule_interval', default=None,
+                            help=_('length of time between each run in iso8601 duration format'))
+        schedule.add_option('--start', dest='schedule_start', default=None,
+                            help=_('date and time of the first run in iso8601 combined date and time format'))
+        schedule.add_option('--runs', dest='schedule_runs', default=None,
+                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        self.parser.add_option_group(schedule)
+
     def run(self):
         # Collect user data
         hostname = self.get_required_option('hostname')
         name = self.opts.name
         description = self.opts.description
-
+        schedule = parse_interval_schedule(self.opts.schedule_interval,
+                                           self.opts.schedule_start,
+                                           self.opts.schedule_runs)
         try:
-            self.cds_api.register(hostname, name, description)
+            self.cds_api.register(hostname, name, description, schedule)
             print(_('Successfully registered CDS [%s]' % hostname))
         except:
             print(_('Error attempting to register CDS [%s]' % hostname))
