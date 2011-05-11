@@ -264,9 +264,9 @@ class DependencyList(PackageAction):
     description = _('List available dependencies')
 
     def setup_parser(self):
-        self.parser.add_option("-n", "--name", action="append", dest="pnames", type="string",
+        self.parser.add_option("-n", "--name", action="append", dest="pnames", default=[],
                                help=_("package to lookup dependencies; to specify multiple packages use multiple -n"))
-        self.parser.add_option("-r", "--repoid", action="append", dest="repoid", type="string",
+        self.parser.add_option("-r", "--repoid", action="append", dest="repoid", default=[],
                                help=_("repository labels; to specify multiple packages use multiple -r"))
 
 
@@ -275,11 +275,12 @@ class DependencyList(PackageAction):
         if not self.opts.pnames:
             system_exit(os.EX_DATAERR, \
                         _("package name is required to lookup dependencies."))
-
         repoid = [ r for r in self.opts.repoid or [] if len(r)]
+
         if not self.opts.repoid or not repoid:
             system_exit(os.EX_DATAERR, \
-                        _("Atleast one repoid is required to lookup dependencies."))
+                        _("At least one repoid is required to lookup dependencies."))
+
         pnames = self.opts.pnames
 
         repos = []
