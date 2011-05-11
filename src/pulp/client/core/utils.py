@@ -83,6 +83,8 @@ def parse_at_schedule(start):
     @rtype: str
     @return: validated combined date time information in iso8601 format
     """
+    if start is None:
+        return None
     try:
         dateutils.parse_iso8601_datetime(start)
         return start

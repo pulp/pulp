@@ -36,7 +36,7 @@ from pulp.client.api.upload import UploadAPI
 from pulp.client.api.file import FileAPI
 from pulp.client.api.package import PackageAPI
 from pulp.client.core.base import Action, Command
-from pulp.client.core.utils import print_header, system_exit
+from pulp.client.core.utils import print_header, parse_at_schedule, system_exit
 from pulp.client.logutil import getLogger
 
 log = getLogger(__name__)
@@ -97,7 +97,8 @@ class Install(PackageAction):
         id_group.add_option("--consumergroupid", dest="consumergroupid",
                             help=_("consumer group id"))
         self.parser.add_option_group(id_group)
-        self.add_scheduled_time_option()
+        self.parser.add_option("--when", dest="when", default=None,
+                               help=_("Format: 'Year-Month-Day Hour:Min' specifies when to execute task"))
 
     def run(self):
         consumerid = self.opts.consumerid
@@ -108,7 +109,7 @@ class Install(PackageAction):
         pnames = self.opts.pnames
         if not pnames:
             system_exit(os.EX_DATAERR, _("Specify an package name to perform install"))
-        when = self.parse_scheduled_time_option()
+        when = parse_at_schedule(self.opts.when)
         if consumergroupid:
             group = self.consumer_group_api.consumergroup(consumergroupid)
             if not group:
