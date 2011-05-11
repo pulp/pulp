@@ -295,9 +295,33 @@ class AssociatePackages(JSONController):
         which could not be associated
         """
         data = self.params()
+        if not data.has_key('package_info'):
+            return self.bad_request("Missing data for 'package_info'")
         pkg_info = data["package_info"]
         return self.ok(rapi.associate_packages(pkg_info))
 
+class DisassociatePackages(JSONController):
+    @JSONController.error_handler
+    @JSONController.auth_required(EXECUTE)
+    def POST(self):
+        """
+        [[wiki]]
+        title: Disassociate a collection of filename,checksum tuples from multiple repositories
+        description: Disassociate a collection of packages from a series of repositories
+        method: POST
+        path: /services/disassociate/packages/
+        permission: READ
+        success response: 200 OK
+        failure response:
+        return: a list of errors in the format of [{'filename':{'checksum_value':[repoid]}}]
+        parameters:
+         * package_info: list of tuples in the format [((filename, checksum),[repoids]]
+        """
+        data = self.params()
+        if not data.has_key('package_info'):
+            return self.bad_request("Missing data for 'package_info'")
+        pkg_info = data["package_info"]
+        return self.ok(rapi.disassociate_packages(pkg_info))
 
 class AgentStatus(JSONController):
 
@@ -435,6 +459,7 @@ class DiscoveryStatus(AsyncController):
 
 URLS = (
     '/associate/packages/$', 'AssociatePackages',
+    '/disassociate/packages/$', 'DisassociatePackages',
     '/dependencies/$', 'DependencyActions',
     '/search/packages/$', 'PackageSearch',
     '/search/files/$', 'FileSearch',

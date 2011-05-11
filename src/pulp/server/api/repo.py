@@ -983,19 +983,19 @@ class RepoApi(BaseApi):
     def remove_packages(self, repoid, pkgobjs=[]):
         """
          Remove one or more packages from a repository
-         Note: This method does not update repo metadata.
-         It is assumed metadata has already been updated.
+         @return:   [] on success of removal of all packages
+                    [error_packages] on an error, error_packages being a list of each package failed to remove
         """
+        errors = []
         if not pkgobjs:
             log.debug("remove_packages invoked on %s with no packages" % (repoid))
             # Nothing to perform, return
-            return
+            return errors
         repo = self._get_existing_repo(repoid)
         for pkg in pkgobjs:
-            # this won't fail even if the package is not in the repo's packages
-            #removed_pkg = repo['packages'].pop(pkg['id'], None)
             if pkg['id'] not in repo['packages']:
                 log.debug("Attempted to remove a package<%s> that isn't part of repo[%s]" % (pkg["filename"], repoid))
+                errors.append(pkg)
                 continue
             repo['packages'].remove(pkg['id'])
             repo['package_count'] = repo['package_count'] - 1
@@ -1012,7 +1012,8 @@ class RepoApi(BaseApi):
             os.makedirs(repo_path)
         #TODO: Make this an async task; so client wouldnt wait
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
-
+        return errors
+    
     def find_repos_by_package(self, pkgid):
         """
         Return repos that contain passed in package id
@@ -2005,19 +2006,17 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         return repo['filters']
 
-    def associate_packages(self, pkg_info):
+    def _translate_filename_checksum_pairs(self, pkg_infos):
         """
-        Associates a list of packages to multiple repositories.
-        Each package is identified by it's (filename,checksum)
-        @param pkg_info: format is [((filename,checksum), [repoids])]
-        @return:    [] on success
-                    or {"filename":{"checksum":[repoids]} on error
+        Translates a list of filename/checksum structures to a list of package ids.
+        @param pkg_infos: format is [((filename, checksum), [repoids])]
+        @return:    {'repo_id':[pkgids]}, {errors}
         """
         start_translate = time.time()
         p_col = model.Package.get_collection()
         repo_pkgs = {}
         errors = {}
-        for item in pkg_info:
+        for item in pkg_infos:
             filename = item[0][0]
             checksum = item[0][1]
             repos = item[1]
@@ -2040,7 +2039,18 @@ class RepoApi(BaseApi):
                 else:
                     repo_pkgs[r_id].append(pkg_id)
         end_translate = time.time()
-        log.info("Translated %s filename,checksums in %s seconds" % (len(pkg_info), end_translate - start_translate))
+        log.info("Translated %s filename,checksums in %s seconds" % (len(pkg_infos), end_translate - start_translate))
+        return repo_pkgs, errors
+
+    def associate_packages(self, pkg_infos):
+        """
+        Associates a list of packages to multiple repositories.
+        Each package is identified by it's (filename,checksum)
+        @param pkg_infos: format is [((filename,checksum), [repoids])]
+        @return:    [] on success
+                    or {"filename":{"checksum":[repoids]} on error
+        """
+        repo_pkgs, errors = self._translate_filename_checksum_pairs(pkg_infos)
         for repo_id in repo_pkgs:
             start_time = time.time()
             add_pkg_errors = self.add_package(repo_id, repo_pkgs[repo_id])
@@ -2054,7 +2064,35 @@ class RepoApi(BaseApi):
                 elif repo_id not in errors[filename][checksum]:
                     errors[filename][checksum].append(repo_id)
             end_time = time.time()
-            log.error("repo.add_package(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
+            log.info("repo.associate_packages(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
+        return errors
+
+    def disassociate_packages(self, pkg_infos):
+        """
+        Disassociates a list of packages to multiple repositories.
+        Each package is identified by it's (filename,checksum)
+        @param pkg_infos: format is [((filename,checksum), [repoids])]
+        @return:    [] on success
+                    or {"filename":{"checksum":[repoids]} on error
+        """
+        repo_pkgs, errors = self._translate_filename_checksum_pairs(pkg_infos)
+        for repo_id in repo_pkgs:
+            start_time = time.time()
+            pkgids = repo_pkgs[repo_id]
+            to_remove_pkgs = self.packageapi.packages_by_id(pkgids)
+            to_remove_pkgs = to_remove_pkgs.values()
+            rm_pkg_errors = self.remove_packages(repo_id, to_remove_pkgs)
+            for p in rm_pkg_errors:
+                filename = p["filename"]
+                checksum = p["checksum"]["sha256"]
+                if not errors.has_key(filename):
+                    errors[filename] = {}
+                if not errors[filename].has_key(checksum):
+                    errors[filename][checksum] = [repo_id]
+                elif repo_id not in errors[filename][checksum]:
+                    errors[filename][checksum].append(repo_id)
+            end_time = time.time()
+            log.info("repo.disassociate_packages(%s) for %s packages took %s seconds" % (repo_id, len(repo_pkgs[repo_id]), end_time - start_time))
         return errors
 
     def metadata(self, id):

@@ -1283,6 +1283,50 @@ class TestRepoApi(unittest.TestCase):
             # value is {'checksum':[repo_id1,repo_id2]}
             self.assertTrue(e in [p4["filename"], p5b["filename"], bad_filename])
 
+    def test_disassociate_packages(self):
+        repo1 = self.rapi.create('some-id1', 'some name', \
+            'i386', 'http://example.com')
+        repo2 = self.rapi.create('some-id2', 'some name', \
+            'i386', 'http://example.com')
+        p1 = testutil.create_package(self.papi, 'test_pkg_by_name1', filename="test01.rpm", checksum="blah1")
+        p2 = testutil.create_package(self.papi, 'test_pkg_by_name2', filename="test02.rpm", checksum="blah2")
+        p3 = testutil.create_package(self.papi, 'test_pkg_by_name3', filename="test03.rpm", checksum="blah3")
+        # Associate test packages
+        errors = self.rapi.associate_packages(
+            [((p1["filename"],p1["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+             ((p2["filename"],p2["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+             ((p3["filename"],p3["checksum"]["sha256"]),[repo1["id"]]) \
+            ])
+        found = self.rapi.repository(repo1['id'])
+        self.assertEqual(len(found['packages']), 3)
+        self.assertTrue(p1["id"] in found['packages'])
+        self.assertTrue(p2["id"] in found['packages'])
+        self.assertTrue(p3["id"] in found['packages'])
+        # Now do the disassociate portion
+        p4 = testutil.create_package(self.papi, 'test_pkg_by_name4', filename='test04.rpm', checksum='blah4')
+        errors = self.rapi.disassociate_packages(
+            [((p1["filename"],p1["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+             ((p2["filename"],p2["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+             ((p3["filename"],p3["checksum"]["sha256"]),[repo1["id"],repo2["id"]]), \
+             ((p4["filename"],p4["checksum"]["sha256"]),[repo1["id"],repo2["id"]]) \
+            ])
+        # Check for errors
+        self.assertEquals(2, len(errors))
+        # p3 should reflect it could not be dissociated from repo2 (it didn't belong to repo2)
+        self.assertTrue(p3["filename"] in errors.keys())
+        self.assertEquals(1, len(errors[p3["filename"]][p3["checksum"]["sha256"]]))
+        self.assertIn(repo2["id"], errors[p3["filename"]][p3["checksum"]["sha256"]])
+        # p4 never belonged to repo1 or repo2 and should reflect an error for both
+        self.assertTrue(p4["filename"] in errors.keys())
+        self.assertEquals(2, len(errors[p4["filename"]][p4["checksum"]["sha256"]]))
+        self.assertIn(repo1["id"], errors[p4["filename"]][p4["checksum"]["sha256"]])
+        self.assertIn(repo2["id"], errors[p4["filename"]][p4["checksum"]["sha256"]])
+        # Verify that p1, p2, p3 are no longer part of repo1
+        found = self.rapi.repository(repo1['id'])
+        self.assertEqual(len(found['packages']), 0)
+        # Verify that p1, p2 are no longer part of repo2
+        found = self.rapi.repository(repo2['id'])
+        self.assertEqual(len(found['packages']), 0)
 
     def test_get_packages_by_nvera(self):
         repo1 = self.rapi.create('some-id1', 'some name', \

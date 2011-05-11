@@ -77,6 +77,14 @@ class ServiceAPI(PulpAPI):
         path = "/services/associate/packages/"
         return self.server.POST(path,{"package_info":package_info})[1]
 
+    def disassociate_packages(self, package_info=[]):
+        """
+        Will disassociate a list of filename,checksums to mulitple repositories
+        package_info: format of [((filename,checksum), [repo_id])]
+        """
+        path = "/services/disassociate/packages/"
+        return self.server.POST(path,{"package_info":package_info})[1]
+    
     def agentstatus(self, filter=[]):
         path = "/services/agent/status/"
         d = dict(filter=filter)
