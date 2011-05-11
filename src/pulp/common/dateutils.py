@@ -126,6 +126,16 @@ def parse_iso8601_datetime(datetime_str):
     return isodate.parse_datetime(datetime_str)
 
 
+def parse_iso8601_duration(duration_str):
+    """
+    Parse an iso8601 duration string.
+    @type duration_str: str
+    @param: duration_str: iso8601 duration string to parse
+    @rtype: isodate.Duration or datetime.timedelta instance
+    """
+    return isodate.parse_duration(duration_str)
+
+
 def parse_iso8601_interval(interval_str):
     """
     Parse an iso8601 time interval string.
@@ -156,7 +166,7 @@ def parse_iso8601_interval(interval_str):
         elif part.startswith('P'):
             if interval is not None:
                 raise isodate.ISO8601Error('Multiple interval durartions specified')
-            interval = isodate.parse_duration(part)
+            interval = parse_iso8601_duration(part)
         else:
             if start_time is not None:
                 raise isodate.ISO8601Error('Interval with start and end times is not supported')
@@ -169,7 +179,7 @@ def parse_iso8601_interval(interval_str):
     # back to a datetime.timedelta instance, if possible
     if isinstance(interval, isodate.Duration):
         if start_time is None:
-            raise isodate.ISO8601Error('Cannot convert duration to timedelta without a start time')
+            raise isodate.ISO8601Error('Intervals with year and month values are not valid without a start time')
         interval = interval.todatetime(start=start_time)
     return (interval, start_time, recurrences)
 

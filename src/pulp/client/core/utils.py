@@ -15,8 +15,13 @@
 
 import os
 import sys
+from gettext import gettext as _
 
-# output formatting -----------------------------------------------------------
+import isodate
+
+from pulp.common import dateutils
+
+# output formatting ------------------------------------------------------------
 
 _header_width = 45
 _header_border = '+------------------------------------------+'
@@ -35,7 +40,56 @@ def print_header(*lines):
         print ' ' * padding, line
     print _header_border
 
-# system exit -----------------------------------------------------------------
+# schedule option parsing ------------------------------------------------------
+
+def parse_interval_schedule(interval, start, runs):
+    """
+    Parse an interval schedule, handling all the corner cases.
+    Generally used for parsing recurring sync schedules.
+    @type interval: str
+    @param interval: time duration in iso8601 format
+    @type start: str
+    @param start: combined date time information in iso8601 format
+    @type runs: str
+    @param runs: integer number of runs as a string
+    @rtype: None or str
+    @return: None if no schedule was specified or an interval schedule in
+             iso8601 interval format otherwise
+    """
+    if interval is None:
+        if start is not None:
+            system_exit(os.EX_USAGE, _('Interval required if start specified'))
+        if runs is not None:
+            system_exit(os.EX_USAGE, _('Interval required if runs specified'))
+        return None
+    try:
+        if runs is not None:
+            runs = int(runs)
+    except ValueError:
+        system_exit(os.EX_USAGE, _('Runs must me an integer'))
+    try:
+        schedule = dateutils.format_iso8601_interval(interval, start, runs)
+        return schedule
+    except isodate.ISO8601Error, e:
+        system_exit(os.EX_USAGE, e.args[0])
+
+
+def parse_at_schedule(start):
+    """
+    Validate an "at" schedule, handling all the corner cases.
+    Generally used for parsing install schedules.
+    @type start: str
+    @param start: combined date time information in iso8601 format
+    @rtype: str
+    @return: validated combined date time information in iso8601 format
+    """
+    try:
+        dateutils.parse_iso8601_datetime(start)
+        return start
+    except isodate.ISO8601Error, e:
+        system_exit(os.EX_USAGE, e.args[0])
+
+# system exit ------------------------------------------------------------------
 
 def system_exit(code, msgs=None):
     """
