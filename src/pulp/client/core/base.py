@@ -32,13 +32,13 @@ _log = getLogger(__name__)
 
 # base command class ----------------------------------------------------------
 #
-# NOTE: If you are adding or removing Commands and Actions you 
+# NOTE: If you are adding or removing Commands and Actions you
 # need to edit:
 #
-# 1) pulp/bin/pulp-admin 
+# 1) pulp/bin/pulp-admin
 # 2) pulp/bin/pulp-client
 #
-# They contain the mapping and lists of Commands and Actions for 
+# They contain the mapping and lists of Commands and Actions for
 # everything the CLI can do.
 
 class Command(object):
@@ -183,26 +183,6 @@ class Action(object):
         @note: this method should be overridden to add per-action options
         """
         pass
-
-    def add_scheduled_time_option(self):
-        """
-        Adds a --when scheduled time option to the option parser
-        """
-        self.parser.add_option("--when", dest="when", default=None,
-                               help=_("Format: 'Year-Month-Day Hour:Min' specifies when to execute task"))
-
-    def parse_scheduled_time_option(self):
-        fmt = "%Y-%m-%d %H:%M"
-        when = self.opts.when
-        if when:
-            try:
-                when = time.strptime(when, fmt)
-                when = time.mktime(when)
-            except:
-                system_exit(-1, _("Unable to parse scheduled time of: %s. Format needs to be in: %s") % (self.opts.when, fmt))
-            if when < time.time():
-                system_exit(-1, _("Scheduled time is in the past: %s.  Please re-run with a valid time.") % (self.opts.when))
-        return when
 
     def run(self):
         """
