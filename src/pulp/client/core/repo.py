@@ -1094,7 +1094,7 @@ class AddErrata(RepoAction):
             name = "%s-%s-%s.%s" % (src_pkgobj['name'], src_pkgobj['version'],
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pkgs[name] = src_pkgobj
-        if self.opts.srcrepo:
+        if self.opts.srcrepo and len(pkgs.keys()):
             # lookup dependencies and let use decide whether to include them
             pkgdeps = self.handle_dependencies(self.opts.srcrepo, id, pkgs.keys(), self.opts.recursive, self.opts.assumeyes)
             pids = [pdep['id'] for pdep in pkgdeps]
