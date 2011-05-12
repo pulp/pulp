@@ -273,7 +273,11 @@ class CdsLib(object):
         for relative_path in delete_us_relative_urls:
             doomed = os.path.join(packages_dir, relative_path)
             log.info('Removing old repo [%s]' % doomed)
-            shutil.rmtree(doomed)
+
+            if os.path.exists(doomed):
+                shutil.rmtree(doomed)
+            else:
+                log.warn('Repository at [%s] could not be found for deletion' % doomed)
 
     def _delete_all_repos(self):
         '''
@@ -294,7 +298,11 @@ class CdsLib(object):
         for path in repo_paths:
             doomed = os.path.join(packages_dir, path)
             log.info('Removing old repo [%s]' % doomed)
-            shutil.rmtree(doomed)
+
+            if os.path.exists(doomed):
+                shutil.rmtree(doomed)
+            else:
+                log.warn('Repository at [%s] could not be found for deletion' % doomed)
 
         # Clear the repos listing
         packages_location = self.config.get('cds', 'packages_dir')
