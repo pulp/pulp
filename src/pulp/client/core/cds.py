@@ -88,7 +88,7 @@ class Register(CDSAction):
         schedule.add_option('--interval', dest='schedule_interval', default=None,
                             help=_('length of time between each run in iso8601 duration format'))
         schedule.add_option('--start', dest='schedule_start', default=None,
-                            help=_('date and time of the first run in iso8601 combined date and time format'))
+                            help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
         schedule.add_option('--runs', dest='schedule_runs', default=None,
                             help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
         self.parser.add_option_group(schedule)
