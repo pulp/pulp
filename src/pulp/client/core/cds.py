@@ -49,8 +49,8 @@ def _print_cds(cds):
     else:
         last_heartbeat = stat[1]
     print(constants.CDS_INFO % \
-        (cds['hostname'],
-         cds['name'],
+        (cds['name'],
+         cds['hostname'],
          cds['description'],
          repo_list,
          formatted_date,
