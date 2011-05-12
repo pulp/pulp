@@ -55,6 +55,7 @@ from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.tasking.repo_sync_task import RepoSyncTask
+from pulp.server.tasking.task import task_running, task_waiting
 
 log = logging.getLogger(__name__)
 
@@ -499,7 +500,7 @@ class RepoApi(BaseApi):
         tasks = [t for t in find_async(method_name="_sync")
                  if (t.args and id in t.args) or
                  (t.kwargs and id in t.kwargs.values())]
-        if tasks and getattr(tasks[0], 'state') in ('waiting', 'running'):
+        if tasks and getattr(tasks[0], 'state') in (task_running, task_waiting):
             log.info("Current running a sync on repo : %s", id)
             return True
         return False
@@ -516,7 +517,7 @@ class RepoApi(BaseApi):
 
         # find if sync in progress
         if self.find_if_running_sync(id):
-            raise PulpException("Repo cannot be deleted because of sync in progress. You can cancel ongoing sync using 'repo cancel_sync' command.")
+            raise PulpException("Repo cannot be deleted because of sync in progress.")
 
         # unassociate with CDS(s)
         cds_unassociate_results = self.cdsapi.unassociate_all_from_repo(id, True)
@@ -1016,7 +1017,7 @@ class RepoApi(BaseApi):
         #TODO: Make this an async task; so client wouldnt wait
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         return errors
-    
+
     def find_repos_by_package(self, pkgid):
         """
         Return repos that contain passed in package id
