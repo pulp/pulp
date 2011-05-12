@@ -1,0 +1,231 @@
+
+/* elements ---------------------------------------------------------------- */
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+body {
+  background: #B5D6F7 url('../images/pulp-page-bg.png') no-repeat top left;
+  color: #111;
+  font: 10pt/16pt "Droid Sans",sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3 {
+  font-weight: bold;
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.7em;
+  line-height: 1.7em;
+}
+
+h2 {
+  font-size: 1.3em;
+  line-height: 1.3em;
+}
+
+h3 {
+  font-size: 1em;
+  line-height: 1em;
+}
+
+.larger h3 {
+  margin-top:10px;
+}
+
+li {
+  padding-bottom: 4px;
+}
+
+p {
+  margin: 0;
+  padding-bottom: 15px;
+}
+
+ul {
+  margin: 0;
+}
+
+/* 
+ *ids --------------------------------------------------------------------- */
+
+#background {
+  background: url('../images/bg-repeater.png') repeat-x;
+}
+
+#header {
+  height: 210px;
+}
+
+#logo {
+  width: 298px;
+  height: 220px;
+  margin-left: -40px;
+  background: url('../images/pulp-logo.png') no-repeat left top;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+}
+
+#tagline {
+  width: 472px;
+  height: 29px;
+  background: url('../images/pulp-juicy-tagline.png') no-repeat left top;
+  position: absolute;
+  left: 240px;
+  top: 120px;
+}
+
+#redhat {
+  width: 276px;
+  height: 25px;
+  background: url('../images/pulp-community-website.png') no-repeat left top;
+  position: absolute;
+  left: 690px;
+  top: 170px;
+}
+
+#intro {
+  padding-top: 15px;
+  background: url('../images/pulp-intro-bg.png') repeat-x left top;
+}
+
+#intro ul li {
+  list-style-image: url('../images/pulp-bullet-orange.png');
+}
+
+#content {
+}
+
+/* classes ----------------------------------------------------------------- */
+
+.flt_left {
+  float: left;
+}
+
+.flt_right {
+  float: right;
+}
+
+.larger {
+  font-size: 1.1em;
+}
+
+.smaller {
+  font-size: .8em;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.invisible {
+  display: none;
+}
+
+.inline {
+  display: inline;
+}
+
+.justified {
+  text-align: justify;
+}
+
+.centered {
+  text-align: center;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.shadow {
+  text-shadow: #999 -1px 1px 2px;
+}
+
+.white {
+  color: #fff;
+}
+
+.black {
+  color: #000;
+}
+
+.grey {
+  color: #333;
+}
+
+.ltgrey {
+  color: #444;
+}
+
+.orange {
+  color: #d06911;
+}
+
+.blue {
+  color: #3566a5;
+}
+
+.green {
+  color: #56a111;
+}
+
+.orange-bg {
+  background-color: #dea95f;
+}
+
+.orange-bg h3 { margin-top: 0px !important; }
+
+.blue-bg {
+  background-color: #6e98c9;
+}
+
+.green-bg {
+  background-color: #8ad365;
+}
+
+.light-bg {
+/*  background-color: #e5f1fc;*/
+  background-color: #fff;
+}
+
+.region {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+}
+
+.region h3 { margin-top: -10px; margin-bottom: 10px; }
+
+.sidebar {
+  margin-left: 20px;
+}
+
+.plain {
+  list-style: disc outside;
+  margin-left: -20px !important;
+}
+
+.avatar {
+  float: left;
+  width: 60px;
+  height: 60px;
+  background-color: #d06911;
+  margin-right: 20px;
+  margin-bottom: 15px;
+}

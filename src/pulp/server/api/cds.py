@@ -33,6 +33,7 @@ from pulp.server.cds.dispatcher import (
     CdsAuthException, CdsMethodException,)
 from pulp.server.db.model import CDS, Repo
 from pulp.server.pexceptions import PulpException
+from pulp.server.agent import PulpAgent
 
 
 log = logging.getLogger(__name__)
@@ -440,7 +441,7 @@ class CdsApi(BaseApi):
             bind_data['gpg_keys'] = None
 
             # Retrieve the repo proxy for the consumer being handled
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             agent_repolib = agent.Repo()
 
             # Send the update message to the consumer

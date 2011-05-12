@@ -41,7 +41,7 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi
-from pulp.server.api.errata import ErrataApi
+from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
@@ -56,6 +56,7 @@ from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.tasking.repo_sync_task import RepoSyncTask
 from pulp.server.tasking.task import task_running, task_waiting
+from pulp.server.agent import PulpAgent
 
 log = logging.getLogger(__name__)
 
@@ -558,6 +559,19 @@ class RepoApi(BaseApi):
                 log.info(
                     'package "%s" has references, not deleted',
                     pkgid)
+            except Exception, ex:
+                log.exception(ex)
+
+        errata = repo["errata"]
+        repo["errata"] = []
+        self.collection.save(repo, safe=True)
+        for eid in errata:
+            try:
+                self.errataapi.delete(eid)
+            except ErrataHasReferences:
+                log.info(
+                    'errata "%s" has references, not deleted',
+                    eid)
             except Exception, ex:
                 log.exception(ex)
 
@@ -1147,11 +1161,6 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
-            repos = self.find_repos_by_errataid(erratum['id'])
-            if repo["id"] in repos and len(repos) == 1:
-                self.errataapi.delete(erratum['id'])
-            else:
-                log.debug("Not deleting %s since it is referenced by these repos: %s" % (erratum["id"], repos))
         except Exception, e:
             raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
 
@@ -1593,6 +1602,11 @@ class RepoApi(BaseApi):
                 new_errata = list(set(sync_errataids).difference(set(repo_errata)))
                 log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
                 self.delete_errata(id, old_errata)
+                for eid in old_errata:
+                    try:
+                        self.errataapi.delete(eid)
+                    except ErrataHasReferences:
+                        log.info('errata "%s" has references, not deleted',eid)
                 # Refresh repo object
                 repo = self._get_existing_repo(id) #repo object must be refreshed
                 log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
@@ -1699,7 +1713,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
@@ -1727,7 +1741,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 

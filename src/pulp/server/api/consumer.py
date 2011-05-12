@@ -32,6 +32,7 @@ from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.util import chunks, compare_packages
+from pulp.server.agent import PulpAgent
 
 
 log = logging.getLogger(__name__)
@@ -122,7 +123,7 @@ class ConsumerApi(BaseApi):
             sha = hashlib.sha256()
             for s in credentials:
                 sha.update(s)
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             consumer = agent.Consumer()
             consumer.deleted(sha.hexdigest())
 
@@ -359,7 +360,7 @@ class ConsumerApi(BaseApi):
         bind_data = consumer_utils.build_bind_data(repo, host_list, gpg_keys)
 
         # Send the bind request over to the consumer
-        agent = self._getagent(consumer, async=True)
+        agent = PulpAgent(consumer, async=True)
         agent_repolib = agent.Repo()
         agent_repolib.bind(repoid, bind_data)
 
@@ -395,7 +396,7 @@ class ConsumerApi(BaseApi):
         repoids.remove(repo_id)
         self.collection.save(consumer, safe=True)
 
-        agent = self._getagent(consumer, async=True)
+        agent = PulpAgent(consumer, async=True)
         agent_repolib = agent.Repo()
         agent_repolib.unbind(repo_id)
 
@@ -432,7 +433,7 @@ class ConsumerApi(BaseApi):
             else:
                 data.append(pkg)
         log.debug("Packages to Install: %s" % data)
-        secret = self._getsecret(consumer)
+        secret = PulpAgent.getsecret(consumer)
         task = InstallPackages(id, secret, data)
         return task
 
@@ -448,7 +449,7 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if consumer is None:
             raise PulpException('Consumer [%s] not found', id)
-        secret = self._getsecret(consumer)
+        secret = PulpAgent.getsecret(consumer)
         task = InstallPackageGroups(id, secret, groupnames)
         return task
 
@@ -492,7 +493,7 @@ class ConsumerApi(BaseApi):
         if not len(pkgs):
             return None
         log.error("Packages to install [%s]" % pkgs)
-        secret = self._getsecret(consumer)
+        secret = PulpAgent.getsecret(consumer)
         task = InstallErrata(
             id,
             secret,
