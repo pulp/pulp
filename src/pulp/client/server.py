@@ -214,6 +214,13 @@ class PulpServer(Server):
                                         ssl_context=ssl_context)
 
     def _connect(self):
+        # make sure credentials are set
+        if not self.has_credentials_set():
+            msg = 'No valid authorization credentials found'
+            # try to deduce the name of the script, if we're being run from one
+            if sys.argv:
+                msg += ', please see %s --help' % sys.argv[0]
+            raise ServerRequestError(msg)
         # make an appropriate connection to the pulp server
         if self.protocol == 'http':
             return self._http_connection()
