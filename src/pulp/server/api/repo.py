@@ -872,9 +872,9 @@ class RepoApi(BaseApi):
             return (package['name'], package['epoch'], package['version'], package['release'], package['arch'])
         def get_pkg_nevra(package):
             return dict(zip(("name", "epoch", "version", "release", "arch"), get_pkg_tup(package)))
-        def form_error_tup(pkg):
+        def form_error_tup(pkg, error_message=None):
             pkg_tup = get_pkg_tup(pkg)
-            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"])
+            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"], error_message)
 
         start_add_packages = time.time()
         errors = []
@@ -911,9 +911,10 @@ class RepoApi(BaseApi):
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
-                log.error("Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
-                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"]))
-                errors.append(form_error_tup(pkg))
+                error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
+                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
+                log.error(error_msg)
+                errors.append(form_error_tup(pkg, error_msg))
                 continue
             nevras[pkg_tup] = pkg["id"]
             filenames[pkg["filename"]] = pkg
@@ -936,8 +937,9 @@ class RepoApi(BaseApi):
             if not nevras.has_key(pkg_tup):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
                 continue
-            log.error("Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id']))
-            errors.append(form_error_tup(pkg))
+            error_message = "Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id'])
+            log.error(error_message)
+            errors.append(form_error_tup(pkg, error_message))
             if packages.has_key(nevras[pkg_tup]):
                 del packages[nevras[pkg_tup]]
         # Check for same filename in calling data or for existing
@@ -948,9 +950,10 @@ class RepoApi(BaseApi):
             if not filenames.has_key(pkg["filename"]):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate filename in repo [%s]" % (pkg["filename"], repo["id"]))
                 continue
-            log.error("Package with same filename [%s] already exists in repo [%s]" \
-                    % (pkg["filename"], repo['id']))
-            errors.append(form_error_tup(pkg))
+            error_message = "Package with same filename [%s] already exists in repo [%s]" \
+                    % (pkg["filename"], repo['id'])
+            log.error(error_message)
+            errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
