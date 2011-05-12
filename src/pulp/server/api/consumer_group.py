@@ -23,6 +23,7 @@ from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
+from pulp.server.agent import PulpAgent
 
 log = logging.getLogger(__name__)
 
@@ -323,7 +324,7 @@ class ConsumerGroupApi(BaseApi):
                 log.error('consumer [%s], not-found', consumerid)
                 continue
             install_data = {"consumerid" : consumerid,
-                            "secret" : self._getsecret(consumer),
+                            "secret" : PulpAgent.getsecret(consumer),
                             "packages"   : packagenames,
                             "reboot_suggested" : False,
                             "assumeyes"  : False}
@@ -372,7 +373,7 @@ class ConsumerGroupApi(BaseApi):
                         pkgs.append(pobj["name"]) # + "." + pobj["arch"])
             log.error("Foe consumer id %s Packages to install %s" % (consumerid, pkgs))
             install_data = {"consumerid" : consumerid,
-                            "secret" : self._getsecret(consumer),
+                            "secret" : PulpAgent.getsecret(consumer),
                             "packages"   : pkgs,
                             "reboot_suggested" : reboot_suggested,
                             "assumeyes"  : assumeyes}

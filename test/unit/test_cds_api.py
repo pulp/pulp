@@ -37,7 +37,7 @@ from pulp.server.cds.dispatcher import CdsTimeoutException
 import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDS, CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
-from pulp.server.agent import Agent
+from pulp.server.agent import Agent, CdsAgent
 
 
 import testutil
@@ -92,7 +92,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         # initialize() and set_global_repo_auth() were send to agent.
-        agent = Agent(CDS.uuid(cds))
+        agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
         self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
@@ -119,7 +119,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         # initialize() and set_global_repo_auth() were send to agent.
-        agent = Agent(CDS.uuid(cds))
+        agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
         self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
@@ -157,7 +157,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         # initialize() and set_global_repo_auth() were sent once to agent.
-        agent = Agent(CDS.uuid(cds))
+        agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
         self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
@@ -169,7 +169,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Setup
         cds = dict(hostname='cds.example.com')
-        agent = Agent(CDS.uuid(cds))
+        agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         cdsplugin.initialize.push(CdsTimeoutException(None))
 
@@ -189,7 +189,7 @@ class TestCdsApi(unittest.TestCase):
         time.sleep(1) # make sure the timestamps will be different
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds is not None)
-        uuid = CDS.uuid(cds)
+        uuid = CdsAgent.uuid(cds)
 
         # Test
         self.cds_api.unregister('cds.example.com')
@@ -536,7 +536,7 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         # sync() was sent to the agent with correct repoid.
-        agent = Agent(CDS.uuid(cds))
+        agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         calls = cdsplugin.sync.history()
         self.assertEqual(1, len(calls))
@@ -573,7 +573,7 @@ class TestCdsApi(unittest.TestCase):
         self.cds_api.associate_repo('cds.example.com', repo['id'])
 
         #   Configure the agent to throw an error
-        agent = Agent(CDS.uuid(cds))
+        agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         cdsplugin.sync.push(CdsTimeoutException(None))
 

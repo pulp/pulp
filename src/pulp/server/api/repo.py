@@ -55,6 +55,7 @@ from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.tasking.repo_sync_task import RepoSyncTask
+from pulp.server.agent import PulpAgent
 
 log = logging.getLogger(__name__)
 
@@ -1695,7 +1696,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
@@ -1723,7 +1724,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
