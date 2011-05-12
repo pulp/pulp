@@ -13,14 +13,23 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import logging
+
 from pulp.server.api.base import BaseApi
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
 
+log = logging.getLogger(__name__)
 
 errata_fields = model.Errata(None, None, None, None, None, None).keys()
 
+class ErrataHasReferences(Exception):
+
+    MSG = 'errata [%s] has references, delete not permitted'
+
+    def __init__(self, id):
+        Exception.__init__(self, self.MSG % id)
 
 class ErrataApi(BaseApi):
 
@@ -70,9 +79,25 @@ class ErrataApi(BaseApi):
     @audit()
     def delete(self, id):
         """
-        Delete package version object based on "_id" key
+        Delete errata object by id key
         """
-        self.collection.remove(dict(id=id), safe=True)
+        if self.referenced(id):
+            raise ErrataHasReferences(id)
+        self.collection.remove(dict(id=id))
+
+    def referenced(self, id):
+        """
+        check if errata has references.
+        @param id: A errata ID.
+        @type id: str
+        @return: True if referenced
+        @rtype: bool
+        """
+        type = self.erratum(id)["type"]
+        collection = model.Repo.get_collection()
+        query = "errata.%s" % type
+        repo = collection.find_one({query:id}, fields=["id"])
+        return (repo is not None)
 
     def erratum(self, id):
         """

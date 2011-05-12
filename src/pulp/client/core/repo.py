@@ -1185,11 +1185,11 @@ class RemoveErrata(RepoAction):
                                     src_pkgobj['release'], src_pkgobj['arch'])
             pnames.append(name)
             pobj.append(src_pkgobj)
-        if not pnames:
-            log.info("Associated Errata packages for id [%s] are not in the repo." % errataids)
-
-        # lookup dependencies and let use decide whether to include them
-        pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
+        pkgdeps = []
+        if pnames:
+            # log.info("Associated Errata packages for id [%s] are not in the repo." % errataids)
+            # lookup dependencies and let use decide whether to include them
+            pkgdeps = self.handle_dependencies(id, None, pnames, self.opts.recursive, self.opts.assumeyes)
         try:
             self.repository_api.delete_errata(id, errataids)
             if pkgdeps:
