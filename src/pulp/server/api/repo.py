@@ -511,6 +511,9 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
 
+        # delete scheduled syncs, if any
+        delete_repo_schedule(repo)
+
         # find if sync in progress
         if self.find_if_running_sync(id):
             raise PulpException("Repo cannot be deleted because of sync in progress. You can cancel ongoing sync using 'repo cancel_sync' command.")
