@@ -393,11 +393,13 @@ class YumSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         cacert = clicert = clikey = None
-        if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
+        if repo['feed_ca']:
             cacert = repo['feed_ca'].encode('utf8')
+        if repo['feed_cert']:
             clicert = repo['feed_cert'].encode('utf8')
+        if repo['feed_key']:
             clikey = repo['feed_key'].encode('utf8')
-
+        log.info("cacert = <%s>, cert = <%s>, key = <%s>" % (cacert, clicert, clikey))
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
         num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
         # check for proxy settings
