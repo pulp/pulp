@@ -15,6 +15,7 @@
 
 # Python
 from gettext import gettext as _
+from optparse import OptionGroup
 
 # Pulp
 from pulp.client import constants
