@@ -347,7 +347,7 @@ class AsyncController(JSONController):
         if isinstance(task.exception, Exception):
             d['exception'] = str(task.exception)
 
-        fields = ('state_time', 'finish_time', 'scheduled_time')
+        fields = ('start_time', 'finish_time', 'scheduled_time')
         for f in fields:
             t = getattr(task, f, None)
             d[f] = t and dateutils.format_iso8601_datetime(t)
