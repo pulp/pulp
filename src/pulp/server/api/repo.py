@@ -46,6 +46,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
+from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.api.scheduled_sync import update_repo_schedule, delete_repo_schedule
 from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
@@ -54,7 +55,6 @@ from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.tasking.repo_sync_task import RepoSyncTask
 from pulp.server.tasking.task import task_running, task_waiting
 from pulp.server.agent import PulpAgent
 
