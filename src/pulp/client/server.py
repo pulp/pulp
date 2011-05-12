@@ -220,7 +220,7 @@ class PulpServer(Server):
             # try to deduce the name of the script, if we're being run from one
             if sys.argv:
                 msg += ', please see %s --help' % sys.argv[0]
-            raise ServerRequestError(msg)
+            raise ServerRequestError(None, msg)
         # make an appropriate connection to the pulp server
         if self.protocol == 'http':
             return self._http_connection()
