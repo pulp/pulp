@@ -23,6 +23,46 @@
 
 ----
 
+== Disassociate a collection of filename,checksum tuples from multiple repositories ==
+''Disassociate a collection of packages from a series of repositories'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /services/disassociate/packages/ [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': [[BR]]
+'''return''': a list of errors in the format of [{'filename':{'checksum_value':[repoid]}}] [[BR]]
+[[BR]]
+'''parameters''': 
+ * '''package_info: list of tuples in the format [((filename''' <checksum)> ''[repoids]]''
+[[BR]]
+
+----
+
+== Discovery Task status ==
+''Get status of an async task.'' [[BR]]
+''This method only works for actions that returned a 202 Accepted response.'' [[BR]]
+''e.g. /services/discovery/repo/<id>'' [[BR]]
+[[BR]]
+'''method''': GET [[BR]]
+[[BR]]
+'''path''': /services/discovery/repo/<id> [[BR]]
+[[BR]]
+'''permission''': READ [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': None [[BR]]
+[[BR]]
+'''return''': Task objects [[BR]]
+[[BR]]
+
+----
+
 == Enable Global Repository Authentication ==
 ''Configures the Pulp server to apply the given credentials to requests against all of its repositories.'' [[BR]]
 [[BR]]
@@ -37,4 +77,22 @@
 '''failure response''': 206 PARTIAL CONTENT [[BR]]
 [[BR]]
 '''return''': list of CDS hostnames that were successfully updated and a list of the ones that failed to update [[BR]]
+[[BR]]
+
+----
+
+== Repository Discovery ==
+''Discover repository urls with metadata and create candidate repos.'' [[BR]]
+[[BR]]
+'''method''': POST [[BR]]
+[[BR]]
+'''path''': /services/discovery/repo/ [[BR]]
+[[BR]]
+'''permission''': EXECUTE [[BR]]
+[[BR]]
+'''success response''': 200 OK [[BR]]
+[[BR]]
+'''failure response''': 206 PARTIAL CONTENT [[BR]]
+[[BR]]
+'''return''': list of matching repourls. [[BR]]
 [[BR]]

@@ -34,8 +34,8 @@ Repo object fields:
  * repomd_xml_path, str, path to the repository's repomd xml file
  * group_xml_path, str, path to the repository's group xml file
  * group_gz_xml_path, str, path to the repository's compressed group xml file
- * sync_schedule, RepoSyncSchedule object, representing recurring sync schedule
- * last_sync, timestamp, date and time of last successful sync
+ * sync_schedule, iso8601 formated recurring interval
+ * last_sync, str or nil, date and time of last successful sync in iso8601 format, nil if has not been synched
  * use_symlinks, bool, whether or not the repository uses symlinks for its content
  * feed_ca, str, full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed
  * feed_cert, str, full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content
@@ -56,21 +56,17 @@ Repo object fields:
  * supported_types, list of str, list of supported types of repositories
  * type, str, repository source type
  * url, str, repository source url
-RepoSyncSchedule object fields:
- * interval, object, fields of units with integer values (weeks, days, hours, minutes)
- * start_time?, object, fields of units with integer values (year, month, day, hour, minute)
- * runs?, int, number of runs to execute, omitted mean ad infinitum
 Task object fields:
  * id, str, unique id (usually a uuid) for the task
  * method_name, str, name of the pulp library method that was called
  * state, str, one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended
- * start_time, timestamp or nil, time the task started running, nil if the task has not yet started
- * finish_time, timestamp or nil, time the task finished running, nil if the task has not yet finished
+ * start_time, str or nil, time the task started running in iso8601 format, nil if the task has not yet started
+ * finish_time,  or nil, time the task finished running in iso8601 format, nil if the task has not yet finished
  * result, object or nil, the result of the pulp library method upon return, usually nil
  * exception, str or nil, a string representation of an error in the pulp librry call, if any
  * traceback, str or nil, a string print out of the trace back for the exception, if any
  * progress, object or nil, object representing the pulp library call's progress, nill if no information is available
- * scheduled_time, timestamp or nil, time the task is scheduled to run, applicable only for scheduled tasks
+ * scheduled_time, str or nil, time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks
  * status_path, str, complete uri path to poll for the task's progress using http GET
 Progress object fields:
  * step, str, name of the step the pulp library call is on
@@ -188,7 +184,7 @@ class Repositories(JSONController):
          * arch, str, the main architecture of packages contained in the repository
          * feed, str, repository feed in the form of <type>:<url>
          * use_symlinks?, bool, defaults to false
-         * sync_schedule?, RepoSyncSchedule object, schedule to regularly sync the repository on
+         * sync_schedule?, str, iso8601 recurring interval specifying sync schedule
          * feed_cert_data?, dict, certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * consumer_cert_data?, str, certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename
          * relative_path?, str, repository on disk path
