@@ -1,0 +1,210 @@
+/*
+Theme Name: Pulp
+Theme URI: http://pulpproject.org
+Description: Pulp project blog
+Version: 1.0
+Author: Jay Dobies
+*/
+
+/* -- override from pulp.css ------------------------------------------ */
+
+body {
+  background: #B5D6F7 url('images/pulp-page-bg.png') no-repeat top left;
+}
+
+#background {
+  background: url('images/bg-repeater.png') repeat-x;
+}
+
+#logo {
+  background: url('images/pulp-logo.png') no-repeat left top;
+}
+
+#tagline {
+  background: url('images/dev-blog.png') no-repeat left top;
+  width: 271px;
+  height: 46px;
+}
+
+#redhat {
+  background: url('images/pulp-community-website.png') no-repeat left top;
+  left: 910px;
+}
+
+h2 {
+  margin-top: 8px;
+  color: #56a111;
+}
+
+h1, h3 {
+  margin-top: 8px;
+  color: #3566a5;
+}
+
+/* -- override from grid.css ------------------------------------------ */
+
+.container {
+  width: 1200px;
+}
+
+.cols_4_5 {
+  width: 280px;
+}
+
+.cols_7 {
+  width: 880px;
+}
+
+/* -- theme specific --------------------------------------------------- */
+
+.alignright {
+float:right;
+margin-left:10px;
+}
+.alignleft {
+float:left;
+margin-right:10px;
+}
+
+
+#content {
+  float:left;
+  padding:0 0 30px 0;
+  min-height:420px;
+  width: 1200px;
+  overflow:hidden;
+}
+
+
+.post {
+  padding:0 10px 0 0;
+}
+.post p {
+  margin:4px 0 4px 0;
+}
+.post small {
+  font-size:11px;
+}
+.post small a {
+  font-weight:normal;
+  text-decoration: none;
+}
+.post ul{
+  list-style:circle;
+  margin:0 0 0 25px;
+}
+.post ol{
+  list-style:decimal;
+  margin:0 0 0 30px;
+}
+.post code {
+  font-family: courier;
+}
+.post blockquote {
+  margin-left: 10px;
+  margin-right: 10px;
+  padding: 4px;
+  font-family: courier;
+  background-color: #eee;
+}
+.post blockquote p {
+  margin: 0;
+  padding: 0;
+}
+.post h1, .post h1 a, .post h1 a:hover {
+  text-decoration: none;
+  margin-top: 12px;
+  color: #d06911;
+}
+.post h2 {
+  margin-top: 12px;
+  color: #56a111;
+}
+.post h3 {
+  margin-top: 12px;
+  color: #3566a5;
+}
+.post a {
+  text-decoration: underline;
+  color: #56a111;
+}
+.post a:hover {
+  text-decoration: none;
+  color: #8ad365;
+}
+
+
+
+#comments p {
+margin:10px 0 0 10px;
+width:auto;
+}
+#comments span {
+display:block;
+color:#eee;
+font-family:Georgia;
+font-size:120px;
+font-weight:normal;
+float:right;
+padding-top:25px;
+}
+#comments ul.formlist {
+margin:20px auto;
+width:375px;
+}
+#comments ul.formlist li {
+display:block;
+margin:10px 0 0;
+}
+#comments ul.formlist p{
+margin:10px 0 0;
+text-align:center;
+}
+#comments input {
+width:370px;
+font-weight:normal;
+}
+#comments textarea {
+width:370px;
+font-weight:normal;
+}
+#comments li.submitbutton input {
+text-align:center;
+background:#fff;
+border:1px solid #aaa;
+color:#000;
+font-weight:normal;
+font-size:16px;
+width:374px;
+}
+#comments .center {
+text-align:center;
+}
+
+.sidebar {
+  margin-left: -5px !important;
+}
+.sidebar ul {
+  list-style: disc outside;
+  margin-left: 10px;
+}
+.sidebar a {
+  color: #348000;
+}
+
+#footer {
+font-size:0.9em;
+width:900px;
+float:left;
+border-top:1px dotted #cccccc;
+text-align:center;
+padding:30px 0 40px 0;
+}
+
+#rss-link {
+  margin-top: 10px;
+}
+#rss-link img {
+  margin: 4px;
+  vertical-align: middle;
+}

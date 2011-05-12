@@ -1,0 +1,21 @@
+.post .contact li{
+padding:0;
+}
+.post .contact input {
+margin:0;
+}
+.post .contact textarea {
+margin:14px 0 0;
+}
+.post .contact label {
+padding:16px 0 4px;
+}
+#comments span {
+padding:35px 0 50px;
+}
+#content {
+_margin:0;
+}
+#sidebar {
+_margin:0;
+}
