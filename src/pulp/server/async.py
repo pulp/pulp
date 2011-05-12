@@ -23,6 +23,7 @@ from pulp.server.agent import Agent
 from pulp.server.tasking.exception import NonUniqueTaskException
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
+from pulp.server.tasking.taskqueue.storage import PersistentStorage
 
 
 log = getLogger(__name__)
@@ -98,7 +99,9 @@ def initialize():
     schedule_threshold = _configured_schedule_threshold()
     _queue = TaskQueue(max_running=max_concurrent,
                        failure_threshold=failure_threshold,
-                       schedule_threshold=schedule_threshold)
+                       schedule_threshold=schedule_threshold,
+                       storage=PersistentStorage(),
+                       dispatch_interval=30)
 
 
 def finalize():
