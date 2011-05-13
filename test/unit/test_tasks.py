@@ -36,9 +36,9 @@ testutil.load_test_config()
 
 from pulp.common import dateutils
 from pulp.server.api.repo import RepoApi
+from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import NonUniqueTaskException
-from pulp.server.tasking.repo_sync_task import RepoSyncTask
 from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (

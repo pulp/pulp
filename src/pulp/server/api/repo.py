@@ -41,11 +41,12 @@ from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
 from pulp.server.api.distribution import DistributionApi
-from pulp.server.api.errata import ErrataApi
+from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
+from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.api.scheduled_sync import update_repo_schedule, delete_repo_schedule
 from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
@@ -54,7 +55,8 @@ from pulp.server.db import model
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.tasking.repo_sync_task import RepoSyncTask
+from pulp.server.tasking.task import task_running, task_waiting
+from pulp.server.agent import PulpAgent
 
 log = logging.getLogger(__name__)
 
@@ -499,7 +501,7 @@ class RepoApi(BaseApi):
         tasks = [t for t in find_async(method_name="_sync")
                  if (t.args and id in t.args) or
                  (t.kwargs and id in t.kwargs.values())]
-        if tasks and getattr(tasks[0], 'state') in ('waiting', 'running'):
+        if tasks and getattr(tasks[0], 'state') in (task_running, task_waiting):
             log.info("Current running a sync on repo : %s", id)
             return True
         return False
@@ -511,9 +513,12 @@ class RepoApi(BaseApi):
         repo = self._get_existing_repo(id)
         log.info("Delete API call invoked %s" % repo)
 
+        # delete scheduled syncs, if any
+        delete_repo_schedule(repo)
+
         # find if sync in progress
         if self.find_if_running_sync(id):
-            raise PulpException("Repo cannot be deleted because of sync in progress. You can cancel ongoing sync using 'repo cancel_sync' command.")
+            raise PulpException("Repo cannot be deleted because of sync in progress.")
 
         # unassociate with CDS(s)
         cds_unassociate_results = self.cdsapi.unassociate_all_from_repo(id, True)
@@ -554,6 +559,19 @@ class RepoApi(BaseApi):
                 log.info(
                     'package "%s" has references, not deleted',
                     pkgid)
+            except Exception, ex:
+                log.exception(ex)
+
+        errata = repo["errata"]
+        repo["errata"] = []
+        self.collection.save(repo, safe=True)
+        for eid in errata:
+            try:
+                self.errataapi.delete(eid)
+            except ErrataHasReferences:
+                log.info(
+                    'errata "%s" has references, not deleted',
+                    eid)
             except Exception, ex:
                 log.exception(ex)
 
@@ -854,9 +872,9 @@ class RepoApi(BaseApi):
             return (package['name'], package['epoch'], package['version'], package['release'], package['arch'])
         def get_pkg_nevra(package):
             return dict(zip(("name", "epoch", "version", "release", "arch"), get_pkg_tup(package)))
-        def form_error_tup(pkg):
+        def form_error_tup(pkg, error_message=None):
             pkg_tup = get_pkg_tup(pkg)
-            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"])
+            return (pkg["id"], pkg_tup, pkg["filename"], pkg["checksum"]["sha256"], error_message)
 
         start_add_packages = time.time()
         errors = []
@@ -893,9 +911,10 @@ class RepoApi(BaseApi):
                 errors.append(form_error_tup(pkg))
                 continue
             if filenames.has_key(pkg["filename"]):
-                log.error("Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
-                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"]))
-                errors.append(form_error_tup(pkg))
+                error_msg = "Duplicate filename detected [%s] with package id [%s] and sha256 [%s]" \
+                        % (pkg["filename"], pkg["id"], pkg["checksum"]["sha256"])
+                log.error(error_msg)
+                errors.append(form_error_tup(pkg, error_msg))
                 continue
             nevras[pkg_tup] = pkg["id"]
             filenames[pkg["filename"]] = pkg
@@ -918,8 +937,9 @@ class RepoApi(BaseApi):
             if not nevras.has_key(pkg_tup):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate NEVRA in repo [%s]" % (pkg_tup, repo["id"]))
                 continue
-            log.error("Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id']))
-            errors.append(form_error_tup(pkg))
+            error_message = "Package with same NVREA [%s] already exists in repo [%s]" % (pkg_tup, repo['id'])
+            log.error(error_message)
+            errors.append(form_error_tup(pkg, error_message))
             if packages.has_key(nevras[pkg_tup]):
                 del packages[nevras[pkg_tup]]
         # Check for same filename in calling data or for existing
@@ -930,9 +950,10 @@ class RepoApi(BaseApi):
             if not filenames.has_key(pkg["filename"]):
                 log.error("Unexpected error, can't find [%s] yet it was returned as a duplicate filename in repo [%s]" % (pkg["filename"], repo["id"]))
                 continue
-            log.error("Package with same filename [%s] already exists in repo [%s]" \
-                    % (pkg["filename"], repo['id']))
-            errors.append(form_error_tup(pkg))
+            error_message = "Package with same filename [%s] already exists in repo [%s]" \
+                    % (pkg["filename"], repo['id'])
+            log.error(error_message)
+            errors.append(form_error_tup(pkg, error_message))
             del_pkg_id = filenames[pkg["filename"]]["id"]
             if packages.has_key(del_pkg_id):
                 del packages[del_pkg_id]
@@ -1013,7 +1034,7 @@ class RepoApi(BaseApi):
         #TODO: Make this an async task; so client wouldnt wait
         pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         return errors
-    
+
     def find_repos_by_package(self, pkgid):
         """
         Return repos that contain passed in package id
@@ -1143,11 +1164,6 @@ class RepoApi(BaseApi):
                 log.debug("Erratum %s Not in repo. Nothing to delete" % erratum['id'])
                 return
             del curr_errata[curr_errata.index(erratum['id'])]
-            repos = self.find_repos_by_errataid(erratum['id'])
-            if repo["id"] in repos and len(repos) == 1:
-                self.errataapi.delete(erratum['id'])
-            else:
-                log.debug("Not deleting %s since it is referenced by these repos: %s" % (erratum["id"], repos))
         except Exception, e:
             raise PulpException("Erratum %s delete failed due to Error: %s" % (erratum['id'], e))
 
@@ -1589,6 +1605,11 @@ class RepoApi(BaseApi):
                 new_errata = list(set(sync_errataids).difference(set(repo_errata)))
                 log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
                 self.delete_errata(id, old_errata)
+                for eid in old_errata:
+                    try:
+                        self.errataapi.delete(eid)
+                    except ErrataHasReferences:
+                        log.info('errata "%s" has references, not deleted',eid)
                 # Refresh repo object
                 repo = self._get_existing_repo(id) #repo object must be refreshed
                 log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
@@ -1695,7 +1716,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 
@@ -1723,7 +1744,7 @@ class RepoApi(BaseApi):
 
         # For each consumer, retrieve its proxy and send the update request
         for consumer in consumers:
-            agent = self._getagent(consumer, async=True)
+            agent = PulpAgent(consumer, async=True)
             repo_proxy = agent.Repo()
             repo_proxy.update(repo['id'], bind_data)
 

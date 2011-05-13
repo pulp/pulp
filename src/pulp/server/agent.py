@@ -20,6 +20,7 @@ The proxy classes must match the names of classes that are exposed
 on the agent.
 """
 
+import hashlib
 from threading import RLock
 from datetime import datetime as dt
 from datetime import timedelta
@@ -34,22 +35,89 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-def Agent(uuid, **options):
+class Agent:
     """
-    Factory method for getting a pulp agent object.
-    @param uuid: The agent UUID.
-    @type uuid: str
-    @return: A proxy object for the remote agent.
+    Agent (proxy) base class.
+    @ivar __agent: The wrapped gofer agent object.
+    @type __agent: Agent
     """
-    return proxy.agent(uuid, **options)
 
-def status(uuids=[]):
+    @classmethod
+    def status(cls, uuids=[]):
+        """
+        Get the agent heartbeat status.
+        @param uuids: An (optional) list of uuids to query.
+        @return: A tuple (status,last-heartbeat)
+        """
+        return HeartbeatListener.status(uuids)
+
+    def __init__(self, uuid, **options):
+        """
+        @param __agent: The wrapped gofer agent object.
+        @type __agent: Agent
+        """
+        options['url'] = \
+            config.get('messaging', 'url')
+        self.__agent = proxy.agent(uuid, **options)
+
+    def __getattr__(self, name):
+        return getattr(self.__agent, name)
+
+
+class PulpAgent(Agent):
     """
-    Get the agent heartbeat status.
-    @param uuids: An (optional) list of uuids to query.
-    @return: A tuple (status,last-heartbeat)
+    Represents a pulp agent (proxy).
     """
-    return HeartbeatListener.status(uuids)
+
+    @classmethod
+    def getsecret(cls, consumer):
+        """
+        Get the shared secret for the specified consumer.
+        Derived from sha256 of credentials which are basically
+        just the private key and certificate PEM.
+        @param consumer: A consumer model object.
+        @type consumer: dict
+        """
+        secret = None
+        credentials = consumer.get('credentials')
+        if credentials:
+            hash = hashlib.sha256()
+            for s in credentials:
+                hash.update(s)
+            secret = hash.hexdigest()
+        return secret
+
+    def __init__(self, consumer, **options):
+        """
+        @param consumer: A consumer model object.
+        @type consumer: dict
+        @keyword async: The asynchronous RMI flag.
+        @keyword timeout: The request timeout (seconds).
+        """
+        uuid = consumer['id']
+        options['secret'] = self.getsecret(consumer)
+        Agent.__init__(self, uuid, **options)
+
+
+class CdsAgent(Agent):
+    """
+    Represents a CDS agent (proxy).
+    """
+
+    @classmethod
+    def uuid(cls, cds):
+        return 'cds-%s' % cds['hostname']
+
+    def __init__(self, cds, **options):
+        """
+        @param cds: A cds model object.
+        @type cds: dict
+        @keyword async: The asynchronous RMI flag.
+        @keyword timeout: The request timeout (seconds).
+        """
+        uuid = self.uuid(cds)
+        options['secret'] = cds.get('secret')
+        Agent.__init__(self, uuid, **options)
 
 
 class HeartbeatListener(Consumer):

@@ -32,7 +32,7 @@ import pulp.server.comps_util
 import pulp.server.util
 from pulp.server import config, constants, updateinfo
 from pulp.server.api.distribution import DistributionApi
-from pulp.server.api.errata import ErrataApi
+from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.db.model import Delta, DuplicateKeyError
@@ -351,6 +351,8 @@ class BaseSynchronizer(object):
         @param updateinfo_xml_path: path to updateinfo metadata xml file
         @param repo:    model.Repo object we want to sync 
         """
+        from pulp.server.api.repo import RepoApi
+        repo_api = RepoApi()
         eids = []
         try:
             start = time.time()
@@ -366,16 +368,26 @@ class BaseSynchronizer(object):
                         continue
                     log.debug("Updating errata %s, it's updated date %s is newer than %s." % \
                             (e['id'], e["updated"], found["updated"]))
-                    self.errata_api.delete(e['id'])
+                    try:
+                        repo_api.delete_erratum(repo['id'], e['id'])
+                        self.errata_api.delete(e['id'])
+                    except ErrataHasReferences:
+                        log.info(
+                            'errata "%s" has references, not deleted',e['id'])
+                    except Exception, ex:
+                        log.exception(ex)
                 pkglist = e['pkglist']
-                self.errata_api.create(id=e['id'], title=e['title'],
-                        description=e['description'], version=e['version'],
-                        release=e['release'], type=e['type'],
-                        status=e['status'], updated=e['updated'],
-                        issued=e['issued'], pushcount=e['pushcount'],
-                        from_str=e['from_str'], reboot_suggested=e['reboot_suggested'],
-                        references=e['references'], pkglist=pkglist,
-                        repo_defined=True, immutable=True)
+                try:
+                    self.errata_api.create(id=e['id'], title=e['title'],
+                            description=e['description'], version=e['version'],
+                            release=e['release'], type=e['type'],
+                            status=e['status'], updated=e['updated'],
+                            issued=e['issued'], pushcount=e['pushcount'],
+                            from_str=e['from_str'], reboot_suggested=e['reboot_suggested'],
+                            references=e['references'], pkglist=pkglist,
+                            repo_defined=True, immutable=True)
+                except DuplicateKeyError:
+                    log.info('errata [%s] already exists' % e['id'])
             end = time.time()
             log.debug("%s new/updated errata imported in %s seconds" % (len(eids), (end - start)))
         except yum.Errors.YumBaseError, e:
@@ -393,11 +405,13 @@ class YumSynchronizer(BaseSynchronizer):
     def sync(self, repo, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         cacert = clicert = clikey = None
-        if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
+        if repo['feed_ca']:
             cacert = repo['feed_ca'].encode('utf8')
+        if repo['feed_cert']:
             clicert = repo['feed_cert'].encode('utf8')
+        if repo['feed_key']:
             clikey = repo['feed_key'].encode('utf8')
-
+        log.info("cacert = <%s>, cert = <%s>, key = <%s>" % (cacert, clicert, clikey))
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
         num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
         # check for proxy settings

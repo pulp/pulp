@@ -27,8 +27,7 @@ from gofer.messaging.policy import RequestTimeout, NotAuthorized
 
 # Pulp
 from pulp.server import config, constants
-from pulp.server.agent import Agent
-from pulp.server.db.model.cds import CDS
+from pulp.server.agent import CdsAgent
 
 
 log = logging.getLogger(__name__)
@@ -233,9 +232,8 @@ class GoferDispatcher(object):
         @return: gofer stub
         @rtype:  object with the same methods as the CDS plugin
         '''
-        secret = cds.get('secret')
-        agent = Agent(CDS.uuid(cds))
-        stub = agent.cdsplugin(secret=secret, timeout=timeout)
+        agent = CdsAgent(cds)
+        stub = agent.cdsplugin(timeout=timeout)
         return stub
 
     def __timeout(self, property):

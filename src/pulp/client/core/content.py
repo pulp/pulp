@@ -162,8 +162,12 @@ class Upload(ContentAction):
                 continue
 
             if len(pids):
-                self.repository_api.add_package(rid, pids.values())
-
+                errors = self.repository_api.add_package(rid, pids.values())
+                for e in errors:
+                    error_message = e[4]
+                    if error_message:
+                        exit_code = os.EX_DATAERR
+                        print "%s" % (error_message)
             if len(fids):
                 self.repository_api.add_file(rid, fids.values())
             msg = _('Content association Complete for Repo [%s]: \n Packages: \n%s \n \n Files: \n%s' % \

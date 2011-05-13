@@ -25,10 +25,10 @@ except ImportError:
 
 from pulp.common import dateutils
 from pulp.server import async
+from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
 from pulp.server.pexceptions import PulpException
-from pulp.server.tasking.repo_sync_task import RepoSyncTask
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
 

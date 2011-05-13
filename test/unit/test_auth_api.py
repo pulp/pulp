@@ -36,8 +36,7 @@ from pulp.server.auth import principal
 import pulp.server.auth.cert_generator as cert_generator
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server.auth.certificate import Certificate
-from pulp.server.db.model import CDS
-from pulp.server.agent import Agent
+from pulp.server.agent import CdsAgent
 
 import testutil
 
@@ -129,7 +128,7 @@ class TestAuthApi(unittest.TestCase):
         #  Each cds got called with set_global_repo_auth() and
         #  sent the expected bundle.
         for cds in cdslist:
-            agent = Agent(CDS.uuid(cds))
+            agent = CdsAgent(cds)
             cdsplugin = agent.cdsplugin()
             calls = cdsplugin.set_global_repo_auth.history()
             lastcall = calls[-1]
@@ -176,7 +175,7 @@ class TestAuthApi(unittest.TestCase):
         # configure each cds agent to raise an exception in the
         # next set_global_repo_auth() call.
         for cds in cdslist:
-            agent = Agent(CDS.uuid(cds))
+            agent = CdsAgent(cds)
             cdsplugin = agent.cdsplugin()
             calls = cdsplugin.set_global_repo_auth.push(Exception())
 
@@ -225,7 +224,7 @@ class TestAuthApi(unittest.TestCase):
         #  Each cds got called with set_global_repo_auth() and
         #  sent the expected bundle.
         for cds in cdslist:
-            agent = Agent(CDS.uuid(cds))
+            agent = CdsAgent(cds)
             cdsplugin = agent.cdsplugin()
             calls = cdsplugin.set_global_repo_auth.history()
             lastcall = calls[-1]
@@ -271,7 +270,7 @@ class TestAuthApi(unittest.TestCase):
         # configure each cds agent to raise an exception in the
         # next set_global_repo_auth() call.
         for cds in cdslist:
-            agent = Agent(CDS.uuid(cds))
+            agent = CdsAgent(cds)
             cdsplugin = agent.cdsplugin()
             calls = cdsplugin.set_global_repo_auth.push(Exception())
 
