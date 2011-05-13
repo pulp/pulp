@@ -72,6 +72,7 @@ Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
+Requires: python-isodate >= 0.4.4
 Requires: m2crypto
 Requires: %{name}-common = %{version}
 Requires: gofer >= 0.35
