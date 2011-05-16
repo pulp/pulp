@@ -212,7 +212,9 @@ class File(Model):
         self.filename = filename
         self.description = description
         self.checksum = {checksum_type: checksum}
-        self.size = size
+        self.size = None
+        if size:
+            self.size = int(size)
         self.download_url = None
         self.repo_defined = repo_defined
 
