@@ -205,6 +205,15 @@ CDS registration is done through the <tt>pulp-admin</tt> script. Registration ta
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Display name for the CDS (will default to the hostname if unspecified) 
 </td></tr><tr><td> Description </td><td> <tt>--description</tt> </td><td> Only used for display purposes to further identify the CDS. 
 </td></tr></table>
+<p>
+<strong>Registration Only Options</strong>
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> Schedule Interval </td><td> <tt>--interval</tt> </td><td> Time between scheduled syncs in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format 
+</td></tr><tr><td> Schedule Start </td><td> <tt>--start</tt> </td><td> Date and time of first scheduled sync in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format (optional: not specified means to run immediately) 
+</td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
+</td></tr></table>
 <h4 id="Example">Example</h4>
 <pre class="wiki">$ pulp-admin cds register --hostname cds1.example.org --name "US East CDS"
 Successfully registered CDS [cds1.example.org]

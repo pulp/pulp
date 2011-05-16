@@ -53,7 +53,7 @@ The <tt>pulp-admin</tt> script provides ways to manipulate repositories in Pulp.
 <p>
 The first step when working with repositories is to create one. Repository creation is done through the <tt>repo create</tt> command in the <tt>pulp-admin</tt> script. For example, to create a repository that will synchronize packages from the Pulp Fedora 14 x86_64 repository, the following command would be used:
 </p>
-<pre class="wiki">$ pulp-admin repo create --id example --feed yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64
+<pre class="wiki">$ pulp-admin repo create --id example --feed http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64
 Successfully created repository [ example ]
 </pre><p>
 The following attributes can be specified at repo creation time (all attributes are optional unless otherwise specified).
@@ -64,7 +64,9 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Display name used to better describe the content and purpose of the repo. 
 </td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Indicates the architecture of packages that will be found in the repo. 
 </td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Indicates where packages should be synchronized from when populating the repo. See the section below on feeds for more information. 
-</td></tr><tr><td> <del>Schedule</del> </td><td> <del><tt>--schedule</tt></del> </td><td> <del>Cron syntax describing the interval at which the repository should be automatically synchronized.</del> 
+</td></tr><tr><td> Schedule Interval </td><td> <tt>--interval</tt> </td><td> Time between scheduled syncs in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format 
+</td></tr><tr><td> Schedule Start </td><td> <tt>--start</tt> </td><td> Date and time of first scheduled sync in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format (optional: not specified means to run immediately) 
+</td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
@@ -78,20 +80,15 @@ The following attributes can be specified at repo creation time (all attributes 
 </td></tr></table>
 <h4 id="Feeds">Feeds</h4>
 <p>
-The following feed types are supported:
+The feed URL is just a valid url string. Supported protocols include 'http','https', 'ftp' or 'file' when creating the repository. For example:
 </p>
-<ul><li>yum
-</li><li>rhn
-</li><li>local
-</li></ul><p>
-The feed URL must be prefixed with one of these types when creating the repository. For example:
-</p>
-<pre class="wiki">$ pulp-admin repo create --id example --feed yum:http://example.com/repos
+<pre class="wiki">$ pulp-admin repo create --id example --feed=https://example.com/repos
+$ pulp-admin repo create --id example --feed=file:///mount/data/f14/repos
 </pre><h3 id="Update">Update</h3>
 <p>
 A repository may be updated after it has been created through the <tt>repo update</tt> command in the <tt>pulp-admin</tt> script. For example, to update a repository so it will synchronize packages from the Pulp Fedora 14 i386 repository instead of the x86_84 repository, the following command would be used:
 </p>
-<pre class="wiki">$ pulp-admin repo update --id example --feed yum:http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386 --arch i386
+<pre class="wiki">$ pulp-admin repo update --id example --feed http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/i386 --arch i386
 Successfully updated repository [ example ]
 </pre><p>
 The following attributes can be updated (all attributes are optional unless otherwise specified).
@@ -102,7 +99,10 @@ The following attributes can be updated (all attributes are optional unless othe
 </td></tr><tr><td> Name </td><td> <tt>--name</tt> </td><td> Change the display name which is used to better describe the content and purpose of the repo. 
 </td></tr><tr><td> Architecture </td><td> <tt>--arch</tt> </td><td> Change the architecture of packages that will be found in the repo. 
 </td></tr><tr><td> Feed </td><td> <tt>--feed</tt> </td><td> Change where packages should be synchronized from when populating the repo. 
-</td></tr><tr><td> <del>Schedule</del> </td><td> <del><tt>--schedule</tt></del> </td><td> <del>Change the cron syntax describing the interval at which the repository should be automatically synchronized.</del> 
+</td></tr><tr><td> Schedule Interval </td><td> <tt>--interval</tt> </td><td> Time between scheduled syncs in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format 
+</td></tr><tr><td> Schedule Start </td><td> <tt>--start</tt> </td><td> Date and time of first scheduled sync in <a class="wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncScheduling">iso8601</a> format (optional: not specified means to run immediately) 
+</td></tr><tr><td> Schedule Runs </td><td> <tt>--runs</tt> </td><td> Total scheduled syncs (optional: not specified means run indefinitely) 
+</td></tr><tr><td> Delete Schedule </td><td> <tt>--delete-schedule</tt> </td><td> Delete an existing schedule 
 </td></tr><tr><td> Feed CA Certificate </td><td> <tt>--feed_ca</tt> </td><td> If the feed uses an HTTPS connection, this indicates the CA certificate used to verify the server's SSL certificate. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Certificate </td><td> <tt>--feed_cert</tt> </td><td> If the feed uses an HTTPS connection and requires an entitlement certificate for authentication, this indicates the certificate to use. The certificate will be uploaded to the Pulp server and used when synchronizing the repository. 
 </td></tr><tr><td> Feed Entitlement Private Key </td><td> <tt>--feed_key</tt> </td><td> When using an entitlement certificate, this indicates the certificate's associated private key. 
@@ -274,9 +274,9 @@ The <tt>repo add_package</tt> command takes following arguments:
 </td></tr><tr><td> Recursive  </td><td> <tt>-r</tt> or <tt>--recursive</tt> </td><td> Recursively lookup the dependency list; defaults to one level of lookup. 
 </td></tr></table>
 <h4 id="Example:Addapackagefromsourcetotargetrepositorytopleveldependencyresolution">Example: Add a package from source to target repository (top level dependency resolution)</h4>
-<pre class="wiki"> $ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 
+<pre class="wiki">$ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 
 </pre><h4 id="Example:Addapackagefromsourcetotargetrepositoryrecursive">Example: Add a package from source to target repository (recursive)</h4>
-<pre class="wiki">pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 -r
+<pre class="wiki">$ pulp-admin repo add_package --id=test17 --source=f13-updates -p lxc-libs-0.7.2-1.fc13.x86_64 -r
 </pre><h3 id="RemovePackage">Remove Package</h3>
 <p>
 The <tt>repo remove_package</tt> command is used to indicate a package to remove from a Pulp repository. During this process, a dependency lookup happens for the requested package and the call provides a suggestive option to choose to any dependencies required by this call.
@@ -481,6 +481,60 @@ The <tt>repo metadata</tt> command takes following arguments:
 <pre class="wiki">$ pulp-admin repo metadata --id testrepo
 </pre><h4 id="Example:checkthemetadataschedulestatusforarepository">Example: check the metadata schedule status for a repository</h4>
 <pre class="wiki">$ pulp-admin repo metadata --id testrepo --status
+</pre><h3 id="Discovery">Discovery</h3>
+<p>
+Perform repo discovery for a specified url and type. This creates an async task and waits for the discovery to complete. Then prompts the user for url selection.
+</p>
+<p>
+The <tt>repo discovery</tt> command takes following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> URL </td><td> <tt>-u</tt> or <tt>--url</tt> </td><td> root url to perform discovery (required). 
+</td></tr><tr><td> TYPE </td><td> <tt>-t</tt> or <tt>--type</tt> </td><td>  content type to look for during discovery(required); supported types: ['yum',] 
+</td></tr><tr><td> ASSUMEYES </td><td> <tt>-y</tt> or <tt>--assumeyes</tt> </td><td> Assume yes; automatically create candidate repos for discovered urls.(optional). 
+</td></tr><tr><td> GROUPID   </td><td> <tt>-g</tt> or <tt>--groupid</tt>   </td><td> groupids to associate the discovered repos (optional). 
+</td></tr></table>
+<h4 id="Example:performarepodiscoveryinteractively">Example: perform a repo discovery interactively</h4>
+<pre class="wiki">$ sudo pulp-admin repo discovery -u http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/ -t yum
+Discovering urls with yum metadata, This could take sometime..
+Waiting -
++------------------------------------------+
+ Repository Urls discovered @ [http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/]
++------------------------------------------+
+(-)  [1] http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos//test_bandwidth_repo_smaller/
+(-)  [2] http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos//test_bandwidth_repo/
+
+Select urls for which candidate repos should be created (h for help):h
+  'a'   	 : select all
+  'x:y' 	 : select a range eg:1:3
+  &lt;sel&gt; 	 : select value between 1 and 2
+  'y'   	 : confirm selection
+  'c'   	 : clear selections
+  'q'   	 : abort the repo creation
+Select urls for which candidate repos should be created (h for help):1:2
+(+)  [1] http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos//test_bandwidth_repo_smaller/
+(+)  [2] http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos//test_bandwidth_repo/
+
+Select urls for which candidate repos should be created (h for help):y
+
+Creating candidate repos for selected urls..
+Successfully created repo [repos-pulp-pulp-demo_repos-test_bandwidth_repo_smaller]
+Successfully created repo [repos-pulp-pulp-demo_repos-test_bandwidth_repo]
+</pre><h4 id="Example:performrepodiscoverynon-interactively">Example: perform repo discovery non-interactively</h4>
+<pre class="wiki">$ sudo pulp-admin repo discovery -u http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/ -t yum -y
+Discovering urls with yum metadata, This could take sometime..
+Waiting \
++------------------------------------------+
+ Repository Urls discovered @ [http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/]
++------------------------------------------+
+(+)  [1] http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos//test_bandwidth_repo_smaller/
+(+)  [2] http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos//test_bandwidth_repo/
+
+Creating candidate repos for selected urls..
+Successfully created repo [repos-pulp-pulp-demo_repos-test_bandwidth_repo_smaller]
+Successfully created repo [repos-pulp-pulp-demo_repos-test_bandwidth_repo]
+
 </pre></div>
    </div>
    

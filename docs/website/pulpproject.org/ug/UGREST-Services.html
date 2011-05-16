@@ -47,7 +47,9 @@
 <a href="UGREST-Services.html#ImportFile">Import File</a></li><li class="active">
 <a href="UGREST-Services.html#LookupPackageChecksums">Lookup Package Checksums</a></li><li class="active">
 <a href="UGREST-Services.html#LookupFileChecksums">Lookup File Checksums</a></li><li class="active">
-<a href="UGREST-Services.html#AssociatePackages">Associate Packages</a></li></ol></li></ol></div>
+<a href="UGREST-Services.html#AssociatePackages">Associate Packages</a></li><li class="active">
+<a href="UGREST-Services.html#RepositoryDiscovery">Repository Discovery</a></li><li class="active">
+<a href="UGREST-Services.html#DiscoveryTaskstatus">Discovery Task status</a></li></ol></li></ol></div>
 
 </p>
 <p>
@@ -276,8 +278,12 @@ Parameters:
 </li><li>hashtype    : for pulp this is always 'sha256'
 </li><li>checksum    : checksum value 
 </li><li>type        : 'file' or 'rpm'
-</li><li>size        : size of the file in bytes
-</li></ul></li><li>uploadid: the ID of an uploaded file
+</li><li>size        : size of the payload in bytes
+</li><li>buildhost  : buildhost of the rpm if available or <i> (optional)
+</li><li>license     : package license or </i> (optional)
+</li><li>group      : package group info (optional)
+</li><li>vendor     : vendor info (optional)
+</li></ul></li></ul><ul><li>uploadid: the ID of an uploaded file
 </li></ul><p>
 Authentication:
 </p>
@@ -431,6 +437,50 @@ Response: <strong>200 OK</strong>
 <div class="code"><pre>[] - on successful association of all package ids
 {<B><span class="code-string">&quot;filename&quot;</span></b>:{<B><span class="code-string">&quot;checksum&quot;</span></b>:[error_repoids]}} - on error <B><span class="code-lang">for</span></b> each (filename,checksum) which failed to associate to a repo
 </pre></div><hr />
+<h2 id="RepositoryDiscovery">Repository Discovery</h2>
+<p>
+<i>Discover repository urls with metadata and create candidate repos.</i> <br />
+<br />
+<strong>method</strong>: POST <br />
+<br />
+<strong>path</strong>: /services/discovery/repo/ <br />
+<br />
+<strong>permission</strong>: EXECUTE <br />
+<br />
+<strong>Parameters</strong>: 
+</p>
+<ul><li>url: url to discovery
+</li><li>type: type of content eg:yum       
+</li></ul><p>
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 206 PARTIAL CONTENT <br />
+<br />
+<strong>return</strong>: Task object. <br />
+<br />
+</p>
+<hr />
+<h2 id="DiscoveryTaskstatus">Discovery Task status</h2>
+<p>
+<i>Get status of a discovery async task.</i> <br />
+<i>This method only works for actions that returned a 202 Accepted response.</i> <br />
+<i>e.g. /services/discovery/repo/&lt;id&gt;</i> <br />
+<br />
+<strong>method</strong>: GET <br />
+<br />
+<strong>path</strong>: /services/discovery/repo/&lt;id&gt; <br />
+<br />
+<strong>permission</strong>: READ <br />
+<br />
+<strong>success response</strong>: 200 OK <br />
+<br />
+<strong>failure response</strong>: 404 Not Found <br />
+<br />
+<strong>return</strong>: Task object with urls in the result <br />
+<br />
+</p>
+<hr />
 </div>
    </div>
    

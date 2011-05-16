@@ -137,6 +137,24 @@ For example:
 </p>
 <pre class="wiki">$ pulp-admin package install -n emacs --consumerid test-consumer
 </pre><hr />
+<h2 id="install1">PackageGroup Installation</h2>
+<h3 id="Installation1">Installation</h3>
+<p>
+Once bound to a repository, a consumer can use yum to access that repo's content like normal. The <tt>packagegroup install</tt> command provides a way to remotely trigger packagegroup installations on a consumer or a consumer group.
+</p>
+<p>
+The <tt>packagegroup install</tt> command takes the following arguments:
+</p>
+<table class="wiki">
+<tr><td> <strong>Name</strong> </td><td> <strong>Flag</strong> </td><td> <strong>Description</strong> 
+</td></tr><tr><td> ID </td><td> <tt>--id</tt> </td><td> ID of the packagegroup to install.  
+</td></tr><tr><td> Consumer ID </td><td> <tt>--consumerid</tt> </td><td> ID of the consumer on which to install the packagegroup. 
+</td></tr></table>
+<p>
+For example:
+</p>
+<pre class="wiki">$ pulp-admin packagegroup install --id test_group_id --consumerid test-consumer
+</pre><hr />
 <h2 id="keyvalue">Key-Value Pairs</h2>
 <p>
 Pulp provides the ability to create custom attributes for consumers using key-value pairs. 
