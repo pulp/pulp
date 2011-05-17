@@ -114,7 +114,7 @@ def to_utc_datetime(dt):
         dt = to_local_datetime(dt)
     return dt.astimezone(utc_tz())
 
-# timezone pickling ------------------------------------------------------------
+# custom pickling --------------------------------------------------------------
 
 def pickle_tzinfo(tz):
     offest = tz.utcoffset(None)
@@ -131,6 +131,17 @@ def unpickle_tzinfo(offset):
     hours = offset.days * 24
     minutes = offset.seconds / 60
     return isodate.FixedOffset(hours, minutes)
+
+
+def pickle_datetime(dt):
+    dt = to_utc_datetime(dt)
+    s = format_iso8601_datetime(dt)
+    return unpickle_datetime, (s,)
+
+
+def unpickle_datetime(s):
+    dt = parse_iso8601_datetime(s)
+    return to_utc_datetime(dt)
 
 # iso8601 functions ------------------------------------------------------------
 
