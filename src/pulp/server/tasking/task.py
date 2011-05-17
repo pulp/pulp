@@ -77,9 +77,6 @@ _copied_fields = (
     'timeout',
     'cancel_attempts',
     'state',
-    'scheduled_time',
-    'start_time',
-    'finish_time',
     'exception',
     'traceback',
     'consecutive_failures',
@@ -90,11 +87,13 @@ _pickled_fields = (
     'args',
     'kwargs',
     'scheduler',
+    'scheduled_time',
+    'start_time',
+    'finish_time',
     '_progress_callback',
     'progress',
     'result',
 )
-
 
 class TaskPicklingError(PulpException):
     pass

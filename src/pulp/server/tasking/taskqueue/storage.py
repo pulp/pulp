@@ -178,8 +178,8 @@ class PersistentStorage(Storage):
     def __init__(self):
         super(PersistentStorage, self).__init__()
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        copy_reg.pickle(datetime.datetime, dateutils.pickle_datetime, dateutils.unpickle_datetime)
-        #copy_reg.pickle(datetime.tzinfo, dateutils.pickle_tzinfo, dateutils.unpickle_tzinfo)
+        #copy_reg.pickle(datetime.datetime, dateutils.pickle_datetime, dateutils.unpickle_datetime)
+        copy_reg.pickle(datetime.tzinfo, dateutils.pickle_tzinfo, dateutils.unpickle_tzinfo)
 
     # database methods
 
