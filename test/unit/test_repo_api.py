@@ -678,7 +678,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(grps.has_key(pkggroup["id"]))
         grp = grps[pkggroup["id"]]
         self.assertEquals(1, len(grp["default_package_names"]))
-        self.assertNotIn(missing_pkg_name, grp["default_package_names"])
+        self.assertTrue(missing_pkg_name not in grp["default_package_names"])
 
     def test_repo_package_groups_with_restrict_incomplete_groups(self):
         repo = self.rapi.create('test_repo_package_groups_with_restrict_incomplete_groups',
@@ -1315,12 +1315,12 @@ class TestRepoApi(unittest.TestCase):
         # p3 should reflect it could not be dissociated from repo2 (it didn't belong to repo2)
         self.assertTrue(p3["filename"] in errors.keys())
         self.assertEquals(1, len(errors[p3["filename"]][p3["checksum"]["sha256"]]))
-        self.assertIn(repo2["id"], errors[p3["filename"]][p3["checksum"]["sha256"]])
+        self.assertTrue(repo2["id"] in errors[p3["filename"]][p3["checksum"]["sha256"]])
         # p4 never belonged to repo1 or repo2 and should reflect an error for both
         self.assertTrue(p4["filename"] in errors.keys())
         self.assertEquals(2, len(errors[p4["filename"]][p4["checksum"]["sha256"]]))
-        self.assertIn(repo1["id"], errors[p4["filename"]][p4["checksum"]["sha256"]])
-        self.assertIn(repo2["id"], errors[p4["filename"]][p4["checksum"]["sha256"]])
+        self.assertTrue(repo1["id"] in errors[p4["filename"]][p4["checksum"]["sha256"]])
+        self.assertTrue(repo2["id"] in errors[p4["filename"]][p4["checksum"]["sha256"]])
         # Verify that p1, p2, p3 are no longer part of repo1
         found = self.rapi.repository(repo1['id'])
         self.assertEqual(len(found['packages']), 0)
