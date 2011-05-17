@@ -14,18 +14,20 @@
 # in this software or its documentation.
 
 import copy_reg
+import datetime
 import heapq
 import itertools
 import types
 from gettext import gettext as _
 
+from pulp.common import dateutils
 from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
 from pulp.server.util import Singleton
 
-# base storage class ----------------------------------------------------------
+# base storage class -----------------------------------------------------------
 
 class Storage(object):
 
@@ -88,7 +90,7 @@ class Storage(object):
     def remove_complete(self, task):
         raise NotImplementedError(_('Base Storage class method called'))
 
-# storage class for in-memory task queues -------------------------------------
+# storage class for in-memory task queues --------------------------------------
 
 class VolatileStorage(Storage):
     """
@@ -148,7 +150,7 @@ class VolatileStorage(Storage):
         assert task in self.__complete_tasks
         self.__complete_tasks.remove(task)
 
-# storage class for database-stored tasks -------------------------------------
+# custom pickle and unpickle methods -------------------------------------------
 
 def _pickle_method(method):
     func_name = method.im_func.__name__
@@ -167,6 +169,7 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
+# storage class for database-stored tasks --------------------------------------
 
 class PersistentStorage(Storage):
 
@@ -175,6 +178,7 @@ class PersistentStorage(Storage):
     def __init__(self):
         super(PersistentStorage, self).__init__()
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+        copy_reg.pickle(datetime.tzinfo, dateutils.pickle_tzinfo, dateutils.unpickle_tzinfo)
 
     # database methods
 
