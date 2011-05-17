@@ -22,7 +22,7 @@ import os
 import pulp.client.repolib as repolib
 from pulp.client.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
-from pulp.client.package_profile import PackageProfile
+from pulp.client.package_profile import get_profile
 from pulp.client.config import Config
 from pulp.client.repo_file import RepoFile
 from pulp.client.credentials import Consumer as ConsumerBundle
@@ -152,7 +152,7 @@ class ProfileUpdateAction:
         try:
             pulpserver()
             capi = ConsumerAPI()
-            pkginfo = PackageProfile().getPackageList()
+            pkginfo = get_profile("rpm").collect()
             capi.profile(cid, pkginfo)
             log.info("Profile updated successfully for consumer %s" % cid)
         except Exception, e:

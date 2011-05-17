@@ -67,7 +67,7 @@ class TestFiles(unittest.TestCase):
         self.assertTrue(sample_file["filename"] == filename)
         self.assertTrue(sample_file["description"] == description)
         self.assertTrue(sample_file["checksum"] == {checksum_type : checksum})
-        self.assertTrue(sample_file["size"] == size)
+        self.assertTrue(sample_file["size"] == int(size))
 
     def test_duplicate(self):
         filename = "pulp-test.iso"

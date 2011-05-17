@@ -109,8 +109,8 @@
 </li><li><strong>repomd_xml_path</strong> &lt;str&gt; <i>path to the repository's repomd xml file</i>
 </li><li><strong>group_xml_path</strong> &lt;str&gt; <i>path to the repository's group xml file</i>
 </li><li><strong>group_gz_xml_path</strong> &lt;str&gt; <i>path to the repository's compressed group xml file</i>
-</li><li><strong>sync_schedule</strong> &lt;<a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncSchedule" rel="nofollow">RepoSyncSchedule?</a> object&gt; <i>representing recurring sync schedule</i>
-</li><li><strong>last_sync</strong> &lt;timestamp&gt; <i>date and time of last successful sync</i>
+</li><li>sync_schedule, iso8601 formated recurring interval
+</li><li><strong>last_sync</strong> &lt;str or nil&gt; <i>date and time of last successful sync in iso8601 format, nil if has not been synched</i>
 </li><li><strong>use_symlinks</strong> &lt;bool&gt; <i>whether or not the repository uses symlinks for its content</i>
 </li><li><strong>feed_ca</strong> &lt;str&gt; <i>full path on the Pulp server to the certificate authority used to verify SSL connections to the repo's feed</i>
 </li><li><strong>feed_cert</strong> &lt;str&gt; <i>full path on the Pulp server to the certificate used to authenticate Pulp with the repo's feed server when synchronizing content</i>
@@ -134,24 +134,18 @@
 </li><li><strong>type</strong> &lt;str&gt; <i>repository source type</i>
 </li><li><strong>url</strong> &lt;str&gt; <i>repository source url</i>
 </li></ul><p>
-<strong><a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncSchedule" rel="nofollow">RepoSyncSchedule?</a> object fields</strong>: 
-</p>
-<ul><li><strong>interval</strong> &lt;object&gt; <i>fields of units with integer values (weeks, days, hours, minutes)</i>
-</li><li><strong>start_time</strong> <i>(optional)</i> &lt;object&gt; <i>fields of units with integer values (year, month, day, hour, minute)</i>
-</li><li><strong>runs</strong> <i>(optional)</i> &lt;int&gt; <i>number of runs to execute, omitted mean ad infinitum</i>
-</li></ul><p>
 <strong>Task object fields</strong>: 
 </p>
 <ul><li><strong>id</strong> &lt;str&gt; <i>unique id (usually a uuid) for the task</i>
 </li><li><strong>method_name</strong> &lt;str&gt; <i>name of the pulp library method that was called</i>
 </li><li><strong>state</strong> &lt;str&gt; <i>one of several valid states of the tasks lifetime: waiting, running, finished, error, timed_out, canceled, reset, suspended</i>
-</li><li><strong>start_time</strong> &lt;timestamp or nil&gt; <i>time the task started running, nil if the task has not yet started</i>
-</li><li><strong>finish_time</strong> &lt;timestamp or nil&gt; <i>time the task finished running, nil if the task has not yet finished</i>
+</li><li><strong>start_time</strong> &lt;str or nil&gt; <i>time the task started running in iso8601 format, nil if the task has not yet started</i>
+</li><li><strong>finish_time</strong> &lt;or nil&gt; <i>time the task finished running in iso8601 format, nil if the task has not yet finished</i>
 </li><li><strong>result</strong> &lt;object or nil&gt; <i>the result of the pulp library method upon return, usually nil</i>
 </li><li><strong>exception</strong> &lt;str or nil&gt; <i>a string representation of an error in the pulp librry call, if any</i>
 </li><li><strong>traceback</strong> &lt;str or nil&gt; <i>a string print out of the trace back for the exception, if any</i>
 </li><li><strong>progress</strong> &lt;object or nil&gt; <i>object representing the pulp library call's progress, nill if no information is available</i>
-</li><li><strong>scheduled_time</strong> &lt;timestamp or nil&gt; <i>time the task is scheduled to run, applicable only for scheduled tasks</i>
+</li><li><strong>scheduled_time</strong> &lt;str or nil&gt; <i>time the task is scheduled to run in iso8601 format, applicable only for scheduled tasks</i>
 </li><li><strong>status_path</strong> &lt;str&gt; <i>complete uri path to poll for the task's progress using http GET</i>
 </li></ul><p>
 <strong>Progress object fields</strong>: 
@@ -232,10 +226,9 @@
 </li><li><strong>arch</strong> &lt;str&gt; <i>the main architecture of packages contained in the repository</i>
 </li><li><strong>feed</strong> &lt;str&gt; <i>repository feed in the form of &lt;type&gt;:&lt;url&gt;</i>
 </li><li><strong>use_symlinks</strong> <i>(optional)</i> &lt;bool&gt; <i>defaults to false</i>
-</li><li><strong>sync_schedule</strong> <i>(optional)</i> &lt;<a class="missing wiki" href="https://fedorahosted.org/pulp/wiki/RepoSyncSchedule" rel="nofollow">RepoSyncSchedule?</a> object&gt; <i>schedule to regularly sync the repository on</i>
-</li><li><strong>feed_cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>certificate information to use when connecting to the feed</i>
-</li><li><strong>consumer_cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>certificate information to use when validating consumers of this repo</i>
-</li><li><strong>cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>repository certificate information</i>
+</li><li><strong>sync_schedule</strong> <i>(optional)</i> &lt;str&gt; <i>iso8601 recurring interval specifying sync schedule</i>
+</li><li><strong>feed_cert_data</strong> <i>(optional)</i> &lt;dict&gt; <i>certificate information to use when connecting to the feed.  Has fields 'ca':filename, 'crt':filename, 'key':filename</i>
+</li><li><strong>consumer_cert_data</strong> <i>(optional)</i> &lt;str&gt; <i>certificate information to use when validating consumers of this repo.  Has fields 'ca':filename, 'crt':filename, 'key':filename</i>
 </li><li><strong>relative_path</strong> <i>(optional)</i> &lt;str&gt; <i>repository on disk path</i>
 </li><li><strong>groupid</strong> <i>(optional)</i> &lt;list of str&gt; <i>list of repository group ids this repository belongs to</i>
 </li><li><strong>gpgkeys</strong> <i>(optional)</i> &lt;list of str&gt; <i>list of gpg keys used for signing content</i>
@@ -259,7 +252,16 @@
 <br />
 <strong>failure response</strong>: None <br />
 <br />
-<strong>return</strong>: true <br />
+<strong>return</strong>: 
+</p>
+<blockquote>
+<p>
+Two lists: <br />
+A list of CDS hostnames unassociated with the deleted repo. <br />
+A list of CDS hostnames that failed during unassociation. <br />
+</p>
+</blockquote>
+<p>
 <br />
 </p>
 <h2 id="GetARepository">Get A Repository</h2>
@@ -501,7 +503,7 @@
 <br />
 <strong>parameters</strong>: 
 </p>
-<ul><li><strong>packageid</strong> &lt;str&gt; <i>id of package to add</i>
+<ul><li><strong>packageid</strong> &lt;list of str&gt; <i>id of package to add</i>
 </li></ul><p>
 <br />
 </p>
@@ -1234,7 +1236,7 @@
 <br />
 <strong>method</strong>: GET <br />
 <br />
-<strong>path</strong>: /repositories/&lt;id&gt;/packagegroups/ <br />
+<strong>path</strong>: /repositories/&lt;repository id&gt;/packagegroups/ <br />
 <br />
 <strong>permission</strong>: READ <br />
 <br />
@@ -1246,8 +1248,8 @@
 <br />
 <strong>filters</strong>: 
 </p>
-<ul><li><strong>id</strong> &lt;str&gt; <i>package groupd id</i>
-</li><li><strong>packagegroups</strong> &lt;str&gt; <i>package group name</i>
+<ul><li><strong>filter_missing_packages</strong> &lt;bool&gt; <i>True means to filter results to remove missing package names</i>
+</li><li><strong>filter_incomplete_groups</strong> &lt;bool&gt; <i>True means to filter results to remove groups with missing packages</i>
 </li></ul><p>
 <br />
 </p>

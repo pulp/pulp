@@ -27,7 +27,7 @@ from pulp.client.config import Config
 from pulp.client.core.base import Action, Command
 from pulp.client.core.utils import print_header, system_exit
 from pulp.client.credentials import Consumer as ConsumerBundle
-from pulp.client.package_profile import PackageProfile
+from pulp.client.package_profile import get_profile
 import pulp.client.repolib as repolib
 from pulp.client.repo_file import RepoFile
 from pulp.common import dateutils
@@ -181,7 +181,7 @@ class Create(ConsumerAction):
         crt = cert_dict['certificate']
         bundle = ConsumerBundle()
         bundle.write(key, crt)
-        pkginfo = PackageProfile().getPackageList()
+        pkginfo = get_profile("rpm").collect()
         self.consumer_api.profile(id, pkginfo)
         print _("Successfully created consumer [ %s ]") % consumer['id']
 
@@ -213,7 +213,7 @@ class Update(ConsumerAction):
         consumer_id = self.getconsumerid()
         if not consumer_id:
             system_exit(os.EX_NOHOST, _("This client is not registered; cannot perform an update"))
-        pkginfo = PackageProfile().getPackageList()
+        pkginfo = get_profile("rpm").collect()
         try:
             self.consumer_api.profile(consumer_id, pkginfo)
             print _("Successfully updated consumer [%s] profile") % consumer_id

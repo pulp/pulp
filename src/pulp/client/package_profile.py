@@ -18,45 +18,46 @@ import utils
 import rpm
 log = getLogger(__name__)
 
-"""
-Module for Package profile accumulation
-"""
+class InvalidProfileType(Exception):
+    pass
 
-class PackageProfile(object):
+class BaseProfile(object):
     """
-    Class for probing package profile info
-    @ivar type: type of package content to run lookups on eg: 'rpm','jar','zip' etc.
-    @type TYPE: str
+    Base Class for probing profile info. type of package content to run lookups on eg: 'rpm','jar','zip' etc.
     """
-    def __init__(self, type='rpm'):
-        self.pkgtype = type
-        self.pkglist = {}
-        
-    def getPackageList(self):
-        """
-        Get I{ordered} pkg hash objects.
-        @return: A list of ordered pkg hash objects.
-        @rtype: list
-        """
-        if self.pkgtype == 'rpm':
-            return self.__getInstalledRpms()
+    def collect(self):
+        # implement in the subclass
+        pass
 
-    def __getInstalledRpms(self):
+class RPMProfile(BaseProfile):
+
+    def collect(self):
         """ Accumulates list of installed rpm info """
         ts = rpm.TransactionSet()
         ts.setVSFlags(-1)
         installed = ts.dbMatch()
-        self.pkglist = utils.generatePakageProfile(installed)
-        return self.pkglist
-    
-    def _getInstalledJars(self):
-        pass
-    
-    def _getInstalledZips(self):
-        pass
+        return utils.generatePakageProfile(installed)
 
+class JarProfile(BaseProfile):
+    pass
+
+def get_profile(type):
+    '''
+    Returns an instance of a Profile object
+    @param type: profile type
+    @type type: string
+    Returns an instance of a Profile object
+    '''
+    if type not in PROFILE_MAP:
+        raise InvalidProfileType('Could not find profile for type [%s]', type)
+    profile = PROFILE_MAP[type]()
+    return profile
+
+PROFILE_MAP = {
+    "rpm" : RPMProfile,
+}
 
 if __name__ == '__main__':
-    pp = PackageProfile()
+    p = get_profile("rpm")
     import pprint
-    pprint.pprint(pp.getPackageList())
+    pprint.pprint(p.collect())

@@ -122,6 +122,26 @@ At this point, the <a class="wiki" href="UGInstallation.html#fserver">Server Ins
 <p>
 Keep in mind that code changes will often require Apache to be restarted to load the changes.
 </p>
+<hr />
+<h2 id="UnitTestCoverage">Unit Test Coverage</h2>
+<p>
+1. Install the coverage plugin for nosetests:
+</p>
+<pre class="wiki">easy_install coverage
+</pre><p>
+2. When you run the test suite with nosetests, pass in the following flags:
+</p>
+<pre class="wiki">nosetests --with-coverage --cover-html --cover-package pulp --cover-erase
+</pre><p>
+A quick explanation:
+</p>
+<ul><li>--with-coverage - actually does the coverage checking
+</li><li>--cover-html - generate HTML pages instead of just the console output
+</li><li>--cover-package pulp - says to only generate coverage numbers for the pulp project; if not you get a lot more fluff in the output
+</li><li>--cover-erase - erase the previously generated reports if they exist
+</li></ul><p>
+That'll put them in a directory called "cover" which I think is in "unit" (it may be your cwd if you run with -w).
+</p>
 </div>
    </div>
    

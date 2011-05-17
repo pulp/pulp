@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.176
+Version:        0.0.177
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -28,14 +28,14 @@ Requires: python-oauth2
 Requires: python-httplib2
 Requires: python-isodate >= 0.4.4
 Requires: python-BeautifulSoup
-Requires: grinder >= 0.0.96
+Requires: grinder >= 0.0.98
 Requires: httpd
 Requires: mod_wsgi
 Requires: mod_ssl
 Requires: m2crypto
 Requires: openssl
 Requires: python-ldap
-Requires: python-gofer >= 0.35
+Requires: python-gofer >= 0.37
 Requires: crontabs
 Requires: acl
 Requires: mongodb
@@ -72,9 +72,10 @@ Summary:        Client side tools for managing content on pulp server
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires: python-simplejson
+Requires: python-isodate >= 0.4.4
 Requires: m2crypto
 Requires: %{name}-common = %{version}
-Requires: gofer >= 0.35
+Requires: gofer >= 0.37
 %if !0%{?fedora}
 # RHEL
 Requires: python-hashlib
@@ -99,7 +100,7 @@ Summary:        Provides the ability to run as a pulp external CDS.
 Group:          Development/Languages
 BuildRequires:  rpm-python
 Requires:       %{name}-common = %{version}
-Requires:       gofer >= 0.35
+Requires:       gofer >= 0.37
 Requires:       grinder
 Requires:       httpd
 Requires:       mod_ssl
@@ -281,6 +282,55 @@ fi
 
 
 %changelog
+* Fri May 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.177-1
+- adding python-isodate to client spec (pkilambi@redhat.com)
+- 682226 - filename must be unique within a repo (jmatthews@redhat.com)
+- Moving RepoSyncTask out of tasking module (jmatthews@redhat.com)
+- merged in upstream (jconnor@redhat.com)
+- Enhance errata delete to check for references before allowing a delete.
+  remove_errata orphanes the errata from the repo. (pkilambi@redhat.com)
+- using task constants removed pulp-admin specific error message from server-
+  side error (jconnor@redhat.com)
+- 704316 - added removal of scheduled syncs as first part of repo delete
+  (jconnor@redhat.com)
+- Better approach to agent proxies. (jortel@redhat.com)
+- Allow ssl cacert to be used by itself during a repo sync
+  (jmatthews@redhat.com)
+- Initial dump of the wordpress theme (need to strip out some unused images
+  eventually). (jason.dobies@redhat.com)
+- removing rhn sync specific options from pulp.conf (pkilambi@redhat.com)
+- cut script name down to basename in error message (jconnor@redhat.com)
+- added None reponse code to no credentials error (jconnor@redhat.com)
+- adding credentials detection before establishing connection to server
+  (jconnor@redhat.com)
+- 697208 - Added check to make sure the repo is present before trying to delete
+  it. (jason.dobies@redhat.com)
+- 688297 - Fixed incorrect substitutions for name and hostname
+  (jason.dobies@redhat.com)
+- update repositories webservices documentation to reflect iso8601 format
+  (jconnor@redhat.com)
+- added default behaviour of ommitting start time for sync schedules in help
+  (jconnor@redhat.com)
+- fixed broken optpars import (jconnor@redhat.com)
+- 696676 - removed premature exit due to lack of credentials
+  (jconnor@redhat.com)
+- use either -a -u set of options (jconnor@redhat.com)
+- fix for interval schedule parsing (jconnor@redhat.com)
+- removed superfluous base class methods (jconnor@redhat.com)
+- added new iso format support for package installs (jconnor@redhat.com)
+- we now support sync scheduling when registering a cds (jconnor@redhat.com)
+- added repo sync scheduling support (jconnor@redhat.com)
+- added utility functions to parse iso8601 schedules and handle parse errors
+  (jconnor@redhat.com)
+- 697872 - RFE: add a call to remove packages from repos (jmatthews@redhat.com)
+- removing more references to auditing.initialize (pkilambi@redhat.com)
+- dont try depsolving during add_errata if there are no packages
+  (pkilambi@redhat.com)
+- 676701 - fixing typo in error message (pkilambi@redhat.com)
+- validate input params to depsolver call; mkae recursive an optional param
+  (pkilambi@redhat.com)
+- 670284 - [RFE] Add an option to package group queries to restrict to packages
+  available on server. (jmatthews@redhat.com)
 * Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.176-1
 - This is needed to be able to build this subproject (jason.dobies@redhat.com)
 
