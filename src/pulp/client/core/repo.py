@@ -290,15 +290,29 @@ class List(RepoAction):
                 filters.append(str(filter))
 
             feed_cert = 'No'
-            if repo['feed_cert']:
+            if repo.has_key('feed_cert') and repo['feed_cert']:
                 feed_cert = 'Yes'
+            feed_ca = 'No'
+            if repo.has_key('feed_ca') and repo['feed_ca']:
+                feed_ca = 'Yes'
+            feed_key = 'No'
+            if repo.has_key('feed_key') and repo['feed_key']:
+                feed_key = 'Yes'
 
             consumer_cert = 'No'
-            if repo['consumer_cert']:
+            if repo.has_key('consumer_cert') and repo['consumer_cert']:
                 consumer_cert = 'Yes'
+            consumer_ca = 'No'
+            if repo.has_key('consumer_ca') and repo['consumer_ca']:
+                consumer_ca = 'Yes'
+            consumer_key = 'No'
+            if repo.has_key('consumer_key') and repo['consumer_key']:
+                consumer_key = 'Yes'
 
             print constants.AVAILABLE_REPOS_LIST % (
-                    repo["id"], repo["name"], feedUrl, feedType, feed_cert, consumer_cert,
+                    repo["id"], repo["name"], feedUrl, feedType,
+                    feed_ca, feed_cert, feed_key,
+                    consumer_ca, consumer_cert, consumer_key,
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
@@ -469,20 +483,36 @@ class Create(RepoAction):
         cacert = self.opts.feed_ca
         cert = self.opts.feed_cert
         key = self.opts.feed_key
-        if cacert and cert and key:
-            feed_cert_data = {"ca": utils.readFile(cacert),
-                              "cert": utils.readFile(cert),
-                              "key": utils.readFile(key)}
+        feed_cacert_tmp = None
+        if cacert:
+            feed_cacert_tmp = utils.readFile(cacert)
+        feed_cert_tmp = None
+        if cert:
+            feed_cert_tmp = utils.readFile(cert)
+        feed_key_tmp = None
+        if key:
+            feed_key_tmp = utils.readFile(key)
+        feed_cert_data = {"ca": feed_cacert_tmp,
+                              "cert": feed_cert_tmp,
+                              "key": feed_key_tmp}
 
         # Consumer cert bundle
         consumer_cert_data = None
         cacert = self.opts.consumer_ca
         cert = self.opts.consumer_cert
         key = self.opts.consumer_key
-        if cacert and cert and key:
-            consumer_cert_data = {"ca": utils.readFile(cacert),
-                                  "cert": utils.readFile(cert),
-                                  "key": utils.readFile(key)}
+        cons_cacert_tmp = None
+        cons_cert_tmp = None
+        cons_key_tmp = None
+        if cacert:
+            cons_cacert_tmp = utils.readFile(cacert)
+        if cert:
+            cons_cert_tmp = utils.readFile(cert)
+        if key:
+            cons_key_tmp = utils.readFile(key)
+        consumer_cert_data = {"ca": cons_cacert_tmp,
+                                  "cert": cons_cert_tmp,
+                                  "key": cons_key_tmp}
         groupid = self.opts.groupid
         keylist = self.opts.keys
         if keylist:
