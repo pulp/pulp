@@ -864,7 +864,7 @@ class CancelSync(RepoAction):
             system_exit(os.EX_OK, _('There is no sync in progress for this repository'))
         taskid = task['id']
         self.repository_api.cancel_sync(str(id), str(taskid))
-        print _("Sync for repository %s canceled") % id
+        print _("Sync for repository %s is being canceled") % id
 
 
 class Metadata(RepoAction):
