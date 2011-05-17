@@ -232,8 +232,8 @@ class PersistentStorage(Storage):
         return self.__waiting_tasks().count()
 
     def enqueue_waiting(self, task):
-        assert task.state is task_waiting
-        assert task.scheduled_time is not None
+        assert task.state is task_waiting, 'task %s enqueued with state %s' % (task, task.state)
+        assert task.scheduled_time is not None, 'task %s enqueued with None scheduld_time' % task
         self.__store_task(task)
 
     def dequeue_waiting(self):
@@ -251,14 +251,14 @@ class PersistentStorage(Storage):
         self.collection.remove({'id': task.id, 'state': task_waiting})
 
     def store_running(self, task):
-        assert task.state is task_running
+        assert task.state is task_running, 'task %s with state %s stored as running' % (task, task.state)
         self.__store_task(task)
 
     def remove_running(self, task):
         self.collection.remove({'id': task.id, 'state': task_running})
 
     def store_complete(self, task):
-        assert task.state in task_complete_states
+        assert task.state in task_complete_states, 'task %s with state %s stored as complete' % (task, task.state)
         self.__store_task(task)
 
     def remove_complete(self, task):
