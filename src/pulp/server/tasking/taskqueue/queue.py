@@ -126,7 +126,7 @@ class TaskQueue(object):
 
     def _get_tasks(self):
         """
-        Get the next 'n' tasks to run, where is max - currently running tasks
+        Get the next 'n' tasks to run, where n is max - currently running tasks
         """
         ready_tasks = []
         num_tasks = self.max_running - self.__running_count
