@@ -98,7 +98,7 @@ class RepoApi(BaseApi):
 
     def __getstate__(self):
         odict = self.__dict__.copy()
-        odict.pop('_RepoApi__sync_lock')
+        odict.pop('_RepoApi__sync_lock', None)
         return odict
 
     def _getcollection(self):
