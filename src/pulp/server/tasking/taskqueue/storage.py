@@ -251,7 +251,16 @@ class PersistentStorage(Storage):
         self.collection.remove({'id': task.id, 'state': task_waiting})
 
     def store_running(self, task):
-        assert task.state == task_running, 'task %s with state %s stored as running' % (task, task.state)
+        # because we are storing snapshots and the task is no longer stored in
+        # volatile memory, there is a disconnect between when a task sets itself
+        # as running and when it gets recorded in the db as running
+        # so we accept tasks that are still in a ready state and set them to the
+        # running state, this is a little bit wrong, but unavoidable given the
+        # current control flow
+        assert str(task.state) in (task_waiting, task_running), \
+               'task %s with state %s stored as running' % (task, task.state)
+        if task.state == task_waiting:
+            task.state = task_running
         self.__store_task(task)
 
     def remove_running(self, task):
