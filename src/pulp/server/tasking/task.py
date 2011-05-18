@@ -219,7 +219,7 @@ class Task(object):
 
             except:
                 msg = _("Error pickling attribute %s: %s")
-                raise TaskPicklingError(msg % (attr, getattr(self, attr, None)))
+                raise TaskPicklingError(msg % (attr, getattr(self, attr, None))), None, sys.exc_info()[2]
         s = model.TaskSnapshot(snapshot)
         return s
 
