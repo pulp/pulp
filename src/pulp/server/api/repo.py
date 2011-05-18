@@ -19,6 +19,7 @@ import gzip
 import logging
 import os
 import shutil
+import sys
 import time
 import threading
 import traceback
@@ -100,7 +101,7 @@ class RepoApi(BaseApi):
         try:
             del odict['_RepoApi__sync_lock']
         except:
-            raise PulpException("%s" % odict)
+            raise PulpException("%s" % odict), None, sys.exc_info()[2]
         return odict
 
     def _getcollection(self):
