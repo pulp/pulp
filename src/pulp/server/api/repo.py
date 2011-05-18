@@ -98,10 +98,7 @@ class RepoApi(BaseApi):
 
     def __getstate__(self):
         odict = self.__dict__.copy()
-        try:
-            del odict['_RepoApi__sync_lock']
-        except:
-            raise PulpException("%s" % odict), None, sys.exc_info()[2]
+        odict.pop('_RepoApi__sync_lock')
         return odict
 
     def _getcollection(self):
