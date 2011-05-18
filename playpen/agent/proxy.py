@@ -5,10 +5,9 @@
 #
 
 from pulp.server.db import connection as db
-from pulp.server.db.model import CDS
 from pulp.server.api.consumer import ConsumerApi
 from pulp.server.api.cds import CdsApi
-from pulp.server.agent import Agent
+from pulp.server.agent import CdsAgent, PulpAgent
 
 db.initialize()
 
@@ -19,7 +18,7 @@ def agent(id, **options):
     if consumer is None:
         print 'consumer (%s), not-found' % id
         return
-    return capi._getagent(consumer, **options)
+    return PulpAgent(consumer, **options)
 
 def cds(id, **options):
     """ get a CDS agent proxy """
@@ -28,7 +27,4 @@ def cds(id, **options):
     if cds is None:
         print 'cds (%s), not-found' % id
         return
-    uuid = CDS.uuid(cds)
-    opt = dict(secret=cds['secret'])
-    opt.update(options)
-    return Agent(uuid, **opt)
+    return CdsAgent(cds, **options)
