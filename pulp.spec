@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.177
+Version:        0.0.178
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -282,6 +282,17 @@ fi
 
 
 %changelog
+* Wed May 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.178-1
+- Change wording for cancel sync in CLI (jmatthew@redhat.com)
+- 705476 - Allow a SSL ca cert to be passed into a repo to use for verifcation
+  (jmatthew@redhat.com)
+- Removed use of assertIn/assertNotIn, they fail on older versions of python
+  (jmatthew@redhat.com)
+- Bump to grinder 0.98 (jmatthew@redhat.com)
+- minor refactor to pkg profile module to be extendable (pkilambi@redhat.com)
+- updating user docs for sprint23 (pkilambi@redhat.com)
+- Append a slash for base urls (pkilambi@redhat.com)
+- convert the file size to int before persisting in db (pkilambi@redhat.com)
 * Fri May 13 2011 Jeff Ortel <jortel@redhat.com> 0.0.177-1
 - adding python-isodate to client spec (pkilambi@redhat.com)
 - 682226 - filename must be unique within a repo (jmatthews@redhat.com)
