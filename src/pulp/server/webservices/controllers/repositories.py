@@ -121,7 +121,11 @@ default_fields = [
     'filters',
     'package_count',
     'feed_cert',
+    'feed_ca',
+    'feed_key',
     'consumer_cert',
+    'consumer_ca',
+    'consumer_key',
     'notes',
 ]
 

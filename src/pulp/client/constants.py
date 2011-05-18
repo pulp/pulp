@@ -21,8 +21,8 @@ Id                 \t%-25s
 Name               \t%-25s
 Feed URL           \t%-25s
 Feed Type          \t%-25s
-Feed Certs         \t%-25s
-Consumer Certs     \t%-25s
+Feed Certs         \tCA:%s   Cert:%s   Key:%s
+Consumer Certs     \tCA:%s   Cert:%s   Key:%s
 Architecture       \t%-25s
 Sync Schedule      \t%-25s
 Packages           \t%-25s
