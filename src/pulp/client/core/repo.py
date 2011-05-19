@@ -723,6 +723,8 @@ class Update(RepoAction):
             if k == 'schedule_interval':
                 k = 'sync_schedule'
                 v = parse_interval_schedule(v, self.opts.schedule_start, self.opts.schedule_runs)
+            if k in ('schedule_start', 'schedule_runs'):
+                continue
             if k == 'delete_schedule':
                 k = 'sync_schedule'
                 v = None
