@@ -1406,9 +1406,9 @@ class Discovery(RepoProgressAction):
         success = 0
         url = self.get_required_option('url')
         ctype = self.get_required_option('type')
-        print(_("Discovering urls with yum metadata, This could take sometime.."))
+        print(_("Discovering urls with yum metadata, This could take some time..."))
         try:
-            task = self.service_api.repo_discovery(url, type=ctype)
+            task = self.service_api.repo_discovery(url, type=ctype)cd
         except Exception,e:
             system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
