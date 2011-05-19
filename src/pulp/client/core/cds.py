@@ -53,6 +53,7 @@ def _print_cds(cds):
          cds['hostname'],
          cds['description'],
          cds['group_id'],
+         cds['sync_schedule'],
          repo_list,
          formatted_date,
          responding,
@@ -114,7 +115,7 @@ class Register(CDSAction):
 
 class Unregister(CDSAction):
 
-    description = _('removes the association between the pulp server and a CDS')
+    description = _('removes the association between the Pulp server and a CDS')
 
     def setup_parser(self):
         self.parser.add_option('--hostname', dest='hostname',
@@ -125,6 +126,71 @@ class Unregister(CDSAction):
         self.cds_api.unregister(hostname)
         print(_('Successfully unregistered CDS [%s]' % hostname))
 
+class Update(CDSAction):
+
+    description = _('updates an existing CDS instance')
+
+    def setup_parser(self):
+        self.parser.add_option('--hostname', dest='hostname',
+                               help=_('CDS hostname (required)'))
+        self.parser.add_option('--name', dest='name',
+                               help=_('display name'))
+        self.parser.add_option('--description', dest='description',
+                               help=_('description of the CDS'))
+        self.parser.add_option('--group_id', dest='group_id',
+                               help=_('assigns the CDS to the given group'))
+
+        self.parser.add_option('--remove_group', dest='remove_group', action='store_true', default=False,
+                               help=_('removes the CDS from a group if it is in one'))
+        self.parser.add_option('--remove_sync_schedule', dest='remove_sync_schedule', action='store_true', default=False,
+                               help=_('removes scheduled syncs for this CDS'))
+
+        schedule = OptionGroup(self.parser, _('CDS Sync Schedule'))
+        schedule.add_option('--interval', dest='schedule_interval', default=None,
+                            help=_('length of time between each run in iso8601 duration format'))
+        schedule.add_option('--start', dest='schedule_start', default=None,
+                            help=_('date and time of the first run in iso8601 combined date and time format, ommitting implies starting immediately'))
+        schedule.add_option('--runs', dest='schedule_runs', default=None,
+                            help=_('number of times to run the scheduled sync, ommitting implies running indefinitely'))
+        self.parser.add_option_group(schedule)
+
+    def run(self):
+        hostname = self.get_required_option('hostname')
+
+        schedule = parse_interval_schedule(self.opts.schedule_interval,
+                                           self.opts.schedule_start,
+                                           self.opts.schedule_runs)
+
+        # Sanity checks
+        if self.opts.group_id is not None and self.opts.remove_group:
+            print(_('A group ID may not be specified while removing the group'))
+            return
+
+        if schedule is not None and self.opts.remove_sync_schedule:
+            print(_('A sync schedule may not be specified while removing scheduled syncs'))
+            return
+
+        # Package updates into a single delta dict
+        delta = {}
+
+        if self.opts.name is not None:
+            delta['name'] = self.opts.name
+        if self.opts.description is not None:
+            delta['description'] = self.opts.description
+
+        if self.opts.group_id is not None:
+            delta['group_id'] = self.opts.group_id
+        elif self.opts.remove_group:
+            delta['group_id'] = None
+
+        if schedule is not None:
+            delta['sync_schedule'] = schedule
+        elif self.opts.remove_sync_schedule:
+            delta['sync_schedule'] = None
+            
+        self.cds_api.update(hostname, delta)
+        print(_('Successfully updated CDS [%s]' % hostname))
+        
 class List(CDSAction):
 
     description = _('lists all CDS instances associated with the pulp server')

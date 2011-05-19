@@ -37,6 +37,10 @@ class CDSAPI(PulpAPI):
         path = '/cds/%s/' % hostname
         return self.server.DELETE(path)[1]
 
+    def update(self, hostname, delta):
+        path = '/cds/%s/' % hostname
+        return self.server.PUT(path, delta)[1]
+    
     def list(self):
         path = '/cds/'
         return self.server.GET(path)[1]

@@ -27,7 +27,7 @@ from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.async import find_async
-from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE,
+from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDATE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -102,6 +102,24 @@ class CdsInstance(JSONController):
             cds['next_scheduled_sync'] = dateutils.format_iso8601_datetime(task.scheduled_time)
 
         return self.ok(cds)
+
+    @JSONController.error_handler
+    @JSONController.auth_required(UPDATE)
+    def PUT(self, id):
+        """
+        [[wiki]]
+        title: Update a CDS instance
+        description: Change an exisiting CDS instance.
+        method: PUT
+        path: /cds/<id>/
+        permission: UPDATE
+        success response: 200 OK
+        return: a CDS object
+        parameters: mapping of property to value to change; valid changes: name, description, sync_schedule, group_id
+        """
+        delta = self.params()
+        updated = cds_api.update(id, delta)
+        return self.ok(updated)
 
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)

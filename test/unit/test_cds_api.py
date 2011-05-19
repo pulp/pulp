@@ -262,9 +262,11 @@ class TestCdsApi(unittest.TestCase):
             'group_id'      : 'group-2',
         }
 
-        self.cds_api.update('update-cds', delta)
+        updated = self.cds_api.update('update-cds', delta)
 
         # Verify
+        self.assertTrue(updated is not None)
+
         cds = self.cds_api.cds('update-cds')
 
         self.assertEqual('update-cds', cds['hostname'])
@@ -308,6 +310,46 @@ class TestCdsApi(unittest.TestCase):
         }
 
         self.assertRaises(PulpException, self.cds_api.update, 'update-cds', delta)
+
+    def test_update_remove_group(self):
+        '''
+        Tests removing a group ID is successful.
+        '''
+
+        # Setup
+        self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
+
+        # Test
+        delta = {
+            'group_id'      : None,
+        }
+
+        self.cds_api.update('update-cds', delta)
+
+        # Verify
+        cds = self.cds_api.cds('update-cds')
+
+        self.assertTrue(cds['group_id'] is None)
+
+    def test_update_remove_sync_schedule(self):
+        '''
+        Tests that removing a sync schedule is successful.
+        '''
+
+        # Setup
+        self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
+
+        # Test
+        delta = {
+            'sync_schedule'      : None,
+        }
+
+        self.cds_api.update('update-cds', delta)
+
+        # Verify
+        cds = self.cds_api.cds('update-cds')
+
+        self.assertTrue(cds['sync_schedule'] is None)
 
     def test_cds_lookup_successful(self):
         '''

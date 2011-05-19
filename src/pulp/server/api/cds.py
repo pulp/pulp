@@ -221,14 +221,14 @@ class CdsApi(BaseApi):
         log.info(delta)
 
         # Validate ----------
-        if 'sync_schedule' in delta:
+        if 'sync_schedule' in delta and delta['sync_schedule'] is not None: # will be None if removing the schedule
             try:
                 dateutils.parse_iso8601_interval(delta['sync_schedule'])
             except:
                 log.exception('Could not update CDS [%s] because the sync schedule was invalid [%s]' % (hostname, delta['sync_schedule']))
                 raise PulpException('Invalid sync schedule format [%s]' % delta['sync_schedule']), None, sys.exc_info()[2]
 
-        if 'group_id' in delta:
+        if 'group_id' in delta and delta['group_id'] is not None: # will be None if removing the group
             if GROUP_ID_PATTERN.match(delta['group_id']) is None:
                 log.info('Could not update CDS [%s] because the group ID was invalid [%s]' % (hostname, delta['group_id']))
                 raise PulpException('Group ID must match the standard ID restrictions')
@@ -246,13 +246,18 @@ class CdsApi(BaseApi):
             
         if 'sync_schedule' in delta:
             cds['sync_schedule'] = delta['sync_schedule']
-            update_cds_schedule(cds, delta['sync_schedule'])
+
+            if delta['sync_schedule'] is not None:
+                update_cds_schedule(cds, delta['sync_schedule'])
+            else:
+                delete_cds_schedule(cds)
 
         if 'group_id' in delta:
             cds['group_id'] = delta['group_id']
             # Add hook to notify other CDS instances in the group
 
         self.collection.save(cds, safe=True)
+        return cds
 
     def cds(self, hostname):
         '''

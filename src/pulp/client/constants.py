@@ -177,6 +177,7 @@ Name                \t%-25s
 Hostname            \t%-25s
 Description         \t%-25s
 Group               \t%-25s
+Sync Schedule       \t%-25s
 Repos               \t%-25s
 Last Sync           \t%-25s
 Status:
