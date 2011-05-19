@@ -543,7 +543,8 @@ class RepositoryActions(AsyncController):
         'remove_filters',
         'add_group',
         'remove_group',
-        'metadata'
+        'metadata',
+        'sync_history',
     )
 
     def sync(self, id):
@@ -627,6 +628,22 @@ class RepositoryActions(AsyncController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
+    
+    def sync_history(self, id):
+        """
+        @type id: str
+        @param id: repo id
+        """
+        data = self.params()
+        limit = data.get('limit', None)
+        sort = data.get('sort', None)
+
+        if limit:
+            limit = int(limit)
+
+        results = api.sync_history(id, limit=limit, sort=sort)
+        return self.ok(results)
+
 
     def clone(self, id):
         """

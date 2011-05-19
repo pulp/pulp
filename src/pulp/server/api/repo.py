@@ -2193,4 +2193,35 @@ class RepoApi(BaseApi):
                     # suppress all other exceptions and retry
                     log.error("Exception: %s" % (e))
                     log.error("Traceback: %s" % (traceback.format_exc()))
+                    
+                    
+    def sync_history(self, id, limit=None, sort='descending'):
+        '''
+        Queries repo sync history.
 
+        @param id: repo id
+        @type  id: string
+
+        @param limit: if specified, the query will only return up to this amount of
+                      entries; default is to not limit the entries returned
+        @type  limit: number greater than zero
+
+        @return: list of completed syncs for given repo; 
+                 empty list (not None) if no matching entries are found
+        @rtype:  
+
+        @raise PulpException: if any of the input values are invalid
+        '''
+
+        # Verify the limit makes sense
+        if limit is not None and limit < 1:
+            raise PulpException('Invalid limit [%s], limit must be greater than zero' % limit)
+
+        tasks = find_async(method_name="_sync", repo_id=id)
+        
+        if limit is not None:
+            sync_history_list = [task.__dict__ for task in tasks[:limit]]
+        else:
+            sync_history_list = [task.__dict__ for task in tasks]
+        return sync_history_list
+            
