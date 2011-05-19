@@ -39,7 +39,6 @@ from pulp.server.db.model import CDS, CDSHistoryEventType, CDSRepoRoundRobin
 from pulp.server.pexceptions import PulpException
 from pulp.server.agent import Agent, CdsAgent
 
-
 import testutil
 
 
@@ -103,7 +102,7 @@ class TestCdsApi(unittest.TestCase):
         '''
 
         # Test
-        self.cds_api.register('cds.example.com', name='Test CDS', description='Test CDS Description')
+        self.cds_api.register('cds.example.com', name='Test CDS', description='Test CDS Description', group_id='test-group')
 
         # Verify
         cds = self.cds_api.cds('cds.example.com')
@@ -112,6 +111,7 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(cds['hostname'], 'cds.example.com')
         self.assertEqual(cds['name'], 'Test CDS')
         self.assertEqual(cds['description'], 'Test CDS Description')
+        self.assertEqual(cds['group_id'], 'test-group')
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(1, len(history))
@@ -139,6 +139,18 @@ class TestCdsApi(unittest.TestCase):
         # Verify
         # initialize() and set_global_repo_auth() were NOT send to agent.
         self.assertEqual(0, len(mocks.all()))
+
+    def test_register_bad_group_id(self):
+        '''
+        Tests that an invalid group ID properly throws an exception.
+        '''
+
+        # Test
+        self.assertRaises(PulpException, self.cds_api.register, 'cds.example.com', group_id='@bad!')
+
+        # Verify
+        history = self.cds_history_api.query(cds_hostname='cds.example.com')
+        self.assertEqual(0, len(history))
 
     def test_register_already_exists(self):
         '''

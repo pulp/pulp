@@ -52,6 +52,7 @@ def _print_cds(cds):
         (cds['name'],
          cds['hostname'],
          cds['description'],
+         cds['group_id'],
          repo_list,
          formatted_date,
          responding,
@@ -83,6 +84,8 @@ class Register(CDSAction):
                                help=_('display name'))
         self.parser.add_option('--description', dest='description',
                                help=_('description of the CDS'))
+        self.parser.add_option('--group_id', dest='group_id',
+                               help=_('if specified, the CDS will belong to the given group'))
 
         schedule = OptionGroup(self.parser, _('CDS Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
@@ -98,11 +101,12 @@ class Register(CDSAction):
         hostname = self.get_required_option('hostname')
         name = self.opts.name
         description = self.opts.description
+        group_id = self.opts.group_id
         schedule = parse_interval_schedule(self.opts.schedule_interval,
                                            self.opts.schedule_start,
                                            self.opts.schedule_runs)
         try:
-            self.cds_api.register(hostname, name, description, schedule)
+            self.cds_api.register(hostname, name, description, schedule, group_id)
             print(_('Successfully registered CDS [%s]' % hostname))
         except:
             print(_('Error attempting to register CDS [%s]' % hostname))

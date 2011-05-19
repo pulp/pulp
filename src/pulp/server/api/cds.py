@@ -16,6 +16,7 @@
 # Python
 import datetime
 import logging
+import re
 import sys
 
 # Pulp
@@ -35,8 +36,11 @@ from pulp.server.db.model import CDS, Repo
 from pulp.server.pexceptions import PulpException
 from pulp.server.agent import PulpAgent
 
+# -- constants ----------------------------------------------------------------
 
 log = logging.getLogger(__name__)
+
+GROUP_ID_PATTERN = re.compile(r'^[-_A-Za-z0-9]+$')
 
 REPO_FIELDS = [
     'id',
@@ -47,6 +51,7 @@ REPO_FIELDS = [
     'publish',
 ]
 
+# -- api ----------------------------------------------------------------------
 
 class CdsApi(BaseApi):
 
@@ -68,7 +73,7 @@ class CdsApi(BaseApi):
 # -- public api ---------------------------------------------------------------------
 
     @audit()
-    def register(self, hostname, name=None, description=None, sync_schedule=None):
+    def register(self, hostname, name=None, description=None, sync_schedule=None, group_id=None):
         '''
         Registers the instance identified by hostname as a CDS in use by this pulp server.
         Before adding the CDS information to the pulp database, the CDS will be initialized.
@@ -89,11 +94,17 @@ class CdsApi(BaseApi):
         @param sync_schedule: contains information on when recurring syncs should execute
         @type  sync_schedule: str
 
+        @param group_id: identifies the group the CDS belongs to
+        @type  group_id: str
+
         @raise PulpException: if the CDS already exists, the hostname is unspecified, or
                               the CDS initialization fails
         '''
         if not hostname:
             raise PulpException('Hostname cannot be empty')
+
+        if group_id is not None and GROUP_ID_PATTERN.match(group_id) is None:
+            raise PulpException('Group ID must match the standard ID restrictions')
 
         existing_cds = self.cds(hostname)
 
@@ -102,6 +113,7 @@ class CdsApi(BaseApi):
 
         cds = CDS(hostname, name, description)
         cds.sync_schedule = sync_schedule
+        cds.group_id = group_id
 
         # Add call here to fire off initialize call to the CDS
         # and pdate the shared secret
