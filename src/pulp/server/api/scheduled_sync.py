@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import datetime
+import sys
 from gettext import gettext as _
 from types import NoneType
 
@@ -22,6 +23,8 @@ try:
 except ImportError:
     from pymongo.bson import BSON
     from pymongo.son import SON
+
+from isodate import ISO8601Error
 
 from pulp.common import dateutils
 from pulp.server import async
@@ -32,7 +35,32 @@ from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
 
-## sync task management ---------------------------------------------------
+# schedule validation and manipulation -----------------------------------------
+
+def validate_schedule(schedule):
+    """
+    Validate and standardize the format of an interval schedule specified in
+    iso8601 format.
+    @raise PulpException: when the schedule is not in iso8601 format
+    @type schedule: str
+    @param schedule: interval schedule in iso8601 format
+    @rtype: str
+    @return: interval schedule in pulp's standard iso8601 format
+    """
+    interval = start = runs = None
+    try:
+        interval, start, runs = dateutils.parse_iso8601_interval(schedule)
+    except ISO8601Error:
+        raise PulpException(_('Imporperly formatted schedule: %s') % schedule), None, sys.exc_info()[2]
+    if not isinstance(interval, datetime.timedelta):
+        raise PulpException(_('Invalid type for interval: %s') % str(type(interval)))
+    # convert the start time to the local timezone
+    if isinstance(start, datetime.datetime):
+        start = dateutils.to_local_datetime(start)
+    # re-format the schedule into pulp's standard format
+    return dateutils.format_iso8601_interval(interval, start, runs)
+
+# sync task management ---------------------------------------------------------
 
 def schedule_to_scheduler(schedule):
     """
@@ -44,6 +72,8 @@ def schedule_to_scheduler(schedule):
     @return: interval scheduler for the tasking sub-system
     """
     i, s, r = dateutils.parse_iso8601_interval(schedule)
+    if s is not None:
+        s = dateutils.to_local_datetime(s)
     return IntervalScheduler(i, s, r)
 
 
@@ -131,7 +161,7 @@ def _remove_cds_scheduled_sync_task(cds):
         return
     async.remove_async(task)
 
-# existing api ----------------------------------------------------------------
+# existing api -----------------------------------------------------------------
 
 def update_repo_schedule(repo, new_schedule):
     """
@@ -141,9 +171,7 @@ def update_repo_schedule(repo, new_schedule):
     @type new_schedule: dict
     @param new_schedule: dictionary representing new schedule
     """
-    # using the parsing function to "validate" the schedule
-    dateutils.parse_iso8601_interval(new_schedule)
-    repo['sync_schedule'] = new_schedule
+    repo['sync_schedule'] = validate_schedule(new_schedule)
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
     task = find_scheduled_task(repo['id'], '_sync')
@@ -169,9 +197,7 @@ def update_cds_schedule(cds, new_schedule):
     '''
     Change a CDS sync schedule.
     '''
-    # use the parsing function to "validate" the new schedule
-    dateutils.parse_iso8601_interval(new_schedule)
-    cds['sync_schedule'] = new_schedule
+    cds['sync_schedule'] = validate_schedule(new_schedule)
     collection = CDS.get_collection()
     collection.save(cds, safe=True)
     task = find_scheduled_task(cds['hostname'], 'cds_sync')
@@ -188,7 +214,7 @@ def delete_cds_schedule(cds):
     collection.save(cds, safe=True)
     _remove_cds_scheduled_sync_task(cds)
 
-# startup initialization ------------------------------------------------------
+# startup initialization -------------------------------------------------------
 
 def init_scheduled_syncs():
     """
