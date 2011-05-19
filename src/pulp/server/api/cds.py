@@ -19,6 +19,9 @@ import logging
 import re
 import sys
 
+# 3rd Party
+from isodate import ISO8601Error
+
 # Pulp
 from pulp.common import dateutils
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
@@ -196,6 +199,60 @@ class CdsApi(BaseApi):
         # The above schedule delete call will update the DB, so this remove has to
         # occur after that
         self.collection.remove({'hostname' : hostname}, safe=True)
+
+    def update(self, hostname, delta):
+        '''
+        Updates values in an existing CDS. The following properties may be updated:
+        - name
+        - description
+        - sync schedule
+        - group membership
+
+        @param hostname: identifies the CDS being updated
+        @type  hostname: str
+
+        @param delta: mapping of properties and values to change
+        @type  delta: dict
+
+        @raises PulpException: if any of the new values are invalid
+        '''
+
+        log.info('Updating CDS [%s]' % hostname)
+        log.info(delta)
+
+        # Validate ----------
+        if 'sync_schedule' in delta:
+            try:
+                dateutils.parse_iso8601_interval(delta['sync_schedule'])
+            except:
+                log.exception('Could not update CDS [%s] because the sync schedule was invalid [%s]' % (hostname, delta['sync_schedule']))
+                raise PulpException('Invalid sync schedule format [%s]' % delta['sync_schedule']), None, sys.exc_info()[2]
+
+        if 'group_id' in delta:
+            if GROUP_ID_PATTERN.match(delta['group_id']) is None:
+                log.info('Could not update CDS [%s] because the group ID was invalid [%s]' % (hostname, delta['group_id']))
+                raise PulpException('Group ID must match the standard ID restrictions')
+
+        # Update ----------
+        cds = self.cds(hostname)
+
+        # If we ever get enough values to warrant a loop, we can add it. For now, it's
+        # just simpler to handle one at a time.
+        if 'name' in delta:
+            cds['name'] = delta['name']
+
+        if 'description' in delta:
+            cds['description'] = delta['description']
+            
+        if 'sync_schedule' in delta:
+            cds['sync_schedule'] = delta['sync_schedule']
+            update_cds_schedule(cds, delta['sync_schedule'])
+
+        if 'group_id' in delta:
+            cds['group_id'] = delta['group_id']
+            # Add hook to notify other CDS instances in the group
+
+        self.collection.save(cds, safe=True)
 
     def cds(self, hostname):
         '''

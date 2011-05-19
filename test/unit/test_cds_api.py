@@ -246,6 +246,69 @@ class TestCdsApi(unittest.TestCase):
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(0, len(history))
 
+    def test_update_cds(self):
+        '''
+        Tests that updating a CDS with valid data succeeds and correctly stores the changes.
+        '''
+
+        # Setup
+        self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
+
+        # Test
+        delta = {
+            'name'          : 'name-2',
+            'description'   : 'description-2',
+            'sync_schedule' : 'P2D',
+            'group_id'      : 'group-2',
+        }
+
+        self.cds_api.update('update-cds', delta)
+
+        # Verify
+        cds = self.cds_api.cds('update-cds')
+
+        self.assertEqual('update-cds', cds['hostname'])
+        self.assertEqual('name-2', cds['name'])
+        self.assertEqual('description-2', cds['description'])
+        self.assertEqual('P2D', cds['sync_schedule'])
+        self.assertEqual('group-2', cds['group_id'])
+
+    def test_update_cds_bad_sync_schedule(self):
+        '''
+        Tests that specifying a bad sync schedule raises the proper error.
+        '''
+
+        # Setup
+        self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
+
+        # Test
+        delta = {
+            'name'          : 'name-2',
+            'description'   : 'description-2',
+            'sync_schedule' : 'spiderman',
+            'group_id'      : 'group-2',
+        }
+
+        self.assertRaises(PulpException, self.cds_api.update, 'update-cds', delta)
+
+    def test_update_cds_bad_group_id(self):
+        '''
+        Tests that specifying an invalid group ID raises the proper error.
+        '''
+
+        # Setup
+        self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
+
+        # Test
+        delta = {
+            'name'          : 'name-2',
+            'description'   : 'description-2',
+            'sync_schedule' : 'P2D',
+            'group_id'      : 'b@d=id',
+        }
+
+        self.assertRaises(PulpException, self.cds_api.update, 'update-cds', delta)
+
     def test_cds_lookup_successful(self):
         '''
         Tests the CDS lookup when a CDS exists with the given hostname.
