@@ -27,7 +27,7 @@ from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.async import find_async
-from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE,
+from pulp.server.auth.authorization import (CREATE, READ, DELETE, EXECUTE, UPDATE,
     grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
 from pulp.server.webservices.controllers.base import JSONController, AsyncController
@@ -65,20 +65,12 @@ class CdsInstances(JSONController):
         if existing is not None:
             return self.conflict('A CDS with the hostname [%s] already exists' % hostname)
 
-        name = None
-        description = None
-        sync_schedule = None
+        name = repo_data.get('name', None)
+        description = repo_data.get('description', None)
+        sync_schedule = repo_data.get('sync_schedule', None)
+        group_id = repo_data.get('group_id', None)
 
-        if 'name' in repo_data:
-            name = repo_data['name']
-
-        if 'description' in repo_data:
-            description = repo_data['description']
-
-        if 'sync_schedule' in repo_data:
-            sync_schedule = repo_data['sync_schedule']
-
-        cds = cds_api.register(hostname, name, description, sync_schedule=sync_schedule)
+        cds = cds_api.register(hostname, name, description, sync_schedule=sync_schedule, group_id=group_id)
 
         path = http.extend_uri_path(hostname)
         grant_automatic_permissions_for_created_resource(http.resource_path(path))
@@ -110,6 +102,24 @@ class CdsInstance(JSONController):
             cds['next_scheduled_sync'] = dateutils.format_iso8601_datetime(task.scheduled_time)
 
         return self.ok(cds)
+
+    @JSONController.error_handler
+    @JSONController.auth_required(UPDATE)
+    def PUT(self, id):
+        """
+        [[wiki]]
+        title: Update a CDS instance
+        description: Change an exisiting CDS instance.
+        method: PUT
+        path: /cds/<id>/
+        permission: UPDATE
+        success response: 200 OK
+        return: a CDS object
+        parameters: mapping of property to value to change; valid changes: name, description, sync_schedule, group_id
+        """
+        delta = self.params()
+        updated = cds_api.update(id, delta)
+        return self.ok(updated)
 
     @JSONController.error_handler
     @JSONController.auth_required(DELETE)
