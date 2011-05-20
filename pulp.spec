@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.178
+Version:        0.0.179
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -282,6 +282,18 @@ fi
 
 
 %changelog
+* Fri May 20 2011 Jeff Ortel <jortel@redhat.com> 0.0.179-1
+- Fix qpid SSL: pass URL to heartbeat & async task listener.
+  (jortel@redhat.com)
+- 705394 - added condition to skip adding unused schedule variables to the
+  update delta (jconnor@redhat.com)
+- 705393 - adding schedule validation and standardization method that will add
+  missing tzinformation (jconnor@redhat.com)
+- Added update CDS API and CLI hooks. (jason.dobies@redhat.com)
+- Added API call for update CDS. (jason.dobies@redhat.com)
+- Added group ID to CDS register and display calls (jason.dobies@redhat.com)
+- Added group ID to CDS instances (plus DB migrate script)
+  (jason.dobies@redhat.com)
 * Wed May 18 2011 Jeff Ortel <jortel@redhat.com> 0.0.178-1
 - Change wording for cancel sync in CLI (jmatthew@redhat.com)
 - 705476 - Allow a SSL ca cert to be passed into a repo to use for verifcation
