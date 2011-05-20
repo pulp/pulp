@@ -15,6 +15,7 @@
 
 import pickle
 
+from pulp.common import dateutils
 from pulp.server.db.model.base import Model
 
 # task snapshot model ---------------------------------------------------------
@@ -62,3 +63,23 @@ class TaskSnapshot(Model):
             raise Exception()
         cls = pickle.loads(task_class)
         return cls.from_snapshot(self)
+
+# task history model -----------------------------------------------------------
+
+class TaskHistory(Model):
+    """
+    Task History Model
+    Store task state and results for auditing and history queries.
+    """
+
+    collection_name = 'task_history'
+    unique_indicies = ()
+
+    def __init__(self, task):
+        super(TaskHistory, self).__init__()
+        for attr in ('id', 'class_name', 'method_name', 'state', 'progress',
+                     'result', 'exception', 'traceback', 'consecutive_failures'):
+            setattr(self, getattr(task, attr))
+        for attr in ('scheduled_time', 'start_time', 'finish_time'):
+            setattr(self, dateutils.format_iso8601_datetime(getattr(task, attr)))
+        self.task_string = str(task)
