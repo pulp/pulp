@@ -20,8 +20,8 @@ import itertools
 import types
 from gettext import gettext as _
 
-from pulp.common import dateutils
-from pulp.server.db.model.persistence import TaskSnapshot
+from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
+from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
@@ -185,8 +185,7 @@ class PersistentStorage(Storage):
     def __init__(self):
         super(PersistentStorage, self).__init__()
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        #copy_reg.pickle(datetime.datetime, dateutils.pickle_datetime, dateutils.unpickle_datetime)
-        copy_reg.pickle(datetime.tzinfo, dateutils.pickle_tzinfo, dateutils.unpickle_tzinfo)
+        copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
 
     # database methods
 
@@ -285,3 +284,68 @@ class PersistentStorage(Storage):
         # this method is now a noop because there's not enough information
         # provided to decided on which copy to delete
         pass
+
+# hybrid storage class ---------------------------------------------------------
+
+class HybridStorage(VolatileStorage):
+    """
+    Hybrid storage class that uses volatile memory for storage and correctness
+    and uses the database to persiste waiting and running tasks across reboots
+    and to keep completed tasks around indefinitely for history and auditing
+    purposes.
+    """
+
+    def  __init__(self):
+        super(HybridStorage, self).__init__()
+        # set custom pickling functions for snapshots
+        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+        copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
+        # load existing incomplete tasks from the database on initialization
+        for snapshot in self.__cursor_to_tasks(self.snapshot_collection.find()):
+            task = TaskSnapshot(snapshot).to_task()
+            self.enqueue_waiting(task)
+
+    # database methods
+
+    @property
+    def snapshot_collection(self):
+        return self.__dict__.setdefault('__snapshot_collection',
+                                        TaskSnapshot.get_collection())
+
+    @property
+    def history_collection(self):
+        return self.__dict__.setdefault('__history_collection',
+                                        TaskHistory.get_collection())
+
+    # query methods
+
+    def complete_tasks(self):
+        # we're utilizing the VolatileStorage management of complete tasks,
+        # but we don't want folks polking around in there, instead they should
+        # use history for completed tasks
+        return []
+
+    def history(self, criteria):
+        # XXX think about how to implement a history query
+        pass
+
+    # wait queueue methods
+
+    def enqueue_waiting(self, task):
+        super(HybridStorage, self).enqueue_waiting(task)
+        # create and keep a snapshot of the task that can be loaded from the
+        # database and executed across reboots, server restarts, etc.
+        snapshot = task.snapshot()
+        self.snapshot_collection.insert(snapshot)
+
+    # storage methods
+
+    def remove_running(self, task):
+        super(HybridStorage, self).remove_running(task)
+        # the task has completed, so remove the snapshot
+        self.snapshot_collection.remove({'id': task.snapshot_id})
+
+    def store_complete(self, task):
+        super(HybridStorage, self).store_complete(task)
+        history = TaskHistory(task)
+        self.history_collection.insert(history)
