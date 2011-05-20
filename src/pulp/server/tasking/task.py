@@ -136,6 +136,7 @@ class Task(object):
         if hasattr(callable, 'im_class'):
             self.class_name = callable.im_class.__name__
         self.method_name = callable.__name__
+        self.snapshot_id = None
 
         # task resources
         self.callable = callable
@@ -222,6 +223,7 @@ class Task(object):
                 msg = _("Error pickling attribute %s: %s")
                 raise TaskPicklingError(msg % (attr, getattr(self, attr, None))), None, sys.exc_info()[2]
         s = model.TaskSnapshot(snapshot)
+        self.snapshot_id = s.id
         return s
 
     @classmethod
@@ -234,6 +236,7 @@ class Task(object):
             setattr(task, attr, snapshot.get(attr, None))
         for attr in _pickled_fields:
             setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
+        task.snapshot_id = snapshot.id
         return task
 
     # -------------------------------------------------------------------------
@@ -242,6 +245,7 @@ class Task(object):
         """
         Reset this task to run again.
         """
+        self.snapshot_id = None
         self.state = task_waiting
         self.start_time = None
         self.finish_time = None
