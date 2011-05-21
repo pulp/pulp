@@ -253,6 +253,12 @@ class PersistentStorage(Storage):
         self.remove_waiting(task)
         return task
 
+    def peek_waiting(self):
+        snapshots = self.__waiting_tasks().sort('scheduled_time').limit(1)
+        if snapshots.count() == 0:
+            return None
+        return TaskSnapshot(snapshots[0]).to_task()
+
     # storage methods
 
     def remove_waiting(self, task):
@@ -303,7 +309,8 @@ class HybridStorage(VolatileStorage):
         # load existing incomplete tasks from the database on initialization
         for snapshot in self.__cursor_to_tasks(self.snapshot_collection.find()):
             task = TaskSnapshot(snapshot).to_task()
-            self.enqueue_waiting(task)
+            # tasks are already in the database, so just enqueue them in memory
+            super(HybridStorage, self).enqueue_waiting(task)
 
     # database methods
 
