@@ -43,7 +43,7 @@ from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_running, task_finished, task_error, task_timed_out,
-    task_canceled, task_complete_states, _copied_fields, _pickled_fields)
+    task_canceled, task_complete_states)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import (
     VolatileStorage, PersistentStorage, _pickle_method, _unpickle_method)
@@ -606,7 +606,7 @@ class PersistentTaskTester(unittest.TestCase):
         task1 = Task(noop)
         snapshot = task1.snapshot()
         task2 = snapshot.to_task()
-        for field in itertools.chain(_copied_fields, _pickled_fields):
+        for field in itertools.chain(Task._copied_fields, Task._pickled_fields):
             f1 = getattr(task1, field)
             f2 = getattr(task2, field)
             if field in self.same_type_fields:

@@ -45,7 +45,7 @@ from pulp.server.tasking.scheduler import (
     Scheduler, ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import (
     Task, task_waiting, task_running, task_finished, task_error, task_timed_out,
-    task_canceled, task_complete_states, _copied_fields, _pickled_fields)
+    task_canceled, task_complete_states)
 from pulp.server.tasking.taskqueue.queue import TaskQueue
 from pulp.server.tasking.taskqueue.storage import (
     VolatileStorage, PersistentStorage, _pickle_method, _unpickle_method)
@@ -94,12 +94,12 @@ class PersistentTaskTester(unittest.TestCase):
         interval = dateutils.parse_iso8601_duration("PT5M")
         start_time = dateutils.parse_iso8601_datetime("2012-03-01T13:00:00Z")
         syncschedule = dateutils.format_iso8601_interval(interval, start_time=start_time)
-        repo = self.rapi.create('some-id', 'some name', 'i386', 
-                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/', 
+        repo = self.rapi.create('some-id', 'some name', 'i386',
+                                'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/',
                                 sync_schedule=syncschedule)
         self.assertTrue(repo is not None)
         task = find_scheduled_task(repo['id'], '_sync')
-        
+
         snapshot1 = task.snapshot()
         collection = TaskSnapshot.get_collection()
         collection.insert(snapshot1, safe=True)
@@ -107,14 +107,14 @@ class PersistentTaskTester(unittest.TestCase):
         task2 = snapshot2.to_task()
         assert(task.scheduled_time == task2.scheduled_time)
 
-        
+
     def test_sync_history(self):
         interval = dateutils.parse_iso8601_duration("PT1M")
         syncschedule = dateutils.format_iso8601_interval(interval)
-        
-        repo = self.rapi.create('xyz', 'xyz', 'i386', 
+
+        repo = self.rapi.create('xyz', 'xyz', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/',
-                                sync_schedule=syncschedule) 
+                                sync_schedule=syncschedule)
         self.assertTrue(repo is not None)
         time.sleep(5)
         print self.rapi.sync_history('xyz')
