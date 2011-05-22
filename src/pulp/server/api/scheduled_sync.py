@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import datetime
+import logging
 import sys
 from gettext import gettext as _
 from types import NoneType
@@ -32,6 +33,7 @@ from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.exception import UnscheduledTaskException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
 
@@ -180,6 +182,7 @@ def update_repo_schedule(repo, new_schedule):
     else:
         _update_repo_scheduled_sync_task(repo, task)
 
+
 def delete_repo_schedule(repo):
     """
     Remove a repo's sync schedule
@@ -193,6 +196,7 @@ def delete_repo_schedule(repo):
     collection.save(repo, safe=True)
     _remove_repo_scheduled_sync_task(repo)
 
+
 def update_cds_schedule(cds, new_schedule):
     '''
     Change a CDS sync schedule.
@@ -205,6 +209,7 @@ def update_cds_schedule(cds, new_schedule):
         _add_cds_scheduled_sync_task(cds)
     else:
         _update_cds_scheduled_sync_task(cds, task)
+
 
 def delete_cds_schedule(cds):
     if cds['sync_schedule'] is None:
@@ -224,16 +229,30 @@ def init_scheduled_syncs():
     _init_repo_scheduled_syncs()
     _init_cds_scheduled_syncs()
 
+
 def _init_repo_scheduled_syncs():
     collection = Repo.get_collection()
+    log = logging.getLogger('pulp')
     for repo in collection.find({}):
         if repo['sync_schedule'] is None:
             continue
-        _add_repo_scheduled_sync_task(repo)
+        try:
+            _add_repo_scheduled_sync_task(repo)
+        except UnscheduledTaskException:
+            log.info(_('Scheduled sync for %s already in task queue') % repo['id'])
+        else:
+            log.info(_('Added scheduled sync for %s to task queue') % repo['id'])
+
 
 def _init_cds_scheduled_syncs():
     collection = CDS.get_collection()
+    log = logging.getLogger('pulp')
     for cds in collection.find({}):
         if cds['sync_schedule'] is None:
             continue
-        _add_cds_scheduled_sync_task(cds)
+        try:
+            _add_cds_scheduled_sync_task(cds)
+        except UnscheduledTaskException:
+            log.info(_('Scheduled sync for %s already in task queue') % cds['id'])
+        else:
+            log.info(_('Added sync for %s to task queue') % cds['id'])
