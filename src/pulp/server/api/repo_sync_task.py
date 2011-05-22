@@ -67,7 +67,7 @@ class RepoSyncTask(Task):
         return s
 
     @classmethod
-    def from_snapshot(clS, snapshot):
+    def from_snapshot(cls, snapshot):
         t = super(RepoSyncTask, cls).from_snapshot(snapshot)
         t.repo_id = snapshot['repo_id']
         t.synchronizer = pickle.loads(snapshot['synchronizer'])
