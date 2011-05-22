@@ -80,7 +80,6 @@ _copied_fields = (
     'exception',
     'traceback',
     'consecutive_failures',
-    'repo_id',
 )
 
 _pickled_fields = (
