@@ -77,8 +77,9 @@ class TaskHistory(Model):
 
     def __init__(self, task):
         super(TaskHistory, self).__init__()
-        for attr in ('id', 'class_name', 'method_name', 'state', 'progress',
-                     'result', 'exception', 'traceback', 'consecutive_failures'):
+        for attr in ('id', 'class_name', 'method_name', 'args', 'kwargs',
+                     'state', 'progress', 'result', 'exception', 'traceback',
+                     'consecutive_failures'):
             setattr(self, getattr(task, attr))
         for attr in ('scheduled_time', 'start_time', 'finish_time'):
             setattr(self, dateutils.format_iso8601_datetime(getattr(task, attr)))
