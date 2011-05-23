@@ -164,9 +164,9 @@ class HeartbeatListener(Consumer):
     def __unlock(cls):
         cls.__mutex.release()
 
-    def __init__(self):
+    def __init__(self, url):
         topic = Topic('heartbeat')
-        Consumer.__init__(self, topic)
+        Consumer.__init__(self, topic, url=url)
 
     def dispatch(self, envelope):
         try:

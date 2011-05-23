@@ -36,9 +36,9 @@ if config.getboolean('events', 'recv_enabled'):
     dispatcher.start()
 
 # start async task reply handler
-replyHandler = ReplyHandler()
+replyHandler = ReplyHandler(url)
 replyHandler.start()
 
 # start agent heartbeat listener
-heartbeatListener = HeartbeatListener()
+heartbeatListener = HeartbeatListener(url)
 heartbeatListener.start()

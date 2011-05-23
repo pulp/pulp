@@ -269,9 +269,8 @@ class ReplyHandler(Listener):
     @ivar consumer: The reply consumer.
     @type consumer: L{ReplyConsumer}
     """
-    def __init__(self):
+    def __init__(self, url):
         ctag = RemoteMethod.CTAG
-        url = config.config.get('messaging', 'url')
         queue = Queue(ctag)
         self.consumer = ReplyConsumer(queue, url=url)
 
