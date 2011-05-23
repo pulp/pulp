@@ -159,8 +159,22 @@ class CdsLib(object):
         '''
         Updates the local knowledge of this CDS instance's group membership
         and other CDS instances in the same group.
+
+        If group_name is None, the effect is that this CDS has been removed
+        from a group.
+
+        @param group_name: identifies the group the CDS is a member in
+        @type  group_name: str or None
+
+        @param cds_hostnames: list of all CDS instances in the group (this instance
+                              will be listed in this list as well)
+        @type  cds_hostnames: list of str
         '''
-        pass # will implement as part of the group load balancing
+        if cds_hostnames is None:
+            members = 'None'
+        else:
+            members = ', '.join(cds_hostnames)
+        log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
 
     def _sync_repos(self, base_url, repos):
         '''

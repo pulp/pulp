@@ -180,7 +180,7 @@ class GoferDispatcher(object):
                                      (this will include the CDS being sent the message)
         @type  member_cds_hostnames: list of str
         '''
-        self._send(self._cds_stub(cds).set_repo_auth, group_name, member_cds_hostnames)
+        self._send(self._cds_stub(cds).update_group_membership, group_name, member_cds_hostnames)
         
     def _send(self, func, *args):
         '''

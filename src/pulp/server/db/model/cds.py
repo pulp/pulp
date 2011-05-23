@@ -88,6 +88,7 @@ class CDSRepoRoundRobin(Model):
     unique_indicies = ('id',)
 
     def __init__(self, repo_id, next_permutation):
+        Model.__init__(self)
         self.id = repo_id
         self.repo_id = repo_id
         self.next_permutation = next_permutation # list of strings
@@ -100,6 +101,7 @@ class CDSSyncSchedule(Model):
     Class representing a serialized CDS sync schedule.
     """
     def __init__(self, interval, start_time=None, runs=None):
+        Model.__init__(self)
         self.interval = interval
         self.start_time = start_time
         self.runs = runs

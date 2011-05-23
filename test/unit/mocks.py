@@ -88,3 +88,7 @@ class cdsplugin(object):
 
     def set_global_repo_auth(self, bundle):
         pass
+
+    def update_group_membership(self, group_name, member_hostnames):
+        self.group_name = group_name
+        self.member_hostnames = member_hostnames

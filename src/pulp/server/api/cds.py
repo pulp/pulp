@@ -19,9 +19,6 @@ import logging
 import re
 import sys
 
-# 3rd Party
-from isodate import ISO8601Error
-
 # Pulp
 from pulp.common import dateutils
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
@@ -148,6 +145,10 @@ class CdsApi(BaseApi):
         bundle = repo_cert_utils.read_global_cert_bundle()
         self.dispatcher.set_global_repo_auth(cds, bundle)
 
+        # If the CDS is part of a group, notify other CDS instances
+        if group_id is not None:
+            self.update_group_membership(group_id)
+
         # If the CDS should sync regularly, update that now
         if sync_schedule is not None:
             update_cds_schedule(cds, sync_schedule)
@@ -200,6 +201,12 @@ class CdsApi(BaseApi):
         # occur after that
         self.collection.remove({'hostname' : hostname}, safe=True)
 
+        # If the CDS was part of a group, notify its remaining members of the change
+        # (this has to happen after the DB update so the unregistered CDS does not
+        # show up in the membership list)
+        if doomed['group_id'] is not None:
+            self.update_group_membership(doomed['group_id'])
+        
     def update(self, hostname, delta):
         '''
         Updates values in an existing CDS. The following properties may be updated:
@@ -253,10 +260,53 @@ class CdsApi(BaseApi):
                 delete_cds_schedule(cds)
 
         if 'group_id' in delta:
-            cds['group_id'] = delta['group_id']
-            # Add hook to notify other CDS instances in the group
 
-        self.collection.save(cds, safe=True)
+            # There are three cases to handle in the case of a group ID change:
+            # - CDS was not previously in a group and is added to one
+            # - CDS was in a group and has been removed from it
+            # - CDS was in a group and is now in a different group
+
+            if cds['group_id'] is None:
+                # Not previously in a group but now is
+                log.info('Assigning previously ungrouped CDS [%s] to group [%s]' % (hostname, delta['group_id']))
+
+                cds['group_id'] = delta['group_id']
+                self.collection.save(cds, safe=True)
+
+                self.update_group_membership(delta['group_id'])
+
+            elif cds['group_id'] is not None and delta['group_id'] is None:
+                # CDS was in a group but no longer is
+                log.info('Removing CDS [%s] from group [%s]' % (hostname, cds['group_id']))
+
+                old_group_id = cds['group_id']
+                cds['group_id'] = None
+                self.collection.save(cds, safe=True)
+
+                # Notify the CDS it's not in a group
+                try:
+                    self.dispatcher.update_group_membership(cds, None, None)
+                except Exception:
+                    log.exception('Error notifying CDS [%s] it has been removed from group [%s]' % (hostname, old_group_id))
+
+                self.update_group_membership(old_group_id)
+
+            elif cds['group_id'] != delta['group_id']:
+                # CDS was in a group and is being changed
+                log.info('Changing CDS [%s] from group [%s] to group [%s]' % (hostname, cds['group_id'], delta['group_id']))
+
+                old_group_id = cds['group_id']
+                cds['group_id'] = delta['group_id']
+                self.collection.save(cds, safe=True)
+
+                self.update_group_membership(old_group_id)
+                self.update_group_membership(delta['group_id'])
+
+        else:
+            # If the group was changed, the CDS has already been saved. If not,
+            # make sure to do it here.
+            self.collection.save(cds, safe=True)
+            
         return cds
 
     def cds(self, hostname):
@@ -548,7 +598,7 @@ class CdsApi(BaseApi):
             except Exception:
                 failed.append(hostname)
                 log.error('unassociate %s, failed', hostname, exc_info=True)
-        return (succeeded, failed)
+        return succeeded, failed
 
 # -- internal only api ---------------------------------------------------------------------
 
@@ -599,6 +649,36 @@ class CdsApi(BaseApi):
                 success_cds_hostnames.append(cds['hostname'])
             except Exception:
                 log.exception('Error enabling repo auth on CDS [%s]' % cds['hostname'])
+                error_cds_hostnames.append(cds['hostname'])
+
+        return success_cds_hostnames, error_cds_hostnames
+
+    def update_group_membership(self, group_id):
+        '''
+        Notifies all CDS instances that are part of the given group that the membership
+        in that group has changed. A list of all current members in the group is sent
+        to each CDS in the group.
+
+        @param group_id: identifies the group whose membership changed
+        @type  group_id: str
+        '''
+
+        # Find all CDS instances in the group
+        db = CDS.get_collection()
+        cds_members = list(db.find({'group_id' : group_id}))
+
+        member_hostnames = [c['hostname'] for c in cds_members]
+
+        # Notify each one, keeping a running list of successes and failures
+        success_cds_hostnames = []
+        error_cds_hostnames = []
+
+        for cds in cds_members:
+            try:
+                self.dispatcher.update_group_membership(cds, group_id, member_hostnames)
+                success_cds_hostnames.append(cds['hostname'])
+            except Exception:
+                log.exception('Error notifying CDS [%s] of changes to group [%s]' % (cds['hostname'], group_id))
                 error_cds_hostnames.append(cds['hostname'])
 
         return success_cds_hostnames, error_cds_hostnames
