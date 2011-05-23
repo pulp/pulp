@@ -155,6 +155,13 @@ class CdsLib(object):
         # files will be deleted.
         self.repo_cert_utils.write_global_repo_cert_bundle(bundle)
 
+    def update_group_membership(self, group_name, cds_hostnames):
+        '''
+        Updates the local knowledge of this CDS instance's group membership
+        and other CDS instances in the same group.
+        '''
+        pass # will implement as part of the group load balancing
+
     def _sync_repos(self, base_url, repos):
         '''
         Synchronizes all repos specified in the sync call.
