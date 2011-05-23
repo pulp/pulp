@@ -289,7 +289,7 @@ class TestCdsApi(unittest.TestCase):
         '''
 
         # Setup
-        cds = self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
+        self.cds_api.register('update-cds', 'name-1', 'description-1', 'P1D', 'group-1')
 
         # Test
         delta = {
@@ -304,7 +304,7 @@ class TestCdsApi(unittest.TestCase):
         # Verify
         self.assertTrue(updated is not None)
 
-        self.cds_api.cds('update-cds')
+        cds = self.cds_api.cds('update-cds')
 
         self.assertEqual('update-cds', cds['hostname'])
         self.assertEqual('name-2', cds['name'])
