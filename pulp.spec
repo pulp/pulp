@@ -160,7 +160,7 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
+cp src/pulp/client/gofer/pulpplugin.py %{buildroot}/usr/lib/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # Pulp and CDS init.d
