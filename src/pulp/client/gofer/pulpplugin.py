@@ -19,7 +19,7 @@ Contains recurring actions and remote classes.
 """
 
 import os
-import pulp.client.repolib as repolib
+from pulp.client import repolib #import pulp.client.repolib as repolib
 from pulp.client.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.package_profile import get_profile

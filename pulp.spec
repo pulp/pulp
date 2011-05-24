@@ -259,7 +259,7 @@ fi
 %{_bindir}/pulp-client
 %{_bindir}/pulp-migrate
 %{_exec_prefix}/lib/gofer/plugins/pulp.*
-%{_sysconfdir}/gofer/plugins/pulp.conf
+%{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
