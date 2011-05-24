@@ -266,8 +266,8 @@ class Task(object):
         if scheduled_time is None:
             self.scheduled_time = None
             raise UnscheduledTaskException()
-        if adjustments:
-            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments))
+        if adjustments > 1:
+            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
         self.scheduled_time = scheduled_time
 
     # -------------------------------------------------------------------------
