@@ -30,6 +30,8 @@ from pulp.server.auth.authentication import (
 from pulp.server.auth.authorization import is_authorized, is_superuser
 from pulp.server.auth.principal import clear_principal, set_principal
 from pulp.server.compat import wraps, json
+from pulp.server.tasking.scheduler import (
+    ImmediateScheduler, AtScheduler, IntervalScheduler)
 from pulp.server.tasking.task import task_complete_states
 from pulp.server.webservices import http
 
@@ -343,15 +345,23 @@ class AsyncController(JSONController):
         fields = ('id', 'method_name', 'state', 'result', 'exception',
                   'traceback', 'progress')
         d = dict((f, getattr(task, f)) for f in fields)
-
+        # convert the exception into a string as it cannot be json encoded
         if isinstance(task.exception, Exception):
             d['exception'] = str(task.exception)
-
+        # time fields must be in iso8601 format
         fields = ('start_time', 'finish_time', 'scheduled_time')
         for f in fields:
             t = getattr(task, f, None)
             d[f] = t and dateutils.format_iso8601_datetime(t)
-
+        # add scheduler information so we can differentiate between recurring
+        # and non-recurring tasks
+        d['scheduler'] = None
+        if isinstance(task.scheduler, ImmediateScheduler):
+            d['scheduler'] = 'immediate'
+        elif isinstance(task.scheduler, AtScheduler):
+            d['scheduler'] = 'at'
+        elif isinstance(task.scheduler, IntervalScheduler):
+            d['scheduler'] = 'interval'
         return d
 
     def _status_path(self, id):
