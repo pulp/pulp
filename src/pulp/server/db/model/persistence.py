@@ -81,6 +81,8 @@ class TaskHistory(Model):
                      'state', 'progress', 'result', 'exception', 'traceback',
                      'consecutive_failures'):
             setattr(self, attr, getattr(task, attr))
+        # remove the synchronizer as it can't be stored in the db
+        self.kwargs.pop('synchronizer', None)
         for attr in ('scheduled_time', 'start_time', 'finish_time'):
             setattr(self, attr, dateutils.format_iso8601_datetime(getattr(task, attr)))
         self.task_string = str(task)
