@@ -13,6 +13,9 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import itertools
+import storage
+
 
 APPLICATION_PREFIX = '/pulp/mirror'
 
@@ -23,9 +26,20 @@ def process_request(environ, start_response):
     """
     status = '200 OK'
 
+    # Determine the balancing order
+    next = _next_permutation()
+
+    # Determine the repo URLs by merging in the requested repo with the
+    # new CDS permutation
     requested_repo = _requested_dir(environ['REQUEST_URI'])
 
-    output = 'https://SOMETHING-HERE%s' % requested_repo
+    repo_urls = []
+    for cds in next:
+        url = 'https://%s%s' % (cds, requested_repo)
+        repo_urls.append(url)
+
+    # Package for returning to the caller
+    output = '\n'.join(repo_urls)
 
     response_headers = [('Content-type', 'text/plain'),
                         ('Content-Length', str(len(output)))]
@@ -44,3 +58,24 @@ def _requested_dir(request_uri):
     @type  request_uri: str
     """
     return request_uri[len(APPLICATION_PREFIX):]
+
+def _next_permutation():
+    """
+    Takes the given list of values and rotates them, returning a new
+    list with the same items in a new order.
+
+    @return: list of CDS hostnames to be used in load balancing consideration;
+             may be empty
+    @rtype:  list of str
+    """
+
+    file_storage = storage.FilePermutationStore()
+    file_storage.open()
+
+    base = file_storage.permutation
+    next = list(itertools.chain(base[1:], base[:1]))
+
+    file_storage.permutation = next
+    file_storage.close()
+
+    return next
