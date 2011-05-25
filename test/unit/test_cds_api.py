@@ -95,7 +95,8 @@ class TestCdsApi(unittest.TestCase):
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
         self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
-
+        self.assertEqual(0, len(cdsplugin.update_group_membership.history()))
+       
     def test_register_full_attributes(self):
         '''
         Tests the register call specifying a value for all optional arguments.
@@ -123,6 +124,11 @@ class TestCdsApi(unittest.TestCase):
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
         self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
+
+        self.assertEqual(1, len(cdsplugin.update_group_membership.history()))
+        self.assertEqual('test-group', cdsplugin.group_name)
+        self.assertEqual(1, len(cdsplugin.member_hostnames))
+        self.assertEqual('cds.example.com', cdsplugin.member_hostnames[0])
 
     def test_register_no_hostname(self):
         '''
@@ -220,6 +226,37 @@ class TestCdsApi(unittest.TestCase):
         agent = Agent(uuid)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.release.history()))
+        self.assertEqual(0, len(cdsplugin.update_group_membership.history()))
+
+    def test_unregister_with_group(self):
+        '''
+        Tests that unregistering a CDS that belonged to the group triggers an
+        update group message to other members.
+        '''
+
+        # Setup
+        self.cds_api.register('cds1.example.com', group_id='test-multi-group')
+        time.sleep(1)
+        self.cds_api.register('cds2.example.com', group_id='test-multi-group')
+
+        cds1 = self.cds_api.cds('cds1.example.com')
+        uuid1 = CdsAgent.uuid(cds1)
+
+        cds2 = self.cds_api.cds('cds2.example.com')
+        uuid2 = CdsAgent.uuid(cds2)
+
+        # Test
+        self.cds_api.unregister('cds1.example.com')
+
+        # Verify
+        cdsplugin1 = Agent(uuid1).cdsplugin()
+        self.assertEqual(2, len(cdsplugin1.update_group_membership.history())) # own register, cds2 register
+
+        cdsplugin2 = Agent(uuid2).cdsplugin()
+        self.assertEqual(2, len(cdsplugin2.update_group_membership.history())) # own register, cds1 unregister
+        self.assertEqual('test-multi-group', cdsplugin2.group_name)
+        self.assertEqual(1, len(cdsplugin2.member_hostnames)) # only itself after cds1 unregister
+        self.assertEqual('cds2.example.com', cdsplugin2.member_hostnames[0])
 
     def test_unregister_no_hostname(self):
         '''
@@ -274,6 +311,13 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual('description-2', cds['description'])
         self.assertEqual('P2D', cds['sync_schedule'])
         self.assertEqual('group-2', cds['group_id'])
+
+        agent = CdsAgent(cds)
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(2, len(cdsplugin.update_group_membership.history())) # register, update
+        self.assertEqual('group-2', cdsplugin.group_name)
+        self.assertEqual(1, len(cdsplugin.member_hostnames))
+        self.assertEqual('update-cds', cdsplugin.member_hostnames[0])
 
     def test_update_cds_bad_sync_schedule(self):
         '''
@@ -330,6 +374,73 @@ class TestCdsApi(unittest.TestCase):
         cds = self.cds_api.cds('update-cds')
 
         self.assertTrue(cds['group_id'] is None)
+
+        agent = CdsAgent(cds)
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(2, len(cdsplugin.update_group_membership.history())) # register, update
+        self.assertEqual(None, cdsplugin.group_name)
+        self.assertEqual(None, cdsplugin.member_hostnames)
+
+    def test_update_add_group(self):
+        '''
+        Tests an update that adds a group to a CDS that did not previously have one.
+        '''
+        # Setup
+        self.cds_api.register('update-cds')
+
+        # Test
+        delta = {
+            'group_id'      : 'new-group',
+        }
+
+        self.cds_api.update('update-cds', delta)
+
+        # Verify
+        cds = self.cds_api.cds('update-cds')
+
+        self.assertEqual('new-group', cds['group_id'])
+
+        agent = CdsAgent(cds)
+        cdsplugin = agent.cdsplugin()
+        self.assertEqual(1, len(cdsplugin.update_group_membership.history())) # update only
+        self.assertEqual('new-group', cdsplugin.group_name)
+        self.assertEqual(1, len(cdsplugin.member_hostnames))
+        self.assertEqual('update-cds', cdsplugin.member_hostnames[0])
+
+    def test_update_change_group(self):
+        '''
+        Tests that changing a CDS' group will update both members of the old and new
+        groups.
+        '''
+
+        # Setup
+        cds_change = self.cds_api.register('update-cds-change-me', group_id='group-1')
+        cds_1 = self.cds_api.register('update-cds-1', group_id='group-1')
+        cds_2 = self.cds_api.register('update-cds-2', group_id='group-2')
+
+        # Test
+        delta = {
+            'group_id'      : 'group-2',
+        }
+
+        self.cds_api.update('update-cds-change-me', delta)
+
+        # Verify
+        cdsplugin_change = CdsAgent(cds_change).cdsplugin()
+        cdsplugin_1 = CdsAgent(cds_1).cdsplugin()
+        cdsplugin_2 = CdsAgent(cds_2).cdsplugin()
+
+        self.assertEqual(3, len(cdsplugin_change.update_group_membership.history())) # self register, cds_1 register, change event
+        self.assertEqual(2, len(cdsplugin_1.update_group_membership.history())) # self register, change event
+        self.assertEqual(2, len(cdsplugin_2.update_group_membership.history())) # self register, change event
+
+        self.assertEqual('group-2', cdsplugin_change.group_name)
+        self.assertEqual('group-1', cdsplugin_1.group_name)
+        self.assertEqual('group-2', cdsplugin_2.group_name)
+
+        self.assertEqual(2, len(cdsplugin_change.member_hostnames)) # change and cds 2
+        self.assertEqual(1, len(cdsplugin_1.member_hostnames)) # cds 1
+        self.assertEqual(2, len(cdsplugin_2.member_hostnames)) # change and cds 2
 
     def test_update_remove_sync_schedule(self):
         '''

@@ -182,6 +182,25 @@ class Task(object):
             return 1
         return cmp(self.scheduled_time, other.scheduled_time)
 
+    def __eq__(self, other):
+        """
+        Keep from using the overridden __cmp__ for equality testing and
+        membership testing.
+        """
+        # Without this, we run into an interesting little dilema, that if two
+        # tasks have the same scheduled_time, they are considered equal.
+        # This is great for sorting, but awful for testing equality, or more to
+        # the point, membership.
+        # This lead to a bug that would give off assertion errors in storage
+        # when testing to make sure a task was not in two places at once, when
+        # there was simply tasks with the same scheduled_time in two different
+        # places.
+        if not isinstance(other, Task):
+            raise TypeError('No comparison defined between task and %s' %
+                            type(other))
+        # only return True if it's the same task
+        return self.id == other.id
+
     def __str__(self):
 
         def _name():
@@ -271,8 +290,8 @@ class Task(object):
         if scheduled_time is None:
             self.scheduled_time = None
             raise UnscheduledTaskException()
-        if adjustments:
-            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments))
+        if adjustments > 1:
+            _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
         self.scheduled_time = scheduled_time
 
     # -------------------------------------------------------------------------

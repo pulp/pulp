@@ -40,6 +40,7 @@ class CdsDispatcherException(Exception):
     Base class for all dispatcher-related exceptions.
     '''
     def __init__(self, wrapped_exception):
+        Exception.__init__(self)
         self.wrapped_exception = wrapped_exception
 
     def __repr__(self):
@@ -91,22 +92,8 @@ class GoferDispatcher(object):
         @return: The CDS shared secret.
         @rtype: str
         '''
-
-        # Gofer doesn't have a good way of differentiating between issues contacting
-        # the CDS and exceptions coming from the CDS itself, so the following long try
-        # block differentiates and throws the appropriate dispatcher exception.
-
-        try:
-            secret = self._cds_stub(cds).initialize()
-            return secret
-        except RequestTimeout, e:
-            raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except NotAuthorized, e:
-            raise CdsAuthException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
-        except Exception, e:
-            raise CdsMethodException(e), None, sys.exc_info()[2]
+        secret = self._send(self._cds_stub(cds).initialize)
+        return secret
 
     def release_cds(self, cds):
         '''
@@ -118,16 +105,7 @@ class GoferDispatcher(object):
         @param cds: A cds to be released.
         @type cds: CDS model object.
         '''
-        try:
-            return self._cds_stub(cds).release()
-        except RequestTimeout, e:
-            raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except NotAuthorized, e:
-            raise CdsAuthException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
-        except Exception, e:
-            raise CdsMethodException(e), None, sys.exc_info()[2]
+        self._send(self._cds_stub(cds).release)
 
     def sync(self, cds, repos):
         '''
@@ -145,27 +123,14 @@ class GoferDispatcher(object):
         @param repos: A list of repos to be synced.
         @type repos: list
         '''
+        server_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name')
+        repo_relative_url = config.config.get('server', 'relative_url')
+        repo_base_url = '%s/%s' % (server_url, repo_relative_url)
+        timeout = self.__timeout('sync_timeout')
+        log.info('sync using timeout=%s', timeout)
+        stub = self._cds_stub(cds, timeout)
 
-        # Gofer doesn't have a good way of differentiating between issues contacting
-        # the CDS and exceptions coming from the CDS itself, so the following long try
-        # block differentiates and throws the appropriate dispatcher exception.
-
-        try:
-            server_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name')
-            repo_relative_url = config.config.get('server', 'relative_url')
-            repo_base_url = '%s/%s' % (server_url, repo_relative_url)
-            timeout = self.__timeout('sync_timeout')
-            log.info('sync using timeout=%s', timeout)
-            stub = self._cds_stub(cds, timeout)
-            stub.sync(repo_base_url, repos)
-        except RequestTimeout, e:
-            raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except NotAuthorized, e:
-            raise CdsAuthException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
-        except Exception, e:
-            raise CdsMethodException(e), None, sys.exc_info()[2]
+        self._send(stub.sync, repo_base_url, repos)
 
     def set_global_repo_auth(self, cds, cert_bundle):
         '''
@@ -178,17 +143,7 @@ class GoferDispatcher(object):
         @param cert_bundle: cert bundle to send to the CDS; may be None
         @type  cert_bundle:  see pulp.repo_auth.repo_cert_utils
         '''
-        try:
-            self._cds_stub(cds).set_global_repo_auth(cert_bundle)
-        except RequestTimeout, e:
-            raise CdsTimeoutException(e), None, sys.exc_info()[2]
-        except NotAuthorized, e:
-            raise CdsAuthException(e), None, sys.exc_info()[2]
-        except DispatchError, e:
-            raise CdsCommunicationsException(e), None, sys.exc_info()[2]
-        except Exception, e:
-            raise CdsMethodException(e), None, sys.exc_info()[2]
-
+        self._send(self._cds_stub(cds).set_global_repo_auth, cert_bundle)
 
     def set_repo_auth(self, cds, repo_id, repo_relative_path, cert_bundle):
         '''
@@ -196,7 +151,7 @@ class GoferDispatcher(object):
         None, the effect is that repo authentication is disabled for that repo.
 
         @param cds: CDS to send the message to
-        @type  cds:  L{CDS}
+        @type  cds: L{CDS}
 
         @param repo_id: identifies the repo being configured
         @type  repo_id: str
@@ -207,8 +162,40 @@ class GoferDispatcher(object):
         @param cert_bundle: cert bundle to send to the CDS; may be None
         @type  cert_bundle:  see pulp.repo_auth.repo_cert_utils
         '''
+        self._send(self._cds_stub(cds).set_repo_auth, repo_id, repo_relative_path, cert_bundle)
+
+    def update_group_membership(self, cds, group_name, member_cds_hostnames):
+        '''
+        Sends a message to the given CDS describing a group update event. This
+        will be sent both when a CDS first joins a group and for all subsequent
+        changes to CDS membership in that group.
+
+        @param cds: CDS to send the message to
+        @type  cds: L{CDS}
+
+        @param group_name: ID of the group the CDS belongs to
+        @type  group_name: str
+
+        @param member_cds_hostnames: list of hostnames of all CDS instances in the group
+                                     (this will include the CDS being sent the message)
+        @type  member_cds_hostnames: list of str
+        '''
+        self._send(self._cds_stub(cds).update_group_membership, group_name, member_cds_hostnames)
+        
+    def _send(self, func, *args):
+        '''
+        Utility function to execute a remote CDS operation, translating Gofer
+        exceptions to Pulp ones.
+
+        @param func: function to execute
+        @type  func: function
+
+        @param args: any arguments to pass to the function
+        @type  args: any
+        '''
         try:
-            self._cds_stub(cds).set_repo_auth(repo_id, repo_relative_path, cert_bundle)
+            result = func(*args)
+            return result
         except RequestTimeout, e:
             raise CdsTimeoutException(e), None, sys.exc_info()[2]
         except NotAuthorized, e:
@@ -216,6 +203,7 @@ class GoferDispatcher(object):
         except DispatchError, e:
             raise CdsCommunicationsException(e), None, sys.exc_info()[2]
         except Exception, e:
+            # This is likely the case that the error originated in the CDS plugin itself
             raise CdsMethodException(e), None, sys.exc_info()[2]
 
     def _cds_stub(self, cds, timeout=None):
@@ -251,8 +239,8 @@ class GoferDispatcher(object):
         if pval:
             parts = pval.split(':', 1)
             if len(parts) > 1:
-                return (int(parts[0]), int(parts[1]))
+                return int(parts[0]), int(parts[1])
             else:
-                return (10, int(parts[0]))
+                return 10, int(parts[0])
         else:
             return None

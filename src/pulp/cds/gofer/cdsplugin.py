@@ -134,4 +134,15 @@ def set_global_repo_auth(bundle):
     '''
     log.info('Setting global repo auth credentials')
     cdslib.set_global_repo_auth(bundle)
-    
+
+@remote(secret=getsecret)
+def update_group_membership(group_name, cds_hostnames):
+    '''
+    See cdslib.CdsLib.update_group_membership for details.
+    '''
+    if cds_hostnames is None:
+        members = 'None'
+    else:
+        members = ', '.join(cds_hostnames)
+    log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
+    cdslib.update_group_membership(group_name, cds_hostnames)

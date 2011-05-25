@@ -3,7 +3,7 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:           pulp
-Version:        0.0.179
+Version:        0.0.180
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -160,7 +160,7 @@ ln -s /var/lib/pulp/published %{buildroot}/var/www/pub
 mkdir -p %{buildroot}/etc/gofer/plugins
 mkdir -p %{buildroot}/usr/lib/gofer/plugins
 cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
-cp src/pulp/client/gofer/pulp.py %{buildroot}/usr/lib/gofer/plugins
+cp src/pulp/client/gofer/pulpplugin.py %{buildroot}/usr/lib/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 
 # Pulp and CDS init.d
@@ -258,8 +258,8 @@ fi
 %{_bindir}/pulp-admin
 %{_bindir}/pulp-client
 %{_bindir}/pulp-migrate
-%{_exec_prefix}/lib/gofer/plugins/pulp.*
-%{_sysconfdir}/gofer/plugins/pulp.conf
+%{_exec_prefix}/lib/gofer/plugins/pulpplugin.*
+%{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
@@ -282,6 +282,11 @@ fi
 
 
 %changelog
+* Tue May 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.180-1
+- bug 703275 - Python naively uses __cmp__ for equality and membership if
+  __eq__ is not present added custom __eq__ to fix assertion bugs
+  (jconnor@redhat.com)
+
 * Fri May 20 2011 Jeff Ortel <jortel@redhat.com> 0.0.179-1
 - Fix qpid SSL: pass URL to heartbeat & async task listener.
   (jortel@redhat.com)

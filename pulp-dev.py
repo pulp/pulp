@@ -48,11 +48,11 @@ LINKS = (
     'etc/httpd/conf.d/pulp.conf',
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
-    'etc/gofer/plugins/pulp.conf',
+    'etc/gofer/plugins/pulpplugin.conf',
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
-    ('src/pulp/client/gofer/pulp.py', '/usr/lib/gofer/plugins/pulp.py'),
+    ('src/pulp/client/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
 )
 
 def parse_cmdline():

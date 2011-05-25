@@ -1913,7 +1913,8 @@ class RepoApi(BaseApi):
                 if fileobj is None:
                     log.error("File ID [%s] does not exist" % fileid)
                     continue
-                write_str = "%s\t%s\n" % (fileobj['checksum']['sha256'], fileobj['filename'])
+                write_str = "%s,%s,%s\n" % (fileobj['filename'], fileobj['checksum']['sha256'], \
+                                            fileobj['size'])
                 f.write(write_str)
             f.close()
         except:

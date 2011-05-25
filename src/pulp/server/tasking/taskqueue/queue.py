@@ -218,7 +218,7 @@ class TaskQueue(object):
                                              (task.class_name, task.method_name,
                                               ', '.join([str(a) for a in task.args]),
                                               str(type(task.scheduler))))
-            task.schedule()
+            task.schedule() # potentially raises UncheduledTaskException
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
             if task.failure_threshold is None:
