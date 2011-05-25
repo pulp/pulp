@@ -35,6 +35,7 @@ DIRS = (
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
     '/usr/lib/gofer',
     '/usr/lib/gofer/plugins',
+    '/usr/lib/yum-plugins/',
 )
 
 #
@@ -49,10 +50,12 @@ LINKS = (
     'etc/pki/pulp/ca.key',
     'etc/pki/pulp/ca.crt',
     'etc/gofer/plugins/pulpplugin.conf',
+    'etc/yum/pluginconf.d/pulp-profile-update.conf',
     'etc/rc.d/init.d/pulp-server',
     'srv/pulp/webservices.wsgi',
     'srv/pulp/bootstrap.wsgi',
     ('src/pulp/client/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
+    ('src/pulp/client/yumplugin/pulp-profile-update.py', '/usr/lib/yum-plugins/pulp-profile-update.py'),
 )
 
 def parse_cmdline():
