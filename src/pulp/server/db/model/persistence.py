@@ -80,7 +80,7 @@ class TaskHistory(Model):
         for attr in ('id', 'class_name', 'method_name', 'args', 'kwargs',
                      'state', 'progress', 'result', 'exception', 'traceback',
                      'consecutive_failures'):
-            setattr(self, getattr(task, attr))
+            setattr(self, attr, getattr(task, attr))
         for attr in ('scheduled_time', 'start_time', 'finish_time'):
-            setattr(self, dateutils.format_iso8601_datetime(getattr(task, attr)))
+            setattr(self, attr, dateutils.format_iso8601_datetime(getattr(task, attr)))
         self.task_string = str(task)
