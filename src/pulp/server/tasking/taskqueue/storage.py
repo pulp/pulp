@@ -341,10 +341,6 @@ class HybridStorage(VolatileStorage):
         self.snapshot_collection.remove({'id': task.snapshot_id})
 
     def store_complete(self, task):
-        # complete tasks are now only stored in the history_collection
+        super(HybridStorage, self).store_complete(task)
         history = TaskHistory(task)
         self.history_collection.insert(history)
-
-    def remove_complete(self, task):
-        # this is something that's no longer supported, or really needed
-        pass
