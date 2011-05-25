@@ -289,6 +289,8 @@ fi
 %{python_sitelib}/pulp/repo_auth/
 %{_sysconfdir}/gofer/plugins/cdsplugin.conf
 %{_exec_prefix}/lib/gofer/plugins/cdsplugin.*
+%attr(775, apache, apache) /srv/pulp
+%attr(750, apache, apache) /srv/pulp/cds.wsgi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/cds.conf
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
