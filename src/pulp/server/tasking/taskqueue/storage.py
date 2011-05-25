@@ -307,7 +307,7 @@ class HybridStorage(VolatileStorage):
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
         # load existing incomplete tasks from the database on initialization
-        for snapshot in self.__cursor_to_tasks(self.snapshot_collection.find()):
+        for snapshot in self.snapshot_collection.find():
             task = TaskSnapshot(snapshot).to_task()
             # tasks are already in the database, so just enqueue them in memory
             super(HybridStorage, self).enqueue_waiting(task)
@@ -323,18 +323,6 @@ class HybridStorage(VolatileStorage):
     def history_collection(self):
         return self.__dict__.setdefault('__history_collection',
                                         TaskHistory.get_collection())
-
-    # query methods
-
-    def complete_tasks(self):
-        # we're utilizing the VolatileStorage management of complete tasks,
-        # but we don't want folks polking around in there, instead they should
-        # use history for completed tasks
-        return []
-
-    def history(self, criteria):
-        # XXX think about how to implement a history query
-        pass
 
     # wait queueue methods
 
@@ -353,6 +341,10 @@ class HybridStorage(VolatileStorage):
         self.snapshot_collection.remove({'id': task.snapshot_id})
 
     def store_complete(self, task):
-        super(HybridStorage, self).store_complete(task)
+        # complete tasks are now only stored in the history_collection
         history = TaskHistory(task)
         self.history_collection.insert(history)
+
+    def remove_complete(self, task):
+        # this is something that's no longer supported, or really needed
+        pass
