@@ -98,6 +98,18 @@ class RepositoryAPI(PulpAPI):
         except ServerRequestError:
             return []
 
+    def running_sync(self, sync_list):
+        """
+        Iterate over a list of syncs and return one that is currently running or
+        about to be run. If no such sync is found, return None.
+        """
+        for sync in sync_list:
+            if sync['state'] == 'running':
+                return sync
+            if sync['state'] == 'waiting' and sync['scheduler'] == 'immediate':
+                return sync
+        return None
+
     def cancel_sync(self, repoid, taskid):
         path = "/repositories/%s/sync/%s/" % (repoid, taskid)
         return self.server.DELETE(path)[1]
@@ -253,15 +265,15 @@ class RepositoryAPI(PulpAPI):
     def list_files(self, repoid):
         path = "/repositories/%s/files/" % repoid
         return self.server.GET(path)[1]
-    
+
     def import_comps(self, repoid, compsdata):
         path = "/repositories/%s/import_comps/" % repoid
         return self.server.POST(path, compsdata)[1]
-    
+
     def export_comps(self, repoid):
         path = "/repositories/%s/comps/" % repoid
         return self.server.GET(path)[1]
-    
+
     def add_filters(self, repoid, filters):
         addinfo = {'filters': filters}
         path = "/repositories/%s/add_filters/" % repoid
@@ -271,7 +283,7 @@ class RepositoryAPI(PulpAPI):
         rminfo = {'filters': filters}
         path = "/repositories/%s/remove_filters/" % repoid
         return self.server.POST(path, rminfo)[1]
-    
+
     def add_group(self, repoid, addgrp):
         addinfo = {'addgrp': addgrp}
         path = "/repositories/%s/add_group/" % repoid
@@ -281,11 +293,11 @@ class RepositoryAPI(PulpAPI):
         rminfo = {'rmgrp': rmgrp}
         path = "/repositories/%s/remove_group/" % repoid
         return self.server.POST(path, rminfo)[1]
-    
+
     def metadata(self, repoid):
         path = "/repositories/%s/metadata/" % repoid
         return self.server.POST(path)[1]
-        
+
     def metadata_status(self, repoid):
         path = '/repositories/%s/metadata/' % repoid
         return self.server.GET(path)[1]
