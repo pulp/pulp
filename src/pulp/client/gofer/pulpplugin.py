@@ -147,14 +147,14 @@ class ProfileUpdateAction:
         bundle = ConsumerBundle()
         cid = bundle.getid()
         if not cid:
-            log.error("Not Registered")
+            log.error("Not Registered; cannot update consumer profile.")
             return
         try:
             pulpserver()
             capi = ConsumerAPI()
             pkginfo = get_profile("rpm").collect()
             capi.profile(cid, pkginfo)
-            log.info("Profile updated successfully for consumer %s" % cid)
+            log.info("Profile updated successfully for consumer [%s]" % cid)
         except Exception, e:
             log.error("Error: %s" % e)
             

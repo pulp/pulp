@@ -170,6 +170,12 @@ cp etc/gofer/plugins/*.conf %{buildroot}/etc/gofer/plugins
 cp src/pulp/client/gofer/pulpplugin.py %{buildroot}/usr/lib/gofer/plugins
 cp src/pulp/cds/gofer/cdsplugin.py %{buildroot}/usr/lib/gofer/plugins
 
+# profile plugin
+mkdir -p %{buildroot}/etc/yum/pluginconf.d/
+mkdir -p %{buildroot}/usr/lib/yum-plugins/
+cp etc/yum/pluginconf.d/*.conf %{buildroot}/etc/yum/pluginconf.d/
+cp src/pulp/client/yumplugin/pulp-profile-update.py %{buildroot}/usr/lib/yum-plugins/
+
 # Pulp and CDS init.d
 mkdir -p %{buildroot}/etc/rc.d/init.d
 cp etc/rc.d/init.d/* %{buildroot}/etc/rc.d/init.d/
@@ -275,8 +281,11 @@ fi
 %{_bindir}/pulp-client
 %{_bindir}/pulp-migrate
 %{_exec_prefix}/lib/gofer/plugins/pulpplugin.*
+%{_prefix}/lib/yum-plugins/pulp-profile-update.py*
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
+%{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %attr(755,root,root) %{_sysconfdir}/pki/consumer/
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/yum/pluginconf.d/pulp-profile-update.conf
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
 
