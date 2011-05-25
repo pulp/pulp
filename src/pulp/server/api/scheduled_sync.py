@@ -109,7 +109,7 @@ def _add_repo_scheduled_sync_task(repo):
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     synchronizer = api.get_synchronizer(repo['source']['type'])
     task.set_synchronizer(api, repo['id'], synchronizer)
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _add_cds_scheduled_sync_task(cds):
@@ -117,7 +117,7 @@ def _add_cds_scheduled_sync_task(cds):
     api = CdsApi()
     task = Task(api.cds_sync, [cds['hostname']])
     task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _update_repo_scheduled_sync_task(repo, task):
@@ -133,7 +133,7 @@ def _update_repo_scheduled_sync_task(repo, task):
         return
     async.remove_async(task)
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _update_cds_scheduled_sync_task(cds, task):
@@ -142,7 +142,7 @@ def _update_cds_scheduled_sync_task(cds, task):
         return
     async.remove_async(task)
     task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _remove_repo_scheduled_sync_task(repo):
@@ -236,9 +236,7 @@ def _init_repo_scheduled_syncs():
     for repo in collection.find({}):
         if repo['sync_schedule'] is None:
             continue
-        try:
-            _add_repo_scheduled_sync_task(repo)
-        except UnscheduledTaskException:
+        if _add_repo_scheduled_sync_task(repo) is None:
             log.info(_('Scheduled sync for %s already in task queue') % repo['id'])
         else:
             log.info(_('Added scheduled sync for %s to task queue') % repo['id'])
@@ -250,9 +248,7 @@ def _init_cds_scheduled_syncs():
     for cds in collection.find({}):
         if cds['sync_schedule'] is None:
             continue
-        try:
-            _add_cds_scheduled_sync_task(cds)
-        except UnscheduledTaskException:
+        if _add_cds_scheduled_sync_task(cds) is None:
             log.info(_('Scheduled sync for %s already in task queue') % cds['id'])
         else:
             log.info(_('Added sync for %s to task queue') % cds['id'])
