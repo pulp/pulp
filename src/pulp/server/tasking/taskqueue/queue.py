@@ -268,12 +268,17 @@ class TaskQueue(object):
             self.__storage.remove_running(task)
             task.thread = None
             task.complete_callback = None
-            # try to re-enqueue to handle recurring tasks,
-            # otherwise store the completed task
+            # it is important for completed tasks to be in the completed task
+            # storage, however briefly
+            self.__storage.store_complete(task)
             try:
+                # try to re-enqueue recurring tasks
                 self.enqueue(task)
             except UnscheduledTaskException:
-                self.__storage.store_complete(task)
+                pass
+            else:
+                # if successful, remove them from completed storage
+                self.__storage.remove_complete(task)
         finally:
             self.__lock.release()
 
