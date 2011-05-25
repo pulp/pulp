@@ -335,20 +335,21 @@ class Status(RepoAction):
         else:
             last_sync = str(parse_iso8601_datetime(last_sync))
         print _('Last Sync: %s') % last_sync
-        if not syncs or syncs[0]['state'] not in ('waiting', 'running'):
+        running_sync = self.repository_api.running_sync(syncs)
+        if not syncs or running_sync is None:
             if syncs and syncs[0]['state'] in ('error'):
                 print _("Last Error: %s\n%s") % \
                         (str(parse_iso8601_datetime(syncs[0]['finish_time'])),
                                 syncs[0]['traceback'][-1])
             return
         print _('Currently syncing:'),
-        if syncs[0]['progress'] is None:
+        if running_sync['progress'] is None:
             print _('progress unknown')
         else:
-            pkgs_left = syncs[0]['progress']['items_left']
-            pkgs_total = syncs[0]['progress']['items_total']
-            bytes_left = float(syncs[0]['progress']['size_left'])
-            bytes_total = float(syncs[0]['progress']['size_total'])
+            pkgs_left = running_sync['progress']['items_left']
+            pkgs_total = running_sync['progress']['items_total']
+            bytes_left = float(running_sync['progress']['size_left'])
+            bytes_total = float(running_sync['progress']['size_total'])
             percent = 100.0
             if bytes_total > 0:
                 percent = ((bytes_total - bytes_left) / bytes_total) * 100.0
@@ -823,9 +824,10 @@ class Sync(RepoProgressAction):
         id = self.get_required_option('id')
         self.get_repo(id)
         tasks = self.repository_api.sync_list(id)
-        if tasks and tasks[0]['state'] in ('waiting', 'running'):
+        running = self.repository_api.running_sync(tasks)
+        if running is not None:
             print _('Sync for repository %s already in progress') % id
-            return tasks[0]
+            return running
         skip = {}
         if self.opts.nopackages:
             skip['packages'] = 1
