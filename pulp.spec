@@ -2,6 +2,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
+# -- headers - pulp server ---------------------------------------------------
+
 Name:           pulp
 Version:        0.0.180
 Release:        1%{?dist}
@@ -66,6 +68,7 @@ Requires: %{name}-client >= %{version}
 %description
 Pulp provides replication, access, and accounting for software repositories.
 
+# -- headers - pulp client ---------------------------------------------------
 
 %package client
 Summary:        Client side tools for managing content on pulp server
@@ -85,6 +88,7 @@ Requires: python-hashlib
 A collection of tools to interact and perform content specific operations such as repo management, 
 package profile updates etc.
 
+# -- headers - pulp client ---------------------------------------------------
 
 %package common
 Summary:        Pulp common python packages.
@@ -94,6 +98,7 @@ BuildRequires:  rpm-python
 %description common
 A collection of resources that are common between the pulp server and client.
 
+# -- headers - pulp cds ------------------------------------------------------
 
 %package cds
 Summary:        Provides the ability to run as a pulp external CDS.
@@ -103,6 +108,7 @@ Requires:       %{name}-common = %{version}
 Requires:       gofer >= 0.37
 Requires:       grinder
 Requires:       httpd
+Requires:       mod_wsgi
 Requires:       mod_ssl
 Requires:       m2crypto
 %if 0%{?fedora} || 0%{?rhel} > 5
@@ -114,6 +120,7 @@ Requires: mod_python
 Tools necessary to interact synchronize content from a pulp server and serve that content
 to clients.
 
+# -- build -------------------------------------------------------------------
 
 %prep
 %setup -q
@@ -189,6 +196,7 @@ cp etc/httpd/conf.d/pulp-cds.conf %{buildroot}/etc/httpd/conf.d/
 %clean
 rm -rf %{buildroot}
 
+# -- post - pulp server ------------------------------------------------------
 
 %post
 setfacl -m u:apache:rwx /etc/pki/content/
@@ -199,6 +207,8 @@ setfacl -m u:apache:rwx /etc/pki/content/
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp.conf
 %endif
 
+# -- post - pulp cds ---------------------------------------------------------
+
 %post cds
 setfacl -m u:apache:rwx /etc/pki/content/
 
@@ -207,6 +217,8 @@ setfacl -m u:apache:rwx /etc/pki/content/
 # Remove the comment flags for the auth handler lines (special format on those is #-)
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %endif
+
+# -- post - pulp client ------------------------------------------------------
 
 %post client
 pushd %{_sysconfdir}/rc.d/init.d
@@ -220,6 +232,7 @@ if [ "$1" = "0" ]; then
   rm -f %{_sysconfdir}/rc.d/init.d/pulp-agent
 fi
 
+# -- files - pulp server -----------------------------------------------------
 
 %files
 %defattr(-,root,root,-)
@@ -243,12 +256,15 @@ fi
 %{_sysconfdir}/pki/pulp/ca.key
 %{_sysconfdir}/pki/pulp/ca.crt
 
+# -- files - common ----------------------------------------------------------
+
 %files common
 %defattr(-,root,root,-)
 %doc
 %{python_sitelib}/pulp/__init__.*
 %{python_sitelib}/pulp/common/
 
+# -- files - pulp client -----------------------------------------------------
 
 %files client
 %defattr(-,root,root,-)
@@ -264,6 +280,7 @@ fi
 %config(noreplace) %{_sysconfdir}/pulp/client.conf
 %ghost %{_sysconfdir}/rc.d/init.d/pulp-agent
 
+# -- files - pulp cds --------------------------------------------------------
 
 %files cds
 %defattr(-,root,root,-)
@@ -280,6 +297,7 @@ fi
 /var/lib/pulp-cds
 /var/log/pulp-cds
 
+# -- changelog ---------------------------------------------------------------
 
 %changelog
 * Tue May 24 2011 Jeff Ortel <jortel@redhat.com> 0.0.180-1
