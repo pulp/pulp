@@ -68,9 +68,10 @@ class Server(object):
     @ivar protocol: protocol the pulp server is using (http, https)
     @ivar path_prefix: mount point of the pulp api (/pulp/api)
     @ivar headers: dictionary of http headers to send in requests
+    @ivar timeout: connection timeout value in seconds
     """
 
-    def __init__(self, host, port=80, protocol='http', path_prefix=''):
+    def __init__(self, host, port=80, protocol='http', path_prefix='', timeout=60):
         assert protocol in ('http', 'https')
 
         self.host = host
@@ -78,6 +79,7 @@ class Server(object):
         self.protocol = protocol
         self.path_prefix = path_prefix
         self.headers = {}
+        self.timeout = timeout
 
     # credentials setters -----------------------------------------------------
 
@@ -176,8 +178,8 @@ class PulpServer(Server):
     Pulp server connection class.
     """
 
-    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api'):
-        super(PulpServer, self).__init__(host, port, protocol, path_prefix)
+    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api', timeout=10):
+        super(PulpServer, self).__init__(host, port, protocol, path_prefix, timeout)
 
         default_locale = locale.getdefaultlocale()[0]
         if default_locale:
@@ -198,7 +200,7 @@ class PulpServer(Server):
     # protected server connection methods -------------------------------------
 
     def _http_connection(self):
-        return httplib.HTTPConnection(self.host, self.port)
+        return httplib.HTTPConnection(self.host, self.port, timeout=self.timeout)
 
     def _https_connection(self):
         # make sure that passed in username and password overrides cert/key auth
@@ -206,6 +208,7 @@ class PulpServer(Server):
                 'Authorization' in self.headers:
             return httplib.HTTPSConnection(self.host, self.port)
         ssl_context = SSL.Context('sslv3')
+        ssl_context.set_session_timeout(self.timeout)
         ssl_context.load_cert(self.__certfile, self.__keyfile)
         #print >> sys.stderr, 'making connection with: %s, %s' % (self.__certfile,
         #                                                         self.__keyfile)
