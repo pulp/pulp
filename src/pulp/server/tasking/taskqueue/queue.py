@@ -23,7 +23,8 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.tasking.exception import (
     TaskThreadStateError, UnscheduledTaskException, NonUniqueTaskException)
-from pulp.server.tasking.scheduler import ImmediateScheduler
+from pulp.server.tasking.scheduler import (
+    AtScheduler, ImmediateScheduler, IntervalScheduler)
 from pulp.server.tasking.taskqueue.thread import DRLock, TaskThread
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states, task_running
@@ -195,6 +196,33 @@ class TaskQueue(object):
 
     # public methods: queue operations
 
+    def _test_uniqueness(self, task, unique):
+        """
+        Does nothing if the task is unique, raise an exception otherwise.
+        @raises: NonUniqueTaskException
+        """
+        def _raise_exception(match):
+            msg = _('Task [%s] %s %s conflicts with [%s] %s %s and cannot be enqueued')
+            raise NonUniqueTaskException(msg % (task.id, str(task), str(task.scheduler),
+                                                match.id, str(match), str(match.scheduler)))
+
+        fields = ('class_name', 'method_name', 'args')
+        for match in self.exists(task, fields, include_finished=False):
+            if isinstance(task.scheduler, ImmediateScheduler):
+                # if unique is True, do not allow more than one immediate task
+                if unique and isinstance(match.scheduler, ImmediateScheduler):
+                    _raise_exception(match)
+            elif isinstance(task.scheduler, AtScheduler):
+                # at scheduled tasks can only conflict if there's another at
+                # scheduled task for the same time
+                if isinstance(match.scheduler, AtScheduler) and \
+                   task.scheduler.scheduled_time == match.scheduler.scheduled_time:
+                    _raise_exception(match)
+            elif isinstance(task.scheduler, IntervalScheduler):
+                # there may be only one interval scheduled task at a time
+                if isinstance(match.scheduler, IntervalScheduler):
+                    _raise_exception(match)
+
     def enqueue(self, task, unique=False):
         """
         Add a task to the task queue
@@ -210,15 +238,8 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            # uniqueness fields
-            fields = ('class_name', 'method_name', 'args', 'scheduler')
-            if unique and self.exists(task, fields, include_finished=False):
-                msg = _('Task %s.%s(%s) with %s scheduler is not unique in the task queue')
-                raise NonUniqueTaskException(msg %
-                                             (task.class_name, task.method_name,
-                                              ', '.join([str(a) for a in task.args]),
-                                              str(type(task.scheduler))))
-            task.schedule() # potentially raises UncheduledTaskException
+            self._test_uniqueness(task, unique) # NonUniqueTaskException
+            task.schedule() # UncheduledTaskException
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
             if task.failure_threshold is None:
