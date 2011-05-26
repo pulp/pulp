@@ -44,7 +44,8 @@ def enqueue(task, unique=True):
     """
     try:
         _queue.enqueue(task, unique)
-    except NonUniqueTaskException:
+    except NonUniqueTaskException, e:
+        log.error(e.args[0])
         return None
     return task
 
