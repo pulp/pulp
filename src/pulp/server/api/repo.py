@@ -63,7 +63,7 @@ log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
 
-def clear_all_sync_in_progress():
+def clear_sync_in_progress_flags():
     """
     Clears 'sync_in_progress' for all repositories
     Runs as part of initialization of wsgi application.
@@ -72,7 +72,9 @@ def clear_all_sync_in_progress():
     some repositories 'locked'.  This will clear all locks on startup
     """
     collection = model.Repo.get_collection()
-    repos = collection.find(fields={"id":1, "sync_in_progress":1})
+    #repos = collection.find(fields={"id":1, "sync_in_progress":1})
+    # only fix those repos whose flag is actually set
+    repos = collection.find({'sync_in_progress': True}, fields={'id': 1})
     for r in repos:
         log.error("r = %s" % (r))
         collection.update({"id":r["id"]}, {"$set": {"sync_in_progress":False}})
@@ -2194,8 +2196,8 @@ class RepoApi(BaseApi):
                     # suppress all other exceptions and retry
                     log.error("Exception: %s" % (e))
                     log.error("Traceback: %s" % (traceback.format_exc()))
-                    
-                    
+
+
     def sync_history(self, id, limit=None, sort='descending'):
         '''
         Queries repo sync history.
@@ -2207,9 +2209,9 @@ class RepoApi(BaseApi):
                       entries; default is to not limit the entries returned
         @type  limit: number greater than zero
 
-        @return: list of completed syncs for given repo; 
+        @return: list of completed syncs for given repo;
                  empty list (not None) if no matching entries are found
-        @rtype:  
+        @rtype:
 
         @raise PulpException: if any of the input values are invalid
         '''
@@ -2219,10 +2221,10 @@ class RepoApi(BaseApi):
             raise PulpException('Invalid limit [%s], limit must be greater than zero' % limit)
 
         tasks = find_async(method_name="_sync", repo_id=id)
-        
+
         if limit is not None:
             sync_history_list = [task.__dict__ for task in tasks[:limit]]
         else:
             sync_history_list = [task.__dict__ for task in tasks]
         return sync_history_list
-            
+
