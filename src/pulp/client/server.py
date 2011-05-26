@@ -178,7 +178,7 @@ class PulpServer(Server):
     Pulp server connection class.
     """
 
-    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api', timeout=10):
+    def __init__(self, host, port=443, protocol='https', path_prefix='/pulp/api', timeout=120):
         super(PulpServer, self).__init__(host, port, protocol, path_prefix, timeout)
 
         default_locale = locale.getdefaultlocale()[0]
