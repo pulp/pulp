@@ -305,8 +305,8 @@ fi
 %config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
 %attr(3775, root, root) %{_sysconfdir}/pki/content
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
-/var/lib/pulp-cds
-/var/log/pulp-cds
+%attr(3775, apache, apache) /var/lib/pulp-cds
+%attr(3775, apache, apache) /var/log/pulp-cds
 
 # -- changelog ---------------------------------------------------------------
 

@@ -23,13 +23,20 @@ from pulp.client.config import Config
 requires_api_version = '2.5'
 plugin_type = (TYPE_CORE,)
 
+def get_consumer():
+    """
+    Get consumer bundle
+    """
+    bundle = ConsumerBundle()
+    return bundle
+
 def pulpserver():
     """
     Pulp server configuration
     """
     cfg = Config()
-    bundle = ConsumerBundle()
-    pulp = PulpServer(cfg.server.host)
+    bundle = get_consumer()
+    pulp = PulpServer(cfg.server.host, timeout=10)
     pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
     set_active_server(pulp)
 
@@ -54,10 +61,10 @@ def posttrans_hook(conduit):
     if hasattr(conduit, 'registerPackageName'):
         conduit.registerPackageName("pulp-client")
     try:
-        bundle = ConsumerBundle()
+        bundle = get_consumer()
         cid = bundle.getid()
         if not cid:
-            conduit.info(2, "Not Registered; cannot update consumer profile.")
+            conduit.info(2, "Consumer Id could not be found. Cannot update consumer profile.")
             return
         update_consumer_profile(cid)
         conduit.info(2, "Profile updated successfully for consumer [%s]" % cid)

@@ -79,7 +79,7 @@ class FilePermutationStore:
             permutation_string = fp_read.read()
             fp_read.close()
 
-            self.permutation = permutation_string.split('\n')
+            self.permutation = [p for p in permutation_string.split('\n') if p != '']
         else:
             self.permutation = []
 
