@@ -102,13 +102,22 @@ def _add_repo_scheduled_sync_task(repo):
     @type repo: L{pulp.server.db.model.resource.Repo}
     @param repo: repo to add sync task for
     """
-    # hack to avoid circular import
+    if repo['source'] is None:
+        # TODO raise appropriate exception, cannot add schedule to repo with no source
+        pass
+    # hack to avoid circular imports
     from pulp.server.api.repo import RepoApi
+    from pulp.server.api.repo_sync import yum_rhn_progress_callback, local_progress_callback
     api = RepoApi()
     task = RepoSyncTask(api._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    synchronizer = api.get_synchronizer(repo['source']['type'])
+    source_type = repo['source']['type']
+    synchronizer = api.get_synchronizer(source_type)
     task.set_synchronizer(api, repo['id'], synchronizer)
+    if source_type == 'remote':
+        task.set_progress('progress_callback', yum_rhn_progress_callback)
+    elif source_type == 'local':
+        task.set_progress('progress_callback', local_progress_callback)
     return async.enqueue(task)
 
 
