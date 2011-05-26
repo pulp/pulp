@@ -144,7 +144,7 @@ class IntervalScheduler(Scheduler):
             next = self._next_run(self.start_time)[1]
             return 'scheduled to run at %s' % next.strftime('%Y-%m-%d %H:%M %z')
 
-        return _('scheduled to run starting %s at intervals %s long %s\nnext run %s') % \
+        return _('scheduled to run starting %s at intervals %s long %s; next run %s') % \
                 (_start_time(), str(self.interval), _num_runs(), _next_run())
 
     def _next_run(self, reference_time):
