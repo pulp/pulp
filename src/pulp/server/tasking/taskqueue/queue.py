@@ -328,6 +328,8 @@ class TaskQueue(object):
         @param include_finished: If True, finished tasks will be included in the search;
                                  otherwise only running and waiting tasks are searched
                                  (defaults to True)
+        @rtype: list
+        @return: list of all the matching tasks, empty if there are none
         """
 
         # Convert the list of attributes to check into a criteria dict used
@@ -340,11 +342,10 @@ class TaskQueue(object):
 
         # Use the find functionality to determine if a task matches
         tasks = self.find(**find_criteria)
-        if not tasks:
-            return False
-        if include_finished:
-            return True
-        for t in tasks:
-            if t.state not in task_complete_states:
-                return True
-        return False
+        # NOTE This method used to return a boolean, it now returns a list of
+        # all the tasks matching the criteria. The list is empty if no matching
+        # tasks are found. This allows the same boolean semantics to be used
+        # as an empty list evaluates to False and a non-empty one to True.
+        if not tasks or include_finished:
+            return tasks
+        return [t for t in tasks if t.state not in task_complete_states]
