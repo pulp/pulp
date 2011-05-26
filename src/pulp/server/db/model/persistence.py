@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import pickle
+from gettext import gettext as _
 
 from pulp.common import dateutils
 from pulp.server.db.model.base import Model
@@ -60,7 +61,7 @@ class TaskSnapshot(Model):
         """
         task_class = self.get('task_class', None)
         if task_class is None:
-            raise Exception()
+            raise ValueError(_('Task snapshot cannot be converted to task without task_class instance'))
         cls = pickle.loads(task_class)
         return cls.from_snapshot(self)
 
