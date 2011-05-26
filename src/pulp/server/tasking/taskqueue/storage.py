@@ -17,6 +17,7 @@ import copy_reg
 import datetime
 import heapq
 import itertools
+import logging
 import types
 from gettext import gettext as _
 
@@ -307,10 +308,15 @@ class HybridStorage(VolatileStorage):
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
         # load existing incomplete tasks from the database on initialization
+        self._load_existing_tasks_from_db()
+
+    def _load_existing_tasks_from_db(self):
+        log = logging.getLogger('pulp')
         for snapshot in self.snapshot_collection.find():
             task = TaskSnapshot(snapshot).to_task()
             # tasks are already in the database, so just enqueue them in memory
             super(HybridStorage, self).enqueue_waiting(task)
+            log.info(_('Loaded Task from database: %s') % str(task))
 
     # database methods
 
