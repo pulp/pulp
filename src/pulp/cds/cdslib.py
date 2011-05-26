@@ -18,15 +18,18 @@ import shutil
 
 # Pulp
 from grinder.RepoFetch import YumRepoGrinder
+from pulp.cds.lb.storage import FilePermutationStore
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 
+# -- constants ---------------------------------------------------------------
 
 LOGPATH = '/var/log/pulp-cds/gofer.log'
 REPO_LIST_FILENAME = 'cds_repo_list'
 
 log = None
 
+# -- public ------------------------------------------------------------------
 
 def loginit(path=LOGPATH):
     '''
@@ -175,6 +178,11 @@ class CdsLib(object):
         else:
             members = ', '.join(cds_hostnames)
         log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
+
+        file_storage = FilePermutationStore()
+        file_storage.open()
+        file_storage.permutation = cds_hostnames
+        file_storage.close()
 
     def _sync_repos(self, base_url, repos):
         '''
