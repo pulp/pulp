@@ -74,7 +74,7 @@ class RepoSyncTask(Task):
         t = super(RepoSyncTask, cls).from_snapshot(snapshot)
         t.repo_id = snapshot['repo_id']
         #t.synchronizer = pickle.loads(snapshot['synchronizer'])
-        if snapshotp['synchronizer_cls'] is None:
+        if snapshot['synchronizer_cls'] is None:
             t.synchronizer = None
         else:
             # this assumes that the synchronizer constructor takes no arguments
