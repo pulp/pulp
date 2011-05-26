@@ -251,11 +251,16 @@ class Task(object):
         """
         Retrieve task from a snapshot
         """
-        task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
+        #task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
+        task = cls(dir) # dir is being used as a placeholder
         for attr in cls._copied_fields:
             setattr(task, attr, snapshot.get(attr, None))
         for attr in cls._pickled_fields:
             setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
+        # reset the progress callback
+        if task._progress_callback is not None:
+            task.set_progress('progress_callback', task._progress_callback)
+        # record the current snapshot id
         task.snapshot_id = snapshot.id
         return task
 
