@@ -63,12 +63,21 @@ class RepoSyncTask(Task):
     def snapshot(self):
         s = super(RepoSyncTask, self).snapshot()
         s['repo_id'] = self.repo_id
-        s['synchronizer'] = pickle.dumps(self.synchronizer)
+        #s['synchronizer'] = pickle.dumps(self.synchronizer)
+        s['synchronizer_cls'] = None
+        if self.synchronizer is None:
+            s['synchronizer_cls'] = pickle.dumps(self.synchronizer.__class__)
         return s
 
     @classmethod
     def from_snapshot(cls, snapshot):
         t = super(RepoSyncTask, cls).from_snapshot(snapshot)
         t.repo_id = snapshot['repo_id']
-        t.synchronizer = pickle.loads(snapshot['synchronizer'])
+        #t.synchronizer = pickle.loads(snapshot['synchronizer'])
+        if snapshotp['synchronizer_cls'] is None:
+            t.synchronizer = None
+        else:
+            # this assumes that the synchronizer constructor takes no arguments
+            snapshot_cls = pickle.loads(snapshot['synchronizer_cls'])
+            t.synchronizer = synchronizer_cls()
         return t
