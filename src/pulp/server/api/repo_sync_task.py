@@ -78,6 +78,6 @@ class RepoSyncTask(Task):
             t.synchronizer = None
         else:
             # this assumes that the synchronizer constructor takes no arguments
-            snapshot_cls = pickle.loads(snapshot['synchronizer_cls'])
+            synchronizer_cls = pickle.loads(snapshot['synchronizer_cls'])
             t.synchronizer = synchronizer_cls()
         return t
