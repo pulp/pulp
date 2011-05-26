@@ -233,8 +233,7 @@ class Task(object):
             try:
                 if attr == "kwargs":
                     kwargs = getattr(self, attr, None)
-                    if "progress_callback" in kwargs.keys():
-                        del kwargs["progress_callback"]
+                    kwargs.pop('progress_callback', None) # self-referential
                     snapshot[attr] = pickle.dumps(kwargs) # ascii pickle
                 else:
                     snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
@@ -255,8 +254,9 @@ class Task(object):
         task = cls(dir) # dir is being used as a placeholder
         for attr in cls._copied_fields:
             setattr(task, attr, snapshot.get(attr, None))
+        pickled_none = pickle.dumps(None) # pickled None, used as default value
         for attr in cls._pickled_fields:
-            setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
+            setattr(task, attr, pickle.loads(snapshot.get(attr, pickled_none)))
         # reset the progress callback
         if task._progress_callback is not None:
             task.set_progress('progress_callback', task._progress_callback)
