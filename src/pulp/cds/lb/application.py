@@ -14,6 +14,7 @@
 # in this software or its documentation.
 
 import itertools
+import socket
 import storage
 
 
@@ -27,14 +28,20 @@ def process_request(environ, start_response):
     status = '200 OK'
 
     # Determine the balancing order
-    next = _next_permutation()
+    cds_hostnames = _next_permutation()
 
     # Determine the repo URLs by merging in the requested repo with the
     # new CDS permutation
     requested_repo = _requested_dir(environ['REQUEST_URI'])
 
     repo_urls = []
-    for cds in next:
+
+    # If the CDS is not in a group, just return a reference to the CDS itself
+    if len(cds_hostnames) == 0:
+        cds_hostnames.append(socket.gethostname())
+
+    # Assemble the repo URLs
+    for cds in cds_hostnames:
         url = 'https://%s%s' % (cds, requested_repo)
         repo_urls.append(url)
 
