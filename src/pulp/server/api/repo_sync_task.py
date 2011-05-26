@@ -65,7 +65,7 @@ class RepoSyncTask(Task):
         s['repo_id'] = self.repo_id
         #s['synchronizer'] = pickle.dumps(self.synchronizer)
         s['synchronizer_cls'] = None
-        if self.synchronizer is None:
+        if self.synchronizer is not None:
             s['synchronizer_cls'] = pickle.dumps(self.synchronizer.__class__)
         return s
 
