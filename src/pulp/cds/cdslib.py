@@ -107,6 +107,8 @@ class CdsLib(object):
         group_id = sync_data['group_id']
         group_members = sync_data['group_members']
 
+        packages_location = self.config.get('cds', 'packages_dir')
+                
         # Clean up any repos that were once synchronized but are no longer associated with the CDS
         try:
             self._delete_removed_repos(repos)
@@ -115,16 +117,32 @@ class CdsLib(object):
             error_messages.append('One or more previously synchronized repositories could not be deleted')
 
         # Sync each repo specified, allowing the syncs to proceed if one or more fails
+        successfully_syncced_repos = []
         for repo in repos:
             try:
                 self._sync_repo(base_url, repo)
+                successfully_syncced_repos.append(repo)
             except Exception:
                 log.exception('Error performing repo sync')
                 error_messages.append('Error synchronizing repository [%s]' % repo['id'])
-        else:
-            # If no repos were specified, make sure the CDS repo list file does not
-            # contain references to any CDS instances
-            packages_location = self.config.get('cds', 'packages_dir')
+
+            # Write it out per-repo in case something drastically awful happens
+            # so we have a best effort record
+
+            # The only potential wonkiness is if the sync failed because the packages
+            # location is unwritable, in which case this will fail too. That's fine,
+            # since not having the file will mean no syncced repos and if we can't
+            # write to the packages location, there's a solid chance we don't in fact
+            # have any repos.
+            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
+            for r in successfully_syncced_repos:
+                repos_file.write(r['relative_path'])
+                repos_file.write('\n')
+            repos_file.close()
+
+        # If no repos were specified, make sure the CDS repo list file does not
+        # contain references to any CDS instances
+        if len(repos) == 0:
             repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
             repos_file.write('')
             repos_file.close()
@@ -255,61 +273,40 @@ class CdsLib(object):
         num_threads = self.config.get('cds', 'sync_threads')
         packages_location = self.config.get('cds', 'packages_dir')
 
-        # Keep a running total of all repos that have been successfully synchronized so
-        # we can write out the list
-        successfully_syncced_repos = []
+        url = '%s/%s' % (base_url, repo['relative_path'])
+        log.info('Synchronizing repo at [%s]' % url)
+        repo_path = os.path.join(packages_location, repo['relative_path'])
 
-        try:
-            url = '%s/%s' % (base_url, repo['relative_path'])
-            log.debug('Synchronizing repo at [%s]' % url)
-            repo_path = os.path.join(packages_location, repo['relative_path'])
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
 
-            if not os.path.exists(repo_path):
-                os.makedirs(repo_path)
+        log.info('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
 
-            log.debug('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
+        # If the repo is protected, add in the credentials
+        feed_ca = feed_cert = feed_key = None
+        ssl_verify = 0
+        bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
+        if bundle is not None:
+            log.debug('Configuring repository for authentication')
+            feed_ca = bundle['ca'].encode('utf8')
+            feed_cert = bundle['cert'].encode('utf8')
+            feed_key = bundle['key'].encode('utf8')
+            ssl_verify = 1
 
-            # If the repo is protected, add in the credentials
-            feed_ca = feed_cert = feed_key = None
-            ssl_verify = 0
-            bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
+        # If the repo itself wasn't protected but there is global repo auth, use that
+        if bundle is None:
+            bundle = self.repo_cert_utils.global_cert_bundle_filenames()
             if bundle is not None:
-                log.debug('Configuring repository for authentication')
+                log.debug('Configuring global repository authentication credentials for repo')
                 feed_ca = bundle['ca'].encode('utf8')
                 feed_cert = bundle['cert'].encode('utf8')
                 feed_key = bundle['key'].encode('utf8')
                 ssl_verify = 1
 
-            # If the repo itself wasn't protected but there is global repo auth, use that
-            if bundle is None:
-                bundle = self.repo_cert_utils.global_cert_bundle_filenames()
-                if bundle is not None:
-                    log.debug('Configuring global repository authentication credentials for repo')
-                    feed_ca = bundle['ca'].encode('utf8')
-                    feed_cert = bundle['cert'].encode('utf8')
-                    feed_key = bundle['key'].encode('utf8')
-                    ssl_verify = 1
+        fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
+        fetch.fetchYumRepo(repo_path)
 
-            fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
-            fetch.fetchYumRepo(repo_path)
-
-            successfully_syncced_repos.append(repo)
-
-            log.debug('Successfully finished synccing [%s]' % url)
-        finally:
-            # Write it out after each repo so that even if a single repo throws an error
-            # on sync, the written file will still be accurate.
-
-            # The only potential wonkiness is if the sync failed because the packages
-            # location is unwritable, in which case this will fail too. That's fine,
-            # since not having the file will mean no syncced repos and if we can't
-            # write to the packages location, there's a solid chance we don't in fact
-            # have any repos.
-            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
-            for r in successfully_syncced_repos:
-                repos_file.write(r['relative_path'])
-                repos_file.write('\n')
-            repos_file.close()
+        log.info('Successfully finished synccing [%s]' % url)
 
     def _delete_removed_repos(self, repos):
         '''
