@@ -205,6 +205,8 @@ class CdsLib(object):
             if sorted(file_storage.permutation) != sorted(cds_hostnames):
                 file_storage.permutation = cds_hostnames
                 file_storage.save()
+            else:
+                log.info('No changes made to group memberships')
         finally:
             file_storage.close()
 
