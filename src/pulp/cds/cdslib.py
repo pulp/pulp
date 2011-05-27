@@ -23,7 +23,7 @@ from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 # -- constants ---------------------------------------------------------------
 
 LOGPATH = '/var/log/pulp-cds/gofer.log'
-REPO_LIST_FILENAME = 'cds_repo_list'
+REPO_LIST_FILENAME = '.cds_repo_list'
 
 log = None
 
@@ -126,7 +126,7 @@ class CdsLib(object):
                 log.exception('Error performing repo sync')
                 error_messages.append('Error synchronizing repository [%s]' % repo['id'])
 
-            # Write it out per-repo in case something drastically awful happens
+            # Write it out per repo in case something drastically awful happens
             # so we have a best effort record
 
             # The only potential wonkiness is if the sync failed because the packages
