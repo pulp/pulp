@@ -24,7 +24,7 @@ from gofer.messaging.dispatcher import DispatchError
 from gofer.messaging.policy import RequestTimeout, NotAuthorized
 
 # Pulp
-from pulp.server import config, constants
+from pulp.server import config
 from pulp.server.agent import CdsAgent
 
 
@@ -84,11 +84,11 @@ class GoferDispatcher(object):
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
 
-        @param cds: A cds to be initialized.
-        @type cds: CDS model object.
+        @param cds: CDS instance to be initialized
+        @type  cds: L{CDS}
 
-        @return: The CDS shared secret.
-        @rtype: str
+        @return: shared secret established with the CDS
+        @rtype:  str
         '''
         secret = self._send(self._cds_stub(cds).initialize)
         return secret
@@ -100,67 +100,42 @@ class GoferDispatcher(object):
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
 
-        @param cds: A cds to be released.
-        @type cds: CDS model object.
+        @param cds: CDS instance to be released
+        @type  cds: L{CDS}
         '''
         self._send(self._cds_stub(cds).release)
 
-    def sync(self, cds, repos):
+    def sync(self, cds, data):
         '''
-        Requests the CDS perform a sync with the pulp server. The current list of repos
-        assigned to the CDS is sent as part of this call. It is up to the CDS to determine
-        if a previously synchronized repo no longer exists in this set and delete its copy
-        of the repo.
+        Requests the CDS perform a sync with the pulp server. This call is intended to
+        not only synchronize repo content, but to provide any data the CDS may need
+        to function. It is meant to serve as a worst-case scenario to convey information
+        that may have been missed when it was first sent, making sure the CDS is
+        correctly configured.
+
+        This call will send
+        all repo-related information to the CDS, including:
+         - current list of repos associated with the CDS (it is up to the CDS to determine
+           if a previously synchronized repo no longer exists in this set and delete it)
+         - auth credentials for any repositories that are protected
+         - global auth credentials
+         - list of other CDS instances in the group
 
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
 
-        @param cds: A cds to be synced.
-        @type cds: CDS model object.
+        @param cds: CDS instance that will be synced
+        @type cds:  L{CDS}
 
-        @param repos: A list of repos to be synced.
-        @type repos: list
+        @param data: contains all of the information described above
+        @type  data: dict
         '''
-        server_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name')
-        repo_relative_url = config.config.get('server', 'relative_url')
-        repo_base_url = '%s/%s' % (server_url, repo_relative_url)
+
         timeout = self.__timeout('sync_timeout')
         log.info('sync using timeout=%s', timeout)
         stub = self._cds_stub(cds, timeout)
 
-        self._send(stub.sync, repo_base_url, repos)
-
-    def set_global_repo_auth(self, cds, cert_bundle):
-        '''
-        Sends the global repo authentication credentials to a specific CDS. If the
-        bundle is None, the effect is that global repo authentication is disabled.
-
-        @param cds: CDS to send the message to
-        @type  cds:  L{CDS}
-
-        @param cert_bundle: cert bundle to send to the CDS; may be None
-        @type  cert_bundle:  see pulp.repo_auth.repo_cert_utils
-        '''
-        self._send(self._cds_stub(cds).set_global_repo_auth, cert_bundle)
-
-    def set_repo_auth(self, cds, repo_id, repo_relative_path, cert_bundle):
-        '''
-        Sends repo authentication credentials to a specific CDS. If the bundle is
-        None, the effect is that repo authentication is disabled for that repo.
-
-        @param cds: CDS to send the message to
-        @type  cds: L{CDS}
-
-        @param repo_id: identifies the repo being configured
-        @type  repo_id: str
-
-        @param repo_relative_path: used to match a request as being against this repo
-        @type  repo_relative_path: str
-
-        @param cert_bundle: cert bundle to send to the CDS; may be None
-        @type  cert_bundle:  see pulp.repo_auth.repo_cert_utils
-        '''
-        self._send(self._cds_stub(cds).set_repo_auth, repo_id, repo_relative_path, cert_bundle)
+        self._send(stub.sync, data)
 
     def update_group_membership(self, cds, group_name, member_cds_hostnames):
         '''

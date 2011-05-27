@@ -119,8 +119,8 @@ class RepoApi(BaseApi):
         Get whether the specified repo has content
         @param repo: A repo.
         @type repo: dict
-        @return: True if has content
-        @rtype: bool
+        @return: number of items in the repo
+        @rtype: int
         """
         try:
             rootdir = pulp.server.util.top_repos_location()
@@ -518,8 +518,8 @@ class RepoApi(BaseApi):
         if self.find_if_running_sync(id):
             raise PulpException("Repo cannot be deleted because of sync in progress.")
 
-        # unassociate with CDS(s)
-        cds_unassociate_results = self.cdsapi.unassociate_all_from_repo(id, True)
+        # unassociate from CDS(s)
+        self.cdsapi.unassociate_all_from_repo(id, True)
 
         #update feed of clones of this repo to None unless they point to origin feed
         for clone_id in repo['clone_ids']:
@@ -629,9 +629,6 @@ class RepoApi(BaseApi):
         # delete the object
         self.collection.remove({'id' : id}, safe=True)
 
-        return cds_unassociate_results
-
-
     @event(subject='repo.updated')
     @audit()
     def update(self, id, delta):
@@ -736,10 +733,8 @@ class RepoApi(BaseApi):
             bundle = repo_cert_utils.read_consumer_cert_bundle(id)
             if bundle is None:
                 protected_repo_utils.delete_protected_repo(repo['relative_path'])
-                self.cdsapi.set_repo_auth(id, repo['relative_path'], None)
             else:
                 protected_repo_utils.add_protected_repo(repo['relative_path'], id)
-                self.cdsapi.set_repo_auth(id, repo['relative_path'], bundle)
 
         # store changed object
         self.collection.save(repo, safe=True)

@@ -110,28 +110,12 @@ def release():
     cdslib.release()
 
 @remote(secret=getsecret)
-def sync(base_url, repos):
+def sync(sync_data):
     '''
     See cdslib.CdsLib.sync for details.
     '''
     log.info('Received sync call')
-    cdslib.sync(base_url, repos)
-
-@remote(secret=getsecret)
-def set_repo_auth(repo_id, repo_relative_path, bundle):
-    '''
-    See cdslib.CdsLib.set_repo_auth for details.
-    '''
-    log.info('Setting repo auth credentials for repo [%s]' % repo_id)
-    cdslib.set_repo_auth(repo_id, repo_relative_path, bundle)
-
-@remote(secret=getsecret)
-def set_global_repo_auth(bundle):
-    '''
-    See cdslib.CdsLib.set_global_repo_auth for details.
-    '''
-    log.info('Setting global repo auth credentials')
-    cdslib.set_global_repo_auth(bundle)
+    cdslib.sync(sync_data)
 
 @remote(secret=getsecret)
 def update_group_membership(group_name, cds_hostnames):

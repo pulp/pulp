@@ -19,20 +19,21 @@ import sys
 
 # Pulp
 from pulp.common import dateutils
+
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
-import pulp.server.cds.round_robin as round_robin
-import pulp.server.consumer_utils as consumer_utils
-from pulp.server import config
+
+from pulp.server import config, constants, consumer_utils
+from pulp.server.agent import PulpAgent
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cds_history import CdsHistoryApi
 from pulp.server.api.scheduled_sync import update_cds_schedule, delete_cds_schedule
 from pulp.server.auditing import audit
+from pulp.server.cds import round_robin
 from pulp.server.cds.dispatcher import (
     GoferDispatcher, CdsTimeoutException, CdsCommunicationsException,
     CdsAuthException, CdsMethodException,)
 from pulp.server.db.model import CDS, Repo
 from pulp.server.pexceptions import PulpException
-from pulp.server.agent import PulpAgent
 
 # -- constants ----------------------------------------------------------------
 
@@ -137,11 +138,6 @@ class CdsApi(BaseApi):
         self.collection.insert(cds, safe=True)
 
         self.cds_history_api.cds_registered(hostname)
-
-        # Send the latest global repo auth credentials out to the CDS
-        repo_cert_utils = RepoCertUtils(config.config)
-        bundle = repo_cert_utils.read_global_cert_bundle()
-        self.dispatcher.set_global_repo_auth(cds, bundle)
 
         # Group handling
         if group_id is not None:
@@ -401,12 +397,6 @@ class CdsApi(BaseApi):
             # Add a history entry for the change
             self.cds_history_api.repo_associated(cds_hostname, repo_id)
 
-            # If the repo has auth credentials, send them to the CDS
-            repo_cert_utils = RepoCertUtils(config.config)
-            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
-            if bundle is not None:
-                self.dispatcher.set_repo_auth(cds, repo_id, repo['relative_path'], bundle)
-
             # Add it to the CDS host assignment algorithm
             round_robin.add_cds_repo_association(cds_hostname, repo_id)
 
@@ -460,14 +450,6 @@ class CdsApi(BaseApi):
             # Add a history entry for the change
             self.cds_history_api.repo_unassociated(cds_hostname, repo_id)
 
-            # If the repo has auth credentials, tell the CDS to remove it from its
-            # protected repo list
-            repo_cert_utils = RepoCertUtils(config.config)
-            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
-            if bundle is not None:
-                repo = Repo.get_collection().find_one({'id' : repo_id})
-                self.dispatcher.set_repo_auth(cds, repo_id, repo['relative_path'], None)
-
             # Automatically redistribute consumers to pick up these changes
             if not deleted:
                 self.redistribute(repo_id)
@@ -498,11 +480,50 @@ class CdsApi(BaseApi):
         if cds is None:
             raise PulpException('CDS with hostname [%s] could not be found' % cds_hostname)
 
+        # -- assemble payload -----------------------------
+
+        repo_cert_utils = RepoCertUtils(config.config)
+
         # Load the repo objects to send to the CDS with the call
         repos = []
+        repo_cert_bundles = {}
+
         for repo_id in cds['repo_ids']:
             repo = self._repocollection().find_one({'id' : repo_id}, fields=REPO_FIELDS)
+
+            # Load the repo cert bundle
+            bundle = repo_cert_utils.read_consumer_cert_bundle(repo_id)
+            repo_cert_bundles[repo['id']] = bundle
+
             repos.append(repo)
+
+        # Repository base URL for this pulp server
+        server_url = constants.SERVER_SCHEME + config.config.get('server', 'server_name')
+        repo_relative_url = config.config.get('server', 'relative_url')
+        repo_base_url = '%s/%s' % (server_url, repo_relative_url)
+
+        # Global cert bundle, if any (repo cert bundles are handled above)
+        global_cert_bundle = repo_cert_utils.global_cert_bundle_filenames()
+
+        # Assemble the list of CDS hostnames in the same group
+        if cds['group_id'] is not None:
+            group_id = cds['group_id']
+            cds_members = list(self.collection.find({'group_id' : cds['group_id']}))
+            member_hostnames = [c['hostname'] for c in cds_members]
+        else:
+            group_id = None
+            member_hostnames = None
+
+        payload = {
+            'repos'              : repos,
+            'repo_base_url'      : repo_base_url,
+            'repo_cert_bundles'  : repo_cert_bundles,
+            'global_cert_bundle' : global_cert_bundle,
+            'group_id'           : group_id,
+            'group_members'      : member_hostnames,
+        }
+
+        # -- dispatch -------------------------------------
 
         # Call out to dispatcher to trigger sync, adding the appropriate history entries
         self.cds_history_api.sync_started(cds_hostname)
@@ -513,7 +534,7 @@ class CdsApi(BaseApi):
         sync_error_msg = None
         sync_traceback = None
         try:
-            self.dispatcher.sync(cds, repos)
+            self.dispatcher.sync(cds, payload)
         except CdsTimeoutException:
             log.exception('Timeout occurred during sync to CDS [%s]' % cds_hostname)
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -539,6 +560,8 @@ class CdsApi(BaseApi):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             sync_traceback = exc_traceback
             sync_error_msg = 'Unknown error during sync'
+
+        # -- tracking -------------------------------------
 
         self.cds_history_api.sync_finished(cds_hostname, error=sync_error_msg)
 
@@ -608,75 +631,13 @@ class CdsApi(BaseApi):
         @type repo_id: str
         @param deleted: Indicates the repo has been deleted.
         @type deleted: bool.
-        @return: The list of hostnames successfully unassocated and a list of
-            hostnames that failed to be unassociated.
-        @rtype: tuple
         '''
-        # Find all CDS instances associated with the given repo
-        succeeded = []
-        failed = []
         for cds in self.cds_with_repo(repo_id):
             hostname = cds['hostname']
             try:
                 self.unassociate_repo(hostname, repo_id, deleted)
-                succeeded.append(hostname)
             except Exception:
-                failed.append(hostname)
                 log.error('unassociate %s, failed', hostname, exc_info=True)
-        return succeeded, failed
-
-# -- internal only api ---------------------------------------------------------------------
-
-    def set_global_repo_auth(self, cert_bundle):
-        '''
-        Notifies *all* CDS instances that global repo authentication has been changed
-        on the Pulp server. If the bundle is None, the effect is that global repo
-        authentication will be disabled.
-
-        @param cert_bundle: contains the bundle contents (PEM encoded certificates and
-                            keys); may be None
-        @type  cert_bundle: dict {str, str} (see repo_cert_utils for more information)
-        '''
-        collection = CDS.get_collection()
-        all_cds = list(collection.find())
-
-        # Attempt to send to all CDS instances. For any that throw an error, log the
-        # exception and keep a running track of which failed to display to the caller
-        success_cds_hostnames = []
-        error_cds_hostnames = []
-        for cds in all_cds:
-            try:
-                self.dispatcher.set_global_repo_auth(cds, cert_bundle)
-                success_cds_hostnames.append(cds['hostname'])
-            except Exception:
-                log.exception('Error enabling global repo auth on CDS [%s]' % cds['hostname'])
-                error_cds_hostnames.append(cds['hostname'])
-
-        return success_cds_hostnames, error_cds_hostnames
-
-    def set_repo_auth(self, repo_id, repo_relative_path, cert_bundle):
-        '''
-        Notifies all CDS instances associated with the given repo that repo authentication
-        has been changed. If the bundle is None, authentication for this repo will be
-        removed.
-        '''
-
-        # Find all CDS instances associated with the given repo
-        cds_list = self.cds_with_repo(repo_id)
-
-        # Attempt to send to all CDS instances. For any that throw an error, log the
-        # exception and keep a running track of which failed to display to the caller
-        success_cds_hostnames = []
-        error_cds_hostnames = []
-        for cds in cds_list:
-            try:
-                self.dispatcher.set_repo_auth(cds, repo_id, repo_relative_path, cert_bundle)
-                success_cds_hostnames.append(cds['hostname'])
-            except Exception:
-                log.exception('Error enabling repo auth on CDS [%s]' % cds['hostname'])
-                error_cds_hostnames.append(cds['hostname'])
-
-        return success_cds_hostnames, error_cds_hostnames
 
 # -- private -------------------------------------------------------------------------------
 
@@ -691,8 +652,7 @@ class CdsApi(BaseApi):
         '''
 
         # Find all CDS instances in the group
-        db = CDS.get_collection()
-        cds_members = list(db.find({'group_id' : group_id}))
+        cds_members = list(self.collection.find({'group_id' : group_id}))
 
         member_hostnames = [c['hostname'] for c in cds_members]
 

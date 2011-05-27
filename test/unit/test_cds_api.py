@@ -55,6 +55,7 @@ class CdsApiTests(unittest.TestCase):
         mocks.reset()
 
     def setUp(self):
+        testutil.load_test_config()
         mocks.install()
         self.config = testutil.load_test_config()
         self.cds_api = CdsApi()
@@ -90,11 +91,9 @@ class CdsApiTests(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
         # Verify
-        # initialize() and set_global_repo_auth() were send to agent.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
         self.assertEqual(0, len(cdsplugin.update_group_membership.history()))
        
     def test_register_full_attributes(self):
@@ -119,11 +118,9 @@ class CdsApiTests(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
         # Verify
-        # initialize() and set_global_repo_auth() were send to agent.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
         self.assertEqual(1, len(cdsplugin.update_group_membership.history()))
         self.assertEqual('test-group', cdsplugin.group_name)
@@ -174,11 +171,9 @@ class CdsApiTests(unittest.TestCase):
         self.assertEqual(1, len(history)) # from the first register call, not the second
 
         # Verify
-        # initialize() and set_global_repo_auth() were sent once to agent.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
     def test_register_init_error(self):
         '''
@@ -763,19 +758,33 @@ class CdsApiTests(unittest.TestCase):
         self.cds_api.cds_sync('cds.example.com')
 
         # Verify
-        # sync() was sent to the agent with correct repoid.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         calls = cdsplugin.sync.history()
         self.assertEqual(1, len(calls))
-        lastsync = calls[-1]
-        syncargs = lastsync[0]
-        self.assertEqual('cds-test-repo', syncargs[1][0]['id'])
+
+        sync_payload = cdsplugin.payload
+
+        self.assertEqual(1, len(sync_payload['repos']))
+        self.assertEqual('cds-test-repo', sync_payload['repos'][0]['id'])
+
+        self.assertTrue(sync_payload['repo_base_url'] is not None)
+
+        self.assertEqual(1, len(sync_payload['repo_cert_bundles']))
+        self.assertTrue('cds-test-repo' in sync_payload['repo_cert_bundles'])
+        self.assertTrue(sync_payload['repo_cert_bundles']['cds-test-repo'] is None)
+
+        self.assertTrue('global_cert_bundle' in sync_payload)
+        self.assertTrue(sync_payload['global_cert_bundle'] is None)
+
+        self.assertTrue('group_id' in sync_payload)
+        self.assertTrue(sync_payload['group_id'] is None)
+
+        self.assertTrue('group_members' in sync_payload)
+        self.assertTrue(sync_payload['group_members'] is None)
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))
-        # self.assertEqual(CDSHistoryEventType.SYNC_FINISHED, history[0]['type_name'])
-        # self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
 
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds['last_sync'] is not None)
@@ -811,17 +820,9 @@ class CdsApiTests(unittest.TestCase):
         # Verify
         calls = cdsplugin.sync.history()
         self.assertEqual(1, len(calls))
-        lastsync = calls[-1]
-        syncargs = lastsync[0]
-        self.assertEqual('cds-test-repo', syncargs[1][0]['id'])
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))
-        # self.assertEqual(CDSHistoryEventType.SYNC_FINISHED, history[0]['type_name'])
-        # self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
-
-        #   Verify the history event contains the exception
-        # self.assertTrue(history[0]['details']['error'] is not None)
 
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds['last_sync'] is not None)
@@ -882,27 +883,6 @@ class CdsApiTests(unittest.TestCase):
 
         # Verify
         self.assertEqual(0, len(results))
-
-    def test_delete_repo_with_associated(self):
-        '''
-        Tests the RepoApi call to delete a repo that is currently associated with at least one CDS.
-        The delete should not be allowed and the user informed to explicitly
-        unassociate the repo from all CDS instances first.
-        '''
-
-        # Setup
-        repoid = 'cds-test-repo'
-        hostname = 'cds1.example.com'
-        repo = self.repo_api.create(repoid, 'CDS Test Repo', 'x86_64')
-        self.cds_api.register(hostname)
-        self.cds_api.associate_repo(hostname, repoid)
-        # Delete
-        succeeded, failed = self.repo_api.delete(repoid)
-        # Verify
-        self.assertTrue(hostname in succeeded)
-        cds = self.cds_api.cds(hostname)
-        self.assertEqual(0, len(cds['repo_ids']))
-
 
     def test_redistribute(self):
         '''

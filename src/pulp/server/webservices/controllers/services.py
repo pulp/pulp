@@ -355,16 +355,9 @@ class EnableGlobalRepoAuth(JSONController):
         bundle = data['cert_bundle']
         log.info('Enabling global repo authentication')
 
-        successes, failures = auth_api.enable_global_repo_auth(bundle)
+        auth_api.enable_global_repo_auth(bundle)
 
-        result = {'success_cds_hostnames' : successes,
-                  'failure_cds_hostnames' : failures}
-
-        # If there were any CDS failures, indicate only a partial content update
-        if len(failures) > 0:
-            self.partial_content(result)
-        else:
-            self.ok(result)
+        self.ok({})
 
 class DisableGlobalRepoAuth(JSONController):
 
@@ -384,16 +377,9 @@ class DisableGlobalRepoAuth(JSONController):
         '''
         log.info('Disabling global repo authentication')
 
-        successes, failures = auth_api.disable_global_repo_auth()
+        auth_api.disable_global_repo_auth()
 
-        result = {'success_cds_hostnames' : successes,
-                  'failure_cds_hostnames' : failures}
-
-        # If there were any CDS failures, indicate only a partial content update
-        if len(failures) > 0:
-            self.partial_content(result)
-        else:
-            self.ok(result)
+        self.ok({})
 
 class RepoDiscovery(AsyncController):
     @JSONController.error_handler

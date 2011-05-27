@@ -67,19 +67,11 @@ class AuthApi(BaseApi):
         @param cert_bundle: contains a consumer certificate bundle; see repo_cert_utils
                             for more information
         @type  cert_bundle: dict {str, str}
-
-        @return: list of CDS hostnames that were successfully updated, list of CDS
-                 hostnames that encountered an error attempting to update
-        @rtype:  list [str], list [str]
         '''
         repo_cert_utils = RepoCertUtils(config.config)
 
         repo_cert_utils.validate_cert_bundle(cert_bundle)
         repo_cert_utils.write_global_repo_cert_bundle(cert_bundle)
-
-        # Call out to all CDS instances to inform them of the auth change
-        successes, failures = self.cds_api.set_global_repo_auth(cert_bundle)
-        return successes, failures
 
     def disable_global_repo_auth(self):
         '''
@@ -94,15 +86,6 @@ class AuthApi(BaseApi):
         the results of which CDS instances were successfully updated. No error is
         thrown regardless of CDS update outcome, however an error is thrown if the
         Pulp server itself cannot be updated.
-        
-        @return: list of CDS hostnames that were successfully updated, list of CDS
-                 hostnames that encountered an error attempting to update
-        @rtype:  list [str], list [str]
         '''
         repo_cert_utils = RepoCertUtils(config.config)
-        
         repo_cert_utils.delete_global_cert_bundle()
-
-        # Call out to all CDS instances to inform them of the auth change
-        successes, failures = self.cds_api.set_global_repo_auth(None)
-        return successes, failures
