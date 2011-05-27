@@ -34,7 +34,6 @@ from pulp.server import config
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server import updateinfo
-from pulp.server.api import repo_sync
 from pulp.server.api.base import BaseApi
 from pulp.server.api.cdn_connect import CDNConnection
 from pulp.server.api.cds import CdsApi
@@ -44,7 +43,7 @@ from pulp.server.api.file import FileApi
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.keystore import KeyStore
 from pulp.server.api.package import PackageApi, PackageHasReferences
-from pulp.server.api.repo_sync_task import RepoSyncTask
+
 from pulp.server.api.scheduled_sync import update_repo_schedule, delete_repo_schedule
 from pulp.server.async import run_async, find_async
 from pulp.server.auditing import audit
@@ -272,101 +271,7 @@ class RepoApi(BaseApi):
                 # need to use lexists so we will return True even for broken links
                 os.unlink(link_path)
 
-    def _clone(self, id, clone_id, clone_name, feed='parent', groupid=None, relative_path=None,
-               filters=(), progress_callback=None):
-        repo = self.repository(id)
-        if repo is None:
-            raise PulpException("A Repo with id %s does not exist" % id)
-        cloned_repo = self.repository(clone_id)
-        if cloned_repo is not None:
-            raise PulpException("A Repo with id %s exists. Choose a different id." % clone_id)
 
-        REPOS_LOCATION = pulp.server.util.top_repos_location()
-        parent_feed = "file://" + REPOS_LOCATION + "/" + repo["relative_path"]
-        feed_cert_data = {}
-        consumer_cert_data = {}
-
-        # Utility function to save space making sure files are closed after reading
-        def read_cert_file(filename):
-            f = open(filename, 'r')
-            contents = f.read()
-            f.close()
-            return contents
-
-        if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
-            feed_cert_data = {'ca' : read_cert_file(repo['feed_ca']),
-                              'cert' : read_cert_file(repo['feed_cert']),
-                              'key'  : read_cert_file(repo['feed_key']), }
-
-        if repo['consumer_ca'] and repo['consumer_cert'] and repo['consumer_key']:
-            consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
-                                  'cert' : read_cert_file(repo['consumer_cert']),
-                                  'key' : read_cert_file(repo['consumer_key']), }
-
-        log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
-        if feed == 'origin':
-            origin_feed = repo['source']['url']
-            self.create(clone_id, clone_name, repo['arch'], feed=origin_feed, groupid=groupid,
-                        relative_path=clone_id, feed_cert_data=feed_cert_data,
-                        consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
-        else:
-            self.create(clone_id, clone_name, repo['arch'], feed=parent_feed, groupid=groupid,
-                        relative_path=relative_path, feed_cert_data=feed_cert_data,
-                        consumer_cert_data=consumer_cert_data, checksum_type=repo['checksum_type'])
-
-        # Associate filters if specified
-        if len(filters) > 0:
-            self.add_filters(clone_id, filter_ids=filters)
-
-        # Sync from parent repo
-        try:
-            self._sync(clone_id, progress_callback=progress_callback)
-        except Exception, e:
-            log.error(e)
-            log.warn("Traceback: %s" % (traceback.format_exc()))
-            raise PulpException("Repo cloning of [%s] failed" % id)
-
-        # Update feed type for cloned repo if "origin" or "feedless"
-        cloned_repo = self.repository(clone_id)
-        if feed == "origin":
-            cloned_repo['source'] = repo['source']
-        elif feed == "none":
-            cloned_repo['source'] = None
-        self.collection.save(cloned_repo, safe=True)
-
-        # Update clone_ids for parent repo
-        clone_ids = repo['clone_ids']
-        clone_ids.append(clone_id)
-        repo['clone_ids'] = clone_ids
-        self.collection.save(repo, safe=True)
-
-        # Update gpg keys from parent repo
-        keylist = []
-        key_paths = self.listkeys(id)
-        for key_path in key_paths:
-            key_path = REPOS_LOCATION + key_path
-            f = open(key_path)
-            fn = os.path.basename(key_path)
-            content = f.read()
-            keylist.append((fn, content))
-            f.close()
-        self.addkeys(clone_id, keylist)
-
-    @audit()
-    def clone(self, id, clone_id, clone_name, feed='parent', groupid=[], relative_path=None,
-              progress_callback=None, timeout=None, filters=[]):
-        """
-        Run a repo clone asynchronously.
-        """
-        task = run_async(self._clone,
-                         [id, clone_id, clone_name, feed, groupid, relative_path, filters],
-                         {},
-                         timeout=timeout)
-        if feed in ('feedless', 'parent'):
-            task.set_progress('progress_callback', repo_sync.local_progress_callback)
-        else:
-            task.set_progress('progress_callback', repo_sync.yum_rhn_progress_callback)
-        return task
 
     @audit(params=['groupid', 'content_set'])
     def create_product_repo(self, content_set, cert_data, groupid=None, gpg_keys=None):
@@ -503,7 +408,6 @@ class RepoApi(BaseApi):
             log.info("Current running a sync on repo : %s", id)
             return True
         return False
-
 
     @event(subject='repo.deleted')
     @audit()
@@ -851,7 +755,7 @@ class RepoApi(BaseApi):
 
     @event(subject='repo.updated.content')
     @audit()
-    def add_package(self, repoid, packageids=[]):
+    def add_package(self, repoid, packageids=[], skip_createrepo=False):
         """
         Adds the passed in package to this repo
         @return:    [] on success
@@ -968,8 +872,9 @@ class RepoApi(BaseApi):
         self.collection.save(repo, safe=True)
         end_add_packages = time.time()
         log.info("inside of repo.add_packages() adding packages took %s seconds" % (end_add_packages - start_add_packages))
-        #TODO: Make this an async task; so client wouldnt wait
-        pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
+        if not skip_createrepo:
+            #TODO: Make this an async task; so client wouldnt wait
+            pulp.server.util.create_repo(repo_path, checksum_type=repo["checksum_type"])
         return errors
 
     def _add_package(self, repo, p):
@@ -1520,134 +1425,6 @@ class RepoApi(BaseApi):
             log.warn("Traceback: %s" % (traceback.format_exc()))
             return False
 
-    def get_synchronizer(self, source_type):
-        return repo_sync.get_synchronizer(source_type)
-
-    def _sync(self, id, skip_dict=None, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
-        """
-        Sync a repo from the URL contained in the feed
-        @param id repository id
-        @type id string
-        @param skip_dict dictionary of item types to skip from synchronization
-        @type skip_dict dict
-        @param progress_callback callback to display progress of synchronization
-        @type progress_callback method
-        @param synchronizer instance of a specific synchronizer class
-        @type synchronizer instance of a L{pulp.server.api.repo_sync.BaseSynchronizer}
-        @param max_speed maximum download bandwidth in KB/sec per thread for yum downloads
-        @type max_speed int
-        @param threads maximum number of threads to use for yum downloading
-        @type threads int
-        """
-
-        if not self.set_sync_in_progress(id, True):
-            log.error("We saw sync was in progress for [%s]" % (id))
-            raise ConflictingOperationException()
-
-        try:
-            if not skip_dict:
-                skip_dict = {}
-            repo = self._get_existing_repo(id)
-            repo_source = repo['source']
-            if not repo_source:
-                raise PulpException("This repo is not setup for sync. Please add packages using upload.")
-            if not synchronizer:
-                synchronizer = repo_sync.get_synchronizer(repo_source["type"])
-            synchronizer.set_callback(progress_callback)
-            log.info("Sync of %s starting, skip_dict = %s" % (id, skip_dict))
-            start_sync_items = time.time()
-            sync_packages, sync_errataids = \
-                repo_sync.sync(
-                    repo,
-                    repo_source,
-                    skip_dict,
-                    progress_callback,
-                    synchronizer,
-                    max_speed,
-                    threads)
-            end_sync_items = time.time()
-            log.info("Sync returned %s packages, %s errata in %s seconds" % (len(sync_packages),
-                len(sync_errataids), (end_sync_items - start_sync_items)))
-            # We need to update the repo object in Mongo to account for
-            # package_group info added in sync call
-            self.collection.save(repo, safe=True)
-            if not skip_dict.has_key('packages') or skip_dict['packages'] != 1:
-                old_pkgs = list(set(repo["packages"]).difference(set(sync_packages.keys())))
-                old_pkgs = map(self.packageapi.package, old_pkgs)
-                old_pkgs = filter(lambda pkg: pkg["repo_defined"], old_pkgs)
-                new_pkgs = list(set(sync_packages.keys()).difference(set(repo["packages"])))
-                new_pkgs = map(lambda pkg_id: sync_packages[pkg_id], new_pkgs)
-                log.info("%s old packages to process, %s new packages to process" % \
-                    (len(old_pkgs), len(new_pkgs)))
-                synchronizer.progress_callback(step="Removing %s packages" % (len(old_pkgs)))
-                # Remove packages that are no longer in source repo
-                self.remove_packages(repo["id"], old_pkgs)
-                # Refresh repo object since we may have deleted some packages
-                repo = self._get_existing_repo(id)
-                synchronizer.progress_callback(step="Adding %s new packages" % (len(new_pkgs)))
-                for pkg in new_pkgs:
-                    self._add_package(repo, pkg)
-                # Update repo for package additions
-                self.collection.save(repo, safe=True)
-            if not skip_dict.has_key('errata') or skip_dict['errata'] != 1:
-                # Determine removed errata
-                synchronizer.progress_callback(step="Processing Errata")
-                log.info("Examining %s errata from repo %s" % (len(self.errata(id)), id))
-                repo_errata = self.errata(id)
-                old_errata = list(set(repo_errata).difference(set(sync_errataids)))
-                new_errata = list(set(sync_errataids).difference(set(repo_errata)))
-                log.info("Removing %s old errata from repo %s" % (len(old_errata), id))
-                self.delete_errata(id, old_errata)
-                for eid in old_errata:
-                    try:
-                        self.errataapi.delete(eid)
-                    except ErrataHasReferences:
-                        log.info('errata "%s" has references, not deleted',eid)
-                # Refresh repo object
-                repo = self._get_existing_repo(id) #repo object must be refreshed
-                log.info("Adding %s new errata to repo %s" % (len(new_errata), id))
-                for eid in new_errata:
-                    self._add_erratum(repo, eid)
-            now = datetime.now(dateutils.local_tz())
-            repo['last_sync'] = dateutils.format_iso8601_datetime(now)
-            synchronizer.progress_callback(step="Finished")
-            self.collection.save(repo, safe=True)
-            return True
-        finally:
-            self.set_sync_in_progress(id, False)
-
-    @audit()
-    def sync(self, id, timeout=None, skip=None, max_speed=None, threads=None):
-        """
-        Run a repo sync asynchronously.
-        @rtype pulp.server.tasking.task or None
-        @return on success a task object is returned
-                on failure None is returned
-        @return
-        """
-        repo = self.repository(id)
-        task = run_async(self._sync,
-                         [id],
-                         {'skip_dict':skip,
-                          'max_speed':max_speed,
-                          'threads':threads},
-                          timeout=timeout,
-                          task_type=RepoSyncTask)
-        if not task:
-            log.error("Unable to create repo._sync task for [%s]" % (id))
-            return task
-        if repo['source'] is not None:
-            source_type = repo['source']['type']
-            if source_type in ('remote'):
-                    task.set_progress('progress_callback',
-                                  repo_sync.yum_rhn_progress_callback)
-            elif source_type in ('local'):
-                task.set_progress('progress_callback',
-                                  repo_sync.local_progress_callback)
-            synchronizer = self.get_synchronizer(source_type)
-            task.set_synchronizer(self, repo['id'], synchronizer)
-        return task
-
     def list_syncs(self, id):
         """
         List all the syncs for a given repository.
@@ -1946,6 +1723,7 @@ class RepoApi(BaseApi):
         compsobj = StringIO()
         compsobj.write(comps_data.encode("utf8"))
         compsobj.seek(0, 0)
+        #TODO: Move repo_sync usage out of repoapi
         bs = repo_sync.BaseSynchronizer()
         status = bs.sync_groups_data(compsobj, repo)
         self.collection.save(repo, safe=True)

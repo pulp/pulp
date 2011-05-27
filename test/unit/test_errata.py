@@ -30,6 +30,7 @@ import mocks
 import pulp
 from pulp.server.db import model
 from pulp.server import updateinfo
+from pulp.server.api import repo_sync
 from pulp.server.api.errata import ErrataApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.api.consumer import ConsumerApi
@@ -368,7 +369,7 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_repo_sync", "test_name", "x86_64",
                 "file://%s" % datadir)
-        self.rapi._sync(r['id'])
+        repo_sync._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         enhancement = [u'RHEA-2009:1270', u'RHEA-2007:0637', u'RHEA-2007:0636',
@@ -410,7 +411,7 @@ class TestErrata(unittest.TestCase):
                 'test_errata_repo_resync_name', 'i386',
                 'file://%s' % (repo_path))
         self.assertTrue(r != None)
-        self.rapi._sync(r["id"])
+        repo_sync._sync(r["id"])
         # 'stable_repo' will be synced once and not changed
         # it is used to verify that when we delete an errata
         # we make sure to not delete one which is referenced by another repo
@@ -418,7 +419,7 @@ class TestErrata(unittest.TestCase):
                 'test_errata_repo_resync_name_stable_repo', 'i386',
                 'file://%s' % (repo_path))
         self.assertTrue(stable_repo != None)
-        self.rapi._sync(stable_repo["id"])
+        repo_sync._sync(stable_repo["id"])
         # Refresh repo now it has been sync'd
         stable_repo = self.rapi.repository(stable_repo['id'])
         r = self.rapi.repository(r['id'])
@@ -429,7 +430,7 @@ class TestErrata(unittest.TestCase):
         r = self.rapi.repository(r["id"])
         r["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(r, safe=True)
-        self.rapi._sync(r["id"])
+        repo_sync._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
         # One bugfix errata was deleted, so make sure this is reflected
@@ -451,7 +452,7 @@ class TestErrata(unittest.TestCase):
                 'test_errata_repo_resync_name', 'i386',
                 'file://%s' % (repo_path))
         self.assertTrue(r != None)
-        self.rapi._sync(r["id"])
+        repo_sync._sync(r["id"])
         # Refresh repos now they have been sync'd
         r = self.rapi.repository(r['id'])
         #LOOK UP ERRATA AND VERIFY
@@ -500,7 +501,7 @@ class TestErrata(unittest.TestCase):
         r = self.rapi.repository(r["id"])
         r["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(r, safe=True)
-        self.rapi._sync(r["id"])
+        repo_sync._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
         self.assertTrue(len(r['errata']['enhancement']) == len(enhancement))
@@ -531,7 +532,8 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_query_by_cve", "test_name", "x86_64",
                 "file://%s" % datadir)
-        self.rapi._sync(r['id'])
+        repo_sync._sync(r['id'])
+
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         found = self.eapi.query_by_cve("CVE-2007-3919")
@@ -542,7 +544,7 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_errata_query_bz", "test_name", "x86_64",
                 "file://%s" % datadir)
-        self.rapi._sync(r['id'])
+        repo_sync._sync(r['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         found = self.eapi.query_by_bz("433560")
@@ -557,10 +559,10 @@ class TestErrata(unittest.TestCase):
         datadir = os.path.join(self.data_path, "repo_rhel_sample")
         r = self.rapi.create("test_find_repos_by_errata", "test_name", "x86_64",
                 "file://%s" % datadir)
-        self.rapi._sync(r['id'])
+        repo_sync._sync(r['id'])
         r2 = self.rapi.create("test_find_repos_by_errata_2", "test_name_2", "x86_64",
                 "file://%s" % datadir)
-        self.rapi._sync(r2['id'])
+        repo_sync._sync(r2['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         r2 = self.rapi.repository(r2['id'])

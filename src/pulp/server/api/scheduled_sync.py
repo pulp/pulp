@@ -100,8 +100,9 @@ def _add_repo_scheduled_sync_task(repo):
     """
     # hack to avoid circular import
     from pulp.server.api.repo import RepoApi
+    import repo_sync
     api = RepoApi()
-    task = RepoSyncTask(api._sync, [repo['id']])
+    task = RepoSyncTask(repo_sync._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     synchronizer = api.get_synchronizer(repo['source']['type'])
     task.set_synchronizer(api, repo['id'], synchronizer)

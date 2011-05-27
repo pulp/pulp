@@ -30,6 +30,7 @@ import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
 import testutil
 from pulp.server import constants
+from pulp.server.api import repo_sync
 
 constants.LOCAL_STORAGE="/tmp/pulp/"
 
@@ -55,7 +56,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         try:
-            self.rapi._sync(repo['id'])
+            repo_sync._sync(repo['id'])
         except Exception:
             # No need for this, an exception with register as a failure and
             # be more informative than the failed assertion
@@ -64,9 +65,11 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Try repo cloning default case: feed = parent
         try:
-            self.rapi._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')
-        except Exception:
+            repo_sync._clone(repo['id'], 'clone-some-id-parent', 'clone-some-id-parent')
+        except Exception, e:
+            print "Exception caught: ", e
             self.assertTrue(False)
+            raise
         # Check that local storage has dir and rpms
         dirList = os.listdir(constants.LOCAL_STORAGE + '/repos/' + 'clone-some-id-parent')
         assert(len(dirList) > 0)
@@ -77,7 +80,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Try repo cloning with origin feed
         try:
-            self.rapi._clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
+            repo_sync._clone(repo['id'], 'clone-some-id-origin', 'clone-some-id-origin', feed="origin")
         except Exception:
             self.assertTrue(False)
         # Check that local storage has dir and rpms
@@ -90,7 +93,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
 
         # Try repo cloning with no feed
         try:
-            self.rapi._clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
+            repo_sync._clone(repo['id'], 'clone-some-id-none', 'clone-some-id-none', feed="none")
         except Exception:
             self.assertTrue(False)
         # Check that local storage has dir and rpms
@@ -105,7 +108,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
     def test_clone_non_existent_repo(self):
         # Negative case where parent repo does not exist
         try:
-            self.rapi._clone('some-random-id', 'clone-some-id-parent', 'clone-some-id-parent')
+            repo_api._clone('some-random-id', 'clone-some-id-parent', 'clone-some-id-parent')
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)
@@ -119,7 +122,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
         self.assertTrue(repo1 is not None)
 
         try:
-            self.rapi._clone('some-id', 'some-id-1', 'clone-some-id-parent')
+            repo_api._clone('some-id', 'some-id-1', 'clone-some-id-parent')
             self.assertTrue(False)
         except Exception:
             self.assertTrue(True)

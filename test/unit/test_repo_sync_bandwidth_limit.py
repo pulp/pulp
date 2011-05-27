@@ -36,6 +36,7 @@ sys.path.insert(0, commondir)
 import mocks
 import pymongo.json_util
 
+from pulp.server.api import repo_sync
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model import Delta
 from pulp.server.db.model import PackageGroup
@@ -82,7 +83,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         # Test repo has 2 packages, so 2 threads is the maximum
         # benefit we can realize
         start = time.time()
-        self.rapi._sync(repo['id'])
+        repo_sync._sync(repo['id'])
         end = time.time()
         found = self.rapi.repository(repo['id'], )
         self.assertEquals(len(found['packages']), 2)
@@ -97,7 +98,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         threads = 2
         limit = 100 # KB/sec
         start = time.time()
-        self.rapi._sync(repo['id'], max_speed=limit, threads=threads)
+        repo_sync._sync(repo['id'], max_speed=limit, threads=threads)
         end = time.time()
         found = self.rapi.repository(repo['id'], )
         assumed_time = (float(repo_size_kb)/(limit*threads))
@@ -115,7 +116,7 @@ class TestRepoSyncBandwidthLimit(unittest.TestCase):
         threads = 1
         limit = 0 # unlimited
         start = time.time()
-        self.rapi._sync(repo['id'], max_speed=limit)
+        repo_sync._sync(repo['id'], max_speed=limit)
         end = time.time()
         found = self.rapi.repository(repo['id'], )
         self.assertEquals(len(found['packages']), 2)

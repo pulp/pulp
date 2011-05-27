@@ -82,6 +82,7 @@ import logging
 import web
 
 from pulp.common.dateutils import format_iso8601_datetime
+from pulp.server.api import repo_sync
 from pulp.server.api import scheduled_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -589,7 +590,7 @@ class RepositoryActions(AsyncController):
             except:
                 return self.bad_request('Unable to convert "threads" with value [%s] to an int' % (threads))
         skip = repo_params.get('skip', {})
-        task = api.sync(id, timeout, skip, max_speed=limit, threads=threads)
+        task = repo_sync.sync(id, timeout, skip, max_speed=limit, threads=threads)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
@@ -649,7 +650,7 @@ class RepositoryActions(AsyncController):
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
 
-        task = api.clone(id,
+        task = repo_sync.clone(id,
                          repo_data['clone_id'],
                          repo_data['clone_name'],
                          repo_data['feed'],

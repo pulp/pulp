@@ -26,9 +26,10 @@ sys.path.insert(0, commondir)
 
 import mocks
 import pulp.server.api.repo
-import pulp.server.api.repo_sync as repo_sync
 import pulp.server.crontab
 import testutil
+
+from pulp.server.api import repo_sync
 
 class TestRepoPublish(unittest.TestCase):
 
@@ -53,7 +54,7 @@ class TestRepoPublish(unittest.TestCase):
         self.assertEquals(repo["publish"], 
                 self.config.getboolean('repos', 'default_to_published'))
         # Sync Repo
-        self.repo_api._sync(repo["id"])
+        repo_sync._sync(repo["id"])
         repo = self.repo_api.repository(repo_id)
 
         # Ensure Repo is Published

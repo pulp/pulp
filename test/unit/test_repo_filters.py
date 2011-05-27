@@ -28,6 +28,7 @@ commondir = os.path.abspath(os.path.dirname(__file__)) + '/../common/'
 sys.path.insert(0, commondir)
 
 import mocks
+from pulp.server.api import repo_sync
 from pulp.server.api.filter import FilterApi
 from pulp.server.api.repo import RepoApi
 import testutil
@@ -89,8 +90,8 @@ class TestRepoFilters(unittest.TestCase):
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
-        self.rapi._sync(id='some-id')
-        self.rapi._clone('some-id', repoid, repoid)
+        repo_sync._sync(repo_id='some-id')
+        repo_sync._clone('some-id', repoid, repoid)
         filter_ids = ["filter-test1", "filter-test2"]
         # Try without creating filters
         try:
@@ -112,8 +113,8 @@ class TestRepoFilters(unittest.TestCase):
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
-        self.rapi._sync(id='some-id')
-        self.rapi._clone('some-id', repoid, repoid)
+        repo_sync._sync(repo_id='some-id')
+        repo_sync._clone('some-id', repoid, repoid)
         self.filter_api.create('filter-test1', type="blacklist")
         self.filter_api.create('filter-test2', type="whitelist")
         filter_ids = ["filter-test1", "filter-test2"]
@@ -132,8 +133,8 @@ class TestRepoFilters(unittest.TestCase):
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
-        self.rapi._sync(id='some-id')
-        self.rapi._clone('some-id', repoid, repoid)
+        repo_sync._sync(repo_id='some-id')
+        repo_sync._clone('some-id', repoid, repoid)
         filters = self.rapi.list_filters(repoid)
         self.assertTrue(len(filters) == 0)
 
