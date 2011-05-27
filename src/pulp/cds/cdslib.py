@@ -206,7 +206,7 @@ class CdsLib(object):
                 file_storage.permutation = cds_hostnames
                 file_storage.save()
             else:
-                log.info('No changes made to group memberships')
+                log.info('No changes needed to be made to group memberships')
         finally:
             file_storage.close()
 
