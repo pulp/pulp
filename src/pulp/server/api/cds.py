@@ -143,9 +143,14 @@ class CdsApi(BaseApi):
         bundle = repo_cert_utils.read_global_cert_bundle()
         self.dispatcher.set_global_repo_auth(cds, bundle)
 
-        # If the CDS is part of a group, notify other CDS instances
+        # Group handling
         if group_id is not None:
-            self.update_group_membership(group_id)
+
+            # Bring this CDS up to speed with any repo associations the others have
+            self._apply_group_repos_to_cds(cds)
+
+            # Notify other CDS instances
+            self._update_group_membership(group_id)
 
         # If the CDS should sync regularly, update that now
         if sync_schedule is not None:
@@ -203,7 +208,7 @@ class CdsApi(BaseApi):
         # (this has to happen after the DB update so the unregistered CDS does not
         # show up in the membership list)
         if doomed['group_id'] is not None:
-            self.update_group_membership(doomed['group_id'])
+            self._update_group_membership(doomed['group_id'])
         
     def update(self, hostname, delta):
         '''
@@ -264,17 +269,20 @@ class CdsApi(BaseApi):
             # - CDS was in a group and has been removed from it
             # - CDS was in a group and is now in a different group
 
+            # Not previously in a group but now is
             if cds['group_id'] is None:
-                # Not previously in a group but now is
                 log.info('Assigning previously ungrouped CDS [%s] to group [%s]' % (hostname, delta['group_id']))
 
                 cds['group_id'] = delta['group_id']
                 self.collection.save(cds, safe=True)
 
-                self.update_group_membership(delta['group_id'])
+                self._update_group_membership(delta['group_id'])
 
+                # The CDS is now part of a group, so make sure its repos are up to speed
+                self._apply_group_repos_to_cds(cds)
+
+            # CDS was in a group but no longer is
             elif cds['group_id'] is not None and delta['group_id'] is None:
-                # CDS was in a group but no longer is
                 log.info('Removing CDS [%s] from group [%s]' % (hostname, cds['group_id']))
 
                 old_group_id = cds['group_id']
@@ -287,18 +295,21 @@ class CdsApi(BaseApi):
                 except Exception:
                     log.exception('Error notifying CDS [%s] it has been removed from group [%s]' % (hostname, old_group_id))
 
-                self.update_group_membership(old_group_id)
+                self._update_group_membership(old_group_id)
 
+            # CDS was in a group and is being changed
             elif cds['group_id'] != delta['group_id']:
-                # CDS was in a group and is being changed
                 log.info('Changing CDS [%s] from group [%s] to group [%s]' % (hostname, cds['group_id'], delta['group_id']))
 
                 old_group_id = cds['group_id']
                 cds['group_id'] = delta['group_id']
                 self.collection.save(cds, safe=True)
 
-                self.update_group_membership(old_group_id)
-                self.update_group_membership(delta['group_id'])
+                self._update_group_membership(old_group_id)
+                self._update_group_membership(delta['group_id'])
+
+                # The CDS is now part of a different group, so make sure its repos are up to speed
+                self._apply_group_repos_to_cds(cds)
 
         else:
             # If the group was changed, the CDS has already been saved. If not,
@@ -348,7 +359,7 @@ class CdsApi(BaseApi):
         return list(self.collection.find())
 
     @audit()
-    def associate_repo(self, cds_hostname, repo_id):
+    def associate_repo(self, cds_hostname, repo_id, apply_to_group=True):
         '''
         Associates a repo with a CDS. All data in an associated repo will be kept synchronized
         when the CDS synchronization occurs. This call will not cause the initial
@@ -363,6 +374,10 @@ class CdsApi(BaseApi):
         @param repo_id: identifies the repo to associate with the CDS; the repo must exist
                         prior to this call
         @type  repo_id: string; may not be None
+
+        @param apply_to_group: if True, the association will be applied to all other CDS
+                               instances in the same group; if False the group is ignored
+        @type  apply_to_group: bool
 
         @raise PulpException: if the CDS or repo does not exist
         '''
@@ -398,8 +413,12 @@ class CdsApi(BaseApi):
             # Automatically redistribute consumers to pick up these changes
             self.redistribute(repo_id)
 
+            # Make the same association on all other CDS instances in the group
+            if cds['group_id'] is not None and apply_to_group:
+                self._apply_cds_repos_to_group(cds)
+
     @audit()
-    def unassociate_repo(self, cds_hostname, repo_id, deleted=False):
+    def unassociate_repo(self, cds_hostname, repo_id, deleted=False, apply_to_group=True):
         '''
         Removes an existing association between a CDS and a repo. This call will not cause
         the repo data to be deleted from the CDS; that must be explicitly done through
@@ -413,8 +432,12 @@ class CdsApi(BaseApi):
         @param repo_id: identifies the repo to unassociate from the CDS
         @type  repo_id: string; may not be None
 
-        @param deleted: Indicates the repo has been deleted.
-        @type deleted: bool
+        @param deleted: indicates the repo has been deleted.
+        @type  deleted: bool
+
+        @param apply_to_group: if True, the association will be applied to all other CDS
+                       instances in the same group; if False the group is ignored
+        @type  apply_to_group: bool
 
         @raise PulpException: if the CDS does not exist
         '''
@@ -445,10 +468,14 @@ class CdsApi(BaseApi):
                 repo = Repo.get_collection().find_one({'id' : repo_id})
                 self.dispatcher.set_repo_auth(cds, repo_id, repo['relative_path'], None)
 
+            # Automatically redistribute consumers to pick up these changes
             if not deleted:
-                # Automatically redistribute consumers to pick up these changes
                 self.redistribute(repo_id)
 
+            # Make the same unassociation on all other CDS instances in the group
+            if cds['group_id'] is not None and apply_to_group:
+                self._apply_cds_repos_to_group(cds)
+            
     def cds_sync(self, cds_hostname):
         '''
         Causes a CDS to be triggered to synchronize all of its repos as soon as possible,
@@ -651,7 +678,9 @@ class CdsApi(BaseApi):
 
         return success_cds_hostnames, error_cds_hostnames
 
-    def update_group_membership(self, group_id):
+# -- private -------------------------------------------------------------------------------
+
+    def _update_group_membership(self, group_id):
         '''
         Notifies all CDS instances that are part of the given group that the membership
         in that group has changed. A list of all current members in the group is sent
@@ -680,3 +709,68 @@ class CdsApi(BaseApi):
                 error_cds_hostnames.append(cds['hostname'])
 
         return success_cds_hostnames, error_cds_hostnames
+        
+    def _apply_group_repos_to_cds(self, cds):
+        """
+        Run when a CDS is added to an existing group. If the group had other members
+        before this CDS was added, the repo list from those instances will be associated
+        with the newly added CDS.
+
+        This call is meant to be called after the CDS has been successfully added to
+        the group.
+
+        @param cds: CDS that was newly added to the group
+        @type  cds: L{CDS}
+        """
+
+        # This shouldn't happen, but safety check
+        if cds['group_id'] is None:
+            log.warn('Apply group repos to CDS called for CDS with no group [%s]' % cds['hostname'])
+            return
+
+        # All CDS instances in the group _except_ the one passed in
+        cdses_in_group = list(self.collection.find({'group_id' : cds['group_id'], 'hostname' : {'$ne' : cds['hostname']}}))
+
+        if len(cdses_in_group) == 0:
+            return
+
+        # They should all have the same repos, so just grab one as a sampling
+        sample_cds = cdses_in_group[0]
+
+        additions = [repo_id for repo_id in sample_cds['repo_ids'] if repo_id not in cds['repo_ids']]
+        removals = [repo_id for repo_id in cds['repo_ids'] if repo_id not in sample_cds['repo_ids']]
+
+        for repo_id in additions:
+            self.associate_repo(cds['hostname'], repo_id, apply_to_group=False)
+
+        for repo_id in removals:
+            self.unassociate_repo(cds['hostname'], repo_id, apply_to_group=False)
+
+    def _apply_cds_repos_to_group(self, cds):
+        """
+        Run when a CDS that is part of a group has its associated repos updated.
+        This call will apply those changes to the other members in the group as well.
+        """
+
+        # This shouldn't happen, but safety check
+        if cds['group_id'] is None:
+            log.warn('Apply CDS repos to group called for CDS with no group [%s]' % cds['hostname'])
+            return
+
+        # The CDS specified now contains the most up to date list of repos, so
+        # bring all other members of the group in line with that.
+        
+        # All CDS instances in the group _except_ the one passed in
+        cdses_in_group = list(self.collection.find({'group_id' : cds['group_id'], 'hostname' : {'$ne' : cds['hostname']}}))
+
+        for change_me in cdses_in_group:
+
+            # Before editing the repo associations, determine additions/removals
+            additions = [repo_id for repo_id in cds['repo_ids'] if repo_id not in change_me['repo_ids']]
+            removals = [repo_id for repo_id in change_me['repo_ids'] if repo_id not in cds['repo_ids']]
+
+            for repo_id in additions:
+                self.associate_repo(change_me['hostname'], repo_id, apply_to_group=False)
+
+            for repo_id in removals:
+                self.unassociate_repo(change_me['hostname'], repo_id, apply_to_group=False)

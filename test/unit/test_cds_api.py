@@ -40,9 +40,9 @@ from pulp.server.agent import Agent, CdsAgent
 import testutil
 
 
-# -- test cases --------------------------------------------------------------------------------------
+class CdsApiTests(unittest.TestCase):
 
-class TestCdsApi(unittest.TestCase):
+    # -- preparation ---------------------------------------------------------
 
     def clean(self):
         self.cds_history_api.clean()
@@ -67,6 +67,8 @@ class TestCdsApi(unittest.TestCase):
     def tearDown(self):
         self.clean()
         testutil.common_cleanup()
+
+    # -- general cds test cases ----------------------------------------------
 
     def test_register_simple_attributes(self):
         '''
@@ -986,3 +988,117 @@ class TestCdsApi(unittest.TestCase):
 
         #   Make sure no attempts to send an update call across the bus were made
         self.assertEqual(0, len(mocks.all()))
+
+    # -- cds group test cases ------------------------------------------------
+
+    def test_register_auto_associate(self):
+        """
+        Tests that registering a CDS to a group that already has CDS instances
+        with repositories causes the newly registered CDS to get the same associations.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.associate_repo('cds-existing', 'test-repo-1')
+
+        # Test
+        self.cds_api.register('cds-new', group_id='test-group')
+
+        # Verify
+        cds = self.cds_api.cds('cds-new')
+        self.assertEqual(['test-repo-1'], cds['repo_ids'])
+
+
+    def test_register_auto_associate_no_repos(self):
+        """
+        Tests that registering a CDS to a group with a CDS instance that doesn't have
+        repositories associated doesn't throw an error when resolving association
+        differences.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        self.cds_api.register('cds-existing', group_id='test-group')
+
+        # Test
+        self.cds_api.register('cds-new', group_id='test-group')
+
+        # Verify
+        cds = self.cds_api.cds('cds-new')
+        self.assertEqual(0, len(cds['repo_ids']))
+
+    def test_update_group_resolve_repo_associations(self):
+        """
+        Tests that updating a CDS that already has repo associations and putting it
+        in a group causes the CDS to have its repo associations changed to meet the
+        rest of the group. This test includes testing that repos are both added to
+        and removed from the updated CDS.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
+        self.repo_api.create('test-repo-2', 'CDS Test Repo 2', 'noarch') # on the CDS before group membership
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.associate_repo('cds-existing', 'test-repo-1')
+
+        self.cds_api.register('cds-updated')
+        self.cds_api.associate_repo('cds-updated', 'test-repo-2')
+
+        # Test
+        delta = {'group_id' : 'test-group'}
+        self.cds_api.update('cds-updated', delta)
+
+        # Verify
+        cds = self.cds_api.cds('cds-updated')
+        self.assertEqual(['test-repo-1'], cds['repo_ids'])
+
+    def test_associate_repo_to_group_member(self):
+        """
+        Tests that associating a repo to a CDS in a group applies the association to
+        all group members.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-1', group_id='test-group')
+        self.cds_api.register('cds-2', group_id='test-group')
+        self.cds_api.register('cds-3', group_id='test-group')
+
+        # Test
+        self.cds_api.associate_repo('cds-1', 'test-repo-1')
+
+        # Verify
+        for i in range(1, 4):
+            cds = self.cds_api.cds('cds-%d' % i)
+            self.assertEqual(['test-repo-1'], cds['repo_ids'])
+
+    def test_unassociate_repo_from_group_member(self):
+        """
+        Tests that unassociating a repo from a CDS in a group applies the removal to
+        all group members.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-1', group_id='test-group')
+        self.cds_api.register('cds-2', group_id='test-group')
+        self.cds_api.register('cds-3', group_id='test-group')
+
+        self.cds_api.associate_repo('cds-1', 'test-repo-1')
+
+        # Test
+        self.cds_api.unassociate_repo('cds-1', 'test-repo-1')
+
+        # Verify
+        for i in range(1, 4):
+            cds = self.cds_api.cds('cds-%d' % i)
+            self.assertEqual([], cds['repo_ids'])
