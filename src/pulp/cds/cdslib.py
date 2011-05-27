@@ -174,9 +174,9 @@ class CdsLib(object):
         @type  cds_hostnames: list of str
         '''
         if cds_hostnames is None:
-            members = 'None'
-        else:
-            members = ', '.join(cds_hostnames)
+            cds_hostnames = []
+            
+        members = ', '.join(cds_hostnames)
         log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
 
         file_storage = FilePermutationStore()
