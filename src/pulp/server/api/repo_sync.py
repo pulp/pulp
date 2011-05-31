@@ -330,7 +330,6 @@ def import_comps(repoid, comps_data=None):
     repo_api.collection.save(repo, safe=True)
     return status
 
-#TODO:  Update import_comps/export_comps WS and test through CLI
 def export_comps(repoid):
     """
     Creates packagegroups and categories from a comps.xml file
