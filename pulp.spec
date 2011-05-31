@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.181
+Version:        0.0.182
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -311,6 +311,63 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Tue May 31 2011 John Matthews <jmatthew@redhat.com> 0.0.182-1
+- Bump to grinder 0.100 (jmatthews@redhat.com)
+- Cleanup with merge of repo sync refactoring (jmatthews@redhat.com)
+- Refactored repo_sync/synchronizers.  repo_sync is now high level 'sync'
+  interface (jmatthews@redhat.com)
+- Updated docs for CR 12 (jason.dobies@redhat.com)
+- Update for CR-12 (jortel@redhat.com)
+- Changed phrasing of log message to not sound like an error
+  (jason.dobies@redhat.com)
+- Added log message when group membership isn't updated
+  (jason.dobies@redhat.com)
+- Make the cds repo list a hidden file (jason.dobies@redhat.com)
+- Fixed CDS repo list saving (jason.dobies@redhat.com)
+- Hardened group change logic (jason.dobies@redhat.com)
+- Refactored CDS communications to only send auth information in the sync call
+  itself to clean up places we need to handle communication errors. The group
+  information is also sent during the sync call as a redundency in case the CDS
+  missed the original call. (jason.dobies@redhat.com)
+- Added CDS group repo normalization functionality (jason.dobies@redhat.com)
+- re-license to GPLv2 or later as well as updated (C) date (mmccune@redhat.com)
+- bumping timeout (pkilambi@redhat.com)
+- adding some checks to the plugin (pkilambi@redhat.com)
+- adding timeout to pulp server connection class (pkilambi@redhat.com)
+- The CDS needs these directories owned by apache (jason.dobies@redhat.com)
+- If the CDS isn't in a group, the load balancer call just returns itself as
+  the host (jason.dobies@redhat.com)
+- Automatic commit of package [pulp] release [0.0.181-1]. (jortel@redhat.com)
+- updating the dev script to link yum plugins (pkilambi@redhat.com)
+- Yum plugin to invoke package profile update on post yum transactions
+  (pkilambi@redhat.com)
+- Hooked in CDS group update to file storage (jason.dobies@redhat.com)
+- Added file storage mechanism for cds host list and tied it into the load
+  balancer web app (jason.dobies@redhat.com)
+- Initial framework for CDS load balancer web app (jason.dobies@redhat.com)
+- Added dividers to make it more readable (jason.dobies@redhat.com)
+- 707341 - fixed client to use new server-side scheduler information to
+  properly determine if a sync is actually currently in progress
+  (jconnor@redhat.com)
+- added logic to look through a list of syncs and find a running one
+  (jconnor@redhat.com)
+- added scheduler information to the task serialization (and comments)
+  (jconnor@redhat.com)
+- copy the renamed file during build (pkilambi@redhat.com)
+- renaming gofer's pulp.py to pulpplugin.py to fix the conflict with top level
+  class while module is loaded (pkilambi@redhat.com)
+- bug 703275 - Python naively uses __cmp__ for equality and membership if
+  __eq__ is not present added custom __eq__ to fix assertion bugs
+  (jconnor@redhat.com)
+- fixing bug in missed runs reporting (off by one error) (jconnor@redhat.com)
+- added comment (jconnor@redhat.com)
+- Fixed test (jason.dobies@redhat.com)
+- Added server -> CDS infrastructure to send CDS group information when it is
+  changed on the server (jason.dobies@redhat.com)
+- Include size info in MANIFEST files (pkilambi@redhat.com)
+- Added group membership messages and cleaned up exception handling in the CDS
+  dispatcher. (jason.dobies@redhat.com)
+
 * Wed May 25 2011 Jeff Ortel <jortel@redhat.com> 0.0.181-1
 - 707341 - fixed client to use new server-side scheduler information to
   properly determine if a sync is actually currently in progress
