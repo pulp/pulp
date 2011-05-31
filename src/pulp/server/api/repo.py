@@ -1712,34 +1712,6 @@ class RepoApi(BaseApi):
         found = self.collection.find({"files":fileid}, fields=["id"])
         return [r["id"] for r in found]
 
-    def import_comps(self, repoid, comps_data=None):
-        """
-        Creates packagegroups and categories from a comps.xml file
-        @param repoid: repository Id
-        @param compsfile: comps xml stream
-        @return: True if success; else False
-        """
-        repo = self._get_existing_repo(repoid)
-        compsobj = StringIO()
-        compsobj.write(comps_data.encode("utf8"))
-        compsobj.seek(0, 0)
-        #TODO: Move repo_sync usage out of repoapi
-        bs = repo_sync.BaseSynchronizer()
-        status = bs.sync_groups_data(compsobj, repo)
-        self.collection.save(repo, safe=True)
-        return status
-
-    def export_comps(self, repoid):
-        """
-        Creates packagegroups and categories from a comps.xml file
-        @param compsfile: comps xml stream
-        @return: comps xml stream
-        """
-        repo = self._get_existing_repo(repoid)
-        xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
-                repo['packagegroups'])
-        return xml
-
     @audit(params=['id', 'filter_ids'])
     def add_filters(self, id, filter_ids):
         repo = self._get_existing_repo(id)

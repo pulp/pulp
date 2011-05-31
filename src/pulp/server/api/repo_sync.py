@@ -17,12 +17,10 @@ import logging
 import sys
 import time
 import traceback
-from yum.packages import YumLocalPackage
-
-from grinder.BaseFetch import BaseFetch
-from grinder.GrinderCallback import ProgressReport
+from StringIO import StringIO
 
 from pulp.common import dateutils
+from pulp.server import comps_util
 from pulp.server.api.errata import ErrataApi, ErrataHasReferences
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -33,7 +31,7 @@ from pulp.server.auditing import audit
 from pulp.server.async import run_async
 from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import ConflictingOperationException
-from pulp.server.util import get_rpm_information, top_repos_location
+from pulp.server.util import top_repos_location
 log = logging.getLogger(__name__)
 
 repo_api = RepoApi()
@@ -206,31 +204,6 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None, ma
     @param threads maximum number of threads to use for yum downloading
     @type threads int
     """
-    repo = repo_api._get_existing_repo(repo_id)
-    bsync = BaseSynchronizer()
-    repo_dir = os.path.join(top_repos_location(), repo["relative_path"])
-
-    def repo_sync_progress_callback(data):
-        if type(data) == ProgressReport:
-            data = yum_rhn_progress_callback(data)
-        try:
-            if data["item_type"] == BaseFetch.RPM and data["item_name"]:
-                log.error("Processed <%s> Status = <%s>" % (data['item_name'], data['status']))
-                #find package id
-                pkg_path = os.path.join(repo_dir, data["item_name"])
-                # Need to translate a rpm.hdr object to a yum PackageSack
-                pkg = YumLocalPackage(filename=pkg_path)
-                pkg.relativepath = pkg_path
-                pulp_pkg = bsync.import_package(pkg, repo_id, repo_defined=True)
-                errors = repo_api.add_package(repoid=repo_id, packageids=[pulp_pkg["id"]], skip_createrepo=True)
-                if errors:
-                    log.error("Error adding package <%s> to repo<%s>: <%s>" % (pkg_path, repo_id, errors))
-                else:
-                    log.error("Success adding package <%s> to repo<%s>" % (pkg_path, repo_id))
-        finally:
-            progress_callback(data)
-
-    log.error("Test log")
     if not repo_api.set_sync_in_progress(repo_id, True):
         log.error("We saw sync was in progress for [%s]" % (repo_id))
         raise ConflictingOperationException()
@@ -245,12 +218,9 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None, ma
             raise PulpException("This repo is not setup for sync. Please add packages using upload.")
         if not synchronizer:
             synchronizer = get_synchronizer(repo_source["type"])
-        #synchronizer.set_callback(yum_rhn_progress_callback)
-        synchronizer.set_callback(progress_callback)
+            synchronizer.set_callback(progress_callback)
         log.info("Sync of %s starting, skip_dict = %s" % (repo_id, skip_dict))
         start_sync_items = time.time()
-        #sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip_dict,
-        #    repo_sync_progress_callback, synchronizer, max_speed, threads)
         sync_packages, sync_errataids = fetch_content(repo["id"], repo_source, skip_dict,
             progress_callback, synchronizer, max_speed, threads)
         end_sync_items = time.time()
@@ -341,3 +311,32 @@ def fetch_content(repo_id, repo_source, skip_dict={}, progress_callback=None, sy
     # Process Metadata
     added_errataids = synchronizer.import_metadata(repo_dir, repo_id, skip_dict)
     return added_packages, added_errataids
+
+
+def import_comps(repoid, comps_data=None):
+    """
+    Creates packagegroups and categories from a comps.xml file
+    @param repoid: repository Id
+    @param compsfile: comps xml stream
+    @return: True if success; else False
+    """
+    repo = repo_api._get_existing_repo(repoid)
+    compsobj = StringIO()
+    compsobj.write(comps_data.encode("utf8"))
+    compsobj.seek(0, 0)
+    bs = BaseSynchronizer()
+    status = bs.sync_groups_data(compsobj, repo)
+    repo_api.collection.save(repo, safe=True)
+    return status
+
+#TODO:  Update import_comps/export_comps WS and test through CLI
+def export_comps(repoid):
+    """
+    Creates packagegroups and categories from a comps.xml file
+    @param compsfile: comps xml stream
+    @return: comps xml stream
+    """
+    repo = repo_api._get_existing_repo(repoid)
+    xml = comps_util.form_comps_xml(repo['packagegroupcategories'],
+                repo['packagegroups'])
+    return xml

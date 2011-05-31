@@ -38,7 +38,6 @@ from pulp.server.api.filter import FilterApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model import Delta, DuplicateKeyError
-from pulp.server.pexceptions import PulpException
 from pulp.server.tasking.exception import CancelException
 
 

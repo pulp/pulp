@@ -483,7 +483,7 @@ class RepositoryDeferredFields(JSONController):
         success response: 200 OK
         return: xml comps file
         """
-        return self.ok(api.export_comps(id))
+        return self.ok(repo_sync.export_comps(id))
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)
@@ -833,7 +833,7 @@ class RepositoryActions(AsyncController):
          * xml comps file body
         """
         comps_data = self.params()
-        return self.ok(api.import_comps(id, comps_data))
+        return self.ok(repo_sync.import_comps(id, comps_data))
 
     def delete_packagegroup(self, id):
         """
