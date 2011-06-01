@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.183
+Version:        0.0.184
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -311,6 +311,17 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.184-1
+- Fixed missing close in CDS repo list. Added call to clean up protection for
+  removed repos. (jason.dobies@redhat.com)
+- Incorrect section name (jason.dobies@redhat.com)
+- 708416 - Order the sync list before determining most recent sync
+  (jason.dobies@redhat.com)
+- The CDS plugin needs access to the server conf properties.
+  (jason.dobies@redhat.com)
+- 709476 - Our conf files should be replaced by default.
+  (jason.dobies@redhat.com)
+
 * Wed Jun 01 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.183-1
 - Added configuration for CA certificate for server's SSL certificate and
   sending of it to CDS instances. (jason.dobies@redhat.com)
