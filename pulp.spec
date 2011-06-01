@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.184
+Version:        0.0.185
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -311,6 +311,11 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.185-1
+- Fix broken repo delete command. (jortel@redhat.com)
+- Fixing test_sync_multiple_repos to use same logic as in the code to check
+  running sync for a repo before deleting it (skarmark@redhat.com)
+
 * Wed Jun 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.184-1
 - Fixed missing close in CDS repo list. Added call to clean up protection for
   removed repos. (jason.dobies@redhat.com)
