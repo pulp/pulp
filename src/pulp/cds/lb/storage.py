@@ -81,15 +81,20 @@ class FilePermutationStore:
         else:
             self.permutation = []
 
-    def close(self):
+    def save(self):
         """
-        Saves the current state of permutations and releases all locks.
+        Saves the current state of permutations but does not release any locks.
         """
 
         # Save the permutation
         fp_write = open(self.store_filename, 'w')
         fp_write.write('\n'.join(self.permutation))
         fp_write.close()
+
+    def close(self):
+        """
+        Releases all locks without writing any changes to the file.
+        """
 
         # Release the file lock
         try:

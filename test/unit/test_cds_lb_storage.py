@@ -55,6 +55,7 @@ class FilePermutationStoreTest(unittest.TestCase):
 
         file_store.open()
         file_store.permutation = ['a', 'b', 'c']
+        file_store.save()
         file_store.close()
 
         # Verify
@@ -80,6 +81,7 @@ class FilePermutationStoreTest(unittest.TestCase):
 
         file_store.open()
         file_store.permutation = ['a', 'b']
+        file_store.save()
         file_store.close()
 
         file_store = storage.FilePermutationStore(TEST_STORAGE_FILE, TEST_LOCK_FILE)
@@ -88,6 +90,7 @@ class FilePermutationStoreTest(unittest.TestCase):
         self.assertEqual(['a', 'b'], file_store.permutation)
 
         file_store.permutation = ['a', 'b', 'c']
+        file_store.save()
         file_store.close()
 
         # Verify

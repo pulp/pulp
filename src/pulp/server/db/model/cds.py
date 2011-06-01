@@ -27,6 +27,7 @@ class CDS(Model):
 
     def __init__(self, hostname, name=None, description=None):
         Model.__init__(self)
+        self._id = hostname
         self.id = hostname
         self.hostname = hostname
         if name:

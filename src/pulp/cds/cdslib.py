@@ -23,7 +23,7 @@ from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 # -- constants ---------------------------------------------------------------
 
 LOGPATH = '/var/log/pulp-cds/gofer.log'
-REPO_LIST_FILENAME = 'cds_repo_list'
+REPO_LIST_FILENAME = '.cds_repo_list'
 
 log = None
 
@@ -46,6 +46,7 @@ def loginit(path=LOGPATH):
         log.addHandler(logging.FileHandler(path))
         log.setLevel(logging.DEBUG)
     return log
+
 
 class CdsLib(object):
 
@@ -81,35 +82,152 @@ class CdsLib(object):
         self.repo_cert_utils.delete_global_cert_bundle()
         self._delete_all_repos()
 
-    def sync(self, base_url, repos):
+    def sync(self, sync_data):
         '''
         Synchronizes the given repos to this CDS. This list is the definitive list of what
         should be present on the CDS if this call succeeds. That includes removing any
         repos that were previously synchronized but are no longer in the given list of repos.
 
-        @param base_url: location of the base URL where repos are hosted, the url
-                         should end in a trailing / but is not required to;
-                         example: https://pulp.example.com/
-        @type  base_url: string
-
-        @param repos: list of repos that should be on the CDS following synchronization
-        @type  repos: list of dict, where each dict describes a repo that should be present
-                      on the CDS
+        @param sync_data: package of all data the CDS needs to configure itself, including
+                          repo information and redundent group membership information;
+                          see the CDS API for information on what is contained
+        @type  sync_data: dict
         '''
 
         log.info('Received sync call')
-        log.info(repos)
+        log.info(sync_data)
 
-        # This call simply wraps the actual logic so that any errors that occur are logged
-        # on the CDS itself before they are re-raised to the pulp server.
+        error_messages = [] # keeps a running total of errors encountered to send back to the server
+
+        # Unpack the necessary data
+        repos = sync_data['repos']
+        base_url = sync_data['repo_base_url']
+        repo_cert_bundles = sync_data['repo_cert_bundles']
+        global_cert_bundle = sync_data['global_cert_bundle']
+        group_id = sync_data['group_id']
+        group_members = sync_data['group_members']
+        ca_cert_pem = sync_data['server_ca_cert']
+
+        packages_location = self.config.get('cds', 'packages_dir')
+
+        # Update the repo certificate bundles
+        for repo in repos:
+            bundle = repo_cert_bundles[repo['id']]
+
+            try:
+                self._set_repo_auth(repo['id'], repo['relative_path'], bundle)
+            except Exception:
+                log.exception('Error updating certificate bundle for repo [%s]' % repo['id'])
+                error_messages.append('Error updating certificate bundle for repo [%s]' % repo['id'])
+
+        # Update the CA certificate for the server
+        ca_filename = self.config.get('server', 'ca_cert_file')
+        try:
+            if ca_cert_pem is None:
+                if os.path.exists(ca_filename):
+                    os.remove(ca_filename)
+            else:
+                f = open(ca_filename)
+                f.write()
+                f.close()
+        except Exception:
+            log.exception('Error updating server CA certificate at [%s]' % ca_filename)
+            error_messages.append('Error updating server CA certificate at [%s]' % ca_filename)
+
+        # Update the global certificate bundle
+        try:
+            self._set_global_repo_auth(global_cert_bundle)
+        except Exception:
+            log.exception('Error updating global cert bundle')
+            error_messages.append('Error updating global certificate bundle')
+
+        # Clean up any repos that were once synchronized but are no longer associated with the CDS
         try:
             self._delete_removed_repos(repos)
-            self._sync_repos(base_url, repos)
-        except Exception, e:
-            log.exception('Error performing sync')
-            raise e
+        except Exception:
+            log.exception('Error performing old repo cleanup')
+            error_messages.append('One or more previously synchronized repositories could not be deleted')
 
-    def set_repo_auth(self, repo_id, repo_relative_path, bundle):
+        # Sync each repo specified, allowing the syncs to proceed if one or more fails
+        successfully_syncced_repos = []
+        for repo in repos:
+            try:
+                self._sync_repo(base_url, repo)
+                successfully_syncced_repos.append(repo)
+            except Exception:
+                log.exception('Error performing repo sync')
+                error_messages.append('Error synchronizing repository [%s]' % repo['id'])
+
+            # Write it out per repo in case something drastically awful happens
+            # so we have a best effort record
+
+            # The only potential wonkiness is if the sync failed because the packages
+            # location is unwritable, in which case this will fail too. That's fine,
+            # since not having the file will mean no syncced repos and if we can't
+            # write to the packages location, there's a solid chance we don't in fact
+            # have any repos.
+            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
+            for r in successfully_syncced_repos:
+                repos_file.write(r['relative_path'])
+                repos_file.write('\n')
+            repos_file.close()
+
+        # If no repos were specified, make sure the CDS repo list file does not
+        # contain references to any CDS instances
+        if len(repos) == 0:
+            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
+            repos_file.write('')
+            repos_file.close()
+
+        # Make sure the CDS group list is up to speed
+        try:
+            self.update_group_membership(group_id, group_members)
+        except Exception:
+            log.exception('Error updating group membership')
+            error_messages.append('Error updating group membership')
+
+        if len(error_messages) > 0:
+            raise Exception('The following errors occurred during the CDS sync: ' + ', '.join(error_messages))
+
+    def update_group_membership(self, group_name, cds_hostnames):
+        '''
+        Updates the local knowledge of this CDS instance's group membership
+        and other CDS instances in the same group.
+
+        If group_name is None, the effect is that this CDS has been removed
+        from a group.
+
+        If the group membership has not changed,
+
+        @param group_name: identifies the group the CDS is a member in
+        @type  group_name: str or None
+
+        @param cds_hostnames: list of all CDS instances in the group (this instance
+                              will be listed in this list as well)
+        @type  cds_hostnames: list of str
+        '''
+        if cds_hostnames is None:
+            cds_hostnames = []
+            
+        members = ', '.join(cds_hostnames)
+        log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
+
+        file_storage = FilePermutationStore()
+        file_storage.open()
+
+        try:
+            # Only edit if there were changes to the CDS groups
+            if sorted(file_storage.permutation) != sorted(cds_hostnames):
+                file_storage.permutation = cds_hostnames
+                file_storage.save()
+            else:
+                log.info('No changes needed to be made to group memberships')
+        finally:
+            file_storage.close()
+
+    # -- internal ------------------------------------------------------------
+
+    def _set_repo_auth(self, repo_id, repo_relative_path, bundle):
         '''
         Saves repo authentication credentials for a repo. If the credentials are None,
         the repo will be removed from the protected repo list.
@@ -142,7 +260,7 @@ class CdsLib(object):
         else:
             self.protected_repo_utils.add_protected_repo(repo_relative_path, repo_id)
 
-    def set_global_repo_auth(self, bundle):
+    def _set_global_repo_auth(self, bundle):
         '''
         Saves the global repo auth credentials which are applied to all repo
         accesses. If the credentials are None, the global credentials will be removed.
@@ -156,114 +274,64 @@ class CdsLib(object):
         # files will be deleted.
         self.repo_cert_utils.write_global_repo_cert_bundle(bundle)
 
-    def update_group_membership(self, group_name, cds_hostnames):
+    def _sync_repo(self, base_url, repo):
         '''
-        Updates the local knowledge of this CDS instance's group membership
-        and other CDS instances in the same group.
-
-        If group_name is None, the effect is that this CDS has been removed
-        from a group.
-
-        @param group_name: identifies the group the CDS is a member in
-        @type  group_name: str or None
-
-        @param cds_hostnames: list of all CDS instances in the group (this instance
-                              will be listed in this list as well)
-        @type  cds_hostnames: list of str
-        '''
-        if cds_hostnames is None:
-            members = 'None'
-        else:
-            members = ', '.join(cds_hostnames)
-        log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
-
-        file_storage = FilePermutationStore()
-        file_storage.open()
-        file_storage.permutation = cds_hostnames
-        file_storage.close()
-
-    def _sync_repos(self, base_url, repos):
-        '''
-        Synchronizes all repos specified in the sync call.
+        Synchronizes a repository from the Pulp server.
 
         @param base_url: location of the base URL where repos are hosted, the url
                          should end in a trailing / but is not required to;
                          example: https://pulp.example.com/
         @type  base_url: string
 
-        @param repos: list of repos that should be on the CDS following synchronization
-        @type  repos: list of dict, where each dict describes a repo that should be present
-                      on the CDS
+        @param repo: contains the details of the repository to sync
+        @type  repo: dict of str
         '''
 
         num_threads = self.config.get('cds', 'sync_threads')
         packages_location = self.config.get('cds', 'packages_dir')
 
-        # Keep a running total of all repos that have been successfully synchronized so
-        # we can write out the list
-        successfully_syncced_repos = []
+        url = '%s/%s' % (base_url, repo['relative_path'])
+        log.info('Synchronizing repo at [%s]' % url)
+        repo_path = os.path.join(packages_location, repo['relative_path'])
 
-        # Synchronize all repos that were specified
-        for repo in repos:
+        if not os.path.exists(repo_path):
+            os.makedirs(repo_path)
 
-            try:
-                url = '%s/%s' % (base_url, repo['relative_path'])
-                log.debug('Synchronizing repo at [%s]' % url)
-                repo_path = os.path.join(packages_location, repo['relative_path'])
+        log.info('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
 
-                if not os.path.exists(repo_path):
-                    os.makedirs(repo_path)
+        # If the repo is protected, add in the credentials
+        feed_ca = feed_cert = feed_key = None
+        ssl_verify = 0
+        bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
+        if bundle is not None:
+            log.debug('Configuring repository for authentication')
+            server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+            if os.path.exists(server_ca_filename):
+                feed_ca = server_ca_filename
+            else:
+                feed_ca = bundle['ca'].encode('utf8')
+            feed_cert = bundle['cert'].encode('utf8')
+            feed_key = bundle['key'].encode('utf8')
+            ssl_verify = 1
 
-                log.debug('Synchronizing repo [%s] from [%s] to [%s]' % (repo['name'], url, repo_path))
-
-                # If the repo is protected, add in the credentials
-                feed_ca = feed_cert = feed_key = None
-                ssl_verify = 0
-                bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
-                if bundle is not None:
-                    log.debug('Configuring repository for authentication')
+        # If the repo itself wasn't protected but there is global repo auth, use that
+        if bundle is None:
+            bundle = self.repo_cert_utils.global_cert_bundle_filenames()
+            if bundle is not None:
+                log.debug('Configuring global repository authentication credentials for repo')
+                server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+                if os.path.exists(server_ca_filename):
+                    feed_ca = server_ca_filename
+                else:
                     feed_ca = bundle['ca'].encode('utf8')
-                    feed_cert = bundle['cert'].encode('utf8')
-                    feed_key = bundle['key'].encode('utf8')
-                    ssl_verify = 1
+                feed_cert = bundle['cert'].encode('utf8')
+                feed_key = bundle['key'].encode('utf8')
+                ssl_verify = 1
 
-                # If the repo itself wasn't protected but there is global repo auth, use that
-                if bundle is None:
-                    bundle = self.repo_cert_utils.global_cert_bundle_filenames()
-                    if bundle is not None:
-                        log.debug('Configuring global repository authentication credentials for repo')
-                        feed_ca = bundle['ca'].encode('utf8')
-                        feed_cert = bundle['cert'].encode('utf8')
-                        feed_key = bundle['key'].encode('utf8')
-                        ssl_verify = 1
+        fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
+        fetch.fetchYumRepo(repo_path)
 
-                fetch = YumRepoGrinder('', url, num_threads, sslverify=ssl_verify, cacert=feed_ca, clicert=feed_cert, clikey=feed_key)
-                fetch.fetchYumRepo(repo_path)
-
-                successfully_syncced_repos.append(repo)
-
-                log.debug('Successfully finished synccing [%s]' % url)
-            finally:
-                # Write it out after each repo so that even if a single repo throws an error
-                # on sync, the written file will still be accurate.
-
-                # The only potential wonkiness is if the sync failed because the packages
-                # location is unwritable, in which case this will fail too. That's fine,
-                # since not having the file will mean no syncced repos and if we can't
-                # write to the packages location, there's a solid chance we don't in fact
-                # have any repos.
-                repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
-                for r in successfully_syncced_repos:
-                    repos_file.write(r['relative_path'])
-                    repos_file.write('\n')
-                repos_file.close()
-
-        if len(repos) == 0:
-            # If no repos were specified, make sure the CDS repo list file does not
-            # contain references to any CDS instances
-            repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
-            repos_file.write('')
-            repos_file.close()
+        log.info('Successfully finished synccing [%s]' % url)
 
     def _delete_removed_repos(self, repos):
         '''

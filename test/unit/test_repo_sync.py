@@ -38,6 +38,7 @@ import mocks
 from pulp.repo_auth.repo_cert_utils import RepoCertUtils
 from pulp.repo_auth.protected_repo_utils import ProtectedRepoUtils
 from pulp.server import async
+from pulp.server.api import repo_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.tasking import task
@@ -90,7 +91,7 @@ class TestRepoSync(unittest.TestCase):
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
         for r in repos:
             self.assertTrue(r)
-        sync_tasks = [self.rapi.sync(r["id"]) for r in repos]
+        sync_tasks = [repo_sync.sync(r["id"]) for r in repos]
         # Poll tasks and wait for sync to finish
         waiting_tasks = [t.id for t in sync_tasks]
         while len(waiting_tasks) > 0:
@@ -120,7 +121,7 @@ class TestRepoSync(unittest.TestCase):
 
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://jmatthews.fedorapeople.org/repo_with_bad_read_perms/')
-        self.rapi._sync(repo['id'], progress_callback=callback)
+        repo_sync._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         self.assertTrue(packages is not None)
@@ -169,7 +170,7 @@ class TestRepoSync(unittest.TestCase):
             self.assertFalse(os.access(bad_tree_path, os.R_OK))
             repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'file://%s' % datadir)
-            self.rapi._sync(repo['id'], progress_callback=callback)
+            repo_sync._sync(repo['id'], progress_callback=callback)
             found = self.rapi.repository(repo['id'])
             packages = found['packages']
             self.assertTrue(packages is not None)

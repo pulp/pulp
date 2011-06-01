@@ -82,6 +82,7 @@ import logging
 import web
 
 from pulp.common.dateutils import format_iso8601_datetime
+from pulp.server.api import repo_sync
 from pulp.server.api import scheduled_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
@@ -314,12 +315,9 @@ class Repository(JSONController):
         permission: DELETE
         success response: 200 OK
         failure response: None
-        return: Two lists:
-            A list of CDS hostnames unassociated with the deleted repo.
-            A list of CDS hostnames that failed during unassociation.
         """
-        cds_unassociate_results = api.delete(id=id)
-        return self.ok(cds_unassociate_results)
+        api.delete(id=id)
+        return self.ok({})
 
 
 class RepositoryDeferredFields(JSONController):
@@ -485,7 +483,7 @@ class RepositoryDeferredFields(JSONController):
         success response: 200 OK
         return: xml comps file
         """
-        return self.ok(api.export_comps(id))
+        return self.ok(repo_sync.export_comps(id))
 
     @JSONController.error_handler
     @JSONController.auth_required(READ)
@@ -593,7 +591,7 @@ class RepositoryActions(AsyncController):
             except:
                 return self.bad_request('Unable to convert "threads" with value [%s] to an int' % (threads))
         skip = repo_params.get('skip', {})
-        task = api.sync(id, timeout, skip, max_speed=limit, threads=threads)
+        task = repo_sync.sync(id, timeout, skip, max_speed=limit, threads=threads)
         if not task:
             return self.conflict('Sync already in process for repo [%s]' % id)
         task_info = self._task_to_dict(task)
@@ -669,7 +667,7 @@ class RepositoryActions(AsyncController):
         if api.repository(repo_data['clone_id'], default_fields) is not None:
             return self.conflict('A repository with the id, %s, already exists' % repo_data['clone_id'])
 
-        task = api.clone(id,
+        task = repo_sync.clone(id,
                          repo_data['clone_id'],
                          repo_data['clone_name'],
                          repo_data['feed'],
@@ -852,7 +850,7 @@ class RepositoryActions(AsyncController):
          * xml comps file body
         """
         comps_data = self.params()
-        return self.ok(api.import_comps(id, comps_data))
+        return self.ok(repo_sync.import_comps(id, comps_data))
 
     def delete_packagegroup(self, id):
         """

@@ -19,6 +19,7 @@ import hashlib
 import base64
 import yum.packages as yumPackages
 
+
 PGPHASHALGO = {
   1: 'md5',
   2: 'sha1',
@@ -305,4 +306,5 @@ def parseCSV(filepath):
         lines.append(line)
     in_file.close()
     return lines
+
 

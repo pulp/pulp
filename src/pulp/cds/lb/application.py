@@ -81,6 +81,7 @@ def _next_permutation():
     next = list(itertools.chain(base[1:], base[:1]))
 
     file_storage.permutation = next
+    file_storage.save()
     file_storage.close()
 
     return next

@@ -40,9 +40,9 @@ from pulp.server.agent import Agent, CdsAgent
 import testutil
 
 
-# -- test cases --------------------------------------------------------------------------------------
+class CdsApiTests(unittest.TestCase):
 
-class TestCdsApi(unittest.TestCase):
+    # -- preparation ---------------------------------------------------------
 
     def clean(self):
         self.cds_history_api.clean()
@@ -55,6 +55,7 @@ class TestCdsApi(unittest.TestCase):
         mocks.reset()
 
     def setUp(self):
+        testutil.load_test_config()
         mocks.install()
         self.config = testutil.load_test_config()
         self.cds_api = CdsApi()
@@ -67,6 +68,8 @@ class TestCdsApi(unittest.TestCase):
     def tearDown(self):
         self.clean()
         testutil.common_cleanup()
+
+    # -- general cds test cases ----------------------------------------------
 
     def test_register_simple_attributes(self):
         '''
@@ -88,11 +91,9 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
         # Verify
-        # initialize() and set_global_repo_auth() were send to agent.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
         self.assertEqual(0, len(cdsplugin.update_group_membership.history()))
        
     def test_register_full_attributes(self):
@@ -117,11 +118,9 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[0]['type_name'])
 
         # Verify
-        # initialize() and set_global_repo_auth() were send to agent.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
         self.assertEqual(1, len(cdsplugin.update_group_membership.history()))
         self.assertEqual('test-group', cdsplugin.group_name)
@@ -172,11 +171,9 @@ class TestCdsApi(unittest.TestCase):
         self.assertEqual(1, len(history)) # from the first register call, not the second
 
         # Verify
-        # initialize() and set_global_repo_auth() were sent once to agent.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(1, len(cdsplugin.set_global_repo_auth.history()))
 
     def test_register_init_error(self):
         '''
@@ -298,6 +295,8 @@ class TestCdsApi(unittest.TestCase):
         }
 
         updated = self.cds_api.update('update-cds', delta)
+
+        time.sleep(1) # seeing if this clears up issues with the group not always being updated
 
         # Verify
         self.assertTrue(updated is not None)
@@ -761,19 +760,36 @@ class TestCdsApi(unittest.TestCase):
         self.cds_api.cds_sync('cds.example.com')
 
         # Verify
-        # sync() was sent to the agent with correct repoid.
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         calls = cdsplugin.sync.history()
         self.assertEqual(1, len(calls))
-        lastsync = calls[-1]
-        syncargs = lastsync[0]
-        self.assertEqual('cds-test-repo', syncargs[1][0]['id'])
+
+        sync_payload = cdsplugin.payload
+
+        self.assertEqual(1, len(sync_payload['repos']))
+        self.assertEqual('cds-test-repo', sync_payload['repos'][0]['id'])
+
+        self.assertTrue(sync_payload['repo_base_url'] is not None)
+
+        self.assertEqual(1, len(sync_payload['repo_cert_bundles']))
+        self.assertTrue('cds-test-repo' in sync_payload['repo_cert_bundles'])
+        self.assertTrue(sync_payload['repo_cert_bundles']['cds-test-repo'] is None)
+
+        self.assertTrue('global_cert_bundle' in sync_payload)
+        self.assertTrue(sync_payload['global_cert_bundle'] is None)
+
+        self.assertTrue('group_id' in sync_payload)
+        self.assertTrue(sync_payload['group_id'] is None)
+
+        self.assertTrue('group_members' in sync_payload)
+        self.assertTrue(sync_payload['group_members'] is None)
+
+        self.assertTrue('server_ca_cert' in sync_payload)
+        self.assertTrue(sync_payload['server_ca_cert'] is None)
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))
-        # self.assertEqual(CDSHistoryEventType.SYNC_FINISHED, history[0]['type_name'])
-        # self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
 
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds['last_sync'] is not None)
@@ -809,17 +825,9 @@ class TestCdsApi(unittest.TestCase):
         # Verify
         calls = cdsplugin.sync.history()
         self.assertEqual(1, len(calls))
-        lastsync = calls[-1]
-        syncargs = lastsync[0]
-        self.assertEqual('cds-test-repo', syncargs[1][0]['id'])
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))
-        # self.assertEqual(CDSHistoryEventType.SYNC_FINISHED, history[0]['type_name'])
-        # self.assertEqual(CDSHistoryEventType.SYNC_STARTED, history[1]['type_name'])
-
-        #   Verify the history event contains the exception
-        # self.assertTrue(history[0]['details']['error'] is not None)
 
         cds = self.cds_api.cds('cds.example.com')
         self.assertTrue(cds['last_sync'] is not None)
@@ -880,27 +888,6 @@ class TestCdsApi(unittest.TestCase):
 
         # Verify
         self.assertEqual(0, len(results))
-
-    def test_delete_repo_with_associated(self):
-        '''
-        Tests the RepoApi call to delete a repo that is currently associated with at least one CDS.
-        The delete should not be allowed and the user informed to explicitly
-        unassociate the repo from all CDS instances first.
-        '''
-
-        # Setup
-        repoid = 'cds-test-repo'
-        hostname = 'cds1.example.com'
-        repo = self.repo_api.create(repoid, 'CDS Test Repo', 'x86_64')
-        self.cds_api.register(hostname)
-        self.cds_api.associate_repo(hostname, repoid)
-        # Delete
-        succeeded, failed = self.repo_api.delete(repoid)
-        # Verify
-        self.assertTrue(hostname in succeeded)
-        cds = self.cds_api.cds(hostname)
-        self.assertEqual(0, len(cds['repo_ids']))
-
 
     def test_redistribute(self):
         '''
@@ -986,3 +973,117 @@ class TestCdsApi(unittest.TestCase):
 
         #   Make sure no attempts to send an update call across the bus were made
         self.assertEqual(0, len(mocks.all()))
+
+    # -- cds group test cases ------------------------------------------------
+
+    def test_register_auto_associate(self):
+        """
+        Tests that registering a CDS to a group that already has CDS instances
+        with repositories causes the newly registered CDS to get the same associations.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.associate_repo('cds-existing', 'test-repo-1')
+
+        # Test
+        self.cds_api.register('cds-new', group_id='test-group')
+
+        # Verify
+        cds = self.cds_api.cds('cds-new')
+        self.assertEqual(['test-repo-1'], cds['repo_ids'])
+
+
+    def test_register_auto_associate_no_repos(self):
+        """
+        Tests that registering a CDS to a group with a CDS instance that doesn't have
+        repositories associated doesn't throw an error when resolving association
+        differences.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+        self.cds_api.register('cds-existing', group_id='test-group')
+
+        # Test
+        self.cds_api.register('cds-new', group_id='test-group')
+
+        # Verify
+        cds = self.cds_api.cds('cds-new')
+        self.assertEqual(0, len(cds['repo_ids']))
+
+    def test_update_group_resolve_repo_associations(self):
+        """
+        Tests that updating a CDS that already has repo associations and putting it
+        in a group causes the CDS to have its repo associations changed to meet the
+        rest of the group. This test includes testing that repos are both added to
+        and removed from the updated CDS.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
+        self.repo_api.create('test-repo-2', 'CDS Test Repo 2', 'noarch') # on the CDS before group membership
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.associate_repo('cds-existing', 'test-repo-1')
+
+        self.cds_api.register('cds-updated')
+        self.cds_api.associate_repo('cds-updated', 'test-repo-2')
+
+        # Test
+        delta = {'group_id' : 'test-group'}
+        self.cds_api.update('cds-updated', delta)
+
+        # Verify
+        cds = self.cds_api.cds('cds-updated')
+        self.assertEqual(['test-repo-1'], cds['repo_ids'])
+
+    def test_associate_repo_to_group_member(self):
+        """
+        Tests that associating a repo to a CDS in a group applies the association to
+        all group members.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-1', group_id='test-group')
+        self.cds_api.register('cds-2', group_id='test-group')
+        self.cds_api.register('cds-3', group_id='test-group')
+
+        # Test
+        self.cds_api.associate_repo('cds-1', 'test-repo-1')
+
+        # Verify
+        for i in range(1, 4):
+            cds = self.cds_api.cds('cds-%d' % i)
+            self.assertEqual(['test-repo-1'], cds['repo_ids'])
+
+    def test_unassociate_repo_from_group_member(self):
+        """
+        Tests that unassociating a repo from a CDS in a group applies the removal to
+        all group members.
+        """
+
+        # Setup
+        self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
+        self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
+
+        self.cds_api.register('cds-1', group_id='test-group')
+        self.cds_api.register('cds-2', group_id='test-group')
+        self.cds_api.register('cds-3', group_id='test-group')
+
+        self.cds_api.associate_repo('cds-1', 'test-repo-1')
+
+        # Test
+        self.cds_api.unassociate_repo('cds-1', 'test-repo-1')
+
+        # Verify
+        for i in range(1, 4):
+            cds = self.cds_api.cds('cds-%d' % i)
+            self.assertEqual([], cds['repo_ids'])

@@ -52,7 +52,7 @@ from uuid import uuid4
 
 from pulp.server import util
 from pulp.server.api.file import FileApi
-from pulp.server.api.repo_sync import BaseSynchronizer
+from pulp.server.api.synchronizers import BaseSynchronizer
 from pulp.server.compat import json
 from pulp.server.event.dispatcher import event
 from pulp.server.pexceptions import PulpException
@@ -344,7 +344,7 @@ class ImportUploadContent:
         packageInfo = PackageInfo(name, version, release, epoch, arch, description, checksum, pkgname,
                                   requires, provides, size, buildhost, license, group, vendor)
         bsync = BaseSynchronizer()
-        pkg = bsync.import_package(packageInfo, repo=None)
+        pkg = bsync.import_package(packageInfo, repo_id=None)
         self.__package_imported(pkg['id'], pkg_path)
         return pkg
 

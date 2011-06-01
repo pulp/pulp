@@ -433,6 +433,30 @@ def delete_empty_directories(dirname):
         # we can hit multiple conditions during remove
         log.error("Unable to delete empty directories due to the following error: %s" % e)
 
+def translate_to_utf8(data, encoding=None):
+    """
+    This method will attempt to encode all strings in passed data to utf-8
+    @param data: data document to pass into Mongo for storage
+    @type data: BSON document
+    @param encoding: if utf-8 encoding fails, will translated strings to unicode using this encoding.  Default is 'iso-8859-1'
+    @type encoding: str
+    @return: BSON document
+    """
+    if not encoding:
+        encoding = 'iso-8859-1'
+    for key in data.keys():
+        try:
+            value = data[key]
+            if isinstance(value, basestring):
+                # Attempt to encode to utf-8
+                log.info("Attempt to convert <%s> %s" % (value, type(value)))
+                attempt = value.encode('utf-8')
+        except Exception, e:
+            log.error(e)
+            translated_value = unicode(data[key], encoding)
+            data[key] = translated_value
+    return data
+
 class Singleton(type):
     """
     Singleton metaclass. To make a class instance a singleton, use this class
