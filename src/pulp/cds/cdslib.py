@@ -305,7 +305,7 @@ class CdsLib(object):
         bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
         if bundle is not None:
             log.debug('Configuring repository for authentication')
-            server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+            server_ca_filename = self.config.get('server', 'ca_cert_file').encode('utf8')
             if os.path.exists(server_ca_filename):
                 feed_ca = server_ca_filename
             else:
@@ -319,7 +319,7 @@ class CdsLib(object):
             bundle = self.repo_cert_utils.global_cert_bundle_filenames()
             if bundle is not None:
                 log.debug('Configuring global repository authentication credentials for repo')
-                server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+                server_ca_filename = self.config.get('server', 'ca_cert_file').encode('utf8')
                 if os.path.exists(server_ca_filename):
                     feed_ca = server_ca_filename
                 else:
