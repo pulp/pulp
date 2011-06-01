@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.182
+Version:        0.0.183
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -311,6 +311,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 01 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.183-1
+- Added configuration for CA certificate for server's SSL certificate and
+  sending of it to CDS instances. (jason.dobies@redhat.com)
+
 * Tue May 31 2011 John Matthews <jmatthew@redhat.com> 0.0.182-1
 - Bump to grinder 0.100 (jmatthews@redhat.com)
 - Cleanup with merge of repo sync refactoring (jmatthews@redhat.com)
