@@ -127,7 +127,7 @@ class CdsLib(object):
                 if os.path.exists(ca_filename):
                     os.remove(ca_filename)
             else:
-                f = open(ca_filename)
+                f = open(ca_filename, 'w')
                 f.write()
                 f.close()
         except Exception:
