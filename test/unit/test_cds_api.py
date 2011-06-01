@@ -296,6 +296,8 @@ class CdsApiTests(unittest.TestCase):
 
         updated = self.cds_api.update('update-cds', delta)
 
+        time.sleep(1) # seeing if this clears up issues with the group not always being updated
+
         # Verify
         self.assertTrue(updated is not None)
 
@@ -782,6 +784,9 @@ class CdsApiTests(unittest.TestCase):
 
         self.assertTrue('group_members' in sync_payload)
         self.assertTrue(sync_payload['group_members'] is None)
+
+        self.assertTrue('server_ca_cert' in sync_payload)
+        self.assertTrue(sync_payload['server_ca_cert'] is None)
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(4, len(history))

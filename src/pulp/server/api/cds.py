@@ -240,7 +240,7 @@ class CdsApi(BaseApi):
                 raise PulpException('Group ID must match the standard ID restrictions')
 
         # Update ----------
-        cds = self.cds(hostname)
+        cds = self.collection.find_one({'hostname': hostname})
 
         # If we ever get enough values to warrant a loop, we can add it. For now, it's
         # just simpler to handle one at a time.
@@ -484,6 +484,19 @@ class CdsApi(BaseApi):
 
         repo_cert_utils = RepoCertUtils(config.config)
 
+        # If the server's CA certificate is specified, send it over
+        server_ca_certificate = None
+        if config.config.has_option('security', 'ssl_ca_certificate'):
+            ca_cert_file = config.config.get('security', 'ssl_ca_certificate')
+
+            try:
+                f = open(ca_cert_file, 'r')
+                server_ca_certificate = f.read()
+                f.close()
+            except Exception:
+                log.exception('Could not load server CA certificate file [%s]' % ca_cert_file)
+                server_ca_certificate = None
+
         # Load the repo objects to send to the CDS with the call
         repos = []
         repo_cert_bundles = {}
@@ -521,6 +534,7 @@ class CdsApi(BaseApi):
             'global_cert_bundle' : global_cert_bundle,
             'group_id'           : group_id,
             'group_members'      : member_hostnames,
+            'server_ca_cert'     : server_ca_certificate,
         }
 
         # -- dispatch -------------------------------------

@@ -106,9 +106,41 @@ class CdsLib(object):
         global_cert_bundle = sync_data['global_cert_bundle']
         group_id = sync_data['group_id']
         group_members = sync_data['group_members']
+        ca_cert_pem = sync_data['server_ca_cert']
 
         packages_location = self.config.get('cds', 'packages_dir')
-                
+
+        # Update the repo certificate bundles
+        for repo in repos:
+            bundle = repo_cert_bundles[repo['id']]
+
+            try:
+                self._set_repo_auth(repo['id'], repo['relative_path'], bundle)
+            except Exception:
+                log.exception('Error updating certificate bundle for repo [%s]' % repo['id'])
+                error_messages.append('Error updating certificate bundle for repo [%s]' % repo['id'])
+
+        # Update the CA certificate for the server
+        ca_filename = self.config.get('server', 'ca_cert_file')
+        try:
+            if ca_cert_pem is None:
+                if os.path.exists(ca_filename):
+                    os.remove(ca_filename)
+            else:
+                f = open(ca_filename)
+                f.write()
+                f.close()
+        except Exception:
+            log.exception('Error updating server CA certificate at [%s]' % ca_filename)
+            error_messages.append('Error updating server CA certificate at [%s]' % ca_filename)
+
+        # Update the global certificate bundle
+        try:
+            self._set_global_repo_auth(global_cert_bundle)
+        except Exception:
+            log.exception('Error updating global cert bundle')
+            error_messages.append('Error updating global certificate bundle')
+
         # Clean up any repos that were once synchronized but are no longer associated with the CDS
         try:
             self._delete_removed_repos(repos)
@@ -146,23 +178,6 @@ class CdsLib(object):
             repos_file = open(os.path.join(packages_location, REPO_LIST_FILENAME), 'w')
             repos_file.write('')
             repos_file.close()
-
-        # Update the repo certificate bundles
-        for repo in repos:
-            bundle = repo_cert_bundles[repo['id']]
-
-            try:
-                self._set_repo_auth(repo['id'], repo['relative_path'], bundle)
-            except Exception:
-                log.exception('Error updating certificate bundle for repo [%s]' % repo['id'])
-                error_messages.append('Error updating certificate bundle for repo [%s]' % repo['id'])
-
-        # Update the global certificate bundle
-        try:
-            self._set_global_repo_auth(global_cert_bundle)
-        except Exception:
-            log.exception('Error updating global cert bundle')
-            error_messages.append('Error updating global certificate bundle')
 
         # Make sure the CDS group list is up to speed
         try:
@@ -290,7 +305,11 @@ class CdsLib(object):
         bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
         if bundle is not None:
             log.debug('Configuring repository for authentication')
-            feed_ca = bundle['ca'].encode('utf8')
+            server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+            if os.path.exists(server_ca_filename):
+                feed_ca = server_ca_filename
+            else:
+                feed_ca = bundle['ca'].encode('utf8')
             feed_cert = bundle['cert'].encode('utf8')
             feed_key = bundle['key'].encode('utf8')
             ssl_verify = 1
@@ -300,7 +319,11 @@ class CdsLib(object):
             bundle = self.repo_cert_utils.global_cert_bundle_filenames()
             if bundle is not None:
                 log.debug('Configuring global repository authentication credentials for repo')
-                feed_ca = bundle['ca'].encode('utf8')
+                server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+                if os.path.exists(server_ca_filename):
+                    feed_ca = server_ca_filename
+                else:
+                    feed_ca = bundle['ca'].encode('utf8')
                 feed_cert = bundle['cert'].encode('utf8')
                 feed_key = bundle['key'].encode('utf8')
                 ssl_verify = 1
