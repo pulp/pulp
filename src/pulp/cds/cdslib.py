@@ -128,7 +128,7 @@ class CdsLib(object):
                     os.remove(ca_filename)
             else:
                 f = open(ca_filename, 'w')
-                f.write()
+                f.write(ca_cert_pem)
                 f.close()
         except Exception:
             log.exception('Error updating server CA certificate at [%s]' % ca_filename)
