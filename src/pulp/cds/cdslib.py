@@ -355,7 +355,10 @@ class CdsLib(object):
             return
 
         repo_list_file = open(repo_list_filename, 'r')
-        existing_repo_relative_urls = repo_list_file.read().split()
+        repo_list_contents = repo_list_file.read()
+        repo_list_file.close()
+
+        existing_repo_relative_urls = repo_list_contents.split()
 
         # Transform the list of repo dicts into just a list of relative URLs; this will
         # make the existence of a repo checking much simpler.
@@ -364,7 +367,7 @@ class CdsLib(object):
         # Determine the repos that are no longer supposed to be syncced
         delete_us_relative_urls = [r for r in existing_repo_relative_urls if r not in sync_repo_relative_urls]
 
-        # Delete the local paths for those urls
+        # Delete the local paths and protection for those repos
         for relative_path in delete_us_relative_urls:
             doomed = os.path.join(packages_dir, relative_path)
             log.info('Removing old repo [%s]' % doomed)
@@ -373,6 +376,8 @@ class CdsLib(object):
                 shutil.rmtree(doomed)
             else:
                 log.warn('Repository at [%s] could not be found for deletion' % doomed)
+
+            self.protected_repo_utils.delete_protected_repo(relative_path)
 
     def _delete_all_repos(self):
         '''
