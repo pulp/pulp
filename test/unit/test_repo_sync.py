@@ -89,6 +89,7 @@ class TestRepoSync(unittest.TestCase):
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
+        
         for r in repos:
             self.assertTrue(r)
         sync_tasks = [repo_sync.sync(r["id"]) for r in repos]
@@ -102,6 +103,7 @@ class TestRepoSync(unittest.TestCase):
         for r in repos:
             synced_repo = self.rapi.repository(r["id"])
             self.assertTrue(synced_repo)
+            print r["id"], len(synced_repo["packages"])
             self.assertTrue(len(synced_repo["packages"]) > 0)
 
     def test_yum_sync_with_exception(self):
