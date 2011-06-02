@@ -1625,8 +1625,8 @@ class RepoApi(BaseApi):
             if fid not in repo['files']:
                 repo['files'].append(fid)
                 changed = True
-                shared_file = "%s/%s/%s" % (pulp.server.util.top_file_location(),
-                                            fileobj['checksum']['sha256'][:3], fileobj['filename'])
+                shared_file = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
+                                            fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
                                                repo['relative_path'], fileobj["filename"])
                 if not os.path.exists(file_repo_path):
