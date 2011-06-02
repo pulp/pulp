@@ -39,7 +39,7 @@ class CDS(Model):
         self.last_sync = None
         self.secret = None
         self.sync_schedule = None
-        self.group_id = None # not a list, only a single group at a time
+        self.cluster_id = None # not a list, only a single cluster at a time
 
     def __str__(self):
         return self.hostname

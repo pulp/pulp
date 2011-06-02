@@ -118,13 +118,13 @@ def sync(sync_data):
     cdslib.sync(sync_data)
 
 @remote(secret=getsecret)
-def update_group_membership(group_name, cds_hostnames):
+def update_cluster_membership(cluster_name, cds_hostnames):
     '''
-    See cdslib.CdsLib.update_group_membership for details.
+    See cdslib.CdsLib.update_cluster_membership for details.
     '''
     if cds_hostnames is None:
         members = 'None'
     else:
         members = ', '.join(cds_hostnames)
-    log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
-    cdslib.update_group_membership(group_name, cds_hostnames)
+    log.info('Received group membership update; Cluster [%s], Members [%s]' % (cluster_name, members))
+    cdslib.update_cluster_membership(cluster_name, cds_hostnames)

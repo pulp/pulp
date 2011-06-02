@@ -66,9 +66,9 @@ class CdsInstances(JSONController):
         name = repo_data.get('name', None)
         description = repo_data.get('description', None)
         sync_schedule = repo_data.get('sync_schedule', None)
-        group_id = repo_data.get('group_id', None)
+        cluster_id = repo_data.get('cluster_id', None)
 
-        cds = cds_api.register(hostname, name, description, sync_schedule=sync_schedule, group_id=group_id)
+        cds = cds_api.register(hostname, name, description, sync_schedule=sync_schedule, cluster_id=cluster_id)
 
         path = http.extend_uri_path(hostname)
         grant_automatic_permissions_for_created_resource(http.resource_path(path))
@@ -113,7 +113,7 @@ class CdsInstance(JSONController):
         permission: UPDATE
         success response: 200 OK
         return: a CDS object
-        parameters: mapping of property to value to change; valid changes: name, description, sync_schedule, group_id
+        parameters: mapping of property to value to change; valid changes: name, description, sync_schedule, cluster_id
         """
         delta = self.params()
         updated = cds_api.update(id, delta)

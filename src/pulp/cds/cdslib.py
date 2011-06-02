@@ -81,6 +81,7 @@ class CdsLib(object):
 
         self.repo_cert_utils.delete_global_cert_bundle()
         self._delete_all_repos()
+        self.update_cluster_membership(None, None)
 
     def sync(self, sync_data):
         '''
@@ -89,7 +90,7 @@ class CdsLib(object):
         repos that were previously synchronized but are no longer in the given list of repos.
 
         @param sync_data: package of all data the CDS needs to configure itself, including
-                          repo information and redundent group membership information;
+                          repo information and redundent cluster membership information;
                           see the CDS API for information on what is contained
         @type  sync_data: dict
         '''
@@ -104,8 +105,8 @@ class CdsLib(object):
         base_url = sync_data['repo_base_url']
         repo_cert_bundles = sync_data['repo_cert_bundles']
         global_cert_bundle = sync_data['global_cert_bundle']
-        group_id = sync_data['group_id']
-        group_members = sync_data['group_members']
+        cluster_id = sync_data['cluster_id']
+        cluster_members = sync_data['cluster_members']
         ca_cert_pem = sync_data['server_ca_cert']
 
         packages_location = self.config.get('cds', 'packages_dir')
@@ -179,30 +180,30 @@ class CdsLib(object):
             repos_file.write('')
             repos_file.close()
 
-        # Make sure the CDS group list is up to speed
+        # Make sure the CDS cluster list is up to speed
         try:
-            self.update_group_membership(group_id, group_members)
+            self.update_cluster_membership(cluster_id, cluster_members)
         except Exception:
-            log.exception('Error updating group membership')
-            error_messages.append('Error updating group membership')
+            log.exception('Error updating cluster membership')
+            error_messages.append('Error updating cluster membership')
 
         if len(error_messages) > 0:
             raise Exception('The following errors occurred during the CDS sync: ' + ', '.join(error_messages))
 
-    def update_group_membership(self, group_name, cds_hostnames):
+    def update_cluster_membership(self, cluster_name, cds_hostnames):
         '''
-        Updates the local knowledge of this CDS instance's group membership
-        and other CDS instances in the same group.
+        Updates the local knowledge of this CDS instance's cluster membership
+        and other CDS instances in the same cluster.
 
-        If group_name is None, the effect is that this CDS has been removed
-        from a group.
+        If cluster_name is None, the effect is that this CDS has been removed
+        from a cluster.
 
-        If the group membership has not changed,
+        If the cluster membership has not changed, no changes are made.
 
-        @param group_name: identifies the group the CDS is a member in
-        @type  group_name: str or None
+        @param cluster_name: identifies the cluster the CDS is a member in
+        @type  cluster_name: str or None
 
-        @param cds_hostnames: list of all CDS instances in the group (this instance
+        @param cds_hostnames: list of all CDS instances in the cluster (this instance
                               will be listed in this list as well)
         @type  cds_hostnames: list of str
         '''
@@ -210,18 +211,18 @@ class CdsLib(object):
             cds_hostnames = []
             
         members = ', '.join(cds_hostnames)
-        log.info('Received group membership update; Group [%s], Members [%s]' % (group_name, members))
+        log.info('Received cluster membership update; Cluster [%s], Members [%s]' % (cluster_name, members))
 
         file_storage = FilePermutationStore()
         file_storage.open()
 
         try:
-            # Only edit if there were changes to the CDS groups
+            # Only edit if there were changes to the CDS cluster
             if sorted(file_storage.permutation) != sorted(cds_hostnames):
                 file_storage.permutation = cds_hostnames
                 file_storage.save()
             else:
-                log.info('No changes needed to be made to group memberships')
+                log.info('No changes needed to be made to cluster memberships')
         finally:
             file_storage.close()
 
