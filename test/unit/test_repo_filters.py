@@ -78,7 +78,7 @@ class TestRepoFilters(unittest.TestCase):
         self.filter_api.clean()
         filters = self.filter_api.filters()
         assert(len(filters) == 0)
- 
+
     def test_delete(self):
         self.filter_api.create('filter-test', type="blacklist")
         self.filter_api.delete('filter-test')
@@ -90,7 +90,7 @@ class TestRepoFilters(unittest.TestCase):
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
-        repo_sync._sync(repo_id='some-id')
+        repo_sync.sync(repo_id='some-id')
         repo_sync._clone('some-id', repoid, repoid)
         filter_ids = ["filter-test1", "filter-test2"]
         # Try without creating filters
@@ -113,7 +113,7 @@ class TestRepoFilters(unittest.TestCase):
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
-        repo_sync._sync(repo_id='some-id')
+        repo_sync.sync(repo_id='some-id')
         repo_sync._clone('some-id', repoid, repoid)
         self.filter_api.create('filter-test1', type="blacklist")
         self.filter_api.create('filter-test2', type="whitelist")
@@ -133,7 +133,7 @@ class TestRepoFilters(unittest.TestCase):
         parent_repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(parent_repo is not None)
-        repo_sync._sync(repo_id='some-id')
+        repo_sync.sync(repo_id='some-id')
         repo_sync._clone('some-id', repoid, repoid)
         filters = self.rapi.list_filters(repoid)
         self.assertTrue(len(filters) == 0)
@@ -144,14 +144,14 @@ class TestRepoFilters(unittest.TestCase):
         self.rapi.add_filters(repoid, filter_ids)
         filters = self.rapi.list_filters(repoid)
         self.assertTrue(len(filters) == 2)
-        
+
     def test_nonexistent_filter_delete(self):
         try:
             self.filter_api.delete("non-existent-filter")
             self.assertTrue(False)
         except:
             pass
-        
+
     def test_repo_associated_filter_delete(self):
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'file://test')
@@ -163,11 +163,11 @@ class TestRepoFilters(unittest.TestCase):
             self.assertTrue(False)
         except:
             pass
-        
+
         self.filter_api.delete("filter-test1", force=True)
         filters = self.rapi.list_filters('some-id')
         self.assertTrue(len(filters) == 0)
-        
+
     def test_add_packages_to_filter(self):
         filter = self.filter_api.create('filter-test', type="blacklist", description="test filter",
                                 package_list=['abc'])
@@ -187,7 +187,7 @@ class TestRepoFilters(unittest.TestCase):
         filter = self.filter_api.filter('filter-test')
         self.assertTrue("^python" not in filter['package_list'])
         self.assertTrue("xyz*" not in filter['package_list'])
-        
+
     def test_add_remove_filters(self):
         filter = self.filter_api.create('filter-test1', type="blacklist", description="test filter",
                                         package_list=['abc',"^python","xyz*"])
@@ -200,17 +200,17 @@ class TestRepoFilters(unittest.TestCase):
             self.assertTrue(False)
         except:
             pass
-        
+
         local_repo = self.rapi.create('some-id1', 'some name1', 'i386',
                                       'file://test')
         self.rapi.add_filters('some-id1', filter_ids)
         filters = self.rapi.list_filters('some-id1')
         self.assertTrue(len(filters) == 2)
-        
+
         self.rapi.remove_filters('some-id1', filter_ids)
         filters = self.rapi.list_filters('some-id1')
         self.assertTrue(len(filters) == 0)
-        
+
 
 if __name__ == '__main__':
     logging.root.addHandler(logging.StreamHandler())

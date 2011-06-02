@@ -56,7 +56,7 @@ class TestRepoSyncSchedule(unittest.TestCase):
                                 'http://repos.fedorapeople.org/repos/pulp/pulp/fedora-14/x86_64/')
         self.assertTrue(repo is not None)
         try:
-            repo_sync._sync(repo['id'])
+            repo_sync.sync(repo['id'])
         except Exception:
             # No need for this, an exception with register as a failure and
             # be more informative than the failed assertion

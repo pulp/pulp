@@ -89,11 +89,11 @@ class TestRepoSync(unittest.TestCase):
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
-        
+
         for r in repos:
             self.assertTrue(r)
         sync_tasks = [repo_sync.sync(r["id"]) for r in repos]
-        
+
         # Poll tasks and wait for sync to finish
         for r in repos:
             while self.rapi.find_if_running_sync(r["id"]):
@@ -116,7 +116,7 @@ class TestRepoSync(unittest.TestCase):
 
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'http://jmatthews.fedorapeople.org/repo_with_bad_read_perms/')
-        repo_sync._sync(repo['id'], progress_callback=callback)
+        repo_sync.sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         self.assertTrue(packages is not None)
@@ -139,7 +139,7 @@ class TestRepoSync(unittest.TestCase):
                 "pulp-test-package-0.2.1-1.fc11.x86_64.rpm",
                 "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"))
             self.assertTrue("HTTP status code of 403" in e["error"])
-        
+
     def test_local_sync_with_exception(self):
         #This test will only run correctly as a non-root user
         if os.getuid() == 0:
@@ -165,7 +165,7 @@ class TestRepoSync(unittest.TestCase):
             self.assertFalse(os.access(bad_tree_path, os.R_OK))
             repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'file://%s' % datadir)
-            repo_sync._sync(repo['id'], progress_callback=callback)
+            repo_sync.sync(repo['id'], progress_callback=callback)
             found = self.rapi.repository(repo['id'])
             packages = found['packages']
             self.assertTrue(packages is not None)
