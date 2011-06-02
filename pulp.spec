@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.185
+Version:        0.0.186
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -311,6 +311,10 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jun 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.186-1
+- Reduce sync logging (jmatthew@redhat.com)
+- Fix for moving get_synchronizer from RepoApi to repo_sync
+  (jmatthew@redhat.com)
 * Wed Jun 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.185-1
 - Fix broken repo delete command. (jortel@redhat.com)
 - Fixing test_sync_multiple_repos to use same logic as in the code to check
