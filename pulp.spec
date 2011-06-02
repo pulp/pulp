@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.183
+Version:        0.0.186
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -246,9 +246,9 @@ fi
 # For noarch packages: sitelib
 %{python_sitelib}/pulp/server/
 %{python_sitelib}/pulp/repo_auth/
-%config(noreplace) %{_sysconfdir}/pulp/pulp.conf
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp.conf
+%config %{_sysconfdir}/pulp/pulp.conf
+%config %{_sysconfdir}/pulp/repo_auth.conf
+%config %{_sysconfdir}/httpd/conf.d/pulp.conf
 %ghost %{_sysconfdir}/yum.repos.d/pulp.repo
 %attr(775, apache, apache) %{_sysconfdir}/pulp
 %attr(775, apache, apache) /srv/pulp
@@ -300,9 +300,9 @@ fi
 %{_exec_prefix}/lib/gofer/plugins/cdsplugin.*
 %attr(775, apache, apache) /srv/pulp
 %attr(750, apache, apache) /srv/pulp/cds.wsgi
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
-%config(noreplace) %{_sysconfdir}/pulp/cds.conf
-%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+%config %{_sysconfdir}/httpd/conf.d/pulp-cds.conf
+%config %{_sysconfdir}/pulp/cds.conf
+%config %{_sysconfdir}/pulp/repo_auth.conf
 %attr(3775, root, root) %{_sysconfdir}/pki/content
 %attr(3775, root, root) %{_sysconfdir}/rc.d/init.d/pulp-cds
 %attr(3775, apache, apache) /var/lib/pulp-cds
@@ -311,6 +311,26 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Thu Jun 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.186-1
+- Reduce sync logging (jmatthew@redhat.com)
+- Fix for moving get_synchronizer from RepoApi to repo_sync
+  (jmatthew@redhat.com)
+* Wed Jun 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.185-1
+- Fix broken repo delete command. (jortel@redhat.com)
+- Fixing test_sync_multiple_repos to use same logic as in the code to check
+  running sync for a repo before deleting it (skarmark@redhat.com)
+
+* Wed Jun 01 2011 Jeff Ortel <jortel@redhat.com> 0.0.184-1
+- Fixed missing close in CDS repo list. Added call to clean up protection for
+  removed repos. (jason.dobies@redhat.com)
+- Incorrect section name (jason.dobies@redhat.com)
+- 708416 - Order the sync list before determining most recent sync
+  (jason.dobies@redhat.com)
+- The CDS plugin needs access to the server conf properties.
+  (jason.dobies@redhat.com)
+- 709476 - Our conf files should be replaced by default.
+  (jason.dobies@redhat.com)
+
 * Wed Jun 01 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.183-1
 - Added configuration for CA certificate for server's SSL certificate and
   sending of it to CDS instances. (jason.dobies@redhat.com)

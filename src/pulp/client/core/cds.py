@@ -334,18 +334,22 @@ class Status(CDSAction):
 
         # Server data retrieval
         cds = self.cds_api.cds(hostname)
-        sync_list = self.cds_api.sync_list(hostname)
+        weird_ordered_sync_list = self.cds_api.sync_list(hostname)
 
         # Print the CDS details
         print_header(_('CDS Status'))
         _print_cds(cds)
 
         # Print details of the latest sync
-        if sync_list is None or len(sync_list) == 0:
+        if weird_ordered_sync_list is None or len(weird_ordered_sync_list) == 0:
             return
 
         print_header(_('Most Recent Sync Tasks'))
 
+        # Order the syncs in chronological order
+        sync_list = sorted(weird_ordered_sync_list, key=lambda x : x['finish_time'], reverse=True)
+
+        # Apply limit restrictions
         if int(self.opts.num_recent_syncs) < len(sync_list):
             upper_limit = int(self.opts.num_recent_syncs)
         else:

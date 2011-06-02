@@ -611,18 +611,8 @@ class Delete(RepoAction):
     def run(self):
         id = self.get_required_option('id')
         self.get_repo(id)
-
-        cds_unassociate_succeeded, cds_unassociate_failed = \
-            self.repository_api.delete(id=id)
+        self.repository_api.delete(id=id)
         print _("Successful deleted repository [ %s ]") % id
-        if cds_unassociate_succeeded:
-            print _("Unassociated with CDS(s):")
-            for hostname in cds_unassociate_succeeded:
-                print '  %s' % hostname
-        if cds_unassociate_failed:
-            print _("Failed to completely unassociate with CDS(s):")
-            for hostname in cds_unassociate_failed:
-                print '  %s' % hostname
 
 
 class Update(RepoAction):

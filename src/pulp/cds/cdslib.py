@@ -127,8 +127,8 @@ class CdsLib(object):
                 if os.path.exists(ca_filename):
                     os.remove(ca_filename)
             else:
-                f = open(ca_filename)
-                f.write()
+                f = open(ca_filename, 'w')
+                f.write(ca_cert_pem)
                 f.close()
         except Exception:
             log.exception('Error updating server CA certificate at [%s]' % ca_filename)
@@ -305,7 +305,7 @@ class CdsLib(object):
         bundle = self.repo_cert_utils.consumer_cert_bundle_filenames(repo['id'])
         if bundle is not None:
             log.debug('Configuring repository for authentication')
-            server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+            server_ca_filename = self.config.get('server', 'ca_cert_file').encode('utf8')
             if os.path.exists(server_ca_filename):
                 feed_ca = server_ca_filename
             else:
@@ -319,7 +319,7 @@ class CdsLib(object):
             bundle = self.repo_cert_utils.global_cert_bundle_filenames()
             if bundle is not None:
                 log.debug('Configuring global repository authentication credentials for repo')
-                server_ca_filename = self.config.get('security', 'ca_cert_file').encode('utf8')
+                server_ca_filename = self.config.get('server', 'ca_cert_file').encode('utf8')
                 if os.path.exists(server_ca_filename):
                     feed_ca = server_ca_filename
                 else:
@@ -355,7 +355,10 @@ class CdsLib(object):
             return
 
         repo_list_file = open(repo_list_filename, 'r')
-        existing_repo_relative_urls = repo_list_file.read().split()
+        repo_list_contents = repo_list_file.read()
+        repo_list_file.close()
+
+        existing_repo_relative_urls = repo_list_contents.split()
 
         # Transform the list of repo dicts into just a list of relative URLs; this will
         # make the existence of a repo checking much simpler.
@@ -364,7 +367,7 @@ class CdsLib(object):
         # Determine the repos that are no longer supposed to be syncced
         delete_us_relative_urls = [r for r in existing_repo_relative_urls if r not in sync_repo_relative_urls]
 
-        # Delete the local paths for those urls
+        # Delete the local paths and protection for those repos
         for relative_path in delete_us_relative_urls:
             doomed = os.path.join(packages_dir, relative_path)
             log.info('Removing old repo [%s]' % doomed)
@@ -373,6 +376,8 @@ class CdsLib(object):
                 shutil.rmtree(doomed)
             else:
                 log.warn('Repository at [%s] could not be found for deletion' % doomed)
+
+            self.protected_repo_utils.delete_protected_repo(relative_path)
 
     def _delete_all_repos(self):
         '''
