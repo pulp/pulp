@@ -757,7 +757,7 @@ class TestRepoApi(unittest.TestCase):
 
     def test_consumer_certificate(self):
         c = self.capi.create('test-consumer', 'some consumer desc')
-        (pk, pem) = self.capi.certificate(c['id'])
+        pem = self.capi.certificate(c['id'])
         self.assertTrue(pem is not None)
         cert = Certificate()
         cert.update(str(pem))

@@ -72,10 +72,9 @@ class TestAuthApi(unittest.TestCase):
         principal.set_principal(admin_user) # pretend the user is logged in
 
         # Test
-        private_key, cert = self.auth_api.admin_certificate()
+        cert = self.auth_api.admin_certificate()
 
         # Verify
-        self.assertTrue(private_key is not None)
         self.assertTrue(cert is not None)
 
         certificate = Certificate(content=cert)

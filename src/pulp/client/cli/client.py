@@ -29,8 +29,7 @@ class ClientCLI(PulpCLI):
             return
         consumer = Consumer()
         certfile = consumer.crtpath()
-        keyfile = consumer.keypath()
-        if os.access(certfile, os.R_OK) and os.access(keyfile, os.R_OK):
-            self._server.set_ssl_credentials(certfile, keyfile)
+        if os.access(certfile, os.R_OK):
+            self._server.set_ssl_credentials(certfile)
         elif None not in (self.opts.username, self.opts.password):
             self._server.set_basic_auth_credentials(self.opts.username, self.opts.password)

@@ -17,7 +17,8 @@ Contains recurring actions and remote classes.
 """
 
 import os
-from pulp.client import repolib #import pulp.client.repolib as repolib
+from hashlib import sha256
+from pulp.client import repolib
 from pulp.client.server import PulpServer, set_active_server
 from pulp.client.api.consumer import ConsumerAPI
 from pulp.client.package_profile import get_profile
@@ -45,7 +46,7 @@ def pulpserver():
     """
     bundle = ConsumerBundle()
     pulp = PulpServer(cfg.server.host)
-    pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
+    pulp.set_ssl_credentials(bundle.crtpath())
     set_active_server(pulp)
 
 def getsecret():
@@ -55,7 +56,13 @@ def getsecret():
     @rtype: str
     """
     bundle = ConsumerBundle()
-    return bundle.digest()
+    content = bundle.read()
+    if content:
+        hash = sha256()
+        hash.update(content)
+        return hash.hexdigest()
+    else:
+        return None
 
 def ybcleanup(yb):
     try:
@@ -102,7 +109,7 @@ class IdentityAction:
     Detect changes in (pulp) registration status.
     """
     
-    last = (0,0)
+    last = -1
     
     @action(seconds=1)
     def perform(self):
@@ -110,9 +117,7 @@ class IdentityAction:
         Update the plugin's UUID.
         """
         bundle = ConsumerBundle()
-        keymod = self.mtime(bundle.keypath())
-        crtmod = self.mtime(bundle.crtpath())
-        current = (keymod, crtmod)
+        current = self.mtime(bundle.crtpath())
         if current != self.last:
             plugin.setuuid(bundle.getid())
             self.last = current

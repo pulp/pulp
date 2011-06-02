@@ -77,11 +77,10 @@ class PulpAgent(Agent):
         @type consumer: dict
         """
         secret = None
-        credentials = consumer.get('credentials')
-        if credentials:
+        certificate = consumer.get('certificate')
+        if certificate:
             hash = hashlib.sha256()
-            for s in credentials:
-                hash.update(s)
+            hash.update(certificate)
             secret = hash.hexdigest()
         return secret
 

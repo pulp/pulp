@@ -12,10 +12,14 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
-
+from gettext import gettext as _
+from optparse import OptionGroup, SUPPRESS_HELP
 from pulp.client.cli.base import PulpCLI
 from pulp.client.credentials import Login
 from pulp.client.core.utils import system_exit
+from pulp.client.config import Config
+
+_cfg = Config()
 
 
 class AdminCLI(PulpCLI):
@@ -30,8 +34,30 @@ class AdminCLI(PulpCLI):
             return
         login = Login()
         certfile = login.crtpath()
-        keyfile = login.keypath()
-        if os.access(certfile, os.R_OK) and os.access(keyfile, os.R_OK):
-            self._server.set_ssl_credentials(certfile, keyfile)
+        if os.access(certfile, os.R_OK):
+            self._server.set_ssl_credentials(certfile)
         elif None not in (self.opts.username, self.opts.password):
             self._server.set_basic_auth_credentials(self.opts.username, self.opts.password)
+            
+            
+    def setup_parser(self):
+        """
+        Add options to the command line parser.
+        @note: this method may be overridden to define new options
+        """
+        PulpCLI.setup_parser(self)
+
+        server = OptionGroup(self.parser, _('Pulp Server Information'))
+        host = _cfg.server.host or 'localhost.localdomain'
+        server.add_option('--host', dest='host', default=host,
+                          help=_('pulp server host name (default: %s)') % host)
+        port = _cfg.server.port or '443'
+        server.add_option('--port', dest='port', default=port,
+                          help=SUPPRESS_HELP)
+        scheme = _cfg.server.scheme or 'https'
+        server.add_option('--scheme', dest='scheme', default=scheme,
+                          help=SUPPRESS_HELP)
+        path = _cfg.server.path or '/pulp/api'
+        server.add_option('--path', dest='path', default=path,
+                          help=SUPPRESS_HELP)
+        self.parser.add_option_group(server)

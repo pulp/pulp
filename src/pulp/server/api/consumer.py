@@ -254,10 +254,11 @@ class ConsumerApi(BaseApi):
         consumer = self.consumer(id)
         if not consumer:
             raise PulpException('Consumer [%s] not found', id)
-        bundle = consumer.get('credentials')
+        bundle = consumer.get('certificate')
         if not bundle:
             bundle = cert_generator.make_cert(id)
-            consumer['credentials'] = bundle
+            bundle = ''.join(bundle)
+            consumer['certificate'] = bundle
             self.collection.save(consumer, safe=True)
         return bundle
 

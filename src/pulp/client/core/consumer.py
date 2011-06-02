@@ -174,11 +174,9 @@ class Create(ConsumerAction):
         id = self.get_required_option('id')
         description = getattr(self.opts, 'description', id)
         consumer = self.consumer_api.create(id, description)
-        cert_dict = self.consumer_api.certificate(id)
-        key = cert_dict['private_key']
-        crt = cert_dict['certificate']
+        crt = self.consumer_api.certificate(id)
         bundle = ConsumerBundle()
-        bundle.write(key, crt)
+        bundle.write(crt)
         pkginfo = get_profile("rpm").collect()
         self.consumer_api.profile(id, pkginfo)
         print _("Successfully created consumer [ %s ]") % consumer['id']
@@ -197,7 +195,6 @@ class Delete(ConsumerAction):
         if self.consumerid:
             repo_file = RepoFile(_cfg.client.repo_file)
             repo_file.delete()
-
             bundle = ConsumerBundle()
             bundle.delete()
         print _("Successfully deleted consumer [%s]") % consumerid

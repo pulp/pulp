@@ -35,7 +35,7 @@ def pulpserver():
     cfg = Config()
     bundle = get_consumer()
     pulp = PulpServer(cfg.server.host, timeout=10)
-    pulp.set_ssl_credentials(bundle.crtpath(), bundle.keypath())
+    pulp.set_ssl_credentials(bundle.crtpath())
     set_active_server(pulp)
 
 def update_consumer_profile(cid):

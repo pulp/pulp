@@ -16,38 +16,67 @@ Module containing classes to manage client credentials.
 """
 
 import os
-import hashlib
+import re
 from pulp.client.config import Config
 from gettext import gettext as _
 from M2Crypto import X509
+from logging import getLogger
+
+log = getLogger(__name__)
 
 cfg = Config()
 
 
-class CredentialError(Exception):
-    """
-    Credentials fail to validate
-    """
-    pass
-
-
 class Bundle:
     """
-    Represents x509, pem encoded key & cert bundles.
+    Represents x509, pem encoded key & certificate bundles.
+    It works with separate key and certificate file and/or
+    consolidated files.
     """
+
+    KEY_PATTERN = re.compile(r'[\-]{5}BEGIN (RSA|DSA) PRIVATE KEY[\-]{5}')
+    CRT_PATTERN = re.compile(r'[\-]{5}BEGIN CERTIFICATE[\-]{5}')
+    
+    @classmethod
+    def haskey(cls, s):
+        """
+        Get whether the string contains a PEM encoded private key.
+        @param s: A PEM string.
+        @type s: str
+        @return: True if contains a key.
+        @rtype: bool
+        """
+        m = cls.KEY_PATTERN.search(s)
+        return ( m is not None )
+
+    @classmethod
+    def hascrt(cls, s):
+        """
+        Get whether the string contains a PEM encoded certificate.
+        @param s: A PEM string.
+        @type s: str
+        @return: True if contains a certificate.
+        @rtype: bool
+        """
+        m = cls.CRT_PATTERN.search(s)
+        return ( m is not None )
+
+    @classmethod
+    def hasboth(cls, s):
+        """
+        Get whether the string contains both
+          a PEM encoded private key AND certificate.
+        @param s: A PEM string.
+        @type s: str
+        @return: True if contains a key & cert.
+        @rtype: bool
+        """
+        return ( cls.haskey(s) and cls.hascrt(s) )
 
     def root(self):
         """
         Get the bundle I{root} directory.
         @return: An absolute path.
-        @rtype: str
-        """
-        pass
-
-    def keypath(self):
-        """
-        Get the absolute path to the private key file.
-        @return: Absolute path to the private key.
         @rtype: str
         """
         pass
@@ -66,67 +95,41 @@ class Bundle:
         @return: True if exists & valid.
         @rtype: bool
         """
-        validkey = os.path.exists(self.keypath())
-        validcrt = os.path.exists(self.crtpath())
-        return ( validkey and validcrt )
+        s = self.read()
+        return self.hasboth(s)
 
     def read(self):
         """
         Read and return the bundle contents.
-        @return: A tuple containing the PEM encoded key & cert.
-        @rtype: tuple
-        """
-        if self.valid():
-            f = open(self.keypath(), 'r')
-            key = f.read()
-            f.close()
-            f = open(self.crtpath(), 'r')
-            crt = f.read()
-            f.close()
-        else:
-            key = None
-            crt = None
-        return (key, crt)
-
-    def digest(self):
-        """
-        Get a SHA-1 hex digest for the bundle contents.
-        @return: hex digest
+        @return: A string containing the PEM encoded key & cert.
         @rtype: str
         """
-        if not self.valid():
-            return None
-        sha = hashlib.sha256()
-        for s in self.read():
-            sha.update(s)
-        return sha.hexdigest()
+        f = open(self.crtpath())
+        content = f.read()
+        f.close()
+        return content
 
-
-    def write(self, key, crt):
+    def write(self, content):
         """
-        Write the specified I{key} & I{crt} bundle.
-        @param key: The PEM text for the private key.
-        @type key: str
-        @param crt: The PEM text for the cert.
-        @type crt: str
+        Write the specified bundle content.
+        @param content: The PEM text for the private key and certificate.
+        @type content: str
         """
         self.mkdir()
-        f = open(self.keypath(), 'w')
-        f.write(key)
-        f.close()
         f = open(self.crtpath(), 'w')
-        f.write(crt)
+        f.write(content)
         f.close()
 
     def delete(self):
         """
-        Delete the bundle.
+        Delete the certificate.
         """
-        for path in (self.keypath(), self.crtpath()):
-            try:
+        path = self.crtpath()
+        try:
+            if path and os.path.exists(path):
                 os.unlink(path)
-            except:
-                pass
+        except IOError:
+            log.error(path, exc_info=1)
 
     def mkdir(self):
         """
@@ -135,6 +138,9 @@ class Bundle:
         path = self.root()
         if not os.path.exists(path):
             os.makedirs(path)
+
+    def __str__(self):
+        return 'bundle: %s' % repr(self.keypath(), self.crtpath())
 
 
 class Login(Bundle):
@@ -148,9 +154,6 @@ class Login(Bundle):
 
     def root(self):
         return os.path.expanduser(self.ROOT)
-
-    def keypath(self):
-        return os.path.join(self.root(), self.KEY)
 
     def crtpath(self):
         return os.path.join(self.root(), self.CRT)
@@ -168,9 +171,6 @@ class Consumer(Bundle):
     def root(self):
         return self.ROOT
 
-    def keypath(self):
-        return os.path.join(self.root(), self.KEY)
-
     def crtpath(self):
         return os.path.join(self.root(), self.CRT)
 
@@ -180,15 +180,11 @@ class Consumer(Bundle):
         @return: The consumer ID.
         @rtype: str
         """
-        try:
-            f = open(self.crtpath())
-            content = f.read()
-            f.close()
+        if self.valid():
+            content = self.read()
             x509 = X509.load_cert_string(content)
             subject = self.subject(x509)
             return subject['CN']
-        except IOError:
-            pass
 
     def subject(self, x509):
         """
@@ -207,103 +203,3 @@ class Consumer(Bundle):
                 d[key] = str(asn1)
                 continue
         return d
-
-
-class Manual:
-    """
-    A manually defined bundle.
-    Usually passed as parameters to the CLI.
-    """
-
-    __keypath = None
-    __crtpath = None
-
-    @classmethod
-    def set(self, key, crt):
-        self.__keypath = key
-        self.__crtpath = crt
-
-    def keypath(self):
-        return self.__keypath
-
-    def crtpath(self):
-        return self.__crtpath
-
-    def valid(self):
-        return ( self.__keypath and self.__crtpath )
-
-
-class Credentials:
-    """
-    Represents the client credentials.
-    """
-
-    __userid = None
-    __password = None
-    __server   = None
-
-    @classmethod
-    def setuser(cls, userid=None, password=None):
-        """
-        Set the current logged in user credentials.
-        @param userid: The user name.
-        @type userid: str
-        @param password: The password
-        @type password: str
-        """
-        cls.__userid = userid
-        cls.__password = password
-
-    @classmethod
-    def setcert(cls, keypath=None, crtpath=None):
-        """
-        Overrides certificate credentials.
-        @param keypath: The abolute path to a private key.
-        @type keypath: str
-        @param crtpath: The absolute path to a cert.
-        @type crtpath: str
-        """
-        Manual.set(keypath, crtpath)
-        
-    @classmethod    
-    def setserver(cls, server=None):
-        """
-        Overrides certificate server url
-        @param server: server url
-        @type server: str
-        """
-        cls.__server = server 
-
-    def best(self):
-        """
-        Get the best available credentials.
-        @return: Tuple: (userid,pwd,keypath,crtpath)
-        @rtype: tuple.
-        """
-        if not self.__userid or not self.__password:
-            key, crt = self.__bestbundle()
-        else:
-            key, crt = (None, None)
-        credentials = (self.__userid, self.__password, key, crt, self.__server)
-        self.validate(credentials)
-        return credentials
-
-    def validate(self, credentials):
-        """
-        Validate credentials.
-        Must have either valid userid/password OR valid key,crt.
-        @raise CredentialsError: When credentials insufficient.
-        """
-        userid, password, key, crt, server = credentials
-        if userid and password:
-            return
-        if key and crt:
-            return
-        raise CredentialError, _('No valid credentials found')
-
-    def __bestbundle(self):
-        for bclass in (Manual, Login, Consumer):
-            b = bclass()
-            if b.valid():
-                return (b.keypath(), b.crtpath())
-        return (None, None)

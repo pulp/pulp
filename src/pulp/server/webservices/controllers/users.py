@@ -129,9 +129,8 @@ class AdminAuthCertificates(JSONController):
         Creates and returns an authentication certificate for the currently
         logged in user.
         '''
-        private_key, cert = auth_api.admin_certificate()
-        certificate = {'certificate': cert, 'private_key': private_key}
-        return self.ok(certificate)
+        bundle = auth_api.admin_certificate()
+        return self.ok(bundle)
 
     # web.py application ----------------------------------------------------------
 

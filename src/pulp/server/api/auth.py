@@ -32,12 +32,11 @@ class AuthApi(BaseApi):
         @return: tuple of the private key and certificate
         @rtype:  (string, string)
         '''
-
         # Get the currently logged in user
         user = principal.get_principal()
-
-        private_key, cert = cert_generator.make_admin_user_cert(user)
-        return private_key, cert
+        bundle = cert_generator.make_admin_user_cert(user)
+        bundle = ''.join(bundle)
+        return bundle
 
     def isadmin(self, login):
         """

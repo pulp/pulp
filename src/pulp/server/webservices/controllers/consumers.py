@@ -238,9 +238,8 @@ class ConsumerDeferredFields(JSONController):
         """
         valid_filters = ('id')
         filters = self.filters(valid_filters)
-        private_key, certificate = consumer_api.certificate(id)
-        certificate = {'certificate': certificate, 'private_key': private_key}
-        return self.ok(certificate)
+        bundle = consumer_api.certificate(id)
+        return self.ok(bundle)
 
     def keyvalues(self, id):
         """

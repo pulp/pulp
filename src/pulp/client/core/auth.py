@@ -45,12 +45,10 @@ class Login(Action):
             password = self.get_required_option('password')
             server.active_server.set_basic_auth_credentials(username, password)
         # Retrieve the certificate information from the server
-        cert_dict = self.user_api.admin_certificate()
+        crt = self.user_api.admin_certificate()
         # Write the certificate data
         bundle = LoginBundle()
-        key = cert_dict['private_key']
-        crt = cert_dict['certificate']
-        bundle.write(key, crt)
+        bundle.write(crt)
         print _('User credentials successfully stored at [%s]') % bundle.root()
 
 

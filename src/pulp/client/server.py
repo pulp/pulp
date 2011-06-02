@@ -91,7 +91,7 @@ class Server(object):
         """
         raise NotImplementedError('base server class method called')
 
-    def set_ssl_credentials(self, certfile, keyfile):
+    def set_ssl_credentials(self, certfile):
         """
         Set ssl certificate and public key credentials
         @type certfile: str
@@ -193,7 +193,7 @@ class PulpServer(Server):
         self._log = getLogger('pulp')
 
         self.__certfile = None
-        self.__keyfile = None
+
 
     # protected server connection methods -------------------------------------
 
@@ -202,14 +202,13 @@ class PulpServer(Server):
 
     def _https_connection(self):
         # make sure that passed in username and password overrides cert/key auth
-        if None in (self.__certfile, self.__keyfile) or \
+        if self.__certfile is None or \
                 'Authorization' in self.headers:
             return httplib.HTTPSConnection(self.host, self.port)
         ssl_context = SSL.Context('sslv3')
         ssl_context.set_session_timeout(self.timeout)
-        ssl_context.load_cert(self.__certfile, self.__keyfile)
-        #print >> sys.stderr, 'making connection with: %s, %s' % (self.__certfile,
-        #                                                         self.__keyfile)
+        ssl_context.load_cert(self.__certfile)
+        #print >> sys.stderr, 'making connection with: %s' % (self.__certfile)
         return httpslib.HTTPSConnection(self.host,
                                         self.port,
                                         ssl_context=ssl_context)
@@ -278,19 +277,14 @@ class PulpServer(Server):
         encoded = base64.encodestring(raw)[:-1]
         self.headers['Authorization'] = 'Basic ' + encoded
 
-    def set_ssl_credentials(self, certfile, keyfile):
+    def set_ssl_credentials(self, certfile):
         if not os.access(certfile, os.R_OK):
             raise RuntimeError(_('certificate file %s does not exist or cannot be read')
                                % certfile)
-        if not os.access(keyfile, os.R_OK):
-            raise RuntimeError(_('key file %s does not exist or cannot be read')
-                               % keyfile)
         self.__certfile = certfile
-        self.__keyfile = keyfile
 
     def has_credentials_set(self):
-        return 'Authorization' in self.headers or \
-                None not in (self.__certfile, self.__keyfile)
+        return 'Authorization' in self.headers or self.__certfile is not None
 
     # request methods ---------------------------------------------------------
 

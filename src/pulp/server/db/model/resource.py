@@ -31,8 +31,8 @@ class Consumer(Model):
     def __init__(self, id, description, key_value_pairs={}):
         self._id = id
         self.id = id
-        self.credentials = None
         self.description = description
+        self.certificate = None
         self.package_profile = []
         self.repoids = []
         self.key_value_pairs = key_value_pairs
