@@ -75,6 +75,7 @@ class TaskHistory(Model):
 
     def __init__(self, task):
         super(TaskHistory, self).__init__()
+        self.task_type = task.__class__.__name__
         for attr in ('id', 'class_name', 'method_name', 'args', 'kwargs',
                      'state', 'progress', 'result', 'exception', 'traceback',
                      'consecutive_failures'):
