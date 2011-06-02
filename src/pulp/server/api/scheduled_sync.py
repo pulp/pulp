@@ -100,9 +100,6 @@ def _add_repo_scheduled_sync_task(repo):
     @type repo: L{pulp.server.db.model.resource.Repo}
     @param repo: repo to add sync task for
     """
-    if repo['source'] is None:
-        # TODO raise appropriate exception, cannot add schedule to repo with no source
-        pass
     # hack to avoid circular imports
     import repo_sync
     from pulp.server.api.repo import RepoApi
@@ -180,6 +177,8 @@ def update_repo_schedule(repo, new_schedule):
     @type new_schedule: dict
     @param new_schedule: dictionary representing new schedule
     """
+    if repo['source'] is None:
+        raise PulpException(_('Cannot add schedule to repository with out sync source'))
     repo['sync_schedule'] = validate_schedule(new_schedule)
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
