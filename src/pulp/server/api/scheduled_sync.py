@@ -104,7 +104,7 @@ def _add_repo_scheduled_sync_task(repo):
     api = RepoApi()
     task = RepoSyncTask(repo_sync._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    synchronizer = api.get_synchronizer(repo['source']['type'])
+    synchronizer = repo_sync.get_synchronizer(repo['source']['type'])
     task.set_synchronizer(api, repo['id'], synchronizer)
     async.enqueue(task)
 
