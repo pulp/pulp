@@ -18,7 +18,7 @@ class TaskingException(Exception):
     """
     pass
 
-# task exceptions -------------------------------------------------------------
+# task exceptions --------------------------------------------------------------
 
 class TaskThreadException(TaskingException):
     """
@@ -62,11 +62,11 @@ class TaskThreadStateError(TaskThreadException):
     '''
     pass
 
-# task queue exceptions -------------------------------------------------------
+# task queue exceptions --------------------------------------------------------
 
 class UnscheduledTaskException(TaskingException):
     """
-    Raised when a task calls schedule, but can no longer be scheduled
+    Raised when a task calls schedule, but can no longer be scheduled.
     """
     pass
 
@@ -74,5 +74,13 @@ class UnscheduledTaskException(TaskingException):
 class NonUniqueTaskException(TaskingException):
     """
     Raised when a non-unique task is enqueued and the unique flag is True.
+    """
+    pass
+
+# task storage exceptions ------------------------------------------------------
+
+class DuplicateSnapshotError(TaskingException):
+    """
+    Raised when more than one snapshot is created for the same task.
     """
     pass

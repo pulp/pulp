@@ -26,8 +26,7 @@ class TaskSnapshot(Model):
     """
 
     collection_name = "task_snapshots"
-    unique_indicies = ()
-    other_indicies = ('id', 'state')
+    unique_indicies = ('id',) # forces only 1 snapshot per task
 
     def __init__(self, serialized_task=None):
         """

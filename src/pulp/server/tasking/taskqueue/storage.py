@@ -16,11 +16,15 @@ import datetime
 import heapq
 import itertools
 import logging
+import sys
 import types
 from gettext import gettext as _
 
+from pymongo.errors import DuplicateKeyError
+
 from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
 from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
+from pulp.server.tasking.exception import DuplicateSnapshotError
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
@@ -331,11 +335,14 @@ class HybridStorage(VolatileStorage):
     # wait queueue methods
 
     def enqueue_waiting(self, task):
-        super(HybridStorage, self).enqueue_waiting(task)
         # create and keep a snapshot of the task that can be loaded from the
         # database and executed across reboots, server restarts, etc.
         snapshot = task.snapshot()
-        self.snapshot_collection.insert(snapshot)
+        try:
+            self.snapshot_collection.insert(snapshot, safe=True)
+        except DuplicateKeyError:
+            raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
+        super(HybridStorage, self).enqueue_waiting(task)
 
     # storage methods
 
