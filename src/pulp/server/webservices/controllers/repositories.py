@@ -78,12 +78,14 @@ Details object fields:
 
 import itertools
 import logging
+from gettext import gettext as _
 
 import web
 
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server.api import repo_sync
 from pulp.server.api import scheduled_sync
+from pulp.server.api import task_history
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
@@ -98,7 +100,6 @@ from pulp.server.webservices.controllers.base import JSONController, AsyncContro
 
 api = RepoApi()
 pkg_api = PackageApi()
-#_log = logging.getLogger('pulp')
 _log = logging.getLogger(__name__)
 
 # default fields for repositories being sent to the client
@@ -624,7 +625,7 @@ class RepositoryActions(AsyncController):
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)
         return self.accepted(task_info)
-    
+
     def sync_history(self, id):
         """
         @type id: str
@@ -1344,6 +1345,39 @@ class Schedules(JSONController):
         schedules = api.all_schedules()
         return self.ok(schedules)
 
+
+class RepositoryTaskHistory(JSONController):
+
+    available_histories = (
+        'sync',
+    )
+
+    def sync(self, id):
+        return self.ok(task_history.repo_sync(id))
+
+    @JSONController.error_handler
+    @JSONController.auth_required(READ)
+    def GET(self, id, action):
+        """
+        [wiki]
+        title: Repository Action History
+        description: List completed actions and their results for a repository.
+        method: GET
+        path: /repositories/<id>/history/<action name>/
+        permission: READ
+        success response: 200 OK
+        failure response: 404 Not Found if the repository does not exist or no action informaion is available
+        return: list of task history objects
+        """
+        repo = api.repository(id, fields=['id'])
+        if not repo:
+            return self.not_found('No repository with id %s found' % id)
+        method = getattr(self, action, None)
+        if method is None:
+            return self.not_found(_('No history availble for %s on %s') %
+                                  (action, id))
+        return method(id)
+
 # web.py application ----------------------------------------------------------
 
 urls = (
@@ -1359,6 +1393,9 @@ urls = (
 
     '/([^/]+)/(%s)/([^/]+)/$' % '|'.join(RepositoryActions.exposed_actions),
     'RepositoryActionStatus',
+
+    '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
+    'RespositoryTaskHistory',
 )
 
 application = web.application(urls, globals())
