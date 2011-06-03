@@ -25,8 +25,8 @@ from threading import RLock
 
 LOG = logging.getLogger(__name__)
 
-DEFAULT_FILE_LOCK = '/var/lib/pulp-cds/.group-members-lock'
-DEFAULT_FILE_STORE = '/var/lib/pulp-cds/.group-members'
+DEFAULT_FILE_LOCK = '/var/lib/pulp-cds/.cluster-members-lock'
+DEFAULT_FILE_STORE = '/var/lib/pulp-cds/.cluster-members'
 
 # -- storage implementations ---------------------------------------------------
 
@@ -37,7 +37,7 @@ class FilePermutationStore:
     WSGI process and the CDS gofer plugin.
     """
 
-    def __init__(self, store_filename=DEFAULT_FILE_STORE, lock_filename=DEFAULT_FILE_LOCK):
+    def __init__(self, store_filename=None, lock_filename=None):
         """
         Creates a new hook to access a file store. No loading of the contents of the
         underlying file is performed.
@@ -48,6 +48,14 @@ class FilePermutationStore:
         @param lock_filename: full path to the file used to prevent concurrent access
         @type  lock_filename: str
         """
+
+        # Default these here instead of the signature so tests can override
+        if store_filename is None:
+            store_filename = DEFAULT_FILE_STORE
+
+        if lock_filename is None:
+            lock_filename = DEFAULT_FILE_LOCK
+
         self.store_filename = store_filename
         self.lock_filename = lock_filename
 

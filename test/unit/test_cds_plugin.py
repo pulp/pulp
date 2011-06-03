@@ -26,10 +26,14 @@ sys.path.insert(0, commondir)
 
 import mocks
 from pulp.cds.cdslib import loginit, CdsLib, SecretFile
+from pulp.cds.lb import storage
 import testutil
 
 # test root dir
 ROOTDIR = '/tmp/pulp-cds'
+
+TEST_STORAGE_FILE = '/tmp/cds-plugin-storage-test'
+TEST_LOCK_FILE = '/tmp/cds-plugin-storage-lock'
 
 # setup logging
 loginit(os.path.join(ROOTDIR, 'cds.log'))
@@ -50,8 +54,21 @@ class TestCdsPlugin(unittest.TestCase):
         config.set('cds', 'sync_threads', '3')
         self.cds = CdsLib(config)
 
+        if os.path.exists(TEST_STORAGE_FILE):
+            os.remove(TEST_STORAGE_FILE)
+
+        if os.path.exists(TEST_LOCK_FILE):
+            os.remove(TEST_LOCK_FILE)
+
+        self.storage_default_file = storage.DEFAULT_FILE_STORE
+        self.storage_default_lock = storage.DEFAULT_FILE_LOCK
+
+        storage.DEFAULT_FILE_STORE = TEST_STORAGE_FILE
+        storage.DEFAULT_FILE_LOCK = TEST_LOCK_FILE
+        
     def tearDown(self):
-        pass
+        storage.DEFAULT_FILE_STORE = self.storage_default_file
+        storage.DEFAULT_FILE_LOCK = self.storage_default_lock
 
     def test_initialize(self):
         self.cds.initialize()

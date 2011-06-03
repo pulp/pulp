@@ -358,7 +358,9 @@ class ImportUploadContent:
         import the files into pulp database
         """
         log.info("Importing file metadata content into pulp")
-        file_path = "%s/%s/%s" % (util.top_file_location(), self.metadata['checksum'][:3], self.metadata['pkgname'])
+        file_path = "%s/%s/%s/%s/%s" % (util.top_file_location(), self.metadata['pkgname'][:3], \
+                                        self.metadata['pkgname'], self.metadata['checksum'], \
+                                        self.metadata['pkgname'])
         if util.check_package_exists(file_path, self.metadata['checksum'], self.metadata['hashtype']):
             log.error("File %s Already Exists on the server skipping upload." % self.metadata['pkgname'])
         if not self.__finalize_content(file_path):

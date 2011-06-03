@@ -82,9 +82,9 @@ class FileApi(BaseApi):
         if not fileobj:
             log.error("File id [%s] not found " % id)
             return
-        file_path = "%s/%s/%s" % (pulp.server.util.top_file_location(),
-                                      fileobj['checksum']['sha256'][:3],
-                                      fileobj['filename'])
+        file_path = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
+                                        fileobj['filename'], fileobj['checksum']['sha256'],
+                                        fileobj['filename'])
         self.collection.remove({'_id':id})
         if not keep_files:
             log.info("file path to be remove %s" % file_path)

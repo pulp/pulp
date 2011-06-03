@@ -40,7 +40,7 @@ def process_request(environ, start_response):
 
     # Assemble the repo URLs
     for cds in cds_hostnames:
-        url = 'https://%s%s' % (cds, requested_repo)
+        url = 'https://%s/pulp/repos/%s' % (cds, requested_repo)
         repo_urls.append(url)
 
     # Package for returning to the caller

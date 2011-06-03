@@ -39,7 +39,7 @@ from pulp.server.pexceptions import PulpException
 
 log = logging.getLogger(__name__)
 
-GROUP_ID_PATTERN = re.compile(r'^[-_A-Za-z0-9]+$')
+CLUSTER_ID_PATTERN = re.compile(r'^[-_A-Za-z0-9]+$')
 
 REPO_FIELDS = [
     'id',
@@ -72,7 +72,7 @@ class CdsApi(BaseApi):
 # -- public api ---------------------------------------------------------------------
 
     @audit()
-    def register(self, hostname, name=None, description=None, sync_schedule=None, group_id=None):
+    def register(self, hostname, name=None, description=None, sync_schedule=None, cluster_id=None):
         '''
         Registers the instance identified by hostname as a CDS in use by this pulp server.
         Before adding the CDS information to the pulp database, the CDS will be initialized.
@@ -93,8 +93,8 @@ class CdsApi(BaseApi):
         @param sync_schedule: contains information on when recurring syncs should execute
         @type  sync_schedule: str
 
-        @param group_id: identifies the group the CDS belongs to
-        @type  group_id: str
+        @param cluster_id: identifies the cluster the CDS belongs to
+        @type  cluster_id: str
 
         @raise PulpException: if the CDS already exists, the hostname is unspecified, or
                               the CDS initialization fails
@@ -102,8 +102,8 @@ class CdsApi(BaseApi):
         if not hostname:
             raise PulpException('Hostname cannot be empty')
 
-        if group_id is not None and GROUP_ID_PATTERN.match(group_id) is None:
-            raise PulpException('Group ID must match the standard ID restrictions')
+        if cluster_id is not None and CLUSTER_ID_PATTERN.match(cluster_id) is None:
+            raise PulpException('Cluster ID must match the standard ID restrictions')
 
         existing_cds = self.cds(hostname)
 
@@ -112,7 +112,7 @@ class CdsApi(BaseApi):
 
         cds = CDS(hostname, name, description)
         cds.sync_schedule = sync_schedule
-        cds.group_id = group_id
+        cds.cluster_id = cluster_id
 
         # Add call here to fire off initialize call to the CDS
         # and pdate the shared secret
@@ -139,14 +139,14 @@ class CdsApi(BaseApi):
 
         self.cds_history_api.cds_registered(hostname)
 
-        # Group handling
-        if group_id is not None:
+        # Cluster handling
+        if cluster_id is not None:
 
             # Bring this CDS up to speed with any repo associations the others have
-            self._apply_group_repos_to_cds(cds)
+            self._apply_cluster_repos_to_cds(cds)
 
             # Notify other CDS instances
-            self._update_group_membership(group_id)
+            self._update_cluster_membership(cluster_id)
 
         # If the CDS should sync regularly, update that now
         if sync_schedule is not None:
@@ -200,11 +200,11 @@ class CdsApi(BaseApi):
         # occur after that
         self.collection.remove({'hostname' : hostname}, safe=True)
 
-        # If the CDS was part of a group, notify its remaining members of the change
+        # If the CDS was part of a cluster, notify its remaining members of the change
         # (this has to happen after the DB update so the unregistered CDS does not
         # show up in the membership list)
-        if doomed['group_id'] is not None:
-            self._update_group_membership(doomed['group_id'])
+        if doomed['cluster_id'] is not None:
+            self._update_cluster_membership(doomed['cluster_id'])
         
     def update(self, hostname, delta):
         '''
@@ -212,7 +212,7 @@ class CdsApi(BaseApi):
         - name
         - description
         - sync schedule
-        - group membership
+        - cluster membership
 
         @param hostname: identifies the CDS being updated
         @type  hostname: str
@@ -234,10 +234,10 @@ class CdsApi(BaseApi):
                 log.exception('Could not update CDS [%s] because the sync schedule was invalid [%s]' % (hostname, delta['sync_schedule']))
                 raise PulpException('Invalid sync schedule format [%s]' % delta['sync_schedule']), None, sys.exc_info()[2]
 
-        if 'group_id' in delta and delta['group_id'] is not None: # will be None if removing the group
-            if GROUP_ID_PATTERN.match(delta['group_id']) is None:
-                log.info('Could not update CDS [%s] because the group ID was invalid [%s]' % (hostname, delta['group_id']))
-                raise PulpException('Group ID must match the standard ID restrictions')
+        if 'cluster_id' in delta and delta['cluster_id'] is not None: # will be None if removing the cluster
+            if CLUSTER_ID_PATTERN.match(delta['cluster_id']) is None:
+                log.info('Could not update CDS [%s] because the cluster ID was invalid [%s]' % (hostname, delta['cluster_id']))
+                raise PulpException('Cluster ID must match the standard ID restrictions')
 
         # Update ----------
         cds = self.collection.find_one({'hostname': hostname})
@@ -258,57 +258,57 @@ class CdsApi(BaseApi):
             else:
                 delete_cds_schedule(cds)
 
-        if 'group_id' in delta:
+        if 'cluster_id' in delta:
 
-            # There are three cases to handle in the case of a group ID change:
-            # - CDS was not previously in a group and is added to one
-            # - CDS was in a group and has been removed from it
-            # - CDS was in a group and is now in a different group
+            # There are three cases to handle in the case of a cluster ID change:
+            # - CDS was not previously in a cluster and is added to one
+            # - CDS was in a cluster and has been removed from it
+            # - CDS was in a cluster and is now in a different cluster
 
-            # Not previously in a group but now is
-            if cds['group_id'] is None:
-                log.info('Assigning previously ungrouped CDS [%s] to group [%s]' % (hostname, delta['group_id']))
+            # Not previously in a cluster but now is
+            if cds['cluster_id'] is None:
+                log.info('Assigning previously unclustered CDS [%s] to cluster [%s]' % (hostname, delta['cluster_id']))
 
-                cds['group_id'] = delta['group_id']
+                cds['cluster_id'] = delta['cluster_id']
                 self.collection.save(cds, safe=True)
 
-                self._update_group_membership(delta['group_id'])
+                self._update_cluster_membership(delta['cluster_id'])
 
-                # The CDS is now part of a group, so make sure its repos are up to speed
-                self._apply_group_repos_to_cds(cds)
+                # The CDS is now part of a cluster, so make sure its repos are up to speed
+                self._apply_cluster_repos_to_cds(cds)
 
-            # CDS was in a group but no longer is
-            elif cds['group_id'] is not None and delta['group_id'] is None:
-                log.info('Removing CDS [%s] from group [%s]' % (hostname, cds['group_id']))
+            # CDS was in a cluster but no longer is
+            elif cds['cluster_id'] is not None and delta['cluster_id'] is None:
+                log.info('Removing CDS [%s] from cluster [%s]' % (hostname, cds['cluster_id']))
 
-                old_group_id = cds['group_id']
-                cds['group_id'] = None
+                old_cluster_id = cds['cluster_id']
+                cds['cluster_id'] = None
                 self.collection.save(cds, safe=True)
 
-                # Notify the CDS it's not in a group
+                # Notify the CDS it's not in a cluster
                 try:
-                    self.dispatcher.update_group_membership(cds, None, None)
+                    self.dispatcher.update_cluster_membership(cds, None, None)
                 except Exception:
-                    log.exception('Error notifying CDS [%s] it has been removed from group [%s]' % (hostname, old_group_id))
+                    log.exception('Error notifying CDS [%s] it has been removed from cluster [%s]' % (hostname, old_cluster_id))
 
-                self._update_group_membership(old_group_id)
+                self._update_cluster_membership(old_cluster_id)
 
-            # CDS was in a group and is being changed
-            elif cds['group_id'] != delta['group_id']:
-                log.info('Changing CDS [%s] from group [%s] to group [%s]' % (hostname, cds['group_id'], delta['group_id']))
+            # CDS was in a cluster and is being changed
+            elif cds['cluster_id'] != delta['cluster_id']:
+                log.info('Changing CDS [%s] from cluster [%s] to cluster [%s]' % (hostname, cds['cluster_id'], delta['cluster_id']))
 
-                old_group_id = cds['group_id']
-                cds['group_id'] = delta['group_id']
+                old_cluster_id = cds['cluster_id']
+                cds['cluster_id'] = delta['cluster_id']
                 self.collection.save(cds, safe=True)
 
-                self._update_group_membership(old_group_id)
-                self._update_group_membership(delta['group_id'])
+                self._update_cluster_membership(old_cluster_id)
+                self._update_cluster_membership(delta['cluster_id'])
 
-                # The CDS is now part of a different group, so make sure its repos are up to speed
-                self._apply_group_repos_to_cds(cds)
+                # The CDS is now part of a different cluster, so make sure its repos are up to speed
+                self._apply_cluster_repos_to_cds(cds)
 
         else:
-            # If the group was changed, the CDS has already been saved. If not,
+            # If the cluster was changed, the CDS has already been saved. If not,
             # make sure to do it here.
             self.collection.save(cds, safe=True)
             
@@ -355,7 +355,7 @@ class CdsApi(BaseApi):
         return list(self.collection.find())
 
     @audit()
-    def associate_repo(self, cds_hostname, repo_id, apply_to_group=True):
+    def associate_repo(self, cds_hostname, repo_id, apply_to_cluster=True):
         '''
         Associates a repo with a CDS. All data in an associated repo will be kept synchronized
         when the CDS synchronization occurs. This call will not cause the initial
@@ -371,9 +371,9 @@ class CdsApi(BaseApi):
                         prior to this call
         @type  repo_id: string; may not be None
 
-        @param apply_to_group: if True, the association will be applied to all other CDS
-                               instances in the same group; if False the group is ignored
-        @type  apply_to_group: bool
+        @param apply_to_cluster: if True, the association will be applied to all other CDS
+                                 instances in the same cluster; if False the cluster is ignored
+        @type  apply_to_cluster: bool
 
         @raise PulpException: if the CDS or repo does not exist
         '''
@@ -403,12 +403,12 @@ class CdsApi(BaseApi):
             # Automatically redistribute consumers to pick up these changes
             self.redistribute(repo_id)
 
-            # Make the same association on all other CDS instances in the group
-            if cds['group_id'] is not None and apply_to_group:
-                self._apply_cds_repos_to_group(cds)
+            # Make the same association on all other CDS instances in the cluster
+            if cds['cluster_id'] is not None and apply_to_cluster:
+                self._apply_cds_repos_to_cluster(cds)
 
     @audit()
-    def unassociate_repo(self, cds_hostname, repo_id, deleted=False, apply_to_group=True):
+    def unassociate_repo(self, cds_hostname, repo_id, deleted=False, apply_to_cluster=True):
         '''
         Removes an existing association between a CDS and a repo. This call will not cause
         the repo data to be deleted from the CDS; that must be explicitly done through
@@ -425,9 +425,9 @@ class CdsApi(BaseApi):
         @param deleted: indicates the repo has been deleted.
         @type  deleted: bool
 
-        @param apply_to_group: if True, the association will be applied to all other CDS
-                       instances in the same group; if False the group is ignored
-        @type  apply_to_group: bool
+        @param apply_to_cluster: if True, the association will be applied to all other CDS
+                                 instances in the same cluster; if False the cluster is ignored
+        @type  apply_to_cluster: bool
 
         @raise PulpException: if the CDS does not exist
         '''
@@ -454,9 +454,9 @@ class CdsApi(BaseApi):
             if not deleted:
                 self.redistribute(repo_id)
 
-            # Make the same unassociation on all other CDS instances in the group
-            if cds['group_id'] is not None and apply_to_group:
-                self._apply_cds_repos_to_group(cds)
+            # Make the same unassociation on all other CDS instances in the cluster
+            if cds['cluster_id'] is not None and apply_to_cluster:
+                self._apply_cds_repos_to_cluster(cds)
             
     def cds_sync(self, cds_hostname):
         '''
@@ -518,13 +518,13 @@ class CdsApi(BaseApi):
         # Global cert bundle, if any (repo cert bundles are handled above)
         global_cert_bundle = repo_cert_utils.global_cert_bundle_filenames()
 
-        # Assemble the list of CDS hostnames in the same group
-        if cds['group_id'] is not None:
-            group_id = cds['group_id']
-            cds_members = list(self.collection.find({'group_id' : cds['group_id']}))
+        # Assemble the list of CDS hostnames in the same cluster
+        if cds['cluster_id'] is not None:
+            cluster_id = cds['cluster_id']
+            cds_members = list(self.collection.find({'cluster_id' : cds['cluster_id']}))
             member_hostnames = [c['hostname'] for c in cds_members]
         else:
-            group_id = None
+            cluster_id = None
             member_hostnames = None
 
         payload = {
@@ -532,8 +532,8 @@ class CdsApi(BaseApi):
             'repo_base_url'      : repo_base_url,
             'repo_cert_bundles'  : repo_cert_bundles,
             'global_cert_bundle' : global_cert_bundle,
-            'group_id'           : group_id,
-            'group_members'      : member_hostnames,
+            'cluster_id'         : cluster_id,
+            'cluster_members'    : member_hostnames,
             'server_ca_cert'     : server_ca_certificate,
         }
 
@@ -655,18 +655,18 @@ class CdsApi(BaseApi):
 
 # -- private -------------------------------------------------------------------------------
 
-    def _update_group_membership(self, group_id):
+    def _update_cluster_membership(self, cluster_id):
         '''
-        Notifies all CDS instances that are part of the given group that the membership
-        in that group has changed. A list of all current members in the group is sent
-        to each CDS in the group.
+        Notifies all CDS instances that are part of the given cluster that the membership
+        in that cluster has changed. A list of all current members in the cluster is sent
+        to each CDS in the cluster.
 
-        @param group_id: identifies the group whose membership changed
-        @type  group_id: str
+        @param cluster_id: identifies the cluster whose membership changed
+        @type  cluster_id: str
         '''
 
-        # Find all CDS instances in the group
-        cds_members = list(self.collection.find({'group_id' : group_id}))
+        # Find all CDS instances in the cluster
+        cds_members = list(self.collection.find({'cluster_id' : cluster_id}))
 
         member_hostnames = [c['hostname'] for c in cds_members]
 
@@ -676,75 +676,75 @@ class CdsApi(BaseApi):
 
         for cds in cds_members:
             try:
-                self.dispatcher.update_group_membership(cds, group_id, member_hostnames)
+                self.dispatcher.update_cluster_membership(cds, cluster_id, member_hostnames)
                 success_cds_hostnames.append(cds['hostname'])
             except Exception:
-                log.exception('Error notifying CDS [%s] of changes to group [%s]' % (cds['hostname'], group_id))
+                log.exception('Error notifying CDS [%s] of changes to cluster [%s]' % (cds['hostname'], cluster_id))
                 error_cds_hostnames.append(cds['hostname'])
 
         return success_cds_hostnames, error_cds_hostnames
         
-    def _apply_group_repos_to_cds(self, cds):
+    def _apply_cluster_repos_to_cds(self, cds):
         """
-        Run when a CDS is added to an existing group. If the group had other members
+        Run when a CDS is added to an existing cluster. If the cluster had other members
         before this CDS was added, the repo list from those instances will be associated
         with the newly added CDS.
 
         This call is meant to be called after the CDS has been successfully added to
-        the group.
+        the cluster.
 
-        @param cds: CDS that was newly added to the group
+        @param cds: CDS that was newly added to the cluster
         @type  cds: L{CDS}
         """
 
         # This shouldn't happen, but safety check
-        if cds['group_id'] is None:
-            log.warn('Apply group repos to CDS called for CDS with no group [%s]' % cds['hostname'])
+        if cds['cluster_id'] is None:
+            log.warn('Apply cluster repos to CDS called for CDS with no cluster [%s]' % cds['hostname'])
             return
 
-        # All CDS instances in the group _except_ the one passed in
-        cdses_in_group = list(self.collection.find({'group_id' : cds['group_id'], 'hostname' : {'$ne' : cds['hostname']}}))
+        # All CDS instances in the cluster _except_ the one passed in
+        cdses_in_cluster = list(self.collection.find({'cluster_id' : cds['cluster_id'], 'hostname' : {'$ne' : cds['hostname']}}))
 
-        if len(cdses_in_group) == 0:
+        if len(cdses_in_cluster) == 0:
             return
 
         # They should all have the same repos, so just grab one as a sampling
-        sample_cds = cdses_in_group[0]
+        sample_cds = cdses_in_cluster[0]
 
         additions = [repo_id for repo_id in sample_cds['repo_ids'] if repo_id not in cds['repo_ids']]
         removals = [repo_id for repo_id in cds['repo_ids'] if repo_id not in sample_cds['repo_ids']]
 
         for repo_id in additions:
-            self.associate_repo(cds['hostname'], repo_id, apply_to_group=False)
+            self.associate_repo(cds['hostname'], repo_id, apply_to_cluster=False)
 
         for repo_id in removals:
-            self.unassociate_repo(cds['hostname'], repo_id, apply_to_group=False)
+            self.unassociate_repo(cds['hostname'], repo_id, apply_to_cluster=False)
 
-    def _apply_cds_repos_to_group(self, cds):
+    def _apply_cds_repos_to_cluster(self, cds):
         """
-        Run when a CDS that is part of a group has its associated repos updated.
-        This call will apply those changes to the other members in the group as well.
+        Run when a CDS that is part of a cluster has its associated repos updated.
+        This call will apply those changes to the other members in the cluster as well.
         """
 
         # This shouldn't happen, but safety check
-        if cds['group_id'] is None:
-            log.warn('Apply CDS repos to group called for CDS with no group [%s]' % cds['hostname'])
+        if cds['cluster_id'] is None:
+            log.warn('Apply CDS repos to cluster called for CDS with no cluster [%s]' % cds['hostname'])
             return
 
         # The CDS specified now contains the most up to date list of repos, so
-        # bring all other members of the group in line with that.
+        # bring all other members of the cluster in line with that.
         
-        # All CDS instances in the group _except_ the one passed in
-        cdses_in_group = list(self.collection.find({'group_id' : cds['group_id'], 'hostname' : {'$ne' : cds['hostname']}}))
+        # All CDS instances in the cluster _except_ the one passed in
+        cdses_in_cluster = list(self.collection.find({'cluster_id' : cds['cluster_id'], 'hostname' : {'$ne' : cds['hostname']}}))
 
-        for change_me in cdses_in_group:
+        for change_me in cdses_in_cluster:
 
             # Before editing the repo associations, determine additions/removals
             additions = [repo_id for repo_id in cds['repo_ids'] if repo_id not in change_me['repo_ids']]
             removals = [repo_id for repo_id in change_me['repo_ids'] if repo_id not in cds['repo_ids']]
 
             for repo_id in additions:
-                self.associate_repo(change_me['hostname'], repo_id, apply_to_group=False)
+                self.associate_repo(change_me['hostname'], repo_id, apply_to_cluster=False)
 
             for repo_id in removals:
-                self.unassociate_repo(change_me['hostname'], repo_id, apply_to_group=False)
+                self.unassociate_repo(change_me['hostname'], repo_id, apply_to_cluster=False)

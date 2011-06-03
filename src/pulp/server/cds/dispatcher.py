@@ -119,7 +119,7 @@ class GoferDispatcher(object):
            if a previously synchronized repo no longer exists in this set and delete it)
          - auth credentials for any repositories that are protected
          - global auth credentials
-         - list of other CDS instances in the group
+         - list of other CDS instances in the cluster
 
         This method runs synchronously and will not return until after the CDS has responded
         or an error occurs.
@@ -137,23 +137,23 @@ class GoferDispatcher(object):
 
         self._send(stub.sync, data)
 
-    def update_group_membership(self, cds, group_name, member_cds_hostnames):
+    def update_cluster_membership(self, cds, cluster_name, member_cds_hostnames):
         '''
-        Sends a message to the given CDS describing a group update event. This
-        will be sent both when a CDS first joins a group and for all subsequent
-        changes to CDS membership in that group.
+        Sends a message to the given CDS describing a cluster update event. This
+        will be sent both when a CDS first joins a cluster and for all subsequent
+        changes to CDS membership in that cluster.
 
         @param cds: CDS to send the message to
         @type  cds: L{CDS}
 
-        @param group_name: ID of the group the CDS belongs to
-        @type  group_name: str
+        @param cluster_name: ID of the cluster the CDS belongs to
+        @type  cluster_name: str
 
-        @param member_cds_hostnames: list of hostnames of all CDS instances in the group
+        @param member_cds_hostnames: list of hostnames of all CDS instances in the cluster
                                      (this will include the CDS being sent the message)
         @type  member_cds_hostnames: list of str
         '''
-        self._send(self._cds_stub(cds).update_group_membership, group_name, member_cds_hostnames)
+        self._send(self._cds_stub(cds).update_cluster_membership, cluster_name, member_cds_hostnames)
         
     def _send(self, func, *args):
         '''

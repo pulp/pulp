@@ -81,6 +81,6 @@ class cdsplugin(object):
     def sync(self, payload):
         self.payload = payload
 
-    def update_group_membership(self, group_name, member_hostnames):
-        self.group_name = group_name
+    def update_cluster_membership(self, cluster_name, member_hostnames):
+        self.cluster_name = cluster_name
         self.member_hostnames = member_hostnames
