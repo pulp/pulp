@@ -59,6 +59,8 @@ Requires: python-hashlib
 Requires: python-uuid
 Requires: python-ctypes
 Requires: python-hashlib
+Requires: nss >= 3.12.9
+Requires: curl => 7.19.7
 %endif
 
 # newer pulp builds should require same client version
