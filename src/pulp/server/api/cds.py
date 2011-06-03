@@ -141,7 +141,8 @@ class CdsApi(BaseApi):
 
         # Cluster handling
         if cluster_id is not None:
-
+            cds = self.collection.find_one({'_id' : hostname})
+            
             # Bring this CDS up to speed with any repo associations the others have
             self._apply_cluster_repos_to_cds(cds)
 
@@ -150,6 +151,7 @@ class CdsApi(BaseApi):
 
         # If the CDS should sync regularly, update that now
         if sync_schedule is not None:
+            cds = self.collection.find_one({'_id' : hostname})
             update_cds_schedule(cds, sync_schedule)
 
         return cds
@@ -696,6 +698,8 @@ class CdsApi(BaseApi):
         @param cds: CDS that was newly added to the cluster
         @type  cds: L{CDS}
         """
+        log.info('Applying repos from cluster [%s] to CDS [%s]' % (cds['cluster_id'], cds['hostname']))
+        
 
         # This shouldn't happen, but safety check
         if cds['cluster_id'] is None:
