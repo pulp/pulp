@@ -3,7 +3,7 @@
 
 Name:           python-isodate
 Version:        0.4.4
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
@@ -58,6 +58,9 @@ for instance nanoseconds it will round it to microseconds.
 %{python_sitelib}/*
 
 %changelog
+* Fri Jun 03 2011 John Matthews <jmatthew@redhat.com> 0.4.4-2
+- Getting python-isodate built in brew (jmatthew@redhat.com)
+
 * Tue May 10 2011 Jay Dobies <jason.dobies@redhat.com> 0.4.4-1
 - Messed up the version number (jason.dobies@redhat.com)
 
