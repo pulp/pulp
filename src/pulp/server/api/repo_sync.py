@@ -108,7 +108,7 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
 
     # Sync from parent repo
     try:
-        sync(clone_id, progress_callback=progress_callback)
+        _sync(clone_id, progress_callback=progress_callback)
     except Exception, e:
         log.error(e)
         log.warn("Traceback: %s" % (traceback.format_exc()))
@@ -152,7 +152,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
     @return
     """
     repo = repo_api.repository(repo_id)
-    task = run_async(sync,
+    task = run_async(_sync,
                         [repo_id],
                         {'skip_dict':skip,
                         'max_speed':max_speed,
@@ -174,7 +174,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
 
 def get_synchronizer(source_type):
     '''
-    Returns an instance of a Synchronizer object which can be used for
+    Returns an instance of a Synchronizer object which can be used for 
     repository synchronization
 
     @param source_type: repository source type
@@ -188,7 +188,7 @@ def get_synchronizer(source_type):
     return synchronizer
 
 
-def sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
+def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None, max_speed=None, threads=None):
     """
     Sync a repo from the URL contained in the feed
     @param repo_id repository id

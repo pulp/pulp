@@ -48,13 +48,13 @@ class TestRepoPublish(unittest.TestCase):
         # Setup
         repo_id = 'test_repo_publish'
         repo_path = os.path.join(self.data_path, "repo_resync_a")
-        repo = self.repo_api.create(repo_id, 'Repo Publish', 'noarch',
+        repo = self.repo_api.create(repo_id, 'Repo Publish', 'noarch', 
                 'file://%s' % (repo_path))
         # Verify that repo 'published' defaulted to whatever is in config
-        self.assertEquals(repo["publish"],
+        self.assertEquals(repo["publish"], 
                 self.config.getboolean('repos', 'default_to_published'))
         # Sync Repo
-        repo_sync.sync(repo["id"])
+        repo_sync._sync(repo["id"])
         repo = self.repo_api.repository(repo_id)
 
         # Ensure Repo is Published

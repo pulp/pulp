@@ -104,7 +104,7 @@ class TestComps(unittest.TestCase):
         repo = self.rapi.create("test_create_groups_metadata_id",
                 'test_import_groups_data_id', 'i386',
                 'file://%s' % (repo_path))
-        repo_sync.sync(repo["id"])
+        repo_sync._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) == 0)
         self.assertTrue(repo["group_xml_path"] == "")
@@ -381,7 +381,7 @@ class TestComps(unittest.TestCase):
         repo = self.rapi.create('test_immutable_groups_id',
                 'test_import_groups_data_id', 'i386',
                 'file://%s' % (repo_path))
-        repo_sync.sync(repo["id"])
+        repo_sync._sync(repo["id"])
         # Ensure groups/categories were found and they are all immutable
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) > 0)
@@ -447,7 +447,7 @@ class TestComps(unittest.TestCase):
         repo = self.rapi.create('test_comps_resync_with_group_changes',
                 'test_comps_resync_with_group_changes_name', 'i386',
                 'file://%s' % (repo_path))
-        repo_sync.sync(repo["id"])
+        repo_sync._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
         # Verify expected groups/categories
         self.assertTrue(len(found) == 3)
@@ -470,7 +470,7 @@ class TestComps(unittest.TestCase):
         repo = self.rapi.repository(repo["id"])
         repo["source"] = pulp.server.db.model.RepoSource("file://%s" % (repo_path))
         model.Repo.get_collection().save(repo, safe=True)
-        repo_sync.sync(repo["id"])
+        repo_sync._sync(repo["id"])
         found = self.rapi.packagegroups(repo['id'])
         self.assertTrue(len(found) == 2)
         self.assertTrue(self.rapi.packagegroup(repo["id"], "admin-tools") is not None)

@@ -708,7 +708,7 @@ class TestRepoApi(unittest.TestCase):
         grps = self.rapi.packagegroups(id=repo["id"], filter_incomplete_groups=True)
         self.assertTrue(grps.has_key(pkggroup1["id"]))
         self.assertTrue(not grps.has_key(pkggroup2["id"]))
-
+    
     def test_repo_package_group_categories(self):
         repo = self.rapi.create(
             'some-id_pkg_group_categories',
@@ -869,8 +869,8 @@ class TestRepoApi(unittest.TestCase):
                                   'file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b, 'some name', 'x86_64',
                                 'file://%s' % datadir_b)
-        repo_sync.sync(repo_a["id"])
-        repo_sync.sync(repo_b["id"])
+        repo_sync._sync(repo_a["id"])
+        repo_sync._sync(repo_b["id"])
 
         # This will get fixed when we move the async nature of sync down into
         # the API layer
@@ -926,8 +926,8 @@ class TestRepoApi(unittest.TestCase):
                                 'file://%s' % datadir_a)
         repo_b = self.rapi.create(repo_name_b, 'some name', 'x86_64',
                                 'file://%s' % datadir_b)
-        repo_sync.sync(repo_a['id'])
-        repo_sync.sync(repo_b['id'])
+        repo_sync._sync(repo_a['id'])
+        repo_sync._sync(repo_b['id'])
         # Look up each repo from API
         found_a = self.rapi.repository(repo_a['id'])
         found_b = self.rapi.repository(repo_b['id'])
@@ -960,12 +960,12 @@ class TestRepoApi(unittest.TestCase):
                 'file://%s' % (p))
         failed = False
         try:
-            repo_sync.sync('invalid-id-not-found')
+            self.rapi._sync('invalid-id-not-found')
         except Exception:
             failed = True
         assert(failed)
 
-        repo_sync.sync(repo['id'])
+        repo_sync._sync(repo['id'])
 
         # Check that local storage has dir and rpms
         d = os.path.join(top_repos_location(), repo['relative_path'])
@@ -984,7 +984,7 @@ class TestRepoApi(unittest.TestCase):
         r = self.rapi.create('test_resync_removes_deleted_package',
                 'test_name', 'x86_64', 'file://%s' % (repo_path))
         self.assertTrue(r != None)
-        repo_sync.sync(r["id"])
+        repo_sync._sync(r["id"])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         self.assertTrue(len(r["packages"]) == 3)
@@ -1003,7 +1003,7 @@ class TestRepoApi(unittest.TestCase):
         r = self.rapi.repository(r["id"])
         d = dict(feed="file://%s" % repo_path)
         self.rapi.update(r["id"], d)
-        repo_sync.sync(r["id"])
+        repo_sync._sync(r["id"])
         #Refresh Repo Object and Verify Changes
         r = self.rapi.repository(r["id"])
         self.assertTrue(len(r["packages"]) == 2)
@@ -1035,7 +1035,7 @@ class TestRepoApi(unittest.TestCase):
         # verify repo without feed is not syncable
         failed = False
         try:
-            repo_sync.sync(repo['id'])
+            repo_sync._sync(repo['id'])
         except Exception:
             # raises a PulpException
             # 'This repo is not setup for sync. Please add packages using upload.'
@@ -1048,7 +1048,7 @@ class TestRepoApi(unittest.TestCase):
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'file://%s' % datadir)
 
-        repo_sync.sync(repo['id'])
+        repo_sync._sync(repo['id'])
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         assert(packages is not None)
@@ -1071,7 +1071,7 @@ class TestRepoApi(unittest.TestCase):
         datadir = my_dir + "/data/repo_resync_a/"
         repo = self.rapi.create('some-id', 'some name', 'i386',
                                 'file://%s' % datadir)
-        repo_sync.sync(repo['id'], progress_callback=callback)
+        repo_sync._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         self.assertTrue(packages is not None)
@@ -1098,11 +1098,11 @@ class TestRepoApi(unittest.TestCase):
         datadir = os.path.join(self.data_path, "sameNEVRA_differentChecksums/A/repo")
         r = self.rapi.create("test_find_repos_by_package", "test_name", "x86_64",
                 "file://%s" % datadir)
-        repo_sync.sync(r['id'])
+        repo_sync._sync(r['id'])
         datadir = os.path.join(self.data_path, "sameNEVRA_differentChecksums/B/repo")
         r2 = self.rapi.create("test_find_repos_by_package_2", "test_name_2", "x86_64",
                 "file://%s" % datadir)
-        repo_sync.sync(r2['id'])
+        repo_sync._sync(r2['id'])
         # Refresh object now it's been sync'd
         r = self.rapi.repository(r['id'])
         r2 = self.rapi.repository(r2['id'])
@@ -1381,7 +1381,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(self.rapi.set_sync_in_progress(repo["id"], True))
         caught = False
         try:
-            repo_sync.sync(repo["id"])
+            repo_sync._sync(repo["id"])
         except ConflictingOperationException, e:
             caught = True
         self.assertTrue(caught)

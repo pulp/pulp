@@ -35,7 +35,6 @@ sys.path.insert(0, commondir)
 
 import pymongo.json_util
 
-from pulp.server.api import repo_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model import RepoSource
@@ -73,7 +72,7 @@ class TestYumRepoSync(unittest.TestCase):
     def tearDown(self):
         self.clean()
 
-
+    
     def test_yum_sync_callback(self):
         # We need report to be accesible for writing by the callback
         global report
@@ -83,7 +82,7 @@ class TestYumRepoSync(unittest.TestCase):
             report = r
         repo = self.rapi.create('some-id', 'some name', 'i386',
                 'http://jmatthews.fedorapeople.org/repo_resync_a')
-        repo_sync.sync(repo['id'], progress_callback=callback)
+        self.rapi._sync(repo['id'], progress_callback=callback)
         found = self.rapi.repository(repo['id'])
         packages = found['packages']
         self.assertTrue(packages is not None)

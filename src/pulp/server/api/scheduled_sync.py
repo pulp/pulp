@@ -104,7 +104,7 @@ def _add_repo_scheduled_sync_task(repo):
     import repo_sync
     from pulp.server.api.repo import RepoApi
     api = RepoApi()
-    task = RepoSyncTask(repo_sync.sync, [repo['id']])
+    task = RepoSyncTask(repo_sync._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
     source_type = repo['source']['type']
     synchronizer = repo_sync.get_synchronizer(source_type)
