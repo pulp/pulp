@@ -54,16 +54,16 @@ class TestRepoDiscoveryApi(unittest.TestCase):
     def test_discovery(self):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
         d = get_discovery("yum")
-        d.setUrl(discover_url)
+        d.setup(discover_url)
         repourls = d.discover()
         self.assertTrue(len(repourls) != 0)
 
     def test_invalid_url(self):
-        discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/fakedir/'
+        discover_url = 'proto://repos.fedorapeople.org/repos/pulp/pulp/fakedir/'
         d = get_discovery("yum")
         failed = False
         try:
-            d.setUrl(discover_url)
+            d.setup(discover_url)
         except:
             failed = True
         assert(failed)
@@ -72,7 +72,7 @@ class TestRepoDiscoveryApi(unittest.TestCase):
         discover_url = 'http://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/'
         groupid = 'testrepos'
         d = get_discovery("yum")
-        d.setUrl(discover_url)
+        d.setup(discover_url)
         repourls = d.discover()
         self.assertTrue(len(repourls) != 0)
         repourl = repourls[0]

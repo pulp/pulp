@@ -404,7 +404,10 @@ class RepoDiscovery(AsyncController):
             return self.bad_request('Invalid content type [%s]' % type)
         try:
             url = data.get('url', None)
-            discovery_obj.setUrl(url)
+            ca = data.get('ca', None)
+            cert = data.get('cert', None)
+            key = data.get('key', None)
+            discovery_obj.setup(url, ca=ca, cert=cert, key=key)
         except InvalidDiscoveryInput:
             return self.bad_request('Invalid url [%s]' % url)
 
