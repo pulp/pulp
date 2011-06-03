@@ -45,7 +45,6 @@ class RepoSyncTask(Task):
         @type sync_obj: instance of pulp.sever.api.repo_sync.BaseSynchronizer
         """
         # To avoid a circular reference we require an instance of repo_api to be passed in
-        log.error("__name__ = %s" % (__name__))
         self.repo_api = repo_api
         self.repo_id = repo_id
         self.synchronizer = sync_obj

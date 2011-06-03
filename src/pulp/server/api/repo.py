@@ -73,7 +73,6 @@ def clear_sync_in_progress_flags():
     # only fix those repos whose flag is actually set
     repos = collection.find({'sync_in_progress': True}, fields={'id': 1})
     for r in repos:
-        log.error("r = %s" % (r))
         collection.update({"id":r["id"]}, {"$set": {"sync_in_progress":False}})
 
 
