@@ -14,6 +14,7 @@
 
 # Python
 import logging
+from gettext import gettext as _
 
 # 3rd Party
 import web
@@ -21,6 +22,7 @@ import web
 # Pulp
 from pulp.common import dateutils
 from pulp.server.api import scheduled_sync
+from pulp.server.api import task_history
 from pulp.server.api.cds import CdsApi
 import pulp.server.api.cds_history as cds_history
 from pulp.server.api.cds_history import CdsHistoryApi
@@ -283,6 +285,37 @@ class CdsSyncTaskStatus(AsyncController):
             return self.not_found('No sync with id [%s] found' % task_id)
         return self.ok(task_info)
 
+
+class CDSTaskHistory(JSONController):
+
+    available_histories = (
+        'sync',
+    )
+
+    def sync(self, hostname):
+        return self.ok(task_history.cds_sync(hostname))
+
+    def GET(self, hostname, action):
+        """
+        [wiki]
+        title: CDS Action History
+        description: List completed actions and their retults for a CDS instance.
+        method: GET
+        path: /cds/<hostname>/history/<action name>/
+        permission: READ
+        success response: 200 OK
+        failure response: 404 Not Found if the CDS instance does not exist or no action information is available
+        return: list of task history object
+        """
+        cds = cds_api.cds(id)
+        if not cds:
+            return self.not_found('No CDS with hostname [%s] found' % id)
+        method = getattr(self, action, None)
+        if method is None:
+            return self.not_found(_('No history available for %s on %s') %
+                                  (action, hostname))
+        return method(hostname)
+
 # web.py application ----------------------------------------------------------
 
 urls = (
@@ -291,6 +324,9 @@ urls = (
     '/([^/]+)/sync/$', 'CdsSyncActions',
     '/([^/]+)/sync/([^/]+)/$', 'CdsSyncTaskStatus',
     '/([^/]+)/$', 'CdsInstance',
+
+    '/([^/]+)/history/(%s)/$' % '|'.join(CDSTaskHistory.available_histories),
+    'CDSTaskHistory',
 )
 
 application = web.application(urls, globals())
