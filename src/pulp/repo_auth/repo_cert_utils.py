@@ -38,7 +38,6 @@ A cert bundle is represented by a dict with the following keys. The value at eac
 is the PEM encoded contents of the certificate or key.
  * 'ca' - CA certificate
  * 'cert' - Certificate
- * 'key' - Private key for the certificate
 
 The validate_cert_bundle method is used to ensure that only these keys are present
 in a cert bundle dict.
@@ -54,7 +53,7 @@ from M2Crypto import X509
 
 # -- constants ----------------------------------------------------------------------------
 
-VALID_BUNDLE_KEYS = ('ca', 'cert', 'key')
+VALID_BUNDLE_KEYS = ('ca', 'cert')
 EMPTY_BUNDLE = dict([(key, None) for key in VALID_BUNDLE_KEYS])
 
 # Single write lock for all repos and global; the usage should be infrequent enough

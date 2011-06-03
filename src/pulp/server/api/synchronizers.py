@@ -373,14 +373,12 @@ class YumSynchronizer(BaseSynchronizer):
     def sync(self, repo_id, repo_source, skip_dict={}, progress_callback=None,
             max_speed=None, threads=None):
         repo = self.repo_api._get_existing_repo(repo_id)
-        cacert = clicert = clikey = None
+        cacert = clicert = None
         if repo['feed_ca']:
             cacert = repo['feed_ca'].encode('utf8')
         if repo['feed_cert']:
             clicert = repo['feed_cert'].encode('utf8')
-        if repo['feed_key']:
-            clikey = repo['feed_key'].encode('utf8')
-        log.info("cacert = <%s>, cert = <%s>, key = <%s>" % (cacert, clicert, clikey))
+        log.info("cacert = <%s>, cert = <%s>" % (cacert, clicert))
         remove_old = config.config.getboolean('yum', 'remove_old_packages')
         num_old_pkgs_keep = config.config.getint('yum', 'num_old_pkgs_keep')
         # check for proxy settings
@@ -408,7 +406,7 @@ class YumSynchronizer(BaseSynchronizer):
         if self.stopped:
             raise CancelException()
         self.yum_repo_grinder = YumRepoGrinder('', repo_source['url'].encode('ascii', 'ignore'),
-                                num_threads, cacert=cacert, clicert=clicert, clikey=clikey,
+                                num_threads, cacert=cacert, clicert=clicert,
                                 packages_location=pulp.server.util.top_package_location(),
                                 remove_old=remove_old, numOldPackages=num_old_pkgs_keep, skip=skip_dict,
                                 proxy_url=proxy_url, proxy_port=proxy_port,

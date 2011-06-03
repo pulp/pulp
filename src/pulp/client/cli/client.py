@@ -16,6 +16,10 @@ import os
 from pulp.client.cli.base import PulpCLI
 from pulp.client.credentials import Consumer
 from pulp.client.core.utils import system_exit
+from pulp.client import server
+from pulp.client.config import Config
+
+_cfg = Config()
 
 class ClientCLI(PulpCLI):
 
@@ -33,3 +37,16 @@ class ClientCLI(PulpCLI):
             self._server.set_ssl_credentials(certfile)
         elif None not in (self.opts.username, self.opts.password):
             self._server.set_basic_auth_credentials(self.opts.username, self.opts.password)
+            
+    def setup_server(self):
+        """
+        Setup the active server connection.
+        """
+        host = _cfg.server.host or 'localhost.localdomain'
+        port = _cfg.server.port or '443'
+        scheme = _cfg.server.scheme or 'https'
+        path = _cfg.server.path or '/pulp/api'
+        #print >> sys.stderr, 'server information: %s, %s, %s, %s' % \
+        #        (host, port, scheme, path)
+        self._server = server.PulpServer(host, int(port), scheme, path)
+        server.set_active_server(self._server)

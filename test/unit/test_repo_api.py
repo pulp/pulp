@@ -135,7 +135,7 @@ class TestRepoApi(unittest.TestCase):
 
         # Setup
         repo_id = 'test_feed_cert'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         # Test
         self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=bundle)
@@ -147,7 +147,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
 
     def test_repo_create_with_consumer_certs(self):
@@ -158,7 +158,7 @@ class TestRepoApi(unittest.TestCase):
 
         # Setup
         repo_id = 'test_consumer_cert'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         # Test
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
@@ -168,7 +168,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('consumer')]))
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
@@ -184,8 +184,8 @@ class TestRepoApi(unittest.TestCase):
 
         # Setup
         repo_id = 'test_both_cert'
-        feed_bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
-        consumer_bundle = {'ca' : 'WOMBAT', 'cert' : 'WOCKET', 'key' : 'ZOMBIE'}
+        feed_bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
+        consumer_bundle = {'ca' : 'WOMBAT', 'cert' : 'WOCKET'}
 
         # Test
         self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=feed_bundle,
@@ -196,9 +196,9 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(6, len(repo_certs))
-        self.assertEqual(3, len([fn for fn in repo_certs if fn.startswith('feed')]))
-        self.assertEqual(3, len([fn for fn in repo_certs if fn.startswith('consumer')]))
+        self.assertEqual(4, len(repo_certs))
+        self.assertEqual(2, len([fn for fn in repo_certs if fn.startswith('feed')]))
+        self.assertEqual(2, len([fn for fn in repo_certs if fn.startswith('consumer')]))
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
         self.assertTrue(os.path.exists(protected_repo_listings_file))
@@ -215,7 +215,7 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Feed Cert', 'noarch')
 
         # Test
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         self.rapi.update(repo_id, {'feed_cert_data' : bundle})
 
         # Verify
@@ -223,7 +223,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('feed')]))
 
     def test_repo_update_with_consumer_certs(self):
@@ -236,7 +236,7 @@ class TestRepoApi(unittest.TestCase):
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch')
 
         # Test
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         self.rapi.update(repo_id, {'consumer_cert_data' : bundle})
 
         # Verify
@@ -244,7 +244,7 @@ class TestRepoApi(unittest.TestCase):
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         repo_certs = os.listdir(repo_cert_dir)
-        self.assertEqual(3, len(repo_certs))
+        self.assertEqual(2, len(repo_certs))
         self.assertEqual(0, len([fn for fn in repo_certs if not fn.startswith('consumer')]))
 
         protected_repo_listings_file = self.config.get('repos', 'protected_repo_listing_file')
@@ -259,7 +259,7 @@ class TestRepoApi(unittest.TestCase):
 
         # Setup
         repo_id = 'test_consumer_cert'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
         # Test
@@ -284,7 +284,7 @@ class TestRepoApi(unittest.TestCase):
 
         # Setup
         repo_id = 'test_feed_cert'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         self.rapi.create(repo_id, 'Test Feed Cert', 'noarch', feed_cert_data=bundle)
 
         # Test
@@ -302,7 +302,7 @@ class TestRepoApi(unittest.TestCase):
 
         # Setup
         repo_id = 'test_consumer_cert'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         self.rapi.create(repo_id, 'Test Consumer Cert', 'noarch', consumer_cert_data=bundle)
 
         # Test

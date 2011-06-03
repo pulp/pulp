@@ -81,15 +81,13 @@ def _clone(id, clone_id, clone_name, feed='parent', groupid=None, relative_path=
         f.close()
         return contents
 
-    if repo['feed_ca'] and repo['feed_cert'] and repo['feed_key']:
+    if repo['feed_ca'] and repo['feed_cert']:
         feed_cert_data = {'ca' : read_cert_file(repo['feed_ca']),
-                        'cert' : read_cert_file(repo['feed_cert']),
-                        'key'  : read_cert_file(repo['feed_key']), }
+                        'cert' : read_cert_file(repo['feed_cert'])}
 
-    if repo['consumer_ca'] and repo['consumer_cert'] and repo['consumer_key']:
+    if repo['consumer_ca'] and repo['consumer_cert']:
         consumer_cert_data = {'ca' : read_cert_file(repo['consumer_ca']),
-                        'cert' : read_cert_file(repo['consumer_cert']),
-                        'key' : read_cert_file(repo['consumer_key']), }
+                        'cert' : read_cert_file(repo['consumer_cert'])}
 
     log.info("Creating repo [%s] cloned from [%s]" % (clone_id, id))
     if feed == 'origin':

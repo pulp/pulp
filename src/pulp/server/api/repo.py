@@ -184,13 +184,11 @@ class RepoApi(BaseApi):
             feed_cert_files = repo_cert_utils.write_feed_cert_bundle(id, feed_cert_data)
             r['feed_ca'] = feed_cert_files['ca']
             r['feed_cert'] = feed_cert_files['cert']
-            r['feed_key'] = feed_cert_files['key']
 
         if consumer_cert_data:
             consumer_cert_files = repo_cert_utils.write_consumer_cert_bundle(id, consumer_cert_data)
             r['consumer_ca'] = consumer_cert_files['ca']
             r['consumer_cert'] = consumer_cert_files['cert']
-            r['consumer_key'] = consumer_cert_files['key']
             protected_repo_utils.add_protected_repo(r['relative_path'], id)
 
         if groupid:

@@ -13,7 +13,7 @@
 
 import logging
 
-from pulp.server.db.model import Consumer
+from pulp.server.db.model import Consumer, Repo
 
 _log = logging.getLogger('pulp')
 
@@ -22,15 +22,40 @@ version = 15
 
 def migrate():
     _log.info('migration to data model version %d started' % version)
-    # update consumer.credentials
+    _migrate_consumers()
+    _migrate_repos()
+    _log.info('migration to data model version %d complete' % version)
+    
+def _migrate_consumers():
+    #
+    # consolidate credentials key and certificate
+    # and rename to: certificate.
+    #
     collection = Consumer.get_collection()
     for consumer in collection.find():
-        prevkey = 'credentials'
-        newkey = 'certificate'
-        if newkey not in consumer:
-            value = consumer[prevkey]
+        PREV = 'credentials'
+        NEW = 'certificate'
+        if NEW not in consumer:
+            value = consumer[PREV]
             if isinstance(value, list):
-                consumer[newkey] = ''.join(value)
-            del consumer[prevkey]
+                consumer[NEW] = ''.join(value)
+            del consumer[PREV]
             collection.save(consumer)
-    _log.info('migration to data model version %d complete' % version)
+
+def _migrate_repos():
+    #
+    # update repo: consolidate key & certificate and
+    # remove key attributes.
+    #
+    collection = Repo.get_collection()
+    for repo in collection.find():
+        for type in ('feed', 'consumer'):
+            KEY = '%s_key' % type
+            if KEY not in repo:
+                continue
+            CERT = '%s_cert' % type
+            key = repo.get(KEY)
+            crt = repo.get(CERT)
+            if key and cert:
+                repo[CERT] = ''.join((key, crt))
+            del repo[KEY]

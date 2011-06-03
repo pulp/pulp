@@ -53,7 +53,7 @@ class TestValidateCertBundle(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'PEM', 'cert' : 'PEM', 'key' : 'PEM'}
+        bundle = {'ca' : 'PEM', 'cert' : 'PEM'}
 
         # Test
         self.utils.validate_cert_bundle(bundle) # should not throw an error
@@ -65,9 +65,8 @@ class TestValidateCertBundle(unittest.TestCase):
         '''
 
         # Test missing CA
-        self.assertRaises(ValueError, self.utils.validate_cert_bundle, {'cert' : 'PEM', 'key' : 'PEM'})
-        self.assertRaises(ValueError, self.utils.validate_cert_bundle, {'ca' : 'PEM', 'key' : 'PEM'})
-        self.assertRaises(ValueError, self.utils.validate_cert_bundle, {'ca' : 'PEM', 'cert' : 'PEM'})
+        self.assertRaises(ValueError, self.utils.validate_cert_bundle, {'cert' : 'PEM'})
+        self.assertRaises(ValueError, self.utils.validate_cert_bundle, {'ca' : 'PEM'})
 
     def test_validate_cert_bundle_non_dict(self):
         '''
@@ -92,7 +91,7 @@ class TestValidateCertBundle(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'PEM', 'cert' : 'PEM', 'key' : 'PEM', 'foo' : 'bar'}
+        bundle = {'ca' : 'PEM', 'cert' : 'PEM', 'foo' : 'bar'}
 
         # Test
         self.assertRaises(ValueError, self.utils.validate_cert_bundle, bundle)
@@ -123,21 +122,20 @@ class TestCertStorage(unittest.TestCase):
 
         # Setup
         repo_id = 'test-repo-1'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         # Test
         files = self.utils.write_feed_cert_bundle(repo_id, bundle)
 
         # Verify
         self.assertTrue(files is not None)
-        self.assertEqual(3, len(files))
+        self.assertEqual(2, len(files))
 
         repo_cert_dir = self.utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         self._verify_repo_file_contents(repo_id, 'feed-%s.ca' % repo_id, bundle['ca'])
         self._verify_repo_file_contents(repo_id, 'feed-%s.cert' % repo_id, bundle['cert'])
-        self._verify_repo_file_contents(repo_id, 'feed-%s.key' % repo_id, bundle['key'])
 
     def test_write_consumer_certs(self):
         '''
@@ -146,21 +144,20 @@ class TestCertStorage(unittest.TestCase):
 
         # Setup
         repo_id = 'test-repo-1'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         # Test
         files = self.utils.write_consumer_cert_bundle(repo_id, bundle)
 
         # Verify
         self.assertTrue(files is not None)
-        self.assertEqual(3, len(files))
+        self.assertEqual(2, len(files))
 
         repo_cert_dir = self.utils._repo_cert_directory(repo_id)
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         self._verify_repo_file_contents(repo_id, 'consumer-%s.ca' % repo_id, bundle['ca'])
         self._verify_repo_file_contents(repo_id, 'consumer-%s.cert' % repo_id, bundle['cert'])
-        self._verify_repo_file_contents(repo_id, 'consumer-%s.key' % repo_id, bundle['key'])
 
     def test_write_read_global_certs(self):
         '''
@@ -168,14 +165,14 @@ class TestCertStorage(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         # Test Write
         files = self.utils.write_global_repo_cert_bundle(bundle)
 
         # Verify Write
         self.assertTrue(files is not None)
-        self.assertEqual(3, len(files))
+        self.assertEqual(2, len(files))
 
         global_cert_dir = self.utils._global_cert_directory()
         self.assertTrue(os.path.exists(global_cert_dir))
@@ -192,13 +189,13 @@ class TestCertStorage(unittest.TestCase):
         # -----
 
         # Test Read Subset
-        read_bundle  = self.utils.read_global_cert_bundle(['key'])
+        read_bundle  = self.utils.read_global_cert_bundle(['ca'])
 
         # Verify Read Subset
         self.assertTrue(read_bundle is not None)
         self.assertEqual(1, len(read_bundle))
-        self.assertTrue('key' in read_bundle)
-        self.assertEqual(read_bundle['key'], bundle['key'])
+        self.assertTrue('ca' in read_bundle)
+        self.assertEqual(read_bundle['ca'], bundle['ca'])
         
     def test_write_read_partial_bundle(self):
         '''
@@ -207,7 +204,7 @@ class TestCertStorage(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'FOO'}
+        bundle = {'cert' : 'FOO'}
 
         # Test
         files = self.utils.write_global_repo_cert_bundle(bundle)
@@ -219,12 +216,11 @@ class TestCertStorage(unittest.TestCase):
         global_cert_dir = self.utils._global_cert_directory()
         self.assertTrue(os.path.exists(global_cert_dir))
 
-        read_bundle = self.utils.read_global_cert_bundle(['ca'])
+        read_bundle = self.utils.read_global_cert_bundle(['cert'])
 
-        self.assertEqual(read_bundle['ca'], bundle['ca'])
+        self.assertEqual(read_bundle['cert'], bundle['cert'])
 
-        self.assertTrue(not os.path.exists(os.path.join(self.utils._global_cert_directory(), 'pulp-global-repo.cert')))
-        self.assertTrue(not os.path.exists(os.path.join(self.utils._global_cert_directory(), 'pulp-global-repo.key')))
+        self.assertTrue(not os.path.exists(os.path.join(self.utils._global_cert_directory(), 'pulp-global-repo.ca')))
 
     def test_remove_bundle_item(self):
         '''
@@ -234,17 +230,14 @@ class TestCertStorage(unittest.TestCase):
 
         # Setup
         repo_id = 'test-repo-1'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         self.utils.write_feed_cert_bundle(repo_id, bundle)
 
         # Test
-        clean_bundle = {'ca' : None, 'cert' : 'ZOMBIE'} # remove ca, update cert, leave key alone
+        clean_bundle = {'ca' : None, 'cert' : 'BAR'} # remove ca, cert unchanged
         files = self.utils.write_feed_cert_bundle(repo_id, clean_bundle)
-
-        # Verify
         self.assertTrue(files is not None)
-        self.assertEqual(2, len(files)) # no change to key
-
+        self.assertEqual(2, len(files)) # no change to cert
         self.assertEqual(files['ca'], None)
 
         repo_cert_dir = self.utils._repo_cert_directory(repo_id)
@@ -252,7 +245,6 @@ class TestCertStorage(unittest.TestCase):
 
         self.assertTrue(not os.path.exists(os.path.join(self.utils._repo_cert_directory(repo_id), 'feed-%s.ca' % repo_id)))
         self._verify_repo_file_contents(repo_id, 'feed-%s.cert' % repo_id, clean_bundle['cert'])
-        self._verify_repo_file_contents(repo_id, 'feed-%s.key' % repo_id, bundle['key'])
 
     def test_write_none_item(self):
         '''
@@ -264,20 +256,18 @@ class TestCertStorage(unittest.TestCase):
         repo_id = 'test-repo-5'
 
         # Test
-        clean_bundle = {'ca' : None, 'cert' : None, 'key' : None}
+        clean_bundle = {'ca' : None, 'cert' : None}
         files = self.utils.write_feed_cert_bundle(repo_id, clean_bundle)
 
         # Verify
         self.assertTrue(files is not None)
-        self.assertEqual(3, len(files))
+        self.assertEqual(2, len(files))
 
         self.assertEqual(files['ca'], None)
         self.assertEqual(files['cert'], None)
-        self.assertEqual(files['key'], None)
 
         self.assertTrue(not os.path.exists(os.path.join(self.utils._repo_cert_directory(repo_id), 'feed-%s.ca' % repo_id)))
         self.assertTrue(not os.path.exists(os.path.join(self.utils._repo_cert_directory(repo_id), 'feed-%s.cert' % repo_id)))
-        self.assertTrue(not os.path.exists(os.path.join(self.utils._repo_cert_directory(repo_id), 'feed-%s.key' % repo_id)))
 
     def test_write_none_consumer_bundle(self):
         '''
@@ -287,7 +277,7 @@ class TestCertStorage(unittest.TestCase):
 
         # Setup
         repo_id = 'test-repo-1'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
         files = self.utils.write_consumer_cert_bundle(repo_id, bundle)
 
         for f in files.values():
@@ -319,7 +309,7 @@ class TestCertStorage(unittest.TestCase):
 
         # Setup
         repo_id = 'test-repo-2'
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         self.utils.write_feed_cert_bundle(repo_id, bundle)
         self.utils.write_consumer_cert_bundle(repo_id, bundle)
@@ -328,7 +318,7 @@ class TestCertStorage(unittest.TestCase):
         self.assertTrue(os.path.exists(repo_cert_dir))
 
         cert_files = os.listdir(repo_cert_dir)
-        self.assertEqual(6, len(cert_files)) # 2 bundles, 3 files each
+        self.assertEqual(4, len(cert_files)) # 2 bundles, 2 files each
 
         # Test
         self.utils.delete_for_repo(repo_id)
@@ -342,7 +332,7 @@ class TestCertStorage(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR'}
 
         self.utils.write_global_repo_cert_bundle(bundle)
 

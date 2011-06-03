@@ -265,10 +265,8 @@ class Repo(Model):
         self.use_symlinks = None
         self.feed_ca = None
         self.feed_cert = None
-        self.feed_key = None
         self.consumer_ca = None
         self.consumer_cert = None
-        self.consumer_key = None
         self.errata = {}
         self.groupid = []
         self.relative_path = None

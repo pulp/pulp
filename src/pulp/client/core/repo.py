@@ -293,9 +293,6 @@ class List(RepoAction):
             feed_ca = 'No'
             if repo.has_key('feed_ca') and repo['feed_ca']:
                 feed_ca = 'Yes'
-            feed_key = 'No'
-            if repo.has_key('feed_key') and repo['feed_key']:
-                feed_key = 'Yes'
 
             consumer_cert = 'No'
             if repo.has_key('consumer_cert') and repo['consumer_cert']:
@@ -303,14 +300,11 @@ class List(RepoAction):
             consumer_ca = 'No'
             if repo.has_key('consumer_ca') and repo['consumer_ca']:
                 consumer_ca = 'Yes'
-            consumer_key = 'No'
-            if repo.has_key('consumer_key') and repo['consumer_key']:
-                consumer_key = 'Yes'
 
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType,
-                    feed_ca, feed_cert, feed_key,
-                    consumer_ca, consumer_cert, consumer_key,
+                    feed_ca, feed_cert,
+                    consumer_ca, consumer_cert,
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
@@ -429,15 +423,11 @@ class Create(RepoAction):
         self.parser.add_option("--feed_ca", dest="feed_ca",
                                help=_("path location to the feed's ca certificate"))
         self.parser.add_option("--feed_cert", dest="feed_cert",
-                               help=_("path location to the feed's entitlement certificate"))
-        self.parser.add_option("--feed_key", dest="feed_key",
-                               help=_("path location to the feed's entitlement certificate key"))
+                               help=_("path location to the feed's entitlement combined private key and certificate"))
         self.parser.add_option("--consumer_ca", dest="consumer_ca",
                                help=_("path location to the ca certificate used to verify consumer requests"))
         self.parser.add_option("--consumer_cert", dest="consumer_cert",
-                               help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
-        self.parser.add_option("--consumer_key", dest="consumer_key",
-                               help=_("path location to the consumer entitlement certificate key"))
+                               help=_("path location to the entitlement combined private key and certificate consumers will be provided at bind to grant access to this repo"))
         #self.parser.add_option("--schedule", dest="schedule",
         #                       help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
@@ -478,40 +468,26 @@ class Create(RepoAction):
             notes = {}
 
         # Feed cert bundle
-        feed_cert_data = None
-        cacert = self.opts.feed_ca
+        ca = self.opts.feed_ca
         cert = self.opts.feed_cert
         key = self.opts.feed_key
-        feed_cacert_tmp = None
-        if cacert:
-            feed_cacert_tmp = utils.readFile(cacert)
-        feed_cert_tmp = None
+        if ca:
+            ca = utils.readFile(ca)
         if cert:
-            feed_cert_tmp = utils.readFile(cert)
-        feed_key_tmp = None
-        if key:
-            feed_key_tmp = utils.readFile(key)
-        feed_cert_data = {"ca": feed_cacert_tmp,
-                              "cert": feed_cert_tmp,
-                              "key": feed_key_tmp}
+            cert = utils.readFile(cert)
+        feed_cert = {"ca": ca, "cert": cert,}
 
         # Consumer cert bundle
-        consumer_cert_data = None
-        cacert = self.opts.consumer_ca
+        consumer_cert = None
+        ca = self.opts.consumer_ca
         cert = self.opts.consumer_cert
         key = self.opts.consumer_key
-        cons_cacert_tmp = None
-        cons_cert_tmp = None
-        cons_key_tmp = None
-        if cacert:
-            cons_cacert_tmp = utils.readFile(cacert)
+        if ca:
+            ca = utils.readFile(ca)
         if cert:
-            cons_cert_tmp = utils.readFile(cert)
-        if key:
-            cons_key_tmp = utils.readFile(key)
-        consumer_cert_data = {"ca": cons_cacert_tmp,
-                                  "cert": cons_cert_tmp,
-                                  "key": cons_key_tmp}
+            cert = utils.readFile(cert)
+        consumer_cert = {"ca": ca, "cert": cert,}
+
         groupid = self.opts.groupid
         keylist = self.opts.keys
         if keylist:
@@ -519,8 +495,8 @@ class Create(RepoAction):
             keylist = reader.expand(keylist)
         repo = self.repository_api.create(id, name, arch, feed, symlinks,
                                           sync_schedule=schedule,
-                                          feed_cert_data=feed_cert_data,
-                                          consumer_cert_data=consumer_cert_data,
+                                          feed_cert_data=feed_cert,
+                                          consumer_cert_data=consumer_cert,
                                           relative_path=relative_path,
                                           groupid=groupid,
                                           gpgkeys=keylist,
@@ -630,17 +606,13 @@ class Update(RepoAction):
         self.parser.add_option("--feed_ca", dest="feed_ca",
                                help=_("path location to the feed's ca certificate"))
         self.parser.add_option("--feed_cert", dest="feed_cert",
-                               help=_("path location to the feed's entitlement certificate"))
-        self.parser.add_option("--feed_key", dest="feed_key",
-                               help=_("path location to the feed's entitlement certificate key"))
+                               help=_("path location to the feed's entitlement combined private key and certificate"))
         self.parser.add_option("--remove_feed_cert", dest="remove_feed_cert", action="store_true",
                                help=_("if specified, the feed certificate information will be removed from this repo"))
         self.parser.add_option("--consumer_ca", dest="consumer_ca",
                                help=_("path location to the ca certificate used to verify consumer requests"))
         self.parser.add_option("--consumer_cert", dest="consumer_cert",
-                               help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
-        self.parser.add_option("--consumer_key", dest="consumer_key",
-                               help=_("path location to the consumer entitlement certificate key"))
+                               help=_("path location to the entitlement combined private key and certificate consumers will be provided at bind to grant access to this repo"))
         self.parser.add_option("--remove_consumer_cert", dest="remove_consumer_cert", action="store_true",
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
@@ -695,14 +667,14 @@ class Update(RepoAction):
                 keylist = v.split(',')
                 self.repository_api.rmkeys(id, keylist)
                 continue
-            if k in ('feed_ca', 'feed_cert', 'feed_key'):
+            if k in ('feed_ca', 'feed_cert'):
                 f = open(v)
                 v = f.read()
                 f.close()
                 feed_cert_bundle = feed_cert_bundle or {}
                 feed_cert_bundle[k[5:]] = v
                 continue
-            if k in ('consumer_ca', 'consumer_cert', 'consumer_key'):
+            if k in ('consumer_ca', 'consumer_cert'):
                 f = open(v)
                 v = f.read()
                 f.close()
@@ -732,12 +704,12 @@ class Update(RepoAction):
         # of the bundle, add it to the delta. Otherwise, no mention in the delta will
         # have no change to the cert bundles.
         if optdict['remove_feed_cert']:
-            delta['feed_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
+            delta['feed_cert_data'] = {'ca' : None, 'cert' : None,}
         elif feed_cert_bundle:
             delta['feed_cert_data'] = feed_cert_bundle
 
         if optdict['remove_consumer_cert']:
-            delta['consumer_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
+            delta['consumer_cert_data'] = {'ca' : None, 'cert' : None,}
         elif consumer_cert_bundle:
             delta['consumer_cert_data'] = consumer_cert_bundle
 
