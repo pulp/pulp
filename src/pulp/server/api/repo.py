@@ -404,7 +404,9 @@ class RepoApi(BaseApi):
         tasks = [t for t in find_async(method_name="_sync")
                  if (t.args and id in t.args) or
                  (t.kwargs and id in t.kwargs.values())]
-        if tasks and getattr(tasks[0], 'state') in (task_running, task_waiting):
+        for t in tasks:
+            if getattr(t, 'state', None) not in (task_running,):
+                continue
             log.info("Current running a sync on repo : %s", id)
             return True
         return False
