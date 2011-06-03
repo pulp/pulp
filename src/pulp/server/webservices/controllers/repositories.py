@@ -1395,7 +1395,7 @@ urls = (
     'RepositoryActionStatus',
 
     '/([^/]+)/history/(%s)/$' % '|'.join(RepositoryTaskHistory.available_histories),
-    'RespositoryTaskHistory',
+    'RepositoryTaskHistory',
 )
 
 application = web.application(urls, globals())
