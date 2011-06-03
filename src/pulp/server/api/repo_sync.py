@@ -17,6 +17,7 @@ import logging
 import sys
 import time
 import traceback
+from gettext import gettext as _
 from StringIO import StringIO
 
 from pulp.common import dateutils
@@ -174,7 +175,7 @@ def sync(repo_id, timeout=None, skip=None, max_speed=None, threads=None):
 
 def get_synchronizer(source_type):
     '''
-    Returns an instance of a Synchronizer object which can be used for 
+    Returns an instance of a Synchronizer object which can be used for
     repository synchronization
 
     @param source_type: repository source type
@@ -206,7 +207,7 @@ def _sync(repo_id, skip_dict=None, progress_callback=None, synchronizer=None, ma
     """
     if not repo_api.set_sync_in_progress(repo_id, True):
         log.error("We saw sync was in progress for [%s]" % (repo_id))
-        raise ConflictingOperationException()
+        raise ConflictingOperationException(_('Sync for repo [%s] already in progress') % repo_id)
 
     try:
         log.info("Sync invoked for repo <%s>" % (repo_id))
