@@ -50,6 +50,7 @@ from pulp.server.db.model import PackageGroup
 from pulp.server.db.model import PackageGroupCategory
 from pulp.server.db.model import Consumer
 from pulp.server.db.model import RepoSource
+from pulp.server.db.model import persistence
 from pulp.server.tasking.exception import ConflictingOperationException
 from pulp.server.util import random_string
 from pulp.server.util import get_rpm_information
@@ -73,6 +74,8 @@ class TestRepoApi(unittest.TestCase):
         self.papi.clean()
         self.capi.clean()
         self.eapi.clean()
+        persistence.TaskSnapshot.get_collection().remove()
+        persistence.TaskHistory.get_collection().remove()
 
         if os.path.exists(CERTS_DIR):
             shutil.rmtree(CERTS_DIR)
@@ -708,7 +711,7 @@ class TestRepoApi(unittest.TestCase):
         grps = self.rapi.packagegroups(id=repo["id"], filter_incomplete_groups=True)
         self.assertTrue(grps.has_key(pkggroup1["id"]))
         self.assertTrue(not grps.has_key(pkggroup2["id"]))
-    
+
     def test_repo_package_group_categories(self):
         repo = self.rapi.create(
             'some-id_pkg_group_categories',

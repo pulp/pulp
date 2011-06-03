@@ -29,6 +29,7 @@ sys.path.insert(0, commondir)
 from pulp.server import async
 from pulp.server.api import repo_sync
 from pulp.server.api.repo import RepoApi
+from pulp.server.db.model import persistence
 from pulp.server.util import chunks
 from pulp.server.util import get_rpm_information
 from pulp.server.util import get_repo_packages
@@ -56,6 +57,8 @@ class TestUtil(unittest.TestCase):
     def clean(self):
         self.rapi.clean()
         testutil.common_cleanup()
+        persistence.TaskSnapshot.get_collection().remove()
+        persistence.TaskHistory.get_collection().remove()
 
     def test_getrpminfo(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
@@ -64,7 +67,7 @@ class TestUtil(unittest.TestCase):
         assert(info is not None)
         assert(info['version'] == '0.2.1')
         assert(info['name'] == 'pulp-test-package')
-        
+
     def test_chunks(self):
         list = range(1003)
         ck = chunks(list, 100)
@@ -81,29 +84,29 @@ class TestUtil(unittest.TestCase):
         self.assertTrue(len(packages) > 0)
         p = packages[0]
         self.assertTrue(p.name is not None)
-        
+
     def test_get_repo_package(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))
         datadir_a = my_dir + "/data/sameNEVRA_differentChecksums/A/repo/"
-        package = get_repo_package(datadir_a, 
+        package = get_repo_package(datadir_a,
                       'pulp-test-package-same-nevra-0.1.0-1.x86_64.rpm')
         self.assertNotEquals(package, None)
         self.assertNotEquals(package.name, None)
-       
+
     def test_get_relative_path(self):
         src = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
         dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/new_name.rpm"
         rel = get_relative_path(src, dst)
         expected_rel = "bzip2-devel-1.0.5-6.fc12.i686.rpm"
         self.assertEquals(rel, expected_rel)
-        
+
         src = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/bzip2-devel-1.0.5-6.fc12.i686.rpm"
         dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
         rel = get_relative_path(src, dst)
         expected_rel = "../../bzip2-devel-1.0.5-6.fc12.i686.rpm"
         self.assertEquals(rel, expected_rel)
-        
-        #Test typical case 
+
+        #Test typical case
         src = "/var/lib/pulp//packages/ece/bzip2-devel/1.0.5/6.fc12/i686/bzip2-devel-1.0.5-6.fc12.i686.rpm"
         dst = "/var/lib/pulp/repos/released/F-13/GOLD/Fedora/x86_64/os/Packages/bzip2-devel-1.0.5-6.fc12.i686.rpm"
         rel = get_relative_path(src, dst)
@@ -117,7 +120,7 @@ class TestUtil(unittest.TestCase):
         rel = get_relative_path(src, dst)
         expected_rel = "../../../../../../../../../../.." + src
         self.assertEquals(rel, expected_rel)
-        
+
         src = "/var/lib/pulp/packages/ruby-gofer/0.20/1.fc14/noarch/804/ruby-gofer-0.20-1.fc14.noarch.rpm"
         dst = "/var/lib/pulp/repos/repos/pulp/pulp/fedora-14/x86_64/ruby-gofer-0.20-1.fc14.noarch.rpm"
         rel = get_relative_path(src, dst)
