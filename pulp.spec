@@ -226,9 +226,6 @@ setfacl -m u:apache:rwx /etc/pki/content/
 sed -i -e 's/#-//g' /etc/httpd/conf.d/pulp-cds.conf
 %endif
 
-# Create a blank HTML page to be used for alive checks
-echo "" > /var/www/html/pulp-ping.html
-
 # -- post - pulp client ------------------------------------------------------
 
 %post client
