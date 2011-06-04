@@ -349,7 +349,7 @@ class HybridStorage(VolatileStorage):
     def remove_running(self, task):
         super(HybridStorage, self).remove_running(task)
         # the task has completed, so remove the snapshot
-        self.snapshot_collection.remove({'_id': task.snapshot_id})
+        self.snapshot_collection.remove({'_id': task.snapshot_id}, safe=True)
 
     def store_complete(self, task):
         super(HybridStorage, self).store_complete(task)
