@@ -253,7 +253,7 @@ class BaseSynchronizer(object):
                     log.error(e)
                     log.error("Caught DuplicateKeyError yet we didn't find a matching package in database")
                     log.error("Originally tried to create: name=%s, epoch=%s, version=%s, arch=%s, hashtype=%s, checksum=%s, file_name=%s" \
-                        % (name, epoch, version, arch, hashtype, checksum, file_name))
+                        % (package.name, package.epoch, package.version, package.arch, hashtype, checksum, file_name))
                     all_pkgs = self.package_api.packages(fields=["name", "epoch", "version", "arch", "filename", "checksum.sha256"])
                     log.error("<%s> packages are in Database" % (len(all_pkgs)))
                     log.error(all_pkgs[:100]) # limit how many pkgs we will display
