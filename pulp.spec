@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.186
+Version:        0.0.187
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -313,6 +313,50 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Sat Jun 04 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.187-1
+- Don't need the ping file, the load balancer now supports a members option
+  that will be used instead. (jason.dobies@redhat.com)
+- Added ability to query just the members of the load balancer, without causing
+  the balancing algorithm to take place or the URL generation to be returned.
+  (jason.dobies@redhat.com)
+- added safe flag to snapshot removal as re-enqueue of a quickly completing,
+  but scheduled task can overlap the insertion of the new snapshot and the
+  removal of the old without it (jconnor@redhat.com)
+- Add 'id' to debug output (jmatthews@redhat.com)
+- Fix log statement (jmatthews@redhat.com)
+- Adding more info so we can debug a rhel5 intermittent unit test failure
+  (jmatthews@redhat.com)
+- Automatic commit of package [python-isodate] minor release [0.4.4-2].
+  (jmatthew@redhat.com)
+- Revert "Fixing test_sync_multiple_repos to use same logic as in the code to
+  check running sync for a repo before deleting it" (jmatthews@redhat.com)
+- Bug 710455 - Grinder cannot sync a Pulp protected repo (jmatthews@redhat.com)
+- Removing unneeded log statements (jmatthews@redhat.com)
+- Removed comment (jmatthews@redhat.com)
+- Adding ping page (this may change, but want to get this in place now for
+  RHUI)) (jason.dobies@redhat.com)
+- Enhancements to Discovery Module: (pkilambi@redhat.com)
+- Reload CDS before these calls so saved info isn't wiped out
+  (jason.dobies@redhat.com)
+- Added better check for running syncsI swear I fixed this once...
+  (jconnor@redhat.com)
+- adding more information to conclicting operation exception
+  (jconnor@redhat.com)
+- added tear-down to for persistence to unittests (jconnor@redhat.com)
+- typo fix (jconnor@redhat.com)
+- Revert "renamed _sync to sycn as it is now a public part of the api"
+  (jconnor@redhat.com)
+- web service for cds task history (jconnor@redhat.com)
+- web service for repository task history (jconnor@redhat.com)
+- removed old unittests (jconnor@redhat.com)
+- new task history api module (jconnor@redhat.com)
+- Changed default file name handling so they can be changed in test cases.
+  (jason.dobies@redhat.com)
+- Refactored CDS "groups" to "cluster". (jason.dobies@redhat.com)
+- updating repo file associations (pkilambi@redhat.com)
+- update file delete to use new location (pkilambi@redhat.com)
+- 709318 - Changing the file store path to be more unique (pkilambi@redhat.com)
+
 * Thu Jun 02 2011 Jeff Ortel <jortel@redhat.com> 0.0.186-1
 - Reduce sync logging (jmatthew@redhat.com)
 - Fix for moving get_synchronizer from RepoApi to repo_sync
