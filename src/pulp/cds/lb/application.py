@@ -25,12 +25,36 @@ def process_request(environ, start_response):
     """
     status = '200 OK'
 
+    # If the members list is requested, don't rotate the permutations and just
+    # return the list of members. If not, assume a load balancing call and take
+    # steps to increment the balancer and generate full URLs.
+    if 'members' in environ['QUERY_STRING']:
+        output = _do_members()
+    else:
+        output = _do_balancing(environ['REQUEST_URI'])
+
+    # Prepare to return to the caller
+    response_headers = [('Content-type', 'text/plain'),
+                        ('Content-Length', str(len(output)))]
+    start_response(status, response_headers)
+
+    return [output]
+
+def _do_balancing(request_uri):
+    """
+    Performs the load balancing, using the given request URI as the
+    destination URL for each server.
+
+    @return: list of full URLs to access the given URI, one per line
+    @rtype:  str
+    """
+
     # Determine the balancing order
     cds_hostnames = _next_permutation()
 
     # Determine the repo URLs by merging in the requested repo with the
     # new CDS permutation
-    requested_repo = _requested_dir(environ['REQUEST_URI'])
+    requested_repo = _requested_dir(request_uri)
 
     repo_urls = []
 
@@ -46,11 +70,25 @@ def process_request(environ, start_response):
     # Package for returning to the caller
     output = '\n'.join(repo_urls)
 
-    response_headers = [('Content-type', 'text/plain'),
-                        ('Content-Length', str(len(output)))]
-    start_response(status, response_headers)
+    return output
 
-    return [output]
+def _do_members():
+    """
+    If a members check was called, simply read in the list of servers and
+    return that.
+
+    @return: list of members in the load balancer, one per line
+    @rtype:  str
+    """
+    file_storage = storage.FilePermutationStore()
+    file_storage.open()
+
+    members = file_storage.permutation
+
+    file_storage.close()
+
+    output = '\n'.join(members)
+    return output
 
 def _requested_dir(request_uri):
     """
