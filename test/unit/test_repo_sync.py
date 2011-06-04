@@ -92,10 +92,12 @@ class TestRepoSync(unittest.TestCase):
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
-
+        sync_tasks = []
         for r in repos:
             self.assertTrue(r)
-        sync_tasks = [repo_sync.sync(r["id"]) for r in repos]
+            t = repo_sync.sync(r["id"])
+            self.assertTrue(t)
+            sync_tasks.append(t)
         # Poll tasks and wait for sync to finish
         waiting_tasks = [t.id for t in sync_tasks]
         while len(waiting_tasks) > 0:
