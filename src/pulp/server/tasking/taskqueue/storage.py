@@ -25,6 +25,7 @@ from pymongo.errors import DuplicateKeyError
 from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
 from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
 from pulp.server.tasking.exception import DuplicateSnapshotError
+from pulp.server.tasking.scheduler import ImmediateScheduler
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
@@ -355,3 +356,11 @@ class HybridStorage(VolatileStorage):
         super(HybridStorage, self).store_complete(task)
         history = TaskHistory(task)
         self.history_collection.insert(history)
+
+
+class ImmediateOnlyHybridStorage(HybridStorage):
+
+    def enqueue_waiting(self, task):
+        if isinstance(task.scheduler, ImmediateScheduler):
+            return HybridStorage.enqueue_waiting(self, task)
+        return VolatileStorage.enqueue_waiting(self, task)
