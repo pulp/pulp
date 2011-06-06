@@ -44,6 +44,22 @@ class BaseDiscovery(object):
         self.sslclientkey = None
         self.sslverify = 0
         self._redirected = None
+        self.progress = {
+            'status': 'running',
+            'num_of_urls': 0,}
+
+    def set_callback(self, callback):
+        self.callback = callback
+
+    def progress_callback(self, **kwargs):
+        """
+        Callback called to update the pulp task's progress
+        """
+        if not self.callback:
+            return
+        for key in kwargs:
+            self.progress[key] = kwargs[key]
+        self.callback(self.progress)
 
     def setup(self, url, ca=None, cert=None, key=None, sslverify=False):
         '''
@@ -171,7 +187,7 @@ class YumDiscovery(BaseDiscovery):
     '''
     Yum discovery class to perform 
     '''
-    def discover(self):
+    def discover(self, progress_callback=None):
         '''
         Takes a root url and traverses the tree to find all the sub urls
         that has repodata in them.
@@ -195,10 +211,17 @@ class YumDiscovery(BaseDiscovery):
                     except:
                         # repomd.xml could not be found, skip
                         continue
+            self.set_callback(progress_callback)
+            self.progress_callback(num_of_urls=len(repourls))
         # clean up the temp files
         self.clean()
         return repourls
 
+def discovery_progress_callback(progress):
+    """
+    This method will report back the number of urls found.
+    """
+    return progress
 
 def get_discovery(type):
     '''
@@ -237,8 +260,8 @@ def main():
     print("Discovering urls with yum metadata, This could take sometime..")
     type = "yum"
     url = sys.argv[1]
-    ca =  open(sys.argv[2], 'r').read() #None
-    cert = open(sys.argv[3], 'r').read() #None
+    ca =  None #open(sys.argv[2], 'r').read() #None
+    cert = None # open(sys.argv[3], 'r').read() #None
     key = None #sys.argv[4]
     d = get_discovery(type)
     print "CA ",ca

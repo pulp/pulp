@@ -24,7 +24,8 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.api.file import FileApi
 from pulp.server.api.upload import File
 from pulp.server.api.upload import ImportUploadContent
-from pulp.server.api.discovery import get_discovery, InvalidDiscoveryInput
+from pulp.server.api.discovery import get_discovery, \
+    discovery_progress_callback, InvalidDiscoveryInput
 from pulp.server.agent import Agent
 from pulp.server.async import find_async
 from pulp.server.auth.authorization import READ, EXECUTE
@@ -416,7 +417,7 @@ class RepoDiscovery(AsyncController):
         log.info('Discovering compatible repo urls @ [%s]' % data['url'])
         # Kick off the async task
         task = self.start_task(discovery_obj.discover)
-
+        task.set_progress('progress_callback', discovery_progress_callback)
         # Munge the task information to return to the caller
         task_info = self._task_to_dict(task)
         task_info['status_path'] = self._status_path(task.id)

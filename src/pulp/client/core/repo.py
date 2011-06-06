@@ -1398,6 +1398,18 @@ class Discovery(RepoProgressAction):
         self.parser.add_option("-t", "--type", dest="type",
                                help=_("content type to look for during discovery(required); supported types: ['yum',]"))
 
+    def print_discovery_progress(self, progress):
+        current = ""
+        if progress and progress.has_key("num_of_urls"):
+            current += _("Number of Urls Discovered: %s\n") % (progress['num_of_urls'])
+            if not progress["num_of_urls"]:
+                current += "Waiting %s\n" % (self.get_wait_symbol())
+                self._previous_step = progress["num_of_urls"]
+        else:
+            current += "Waiting %s\n" % (self.get_wait_symbol())
+            self._previous_step = None
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
 
     def run(self):
         success = 0
@@ -1423,9 +1435,10 @@ class Discovery(RepoProgressAction):
             system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
         while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
-            self.print_progress(task['progress'])
+            self.print_discovery_progress(task['progress'])
             time.sleep(0.25)
             task = self.service_api.task_status(task['status_path'])
+
         repourls = task['result'] or []
 
         if not len(repourls):
