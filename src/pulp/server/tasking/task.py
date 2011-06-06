@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
 import datetime
 import logging
 import pickle
@@ -26,7 +25,6 @@ from pulp.server.db import model
 from pulp.server.tasking.exception import (
     TimeoutException, CancelException, UnscheduledTaskException)
 from pulp.server.tasking.scheduler import ImmediateScheduler
-from pulp.server.pexceptions import PulpException
 
 
 _log = logging.getLogger(__name__)
@@ -66,10 +64,6 @@ task_complete_states = (
     task_timed_out,
     task_canceled,
 )
-
-
-class TaskPicklingError(PulpException):
-    pass
 
 # task -------------------------------------------------------------------------
 
