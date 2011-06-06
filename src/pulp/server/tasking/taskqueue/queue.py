@@ -98,7 +98,7 @@ class TaskQueue(object):
         self.__lock.release()
         self.__dispatcher.join()
 
-    # protected methods: scheduling
+    # scheduling ---------------------------------------------------------------
 
     def _dispatch(self):
         """
@@ -192,7 +192,7 @@ class TaskQueue(object):
             if now - task.finish_time > self.finished_lifetime:
                 self.__storage.remove_complete(task)
 
-    # public methods: queue operations
+    # queue operations ---------------------------------------------------------
 
     def _test_uniqueness(self, task, unique):
         """
