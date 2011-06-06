@@ -282,11 +282,11 @@ class Task(object):
             if self.consecutive_failures == self.failure_threshold:
                 _log.warn(_('%s has had %d failures and will not be scheduled again') %
                           (str(self), self.consecutive_failures))
-                return False
+                raise UnscheduledTaskException(_('Too many consecutive failures for task: %s') % str(self))
         adjustments, scheduled_time = self.scheduler.schedule(self.scheduled_time)
         if scheduled_time is None:
             self.scheduled_time = None
-            raise UnscheduledTaskException()
+            raise UnscheduledTaskException(_('No more scheduled runs for task: %s') % str(self))
         if adjustments > 1:
             _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
         self.scheduled_time = scheduled_time
