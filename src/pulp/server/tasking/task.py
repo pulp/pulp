@@ -330,21 +330,17 @@ class Task(object):
             result = self.callable(*self.args, **self.kwargs)
             self.invoked(result)
         except TimeoutException, e:
-            _log.info('Task id:%s, method_name:%s: TIMED OUT' %
-                       (self.id, self.method_name))
+            _log.info(_('Task timed out: %s') % str(self))
             self.state = task_timed_out
             self._exception_delivered()
-            self.failed(e)
+            self._complete()
         except CancelException, e:
-            _log.info("Task id:%s, method_name:%s CancelException" %
-                      (self.id, self.method_name))
+            _log.info(_('Task cancelled: %s') % str(self))
             self.state = task_canceled
             self._exception_delivered()
-            self.failed(e)
+            self._complete()
         except Exception, e:
-            _log.info("Task id:%s, method_name:%s Exception: %s" %
-                      (self.id, self.method_name, e))
-            self._exception_delivered()
+            #self._exception_delivered()
             self.failed(e)
 
     # state methods ------------------------------------------------------------
@@ -368,7 +364,6 @@ class Task(object):
         self.consecutive_failures = 0
         self.result = result
         self.state = task_finished
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
         self._complete()
 
     def failed(self, exception, tb=None):
@@ -379,14 +374,11 @@ class Task(object):
         @param tb: The formatted traceback.
         @type tb: str
         """
+        self.state = task_error
         self.consecutive_failures += 1
         self.exception = repr(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
-        _log.error('Task id:%s, method_name:%s:\n%s' % (self.id,
-                                                        self.method_name,
-                                                        ''.join(self.traceback)))
-        self.state = task_error
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
+        _log.error(_('Task failed: %s\n%s') % (str(self), ''.join(self.traceback)))
         self._complete()
 
     def _complete(self):
@@ -394,6 +386,7 @@ class Task(object):
         Safely call the complete callback
         """
         assert self.state in task_complete_states
+        self.finish_time = datetime.datetime.now(dateutils.local_tz())
         if self.complete_callback is None:
             return
         try:
@@ -413,10 +406,9 @@ class Task(object):
             return
         if hasattr(self.thread, 'cancel'):
             self.thread.cancel()
-        self.state = task_canceled
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
-        # Intentionally not calling _complete().  This will be handled after
-        # exception has been delivered and the Exception is caught.
+        else:
+            self.state = task_canceled
+            self._complete()
 
     def timeout(self):
         """
@@ -428,8 +420,9 @@ class Task(object):
             return
         if hasattr(self.thread, 'timeout'):
             self.thread.timeout()
-        self.state = task_timed_out
-        self.finish_time = datetime.datetime.now(dateutils.local_tz())
+        else:
+            self.state = task_timed_out
+            self._complete()
 
 # asynchronous task ------------------------------------------------------------
 
