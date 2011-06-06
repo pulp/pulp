@@ -291,33 +291,6 @@ class Task(object):
             _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
         self.scheduled_time = scheduled_time
 
-    # attribute setters ------------------------------------------------------
-
-    def set_progress(self, arg, callback):
-        """
-        Setup a progress callback for the task, if it accepts one
-        @type arg: str
-        @param arg: name of the callable's progress callback argument
-        @type callback: callable, returning a dict
-        @param callback: value of the callable's progress callback argument
-        """
-        self.kwargs[arg] = self.progress_callback
-        self._progress_callback = callback
-
-    def progress_callback(self, *args, **kwargs):
-        """
-        Provide a callback for runtime progress reporting.
-        This is a pass-through to the function set by the set_progress method
-        that records the results.
-        """
-        try:
-            # NOTE, the self._progress_callback method should return a dict
-            self.progress = self._progress_callback(*args, **kwargs)
-        except Exception, e:
-            _log.error('Exception, %s, in task %s progress callback: %s' %
-                       (repr(e), self.id, self._progress_callback.__name__))
-            raise
-
     # run the task -------------------------------------------------------------
 
     def _exception_delivered(self):
