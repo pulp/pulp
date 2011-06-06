@@ -178,7 +178,7 @@ class TaskQueue(object):
                 continue
             if now - task.start_time < task.timeout:
                 continue
-            task.thread.timeout()
+            task.timeout()
 
     def _cull_tasks(self):
         """

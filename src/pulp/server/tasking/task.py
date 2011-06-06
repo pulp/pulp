@@ -428,13 +428,14 @@ class Task(object):
         except Exception, e:
             _log.exception(e)
 
-    # cancellation -------------------------------------------------------------
+    # premature termination ----------------------------------------------------
 
     def cancel(self):
         """
         Cancel a running task.
         NOTE: this is a noop if the task is already complete.
         """
+        _log.warn(_('Deprecated base class Task.cancel() called for [%s]') % str(self))
         if self.state in task_complete_states:
             return
         if hasattr(self.thread, 'cancel'):
@@ -443,6 +444,19 @@ class Task(object):
         self.finish_time = datetime.datetime.now(dateutils.local_tz())
         # Intentionally not calling _complete().  This will be handled after
         # exception has been delivered and the Exception is caught.
+
+    def timeout(self):
+        """
+        Timeout a running task.
+        NOTE: this is a noop if the task is already comlete.
+        """
+        _log.warn(_('Deprecated base class Task.timeout() called for [%s]') % str(self))
+        if self.state in task_complete_states:
+            return
+        if hasattr(self.thread, 'timeout'):
+            self.thread.timeout()
+        self.state = task_timed_out
+        self.finish_time = datetime.datetime.now(dateutils.local_tz())
 
 # asynchronous task ------------------------------------------------------------
 
