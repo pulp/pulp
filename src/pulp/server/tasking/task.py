@@ -200,24 +200,24 @@ class Task(object):
         return self.id == other.id
 
     def __str__(self):
-
+        """
+        Build  a string representation of the task.
+        """
+        # task name
         def _name():
             if self.class_name is None:
                 return self.method_name
             return '.'.join((self.class_name, self.method_name))
-
+        # task arguments
         def _args():
             return ', '.join([str(a) for a in self.args])
-
+        # task keyword arguments
         def _kwargs():
             return ', '.join(['='.join((str(k), str(v))) for k, v in self.kwargs.items()])
-
+        # put it all together
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
-    # -------------------------------------------------------------------------
-
-    def _get_task_snapshots_collection(self):
-        return model.TaskSnapshot.get_collection()
+    # snapshot methods ---------------------------------------------------------
 
     def snapshot(self):
         """
@@ -262,7 +262,7 @@ class Task(object):
         task.snapshot_id = snapshot.id
         return task
 
-    # -------------------------------------------------------------------------
+    # scheduling methods -------------------------------------------------------
 
     def reset(self):
         """
@@ -297,7 +297,7 @@ class Task(object):
             _log.warn(_('%s missed %d scheduled runs') % (str(self), adjustments - 1))
         self.scheduled_time = scheduled_time
 
-    # -------------------------------------------------------------------------
+    # attribute setters ------------------------------------------------------
 
     def set_progress(self, arg, callback):
         """
@@ -324,7 +324,7 @@ class Task(object):
                        (repr(e), self.id, self._progress_callback.__name__))
             raise
 
-    # -------------------------------------------------------------------------
+    # run the task -------------------------------------------------------------
 
     def _exception_delivered(self):
         """
@@ -380,7 +380,7 @@ class Task(object):
             self._exception_delivered()
             self.failed(e)
 
-    # -------------------------------------------------------------------------
+    # state methods ------------------------------------------------------------
 
     def invoked(self, result):
         """
@@ -434,7 +434,7 @@ class Task(object):
         except Exception, e:
             _log.exception(e)
 
-    # -------------------------------------------------------------------------
+    # cancellation -------------------------------------------------------------
 
     def cancel(self):
         """
@@ -450,7 +450,7 @@ class Task(object):
         # Intentionally not calling _complete().  This will be handled after
         # exception has been delivered and the Exception is caught.
 
-# asynchronous task -----------------------------------------------------------
+# asynchronous task ------------------------------------------------------------
 
 class AsyncTask(Task):
     """
