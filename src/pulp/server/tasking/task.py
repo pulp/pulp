@@ -23,10 +23,11 @@ from gettext import gettext as _
 
 from pulp.common import dateutils
 from pulp.server.db import model
-from pulp.server.tasking.exception import TimeoutException, CancelException, \
-    UnscheduledTaskException
+from pulp.server.tasking.exception import (
+    TimeoutException, CancelException, UnscheduledTaskException)
 from pulp.server.tasking.scheduler import ImmediateScheduler
 from pulp.server.pexceptions import PulpException
+
 
 _log = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ task_complete_states = (
 class TaskPicklingError(PulpException):
     pass
 
-# task ------------------------------------------------------------------------
+# task -------------------------------------------------------------------------
 
 class Task(object):
     """
@@ -80,33 +81,6 @@ class Task(object):
     error reporting as well as time limits on the call runtime in the form of a
     timeout and the ability to cancel the call.
     """
-
-    # field categories for task snapshots
-
-    _copied_fields = (
-        'id',
-        'class_name',
-        'method_name',
-        'timeout',
-        'cancel_attempts',
-        'state',
-        'exception',
-        'traceback',
-        'consecutive_failures',
-    )
-
-    _pickled_fields = (
-        'callable',
-        'args',
-        'kwargs',
-        'scheduler',
-        'scheduled_time',
-        'start_time',
-        'finish_time',
-        '_progress_callback',
-        'progress',
-        'result',
-    )
 
     def __init__(self,
                  callable,
@@ -217,44 +191,64 @@ class Task(object):
         # put it all together
         return 'Task %s: %s(%s, %s)' % (self.id, _name(), _args(), _kwargs())
 
+    # attribute setters ------------------------------------------------------
+
+    def set_progress(self, arg, callback):
+        """
+        Setup a progress callback for the task, if it accepts one
+        @type arg: str
+        @param arg: name of the callable's progress callback argument
+        @type callback: callable, returning a dict
+        @param callback: value of the callable's progress callback argument
+        """
+        self.kwargs[arg] = self.progress_callback
+        self._progress_callback = callback
+
+    def progress_callback(self, *args, **kwargs):
+        """
+        Provide a callback for runtime progress reporting.
+        This is a pass-through to the function set by the set_progress method
+        that records the results.
+        """
+        try:
+            # NOTE, the self._progress_callback method should return a dict
+            self.progress = self._progress_callback(*args, **kwargs)
+        except Exception, e:
+            _log.error('Exception, %s, in task %s progress callback: %s' %
+                       (repr(e), self.id, self._progress_callback.__name__))
+            raise
+
     # snapshot methods ---------------------------------------------------------
 
     def snapshot(self):
         """
         Serialize the task into snapshot and store it in db
         """
-        snapshot = {}
-        snapshot['task_class'] = pickle.dumps(self.__class__)
-        for attr in self._copied_fields:
-            snapshot[attr] = getattr(self, attr, None)
-        for attr in self._pickled_fields:
-            try:
-                if attr == "kwargs":
-                    kwargs = getattr(self, attr, None)
-                    kwargs.pop('progress_callback', None) # self-referential
-                    snapshot[attr] = pickle.dumps(kwargs) # ascii pickle
-                else:
-                    snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
-
-            except:
-                msg = _("Error pickling attribute %s: %s")
-                raise TaskPicklingError(msg % (attr, getattr(self, attr, None))), None, sys.exc_info()[2]
-        s = model.TaskSnapshot(snapshot)
-        self.snapshot_id = s.id
-        return s
+        # start recording pertinent data
+        data = {}
+        data['task'] = pickle.dumps(None)
+        data['task_class'] = pickle.dumps(self.__class__)
+        # self-grooming
+        callback = self.kwargs.pop('progress_callback', None) # self-referential
+        # try to pickle the task
+        try:
+            data['task'] = pickle.dumps(self)
+        except:
+            raise
+        # restore groomed state
+        if callback is not None:
+            self.progress_callback(callback)
+        # build the snapshot
+        snapshot = model.TaskSnapshot(data)
+        self.snapshot_id = snapshot.id
+        return snapshot
 
     @classmethod
     def from_snapshot(cls, snapshot):
         """
         Retrieve task from a snapshot
         """
-        #task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
-        task = cls(dir) # dir is being used as a placeholder
-        for attr in cls._copied_fields:
-            setattr(task, attr, snapshot.get(attr, None))
-        pickled_none = pickle.dumps(None) # pickled None, used as default value
-        for attr in cls._pickled_fields:
-            setattr(task, attr, pickle.loads(snapshot.get(attr, pickled_none)))
+        task = pickle.loads(snapshot['task'])
         # reset the progress callback
         if task._progress_callback is not None:
             task.set_progress('progress_callback', task._progress_callback)

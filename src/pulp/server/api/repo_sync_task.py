@@ -32,8 +32,9 @@ class RepoSyncTask(Task):
     """
     def __init__(self, callable, args=[], kwargs={}, timeout=None):
         super(RepoSyncTask, self).__init__(callable, args, kwargs, timeout)
-        self.synchronizer = None
+        self.repo_api = None
         self.repo_id = None
+        self.synchronizer = None
 
     def set_synchronizer(self, repo_api, repo_id, sync_obj):
         """
@@ -60,23 +61,27 @@ class RepoSyncTask(Task):
         # Allow thread to stop on it's own when it reaches a safe stopping point
 
     def snapshot(self):
-        s = super(RepoSyncTask, self).snapshot()
-        s['repo_id'] = self.repo_id
-        #s['synchronizer'] = pickle.dumps(self.synchronizer)
-        s['synchronizer_cls'] = None
-        if self.synchronizer is not None:
-            s['synchronizer_cls'] = pickle.dumps(self.synchronizer.__class__)
-        return s
+        # self grooming
+        repo_api = self.repo_api
+        synchronizer = self.synchronizer
+        self.repo_api = self.synchronizer = None
+        self.kwargs.pop('synchronizer', None)
+        # create the snapshot
+        snapshot = super(RepoSyncTask, self).snapshot()
+        snapshot['synchronizer_class'] = pickle.dumps(None)
+        if None not in (repo_api, synchronizer):
+            snapshot['synchronizer_class'] = pickle.dumps(synchronizer.__class__)
+            # restore the grooming
+            self.set_synchronizer(repo_api, self.repo_id, synchronizer)
+        return snapshot
 
     @classmethod
     def from_snapshot(cls, snapshot):
-        t = super(RepoSyncTask, cls).from_snapshot(snapshot)
-        t.repo_id = snapshot['repo_id']
-        #t.synchronizer = pickle.loads(snapshot['synchronizer'])
-        if snapshot['synchronizer_cls'] is None:
-            t.synchronizer = None
-        else:
-            # this assumes that the synchronizer constructor takes no arguments
-            synchronizer_cls = pickle.loads(snapshot['synchronizer_cls'])
-            t.synchronizer = synchronizer_cls()
-        return t
+        # create task using base class
+        task = super(RepoSyncTask, cls).from_snapshot(snapshot)
+        # restore synchronizer, if applicable
+        synchronizer_class = pickle.loads(snapshot['synchronizer_class'])
+        if synchronizer_class is not None:
+            from pulp.server.api.repo import RepoApi # avoid circular import
+            task.set_synchronizer(RepoApi(), task.repo_id, synchronizer_class())
+        return task
