@@ -1387,6 +1387,10 @@ class Discovery(RepoProgressAction):
     def setup_parser(self):
         self.parser.add_option("-u", "--url", dest="url",
                                help=_("root url to perform discovery (required)"))
+        self.parser.add_option("--feed_ca", dest="feed_ca",
+                               help=_("path location to the feed's ca certificate"))
+        self.parser.add_option("--feed_cert", dest="feed_cert",
+                               help=_("path location to the feed's entitlement combined private key and certificate"))
         self.parser.add_option("-g", "--groupid", action="append", dest="groupid",
                                help=_("groupids to associate the discovered repos (optional)"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
@@ -1394,13 +1398,27 @@ class Discovery(RepoProgressAction):
         self.parser.add_option("-t", "--type", dest="type",
                                help=_("content type to look for during discovery(required); supported types: ['yum',]"))
 
+
     def run(self):
         success = 0
         url = self.get_required_option('url')
         ctype = self.get_required_option('type')
+        # Feed cert bundle
+        cacert = self.opts.feed_ca
+        cert = self.opts.feed_cert
+        feed_cacert_tmp = None
+        if cacert:
+            feed_cacert_tmp = utils.readFile(cacert)
+        feed_cert_tmp = None
+        if cert:
+            feed_cert_tmp = utils.readFile(cert)
+        feed_cert_data = {}
+        if feed_cert_tmp or feed_cacert_tmp:
+            feed_cert_data = {"ca": feed_cacert_tmp,
+                              "cert": feed_cert_tmp,}
         print(_("Discovering urls with yum metadata, This could take some time..."))
         try:
-            task = self.service_api.repo_discovery(url, type=ctype)
+            task = self.service_api.repo_discovery(url, type=ctype, cert_data=feed_cert_data)
         except Exception,e:
             system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
@@ -1458,7 +1476,9 @@ class Discovery(RepoProgressAction):
                 if not id:
                     #no valid id formed, continue
                     continue
-                repo = self.repository_api.create(id, id, 'noarch', groupid=self.opts.groupid or [], feed=repourl)
+                repo = self.repository_api.create(id, id, 'noarch',
+                                                  groupid=self.opts.groupid or [],
+                                                  feed=repourl, feed_cert_data=feed_cert_data,)
                 print("Successfully created repo [%s]" % repo['id'])
             except Exception, e:
                 success = -1

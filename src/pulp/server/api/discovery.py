@@ -13,10 +13,12 @@
 
 
 # Python
+import os
 import re
 import sys
 import StringIO
 import pycurl
+import tempfile
 import urlparse
 import types
 import BeautifulSoup
@@ -27,6 +29,8 @@ log = logging.getLogger(__name__)
 
 class InvalidDiscoveryInput(Exception):
     pass
+
+CACHE_DIR="/var/lib/pulp/cache"
 
 class BaseDiscovery(object):
     """
@@ -48,7 +52,7 @@ class BaseDiscovery(object):
         @type url: string
         @param ca: optional ca certificate to access the url
         @type ca: string
-        @param cert: optional certificate to access the url(this could include both cert and key)
+        @param cert: optional certificate to access the url(this could include both crt and key)
         @type cert: string
         @param key: optional certificate key to access the url
         @type key: string
@@ -59,9 +63,9 @@ class BaseDiscovery(object):
         if proto not in ['http', 'https', 'ftp']:
              raise InvalidDiscoveryInput("Invalid input url %s" % url)
         self.url = url
-        self.sslcacert = ca
-        self.sslclientcert = cert
-        self.sslclientkey = key
+        self.sslcacert = write_temp_file(ca)
+        self.sslclientcert = write_temp_file(cert)
+        self.sslclientkey = write_temp_file(key)
         self.sslverify = sslverify
 
     def _get_header(self, buf):
@@ -72,7 +76,7 @@ class BaseDiscovery(object):
         if buf.lower().startswith('location:'):
             self._redirected = buf[9:].strip()
 
-    def initiate_request(self, url=None):
+    def _request(self, url=None):
         '''
          Initialize the curl object; loads the url and fetches the page.
          in case of redirects[301,302], the redirection is followed and
@@ -122,8 +126,8 @@ class BaseDiscovery(object):
         @rtype: list
         """
         try:
-            log.debug("Processing URL : %s" % url)
-            src = self.initiate_request(url=url)
+            log.info("Processing URL : %s" % url)
+            src = self._request(url=url)
         except Exception, e:
             log.debug("An error occurred while reading url page [%s] : %s" % (url, e))
             return []
@@ -151,6 +155,15 @@ class BaseDiscovery(object):
         self._redirected = None
         return urls
 
+    def clean(self):
+        for crt in [self.sslcacert, self.sslclientcert, self.sslclientkey]:
+            if crt and os.path.exists(crt):
+                try:
+                    log.info("cleaning up file [%s]" % crt)
+                    os.remove(crt)
+                except:
+                    log.error("Unable to remove temporary cert file [%s]" % crt)
+
     def discover(self):
         raise NotImplementedError('base discovery class method called')
 
@@ -177,11 +190,13 @@ class YumDiscovery(BaseDiscovery):
                     urls.append(result)
                 if result.endswith('/repodata/'):
                     try:
-                        self.initiate_request(url="%s/%s" % (result, 'repomd.xml'))
+                        self._request(url="%s/%s" % (result, 'repomd.xml'))
                         repourls.append(result[:result.rfind('/repodata/')])
                     except:
                         # repomd.xml could not be found, skip
                         continue
+        # clean up the temp files
+        self.clean()
         return repourls
 
 
@@ -201,6 +216,20 @@ DISCOVERY_MAP = {
     "yum" : YumDiscovery,
 }
 
+def write_temp_file(buf):
+    if not buf:
+        return None
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+    try:
+        (fd, tempfilename) = tempfile.mkstemp(prefix="_discovery-%d-" \
+                                   % os.getpid(), dir=CACHE_DIR)
+        tmpfile = os.fdopen(fd, "wb+")
+        tmpfile.write(buf)
+    finally:
+        tmpfile.close()
+    return tempfilename
+
 def main():
     if len(sys.argv) < 2:
         print "USAGE:python discovery.py <url>"
@@ -208,10 +237,12 @@ def main():
     print("Discovering urls with yum metadata, This could take sometime..")
     type = "yum"
     url = sys.argv[1]
-    ca =  None
-    cert = None
-    key = None
+    ca =  open(sys.argv[2], 'r').read() #None
+    cert = open(sys.argv[3], 'r').read() #None
+    key = None #sys.argv[4]
     d = get_discovery(type)
+    print "CA ",ca
+    print "CERT", cert
     d.setup(url, ca, cert, key)
     repourls = d.discover()
     print('========================')
