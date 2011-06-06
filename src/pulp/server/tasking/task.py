@@ -84,8 +84,8 @@ class Task(object):
 
     def __init__(self,
                  callable,
-                 args=[],
-                 kwargs={},
+                 args=None,
+                 kwargs=None,
                  scheduler=None,
                  timeout=None):
         """
@@ -113,8 +113,8 @@ class Task(object):
 
         # task resources
         self.callable = callable
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args or []
+        self.kwargs = kwargs or {}
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout = timeout
         self.cancel_attempts = 0
