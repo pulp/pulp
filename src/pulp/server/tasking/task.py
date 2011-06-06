@@ -117,7 +117,6 @@ class Task(object):
         self.kwargs = kwargs or {}
         self.scheduler = scheduler or ImmediateScheduler()
         self.timeout = timeout
-        self.cancel_attempts = 0
         self._progress_callback = None
 
         # resources managed by the task queue to deliver events
@@ -138,6 +137,7 @@ class Task(object):
         self.exception = None
         self.traceback = None
         self.consecutive_failures = 0
+        self.cancel_attempts = 0
 
     def __cmp__(self, other):
         """
