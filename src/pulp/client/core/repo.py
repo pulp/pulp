@@ -470,7 +470,6 @@ class Create(RepoAction):
         # Feed cert bundle
         ca = self.opts.feed_ca
         cert = self.opts.feed_cert
-        key = self.opts.feed_key
         if ca:
             ca = utils.readFile(ca)
         if cert:
@@ -481,7 +480,6 @@ class Create(RepoAction):
         consumer_cert = None
         ca = self.opts.consumer_ca
         cert = self.opts.consumer_cert
-        key = self.opts.consumer_key
         if ca:
             ca = utils.readFile(ca)
         if cert:
