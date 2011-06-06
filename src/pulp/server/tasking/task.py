@@ -33,37 +33,25 @@ _log = logging.getLogger(__name__)
 
 task_waiting = 'waiting'
 task_running = 'running'
+task_suspended = 'suspended'
 task_finished = 'finished'
 task_error = 'error'
 task_timed_out = 'timed out'
 task_canceled = 'canceled'
-task_suspended = 'suspended'
 
-task_states = (
-    task_waiting,
-    task_running,
-    task_finished,
-    task_error,
-    task_timed_out,
-    task_canceled,
-    task_suspended,
-)
+task_states = (task_waiting,
+               task_running,
+               task_suspended,
+               task_finished,
+               task_error,
+               task_timed_out,
+               task_canceled)
 
-task_ready_states = (
-    task_waiting,
-)
+task_ready_states = (task_waiting,)
 
-task_incomplete_states = (
-    task_waiting,
-    task_running,
-)
+task_incomplete_states = (task_waiting, task_running, task_suspended)
 
-task_complete_states = (
-    task_finished,
-    task_error,
-    task_timed_out,
-    task_canceled,
-)
+task_complete_states = (task_finished, task_error, task_timed_out, task_canceled)
 
 # task -------------------------------------------------------------------------
 
@@ -265,7 +253,6 @@ class Task(object):
         self.exception = None
         self.traceback = None
 
-
     def schedule(self):
         """
         Schedule the task's next run time.
@@ -329,12 +316,11 @@ class Task(object):
             self._exception_delivered()
             self._complete()
         except CancelException, e:
-            _log.info(_('Task cancelled: %s') % str(self))
+            _log.info(_('Task canceled: %s') % str(self))
             self.state = task_canceled
             self._exception_delivered()
             self._complete()
         except Exception, e:
-            #self._exception_delivered()
             self.failed(e)
 
     # state methods ------------------------------------------------------------
@@ -355,9 +341,10 @@ class Task(object):
         @param result: The object returned by the I{method}.
         @type result: object.
         """
-        self.consecutive_failures = 0
-        self.result = result
         self.state = task_finished
+        self.result = result
+        self.consecutive_failures = 0
+        _log.info(_('Task succeeded: %s') % str(self))
         self._complete()
 
     def failed(self, exception, tb=None):
@@ -369,9 +356,9 @@ class Task(object):
         @type tb: str
         """
         self.state = task_error
-        self.consecutive_failures += 1
         self.exception = repr(exception)
         self.traceback = tb or traceback.format_exception(*sys.exc_info())
+        self.consecutive_failures += 1
         _log.error(_('Task failed: %s\n%s') % (str(self), ''.join(self.traceback)))
         self._complete()
 
@@ -402,6 +389,7 @@ class Task(object):
             self.thread.cancel()
         else:
             self.state = task_canceled
+            _log.info(_('Task canceled: %s') % str(self))
             self._complete()
 
     def timeout(self):
@@ -416,6 +404,7 @@ class Task(object):
             self.thread.timeout()
         else:
             self.state = task_timed_out
+            _log.info(_('Task timed out: %s') % str(self))
             self._complete()
 
 # asynchronous task ------------------------------------------------------------
@@ -429,6 +418,7 @@ class AsyncTask(Task):
     transition to a finished state.  Rather, the Task state is advanced
     by external processing.
     """
+
     def invoked(self, result):
         """
         The I{method} has been successfully invoked.
