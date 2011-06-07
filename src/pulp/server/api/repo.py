@@ -96,7 +96,10 @@ class RepoApi(BaseApi):
 
     def __getstate__(self):
         odict = self.__dict__.copy()
-        odict.pop('_RepoApi__sync_lock', None)
+        for k, v in odict.items():
+            if not isinstance(v, threading.RLock):
+                continue
+            odict.pop(k)
         return odict
 
     def _getcollection(self):
