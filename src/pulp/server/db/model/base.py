@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import threading
 import uuid
 from gettext import gettext as _
 
@@ -58,11 +59,18 @@ class Model(dict):
     collection_name = None
     unique_indicies = ('id',) # note, '_id' is automatically unique and indexed
     other_indicies = ()
-
+    __uuid_lock = threading.RLock()
     # -------------------------------------------------------------------------
 
     def __init__(self):
-        self._id = str(uuid.uuid4())
+        # On RHEL-5 there is an issue with multiple threads calling uuid.uuid4()
+        # non-unique ids may be returned, using lock to ensure serial access
+        self.__uuid_lock.acquire()
+        try:
+            uniq_id = uuid.uuid4()
+        finally:
+            self.__uuid_lock.release()
+        self._id = str(uniq_id)
         self.id = self._id
 
     # dict to dot-notation mapping methods
