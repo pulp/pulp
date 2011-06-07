@@ -202,14 +202,14 @@ class Task(object):
 
     # snapshot methods ---------------------------------------------------------
 
-    _copy_fields = ('id', 'class_name', 'method_name', 'timeout',
-                    'failure_threshold', 'schedule_threshold', 'state',
-                    'progress', 'consecutive_failures', 'cancel_attempts')
+    _copy_fields = ('id', 'class_name', 'method_name', 'failure_threshold',
+                    'state', 'progress', 'consecutive_failures',
+                    'cancel_attempts')
 
-    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler',
-                      '_progress_callback',
-                      'scheduled_time', 'start_time', 'finish_time',
-                      'result', 'exception', 'traceback')
+    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout',
+                      'schedule_threshold', '_progress_callback',
+                      'scheduled_time', 'start_time', 'finish_time', 'result',
+                      'exception', 'traceback')
 
     def snapshot(self):
         """
