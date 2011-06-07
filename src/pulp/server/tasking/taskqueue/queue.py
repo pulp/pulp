@@ -23,7 +23,7 @@ from pulp.server.tasking.exception import (
     TaskThreadStateError, UnscheduledTaskException, NonUniqueTaskException)
 from pulp.server.tasking.scheduler import (
     AtScheduler, ImmediateScheduler, IntervalScheduler)
-from pulp.server.tasking.taskqueue.thread import DRLock, TaskThread
+from pulp.server.tasking.taskqueue.thread import TaskThread
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states, task_running
 
