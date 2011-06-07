@@ -62,23 +62,22 @@ class RepoSyncTask(Task):
 
     def snapshot(self):
         # self grooming
-        repo_api = self.repo_api
-        synchronizer = self.synchronizer
-        self.repo_api = self.synchronizer = None
         self.kwargs.pop('synchronizer', None)
         # create the snapshot
         snapshot = super(RepoSyncTask, self).snapshot()
+        snapshot['repo_id'] = self.repo_id
         snapshot['synchronizer_class'] = pickle.dumps(None)
-        if None not in (repo_api, synchronizer):
+        if self.synchronizer is not None:
             snapshot['synchronizer_class'] = pickle.dumps(synchronizer.__class__)
             # restore the grooming
-            self.set_synchronizer(repo_api, self.repo_id, synchronizer)
+            self.set_synchronizer(self.repo_api, self.repo_id, synchronizer)
         return snapshot
 
     @classmethod
     def from_snapshot(cls, snapshot):
         # create task using base class
         task = super(RepoSyncTask, cls).from_snapshot(snapshot)
+        task.repo_id = snapshot['repo_id']
         # restore synchronizer, if applicable
         synchronizer_class = pickle.loads(snapshot['synchronizer_class'])
         if synchronizer_class is not None:
