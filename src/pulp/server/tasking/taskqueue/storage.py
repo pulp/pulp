@@ -183,7 +183,7 @@ def _unpickle_method(func_name, obj, cls):
 
 
 def _pickle_lock(rlock):
-    return _unpickle_rlock, ()
+    return _unpickle_lock, ()
 
 
 def _unpickle_lock():
