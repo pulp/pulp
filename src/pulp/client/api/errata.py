@@ -59,10 +59,18 @@ class ErrataAPI(PulpAPI):
         path = "/errata/%s/" % id
         return self.server.GET(path)[1]
 
-    def errata(self, id=None, title=None, description=None, version=None,
-               release=None, type=None, status=None, updated=None, issued=None,
-               pushcount=None, from_str=None, reboot_suggested=None):
-        pass
+    def errata(self, types=None, id=None, title=None, repo_defined=None):
+        path = "/errata/"
+        queries = []
+        if types:
+            queries.append(('type', types))
+        if id:
+            queries.append(('id', id))
+        if title:
+            queries.append(('title', title))
+        #if repo_defined is not None:
+            #queries.append(('repo_defined', repo_defined))
+        return self.server.GET(path, queries)[1]
 
     def find_repos(self, id):
         path = "/errata/%s/get_repos/" % id

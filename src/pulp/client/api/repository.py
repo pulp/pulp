@@ -227,9 +227,11 @@ class RepositoryAPI(PulpAPI):
         path = "/repositories/%s/delete_errata/" % id
         return self.server.POST(path, erratainfo)[1]
 
-    def errata(self, id, types=()):
+    def errata(self, id, type=None):
         path = "/repositories/%s/errata/" % id
-        queries = [('type', t) for t in types]
+        queries = []
+        if type:
+            queries = [('type', type)]
         return self.server.GET(path, queries)[1]
 
     def addkeys(self, id, keylist):

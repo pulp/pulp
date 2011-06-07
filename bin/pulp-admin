@@ -69,6 +69,7 @@ def setup_admin(admin):
 
     errata_cmd = errata.Errata()
     errata_cmd.add_action('list', errata.List())
+    errata_cmd.add_action('search', errata.Search())
     errata_cmd.add_action('info', errata.Info())
     errata_cmd.add_action('install', errata.Install())
     errata_cmd.add_action('create', errata.Create())

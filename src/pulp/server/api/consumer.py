@@ -508,7 +508,10 @@ class ConsumerApi(BaseApi):
         List applicable errata for a given consumer id
         """
         consumer = self.consumer(id)
-        return self._applicable_errata(consumer, types).keys()
+        consumer_errata = []
+        for errataid in self._applicable_errata(consumer, types).keys():
+            consumer_errata.append( self.errataapi.erratum(errataid, fields=['id', 'title', 'type']))
+        return consumer_errata
 
     def list_package_updates(self, id, types=()):
         """
@@ -547,6 +550,7 @@ class ConsumerApi(BaseApi):
         pkg_profile_dict = [dict(pkg) for pkg in pkg_profile]
         pkg_profile_names = [pkg['name'] for pkg in pkg_profile]
         #Compute applicable errata by subscribed repos
+
         errataids = [eid for repoid in consumer["repoids"] \
                      for eid in self.repoapi.errata(repoid, types) ]
         for erratumid in errataids:
