@@ -17,9 +17,9 @@ import heapq
 import itertools
 import logging
 import sys
-import thread
 import types
 from gettext import gettext as _
+from threading import thread # avoids name conflict with local thread module
 
 from pymongo.errors import DuplicateKeyError
 
