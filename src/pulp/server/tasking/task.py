@@ -202,25 +202,32 @@ class Task(object):
 
     # snapshot methods ---------------------------------------------------------
 
+    _copy_fields = ('id', 'class_name', 'method_name', 'timeout',
+                    'failure_threshold', 'schedule_threshold', 'state',
+                    'progress', 'consecutive_failures', 'cancel_attempts')
+
+    _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler',
+                      '_progress_callback', 'complete_callback',
+                      'scheduled_time', 'start_time', 'finish_time',
+                      'result', 'exception', 'traceback')
+
     def snapshot(self):
         """
         Serialize the task into snapshot and store it in db
         """
         # start recording pertinent data
         data = {}
-        data['task'] = pickle.dumps(None)
         data['task_class'] = pickle.dumps(self.__class__)
         # self-grooming
         callback = self.kwargs.pop('progress_callback', None) # self-referential
-        thread = self.thread
-        self.thread = None
-        # try to pickle the task
-        data['task'] = pickle.dumps(self)
+        # store the attributes of the task
+        for field in self._copy_fields:
+            data[field] = getattr(self, field)
+        for field in self._pickle_fields:
+            data[field] = pickle.dumps(getattr(self, field))
         # restore groomed state
         if callback is not None:
             self.progress_callback(callback)
-        if thread is not None:
-            self.thread = thread
         # build the snapshot
         snapshot = model.TaskSnapshot(data)
         self.snapshot_id = snapshot.id
@@ -231,7 +238,13 @@ class Task(object):
         """
         Retrieve task from a snapshot
         """
-        task = pickle.loads(snapshot['task'])
+        def _dummy_callable():
+            pass
+        task = cls(_dummy_callable)
+        for field in task._copy_fields:
+            setattr(task, field, snapshot[field])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
         # reset the progress callback
         if task._progress_callback is not None:
             task.set_progress('progress_callback', task._progress_callback)
