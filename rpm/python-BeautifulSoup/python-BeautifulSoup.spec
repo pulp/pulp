@@ -6,7 +6,7 @@
 Name:           python-BeautifulSoup
 Epoch:          1
 Version:        3.0.8.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        HTML/XML parser for quick-turnaround applications like screen-scraping
 
 Group:          Development/Languages
@@ -74,6 +74,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Tue Jun 07 2011 John Matthews <jmatthews@redhat.com> 3.0.8.1-2
+- new package built with tito
+
 * Sun Jun 20 2010 Terje Rosten <terje.rosten@ntnu.no> - 1:3.0.8.1-1
 - 3.0.8.1
 
