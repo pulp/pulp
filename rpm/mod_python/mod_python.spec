@@ -3,7 +3,7 @@
 Summary: An embedded Python interpreter for the Apache HTTP Server
 Name: mod_python
 Version: 3.3.1
-Release: 14%{?dist}.1
+Release: 14%{?dist}.2
 Source: http://www.apache.org/dist/httpd/modpython/%{name}-%{version}.tgz
 Source1: python.conf
 Patch1: mod_python-3.1.3-ldflags.patch
@@ -63,6 +63,9 @@ cp -a doc-html/* $RPM_BUILD_ROOT%{contentdir}/manual/mod/mod_python/
 %{python_sitearch}/mod_python*
 
 %changelog
+* Tue Jun 07 2011 John Matthews <jmatthews@redhat.com> 3.3.1-14.2
+- new package built with tito
+
 * Sat Dec 4 2010 Lubomir Rintel <lkundrak@v3.sk> - 3.3.1-14.1
 - Drop the pycapsule patch for el6
 
