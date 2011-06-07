@@ -105,11 +105,9 @@ def _load_persisted_tasks():
         task = TaskSnapshot(snapshot).to_task()
         tasks.append(task)
         log.info(_('Loaded Task from database: %s') % str(task))
-    #collection.drop()
-    #collection.remove({'_id': {'$in': snapshot_ids}}, safe=True)
     for id in snapshot_ids:
         last_error = collection.remove({'_id': id}, safe=True)
-        if last_error:
+        if not last_error.get('ok', False):
             raise Exception(repr(last_error))
     for task in tasks:
         enqueue(task)
