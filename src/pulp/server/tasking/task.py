@@ -207,9 +207,8 @@ class Task(object):
                     'cancel_attempts')
 
     _pickle_fields = ('callable', 'args', 'kwargs', 'scheduler', 'timeout',
-                      'schedule_threshold', '_progress_callback',
-                      'scheduled_time', 'start_time', 'finish_time', 'result',
-                      'exception', 'traceback')
+                      'schedule_threshold', '_progress_callback', 'start_time',
+                      'finish_time', 'result', 'exception', 'traceback')
 
     def snapshot(self):
         """
