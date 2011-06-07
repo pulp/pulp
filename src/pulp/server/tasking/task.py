@@ -212,14 +212,15 @@ class Task(object):
         data['task_class'] = pickle.dumps(self.__class__)
         # self-grooming
         callback = self.kwargs.pop('progress_callback', None) # self-referential
+        thread = self.thread
+        self.thread = None
         # try to pickle the task
-        try:
-            data['task'] = pickle.dumps(self)
-        except:
-            raise
+        data['task'] = pickle.dumps(self)
         # restore groomed state
         if callback is not None:
             self.progress_callback(callback)
+        if thread is not None:
+            self.thread = thread
         # build the snapshot
         snapshot = model.TaskSnapshot(data)
         self.snapshot_id = snapshot.id
