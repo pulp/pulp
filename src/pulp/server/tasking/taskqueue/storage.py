@@ -17,9 +17,9 @@ import heapq
 import itertools
 import logging
 import sys
+import threading
 import types
 from gettext import gettext as _
-from threading import thread # avoids name conflict with local thread module
 
 from pymongo.errors import DuplicateKeyError
 
@@ -187,7 +187,7 @@ def _pickle_lock(rlock):
 
 
 def _unpickle_lock():
-    return thread.allocate_lock()
+    return threading.Lock()
 
 # hybrid storage class ---------------------------------------------------------
 
@@ -203,7 +203,7 @@ class HybridStorage(VolatileStorage):
         super(HybridStorage, self).__init__()
         # set custom pickling functions for snapshots
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        copy_reg.pickle(thread.LockType, _pickle_lock, _unpickle_lock)
+        copy_reg.pickle(threading.thread.LockType, _pickle_lock, _unpickle_lock)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
         # load existing incomplete tasks from the database on initialization
         self._load_existing_tasks_from_db()
