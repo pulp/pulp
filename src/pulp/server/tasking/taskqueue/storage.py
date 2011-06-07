@@ -186,7 +186,6 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
-# snapshot storage class -------------------------------------------------------
 
 def _pickle_lock(rlock):
     return _unpickle_lock, ()
@@ -195,6 +194,7 @@ def _pickle_lock(rlock):
 def _unpickle_lock():
     return thread.allocate_lock()
 
+# snapshot storage class -------------------------------------------------------
 
 class SnapshotStorage(VolatileStorage):
     """
