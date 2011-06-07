@@ -180,18 +180,18 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
-# hybrid storage class ---------------------------------------------------------
+# snapshot storage class -------------------------------------------------------
 
 class SnapshotStorage(VolatileStorage):
     """
-    Hybrid storage class that uses volatile memory for storage and correctness
+    Snapshot storage class that uses volatile memory for storage and correctness
     and uses the database to persiste waiting and running tasks across reboots
     and to keep completed tasks around indefinitely for history and auditing
     purposes.
     """
 
     def  __init__(self):
-        super(HybridStorage, self).__init__()
+        super(SnapshotStorage, self).__init__()
         # set custom pickling functions for snapshots
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
@@ -219,16 +219,16 @@ class SnapshotStorage(VolatileStorage):
                 self.snapshot_collection.insert(snapshot, safe=True)
             except DuplicateKeyError:
                 raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
-        super(HybridStorage, self).enqueue_waiting(task)
+        super(SnapshotStorage, self).enqueue_waiting(task)
 
     # storage methods
 
     def remove_running(self, task):
-        super(HybridStorage, self).remove_running(task)
+        super(SnapshotStorage, self).remove_running(task)
         # the task has completed, so remove the snapshot
         self.snapshot_collection.remove({'_id': task.snapshot_id}, safe=True)
 
     def store_complete(self, task):
-        super(HybridStorage, self).store_complete(task)
+        super(SnapshotStorage, self).store_complete(task)
         history = TaskHistory(task)
         self.history_collection.insert(history)
