@@ -75,7 +75,6 @@ class TaskQueue(object):
         self.schedule_threshold = schedule_threshold
 
         self.__lock = threading.RLock()
-        #self.__lock = DRLock()
         self.__condition = threading.Condition(self.__lock)
 
         self.__running_count = 0
