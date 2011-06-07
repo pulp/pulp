@@ -26,7 +26,7 @@
 
 Name:           pymongo
 Version:        1.9
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Python driver for MongoDB
 
 Group:          Development/Languages
@@ -196,6 +196,9 @@ nosetests --exclude="$exclude"
 popd
 
 %changelog
+* Tue Jun 07 2011 John Matthews <jmatthews@redhat.com> 1.9-7
+- new package built with tito
+
 * Mon Nov 08 2010 Silas Sewell <silas@sewell.ch> - 1.9-6
 - Make path conditional (more big endian issues)
 
