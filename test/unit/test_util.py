@@ -31,6 +31,7 @@ from pulp.server.api import repo_sync
 from pulp.server.api.repo import RepoApi
 from pulp.server.db.model import persistence
 from pulp.server.util import chunks
+from pulp.server.tasking import task
 from pulp.server.util import get_rpm_information
 from pulp.server.util import get_repo_packages
 from pulp.server.util import get_repo_package
@@ -185,8 +186,21 @@ class TestUtil(unittest.TestCase):
                 print "t.caught_exception = %s" % (t.caught_exception)
         self.assertFalse(caught)
 
+        sync_tasks = []
+        sync_tasks.append(background_sync_task_a)
+        sync_tasks.append(background_sync_task_b)
 
-
+        # Poll tasks and wait for sync to finish
+        waiting_tasks = [t.id for t in sync_tasks]
+        while len(waiting_tasks) > 0:
+            time.sleep(1)
+            for t_id in waiting_tasks:
+                found_tasks = async.find_async(id=t_id)
+                self.assertEquals(len(found_tasks), 1)
+                updated_task = found_tasks[0]
+                if updated_task.state in task.task_complete_states:
+                    self.assertEquals(updated_task.state, task.task_finished)
+                    waiting_tasks.remove(t_id)
 
 
 
