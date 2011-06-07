@@ -235,7 +235,7 @@ class SnapshotStorage(VolatileStorage):
     def enqueue_waiting(self, task):
         # create and keep a snapshot of the task that can be loaded from the
         # database and executed across reboots, server restarts, etc.
-        if isinstance(task.scheduler, )AtScheduler, ImmediateScheduler)):
+        if isinstance(task.scheduler, (AtScheduler, ImmediateScheduler)):
             self._snapshot_task(task)
         super(SnapshotStorage, self).enqueue_waiting(task)
 
