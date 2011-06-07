@@ -23,7 +23,7 @@ from pulp.server.tasking.exception import (
     NonUniqueTaskException, DuplicateSnapshotError)
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
-from pulp.server.tasking.taskqueue.storage import HybridStorage
+from pulp.server.tasking.taskqueue.storage import ImmediateOnlyHybridStorage
 
 
 log = getLogger(__name__)
@@ -103,7 +103,7 @@ def initialize():
     _queue = TaskQueue(max_running=max_concurrent,
                        failure_threshold=failure_threshold,
                        schedule_threshold=schedule_threshold,
-                       storage=HybridStorage(),
+                       storage=ImmediateOnlyHybridStorage(),
                        dispatch_interval=5)
 
 
