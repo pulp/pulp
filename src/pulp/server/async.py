@@ -98,10 +98,18 @@ def _configured_schedule_threshold():
 def _load_persisted_tasks():
     assert _queue is not None
     collection = TaskSnapshot.get_collection()
+    tasks = []
+    snapshot_ids = []
     for snapshot in collection.find():
-        collection.remove({'_id': snapshot['_id']})
+        snapshot_ids.append(snapshot['_id'])
         task = TaskSnapshot(snapshot).to_task()
+        tasks.append(task)
         log.info(_('Loaded Task from database: %s') % str(task))
+    for id in snapshot_ids:
+        last_error = collection.remove({'_id': id}, safe=True)
+        if not last_error.get('ok', False):
+            raise Exception(repr(last_error))
+    for task in tasks:
         enqueue(task)
 
 
