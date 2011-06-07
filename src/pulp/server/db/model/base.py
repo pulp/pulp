@@ -114,9 +114,5 @@ class Model(dict):
         # collection_name
         if cls.collection_name is None:
             return None
-        # see if we have the collection cached
-        cls.__collection = cls._get_cached_collection()
-        # if not, grab the collection, and cache it
-        if cls.__collection is None:
-            cls.__collection = cls._get_collection_from_db()
-        return cls.__collection
+        # removed cached connections to handle AutoReconnect exception
+        return cls._get_collection_from_db()
