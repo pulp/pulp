@@ -35,6 +35,8 @@ class Repo(dict):
         ('gpgkey', None),
         ('sslverify', '0'),
         ('gpgcheck', '0'),
+        ('sslcacert', None),
+        ('sslclientcert', None),
     )
 
     def __init__(self, id):
@@ -419,6 +421,76 @@ class RepoKeyFiles(object):
                 f = open(filename, 'w')
                 f.write(self.keys[filename])
                 f.close()
+
+
+class CertFiles(object):
+    '''
+    Manages the CA and client certificate files.
+    @ivar rootdir: The root directory to write the certs.
+    @type rootdir: str
+    @ivar cacert: The CA certificate PEM text.
+    @type cacert: str
+    @ivar clientcert: The client key & certifiate PEM text.
+    @type clientcert: str 
+    '''
+    
+    CA = 'ca.crt'
+    CLIENT = 'client.crt'
+        
+    def __init__(self, rootdir, repoid):
+        '''
+        @param rootdir: The fully qualified path to the directory where
+        the certificate files are written.
+        @type rootdir: str
+        @param repoid: The ID of the repo.
+        @type repoid: str 
+        '''
+        self.rootdir = os.path.join(rootdir, repoid)
+        self.cacert = None
+        self.clientcert = None
+        
+    def update(self, cacert, clientcert):
+        '''
+        Update the certificates.
+        @param cacert: The CA certificate PEM text.
+        @type cacert: str
+        @param clientcert: The client key & certificate PEM text.
+        @type clientcert: str
+        '''
+        self.cacert = cacert
+        self.clientcert = clientcert
+    
+    def apply(self):
+        '''
+        Apply changes to the filesystem.
+        '''
+        paths = []
+        self.__clear()
+        for file, content in (
+            (self.CA, self.cacert),
+            (self.CLIENT, self.clientcert)):
+            if not content:
+                paths.append(None)
+                continue
+            self.__mkdir()
+            path = os.path.join(self.rootdir, file)
+            paths.append(path)
+            f = open(path, 'w')
+            f.write(content)
+            f.close()
+        return paths
+
+    def __nocerts(self):
+        return not (self.cacert or self.clientcert)
+    
+    def __mkdir(self):
+        if not os.path.exists(self.rootdir):
+            os.makedirs(self.rootdir)
+    
+    def __clear(self):
+        if os.path.exists(self.rootdir):
+            shutil.rmtree(self.rootdir)
+
 
 class Reader(object):
     '''

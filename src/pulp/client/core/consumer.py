@@ -235,9 +235,17 @@ class Bind(ConsumerAction):
 
         if bind_data:
             if self.consumerid:
-                mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
-                repolib.bind(_cfg.client.repo_file, mirror_list_filename, _cfg.client.gpg_keys_dir,
-                             repoid, bind_data['repo'], bind_data['host_urls'], bind_data['gpg_keys'])
+                mirror_list_filename = \
+                    repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
+                repolib.bind(
+                    _cfg.client.repo_file,
+                    mirror_list_filename,
+                    _cfg.client.gpg_keys_dir,
+                    _cfg.client.cert_dir,
+                    repoid,
+                    bind_data['repo'],
+                    bind_data['host_urls'],
+                    bind_data['gpg_keys'])
 
             print _("Successfully subscribed consumer [%s] to repo [%s]") % \
                   (consumerid, repoid)
@@ -262,8 +270,14 @@ class Unbind(ConsumerAction):
         repoid = self.get_required_option('repoid')
         self.consumer_api.unbind(consumerid, repoid)
         if self.consumerid:
-            mirror_list_filename = repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
-            repolib.unbind(_cfg.client.repo_file, mirror_list_filename, _cfg.client.gpg_keys_dir, repoid)
+            mirror_list_filename = \
+                repolib.mirror_list_filename(_cfg.client.mirror_list_dir, repoid)
+            repolib.unbind(
+                _cfg.client.repo_file,
+                mirror_list_filename,
+                _cfg.client.gpg_keys_dir,
+                _cfg.client.cert_dir,
+                repoid)
         print _("Successfully unsubscribed consumer [%s] from repo [%s]") % \
                 (consumerid, repoid)
 

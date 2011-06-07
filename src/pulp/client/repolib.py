@@ -23,13 +23,13 @@ import os
 # Pulp
 from pulp.client.lock import Lock
 from pulp.client.logutil import getLogger
-from pulp.client.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles
+from pulp.client.repo_file import Repo, RepoFile, MirrorListFile, RepoKeyFiles, CertFiles
 
 log = getLogger(__name__)
 
 # -- public ----------------------------------------------------------------
 
-def bind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, repo_data, url_list, gpg_keys, lock=None):
+def bind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, repo_id, repo_data, url_list, gpg_keys, lock=None):
     '''
     Uses the given data to safely bind a repo to a repo file. This call will
     determine the best method for representing the repo given the data in the
@@ -53,6 +53,10 @@ def bind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, repo_data,
     @param keys_root_dir: absolute path to the root directory in which the keys for
                           all repos will be stored
     @type  keys_root_dir: string
+    
+    @param cert_root_dir: absolute path to the root directory in which the certs for
+                          all repos will be stored
+    @type  cert_root_dir: string
 
     @param repo_id: uniquely identifies the repo being updated
     @type  repo_id: string
@@ -94,6 +98,8 @@ def bind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, repo_data,
 
         if gpg_keys is not None:
             _handle_gpg_keys(repo, gpg_keys, keys_root_dir)
+            
+        _handle_certs(repo, cert_root_dir)
 
         if url_list is not None:
             _handle_host_urls(repo, url_list, mirror_list_filename)
@@ -109,7 +115,7 @@ def bind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, repo_data,
     finally:
         lock.release()
 
-def unbind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, lock=None):
+def unbind(repo_filename, mirror_list_filename, keys_root_dir, cert_root_dir, repo_id, lock=None):
     '''
     Removes the repo identified by repo_id from the given repo file. If the repo is
     not bound, this call has no effect. If the mirror list file exists, it will be
@@ -133,6 +139,10 @@ def unbind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, lock=Non
     @param keys_root_dir: absolute path to the root directory in which the keys for
                           all repos will be stored
     @type  keys_root_dir: string
+    
+    @param cert_root_dir: absolute path to the root directory in which the certs for
+                          all repos will be stored
+    @type  cert_root_dir: string
 
     @param repo_id: identifies the repo in the repo file to delete
     @type  repo_id: string
@@ -164,6 +174,10 @@ def unbind(repo_filename, mirror_list_filename, keys_root_dir, repo_id, lock=Non
         # Keys removal
         repo_keys = RepoKeyFiles(keys_root_dir, repo_id)
         repo_keys.update_filesystem()
+        
+        # cert removal
+        certificates = CertFiles(cert_root_dir, repo_id)
+        certificates.apply()
             
     finally:
         lock.release()
@@ -201,6 +215,8 @@ def _convert_repo(repo_id, repo_data):
     else:
         enabled = '0'
     repo['enabled'] = enabled
+    repo['sslcacert'] = repo_data['consumer_ca']
+    repo['sslclientcert'] = repo_data['consumer_cert']
 
     return repo
 
@@ -227,6 +243,28 @@ def _handle_gpg_keys(repo, gpg_keys, keys_root_dir):
 
     # Call this in either case to make sure any existing keys were deleted
     repo_keys.update_filesystem()
+    
+def _handle_certs(repo, rootdir):
+    '''
+    Handle x.509 certificates that were specified with the repo.
+    The cert files will be written to disk, deleting any existing
+    files that were there. The repo object will be updated with any
+    values related to the stored certificates.
+    '''
+    certificates = CertFiles(rootdir, repo.id)
+    cacert = repo['sslcacert']
+    clientcert = repo['sslclientcert']
+    certificates.update(cacert, clientcert)
+    capath, clientpath = certificates.apply()
+    # CA certificate
+    if cacert:
+        repo['sslcacert'] = capath
+        repo['sslverify'] = '1'
+    else:
+        repo['sslverify'] = '0'
+    # client certificate
+    if clientcert:
+        repo['sslclientcert'] = clientpath
 
 def _handle_host_urls(repo, url_list, mirror_list_filename):
     '''
