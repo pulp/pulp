@@ -617,7 +617,7 @@ class InstallPackages(AgentTask):
         AgentTask.__init__(self, self.install)
 
     # snapshot fields: used for task persistence
-    _copy_fields = itertools.chain(('consumerid', 'sercret', 'packages',
+    _copy_fields = itertools.chain(('consumerid', 'secret', 'packages',
                                     'errata', 'reboot_suggested', 'assumeyes'),
                                    Task._copy_fields)
 
