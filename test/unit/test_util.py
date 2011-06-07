@@ -52,14 +52,14 @@ class TestUtil(unittest.TestCase):
         self.data_path = \
             os.path.join(os.path.abspath(os.path.dirname(__file__)), "data")
         self.rapi = RepoApi()
-        async.initialize()
         self.clean()
+        async.initialize()
 
     def clean(self):
+        persistence.TaskSnapshot.get_collection().remove(safe=True)
+        persistence.TaskHistory.get_collection().remove()
         self.rapi.clean()
         testutil.common_cleanup()
-        persistence.TaskSnapshot.get_collection().remove()
-        persistence.TaskHistory.get_collection().remove()
 
     def test_getrpminfo(self):
         my_dir = os.path.abspath(os.path.dirname(__file__))

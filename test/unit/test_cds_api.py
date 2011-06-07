@@ -34,6 +34,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.cds.dispatcher import CdsTimeoutException
 import pulp.server.cds.round_robin as round_robin
 from pulp.server.db.model import CDS, CDSHistoryEventType, CDSRepoRoundRobin
+from pulp.server.db.model.persistence import TaskHistory, TaskSnapshot
 from pulp.server.pexceptions import PulpException
 from pulp.server.agent import Agent, CdsAgent
 
@@ -45,6 +46,8 @@ class CdsApiTests(unittest.TestCase):
     # -- preparation ---------------------------------------------------------
 
     def clean(self):
+        TaskHistory.get_collection().remove()
+        TaskSnapshot.get_collection().remove(safe=True)
         self.cds_history_api.clean()
         self.cds_api.clean()
         self.repo_api.clean()
@@ -56,7 +59,7 @@ class CdsApiTests(unittest.TestCase):
 
     def setUp(self):
         self.config = testutil.load_test_config()
-        
+
         mocks.install()
         self.config = testutil.load_test_config()
         self.cds_api = CdsApi()
@@ -96,7 +99,7 @@ class CdsApiTests(unittest.TestCase):
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
         self.assertEqual(0, len(cdsplugin.update_cluster_membership.history()))
-       
+
     def test_register_full_attributes(self):
         '''
         Tests the register call specifying a value for all optional arguments.
@@ -192,7 +195,7 @@ class CdsApiTests(unittest.TestCase):
 
         # Verify
         self.assertTrue(self.cds_api.cds('cds.example.com') is None)
-        
+
     def test_unregister(self):
         '''
         Tests the basic case where unregister is successful.
@@ -571,7 +574,7 @@ class CdsApiTests(unittest.TestCase):
         host_urls = round_robin.generate_cds_urls('cds-test-repo')
         self.assertEqual(1, len(host_urls))
         self.assertEqual('cds.example.com', host_urls[0])
-        
+
     def test_associate_repo_invalid_cds(self):
         '''
         Tests that associating a repo with an invalid CDS hostname throws an error.
@@ -690,7 +693,7 @@ class CdsApiTests(unittest.TestCase):
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(1, len(history)) # register only
-        
+
     def test_unassociate_all_from_repo(self):
         '''
         Tests the unassociate_all_from_repo call under normal conditions: there is at least
@@ -730,7 +733,7 @@ class CdsApiTests(unittest.TestCase):
         self.assertEqual(CDSHistoryEventType.REPO_UNASSOCIATED, history[0]['type_name'])
         self.assertEqual(CDSHistoryEventType.REPO_ASSOCIATED, history[1]['type_name'])
         self.assertEqual(CDSHistoryEventType.REGISTERED, history[2]['type_name'])
-    
+
     def test_unassociate_all_from_repo_no_cds(self):
         '''
         Tests that an error is not thrown when calling unassociate_all_from_repo while there
@@ -968,7 +971,7 @@ class CdsApiTests(unittest.TestCase):
 
         # Clear the call history
         mocks.reset()
-                
+
         # Test
         self.cds_api.redistribute(repo['id'])
 
