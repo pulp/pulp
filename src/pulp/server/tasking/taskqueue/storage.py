@@ -46,15 +46,20 @@ class Storage(object):
     def complete_tasks(self):
         raise NotImplementedError(_('Base Storage class method called'))
 
-    def all_tasks(self):
-        return itertools.chain(self.waiting_tasks(),
-                               self.running_tasks(),
-                               self.complete_tasks())
+    def incomplete_tasks(self):
+        return itertools.chain(self.waiting_tasks(), self.running_tasks())
 
-    def find(self, criteria):
+    def all_tasks(self):
+        return itertools.chain(self.incomplete_tasks(), self.complete_tasks())
+
+    def find(self, criteria, ignore_complete=False):
         num_criteria = len(criteria)
         tasks = []
-        for task in self.all_tasks():
+        if ignore_complete:
+            search_tasks = self.incomplete_tasks()
+        else:
+            search_tasks = self.all_tasks()
+        for task in search_tasks:
             matches = 0
             for attr, value in criteria.items():
                 if not hasattr(task, attr):
