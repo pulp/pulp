@@ -215,25 +215,28 @@ class SnapshotStorage(VolatileStorage):
 
     # wait queueue methods
 
+    def _snapshot_task(self, task):
+        snapshot = task.snapshot()
+        try:
+            self.snapshot_collection.insert(snapshot, safe=True)
+        except DuplicateKeyError:
+            raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
+
     def enqueue_waiting(self, task):
         # create and keep a snapshot of the task that can be loaded from the
         # database and executed across reboots, server restarts, etc.
         if isinstance(task.scheduler, ImmediateScheduler):
-            snapshot = task.snapshot()
-            try:
-                self.snapshot_collection.insert(snapshot, safe=True)
-            except DuplicateKeyError:
-                raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
+            self._snapshot_task(task)
         super(SnapshotStorage, self).enqueue_waiting(task)
 
     # storage methods
 
     def remove_running(self, task):
-        super(SnapshotStorage, self).remove_running(task)
         # the task has completed, so remove the snapshot
         self.snapshot_collection.remove({'_id': task.snapshot_id}, safe=True)
+        super(SnapshotStorage, self).remove_running(task)
 
     def store_complete(self, task):
-        super(SnapshotStorage, self).store_complete(task)
         history = TaskHistory(task)
         self.history_collection.insert(history)
+        super(SnapshotStorage, self).store_complete(task)
