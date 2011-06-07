@@ -66,33 +66,6 @@ task_complete_states = (
     task_canceled,
 )
 
-# task fields stored in task snapshots ----------------------------------------
-
-_copied_fields = (
-    'id',
-    'class_name',
-    'method_name',
-    'timeout',
-    'cancel_attempts',
-    'state',
-    'scheduled_time',
-    'start_time',
-    'finish_time',
-    'exception',
-    'traceback',
-    'consecutive_failures',
-)
-
-_pickled_fields = (
-    'callable',
-    'args',
-    'kwargs',
-    'scheduler',
-    '_progress_callback',
-    'progress',
-    'result',
-)
-
 
 class TaskPicklingError(PulpException):
     pass
@@ -107,6 +80,34 @@ class Task(object):
     error reporting as well as time limits on the call runtime in the form of a
     timeout and the ability to cancel the call.
     """
+
+    # field categories for task snapshots
+
+    _copied_fields = (
+        'id',
+        'class_name',
+        'method_name',
+        'timeout',
+        'cancel_attempts',
+        'state',
+        'exception',
+        'traceback',
+        'consecutive_failures',
+    )
+
+    _pickled_fields = (
+        'callable',
+        'args',
+        'kwargs',
+        'scheduler',
+        'scheduled_time',
+        'start_time',
+        'finish_time',
+        '_progress_callback',
+        'progress',
+        'result',
+    )
+
     def __init__(self,
                  callable,
                  args=[],
@@ -134,6 +135,7 @@ class Task(object):
         if hasattr(callable, 'im_class'):
             self.class_name = callable.im_class.__name__
         self.method_name = callable.__name__
+        self.snapshot_id = None
 
         # task resources
         self.callable = callable
@@ -223,22 +225,22 @@ class Task(object):
         """
         snapshot = {}
         snapshot['task_class'] = pickle.dumps(self.__class__)
-        for attr in _copied_fields:
+        for attr in self._copied_fields:
             snapshot[attr] = getattr(self, attr, None)
-        for attr in _pickled_fields:
+        for attr in self._pickled_fields:
             try:
                 if attr == "kwargs":
                     kwargs = getattr(self, attr, None)
-                    if "progress_callback" in kwargs.keys():
-                        del kwargs["progress_callback"]
+                    kwargs.pop('progress_callback', None) # self-referential
                     snapshot[attr] = pickle.dumps(kwargs) # ascii pickle
                 else:
                     snapshot[attr] = pickle.dumps(getattr(self, attr, None)) # ascii pickle
 
             except:
                 msg = _("Error pickling attribute %s: %s")
-                raise TaskPicklingError(msg % (attr, getattr(self, attr, None)))
+                raise TaskPicklingError(msg % (attr, getattr(self, attr, None))), None, sys.exc_info()[2]
         s = model.TaskSnapshot(snapshot)
+        self.snapshot_id = s.id
         return s
 
     @classmethod
@@ -246,11 +248,18 @@ class Task(object):
         """
         Retrieve task from a snapshot
         """
-        task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
-        for attr in _copied_fields:
+        #task = copy.deepcopy(cls(dir)) # dir is being used as a placeholder
+        task = cls(dir) # dir is being used as a placeholder
+        for attr in cls._copied_fields:
             setattr(task, attr, snapshot.get(attr, None))
-        for attr in _pickled_fields:
-            setattr(task, attr, pickle.loads(snapshot.get(attr, 'N.'))) # N. pickled None
+        pickled_none = pickle.dumps(None) # pickled None, used as default value
+        for attr in cls._pickled_fields:
+            setattr(task, attr, pickle.loads(snapshot.get(attr, pickled_none)))
+        # reset the progress callback
+        if task._progress_callback is not None:
+            task.set_progress('progress_callback', task._progress_callback)
+        # record the current snapshot id
+        task.snapshot_id = snapshot.id
         return task
 
     # -------------------------------------------------------------------------
@@ -259,6 +268,7 @@ class Task(object):
         """
         Reset this task to run again.
         """
+        self.snapshot_id = None
         self.state = task_waiting
         self.start_time = None
         self.finish_time = None

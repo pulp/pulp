@@ -41,6 +41,7 @@ from pulp.server import async
 from pulp.server.api import repo_sync
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
+from pulp.server.db.model import persistence
 from pulp.server.tasking import task
 from pulp.server.auth.cert_generator import SerialNumber
 from pulp.server import constants
@@ -63,6 +64,8 @@ class TestRepoSync(unittest.TestCase):
         shutil.rmtree(constants.LOCAL_STORAGE, ignore_errors=True)
         sn = SerialNumber()
         sn.reset()
+        persistence.TaskSnapshot.get_collection().remove()
+        persistence.TaskHistory.get_collection().remove()
 
     def setUp(self):
         mocks.install()
@@ -89,11 +92,11 @@ class TestRepoSync(unittest.TestCase):
             "el6_x86_64": ("http://repos.fedorapeople.org/repos/pulp/pulp/testing/6Server/x86_64/", "x86_64")}
 
         repos = [self.rapi.create(key, key, value[1], value[0]) for key, value in feeds.items()]
-        
+
         for r in repos:
             self.assertTrue(r)
         sync_tasks = [repo_sync.sync(r["id"]) for r in repos]
-        
+
         # Poll tasks and wait for sync to finish
         for r in repos:
             while self.rapi.find_if_running_sync(r["id"]):
@@ -139,7 +142,7 @@ class TestRepoSync(unittest.TestCase):
                 "pulp-test-package-0.2.1-1.fc11.x86_64.rpm",
                 "pulp-test-package-0.3.1-1.fc11.x86_64.rpm"))
             self.assertTrue("HTTP status code of 403" in e["error"])
-        
+
     def test_local_sync_with_exception(self):
         #This test will only run correctly as a non-root user
         if os.getuid() == 0:

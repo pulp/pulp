@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import traceback
 from logging import getLogger
 
 from gofer.messaging import Queue
@@ -18,9 +19,11 @@ from gofer.messaging.async import ReplyConsumer, Listener
 
 from pulp.server import config
 from pulp.server.agent import Agent
-from pulp.server.tasking.exception import NonUniqueTaskException
+from pulp.server.tasking.exception import (
+    NonUniqueTaskException, DuplicateSnapshotError)
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
+from pulp.server.tasking.taskqueue.storage import HybridStorage
 
 
 log = getLogger(__name__)
@@ -41,8 +44,11 @@ def enqueue(task, unique=True):
     """
     try:
         _queue.enqueue(task, unique)
-    except NonUniqueTaskException:
+    except NonUniqueTaskException, e:
+        log.error(e.args[0])
         return None
+    except DuplicateSnapshotError, e:
+        log.error(traceback.format_exc())
     return task
 
 
@@ -96,7 +102,9 @@ def initialize():
     schedule_threshold = _configured_schedule_threshold()
     _queue = TaskQueue(max_running=max_concurrent,
                        failure_threshold=failure_threshold,
-                       schedule_threshold=schedule_threshold)
+                       schedule_threshold=schedule_threshold,
+                       storage=HybridStorage(),
+                       dispatch_interval=5)
 
 
 def finalize():

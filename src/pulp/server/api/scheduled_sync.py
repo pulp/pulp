@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
+import logging
 import sys
 from gettext import gettext as _
 from types import NoneType
@@ -30,6 +31,7 @@ from pulp.server.api.repo_sync_task import RepoSyncTask
 from pulp.server.db.model.cds import CDS
 from pulp.server.db.model.resource import Repo
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.exception import UnscheduledTaskException
 from pulp.server.tasking.scheduler import IntervalScheduler
 from pulp.server.tasking.task import task_complete_states, Task
 
@@ -98,15 +100,20 @@ def _add_repo_scheduled_sync_task(repo):
     @type repo: L{pulp.server.db.model.resource.Repo}
     @param repo: repo to add sync task for
     """
-    # hack to avoid circular import
-    from pulp.server.api.repo import RepoApi
+    # hack to avoid circular imports
     import repo_sync
+    from pulp.server.api.repo import RepoApi
     api = RepoApi()
     task = RepoSyncTask(repo_sync._sync, [repo['id']])
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    synchronizer = repo_sync.get_synchronizer(repo['source']['type'])
+    source_type = repo['source']['type']
+    synchronizer = repo_sync.get_synchronizer(source_type)
     task.set_synchronizer(api, repo['id'], synchronizer)
-    async.enqueue(task)
+    if source_type == 'remote':
+        task.set_progress('progress_callback', repo_sync.yum_rhn_progress_callback)
+    elif source_type == 'local':
+        task.set_progress('progress_callback', repo_sync.local_progress_callback)
+    return async.enqueue(task)
 
 
 def _add_cds_scheduled_sync_task(cds):
@@ -114,7 +121,7 @@ def _add_cds_scheduled_sync_task(cds):
     api = CdsApi()
     task = Task(api.cds_sync, [cds['hostname']])
     task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _update_repo_scheduled_sync_task(repo, task):
@@ -130,7 +137,7 @@ def _update_repo_scheduled_sync_task(repo, task):
         return
     async.remove_async(task)
     task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _update_cds_scheduled_sync_task(cds, task):
@@ -139,7 +146,7 @@ def _update_cds_scheduled_sync_task(cds, task):
         return
     async.remove_async(task)
     task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
-    async.enqueue(task)
+    return async.enqueue(task)
 
 
 def _remove_repo_scheduled_sync_task(repo):
@@ -170,6 +177,8 @@ def update_repo_schedule(repo, new_schedule):
     @type new_schedule: dict
     @param new_schedule: dictionary representing new schedule
     """
+    if repo['source'] is None:
+        raise PulpException(_('Cannot add schedule to repository with out sync source'))
     repo['sync_schedule'] = validate_schedule(new_schedule)
     collection = Repo.get_collection()
     collection.save(repo, safe=True)
@@ -178,6 +187,7 @@ def update_repo_schedule(repo, new_schedule):
         _add_repo_scheduled_sync_task(repo)
     else:
         _update_repo_scheduled_sync_task(repo, task)
+
 
 def delete_repo_schedule(repo):
     """
@@ -192,6 +202,7 @@ def delete_repo_schedule(repo):
     collection.save(repo, safe=True)
     _remove_repo_scheduled_sync_task(repo)
 
+
 def update_cds_schedule(cds, new_schedule):
     '''
     Change a CDS sync schedule.
@@ -204,6 +215,7 @@ def update_cds_schedule(cds, new_schedule):
         _add_cds_scheduled_sync_task(cds)
     else:
         _update_cds_scheduled_sync_task(cds, task)
+
 
 def delete_cds_schedule(cds):
     if cds['sync_schedule'] is None:
@@ -223,16 +235,26 @@ def init_scheduled_syncs():
     _init_repo_scheduled_syncs()
     _init_cds_scheduled_syncs()
 
+
 def _init_repo_scheduled_syncs():
     collection = Repo.get_collection()
+    log = logging.getLogger('pulp')
     for repo in collection.find({}):
         if repo['sync_schedule'] is None:
             continue
-        _add_repo_scheduled_sync_task(repo)
+        if _add_repo_scheduled_sync_task(repo) is None:
+            log.info(_('Scheduled sync for %s already in task queue') % repo['id'])
+        else:
+            log.info(_('Added scheduled sync for %s to task queue') % repo['id'])
+
 
 def _init_cds_scheduled_syncs():
     collection = CDS.get_collection()
+    log = logging.getLogger('pulp')
     for cds in collection.find({}):
         if cds['sync_schedule'] is None:
             continue
-        _add_cds_scheduled_sync_task(cds)
+        if _add_cds_scheduled_sync_task(cds) is None:
+            log.info(_('Scheduled sync for %s already in task queue') % cds['id'])
+        else:
+            log.info(_('Added sync for %s to task queue') % cds['id'])

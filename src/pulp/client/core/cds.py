@@ -50,7 +50,7 @@ def _print_cds(cds):
         (cds['name'],
          cds['hostname'],
          cds['description'],
-         cds['group_id'],
+         cds['cluster_id'],
          cds['sync_schedule'],
          repo_list,
          formatted_date,
@@ -83,8 +83,8 @@ class Register(CDSAction):
                                help=_('display name'))
         self.parser.add_option('--description', dest='description',
                                help=_('description of the CDS'))
-        self.parser.add_option('--group_id', dest='group_id',
-                               help=_('if specified, the CDS will belong to the given group'))
+        self.parser.add_option('--cluster_id', dest='cluster_id',
+                               help=_('if specified, the CDS will belong to the given cluster'))
 
         schedule = OptionGroup(self.parser, _('CDS Sync Schedule'))
         schedule.add_option('--interval', dest='schedule_interval', default=None,
@@ -100,12 +100,12 @@ class Register(CDSAction):
         hostname = self.get_required_option('hostname')
         name = self.opts.name
         description = self.opts.description
-        group_id = self.opts.group_id
+        cluster_id = self.opts.cluster_id
         schedule = parse_interval_schedule(self.opts.schedule_interval,
                                            self.opts.schedule_start,
                                            self.opts.schedule_runs)
         try:
-            self.cds_api.register(hostname, name, description, schedule, group_id)
+            self.cds_api.register(hostname, name, description, schedule, cluster_id)
             print(_('Successfully registered CDS [%s]' % hostname))
         except:
             print(_('Error attempting to register CDS [%s]' % hostname))
@@ -135,11 +135,11 @@ class Update(CDSAction):
                                help=_('display name'))
         self.parser.add_option('--description', dest='description',
                                help=_('description of the CDS'))
-        self.parser.add_option('--group_id', dest='group_id',
+        self.parser.add_option('--cluster_id', dest='cluster_id',
                                help=_('assigns the CDS to the given group'))
 
-        self.parser.add_option('--remove_group', dest='remove_group', action='store_true', default=False,
-                               help=_('removes the CDS from a group if it is in one'))
+        self.parser.add_option('--remove_cluster', dest='remove_cluster', action='store_true', default=False,
+                               help=_('removes the CDS from a cluster if it is in one'))
         self.parser.add_option('--remove_sync_schedule', dest='remove_sync_schedule', action='store_true', default=False,
                                help=_('removes scheduled syncs for this CDS'))
 
@@ -160,8 +160,8 @@ class Update(CDSAction):
                                            self.opts.schedule_runs)
 
         # Sanity checks
-        if self.opts.group_id is not None and self.opts.remove_group:
-            print(_('A group ID may not be specified while removing the group'))
+        if self.opts.cluster_id is not None and self.opts.remove_cluster:
+            print(_('A cluster ID may not be specified while removing the cluster'))
             return
 
         if schedule is not None and self.opts.remove_sync_schedule:
@@ -176,10 +176,10 @@ class Update(CDSAction):
         if self.opts.description is not None:
             delta['description'] = self.opts.description
 
-        if self.opts.group_id is not None:
-            delta['group_id'] = self.opts.group_id
-        elif self.opts.remove_group:
-            delta['group_id'] = None
+        if self.opts.cluster_id is not None:
+            delta['cluster_id'] = self.opts.cluster_id
+        elif self.opts.remove_cluster:
+            delta['cluster_id'] = None
 
         if schedule is not None:
             delta['sync_schedule'] = schedule

@@ -12,7 +12,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import pickle
+from gettext import gettext as _
 
+from pulp.common import dateutils
 from pulp.server.db.model.base import Model
 
 # task snapshot model ---------------------------------------------------------
@@ -24,8 +26,7 @@ class TaskSnapshot(Model):
     """
 
     collection_name = "task_snapshots"
-    unique_indicies = ()
-    other_indicies = ('id', 'state')
+    unique_indicies = ('id',) # forces only 1 snapshot per task
 
     def __init__(self, serialized_task=None):
         """
@@ -57,6 +58,31 @@ class TaskSnapshot(Model):
         """
         task_class = self.get('task_class', None)
         if task_class is None:
-            raise Exception()
+            raise ValueError(_('Task snapshot cannot be converted to task without task_class instance'))
         cls = pickle.loads(task_class)
         return cls.from_snapshot(self)
+
+# task history model -----------------------------------------------------------
+
+class TaskHistory(Model):
+    """
+    Task History Model
+    Store task state and results for auditing and history queries.
+    """
+
+    collection_name = 'task_history'
+    unique_indicies = ()
+
+    def __init__(self, task):
+        super(TaskHistory, self).__init__()
+        self.task_type = task.__class__.__name__
+        for attr in ('id', 'class_name', 'method_name', 'args', 'kwargs',
+                     'state', 'progress', 'result', 'exception', 'traceback',
+                     'consecutive_failures'):
+            setattr(self, attr, getattr(task, attr))
+        # remove the kwargs that can't be stored in the database
+        for arg in ('synchronizer', 'progress_callback'):
+            self.kwargs.pop(arg, None)
+        for attr in ('scheduled_time', 'start_time', 'finish_time'):
+            setattr(self, attr, dateutils.format_iso8601_datetime(getattr(task, attr)))
+        self.task_string = str(task)

@@ -55,7 +55,8 @@ class CdsApiTests(unittest.TestCase):
         mocks.reset()
 
     def setUp(self):
-        testutil.load_test_config()
+        self.config = testutil.load_test_config()
+        
         mocks.install()
         self.config = testutil.load_test_config()
         self.cds_api = CdsApi()
@@ -94,7 +95,7 @@ class CdsApiTests(unittest.TestCase):
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
-        self.assertEqual(0, len(cdsplugin.update_group_membership.history()))
+        self.assertEqual(0, len(cdsplugin.update_cluster_membership.history()))
        
     def test_register_full_attributes(self):
         '''
@@ -102,7 +103,7 @@ class CdsApiTests(unittest.TestCase):
         '''
 
         # Test
-        self.cds_api.register('cds.example.com', name='Test CDS', description='Test CDS Description', group_id='test-group')
+        self.cds_api.register('cds.example.com', name='Test CDS', description='Test CDS Description', cluster_id='test-group')
 
         # Verify
         cds = self.cds_api.cds('cds.example.com')
@@ -111,7 +112,7 @@ class CdsApiTests(unittest.TestCase):
         self.assertEqual(cds['hostname'], 'cds.example.com')
         self.assertEqual(cds['name'], 'Test CDS')
         self.assertEqual(cds['description'], 'Test CDS Description')
-        self.assertEqual(cds['group_id'], 'test-group')
+        self.assertEqual(cds['cluster_id'], 'test-group')
 
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
         self.assertEqual(1, len(history))
@@ -122,8 +123,8 @@ class CdsApiTests(unittest.TestCase):
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.initialize.history()))
 
-        self.assertEqual(1, len(cdsplugin.update_group_membership.history()))
-        self.assertEqual('test-group', cdsplugin.group_name)
+        self.assertEqual(1, len(cdsplugin.update_cluster_membership.history()))
+        self.assertEqual('test-group', cdsplugin.cluster_name)
         self.assertEqual(1, len(cdsplugin.member_hostnames))
         self.assertEqual('cds.example.com', cdsplugin.member_hostnames[0])
 
@@ -143,13 +144,13 @@ class CdsApiTests(unittest.TestCase):
         # initialize() and set_global_repo_auth() were NOT send to agent.
         self.assertEqual(0, len(mocks.all()))
 
-    def test_register_bad_group_id(self):
+    def test_register_bad_cluster_id(self):
         '''
-        Tests that an invalid group ID properly throws an exception.
+        Tests that an invalid cluster ID properly throws an exception.
         '''
 
         # Test
-        self.assertRaises(PulpException, self.cds_api.register, 'cds.example.com', group_id='@bad!')
+        self.assertRaises(PulpException, self.cds_api.register, 'cds.example.com', cluster_id='@bad!')
 
         # Verify
         history = self.cds_history_api.query(cds_hostname='cds.example.com')
@@ -221,18 +222,18 @@ class CdsApiTests(unittest.TestCase):
         agent = Agent(uuid)
         cdsplugin = agent.cdsplugin()
         self.assertEqual(1, len(cdsplugin.release.history()))
-        self.assertEqual(0, len(cdsplugin.update_group_membership.history()))
+        self.assertEqual(0, len(cdsplugin.update_cluster_membership.history()))
 
-    def test_unregister_with_group(self):
+    def test_unregister_with_cluster(self):
         '''
-        Tests that unregistering a CDS that belonged to the group triggers an
+        Tests that unregistering a CDS that belonged to the cluster triggers an
         update group message to other members.
         '''
 
         # Setup
-        self.cds_api.register('cds1.example.com', group_id='test-multi-group')
+        self.cds_api.register('cds1.example.com', cluster_id='test-multi-group')
         time.sleep(1)
-        self.cds_api.register('cds2.example.com', group_id='test-multi-group')
+        self.cds_api.register('cds2.example.com', cluster_id='test-multi-group')
 
         cds1 = self.cds_api.cds('cds1.example.com')
         uuid1 = CdsAgent.uuid(cds1)
@@ -245,11 +246,11 @@ class CdsApiTests(unittest.TestCase):
 
         # Verify
         cdsplugin1 = Agent(uuid1).cdsplugin()
-        self.assertEqual(2, len(cdsplugin1.update_group_membership.history())) # own register, cds2 register
+        self.assertEqual(2, len(cdsplugin1.update_cluster_membership.history())) # own register, cds2 register
 
         cdsplugin2 = Agent(uuid2).cdsplugin()
-        self.assertEqual(2, len(cdsplugin2.update_group_membership.history())) # own register, cds1 unregister
-        self.assertEqual('test-multi-group', cdsplugin2.group_name)
+        self.assertEqual(2, len(cdsplugin2.update_cluster_membership.history())) # own register, cds1 unregister
+        self.assertEqual('test-multi-group', cdsplugin2.cluster_name)
         self.assertEqual(1, len(cdsplugin2.member_hostnames)) # only itself after cds1 unregister
         self.assertEqual('cds2.example.com', cdsplugin2.member_hostnames[0])
 
@@ -291,7 +292,7 @@ class CdsApiTests(unittest.TestCase):
             'name'          : 'name-2',
             'description'   : 'description-2',
             'sync_schedule' : 'P2D',
-            'group_id'      : 'group-2',
+            'cluster_id'    : 'group-2',
         }
 
         updated = self.cds_api.update('update-cds', delta)
@@ -307,12 +308,12 @@ class CdsApiTests(unittest.TestCase):
         self.assertEqual('name-2', cds['name'])
         self.assertEqual('description-2', cds['description'])
         self.assertEqual('P2D', cds['sync_schedule'])
-        self.assertEqual('group-2', cds['group_id'])
+        self.assertEqual('group-2', cds['cluster_id'])
 
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
-        self.assertEqual(2, len(cdsplugin.update_group_membership.history())) # register, update
-        self.assertEqual('group-2', cdsplugin.group_name)
+        self.assertEqual(2, len(cdsplugin.update_cluster_membership.history())) # register, update
+        self.assertEqual('group-2', cdsplugin.cluster_name)
         self.assertEqual(1, len(cdsplugin.member_hostnames))
         self.assertEqual('update-cds', cdsplugin.member_hostnames[0])
 
@@ -329,12 +330,12 @@ class CdsApiTests(unittest.TestCase):
             'name'          : 'name-2',
             'description'   : 'description-2',
             'sync_schedule' : 'spiderman',
-            'group_id'      : 'group-2',
+            'cluster_id'    : 'group-2',
         }
 
         self.assertRaises(PulpException, self.cds_api.update, 'update-cds', delta)
 
-    def test_update_cds_bad_group_id(self):
+    def test_update_cds_bad_cluster_id(self):
         '''
         Tests that specifying an invalid group ID raises the proper error.
         '''
@@ -347,12 +348,12 @@ class CdsApiTests(unittest.TestCase):
             'name'          : 'name-2',
             'description'   : 'description-2',
             'sync_schedule' : 'P2D',
-            'group_id'      : 'b@d=id',
+            'cluster_id'    : 'b@d=id',
         }
 
         self.assertRaises(PulpException, self.cds_api.update, 'update-cds', delta)
 
-    def test_update_remove_group(self):
+    def test_update_remove_cluster(self):
         '''
         Tests removing a group ID is successful.
         '''
@@ -362,7 +363,7 @@ class CdsApiTests(unittest.TestCase):
 
         # Test
         delta = {
-            'group_id'      : None,
+            'cluster_id'      : None,
         }
 
         self.cds_api.update('update-cds', delta)
@@ -370,15 +371,15 @@ class CdsApiTests(unittest.TestCase):
         # Verify
         cds = self.cds_api.cds('update-cds')
 
-        self.assertTrue(cds['group_id'] is None)
+        self.assertTrue(cds['cluster_id'] is None)
 
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
-        self.assertEqual(2, len(cdsplugin.update_group_membership.history())) # register, update
-        self.assertEqual(None, cdsplugin.group_name)
+        self.assertEqual(2, len(cdsplugin.update_cluster_membership.history())) # register, update
+        self.assertEqual(None, cdsplugin.cluster_name)
         self.assertEqual(None, cdsplugin.member_hostnames)
 
-    def test_update_add_group(self):
+    def test_update_add_cluster(self):
         '''
         Tests an update that adds a group to a CDS that did not previously have one.
         '''
@@ -387,7 +388,7 @@ class CdsApiTests(unittest.TestCase):
 
         # Test
         delta = {
-            'group_id'      : 'new-group',
+            'cluster_id'      : 'new-group',
         }
 
         self.cds_api.update('update-cds', delta)
@@ -395,29 +396,29 @@ class CdsApiTests(unittest.TestCase):
         # Verify
         cds = self.cds_api.cds('update-cds')
 
-        self.assertEqual('new-group', cds['group_id'])
+        self.assertEqual('new-group', cds['cluster_id'])
 
         agent = CdsAgent(cds)
         cdsplugin = agent.cdsplugin()
-        self.assertEqual(1, len(cdsplugin.update_group_membership.history())) # update only
-        self.assertEqual('new-group', cdsplugin.group_name)
+        self.assertEqual(1, len(cdsplugin.update_cluster_membership.history())) # update only
+        self.assertEqual('new-group', cdsplugin.cluster_name)
         self.assertEqual(1, len(cdsplugin.member_hostnames))
         self.assertEqual('update-cds', cdsplugin.member_hostnames[0])
 
-    def test_update_change_group(self):
+    def test_update_change_cluster(self):
         '''
         Tests that changing a CDS' group will update both members of the old and new
         groups.
         '''
 
         # Setup
-        cds_change = self.cds_api.register('update-cds-change-me', group_id='group-1')
-        cds_1 = self.cds_api.register('update-cds-1', group_id='group-1')
-        cds_2 = self.cds_api.register('update-cds-2', group_id='group-2')
+        cds_change = self.cds_api.register('update-cds-change-me', cluster_id='group-1')
+        cds_1 = self.cds_api.register('update-cds-1', cluster_id='group-1')
+        cds_2 = self.cds_api.register('update-cds-2', cluster_id='group-2')
 
         # Test
         delta = {
-            'group_id'      : 'group-2',
+            'cluster_id'      : 'group-2',
         }
 
         self.cds_api.update('update-cds-change-me', delta)
@@ -427,13 +428,13 @@ class CdsApiTests(unittest.TestCase):
         cdsplugin_1 = CdsAgent(cds_1).cdsplugin()
         cdsplugin_2 = CdsAgent(cds_2).cdsplugin()
 
-        self.assertEqual(3, len(cdsplugin_change.update_group_membership.history())) # self register, cds_1 register, change event
-        self.assertEqual(2, len(cdsplugin_1.update_group_membership.history())) # self register, change event
-        self.assertEqual(2, len(cdsplugin_2.update_group_membership.history())) # self register, change event
+        self.assertEqual(3, len(cdsplugin_change.update_cluster_membership.history())) # self register, cds_1 register, change event
+        self.assertEqual(2, len(cdsplugin_1.update_cluster_membership.history())) # self register, change event
+        self.assertEqual(2, len(cdsplugin_2.update_cluster_membership.history())) # self register, change event
 
-        self.assertEqual('group-2', cdsplugin_change.group_name)
-        self.assertEqual('group-1', cdsplugin_1.group_name)
-        self.assertEqual('group-2', cdsplugin_2.group_name)
+        self.assertEqual('group-2', cdsplugin_change.cluster_name)
+        self.assertEqual('group-1', cdsplugin_1.cluster_name)
+        self.assertEqual('group-2', cdsplugin_2.cluster_name)
 
         self.assertEqual(2, len(cdsplugin_change.member_hostnames)) # change and cds 2
         self.assertEqual(1, len(cdsplugin_1.member_hostnames)) # cds 1
@@ -751,6 +752,8 @@ class CdsApiTests(unittest.TestCase):
         '''
 
         # Setup
+        self.config.remove_option('security', 'ssl_ca_certificate')
+
         repo = self.repo_api.create('cds-test-repo', 'CDS Test Repo', 'x86_64')
         self.cds_api.register('cds.example.com')
         cds = self.cds_api.cds('cds.example.com')
@@ -779,11 +782,11 @@ class CdsApiTests(unittest.TestCase):
         self.assertTrue('global_cert_bundle' in sync_payload)
         self.assertTrue(sync_payload['global_cert_bundle'] is None)
 
-        self.assertTrue('group_id' in sync_payload)
-        self.assertTrue(sync_payload['group_id'] is None)
+        self.assertTrue('cluster_id' in sync_payload)
+        self.assertTrue(sync_payload['cluster_id'] is None)
 
-        self.assertTrue('group_members' in sync_payload)
-        self.assertTrue(sync_payload['group_members'] is None)
+        self.assertTrue('cluster_members' in sync_payload)
+        self.assertTrue(sync_payload['cluster_members'] is None)
 
         self.assertTrue('server_ca_cert' in sync_payload)
         self.assertTrue(sync_payload['server_ca_cert'] is None)
@@ -974,7 +977,7 @@ class CdsApiTests(unittest.TestCase):
         #   Make sure no attempts to send an update call across the bus were made
         self.assertEqual(0, len(mocks.all()))
 
-    # -- cds group test cases ------------------------------------------------
+    # -- cds cluster test cases ------------------------------------------------
 
     def test_register_auto_associate(self):
         """
@@ -986,16 +989,15 @@ class CdsApiTests(unittest.TestCase):
         self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # in the group
         self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
-        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.register('cds-existing', cluster_id='test-group')
         self.cds_api.associate_repo('cds-existing', 'test-repo-1')
 
         # Test
-        self.cds_api.register('cds-new', group_id='test-group')
+        self.cds_api.register('cds-new', cluster_id='test-group')
 
         # Verify
         cds = self.cds_api.cds('cds-new')
         self.assertEqual(['test-repo-1'], cds['repo_ids'])
-
 
     def test_register_auto_associate_no_repos(self):
         """
@@ -1006,10 +1008,10 @@ class CdsApiTests(unittest.TestCase):
 
         # Setup
         self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
-        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.register('cds-existing', cluster_id='test-group')
 
         # Test
-        self.cds_api.register('cds-new', group_id='test-group')
+        self.cds_api.register('cds-new', cluster_id='test-group')
 
         # Verify
         cds = self.cds_api.cds('cds-new')
@@ -1028,14 +1030,14 @@ class CdsApiTests(unittest.TestCase):
         self.repo_api.create('test-repo-2', 'CDS Test Repo 2', 'noarch') # on the CDS before group membership
         self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
-        self.cds_api.register('cds-existing', group_id='test-group')
+        self.cds_api.register('cds-existing', cluster_id='test-group')
         self.cds_api.associate_repo('cds-existing', 'test-repo-1')
 
         self.cds_api.register('cds-updated')
         self.cds_api.associate_repo('cds-updated', 'test-repo-2')
 
         # Test
-        delta = {'group_id' : 'test-group'}
+        delta = {'cluster_id' : 'test-group'}
         self.cds_api.update('cds-updated', delta)
 
         # Verify
@@ -1052,9 +1054,9 @@ class CdsApiTests(unittest.TestCase):
         self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
         self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
-        self.cds_api.register('cds-1', group_id='test-group')
-        self.cds_api.register('cds-2', group_id='test-group')
-        self.cds_api.register('cds-3', group_id='test-group')
+        self.cds_api.register('cds-1', cluster_id='test-group')
+        self.cds_api.register('cds-2', cluster_id='test-group')
+        self.cds_api.register('cds-3', cluster_id='test-group')
 
         # Test
         self.cds_api.associate_repo('cds-1', 'test-repo-1')
@@ -1074,9 +1076,9 @@ class CdsApiTests(unittest.TestCase):
         self.repo_api.create('test-repo-1', 'CDS Test Repo 1', 'noarch') # will be added to the group
         self.repo_api.create('test-repo-x', 'CDS Test Repo X', 'noarch') # unused; make sure it doesn't sneak in
 
-        self.cds_api.register('cds-1', group_id='test-group')
-        self.cds_api.register('cds-2', group_id='test-group')
-        self.cds_api.register('cds-3', group_id='test-group')
+        self.cds_api.register('cds-1', cluster_id='test-group')
+        self.cds_api.register('cds-2', cluster_id='test-group')
+        self.cds_api.register('cds-3', cluster_id='test-group')
 
         self.cds_api.associate_repo('cds-1', 'test-repo-1')
 

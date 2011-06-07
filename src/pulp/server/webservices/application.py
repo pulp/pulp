@@ -62,12 +62,20 @@ _stacktrace_dumper = None
 
 
 def _initialize_pulp():
+    # XXX ORDERING COUNTS
+    # This initialization order is very sensitive, and each touches a number of
+    # sub-systems in pulp. If you get this wrong, you will have pulp tripping
+    # over itself on start up. If you do not know where to add something, ASK!
     global _stacktrace_dumper
-    # pulp initialization methods
+    # start logging and verify we can run
     start_logging()
     check_version()
+    # ensure necessary infrastructure
     ensure_builtin_roles()
     ensure_admin()
+    # clean up previous runs, if needed
+    repo.clear_sync_in_progress_flags()
+    # initialize current run
     async.initialize()
     # pulp finalization methods, registered via 'atexit'
     atexit.register(async.finalize)
@@ -79,7 +87,6 @@ def _initialize_pulp():
     # setup recurring tasks
     auditing.init_culling_task()
     consumer_history.init_culling_task()
-    repo.clear_all_sync_in_progress()
     scheduled_sync.init_scheduled_syncs()
 
 

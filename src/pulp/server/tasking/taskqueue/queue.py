@@ -21,7 +21,8 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.tasking.exception import (
     TaskThreadStateError, UnscheduledTaskException, NonUniqueTaskException)
-from pulp.server.tasking.scheduler import ImmediateScheduler
+from pulp.server.tasking.scheduler import (
+    AtScheduler, ImmediateScheduler, IntervalScheduler)
 from pulp.server.tasking.taskqueue.thread import DRLock, TaskThread
 from pulp.server.tasking.taskqueue.storage import VolatileStorage
 from pulp.server.tasking.task import task_complete_states, task_running
@@ -124,7 +125,7 @@ class TaskQueue(object):
 
     def _get_tasks(self):
         """
-        Get the next 'n' tasks to run, where is max - currently running tasks
+        Get the next 'n' tasks to run, where n is max - currently running tasks
         """
         ready_tasks = []
         num_tasks = self.max_running - self.__running_count
@@ -132,11 +133,10 @@ class TaskQueue(object):
         while len(ready_tasks) < num_tasks:
             if self.__storage.num_waiting() == 0:
                 break
-            task = self.__storage.dequeue_waiting()
+            task = self.__storage.peek_waiting()
             if task.scheduled_time is not None and task.scheduled_time > now:
-                self.__storage.enqueue_waiting(task)
                 break
-            ready_tasks.append(task)
+            ready_tasks.append(self.__storage.dequeue_waiting())
         return ready_tasks
 
     def _cancel_tasks(self):
@@ -194,6 +194,33 @@ class TaskQueue(object):
 
     # public methods: queue operations
 
+    def _test_uniqueness(self, task, unique):
+        """
+        Does nothing if the task is unique, raise an exception otherwise.
+        @raises: NonUniqueTaskException
+        """
+        def _raise_exception(match):
+            msg = _('Task [%s] %s %s conflicts with [%s] %s %s and cannot be enqueued')
+            raise NonUniqueTaskException(msg % (task.id, str(task), str(task.scheduler),
+                                                match.id, str(match), str(match.scheduler)))
+
+        fields = ('class_name', 'method_name', 'args')
+        for match in self.exists(task, fields, include_finished=False):
+            if isinstance(task.scheduler, ImmediateScheduler):
+                # if unique is True, do not allow more than one immediate task
+                if unique and isinstance(match.scheduler, ImmediateScheduler):
+                    _raise_exception(match)
+            elif isinstance(task.scheduler, AtScheduler):
+                # at scheduled tasks can only conflict if there's another at
+                # scheduled task for the same time
+                if isinstance(match.scheduler, AtScheduler) and \
+                   task.scheduler.scheduled_time == match.scheduler.scheduled_time:
+                    _raise_exception(match)
+            elif isinstance(task.scheduler, IntervalScheduler):
+                # there may be only one interval scheduled task at a time
+                if isinstance(match.scheduler, IntervalScheduler):
+                    _raise_exception(match)
+
     def enqueue(self, task, unique=False):
         """
         Add a task to the task queue
@@ -209,15 +236,8 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            # uniqueness fields
-            fields = ('class_name', 'method_name', 'args', 'scheduler')
-            if unique and self.exists(task, fields, include_finished=False):
-                msg = _('Task %s.%s(%s) with %s scheduler is not unique in the task queue')
-                raise NonUniqueTaskException(msg %
-                                             (task.class_name, task.method_name,
-                                              ', '.join([str(a) for a in task.args]),
-                                              str(type(task.scheduler))))
-            task.schedule() # potentially raises UncheduledTaskException
+            self._test_uniqueness(task, unique) # NonUniqueTaskException
+            task.schedule() # UncheduledTaskException
             task.complete_callback = self.complete
             # setup error condition parameters, if not overridden by the task
             if task.failure_threshold is None:
@@ -267,12 +287,17 @@ class TaskQueue(object):
             self.__storage.remove_running(task)
             task.thread = None
             task.complete_callback = None
-            # try to re-enqueue to handle recurring tasks,
-            # otherwise store the completed task
+            # it is important for completed tasks to be in the completed task
+            # storage, however briefly
+            self.__storage.store_complete(task)
             try:
+                # try to re-enqueue recurring tasks
                 self.enqueue(task)
             except UnscheduledTaskException:
-                self.__storage.store_complete(task)
+                pass
+            else:
+                # if successful, remove them from completed storage
+                self.__storage.remove_complete(task)
         finally:
             self.__lock.release()
 
@@ -322,6 +347,8 @@ class TaskQueue(object):
         @param include_finished: If True, finished tasks will be included in the search;
                                  otherwise only running and waiting tasks are searched
                                  (defaults to True)
+        @rtype: list
+        @return: list of all the matching tasks, empty if there are none
         """
 
         # Convert the list of attributes to check into a criteria dict used
@@ -334,11 +361,10 @@ class TaskQueue(object):
 
         # Use the find functionality to determine if a task matches
         tasks = self.find(**find_criteria)
-        if not tasks:
-            return False
-        if include_finished:
-            return True
-        for t in tasks:
-            if t.state not in task_complete_states:
-                return True
-        return False
+        # NOTE This method used to return a boolean, it now returns a list of
+        # all the tasks matching the criteria. The list is empty if no matching
+        # tasks are found. This allows the same boolean semantics to be used
+        # as an empty list evaluates to False and a non-empty one to True.
+        if not tasks or include_finished:
+            return tasks
+        return [t for t in tasks if t.state not in task_complete_states]

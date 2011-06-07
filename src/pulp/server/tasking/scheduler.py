@@ -65,7 +65,7 @@ class ImmediateScheduler(Scheduler):
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
         if previous_run is None:
-            return (None, datetime.datetime.now(dateutils.local_tz()))
+            return (None, datetime.datetime.now(dateutils.utc_tz()))
         return (None, None)
 
 
@@ -84,11 +84,11 @@ class AtScheduler(Scheduler):
         if scheduled_time < datetime.datetime.now(dateutils.local_tz()):
             raise ValueError('AtScheduler: scheduled time in the past: %s' %
                              str(scheduled_time))
-        self.scheduled_time = scheduled_time
+        self.scheduled_time = dateutils.to_utc_datetime(scheduled_time)
 
     def __str__(self):
         return _('scheduled to run at %s') % \
-                self.scheduled_time.strftime('%Y-%m-%d %H:%M')
+                self.scheduled_time.strftime('%Y-%m-%d %H:%M %z')
 
     def schedule(self, previous_run):
         assert isinstance(previous_run, (types.NoneType, datetime.datetime))
@@ -121,7 +121,7 @@ class IntervalScheduler(Scheduler):
             log.warn(_('IntervalScheduler created with start time more than one interval in the past: %s, %s') %
                      (str(start_time), str(interval)))
         self.interval = interval
-        self.start_time = start_time
+        self.start_time = start_time and dateutils.to_utc_datetime(start_time)
         self.remaining_runs = runs
 
     def __str__(self):
@@ -129,7 +129,7 @@ class IntervalScheduler(Scheduler):
         def _start_time():
             if self.start_time is None:
                 return 'immediately'
-            return 'at %s' % self.start_time.strftime('%Y-%m-%d %H:%M')
+            return 'at %s' % self.start_time.strftime('%Y-%m-%d %H:%M %z')
 
         def _num_runs():
             if self.remaining_runs is None:
@@ -140,9 +140,9 @@ class IntervalScheduler(Scheduler):
             if self.remaining_runs == 0:
                 return 'not scheduled'
             next = self._next_run(self.start_time)[1]
-            return 'scheduled to run at %s' % next.strftime('%Y-%m-%d %H:%M')
+            return 'scheduled to run at %s' % next.strftime('%Y-%m-%d %H:%M %z')
 
-        return _('scheduled to run starting %s at intervals %s long %s\nnext run %s') % \
+        return _('scheduled to run starting %s at intervals %s long %s; next run %s') % \
                 (_start_time(), str(self.interval), _num_runs(), _next_run())
 
     def _next_run(self, reference_time):
@@ -150,7 +150,7 @@ class IntervalScheduler(Scheduler):
         # and count the number of intervals that had to be added to make it in
         # the future for catching and reporting tasks that take longer than
         # their scheduled intervals
-        now = datetime.datetime.now(dateutils.local_tz())
+        now = datetime.datetime.now(dateutils.utc_tz())
         reference_time = reference_time or now
         intervals = 0
         while reference_time < now:

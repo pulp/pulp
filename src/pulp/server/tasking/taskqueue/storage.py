@@ -12,18 +12,25 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy_reg
+import datetime
 import heapq
 import itertools
+import logging
+import sys
 import types
 from gettext import gettext as _
 
-from pulp.server.db.model.persistence import TaskSnapshot
+from pymongo.errors import DuplicateKeyError
+
+from pulp.common.dateutils import pickle_tzinfo, unpickle_tzinfo
+from pulp.server.db.model.persistence import TaskSnapshot, TaskHistory
+from pulp.server.tasking.exception import DuplicateSnapshotError
 from pulp.server.tasking.task import (
     task_running, task_ready_states, task_complete_states, task_waiting,
     task_states)
 from pulp.server.util import Singleton
 
-# base storage class ----------------------------------------------------------
+# base storage class -----------------------------------------------------------
 
 class Storage(object):
 
@@ -69,6 +76,9 @@ class Storage(object):
     def dequeue_waiting(self):
         raise NotImplementedError(_('Base Storage class method called'))
 
+    def peek_waiting(self):
+        raise NotImplemented(_('Base Storage class method called'))
+
     # task storage
 
     def remove_waiting(self, task):
@@ -86,7 +96,7 @@ class Storage(object):
     def remove_complete(self, task):
         raise NotImplementedError(_('Base Storage class method called'))
 
-# storage class for in-memory task queues -------------------------------------
+# storage class for in-memory task queues --------------------------------------
 
 class VolatileStorage(Storage):
     """
@@ -121,6 +131,10 @@ class VolatileStorage(Storage):
             return None
         return heapq.heappop(self.__waiting_tasks)
 
+    def peek_waiting(self):
+        assert self.__waiting_tasks
+        return self.__waiting_tasks[0]
+
     # storage methods
 
     def remove_waiting(self, task):
@@ -146,7 +160,7 @@ class VolatileStorage(Storage):
         assert task in self.__complete_tasks
         self.__complete_tasks.remove(task)
 
-# storage class for database-stored tasks -------------------------------------
+# custom pickle and unpickle methods -------------------------------------------
 
 def _pickle_method(method):
     func_name = method.im_func.__name__
@@ -165,6 +179,7 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
+# storage class for database-stored tasks --------------------------------------
 
 class PersistentStorage(Storage):
 
@@ -173,6 +188,7 @@ class PersistentStorage(Storage):
     def __init__(self):
         super(PersistentStorage, self).__init__()
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+        copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
 
     # database methods
 
@@ -225,8 +241,10 @@ class PersistentStorage(Storage):
         return self.__waiting_tasks().count()
 
     def enqueue_waiting(self, task):
-        assert task.state is task_waiting
-        assert task.scheduled_time is not None
+        assert task.state == task_waiting, \
+               'task %s enqueued with state %s' % (task, task.state)
+        assert task.scheduled_time is not None, \
+               'task %s enqueued with None scheduld_time' % task
         self.__store_task(task)
 
     def dequeue_waiting(self):
@@ -238,20 +256,36 @@ class PersistentStorage(Storage):
         self.remove_waiting(task)
         return task
 
+    def peek_waiting(self):
+        snapshots = self.__waiting_tasks().sort('scheduled_time').limit(1)
+        if snapshots.count() == 0:
+            return None
+        return TaskSnapshot(snapshots[0]).to_task()
+
     # storage methods
 
     def remove_waiting(self, task):
         self.collection.remove({'id': task.id, 'state': task_waiting})
 
     def store_running(self, task):
-        assert task.state is task_running
+        # because we are storing snapshots and the task is no longer stored in
+        # volatile memory, there is a disconnect between when a task sets itself
+        # as running and when it gets recorded in the db as running
+        # so we accept tasks that are still in a ready state and set them to the
+        # running state, this is a little bit wrong, but unavoidable given the
+        # current control flow
+        assert str(task.state) in (task_waiting, task_running), \
+               'task %s with state %s stored as running' % (task, task.state)
+        if task.state == task_waiting:
+            task.state = task_running
         self.__store_task(task)
 
     def remove_running(self, task):
         self.collection.remove({'id': task.id, 'state': task_running})
 
     def store_complete(self, task):
-        assert task.state in task_complete_states
+        assert str(task.state) in task_complete_states, \
+               'task %s with state %s stored as complete' % (task, task.state)
         self.__store_task(task)
 
     def remove_complete(self, task):
@@ -259,3 +293,65 @@ class PersistentStorage(Storage):
         # this method is now a noop because there's not enough information
         # provided to decided on which copy to delete
         pass
+
+# hybrid storage class ---------------------------------------------------------
+
+class HybridStorage(VolatileStorage):
+    """
+    Hybrid storage class that uses volatile memory for storage and correctness
+    and uses the database to persiste waiting and running tasks across reboots
+    and to keep completed tasks around indefinitely for history and auditing
+    purposes.
+    """
+
+    def  __init__(self):
+        super(HybridStorage, self).__init__()
+        # set custom pickling functions for snapshots
+        copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
+        copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
+        # load existing incomplete tasks from the database on initialization
+        self._load_existing_tasks_from_db()
+
+    def _load_existing_tasks_from_db(self):
+        log = logging.getLogger('pulp')
+        for snapshot in self.snapshot_collection.find():
+            task = TaskSnapshot(snapshot).to_task()
+            # tasks are already in the database, so just enqueue them in memory
+            super(HybridStorage, self).enqueue_waiting(task)
+            log.info(_('Loaded Task from database: %s') % str(task))
+
+    # database methods
+
+    @property
+    def snapshot_collection(self):
+        return self.__dict__.setdefault('__snapshot_collection',
+                                        TaskSnapshot.get_collection())
+
+    @property
+    def history_collection(self):
+        return self.__dict__.setdefault('__history_collection',
+                                        TaskHistory.get_collection())
+
+    # wait queueue methods
+
+    def enqueue_waiting(self, task):
+        # create and keep a snapshot of the task that can be loaded from the
+        # database and executed across reboots, server restarts, etc.
+        snapshot = task.snapshot()
+        try:
+            self.snapshot_collection.insert(snapshot, safe=True)
+        except DuplicateKeyError:
+            raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
+        super(HybridStorage, self).enqueue_waiting(task)
+
+    # storage methods
+
+    def remove_running(self, task):
+        super(HybridStorage, self).remove_running(task)
+        # the task has completed, so remove the snapshot
+        self.snapshot_collection.remove({'_id': task.snapshot_id})
+
+    def store_complete(self, task):
+        super(HybridStorage, self).store_complete(task)
+        history = TaskHistory(task)
+        self.history_collection.insert(history)

@@ -17,6 +17,7 @@ import gzip
 import logging
 import os
 import shutil
+import sys
 import time
 import threading
 import traceback
@@ -59,7 +60,7 @@ log = logging.getLogger(__name__)
 
 repo_fields = model.Repo(None, None, None).keys()
 
-def clear_all_sync_in_progress():
+def clear_sync_in_progress_flags():
     """
     Clears 'sync_in_progress' for all repositories
     Runs as part of initialization of wsgi application.
@@ -68,7 +69,9 @@ def clear_all_sync_in_progress():
     some repositories 'locked'.  This will clear all locks on startup
     """
     collection = model.Repo.get_collection()
-    repos = collection.find(fields={"id":1, "sync_in_progress":1})
+    #repos = collection.find(fields={"id":1, "sync_in_progress":1})
+    # only fix those repos whose flag is actually set
+    repos = collection.find({'sync_in_progress': True}, fields={'id': 1})
     for r in repos:
         log.error("r = %s" % (r))
         collection.update({"id":r["id"]}, {"$set": {"sync_in_progress":False}})
@@ -94,10 +97,7 @@ class RepoApi(BaseApi):
 
     def __getstate__(self):
         odict = self.__dict__.copy()
-        try:
-            del odict['_RepoApi__sync_lock']
-        except:
-            raise PulpException("%s" % odict)
+        odict.pop('_RepoApi__sync_lock', None)
         return odict
 
     def _getcollection(self):
@@ -402,7 +402,9 @@ class RepoApi(BaseApi):
         tasks = [t for t in find_async(method_name="_sync")
                  if (t.args and id in t.args) or
                  (t.kwargs and id in t.kwargs.values())]
-        if tasks and getattr(tasks[0], 'state') in (task_running, task_waiting):
+        for t in tasks:
+            if getattr(t, 'state', None) not in (task_running,):
+                continue
             log.info("Current running a sync on repo : %s", id)
             return True
         return False
@@ -1623,8 +1625,8 @@ class RepoApi(BaseApi):
             if fid not in repo['files']:
                 repo['files'].append(fid)
                 changed = True
-                shared_file = "%s/%s/%s" % (pulp.server.util.top_file_location(),
-                                            fileobj['checksum']['sha256'][:3], fileobj['filename'])
+                shared_file = "%s/%s/%s/%s/%s" % (pulp.server.util.top_file_location(), fileobj['filename'][:3],
+                                            fileobj['filename'],fileobj['checksum']['sha256'], fileobj['filename'])
                 file_repo_path = "%s/%s/%s" % (pulp.server.util.top_repos_location(),
                                                repo['relative_path'], fileobj["filename"])
                 if not os.path.exists(file_repo_path):
@@ -1937,4 +1939,35 @@ class RepoApi(BaseApi):
                     # suppress all other exceptions and retry
                     log.error("Exception: %s" % (e))
                     log.error("Traceback: %s" % (traceback.format_exc()))
+
+
+    def sync_history(self, id, limit=None, sort='descending'):
+        '''
+        Queries repo sync history.
+
+        @param id: repo id
+        @type  id: string
+
+        @param limit: if specified, the query will only return up to this amount of
+                      entries; default is to not limit the entries returned
+        @type  limit: number greater than zero
+
+        @return: list of completed syncs for given repo;
+                 empty list (not None) if no matching entries are found
+        @rtype:
+
+        @raise PulpException: if any of the input values are invalid
+        '''
+
+        # Verify the limit makes sense
+        if limit is not None and limit < 1:
+            raise PulpException('Invalid limit [%s], limit must be greater than zero' % limit)
+
+        tasks = find_async(method_name="_sync", repo_id=id)
+
+        if limit is not None:
+            sync_history_list = [task.__dict__ for task in tasks[:limit]]
+        else:
+            sync_history_list = [task.__dict__ for task in tasks]
+        return sync_history_list
 
