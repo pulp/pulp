@@ -17,7 +17,7 @@ import heapq
 import itertools
 import logging
 import sys
-import threading
+import thread
 import types
 from gettext import gettext as _
 
@@ -182,12 +182,12 @@ def _unpickle_method(func_name, obj, cls):
     return func.__get__(obj, cls)
 
 
-def _pickle_rlock(rlock):
+def _pickle_lock(rlock):
     return _unpickle_rlock, ()
 
 
-def _unpickle_rlock():
-    return threading.RLock()
+def _unpickle_lock():
+    return thread.allocate_lock()
 
 # hybrid storage class ---------------------------------------------------------
 
@@ -203,7 +203,7 @@ class HybridStorage(VolatileStorage):
         super(HybridStorage, self).__init__()
         # set custom pickling functions for snapshots
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        copy_reg.pickle(threading._RLock, _pickle_rlock, _unpickle_rlock)
+        copy_reg.pickle(thread.LockType, _pickle_lock, _unpickle_lock)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
         # load existing incomplete tasks from the database on initialization
         self._load_existing_tasks_from_db()
