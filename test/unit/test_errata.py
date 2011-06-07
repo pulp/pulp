@@ -260,18 +260,18 @@ class TestErrata(unittest.TestCase):
         description = 'test_errata_description_1'
         version = '1.0'
         release = '0'
-        type = 'test_errata_type'
+        type = 'security'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
 
         self.assertTrue(test_errata_1 is not None)
         self.rapi.add_erratum(repo['id'], test_errata_1['id'])
 
-        errata = self.rapi.errata('some-id', types=['test_errata_type'])
+        errata = self.rapi.errata('some-id', types=['security'])
         self.assertTrue(len(errata) == 1)
 
         self.rapi.delete_erratum(repo['id'], test_errata_1['id'])
 
-        errata = self.rapi.errata('some-id', types=['test_errata_type'])
+        errata = self.rapi.errata('some-id', types=['security'])
         self.assertTrue(len(errata) == 0)
 
     def test_repo_errata(self):
@@ -282,7 +282,7 @@ class TestErrata(unittest.TestCase):
         description = 'test_errata_description_1'
         version = '1.0'
         release = '0'
-        type = 'test_errata_type'
+        type = 'security'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
         self.assertTrue(test_errata_1 is not None)
         test_errata_1['pkglist'] = 'test1.rpm'
@@ -291,18 +291,18 @@ class TestErrata(unittest.TestCase):
         description = 'test_errata_description_2'
         version = '1.0'
         release = '0'
-        type = 'test_errata_type'
+        type = 'security'
         test_errata_2 = self.eapi.create(id, title, description, version, release, type)
         self.assertTrue(test_errata_2 is not None)
         test_errata_2['pkglist'] = 'test2.rpm'
         self.rapi.add_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
         
-        errata = self.rapi.errata('some-id', types=['test_errata_type'])
+        errata = self.rapi.errata('some-id', types=['security'])
         self.assertTrue(len(errata) == 2)
 
         self.rapi.delete_errata(repo['id'], [test_errata_1['id'], test_errata_2['id']])
 
-        errata = self.rapi.errata('some-id', types=['test_errata_type'])
+        errata = self.rapi.errata('some-id', types=['security'])
         self.assertTrue(len(errata) == 0)
 
     def test_consumer_errata(self):
@@ -314,7 +314,7 @@ class TestErrata(unittest.TestCase):
         description = 'test_errata_description_1'
         version = '1.0'
         release = '0'
-        type = 'test_errata_type'
+        type = 'enhancement'
         test_errata_1 = self.eapi.create(id, title, description, version, release, type)
         assert(test_errata_1 is not None)
 
@@ -358,8 +358,8 @@ class TestErrata(unittest.TestCase):
 
         c["repoids"] = [repo['id']]
         model.Consumer.get_collection().save(c, safe=True)
-
         errlist = self.capi.listerrata(c['id'], types=[type,])
+
         assert(len(errlist) == 1)
 
         pkguplist = self.capi.list_package_updates(c['id'])['packages']

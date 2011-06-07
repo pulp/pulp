@@ -86,6 +86,7 @@ from pulp.common.dateutils import format_iso8601_datetime
 from pulp.server.api import repo_sync
 from pulp.server.api import scheduled_sync
 from pulp.server.api import task_history
+from pulp.server.api.errata import ErrataApi
 from pulp.server.api.package import PackageApi
 from pulp.server.api.repo import RepoApi
 from pulp.server.async import find_async
@@ -100,6 +101,7 @@ from pulp.server.webservices.controllers.base import JSONController, AsyncContro
 
 api = RepoApi()
 pkg_api = PackageApi()
+errataapi = ErrataApi()
 _log = logging.getLogger(__name__)
 
 # default fields for repositories being sent to the client
@@ -431,7 +433,15 @@ class RepositoryDeferredFields(JSONController):
         """
         valid_filters = ('type')
         types = self.filters(valid_filters).get('type', [])
-        return self.ok(api.errata(id, types))
+        if types == []:
+            errataids = api.errata(id)
+        else:
+            errataids = api.errata(id, [types])
+        # For each erratum find id, title and type
+        repo_errata = []
+        for errataid in errataids:
+            repo_errata.append(errataapi.erratum(errataid, fields=['id', 'title', 'type']))
+        return self.ok(repo_errata)
 
     def distribution(self, id):
         """

@@ -953,13 +953,21 @@ class RepoApi(BaseApi):
         errata = repo['errata']
         if not errata:
             return []
+
         if types:
-            try:
-                return [item for type in types for item in errata[type]]
-            except KeyError, ke:
-                log.debug("Invalid errata type requested :[%s]" % (ke))
-                raise PulpException("Invalid errata type requested :[%s]" % (ke))
-        return list(chain.from_iterable(errata.values()))
+            for type in types:
+                if type not in ['bugfix', 'security', 'enhancement']:
+                    log.debug("Invalid errata type requested :[%s]" % (type))
+                    raise PulpException("Invalid errata type requested :[%s]" % (type))
+                if type not in errata:
+                    types.remove(type)
+
+            errataids = [item for type in types for item in errata[type]]
+
+        else:
+            errataids = list(chain.from_iterable(errata.values()))
+
+        return errataids
 
     @audit()
     def add_erratum(self, repoid, erratumid):

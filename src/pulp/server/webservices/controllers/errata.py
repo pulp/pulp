@@ -21,6 +21,7 @@ from pulp.server.api.repo import RepoApi
 from pulp.server.auth.authorization import (CREATE, READ, UPDATE, DELETE,
     EXECUTE, grant_automatic_permissions_for_created_resource)
 from pulp.server.webservices import http
+from pulp.server.webservices import mongo
 from pulp.server.webservices.controllers.base import (JSONController,
     AsyncController)
 
@@ -30,6 +31,13 @@ api = ErrataApi()
 rapi = RepoApi()
 log = logging.getLogger('pulp')
 
+default_fields = [
+    'id',
+    'title',
+    'type',
+    ]
+
+
 class Errata(JSONController):
 
     @JSONController.error_handler
@@ -37,10 +45,29 @@ class Errata(JSONController):
     def GET(self):
         """
         List all available errata.
-        @return: a list of all users
+        @return: a list of all errata
         """
         # implement filters
-        return self.ok(api.errata())
+        valid_filters = ('id', 'title', 'type', 'repo_defined')
+
+        filters = self.filters(valid_filters)
+
+        types = filters.pop('type', None)
+        id = filters.pop('id', None)
+        title = filters.pop('title', None)
+        repo_defined = filters.pop('repo_defined', None)
+
+        if types:
+            types = types[0]
+        if id:
+            id = id[0]
+        if title:
+            title = title[0]
+        if repo_defined:
+            repo_defined = repo_defined[0]
+
+        errata = api.errata(id=id, title=title, type=types, repo_defined=repo_defined)
+        return self.ok(errata)
 
     @JSONController.error_handler
     @JSONController.auth_required(CREATE)
@@ -149,6 +176,7 @@ class ErrataActions(AsyncController):
          @return List of repoids which have specified errata id
         """
         return self.ok(rapi.find_repos_by_errataid(id))
+
 
     @JSONController.error_handler
     @JSONController.auth_required(EXECUTE)
