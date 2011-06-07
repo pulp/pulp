@@ -104,6 +104,7 @@ def _load_persisted_tasks():
         log.info(_('Loaded Task from database: %s') % str(task))
         enqueue(task)
 
+
 def initialize():
     """
     Explicitly start-up the asynchronous sub-system
@@ -139,6 +140,7 @@ class AsyncAgent:
     @ivar __secret: The shared secret.
     @type __secret: str
     """
+
     def __init__(self, id, secret):
         """
         @param id: The agent ID.
@@ -174,6 +176,7 @@ class RemoteClass:
     @ivar __taskid: The correlated taskid.
     @type __taskid: str
     """
+
     def __init__(self, id, secret, name):
         """
         @param id: The agent (consumer) id.
@@ -285,6 +288,7 @@ class ReplyHandler(Listener):
     @ivar consumer: The reply consumer.
     @type consumer: L{ReplyConsumer}
     """
+
     def __init__(self, url):
         ctag = RemoteMethod.CTAG
         queue = Queue(ctag)
@@ -325,6 +329,7 @@ class AgentTask(AsyncTask):
     """
     Task represents an async task involving an RMI to the agent.
     """
+
     def succeeded(self, sn, result):
         """
         The RMI succeeded.
