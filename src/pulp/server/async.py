@@ -99,14 +99,18 @@ def _load_persisted_tasks():
     assert _queue is not None
     collection = TaskSnapshot.get_collection()
     tasks = []
-    #snapshot_ids = []
+    snapshot_ids = []
     for snapshot in collection.find():
-        #snapshot_ids.append(snapshot['_id'])
+        snapshot_ids.append(snapshot['_id'])
         task = TaskSnapshot(snapshot).to_task()
         tasks.append(task)
         log.info(_('Loaded Task from database: %s') % str(task))
-    collection.drop()
+    #collection.drop()
     #collection.remove({'_id': {'$in': snapshot_ids}}, safe=True)
+    for id in snapshot_ids:
+        last_error = collection.remove({'_id': id}, safe=True)
+        if last_error:
+            raise Exception(repr(last_error))
     for task in tasks:
         enqueue(task)
 
