@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import traceback
+from gettext import gettext as _
 from logging import getLogger
 
 from gofer.messaging import Queue
@@ -19,11 +20,12 @@ from gofer.messaging.async import ReplyConsumer, Listener
 
 from pulp.server import config
 from pulp.server.agent import Agent
+from pulp.server.db.model.persistence import TaskSnapshot
 from pulp.server.tasking.exception import (
     NonUniqueTaskException, DuplicateSnapshotError)
 from pulp.server.tasking.task import Task, AsyncTask
 from pulp.server.tasking.taskqueue.queue import TaskQueue
-from pulp.server.tasking.taskqueue.storage import ImmediateOnlyHybridStorage
+from pulp.server.tasking.taskqueue.storage import SnapshotStorage
 
 
 log = getLogger(__name__)
@@ -93,6 +95,15 @@ def _configured_schedule_threshold():
     return config.parse_time_delta(value)
 
 
+def _load_persisted_tasks():
+    assert _queue is not None
+    collection = TaskSnapshot.get_collection()
+    for snapshot in collection.find():
+        collection.remove({'_id': snapshot['_id']})
+        task = TaskSnapshot(snapshot).to_task()
+        log.info(_('Loaded Task from database: %s') % str(task))
+        enqueue(task)
+
 def initialize():
     """
     Explicitly start-up the asynchronous sub-system
@@ -104,8 +115,9 @@ def initialize():
     _queue = TaskQueue(max_running=max_concurrent,
                        failure_threshold=failure_threshold,
                        schedule_threshold=schedule_threshold,
-                       storage=ImmediateOnlyHybridStorage(),
+                       storage=SnapshotStorage(),
                        dispatch_interval=5)
+    _load_persisted_tasks()
 
 
 def finalize():

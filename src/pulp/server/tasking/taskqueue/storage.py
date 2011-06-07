@@ -191,7 +191,7 @@ def _unpickle_lock():
 
 # hybrid storage class ---------------------------------------------------------
 
-class HybridStorage(VolatileStorage):
+class SnapshotStorage(VolatileStorage):
     """
     Hybrid storage class that uses volatile memory for storage and correctness
     and uses the database to persiste waiting and running tasks across reboots
@@ -205,16 +205,6 @@ class HybridStorage(VolatileStorage):
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
         copy_reg.pickle(thread.LockType, _pickle_lock, _unpickle_lock)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
-        # load existing incomplete tasks from the database on initialization
-        self._load_existing_tasks_from_db()
-
-    def _load_existing_tasks_from_db(self):
-        log = logging.getLogger('pulp')
-        for snapshot in self.snapshot_collection.find():
-            task = TaskSnapshot(snapshot).to_task()
-            # tasks are already in the database, so just enqueue them in memory
-            super(HybridStorage, self).enqueue_waiting(task)
-            log.info(_('Loaded Task from database: %s') % str(task))
 
     # database methods
 
@@ -233,11 +223,12 @@ class HybridStorage(VolatileStorage):
     def enqueue_waiting(self, task):
         # create and keep a snapshot of the task that can be loaded from the
         # database and executed across reboots, server restarts, etc.
-        snapshot = task.snapshot()
-        try:
-            self.snapshot_collection.insert(snapshot, safe=True)
-        except DuplicateKeyError:
-            raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
+        if isinstance(task.scheduler, ImmediateScheduler):
+            snapshot = task.snapshot()
+            try:
+                self.snapshot_collection.insert(snapshot, safe=True)
+            except DuplicateKeyError:
+                raise DuplicateSnapshotError(_('Duplicate snapshot for task %s') % str(task)), None, sys.exc_info()[2]
         super(HybridStorage, self).enqueue_waiting(task)
 
     # storage methods
@@ -251,11 +242,3 @@ class HybridStorage(VolatileStorage):
         super(HybridStorage, self).store_complete(task)
         history = TaskHistory(task)
         self.history_collection.insert(history)
-
-
-class ImmediateOnlyHybridStorage(HybridStorage):
-
-    def enqueue_waiting(self, task):
-        if isinstance(task.scheduler, ImmediateScheduler):
-            return HybridStorage.enqueue_waiting(self, task)
-        return VolatileStorage.enqueue_waiting(self, task)
