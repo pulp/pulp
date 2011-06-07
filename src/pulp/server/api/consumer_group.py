@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import itertools
 import logging
 
 from pulp.server.api.base import BaseApi
@@ -21,6 +22,7 @@ from pulp.server.async import AsyncAgent, AgentTask
 from pulp.server.auditing import audit
 from pulp.server.db import model
 from pulp.server.pexceptions import PulpException
+from pulp.server.tasking.task import Task
 from pulp.server.agent import PulpAgent
 
 log = logging.getLogger(__name__)
@@ -406,6 +408,10 @@ class InstallPackages(AgentTask):
         self.__succeeded = []
         self.__failed = []
         AgentTask.__init__(self, self.install)
+
+    # snapshot fields: used by task persistence
+    _copy_fields = itertools.chain(('items', 'errata', 'serials'),
+                                   Task._copy_fields)
 
     def install(self):
         """
