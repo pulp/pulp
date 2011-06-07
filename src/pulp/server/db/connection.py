@@ -107,6 +107,13 @@ class PulpCollection(Collection):
         for m in self._retry_methods:
             setattr(self, m, _retry_decorator(getattr(self, m)))
 
+    def __getstate__(self):
+        return {'name': self.name}
+
+    def __setstate__(self, state):
+        return get_collection(state['name'])
+
+
 # collection factory -----------------------------------------------------------
 
 def get_collection(name):
