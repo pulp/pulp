@@ -92,7 +92,7 @@ class BaseDiscovery(object):
         if buf.lower().startswith('location:'):
             self._redirected = buf[9:].strip()
 
-    def _request(self, url=None):
+    def _request(self, url=None, handle_redirect=False):
         '''
          Initialize the curl object; loads the url and fetches the page.
          in case of redirects[301,302], the redirection is followed and
@@ -123,14 +123,20 @@ class BaseDiscovery(object):
         curl.setopt(curl.FOLLOWLOCATION, 1)
         curl.setopt(pycurl.HEADERFUNCTION, self._get_header)
         curl.perform()
+        status = curl.getinfo(curl.HTTP_CODE)
+        if status not in [200, 202, 301, 302]:
+            log.debug("Could not find the page at location [%s]" % url)
+            return None
         page_data = page_info.getvalue()
         curl.close()
-        if self._redirected:
+        if handle_redirect and self._redirected:
             # request has been redirected with a 301 or 302, grab the new url
             self.url = self._redirected
+        else:
+            self._redirected = None
         return page_data
 
-    def parse_url(self, url):
+    def parse_url(self, url, handle_redirect=False):
         """
         Extract and parses a url; looks up <a> tags and
         finds matching sub urls.
@@ -143,7 +149,7 @@ class BaseDiscovery(object):
         """
         try:
             log.info("Processing URL : %s" % url)
-            src = self._request(url=url)
+            src = self._request(url=url, handle_redirect=handle_redirect)
         except Exception, e:
             log.debug("An error occurred while reading url page [%s] : %s" % (url, e))
             return []
@@ -158,6 +164,8 @@ class BaseDiscovery(object):
         matches = soup.fetch('a')[1:]
         urls = []
         for item in matches:
+            if not item.has_key('href'):
+                continue
             link = urlparse.urlparse(item['href'])
             proto, netloc, path, params, query, frag = link
             if not path or path == '/':
@@ -197,7 +205,7 @@ class YumDiscovery(BaseDiscovery):
         @rtype: list
         '''
         repourls = []
-        urls = self.parse_url(self.url)
+        urls = self.parse_url(self.url, handle_redirect=True)
         while urls:
             uri = urls.pop()
             results = self.parse_url(uri)
@@ -267,11 +275,13 @@ def main():
     print "CA ",ca
     print "CERT", cert
     d.setup(url, ca, cert, key)
-    repourls = d.discover()
-    print('========================')
-    print('Urls with repodata:\n')
-    print( '=======================')
-    print('\n'.join(repourls))
-
+    try:
+        repourls = d.discover()
+        print('========================')
+        print('Urls with repodata:\n')
+        print( '=======================')
+        print('\n'.join(repourls))
+    except KeyboardInterrupt:
+        sys.exit(0)
 if __name__ == '__main__':
     main()
