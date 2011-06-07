@@ -49,6 +49,7 @@ def enqueue(task, unique=True):
         return None
     except DuplicateSnapshotError, e:
         log.error(traceback.format_exc())
+        return None
     return task
 
 
