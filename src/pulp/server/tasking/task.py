@@ -230,7 +230,7 @@ class Task(object):
             self.progress_callback(callback)
         # build the snapshot
         snapshot = model.TaskSnapshot(data)
-        self.snapshot_id = snapshot.id
+        self.snapshot_id = snapshot._id
         return snapshot
 
     @classmethod
