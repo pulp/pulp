@@ -139,32 +139,32 @@ class VolatileStorage(Storage):
         return heapq.heappop(self.__waiting_tasks)
 
     def peek_waiting(self):
-        assert self.__waiting_tasks
+        assert self.__waiting_tasks, 'Peek called on empty waiting queue'
         return self.__waiting_tasks[0]
 
     # storage methods
 
     def remove_waiting(self, task):
-        assert task in self.__waiting_tasks
+        assert task in self.__waiting_tasks, 'Task [%s] not in waiting tasks' % task.id
         self.__waiting_tasks.remove(task)
         heapq.heapify(self.__waiting_tasks)
 
     def store_running(self, task):
-        assert task not in self.__waiting_tasks
-        assert task not in self.__complete_tasks
+        assert task not in self.__waiting_tasks, 'Task [%s] in waiting tasks' % task.id
+        assert task not in self.__complete_tasks, 'Task [%s] in complete tasks' % task.id
         self.__running_tasks.append(task)
 
     def remove_running(self, task):
-        assert task in self.__running_tasks
+        assert task in self.__running_tasks, 'Task [%s] not in running tasks' % task.id
         self.__running_tasks.remove(task)
 
     def store_complete(self, task):
-        assert task not in self.__waiting_tasks
-        assert task not in self.__running_tasks
+        assert task not in self.__waiting_tasks, 'Task [%s] in waiting tasks' % task.id
+        assert task not in self.__running_tasks, 'Task [%s] in running tasks' % task.id
         self.__complete_tasks.append(task)
 
     def remove_complete(self, task):
-        assert task in self.__complete_tasks
+        assert task in self.__complete_tasks, 'Task [%s] not in complete tasks' % task.id
         self.__complete_tasks.remove(task)
 
 # custom pickle and unpickle methods -------------------------------------------
