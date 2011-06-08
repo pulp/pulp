@@ -79,6 +79,12 @@ class NonUniqueTaskException(TaskingException):
 
 # task storage exceptions ------------------------------------------------------
 
+class SnapshotFailure(TaskingException):
+    """
+    Raised when a task snapshot fails.
+    """
+    pass
+
 class DuplicateSnapshotError(TaskingException):
     """
     Raised when more than one snapshot is created for the same task.
