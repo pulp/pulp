@@ -17,7 +17,6 @@ import heapq
 import itertools
 import logging
 import sys
-import thread
 import types
 from gettext import gettext as _
 
@@ -186,14 +185,6 @@ def _unpickle_method(func_name, obj, cls):
             break
     return func.__get__(obj, cls)
 
-
-def _pickle_lock(rlock):
-    return _unpickle_lock, ()
-
-
-def _unpickle_lock():
-    return thread.allocate_lock()
-
 # snapshot storage class -------------------------------------------------------
 
 class SnapshotStorage(VolatileStorage):
@@ -208,7 +199,6 @@ class SnapshotStorage(VolatileStorage):
         super(SnapshotStorage, self).__init__()
         # set custom pickling functions for snapshots
         copy_reg.pickle(types.MethodType, _pickle_method, _unpickle_method)
-        copy_reg.pickle(thread.LockType, _pickle_lock, _unpickle_lock)
         copy_reg.pickle(datetime.tzinfo, pickle_tzinfo, unpickle_tzinfo)
 
     # database methods
