@@ -13,6 +13,7 @@
 
 import itertools
 import logging
+import pickle
 
 from pulp.server.api.base import BaseApi
 from pulp.server.api.consumer import ConsumerApi
@@ -412,6 +413,16 @@ class InstallPackages(AgentTask):
     # snapshot fields: used by task persistence
     _copy_fields = itertools.chain(('items', 'errata', 'serials'),
                                    Task._copy_fields)
+
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        task = cls(snapshot['items'])
+        for field in task._copy_fields:
+            setattr(task, field, snapshot[field])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        task.snapshot_id = snapshot['_id']
+        return task
 
     def install(self):
         """

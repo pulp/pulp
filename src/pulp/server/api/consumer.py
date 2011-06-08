@@ -14,6 +14,7 @@
 import hashlib
 import itertools
 import logging
+import pickle
 
 # Pulp
 import pulp.server.auth.cert_generator as cert_generator
@@ -625,6 +626,16 @@ class InstallPackages(AgentTask):
                                     'errata', 'reboot_suggested', 'assumeyes'),
                                    Task._copy_fields)
 
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['packages'])
+        for field in task._copy_fields:
+            setattr(task, field, snapshot[field])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        task.snapshot_id = snapshot['_id']
+        return task
+
     def install(self):
         """
         Perform the RMI to the agent to install packages.
@@ -681,6 +692,16 @@ class InstallPackageGroups(AgentTask):
     # snapshot fields: used for task persistence
     _copy_fields = itertools.chain(('consumerid', 'secret', 'groups'),
                                    Task._copy_fields)
+
+    @classmethod
+    def from_snapshot(cls, snapshot):
+        task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['groups'])
+        for field in task._copy_fields:
+            setattr(task, field, snapshot['field'])
+        for field in task._pickle_fields:
+            setattr(task, field, pickle.loads(snapshot[field]))
+        task.snapshot_id = snapshot['_id']
+        return task
 
     def install(self):
         """
