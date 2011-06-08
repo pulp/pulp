@@ -249,6 +249,10 @@ class TaskQueue(object):
             self.__lock.release()
 
     def remove(self, task):
+        """
+        Remove a task from task queue, ensuring that a running task finishes and
+        continues to be tracked by the system.
+        """
         self.__lock.acquire()
         try:
             task.scheduler = ImmediateScheduler()
