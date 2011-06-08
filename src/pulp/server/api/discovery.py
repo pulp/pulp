@@ -148,7 +148,7 @@ class BaseDiscovery(object):
         @rtype: list
         """
         try:
-            log.info("Processing URL : %s" % url)
+            log.debug("Processing URL : %s" % url)
             src = self._request(url=url, handle_redirect=handle_redirect)
         except Exception, e:
             log.debug("An error occurred while reading url page [%s] : %s" % (url, e))
@@ -159,7 +159,7 @@ class BaseDiscovery(object):
         try:
             soup = BeautifulSoup.BeautifulSoup(src)
         except Exception, e:
-            log.error("An error occurred while loading url source: %s" % e)
+            log.debug("An error occurred while loading url source: %s" % e)
             return []
         matches = soup.fetch('a')[1:]
         urls = []
