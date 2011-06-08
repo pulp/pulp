@@ -370,6 +370,7 @@ class Content(RepoAction):
         all_packages = self.repository_api.packages(id)
         all_pnames = [pkg['filename'] for pkg in all_packages]
         all_errata = self.repository_api.errata(repo['id'])
+        all_errata_ids = [e["id"] for e in all_errata]
         if self.opts.consumerid is not None:
             if not len(self.opts.consumerid):
                 self.parser.error(_("error: --consumerid requires an argument"))
@@ -386,12 +387,12 @@ class Content(RepoAction):
             cerrata = errata_pkg_updates['errata']
             applicable_errata = []
             for e in cerrata:
-                if e in all_errata:
+                if e in all_errata_ids:
                     applicable_errata.append(e)
             errata = applicable_errata
         else:
             pnames = all_pnames
-            errata = all_errata
+            errata = all_errata_ids
         print_header(_('Contents of %s') % id)
 
         print _('\nPackages in %s: \n') % id

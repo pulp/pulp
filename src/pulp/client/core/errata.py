@@ -53,8 +53,8 @@ class List(ErrataAction):
     def __init__(self, is_consumer_client=False):
         super(List, self).__init__()
         self.is_consumer_client = is_consumer_client
-        self.id_field_size = 25
-        self.title_field_size = 50
+        self.id_field_size = 20
+        self.type_field_size = 15
 
     def setup_parser(self):
         default = None
@@ -106,13 +106,13 @@ class List(ErrataAction):
             system_exit(os.EX_OK, _("No errata available to list"))
 
         print _("%s\t%s\t%s" % (self.form_item_string("Id", self.id_field_size),
-                self.form_item_string("Title", self.title_field_size),
-                "Type"))
+                self.form_item_string("Type", self.type_field_size),
+                "Title"))
         for erratum in errata:
             print "%s\t%s\t%s" % \
                 (self.form_item_string(erratum["id"], self.id_field_size),
-                 self.form_item_string(erratum["title"], self.title_field_size),
-                 erratum['type'])
+                 self.form_item_string(erratum["type"], self.type_field_size),
+                 erratum["title"])
 
 
     def form_item_string(self, msg, field_size):
@@ -152,8 +152,8 @@ class Search(ErrataAction):
 
     def __init__(self):
         super(Search, self).__init__()
-        self.id_field_size = 25
-        self.title_field_size = 50
+        self.id_field_size = 20
+        self.type_field_size = 15
 
     def setup_parser(self):
         self.parser.add_option("--id", dest="id", help=_("errata id"))
@@ -169,17 +169,17 @@ class Search(ErrataAction):
             orphaned_value = True
         else:
             orphaned_value = False
-
+        
         errata = self.errata_api.errata(id=self.opts.id, title=self.opts.title, types=self.opts.type, repo_defined=orphaned_value)
 
         print _("%s\t%s\t%s" % (self.form_item_string("Id", self.id_field_size),
-                self.form_item_string("Title", self.title_field_size),
-                "Type"))
+                self.form_item_string("Type", self.type_field_size),
+                "Title"))
         for erratum in errata:
             print "%s\t%s\t%s" % \
                 (self.form_item_string(erratum["id"], self.id_field_size),
-                 self.form_item_string(erratum["title"], self.title_field_size),
-                 erratum['type'])
+                 self.form_item_string(erratum["type"], self.type_field_size),
+                 erratum['title'])
 
     def form_item_string(self, msg, field_size):
         return string.ljust(msg, field_size)

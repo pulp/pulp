@@ -142,9 +142,9 @@ class ErrataApi(BaseApi):
             searchDict['reboot_suggested'] = reboot_suggested
         if severity:
             searchDict['severity'] = severity
-        if repo_defined:
-            searchDict['repo_defined'] = repo_defined
-
+        if repo_defined is not None:
+            searchDict['repo_defined'] = False
+        
         if (len(searchDict.keys()) == 0):
             return list(self.collection.find())
         else:
