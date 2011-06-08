@@ -414,6 +414,13 @@ class InstallPackages(AgentTask):
     _copy_fields = itertools.chain(('items', 'errata', 'serials'),
                                    Task._copy_fields)
 
+    def snapshot(self):
+        # since the callable is set, we do not need to pickle it
+        self.callable = None
+        task = super(InstallPackages, self).snapshot()
+        self.callable = self.install
+        return task
+
     @classmethod
     def from_snapshot(cls, snapshot):
         task = cls(snapshot['items'])

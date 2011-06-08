@@ -626,6 +626,13 @@ class InstallPackages(AgentTask):
                                     'errata', 'reboot_suggested', 'assumeyes'),
                                    Task._copy_fields)
 
+    def snapshot(self):
+        # since the callable is set, we do not need to pickle it
+        self.callable = None
+        task = super(InstallPackages, self).snapshot()
+        self.callable = self.install
+        return task
+
     @classmethod
     def from_snapshot(cls, snapshot):
         task = cls(snapshot['consumerid'], snapshot['secret'], snapshot['packages'])
@@ -692,6 +699,13 @@ class InstallPackageGroups(AgentTask):
     # snapshot fields: used for task persistence
     _copy_fields = itertools.chain(('consumerid', 'secret', 'groups'),
                                    Task._copy_fields)
+
+    def snapshot(self):
+        # since the callable is set, we do not need to pickle it
+        self.callable = None
+        task = super(InstallPackages, self).snapshot()
+        self.callable = self.install
+        return task
 
     @classmethod
     def from_snapshot(cls, snapshot):
