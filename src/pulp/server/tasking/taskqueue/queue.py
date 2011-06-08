@@ -312,6 +312,8 @@ class TaskQueue(object):
         finally:
             self.__lock.release()
 
+    # task query operations ----------------------------------------------------
+
     def find(self, **kwargs):
         """
         Find tasks in this task queue.
