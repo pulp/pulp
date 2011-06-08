@@ -4,7 +4,7 @@
 
 Name:           PyYAML
 Version:        3.09
-Release:        11%{?dist}
+Release:        12%{?dist}
 Summary:        YAML parser and emitter for Python
 
 Group:          Development/Libraries
@@ -53,6 +53,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Jun 08 2011 John Matthews <jmatthew@redhat.com> 3.09-12
+- Fix, mistaken tag of 3.10 for PyYAML (jmatthews@redhat.com)
+
 * Wed Jun 08 2011 John Matthews <jmatthews@redhat.com> 3.10-1
 - new package built with tito
 
