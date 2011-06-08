@@ -541,7 +541,7 @@ class ScheduledTaskTester(QueueTester):
         task = Task(noop, scheduler=interval)
         self.queue.enqueue(task)
         self._wait_for_task(task, timedelta(seconds=11))
-        self.assertTrue(task.scheduled_time is None)
+        self.assertTrue(task.scheduled_time is None, 'scheduled_time is %s' % task.scheduled_time)
 
     def test_interval_no_start_time(self):
         then = timedelta(seconds=10)
