@@ -95,7 +95,7 @@ class Errata(Model):
                       'reboot_suggested')
 
     def __init__(self, id, title, description, version, release, type, status=u"",
-            updated=u"", issued=u"", pushcount=u"", from_str=u"",
+            updated=u"", issued=u"", pushcount=1, from_str=u"",
             reboot_suggested=False, references=[], pkglist=[], severity=u"",
             rights=u"", summary=u"", solution=u"", repo_defined=False, immutable=False):
         self._id = id
@@ -136,7 +136,7 @@ class Package(Model):
         Model.__init__(self)
         # ID is initialized in Model.__init__()
         self.name = name
-        self.epoch = epoch
+        self.epoch = epoch or 0 #epoch can be "", None; default to 0 as yum
         self.version = version
         self.release = release
         self.arch = arch
