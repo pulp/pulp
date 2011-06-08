@@ -3,8 +3,8 @@
 #====================================================================#
 
 Name:           PyYAML
-Version:        3.10
-Release:        1%{?dist}
+Version:        3.09
+Release:        11%{?dist}
 Summary:        YAML parser and emitter for Python
 
 Group:          Development/Libraries
