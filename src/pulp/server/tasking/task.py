@@ -248,7 +248,7 @@ class Task(object):
         if task._progress_callback is not None:
             task.set_progress('progress_callback', task._progress_callback)
         # record the current snapshot id
-        task.snapshot_id = snapshot.id
+        task.snapshot_id = snapshot._id
         return task
 
     # scheduling methods -------------------------------------------------------
