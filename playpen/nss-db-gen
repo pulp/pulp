@@ -1,0 +1,170 @@
+#!/bin/bash
+# Copyright (c) 2010 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public License,
+# version 2 (GPLv2). There is NO WARRANTY for this software, express or
+# implied, including the implied warranties of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. You should have received a copy of GPLv2
+# along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+#
+# Red Hat trademarks are not licensed under GPLv2. No permission is
+# granted to use or replicate Red Hat trademarks that are incorporated
+# in this software or its documentation.
+#
+
+DIR="/tmp/tmp$RANDOM"
+HOST=`hostname`
+PWDFILE="password"
+INST_DIR='/tmp/etc/pki/qpid'
+DB_PASSWORD=""
+
+#
+# ========== SETUP ============
+#
+
+# prompt user for install directory
+echo ""
+echo "Please specify a directory into which the created NSS database
+and associated certificates will be installed."
+echo ""
+read -p "Enter a directory [$INST_DIR]:" ans
+if [ "${#ans}" -gt 0 ]
+then
+  INST_DIR=$ans
+fi
+echo $INST_DIR
+
+# prompt user for install directory
+while [ "${#DB_PASSWORD}" -eq 0 ]; do
+  echo ""
+  read -sp "Enter NSS database password:" DB_PASSWORD
+done
+echo ""
+echo ""
+
+# create temporary db directory
+rm -rf $DIR
+mkdir $DIR
+cd $DIR
+
+#
+# ========== PASSWORD ===========
+#
+
+# create the password file
+echo "$DB_PASSWORD" > $PWDFILE
+
+echo "Password file created."
+
+#
+# ========== DATABASE ============
+#
+
+# create the nss db
+certutil -N -d . -f $PWDFILE
+
+echo "Database created."
+
+#
+# =========== CA =================
+#
+
+# create the CA cert
+SUBJECT="CN=ca,O=pulp,ST=Alabama,C=US"
+certutil -S -d . -n "ca" -s $SUBJECT -t "CT,," -x -f $PWDFILE -z cert8.db
+# export CA cert
+certutil -L -d . -n "ca" -a -o ca.crt -f $PWDFILE
+
+echo "CA created"
+
+#
+# =========== BROKER =============
+#
+
+# create broker cert signing request
+SUBJECT="CN=broker,O=pulp,ST=Alabama,C=US"
+certutil -R -d . -s $SUBJECT -a -o broker.req -f $PWDFILE -z cert8.db
+
+# sign the broker cert w/ CA
+certutil -C -d . -c "ca" -uV -m1 -a -i broker.req -f $PWDFILE -o broker.crt
+
+# import the broker cert
+certutil -A -d . -n "broker" -t ",," -a -i broker.crt
+
+echo "Broker certificate created."
+
+#
+# =========== CLIENT =============
+#
+
+# create client cert signing request
+SUBJECT="CN=client,O=pulp,ST=Alabama,C=US"
+certutil -R -d . -s $SUBJECT -a -o client.req -f $PWDFILE -z cert8.db
+
+# sign the client cert w/ CA
+certutil -C -d . -c "ca" -uC -m2 -a -i client.req -f $PWDFILE -o client.crt
+
+# import the client cert
+certutil -A -d . -n "client" -t ",," -a -i client.crt
+echo "Client certificate created."
+
+# export client p12 bundle
+pk12util -d . -n "client" -o client.p12
+
+# using openssl, generate a key & cert using the p12.
+openssl pkcs12 -in client.p12 -nodes -out client.crt
+
+echo "Client key & certficate exported"
+
+#
+# =========== INSTALL =============
+#
+
+# clean unused artifacts
+rm -f *.req
+rm -f *.p12
+rm -f broker.crt
+
+# create target directory
+mkdir -p $INST_DIR
+cp $DIR/* $INST_DIR
+
+echo ""
+echo "Artifacts copied to: $INST_DIR."
+echo ""
+
+#
+# =========== POST =============
+#
+
+echo "Please update /etc/qpidd.conf as follows:"
+echo "
+....
+# SSL
+require-encryption=yes
+ssl-require-client-authentication=yes
+ssl-cert-db=$INST_DIR
+ssl-cert-password-file=$INST_DIR/password
+ssl-cert-name=broker
+ssl-port=5674
+...
+"
+echo ""
+echo "Please configure clients as follows:"
+echo "
+...
+[messaging]
+url=ssl://<host>:5674
+cacert=$INST_DIR/ca.crt
+clientcert=$INST_DIR/client.crt
+...
+"
+
+#
+# =========== CLEANUP =============
+#
+
+cd /tmp
+rm -rf $DIR
+
