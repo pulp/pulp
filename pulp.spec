@@ -5,7 +5,7 @@
 # -- headers - pulp server ---------------------------------------------------
 
 Name:           pulp
-Version:        0.0.187
+Version:        0.0.188
 Release:        1%{?dist}
 Summary:        An application for managing software content
 
@@ -313,6 +313,107 @@ fi
 # -- changelog ---------------------------------------------------------------
 
 %changelog
+* Wed Jun 08 2011 Jeff Ortel <jortel@redhat.com> 0.0.188-1
+- 709703 - set the right defaults for pushcount and epoch (pkilambi@redhat.com)
+- removed callable from pickling in derived tasks that only can have one
+  possible method passed in (jconnor@redhat.com)
+- removed lock pickling (jconnor@redhat.com)
+- added assertion error messages (jconnor@redhat.com)
+- Automatic commit of package [PyYAML] minor release [3.09-14].
+  (jmatthew@redhat.com)
+- import PyYAML for brew (jmatthews@redhat.com)
+- added overriden from_snapshot class methods for derived task classes that
+  take different contructor arguments for re-constitution (jconnor@redhat.com)
+- fixed snapshot id setting (jconnor@redhat.com)
+- extra lines in errata list and search outputs and removing errata type
+  constraint (skarmark@redhat.com)
+- adding failure message for assert in intervalschedule test case
+  (skarmark@redhat.com)
+- added --orphaned flag for errata search (skarmark@redhat.com)
+- re-arranging calls so that db gets cleaned up before async is initialized,
+  keeping persisted tasks from being loaded (jconnor@redhat.com)
+- fixing repo delete issue because of missing handling for checking whether
+  repo sync invoked is completed (skarmark@redhat.com)
+- added individual snapshot removal (jconnor@redhat.com)
+- simply dropping whole snapshot collection in order to ensure old snapshots
+  are deleted (jconnor@redhat.com)
+- adding safe batch removal of task snapshots before enqueueing them
+  (jconnor@redhat.com)
+- added at scheduled task to get persisted (jconnor@redhat.com)
+- Updated User Guide to include jconnor ISO8601 updates from wiki
+  (tsanders@redhat.com)
+- Bump to grinder 102 (jmatthews@redhat.com)
+- Adding lock for creating a document's id because rhel5 uuid.uuid4() is not
+  threadsafe (jmatthews@redhat.com)
+- Adding checks to check status of the request return and raise exception if
+  its not a success or redirect. Also have an optional handle_redirects param
+  to tell the request to override urls (pkilambi@redhat.com)
+- dont persist the scheduled time, let the scheduler figure it back out
+  (jconnor@redhat.com)
+- 700367 - bug fix + errata enhancement changes + errata search
+  (skarmark@redhat.com)
+- reverted custom lock pickling (jconnor@redhat.com)
+- refactored and re-arranged functionality in snapshot storage
+  (jconnor@redhat.com)
+- added ignore_complete flag to find (jconnor@redhat.com)
+- changed super calls and comments to new storage class name
+  (jconnor@redhat.com)
+- remove cusomt pickling of lock types (jconnor@redhat.com)
+- consolidate hybrid storage into 1 class and moved loading of persisted tasks
+  to async initialization (jconnor@redhat.com)
+- moved all timedeltas to pickle fields (jconnor@redhat.com)
+- removed complete callback from pickle fields (jconnor@redhat.com)
+- added additional copy fields for other derived task classes
+  (jconnor@redhat.com)
+- reverted repo sync task back to individual fields (jconnor@redhat.com)
+- fixed bug in snapshot id (jconnor@redhat.com)
+- reverting back to individual field storage and pickling (jconnor@redhat.com)
+- removing thread from the snapshot (jconnor@redhat.com)
+- delete old thread module (jconnor@redhat.com)
+- renamed local thread module (jconnor@redhat.com)
+- one more try before having to rename local thread module (jconnor@redhat.com)
+- change thread import (jconnor@redhat.com)
+- changed to natice lock pickling and unpickling (jconnor@redhat.com)
+- added custom pickling and unpickling of rlocks (jconnor@redhat.com)
+- 681239 - user update and create now have 2 options of providing password,
+  through command line or password prompt (skarmark@redhat.com)
+- more thorough lock removal (jconnor@redhat.com)
+- added return of None on duplicate snapshot (jconnor@redhat.com)
+- added get and set state magic methods to PulpCollection for pickline
+  (jconnor@redhat.com)
+- using immediate only hybrid storage (jconnor@redhat.com)
+- removed cached connections to handle AutoReconnect exceptions
+  (jconnor@redhat.com)
+- db version 16 for dropping all tasks serialzed in the old format
+  (jconnor@redhat.com)
+- more cleanup and control flow issues (jconnor@redhat.com)
+- removed unused exception type (jconnor@redhat.com)
+- fixed bad return on too many consecutive failures (jconnor@redhat.com)
+- corrected control flow for exception paths through task execution
+  (jconnor@redhat.com)
+- using immutable default values for keyword arguments in constructor
+  (jconnor@redhat.com)
+- added timeout() method to base class and deprecation warnings for usage of
+  dangerous exception injection (jconnor@redhat.com)
+- removed pickling of individual fields and instead pickle the whole task
+  (jconnor@redhat.com)
+- comment additions and cleanup (jconnor@redhat.com)
+- remove unused persistent storage (jconnor@redhat.com)
+- removed unused code (jconnor@redhat.com)
+- change in delimiter comments (jconnor@redhat.com)
+- adding hybrid storage class that only takes snapshots of tasks with an
+  immediate scheduler (jconnor@redhat.com)
+- Adding progress call back to get incremental feedback on discovery
+  (pkilambi@redhat.com)
+- Need apache to be able to update this file as well as root.
+  (jason.dobies@redhat.com)
+- Adding authenticated repo support to client discovery (pkilambi@redhat.com)
+- 704320 - Capitalize the first letter of state for consistency
+  (jason.dobies@redhat.com)
+- Return a 404 for the member list if the CDS is not part of a cluster
+  (jason.dobies@redhat.com)
+- Don't care about client certificates for mirror list
+  (jason.dobies@redhat.com)
 * Sat Jun 04 2011 Jay Dobies <jason.dobies@redhat.com> 0.0.187-1
 - Don't need the ping file, the load balancer now supports a members option
   that will be used instead. (jason.dobies@redhat.com)
