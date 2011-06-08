@@ -105,7 +105,7 @@ class List(ErrataAction):
         if not errata:
             system_exit(os.EX_OK, _("No errata available to list"))
 
-        print _("%s\t%s\t%s" % (self.form_item_string("Id", self.id_field_size),
+        print _("\n%s\t%s\t%s\n" % (self.form_item_string("Id", self.id_field_size),
                 self.form_item_string("Type", self.type_field_size),
                 "Title"))
         for erratum in errata:
@@ -172,7 +172,7 @@ class Search(ErrataAction):
         
         errata = self.errata_api.errata(id=self.opts.id, title=self.opts.title, types=self.opts.type, repo_defined=orphaned_value)
 
-        print _("%s\t%s\t%s" % (self.form_item_string("Id", self.id_field_size),
+        print _("\n%s\t%s\t%s\n" % (self.form_item_string("Id", self.id_field_size),
                 self.form_item_string("Type", self.type_field_size),
                 "Title"))
         for erratum in errata:

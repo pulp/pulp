@@ -956,9 +956,6 @@ class RepoApi(BaseApi):
 
         if types:
             for type in types:
-                if type not in ['bugfix', 'security', 'enhancement']:
-                    log.debug("Invalid errata type requested :[%s]" % (type))
-                    raise PulpException("Invalid errata type requested :[%s]" % (type))
                 if type not in errata:
                     types.remove(type)
 
