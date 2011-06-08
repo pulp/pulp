@@ -4,7 +4,7 @@
 
 Name:           PyYAML
 Version:        3.09
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        YAML parser and emitter for Python
 
 Group:          Development/Libraries
@@ -53,6 +53,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Jun 08 2011 John Matthews <jmatthew@redhat.com> 3.09-14
+- 
+
 * Wed Jun 08 2011 John Matthews <jmatthew@redhat.com> 3.09-13
 - 
 
