@@ -293,6 +293,9 @@ class List(RepoAction):
             feed_ca = 'No'
             if repo.has_key('feed_ca') and repo['feed_ca']:
                 feed_ca = 'Yes'
+            feed_key = 'No'
+            if repo.has_key('feed_key') and repo['feed_key']:
+                feed_key = 'Yes'
 
             consumer_cert = 'No'
             if repo.has_key('consumer_cert') and repo['consumer_cert']:
@@ -300,11 +303,14 @@ class List(RepoAction):
             consumer_ca = 'No'
             if repo.has_key('consumer_ca') and repo['consumer_ca']:
                 consumer_ca = 'Yes'
+            consumer_key = 'No'
+            if repo.has_key('consumer_key') and repo['consumer_key']:
+                consumer_key = 'Yes'
 
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType,
-                    feed_ca, feed_cert,
-                    consumer_ca, consumer_cert,
+                    feed_ca, feed_cert, feed_key,
+                    consumer_ca, consumer_cert, consumer_key,
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
@@ -364,6 +370,7 @@ class Content(RepoAction):
         all_packages = self.repository_api.packages(id)
         all_pnames = [pkg['filename'] for pkg in all_packages]
         all_errata = self.repository_api.errata(repo['id'])
+        all_errata_ids = [e["id"] for e in all_errata]
         if self.opts.consumerid is not None:
             if not len(self.opts.consumerid):
                 self.parser.error(_("error: --consumerid requires an argument"))
@@ -380,12 +387,12 @@ class Content(RepoAction):
             cerrata = errata_pkg_updates['errata']
             applicable_errata = []
             for e in cerrata:
-                if e in all_errata:
+                if e in all_errata_ids:
                     applicable_errata.append(e)
             errata = applicable_errata
         else:
             pnames = all_pnames
-            errata = all_errata
+            errata = all_errata_ids
         print_header(_('Contents of %s') % id)
 
         print _('\nPackages in %s: \n') % id
@@ -423,11 +430,15 @@ class Create(RepoAction):
         self.parser.add_option("--feed_ca", dest="feed_ca",
                                help=_("path location to the feed's ca certificate"))
         self.parser.add_option("--feed_cert", dest="feed_cert",
-                               help=_("path location to the feed's entitlement combined private key and certificate"))
+                               help=_("path location to the feed's entitlement certificate"))
+        self.parser.add_option("--feed_key", dest="feed_key",
+                               help=_("path location to the feed's entitlement certificate key"))
         self.parser.add_option("--consumer_ca", dest="consumer_ca",
                                help=_("path location to the ca certificate used to verify consumer requests"))
         self.parser.add_option("--consumer_cert", dest="consumer_cert",
-                               help=_("path location to the entitlement combined private key and certificate consumers will be provided at bind to grant access to this repo"))
+                               help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
+        self.parser.add_option("--consumer_key", dest="consumer_key",
+                               help=_("path location to the consumer entitlement certificate key"))
         #self.parser.add_option("--schedule", dest="schedule",
         #                       help=_("cron entry date and time syntax for scheduling automatic repository synchronizations"))
         self.parser.add_option("--symlinks", action="store_true", dest="symlinks",
@@ -468,24 +479,40 @@ class Create(RepoAction):
             notes = {}
 
         # Feed cert bundle
-        ca = self.opts.feed_ca
+        feed_cert_data = None
+        cacert = self.opts.feed_ca
         cert = self.opts.feed_cert
-        if ca:
-            ca = utils.readFile(ca)
+        key = self.opts.feed_key
+        feed_cacert_tmp = None
+        if cacert:
+            feed_cacert_tmp = utils.readFile(cacert)
+        feed_cert_tmp = None
         if cert:
-            cert = utils.readFile(cert)
-        feed_cert = {"ca": ca, "cert": cert,}
+            feed_cert_tmp = utils.readFile(cert)
+        feed_key_tmp = None
+        if key:
+            feed_key_tmp = utils.readFile(key)
+        feed_cert_data = {"ca": feed_cacert_tmp,
+                              "cert": feed_cert_tmp,
+                              "key": feed_key_tmp}
 
         # Consumer cert bundle
-        consumer_cert = None
-        ca = self.opts.consumer_ca
+        consumer_cert_data = None
+        cacert = self.opts.consumer_ca
         cert = self.opts.consumer_cert
-        if ca:
-            ca = utils.readFile(ca)
+        key = self.opts.consumer_key
+        cons_cacert_tmp = None
+        cons_cert_tmp = None
+        cons_key_tmp = None
+        if cacert:
+            cons_cacert_tmp = utils.readFile(cacert)
         if cert:
-            cert = utils.readFile(cert)
-        consumer_cert = {"ca": ca, "cert": cert,}
-
+            cons_cert_tmp = utils.readFile(cert)
+        if key:
+            cons_key_tmp = utils.readFile(key)
+        consumer_cert_data = {"ca": cons_cacert_tmp,
+                                  "cert": cons_cert_tmp,
+                                  "key": cons_key_tmp}
         groupid = self.opts.groupid
         keylist = self.opts.keys
         if keylist:
@@ -493,8 +520,8 @@ class Create(RepoAction):
             keylist = reader.expand(keylist)
         repo = self.repository_api.create(id, name, arch, feed, symlinks,
                                           sync_schedule=schedule,
-                                          feed_cert_data=feed_cert,
-                                          consumer_cert_data=consumer_cert,
+                                          feed_cert_data=feed_cert_data,
+                                          consumer_cert_data=consumer_cert_data,
                                           relative_path=relative_path,
                                           groupid=groupid,
                                           gpgkeys=keylist,
@@ -604,13 +631,17 @@ class Update(RepoAction):
         self.parser.add_option("--feed_ca", dest="feed_ca",
                                help=_("path location to the feed's ca certificate"))
         self.parser.add_option("--feed_cert", dest="feed_cert",
-                               help=_("path location to the feed's entitlement combined private key and certificate"))
+                               help=_("path location to the feed's entitlement certificate"))
+        self.parser.add_option("--feed_key", dest="feed_key",
+                               help=_("path location to the feed's entitlement certificate key"))
         self.parser.add_option("--remove_feed_cert", dest="remove_feed_cert", action="store_true",
                                help=_("if specified, the feed certificate information will be removed from this repo"))
         self.parser.add_option("--consumer_ca", dest="consumer_ca",
                                help=_("path location to the ca certificate used to verify consumer requests"))
         self.parser.add_option("--consumer_cert", dest="consumer_cert",
-                               help=_("path location to the entitlement combined private key and certificate consumers will be provided at bind to grant access to this repo"))
+                               help=_("path location to the entitlement certificate consumers will be provided at bind to grant access to this repo"))
+        self.parser.add_option("--consumer_key", dest="consumer_key",
+                               help=_("path location to the consumer entitlement certificate key"))
         self.parser.add_option("--remove_consumer_cert", dest="remove_consumer_cert", action="store_true",
                                help=_("if specified, the consumer certificate information will be removed from this repo"))
         self.parser.add_option("--symlinks", dest="use_symlinks",
@@ -665,14 +696,14 @@ class Update(RepoAction):
                 keylist = v.split(',')
                 self.repository_api.rmkeys(id, keylist)
                 continue
-            if k in ('feed_ca', 'feed_cert'):
+            if k in ('feed_ca', 'feed_cert', 'feed_key'):
                 f = open(v)
                 v = f.read()
                 f.close()
                 feed_cert_bundle = feed_cert_bundle or {}
                 feed_cert_bundle[k[5:]] = v
                 continue
-            if k in ('consumer_ca', 'consumer_cert'):
+            if k in ('consumer_ca', 'consumer_cert', 'consumer_key'):
                 f = open(v)
                 v = f.read()
                 f.close()
@@ -702,12 +733,12 @@ class Update(RepoAction):
         # of the bundle, add it to the delta. Otherwise, no mention in the delta will
         # have no change to the cert bundles.
         if optdict['remove_feed_cert']:
-            delta['feed_cert_data'] = {'ca' : None, 'cert' : None,}
+            delta['feed_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif feed_cert_bundle:
             delta['feed_cert_data'] = feed_cert_bundle
 
         if optdict['remove_consumer_cert']:
-            delta['consumer_cert_data'] = {'ca' : None, 'cert' : None,}
+            delta['consumer_cert_data'] = {'ca' : None, 'cert' : None, 'key' : None}
         elif consumer_cert_bundle:
             delta['consumer_cert_data'] = consumer_cert_bundle
 
@@ -1357,6 +1388,10 @@ class Discovery(RepoProgressAction):
     def setup_parser(self):
         self.parser.add_option("-u", "--url", dest="url",
                                help=_("root url to perform discovery (required)"))
+        self.parser.add_option("--feed_ca", dest="feed_ca",
+                               help=_("path location to the feed's ca certificate"))
+        self.parser.add_option("--feed_cert", dest="feed_cert",
+                               help=_("path location to the feed's entitlement combined private key and certificate"))
         self.parser.add_option("-g", "--groupid", action="append", dest="groupid",
                                help=_("groupids to associate the discovered repos (optional)"))
         self.parser.add_option("-y", "--assumeyes", action="store_true", dest="assumeyes",
@@ -1364,20 +1399,47 @@ class Discovery(RepoProgressAction):
         self.parser.add_option("-t", "--type", dest="type",
                                help=_("content type to look for during discovery(required); supported types: ['yum',]"))
 
+    def print_discovery_progress(self, progress):
+        current = ""
+        if progress and progress.has_key("num_of_urls"):
+            current += _("Number of Urls Discovered: %s\n") % (progress['num_of_urls'])
+            if not progress["num_of_urls"]:
+                current += "Waiting %s\n" % (self.get_wait_symbol())
+                self._previous_step = progress["num_of_urls"]
+        else:
+            current += "Waiting %s\n" % (self.get_wait_symbol())
+            self._previous_step = None
+        self.write(current, self._previous_progress)
+        self._previous_progress = current
+
     def run(self):
         success = 0
         url = self.get_required_option('url')
         ctype = self.get_required_option('type')
+        # Feed cert bundle
+        cacert = self.opts.feed_ca
+        cert = self.opts.feed_cert
+        feed_cacert_tmp = None
+        if cacert:
+            feed_cacert_tmp = utils.readFile(cacert)
+        feed_cert_tmp = None
+        if cert:
+            feed_cert_tmp = utils.readFile(cert)
+        feed_cert_data = {}
+        if feed_cert_tmp or feed_cacert_tmp:
+            feed_cert_data = {"ca": feed_cacert_tmp,
+                              "cert": feed_cert_tmp,}
         print(_("Discovering urls with yum metadata, This could take some time..."))
         try:
-            task = self.service_api.repo_discovery(url, type=ctype)
+            task = self.service_api.repo_discovery(url, type=ctype, cert_data=feed_cert_data)
         except Exception,e:
             system_exit(os.EX_DATAERR, _("Error: %s" % e[1]))
         print task['progress']
         while task['state'] not in ('finished', 'error', 'timed out', 'canceled'):
-            self.print_progress(task['progress'])
+            self.print_discovery_progress(task['progress'])
             time.sleep(0.25)
             task = self.service_api.task_status(task['status_path'])
+
         repourls = task['result'] or []
 
         if not len(repourls):
@@ -1428,7 +1490,9 @@ class Discovery(RepoProgressAction):
                 if not id:
                     #no valid id formed, continue
                     continue
-                repo = self.repository_api.create(id, id, 'noarch', groupid=self.opts.groupid or [], feed=repourl)
+                repo = self.repository_api.create(id, id, 'noarch',
+                                                  groupid=self.opts.groupid or [],
+                                                  feed=repourl, feed_cert_data=feed_cert_data,)
                 print("Successfully created repo [%s]" % repo['id'])
             except Exception, e:
                 success = -1

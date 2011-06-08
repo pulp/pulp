@@ -91,7 +91,7 @@ class TestAuthApi(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', }
 
         # Test
         self.auth_api.enable_global_repo_auth(bundle)
@@ -109,7 +109,7 @@ class TestAuthApi(unittest.TestCase):
         '''
 
         # Setup
-        bundle = {'ca' : 'FOO', 'cert' : 'BAR', 'key' : 'BAZ'}
+        bundle = {'ca' : 'FOO', 'cert' : 'BAR', }
         self.auth_api.enable_global_repo_auth(bundle)
 
         # Test

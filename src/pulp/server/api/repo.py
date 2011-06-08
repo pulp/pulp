@@ -29,6 +29,7 @@ from urlparse import urlparse
 import pulp.server.consumer_utils as consumer_utils
 import pulp.server.util
 from pulp.common import dateutils
+from pulp.common.bundle import Bundle
 from pulp.server import constants
 from pulp.server import comps_util
 from pulp.server import config
@@ -73,7 +74,6 @@ def clear_sync_in_progress_flags():
     # only fix those repos whose flag is actually set
     repos = collection.find({'sync_in_progress': True}, fields={'id': 1})
     for r in repos:
-        log.error("r = %s" % (r))
         collection.update({"id":r["id"]}, {"$set": {"sync_in_progress":False}})
 
 
@@ -97,7 +97,10 @@ class RepoApi(BaseApi):
 
     def __getstate__(self):
         odict = self.__dict__.copy()
-        odict.pop('_RepoApi__sync_lock', None)
+        for k, v in odict.items():
+            if not isinstance(v, threading.RLock):
+                continue
+            odict.pop(k)
         return odict
 
     def _getcollection(self):
@@ -128,6 +131,31 @@ class RepoApi(BaseApi):
             return len(os.listdir(path))
         except:
             return 0
+        
+    def _consolidate_bundle(self, data):
+        """
+        Consolidate key & certificate.
+        Used by create() and update().  Also performs some validation.
+        @param data: cert dict (ca|cert|key)
+        @type data: dict
+        """
+        if data is None:
+            return
+        key = data.get('key', '')
+        cert = data.get('cert', '')
+        if key:
+            if not Bundle.haskey(key):
+                raise Exception, 'key (PEM) not valid'
+            if cert:
+                if not Bundle.hascrt(cert):
+                    raise Exception, 'certificate (PEM) not valid'
+                data['cert'] = Bundle.join(key, cert)
+                del data['key']
+            else:
+                raise Exception, 'certificate must be specified'
+        else:
+            if cert and (not Bundle.hasboth(cert)):
+                raise Exception, 'key and certificate (PEM) expected'
 
     @audit()
     def clean(self):
@@ -181,11 +209,17 @@ class RepoApi(BaseApi):
         protected_repo_utils = ProtectedRepoUtils(config.config)
 
         if feed_cert_data:
+            # consolidate key & certificate
+            self._consolidate_bundle(feed_cert_data)
+            # store certificates
             feed_cert_files = repo_cert_utils.write_feed_cert_bundle(id, feed_cert_data)
             r['feed_ca'] = feed_cert_files['ca']
             r['feed_cert'] = feed_cert_files['cert']
 
         if consumer_cert_data:
+            # consolidate key & certificate
+            self._consolidate_bundle(consumer_cert_data)
+            # store certificates
             consumer_cert_files = repo_cert_utils.write_consumer_cert_bundle(id, consumer_cert_data)
             r['consumer_ca'] = consumer_cert_files['ca']
             r['consumer_cert'] = consumer_cert_files['cert']
@@ -566,12 +600,18 @@ class RepoApi(BaseApi):
                 continue
             # Feed certificate bundle changed
             if key == 'feed_cert_data':
+                # consolidate key & certificate
+                self._consolidate_bundle(value)
+                # store certificates
                 written_files = repo_cert_utils.write_feed_cert_bundle(id, value)
                 for item in written_files:
                     repo['feed_' + item] = written_files[item]
                 continue
             # Consumer certificate bundle changed
             if key == 'consumer_cert_data':
+                # consolidate key & certificate
+                self._consolidate_bundle(value)
+                # store certificates
                 written_files = repo_cert_utils.write_consumer_cert_bundle(id, value)
                 for item in written_files:
                     repo['consumer_' + item] = written_files[item]
@@ -949,13 +989,18 @@ class RepoApi(BaseApi):
         errata = repo['errata']
         if not errata:
             return []
+
         if types:
-            try:
-                return [item for type in types for item in errata[type]]
-            except KeyError, ke:
-                log.debug("Invalid errata type requested :[%s]" % (ke))
-                raise PulpException("Invalid errata type requested :[%s]" % (ke))
-        return list(chain.from_iterable(errata.values()))
+            for type in types:
+                if type not in errata:
+                    types.remove(type)
+
+            errataids = [item for type in types for item in errata[type]]
+
+        else:
+            errataids = list(chain.from_iterable(errata.values()))
+
+        return errataids
 
     @audit()
     def add_erratum(self, repoid, erratumid):

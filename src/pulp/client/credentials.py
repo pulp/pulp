@@ -33,11 +33,10 @@ class Login(Bundle):
     """
 
     ROOT = '~/.pulp'
-    KEY = 'user-key.pem'
     CRT = 'user-cert.pem'
 
     def __init__(self):
-        path = os.path.join(ROOT, self.CRT)
+        path = os.path.join(self.ROOT, self.CRT)
         Bundle.__init__(self, path)
 
 
@@ -47,11 +46,10 @@ class Consumer(Bundle):
     """
 
     ROOT = '/etc/pki/consumer'
-    KEY = 'key.pem'
     CRT = 'cert.pem'
 
     def __init__(self):
-        path = os.path.join(ROOT, self.CRT)
+        path = os.path.join(self.ROOT, self.CRT)
         Bundle.__init__(self, path)
 
     def getid(self):

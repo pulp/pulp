@@ -106,7 +106,7 @@ class Bundle:
         @param path: The absolute path to the bundle represented.
         @type path: str
         """
-        self.path = path
+        self.path = os.path.expanduser(path)
 
     def crtpath(self):
         """
