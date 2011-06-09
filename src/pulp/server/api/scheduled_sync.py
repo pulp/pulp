@@ -132,21 +132,13 @@ def _update_repo_scheduled_sync_task(repo, task):
     @type task: L{pulp.server.tasking.task.Task}
     @param task: task to update
     """
-    if task.state not in task_complete_states:
-        task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-        return
-    async.remove_async(task)
-    task.scheduler = schedule_to_scheduler(repo['sync_schedule'])
-    return async.enqueue(task)
+    new_scheduler = schedule_to_scheduler(repo['sync_schedule'])
+    return async.reschedule_async(task, new_scheduler)
 
 
 def _update_cds_scheduled_sync_task(cds, task):
-    if task.state not in task_complete_states:
-        task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
-        return
-    async.remove_async(task)
-    task.scheduler = schedule_to_scheduler(cds['sync_schedule'])
-    return async.enqueue(task)
+    new_scheduler = schedule_to_scheduler(cds['sync_schedule'])
+    return async.reschedule_async(task, new_scheduler)
 
 
 def _remove_repo_scheduled_sync_task(repo):

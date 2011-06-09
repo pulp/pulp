@@ -630,9 +630,9 @@ class InstallPackages(AgentTask):
     def snapshot(self):
         # since the callable is set, we do not need to pickle it
         self.callable = None
-        task = super(InstallPackages, self).snapshot()
+        snapshot = super(InstallPackages, self).snapshot()
         self.callable = self.install
-        return task
+        return snapshot
 
     @classmethod
     def from_snapshot(cls, snapshot):
@@ -704,9 +704,9 @@ class InstallPackageGroups(AgentTask):
     def snapshot(self):
         # since the callable is set, we do not need to pickle it
         self.callable = None
-        task = super(InstallPackages, self).snapshot()
+        snapshot = super(InstallPackageGroups, self).snapshot()
         self.callable = self.install
-        return task
+        return snapshot
 
     @classmethod
     def from_snapshot(cls, snapshot):

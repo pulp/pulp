@@ -53,8 +53,11 @@ def posttrans_hook(conduit):
     """
     Update Package Profile for available consumer.
     """
+    #get configuration
+    verbose = conduit.confBool("main", "verbose", default=1)
     if os.getuid() != 0:
-        conduit.info(2, 'Not root, Pulp consumer profile not updated')
+        if verbose:
+            conduit.info(2, 'Not root, Pulp consumer profile not updated')
         return
     if hasattr(conduit, 'registerPackageName'):
         conduit.registerPackageName("pulp-client")
@@ -62,10 +65,12 @@ def posttrans_hook(conduit):
         bundle = get_consumer()
         cid = bundle.getid()
         if not cid:
-            conduit.info(2, "Consumer Id could not be found. Cannot update consumer profile.")
+            if verbose:
+                conduit.info(2, "Consumer Id could not be found. Cannot update consumer profile.")
             return
         update_consumer_profile(cid)
-        conduit.info(2, "Profile updated successfully for consumer [%s]" % cid)
+        if verbose:
+            conduit.info(2, "Profile updated successfully for consumer [%s]" % cid)
     except Exception, e:
         conduit.error(2, str(e))
 

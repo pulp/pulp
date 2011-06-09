@@ -118,7 +118,6 @@ class TaskQueue(object):
             except Exception:
                 _log.critical('Exception in FIFO Queue Dispatch Thread\n%s' %
                               ''.join(traceback.format_exception(*sys.exc_info())))
-                raise
         finally:
             self.__lock.release()
 
@@ -249,6 +248,10 @@ class TaskQueue(object):
             self.__lock.release()
 
     def remove(self, task):
+        """
+        Remove a task from task queue, ensuring that a running task finishes and
+        continues to be tracked by the system.
+        """
         self.__lock.acquire()
         try:
             task.scheduler = ImmediateScheduler()
@@ -311,6 +314,29 @@ class TaskQueue(object):
             self.__canceled_tasks.append(task)
         finally:
             self.__lock.release()
+
+    def reschedule(self, task, scheduler):
+        """
+        Reschedule an already scheduled task.
+        @type task: pulp.server.tasking.task.Task instance
+        @param task: task to reschedule
+        @type scheduler: pulp.server.tasking.scheduler.Scheduler instance
+        @param scheduler: scheduler representing task's new schedule
+        """
+        # NOTE this needs to be done here to ensure the scheduler is assigned
+        # before the task changes state
+        self.__lock.acquire()
+        try:
+            task.scheduler = scheduler
+            # most likely we won't be rescheduling tasks that have completed
+            # but just in case...
+            if task in self.__storage.complete_tasks():
+                self.__storage.remove_complete(task)
+                self.enqueue(task)
+        finally:
+            self.__lock.release()
+
+    # task query operations ----------------------------------------------------
 
     def find(self, **kwargs):
         """

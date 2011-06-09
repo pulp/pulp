@@ -23,7 +23,8 @@ from gettext import gettext as _
 from pulp.common import dateutils
 from pulp.server.db import model
 from pulp.server.tasking.exception import (
-    TimeoutException, CancelException, UnscheduledTaskException)
+    TimeoutException, CancelException, UnscheduledTaskException,
+    SnapshotFailure)
 from pulp.server.tasking.scheduler import ImmediateScheduler
 
 
@@ -223,7 +224,12 @@ class Task(object):
         for field in self._copy_fields:
             data[field] = getattr(self, field)
         for field in self._pickle_fields:
-            data[field] = pickle.dumps(getattr(self, field))
+            try:
+                data[field] = pickle.dumps(getattr(self, field))
+            except Exception, e:
+                msg = _('Snapshot of %s failed error pickling field: %s') % (str(self), field)
+                _log.error(msg + '\n%s\n%s' % (traceback.format_exc(), e.args[0]))
+                raise SnapshotFailure('\n'.join((msg, e.args[0]))), None, sys.exc_info()[2]
         # restore groomed state
         if callback is not None:
             self.progress_callback(callback)
