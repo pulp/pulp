@@ -88,6 +88,10 @@ def remove_async(task):
 def cancel_async(task):
     return _queue.cancel(task)
 
+
+def reschedule_async(task, scheduler):
+    return _queue.reschedule(task, scheduler)
+
 # async system initialization/finalization ------------------------------------
 
 def _configured_schedule_threshold():
