@@ -293,9 +293,6 @@ class List(RepoAction):
             feed_ca = 'No'
             if repo.has_key('feed_ca') and repo['feed_ca']:
                 feed_ca = 'Yes'
-            feed_key = 'No'
-            if repo.has_key('feed_key') and repo['feed_key']:
-                feed_key = 'Yes'
 
             consumer_cert = 'No'
             if repo.has_key('consumer_cert') and repo['consumer_cert']:
@@ -303,14 +300,11 @@ class List(RepoAction):
             consumer_ca = 'No'
             if repo.has_key('consumer_ca') and repo['consumer_ca']:
                 consumer_ca = 'Yes'
-            consumer_key = 'No'
-            if repo.has_key('consumer_key') and repo['consumer_key']:
-                consumer_key = 'Yes'
 
             print constants.AVAILABLE_REPOS_LIST % (
                     repo["id"], repo["name"], feedUrl, feedType,
-                    feed_ca, feed_cert, feed_key,
-                    consumer_ca, consumer_cert, consumer_key,
+                    feed_ca, feed_cert,
+                    consumer_ca, consumer_cert,
                     repo["arch"], repo["sync_schedule"], repo['package_count'],
                     repo['files_count'], ' '.join(repo['distributionid']) or None,
                     repo['publish'], repo['clone_ids'], repo['groupid'] or None, filters, repo['notes'])
